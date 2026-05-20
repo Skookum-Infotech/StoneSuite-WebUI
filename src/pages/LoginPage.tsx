@@ -77,11 +77,11 @@ export default function LoginPage() {
 
             {/* Logo + heading */}
             <div className="mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-stone-200 bg-stone-900 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)]">
+              <div className="mx-auto mb-5 flex h-10 w-20 items-center justify-center">
                 <img
-                  src="/logo-white.png"
+                  src="/logo-dark.png"
                   alt="Stone Suite logo"
-                  className="h-8 w-auto object-contain"
+                  className="h-24 w-auto object-contain"
                   onError={(e) => {
                     // fallback if logo missing
                     (e.currentTarget as HTMLImageElement).style.display = 'none'
@@ -214,7 +214,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex h-full w-full flex-col justify-between p-10 xl:p-14">
 
           {/* Top — logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8 border border-white/10">
               <img
                 src="/logo-white.png"
