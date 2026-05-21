@@ -1,5 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { ArrowRight, Building2, Lock, Mail, ShieldCheck, Layers, Zap, Globe } from 'lucide-react'
+import { ArrowRight, Building2, Lock, Mail, ShieldCheck, Layers, Zap, Globe, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { authService } from '@/services/authService'
+import { useAuthStore } from '@/store/useAuthStore'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,9 +51,30 @@ function FeaturePill({ icon, label }: { icon: ReactNode; label: string }) {
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  
+  const navigate = useNavigate()
+  const setAuth = useAuthStore((state) => state.setAuth)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const response = await authService.login({ email, password, rememberMe: false })
+      if (response.success && response.user && response.token) {
+        setAuth(response.user, response.token)
+        navigate('/dashboard')
+      } else {
+        setError(response.message || 'Login failed')
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred during login')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -145,12 +169,28 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {error && (
+                <div className="text-sm font-medium text-red-500 bg-red-50 p-2 rounded-md border border-red-100">
+                  {error}
+                </div>
+              )}
+
               <Button
                 type="submit"
-                className="mt-1 h-11 w-full rounded-xl bg-stone-900 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] transition-all duration-200 hover:bg-stone-800 hover:shadow-[0_12px_28px_-8px_rgba(0,0,0,0.45)] active:scale-[0.99] focus-visible:ring-stone-400/30"
+                disabled={isLoading}
+                className="mt-1 h-11 w-full rounded-xl bg-stone-900 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] transition-all duration-200 hover:bg-stone-800 hover:shadow-[0_12px_28px_-8px_rgba(0,0,0,0.45)] active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Sign In
-                <ArrowRight className="ml-2 size-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="ml-2 size-4" />
+                  </>
+                )}
               </Button>
             </form>
 
