@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { ArrowRight, Building2, Lock, Mail, ShieldCheck, Layers, Zap, Globe, Loader2 } from 'lucide-react'
+import { ArrowRight, Lock, Mail, Layers, Zap, Globe, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -7,6 +7,8 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FaMicrosoft } from 'react-icons/fa6'
+import { FaAws } from 'react-icons/fa'
 
 function OAuthButton({
   icon,
@@ -42,7 +44,7 @@ function StatCard({ value, label }: { value: string; label: string }) {
 function FeaturePill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
     <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-sm">
-      <span className="text-amber-300/80">{icon}</span>
+      <span className="text-[#C4FF8B]">{icon}</span>
       <span className="text-xs font-medium text-stone-300">{label}</span>
     </div>
   )
@@ -53,7 +55,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  
+
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
 
@@ -178,7 +180,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="mt-1 h-11 w-full rounded-xl bg-stone-900 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] transition-all duration-200 hover:bg-stone-800 hover:shadow-[0_12px_28px_-8px_rgba(0,0,0,0.45)] active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="mt-1 h-11 w-full rounded-xl bg-[#c2f589] text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-[#99c466] active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
@@ -205,11 +207,11 @@ export default function LoginPage() {
             <div className="space-y-2.5">
               <OAuthButton
                 label="Continue with Microsoft Entra ID"
-                icon={<Building2 className="size-4" />}
+                icon={<FaMicrosoft className="size-4" />}
               />
               <OAuthButton
                 label="Continue with AWS Cognito"
-                icon={<ShieldCheck className="size-4" />}
+                icon={<FaAws className="size-4" />}
               />
             </div>
 
@@ -223,7 +225,7 @@ export default function LoginPage() {
       {/* ── RIGHT — Hero ── */}
       <aside className="relative flex min-h-screen w-full flex-col overflow-hidden md:w-1/2">
         {/* Deep stone/charcoal base */}
-        <div className="absolute inset-0 bg-[#0c0a08]" />
+        <div className="absolute inset-0 bg-[#071006]" />
 
         {/* Layered atmosphere */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_10%,rgba(217,119,6,0.12),transparent_65%)]" />
@@ -254,12 +256,12 @@ export default function LoginPage() {
         <div className="relative z-10 flex h-full w-full flex-col justify-between p-10 xl:p-14">
 
           {/* Top — logo */}
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8 border border-white/10">
+          <div className="flex items-center">
+            <div className="flex h-20 w-20 items-center">
               <img
                 src="/logo-white.png"
                 alt="Stone Suite"
-                className="h-5 w-auto object-contain"
+                className="h-25 w-auto object-contain"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = 'none'
                   const parent = e.currentTarget.parentElement
@@ -267,15 +269,14 @@ export default function LoginPage() {
                 }}
               />
             </div>
-            <span className="text-sm font-semibold tracking-widest text-stone-300 uppercase">Stone Suite</span>
           </div>
 
           {/* Middle — hero copy */}
           <div className="max-w-lg">
             {/* Eyebrow */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/8 px-4 py-1.5">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-amber-300/90">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#C4FF8B]/20 bg-[#C4FF8B]/8 px-4 py-1.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C4FF8B]" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-[#C4FF8B]/90">
                 Fabrication Management Platform
               </span>
             </div>
@@ -285,8 +286,7 @@ export default function LoginPage() {
               <span
                 className="relative"
                 style={{
-                  background: 'linear-gradient(135deg, #fbbf24, #d97706, #92400e)',
-                  WebkitBackgroundClip: 'text',
+                  background: 'linear-gradient(135deg, #C4FF8B, #8FE85F, #2F6B1F)', WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
                 }}
@@ -307,7 +307,7 @@ export default function LoginPage() {
             </div>
 
             {/* Stats */}
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3 mb-4">
               <StatCard value="500+" label="Projects Managed" />
               <StatCard value="99.9%" label="Uptime SLA" />
               <StatCard value="24/7" label="Support Access" />
@@ -320,7 +320,7 @@ export default function LoginPage() {
               "Stone Suite cut our quoting time by 60% and gave us full visibility across every job on the floor."
             </p>
             <div className="mt-3 flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400/60 to-stone-600/60 border border-white/10" />
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#C4FF8B]/60 to-[#2F6B1F]/60 border border-white/10" />
               <div>
                 <p className="text-xs font-semibold text-stone-200">Marcus T.</p>
                 <p className="text-xs text-stone-500">Operations Director, PrimeCut Stone</p>
