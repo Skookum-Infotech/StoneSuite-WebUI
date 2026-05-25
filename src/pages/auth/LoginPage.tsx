@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { ArrowRight, Lock, Mail, Layers, Zap, Globe, Loader2 } from 'lucide-react'
+import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -30,24 +30,7 @@ function OAuthButton({
   )
 }
 
-function StatCard({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/4 px-5 py-4 backdrop-blur-sm transition-all duration-300 hover:border-white/15 hover:bg-white/8">
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <p className="relative text-2xl font-bold tracking-tight text-white">{value}</p>
-      <p className="relative mt-0.5 text-xs font-medium uppercase tracking-widest text-stone-400">{label}</p>
-    </div>
-  )
-}
 
-function FeaturePill({ icon, label }: { icon: ReactNode; label: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-sm">
-      <span className="text-[#C4FF8B]">{icon}</span>
-      <span className="text-xs font-medium text-stone-300">{label}</span>
-    </div>
-  )
-}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -80,11 +63,11 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen md:flex md:flex-row"
+      className="min-h-screen md:h-screen md:overflow-hidden md:flex md:flex-row"
       style={{ fontFamily: "'DM Sans', 'Geist', system-ui, sans-serif" }}
     >
       {/* ── LEFT — Login ── */}
-      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-stone-50 px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10">
+      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden md:min-h-0 md:h-full bg-stone-50 px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10">
         {/* Subtle texture overlay */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -210,10 +193,10 @@ export default function LoginPage() {
                   label="Microsoft Entra ID"
                   icon={
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" className="size-5">
-                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                      <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                      <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                      <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
                     </svg>
                   }
                 />
@@ -232,108 +215,97 @@ export default function LoginPage() {
       </main>
 
       {/* ── RIGHT — Hero ── */}
-      <aside className="relative flex min-h-screen w-full flex-col overflow-hidden md:w-1/2">
-        {/* Deep stone/charcoal base */}
-        <div className="absolute inset-0 bg-[#071006]" />
+      <aside className="relative hidden h-screen w-1/2 flex-col overflow-hidden md:flex">
+        <div className="absolute inset-0 bg-[#0B1110]" />
 
-        {/* Layered atmosphere */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_10%,rgba(217,119,6,0.12),transparent_65%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_80%_90%,rgba(120,113,108,0.15),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_50%_50%,rgba(255,255,255,0.02),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_20%_12%,rgba(196,255,139,0.13),transparent_62%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_90%_88%,rgba(20,184,166,0.11),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(255,255,255,0.05),transparent_40%,rgba(0,0,0,0.28))]" />
 
-        {/* Stone texture grid */}
         <div
-          className="absolute inset-0 opacity-[0.06]"
+          className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)
-            `,
-            backgroundSize: '52px 52px',
+        linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)
+      `,
+            backgroundSize: '84px 84px',
           }}
         />
 
-        {/* Diagonal accent line */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'linear-gradient(135deg, transparent 40%, rgba(217,119,6,0.3) 50%, transparent 60%)',
-          }}
-        />
+        <div className="absolute -right-24 top-24 h-64 w-64 rotate-12 rounded-[2rem] border border-white/10 bg-white/[0.035] shadow-2xl backdrop-blur-sm" />
+        <div className="absolute -right-8 top-40 h-36 w-36 rotate-12 rounded-[1.5rem] border border-[#C4FF8B]/15 bg-[#C4FF8B]/[0.04]" />
 
-        {/* Content */}
-        <div className="relative z-10 flex h-full w-full flex-col justify-between p-10 xl:p-14">
-
-          {/* Top — logo */}
-          <div className="flex items-center">
-            <div className="flex h-20 w-20 items-center">
+        <div className="relative z-10 flex h-full flex-col justify-between p-8 lg:p-10">
+          {/* Top */}
+          <div className="flex items-center justify-between">
+            <div className="flex h-14 w-24 items-center">
               <img
                 src="/logo-white.png"
                 alt="Stone Suite"
-                className="h-25 w-auto object-contain"
+                className="h-20 w-auto object-contain"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none'
+                  ; (e.currentTarget as HTMLImageElement).style.display = 'none'
                   const parent = e.currentTarget.parentElement
-                  if (parent) parent.innerHTML = '<span style="color:white;font-size:0.9rem;font-weight:700">S</span>'
+                  if (parent)
+                    parent.innerHTML =
+                      '<span style="color:white;font-size:0.9rem;font-weight:700">S</span>'
                 }}
               />
             </div>
+
+            <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-stone-300">
+              Stone ERP
+            </div>
           </div>
 
-          {/* Middle — hero copy */}
-          <div className="max-w-lg">
-            {/* Eyebrow */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#C4FF8B]/20 bg-[#C4FF8B]/8 px-4 py-1.5">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C4FF8B]" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-[#C4FF8B]/90">
-                Fabrication Management Platform
+          {/* Middle */}
+          <div className="max-w-xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#C4FF8B]/20 bg-[#C4FF8B]/10 px-3.5 py-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#C4FF8B]" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C4FF8B]">
+                Built for stone operations
               </span>
             </div>
 
-            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-white xl:text-[3.25rem]">
-              Precision tools for modern{' '}
-              <span
-                className="relative"
-                style={{
-                  background: 'linear-gradient(135deg, #C4FF8B, #8FE85F, #2F6B1F)', WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                stone fabrication.
+            <h1 className="text-4xl font-bold leading-[1.04] tracking-tight text-white lg:text-5xl xl:text-[3.35rem]">
+              Manage every stone job with{' '}
+              <span className="bg-gradient-to-r from-[#C4FF8B] via-[#9EF06B] to-[#38BDF8] bg-clip-text text-transparent">
+                clarity.
               </span>
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-stone-400">
-              Streamline your workflow from quote to completion with our integrated suite of fabrication management tools.
+              A focused ERP workspace for daily operations, material flow,
+              fabrication progress, and team coordination.
             </p>
 
-            {/* Feature pills */}
-            <div className="mt-7 flex flex-wrap gap-2">
-              <FeaturePill icon={<Zap className="size-3" />} label="Real-time Quoting" />
-              <FeaturePill icon={<Layers className="size-3" />} label="Job Scheduling" />
-              <FeaturePill icon={<Globe className="size-3" />} label="Client Portal" />
-            </div>
+            <div className="mt-6 grid max-w-lg gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3.5 backdrop-blur-sm">
+                <p className="text-sm font-semibold text-white">Operations control</p>
+                <p className="mt-1 text-xs leading-relaxed text-stone-400">
+                  Organize work orders, teams, and daily activity.
+                </p>
+              </div>
 
-            {/* Stats */}
-            <div className="mt-8 flex flex-wrap gap-3 mb-4">
-              <StatCard value="500+" label="Projects Managed" />
-              <StatCard value="99.9%" label="Uptime SLA" />
-              <StatCard value="24/7" label="Support Access" />
+              <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3.5 backdrop-blur-sm">
+                <p className="text-sm font-semibold text-white">Material visibility</p>
+                <p className="mt-1 text-xs leading-relaxed text-stone-400">
+                  Track slabs, stock movement, and fabrication readiness.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Bottom — testimonial */}
-          <div className="rounded-2xl border border-white/8 bg-white/4 p-5 backdrop-blur-sm">
-            <p className="text-sm italic leading-relaxed text-stone-300">
-              "Stone Suite cut our quoting time by 60% and gave us full visibility across every job on the floor."
+          {/* Bottom */}
+          <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-500">
+              Designed for fabrication workflows
             </p>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#C4FF8B]/60 to-[#2F6B1F]/60 border border-white/10" />
-              <div>
-                <p className="text-xs font-semibold text-stone-200">Marcus T.</p>
-                <p className="text-xs text-stone-500">Operations Director, PrimeCut Stone</p>
-              </div>
+
+            <div className="flex shrink-0 items-center gap-2 text-xs text-stone-400">
+              <span className="h-2 w-2 rounded-full bg-[#C4FF8B]" />
+              Secure access
             </div>
           </div>
         </div>
