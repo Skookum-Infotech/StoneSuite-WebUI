@@ -7,7 +7,6 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { FaMicrosoft } from 'react-icons/fa6'
 import { FaAws } from 'react-icons/fa'
 
 function OAuthButton({
@@ -21,12 +20,12 @@ function OAuthButton({
     <Button
       type="button"
       variant="outline"
-      className="h-11 w-full justify-start gap-3 rounded-xl border-stone-200 bg-white px-4 text-stone-700 shadow-sm transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-950 focus-visible:ring-stone-400/20"
+      className="h-11 w-full justify-center gap-2 rounded-xl border-stone-200 bg-white px-2 text-stone-700 shadow-sm transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-950 focus-visible:ring-stone-400/20"
     >
-      <span className="flex size-7 items-center justify-center rounded-lg bg-stone-100 text-stone-600">
+      <span className="flex size-5 shrink-0 items-center justify-center">
         {icon}
       </span>
-      <span className="truncate text-sm font-medium tracking-wide">{label}</span>
+      <span className="truncate text-xs font-semibold sm:text-sm">{label}</span>
     </Button>
   )
 }
@@ -204,15 +203,25 @@ export default function LoginPage() {
             </div>
 
             {/* OAuth */}
-            <div className="space-y-2.5">
-              <OAuthButton
-                label="Continue with Microsoft Entra ID"
-                icon={<FaMicrosoft className="size-4" />}
-              />
-              <OAuthButton
-                label="Continue with AWS Cognito"
-                icon={<FaAws className="size-4" />}
-              />
+            <div className="flex flex-col items-center space-y-3">
+              <span className="text-sm font-medium text-stone-500">Continue with</span>
+              <div className="grid w-full grid-cols-2 gap-3">
+                <OAuthButton
+                  label="Microsoft Entra ID"
+                  icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" className="size-5">
+                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                    </svg>
+                  }
+                />
+                <OAuthButton
+                  label="AWS Cognito"
+                  icon={<FaAws className="size-5 text-[#FF9900]" />}
+                />
+              </div>
             </div>
 
             <p className="mt-6 text-center text-xs text-stone-400">
