@@ -72,12 +72,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Header / Brand Logo */}
         <div>
-          <div className="relative flex h-16 items-center justify-between px-6 border-b border-sidebar-border/50">
-            <NavLink to="/dashboard" className="flex items-center gap-2.5 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#c2f589] text-stone-950 shadow-[0_0_15px_rgba(194,245,137,0.3)] transition-transform group-hover:scale-105">
-                <Building2 className="size-5" />
+          <div className="relative flex h-16 items-center justify-between border-b border-border bg-stone-350 px-6">
+            <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden">
+                <img
+                  src="/logo-only.png"
+                  alt="Stone Suite"
+                  className="h-8 w-8 object-contain"
+                />
               </div>
-              <span className="font-heading text-lg font-bold tracking-wider text-stone-900 dark:text-white uppercase transition-colors group-hover:text-stone-700 dark:group-hover:text-stone-200">
+              <span className="font-heading text-lg font-bold tracking-wider text-dark dark:text-white uppercase transition-colors group-hover:text-stone-700 dark:group-hover:text-stone-200">
                 Stone Suite
               </span>
             </NavLink>
@@ -109,8 +113,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       cn(
                         'flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
                         isActive
-                  ? "bg-[#c2f589] text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold" 
-                  : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
+                          ? "bg-[#c2f589] text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold"
+                          : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
                       )
                     }
                   >
@@ -128,8 +132,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     className={cn(
                       'flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
                       isActive
-                    ? "text-stone-900 dark:text-white bg-sidebar-accent/50"
-                    : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
+                        ? "text-stone-900 dark:text-white bg-sidebar-accent/50"
+                        : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
                     )}
                   >
                     <div className="flex items-center gap-3.5">

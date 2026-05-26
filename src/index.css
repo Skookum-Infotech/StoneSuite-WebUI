@@ -55,7 +55,7 @@
 
   --destructive: #ef4444;
 
-  --border: #e7e5e4;
+  /* --border: #e7e5e4;
   --input: #e7e5e4;
   --ring: #a3e635;
 
@@ -66,7 +66,7 @@
   --sidebar-accent: rgba(255, 255, 255, 0.06);
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #c2f589;
+  --sidebar-ring: #c2f589; */
 
 
   @media (max-width: 1024px) {
