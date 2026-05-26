@@ -86,7 +86,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5 px-4 py-6">
+          <nav className="space-y-1.5 px-3.5 py-6">
             {sidebarItems.filter(canAccess).map((item) => {
               const Icon = item.icon
               const hasChildren = item.children && item.children.length > 0
@@ -101,14 +101,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     onClick={onClose}
                     className={({ isActive }) =>
                       cn(
-                        'flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
+                        'flex items-center gap-3.5 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
                         isActive
                           ? "bg-brand text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold"
                           : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
                       )
                     }
                   >
-                    <Icon className="size-5" />
+                    <Icon className="size-4" />
                     <span>{item.title}</span>
                   </NavLink>
                 )
@@ -133,7 +133,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                     <ChevronDown
                       className={cn(
-                        'size-4 transition-transform duration-200',
+                        'size-3.5 transition-transform duration-200',
                         isExpanded && 'rotate-180'
                       )}
                     />

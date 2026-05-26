@@ -65,7 +65,7 @@ export default function OnboardingPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark-hover"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand text-stone-950 py-2.5 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand/50 hover:text-stone-950 cursor-pointer"
           >
             <Plus className="size-4" />
             Add New Customer
