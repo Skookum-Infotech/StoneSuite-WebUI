@@ -32,6 +32,43 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  --background: #fafaf9;
+  --foreground: #1c1917;
+
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+
+  --primary: #c2f589;
+  --primary-foreground: #1c1917;
+
+  --secondary: #f5f5f4;
+  --secondary-foreground: #292524;
+
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c;
+
+  --accent: #ecfccb;
+  --accent-foreground: #365314;
+
+  --destructive: #ef4444;
+
+  --border: #e7e5e4;
+  --input: #e7e5e4;
+  --ring: #a3e635;
+
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #c2f589;
+  --sidebar-primary-foreground: #1c1917;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #c2f589;
+
+
   @media (max-width: 1024px) {
     font-size: 16px;
   }
