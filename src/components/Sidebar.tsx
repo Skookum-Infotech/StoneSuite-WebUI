@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   ChevronDown,
-  LogOut,
   X,
-  Building2
 } from 'lucide-react';
-import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
 import type { SidebarItem } from '@/types/sidebar';
 import { sidebarItems } from '@/config/sidebar';
@@ -18,16 +15,9 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
 
   // Accordion state - initialized to true if currently on a customer route
   const [expandedItems, setExpandedItems] = useState<string[]>([])
-
-  const handleLogout = () => {
-    logout();
-    navigate('/auth/login');
-  };
 
 
   const toggleExpanded = (title: string) => {
@@ -113,7 +103,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       cn(
                         'flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
                         isActive
-                          ? "bg-[#c2f589] text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold"
+                          ? "bg-brand text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold"
                           : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
                       )
                     }
@@ -192,7 +182,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* 
         <div className="p-4 border-t border-sidebar-border/50 bg-stone-50/50 dark:bg-stone-950/20">
           <div className="flex items-center gap-3 rounded-2xl p-2.5 hover:bg-sidebar-accent/50 transition-colors">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-[#c2f589] font-bold text-stone-950 shadow-inner">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand font-bold text-stone-950 shadow-inner">
               {user?.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'SS'}
             </div>
             

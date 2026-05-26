@@ -112,7 +112,7 @@ export default function MainLayout() {
                 }}
                 className="flex items-center gap-2 rounded-2xl border border-stone-200/80 dark:border-stone-800/80 bg-stone-50/50 dark:bg-stone-900/20 p-1.5 pr-3 text-left hover:bg-stone-100/50 dark:hover:bg-stone-800/30 transition-all cursor-pointer select-none"
               >
-                <div className="flex size-7.5 items-center justify-center rounded-xl bg-[#c2f589] text-[11px] font-bold text-stone-950 shadow-sm">
+                <div className="flex size-7.5 items-center justify-center rounded-xl bg-brand text-[11px] font-bold text-stone-950 shadow-sm">
                   {user?.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'SS'}
                 </div>
                 <span className="hidden sm:block text-xs font-bold text-stone-700 dark:text-stone-200">

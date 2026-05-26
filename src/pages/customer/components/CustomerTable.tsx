@@ -13,9 +13,9 @@ const statusStyles: Record<CustomerStatus, string> = {
 
 export function CustomerTable({ customers }: Props) {
   return (
-    <div className="overflow-hidden border border-stone-200 bg-white">
+    <div className="overflow-hidden border border-stone-200 bg-white rounded-md shadow-sm">
       <table className="w-full text-left text-sm">
-        <thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
+        <thead className="bg-brand/20 text-xs uppercase tracking-wide text-brand-dark">
           <tr>
             <th className="px-5 py-4 font-semibold">Company</th>
             <th className="px-5 py-4 font-semibold">Country</th>

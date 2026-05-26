@@ -90,7 +90,7 @@ export function AddCustomerModal({ open, onClose, onSubmit }: Props) {
 
             <button
               type="submit"
-              className="rounded-2xl bg-[#719c3b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#5f8431]"
+              className="rounded-2xl bg-brand-dark px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark-hover"
             >
               Create Customer
             </button>
@@ -138,7 +138,7 @@ function Input({
         name={name}
         type={type}
         required={required}
-        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-800 outline-none transition placeholder:text-stone-400 focus:border-[#719c3b] focus:ring-4 focus:ring-[#c2f589]/30"
+        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-800 outline-none transition placeholder:text-stone-400 focus:border-brand-dark focus:ring-4 focus:ring-brand/30"
       />
     </label>
   );

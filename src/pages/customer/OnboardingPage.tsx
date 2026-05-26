@@ -49,7 +49,7 @@ export default function OnboardingPage() {
       <div className="bg-white p-8 flex-1 flex flex-col min-h-0">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#c2f589]/20 text-[#719c3b]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
               <UserPlus className="size-6" />
             </div>
 
@@ -65,7 +65,7 @@ export default function OnboardingPage() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#719c3b] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5f8431]"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-dark-hover"
           >
             <Plus className="size-4" />
             Add New Customer

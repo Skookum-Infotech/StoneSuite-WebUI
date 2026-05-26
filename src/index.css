@@ -157,6 +157,11 @@
 
 
 @theme inline {
+  --color-brand: #c2f589;
+  --color-brand-hover: #99c466;
+  --color-brand-dark: #719c3b;
+  --color-brand-dark-hover: #5f8431;
+
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);

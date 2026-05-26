@@ -162,7 +162,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="mt-1 h-11 w-full rounded-xl bg-[#c2f589] text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-[#99c466] active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="mt-1 h-11 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
@@ -220,9 +220,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-stone-900 to-slate-950" />
         
         {/* Decorative Animated Orbs */}
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-[#c2f589]/10 blur-[120px]" style={{ animationDuration: '4s' }} />
+        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/10 blur-[120px]" style={{ animationDuration: '4s' }} />
         <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-emerald-500/10 blur-[120px]" style={{ animationDuration: '5s', animationDelay: '1s' }} />
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-[#c2f589]/5 to-transparent blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-brand/5 to-transparent blur-3xl" />
 
         {/* Subtle dot pattern */}
         <div
@@ -248,7 +248,7 @@ export default function LoginPage() {
         `}</style>
 
         <div className="absolute right-16 top-1/4 h-32 w-32 animate-float-slow rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-md" />
-        <div className="absolute bottom-1/3 left-16 h-20 w-20 animate-float-delayed rounded-full border border-[#c2f589]/20 bg-[#c2f589]/10 shadow-2xl backdrop-blur-md" />
+        <div className="absolute bottom-1/3 left-16 h-20 w-20 animate-float-delayed rounded-full border border-brand/20 bg-brand/10 shadow-2xl backdrop-blur-md" />
 
         <div className="relative z-10 flex h-full flex-col justify-between p-8 lg:p-12">
           {/* Top Section */}
@@ -274,19 +274,19 @@ export default function LoginPage() {
 
           {/* Middle Section */}
           <div className="max-w-xl">
-            <div className="mb-4 inline-flex transform items-center gap-2 rounded-full border border-[#c2f589]/30 bg-[#c2f589]/10 px-3 py-1.5 lg:px-4 lg:py-2 transition-all hover:-translate-y-1 hover:bg-[#c2f589]/20">
+            <div className="mb-4 inline-flex transform items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1.5 lg:px-4 lg:py-2 transition-all hover:-translate-y-1 hover:bg-brand/20">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c2f589] opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#c2f589]"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand"></span>
               </span>
-              <span className="text-[10px] lg:text-xs font-semibold uppercase tracking-widest text-[#c2f589]">
+              <span className="text-[10px] lg:text-xs font-semibold uppercase tracking-widest text-brand">
                 Next-Gen Platform
               </span>
             </div>
 
             <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
               Elevate your <br />
-              <span className="bg-gradient-to-r from-[#c2f589] via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-brand via-emerald-400 to-teal-400 bg-clip-text text-transparent">
                 stone operations.
               </span>
             </h1>
@@ -309,7 +309,7 @@ export default function LoginPage() {
               </div>
 
               <div className="group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-                <div className="mb-2 inline-flex rounded-lg bg-[#c2f589]/20 p-1.5 lg:p-2 text-[#c2f589] transition-transform group-hover:scale-110 group-hover:bg-[#c2f589]/30">
+                <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 lg:p-2 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
                   <svg className="size-4 lg:size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
