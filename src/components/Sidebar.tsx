@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserPlus, 
-  ChevronDown, 
-  LogOut, 
+import {
+  ChevronDown,
+  LogOut,
   X,
   Building2
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
+import type { SidebarItem } from '@/types/sidebar';
+import { sidebarItems } from '@/config/sidebar';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,38 +20,53 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  
-  // Accordion state - initialized to true if currently on a customer route
-  const [isCustomerExpanded, setIsCustomerExpanded] = useState(
-    location.pathname.startsWith('/customer')
-  );
 
-  // Sync accordion expansion with active routes
-  useEffect(() => {
-    if (location.pathname.startsWith('/customer')) {
-      setIsCustomerExpanded(true);
-    }
-  }, [location.pathname]);
+  // Accordion state - initialized to true if currently on a customer route
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
 
   const handleLogout = () => {
     logout();
     navigate('/auth/login');
   };
 
+
+  const toggleExpanded = (title: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(title)
+        ? prev.filter((item) => item !== title)
+        : [...prev, title]
+    )
+  }
+
+  // ONCE USER.ROLE IS IMPLEMENTED WE CAN ACTIVATE THE SIDEBAR MODULE ACCESS ------------------------->
+  // const canAccess = (item: SidebarItem) => {
+  //   if (!item.access?.length) return true
+  //   return user?.role ? item.access.includes(user.role as any) : false
+  // }
+
+  const canAccess = (_item: SidebarItem) => true
+
+  const isItemActive = (item: SidebarItem) => {
+    if (item.path && location.pathname === item.path) return true
+
+    return item.children?.some((child) =>
+      child.path ? location.pathname.startsWith(child.path) : false
+    )
+  }
   return (
     <>
       {/* Mobile Sidebar Backdrop */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-stone-900/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar Container */}
-      <aside 
+      <aside
         className={cn(
-          "fixed bottom-0 top-0 left-0 z-50 flex w-72 flex-col justify-between border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "fixed bottom-0 top-0 left-0 z-50 flex w-72 flex-col justify-between border-r border-sidebar-border bg-background text-sidebar-foreground transition-transform duration-300 ease-in-out lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -69,7 +83,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </NavLink>
 
             {/* Mobile close button */}
-            <button 
+            <button
               onClick={onClose}
               className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-500 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 lg:hidden"
             >
@@ -79,73 +93,99 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Navigation Links */}
           <nav className="space-y-1.5 px-4 py-6">
-            {/* Dashboard Link */}
-            <NavLink
-              to="/dashboard"
-              onClick={onClose}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200",
-                isActive 
+            {sidebarItems.filter(canAccess).map((item) => {
+              const Icon = item.icon
+              const hasChildren = item.children && item.children.length > 0
+              const isActive = isItemActive(item)
+              const isExpanded = expandedItems.includes(item.title) || isActive
+
+              if (!hasChildren && item.path) {
+                return (
+                  <NavLink
+                    key={item.title}
+                    to={item.path}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
+                        isActive
                   ? "bg-[#c2f589] text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold" 
                   : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
-              )}
-            >
-              <LayoutDashboard className="size-5" />
-              <span>Dashboard</span>
-            </NavLink>
+                      )
+                    }
+                  >
+                    <Icon className="size-5" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                )
+              }
 
-            {/* Customer Module Accordion */}
-            <div className="space-y-1">
-              <button
-                onClick={() => setIsCustomerExpanded(!isCustomerExpanded)}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer",
-                  location.pathname.startsWith('/customer')
+              return (
+                <div key={item.title} className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpanded(item.title)}
+                    className={cn(
+                      'flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
+                      isActive
                     ? "text-stone-900 dark:text-white bg-sidebar-accent/50"
                     : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
-                )}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Users className="size-5" />
-                  <span>Customer</span>
-                </div>
-                <ChevronDown 
-                  className={cn(
-                    "size-4 text-stone-500 transition-transform duration-250",
-                    isCustomerExpanded && "rotate-180 text-stone-900 dark:text-white"
-                  )}
-                />
-              </button>
-
-              {/* Accordion Sub-items */}
-              <div 
-                className={cn(
-                  "grid transition-all duration-300 ease-in-out overflow-hidden pl-4",
-                  isCustomerExpanded ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
-                )}
-              >
-                <div className="overflow-hidden space-y-1 border-l-2 border-stone-200/60 dark:border-stone-800/80 ml-6 pl-3">
-                  <NavLink
-                    to="/customer/onboarding"
-                    onClick={onClose}
-                    className={({ isActive }) => cn(
-                      "flex items-center gap-2.5 rounded-lg px-3.5 py-2 text-xs font-semibold tracking-wide transition-all duration-200",
-                      isActive
-                        ? "bg-[#c2f589]/20 text-[#608731] dark:text-[#a5da67] font-bold"
-                        : "text-stone-500 dark:text-stone-400 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
                     )}
                   >
-                    <UserPlus className="size-4" />
-                    <span>Onboarding</span>
-                  </NavLink>
+                    <div className="flex items-center gap-3.5">
+                      <Icon className="size-5" />
+                      <span>{item.title}</span>
+                    </div>
+
+                    <ChevronDown
+                      className={cn(
+                        'size-4 transition-transform duration-200',
+                        isExpanded && 'rotate-180'
+                      )}
+                    />
+                  </button>
+
+                  <div
+                    className={cn(
+                      'grid overflow-hidden pl-4 transition-all duration-300 ease-in-out',
+                      isExpanded
+                        ? 'mt-1 grid-rows-[1fr] opacity-100'
+                        : 'grid-rows-[0fr] opacity-0'
+                    )}
+                  >
+                    <div className="ml-6 space-y-1 overflow-hidden border-l-2 border-sidebar-border pl-3">
+                      {item.children?.filter(canAccess).map((child) => {
+                        const ChildIcon = child.icon
+
+                        return (
+                          <NavLink
+                            key={child.title}
+                            to={child.path!}
+                            onClick={onClose}
+                            className={({ isActive }) =>
+                              cn(
+                                'flex items-center gap-2.5 rounded-lg px-3.5 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+                                isActive
+                                  ? 'bg-sidebar-primary/20 text-sidebar-primary font-bold'
+                                  : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                              )
+                            }
+                          >
+                            <ChildIcon className="size-4" />
+                            <span>{child.title}</span>
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )
+            })}
           </nav>
         </div>
 
         {/* Footer / User Profile Card */}
-          {/* 
+        {/* 
         <div className="p-4 border-t border-sidebar-border/50 bg-stone-50/50 dark:bg-stone-950/20">
           <div className="flex items-center gap-3 rounded-2xl p-2.5 hover:bg-sidebar-accent/50 transition-colors">
             <div className="flex size-10 items-center justify-center rounded-xl bg-[#c2f589] font-bold text-stone-950 shadow-inner">
@@ -171,7 +211,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
        */}
-       
+
       </aside>
     </>
   );
