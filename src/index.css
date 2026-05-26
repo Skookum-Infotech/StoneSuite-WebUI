@@ -73,6 +73,27 @@
     font-size: 16px;
   }
 
+  .modal-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d6d3d1 transparent;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar-thumb {
+    background: #d6d3d1;
+    border-radius: 999px;
+  }
+
+  .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a29e;
+  }
 
   --foreground: oklch(0.145 0 0);
 
@@ -214,8 +235,14 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;}
+    @apply border-border outline-ring/50;
+  }
+
   body {
-    @apply bg-background text-foreground;}
+    @apply bg-background text-foreground;
+  }
+
   html {
-    @apply font-sans;}}
+    @apply font-sans;
+  }
+}

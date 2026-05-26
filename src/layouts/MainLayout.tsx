@@ -168,7 +168,7 @@ export default function MainLayout() {
         </header>
 
         {/* Page Content Viewport */}
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 max-w-7xl w-full mx-auto flex flex-col min-h-0">
           <Outlet />
         </main>
       </div>
