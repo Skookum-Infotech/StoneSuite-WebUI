@@ -9,7 +9,6 @@ const ForgotPasswordPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [step, setStep] = useState('email'); // 'email', 'verify', 'reset'
   const [resetCode, setResetCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
