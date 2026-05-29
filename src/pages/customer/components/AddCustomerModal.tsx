@@ -1,44 +1,49 @@
 import { X } from 'lucide-react';
-import type { Customer } from '../OnboardingPage';
+import type { CreateCustomerPayload } from '@/types/customer';
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSubmit: (customer: Customer) => void;
+  onSubmit: (payload: CreateCustomerPayload) => void;
+  isPending?: boolean;
 };
 
-export function AddCustomerModal({ open, onClose, onSubmit }: Props) {
+export function AddCustomerModal({ open, onClose, onSubmit, isPending }: Props) {
   if (!open) return null;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const form = new FormData(event.currentTarget);
+    const get = (key: string) => String(form.get(key) ?? '').trim();
 
     onSubmit({
-      id: `CUS-${Date.now()}`,
-      companyName: String(form.get('companyName')),
-      legalName: String(form.get('legalName')),
-      country: String(form.get('country')),
-      currency: String(form.get('currency')),
-      timezone: String(form.get('timezone')),
-      superAdminName: String(form.get('superAdminName')),
-      superAdminEmail: String(form.get('superAdminEmail')),
-      status: 'Draft',
+      name: get('companyName'),
+      legalName: get('legalName'),
+      website: get('website'),
+      country: get('country'),
+      currency: get('currency'),
+      timezone: get('timezone'),
+      taxId: get('taxId'),
+      billingAddress: get('billingAddress'),
+      shippingAddress: get('shippingAddress'),
+      returnAddress: get('returnAddress'),
+      superAdminName: get('superAdminName'),
+      superAdminEmail: get('superAdminEmail'),
+      superAdminPhone: get('superAdminPhone'),
+      superAdminJobTitle: get('superAdminJobTitle'),
+      financeName: get('financeName'),
+      financeEmail: get('financeEmail'),
+      financePhone: get('financePhone'),
     });
-  }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto scrollbar-hide rounded-xl bg-white p-6 shadow-xl border border-stone-900 modal-scrollbar">
         <div className="mb-6 flex items-center justify-between">
-          <div >
-            <h2 className="text-xl font-bold text-stone-900">
-              Add New Customer
-            </h2>
-            <p className="text-sm text-stone-500">
-              Enter the required onboarding details.
-            </p>
+          <div>
+            <h2 className="text-xl font-bold text-stone-900">Add New Customer</h2>
+            <p className="text-sm text-stone-500">Enter the required onboarding details.</p>
           </div>
 
           <button
@@ -83,16 +88,18 @@ export function AddCustomerModal({ open, onClose, onSubmit }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50"
+              disabled={isPending}
+              className="rounded-2xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="rounded-2xl bg-brand-dark px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark-hover"
+              disabled={isPending}
+              className="rounded-2xl bg-brand-dark px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark-hover disabled:opacity-50"
             >
-              Create Customer
+              {isPending ? 'Creating…' : 'Create Customer'}
             </button>
           </div>
         </form>
@@ -101,13 +108,7 @@ export function AddCustomerModal({ open, onClose, onSubmit }: Props) {
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
       <h3 className="mb-3 text-sm font-bold text-stone-800">{title}</h3>
@@ -133,7 +134,6 @@ function Input({
         {label}
         {required && <span className="text-red-500"> *</span>}
       </span>
-
       <input
         name={name}
         type={type}

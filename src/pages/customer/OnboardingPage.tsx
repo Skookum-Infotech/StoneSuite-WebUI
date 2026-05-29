@@ -1,48 +1,27 @@
 import { useState } from 'react';
 import { UserPlus, Plus } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CustomerTable } from './components/CustomerTable';
 import { AddCustomerModal } from './components/AddCustomerModal';
-
-export type CustomerStatus =
-  | 'Draft'
-  | 'Pending Setup'
-  | 'In Review'
-  | 'Active';
-
-export type Customer = {
-  id: string;
-  companyName: string;
-  legalName: string;
-  country: string;
-  currency: string;
-  timezone: string;
-  superAdminName: string;
-  superAdminEmail: string;
-  status: CustomerStatus;
-};
-
-const initialCustomers: Customer[] = [
-  {
-    id: 'CUS-001',
-    companyName: 'Acme Retail',
-    legalName: 'Acme Retail Pvt Ltd',
-    country: 'India',
-    currency: 'INR',
-    timezone: 'Asia/Kolkata',
-    superAdminName: 'Rahul Menon',
-    superAdminEmail: 'rahul@acme.com',
-    status: 'Pending Setup',
-  },
-];
+import { customerService } from '@/services/customerService';
+import type { CreateCustomerPayload } from '@/types/customer';
 
 export default function OnboardingPage() {
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleAddCustomer = (customer: Customer) => {
-    setCustomers((prev) => [customer, ...prev]);
-    setIsModalOpen(false);
-  };
+  const { data: customers = [], isLoading, isError } = useQuery({
+    queryKey: ['customers'],
+    queryFn: customerService.list,
+  });
+
+  const { mutate: createCustomer, isPending } = useMutation({
+    mutationFn: (payload: CreateCustomerPayload) => customerService.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      setIsModalOpen(false);
+    },
+  });
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -73,14 +52,18 @@ export default function OnboardingPage() {
         </div>
 
         <div className="mt-8 border-t border-stone-100 pt-6 flex-1 flex flex-col min-h-0">
-          <CustomerTable customers={customers} />
+          {isError && (
+            <p className="text-sm text-red-500 mb-4">Failed to load customers. Is the backend running?</p>
+          )}
+          <CustomerTable customers={customers} isLoading={isLoading} />
         </div>
       </div>
 
       <AddCustomerModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddCustomer}
+        onSubmit={createCustomer}
+        isPending={isPending}
       />
     </div>
   );

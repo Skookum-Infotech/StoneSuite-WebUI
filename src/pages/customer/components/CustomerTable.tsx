@@ -1,17 +1,28 @@
-import type { Customer, CustomerStatus } from '../OnboardingPage';
+import type { Customer } from '@/types/customer';
 
 type Props = {
   customers: Customer[];
+  isLoading?: boolean;
 };
 
-const statusStyles: Record<CustomerStatus, string> = {
-  Draft: 'bg-stone-100 text-stone-600',
-  'Pending Setup': 'bg-amber-100 text-amber-700',
-  'In Review': 'bg-blue-100 text-blue-700',
-  Active: 'bg-green-100 text-green-700',
+const statusStyles: Record<string, string> = {
+  draft: 'bg-stone-100 text-stone-600',
+  invitation_sent: 'bg-amber-100 text-amber-700',
+  active: 'bg-green-100 text-green-700',
+  suspended: 'bg-red-100 text-red-600',
 };
 
-export function CustomerTable({ customers }: Props) {
+const statusLabel: Record<string, string> = {
+  draft: 'Draft',
+  invitation_sent: 'Invitation Sent',
+  active: 'Active',
+  suspended: 'Suspended',
+};
+
+export function CustomerTable({ customers, isLoading }: Props) {
+  const superAdmin = (customer: Customer) =>
+    customer.contacts?.find((c) => c.role === 'super_admin');
+
   return (
     <div className="overflow-hidden border border-stone-200 bg-white rounded-md shadow-sm">
       <table className="w-full text-left text-sm">
@@ -26,42 +37,51 @@ export function CustomerTable({ customers }: Props) {
         </thead>
 
         <tbody className="divide-y divide-stone-100">
-          {customers.map((customer) => (
-            <tr key={customer.id} className="hover:bg-stone-50/70">
-              <td className="px-5 py-4">
-                <div className="font-semibold text-stone-900">
-                  {customer.companyName}
-                </div>
-                <div className="text-xs text-stone-500">
-                  {customer.legalName}
-                </div>
-              </td>
+          {customers.map((customer) => {
+            const admin = superAdmin(customer);
+            return (
+              <tr key={customer.id} className="hover:bg-stone-50/70">
+                <td className="px-5 py-4">
+                  <div className="font-semibold text-stone-900">{customer.name}</div>
+                  {customer.legalName && (
+                    <div className="text-xs text-stone-500">{customer.legalName}</div>
+                  )}
+                </td>
 
-              <td className="px-5 py-4 text-stone-600">{customer.country}</td>
-              <td className="px-5 py-4 text-stone-600">{customer.currency}</td>
+                <td className="px-5 py-4 text-stone-600">{customer.country || '—'}</td>
+                <td className="px-5 py-4 text-stone-600">{customer.currency || '—'}</td>
 
-              <td className="px-5 py-4">
-                <div className="font-medium text-stone-800">
-                  {customer.superAdminName}
-                </div>
-                <div className="text-xs text-stone-500">
-                  {customer.superAdminEmail}
-                </div>
-              </td>
+                <td className="px-5 py-4">
+                  {admin ? (
+                    <>
+                      <div className="font-medium text-stone-800">{admin.fullName}</div>
+                      <div className="text-xs text-stone-500">{admin.email}</div>
+                    </>
+                  ) : (
+                    <span className="text-stone-400">—</span>
+                  )}
+                </td>
 
-              <td className="px-5 py-4">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[customer.status]}`}
-                >
-                  {customer.status}
-                </span>
-              </td>
-            </tr>
-          ))}
+                <td className="px-5 py-4">
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[customer.status] ?? 'bg-stone-100 text-stone-600'}`}
+                  >
+                    {statusLabel[customer.status] ?? customer.status}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
-      {customers.length === 0 && (
+      {isLoading && (
+        <div className="flex h-40 items-center justify-center text-sm text-stone-400">
+          Loading customers…
+        </div>
+      )}
+
+      {!isLoading && customers.length === 0 && (
         <div className="flex h-40 items-center justify-center text-sm text-stone-400">
           No customers added yet.
         </div>
