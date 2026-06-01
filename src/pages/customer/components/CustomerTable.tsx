@@ -25,14 +25,14 @@ export function CustomerTable({ customers, isLoading }: Props) {
 
   return (
     <div className="overflow-hidden border border-stone-200 bg-white rounded-md shadow-sm">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-brand/20 text-xs uppercase tracking-wide text-brand-dark">
+      <table className="w-full text-left text-xs">
+        <thead className="bg-brand/20 text-[10px] uppercase tracking-wide text-brand-dark">
           <tr>
-            <th className="px-5 py-4 font-semibold">Company</th>
-            <th className="px-5 py-4 font-semibold">Country</th>
-            <th className="px-5 py-4 font-semibold">Currency</th>
-            <th className="px-5 py-4 font-semibold">Super Admin</th>
-            <th className="px-5 py-4 font-semibold">Status</th>
+            <th className="px-3 py-2.5 font-semibold">Company</th>
+            <th className="px-3 py-2.5 font-semibold">Country</th>
+            <th className="px-3 py-2.5 font-semibold">Currency</th>
+            <th className="px-3 py-2.5 font-semibold">Super Admin</th>
+            <th className="px-3 py-2.5 font-semibold">Status</th>
           </tr>
         </thead>
 
@@ -41,30 +41,30 @@ export function CustomerTable({ customers, isLoading }: Props) {
             const admin = superAdmin(customer);
             return (
               <tr key={customer.id} className="hover:bg-stone-50/70">
-                <td className="px-5 py-4">
+                <td className="px-3 py-2">
                   <div className="font-semibold text-stone-900">{customer.name}</div>
                   {customer.legalName && (
-                    <div className="text-xs text-stone-500">{customer.legalName}</div>
+                    <div className="text-[10px] text-stone-400">{customer.legalName}</div>
                   )}
                 </td>
 
-                <td className="px-5 py-4 text-stone-600">{customer.country || '—'}</td>
-                <td className="px-5 py-4 text-stone-600">{customer.currency || '—'}</td>
+                <td className="px-3 py-2 text-stone-600">{customer.country || '—'}</td>
+                <td className="px-3 py-2 text-stone-600">{customer.currency || '—'}</td>
 
-                <td className="px-5 py-4">
+                <td className="px-3 py-2">
                   {admin ? (
                     <>
                       <div className="font-medium text-stone-800">{admin.fullName}</div>
-                      <div className="text-xs text-stone-500">{admin.email}</div>
+                      <div className="text-[10px] text-stone-400">{admin.email}</div>
                     </>
                   ) : (
-                    <span className="text-stone-400">—</span>
+                    <span className="text-stone-300">—</span>
                   )}
                 </td>
 
-                <td className="px-5 py-4">
+                <td className="px-3 py-2">
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[customer.status] ?? 'bg-stone-100 text-stone-600'}`}
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusStyles[customer.status] ?? 'bg-stone-100 text-stone-600'}`}
                   >
                     {statusLabel[customer.status] ?? customer.status}
                   </span>
@@ -76,13 +76,13 @@ export function CustomerTable({ customers, isLoading }: Props) {
       </table>
 
       {isLoading && (
-        <div className="flex h-40 items-center justify-center text-sm text-stone-400">
+        <div className="flex h-32 items-center justify-center text-xs text-stone-400">
           Loading customers…
         </div>
       )}
 
       {!isLoading && customers.length === 0 && (
-        <div className="flex h-40 items-center justify-center text-sm text-stone-400">
+        <div className="flex h-32 items-center justify-center text-xs text-stone-400">
           No customers added yet.
         </div>
       )}

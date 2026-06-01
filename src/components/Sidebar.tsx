@@ -56,22 +56,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed bottom-0 top-0 left-0 z-50 flex w-72 flex-col justify-between border-r border-sidebar-border bg-background text-sidebar-foreground transition-transform duration-300 ease-in-out lg:translate-x-0",
+          "fixed bottom-0 top-0 left-0 z-50 flex w-56 flex-col justify-between border-r border-sidebar-border bg-background text-sidebar-foreground transition-transform duration-300 ease-in-out lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header / Brand Logo */}
         <div>
-          <div className="relative flex h-16 items-center justify-between border-b border-border bg-stone-350 px-6">
-            <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden">
+          <div className="relative flex h-12 items-center justify-between border-b border-border bg-stone-350 px-4">
+            <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden">
                 <img
                   src="/logo-only.png"
                   alt="Stone Suite"
-                  className="h-8 w-8 object-contain"
+                  className="h-6 w-6 object-contain"
                 />
               </div>
-              <span className="font-heading text-lg font-bold tracking-wider text-dark dark:text-white uppercase transition-colors group-hover:text-stone-700 dark:group-hover:text-stone-200">
+              <span className="font-heading text-sm font-bold tracking-wider text-dark dark:text-white uppercase transition-colors group-hover:text-stone-700 dark:group-hover:text-stone-200">
                 Stone Suite
               </span>
             </NavLink>
@@ -79,14 +79,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Mobile close button */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-500 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 lg:hidden"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-500 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 lg:hidden"
             >
-              <X className="size-5" />
+              <X className="size-4" />
             </button>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5 px-3.5 py-6">
+          <nav className="space-y-0.5 px-2.5 py-4">
             {sidebarItems.filter(canAccess).map((item) => {
               const Icon = item.icon
               const hasChildren = item.children && item.children.length > 0
@@ -101,39 +101,39 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     onClick={onClose}
                     className={({ isActive }) =>
                       cn(
-                        'flex items-center gap-3.5 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
+                        'flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
                         isActive
                           ? "bg-brand text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold"
                           : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
                       )
                     }
                   >
-                    <Icon className="size-4" />
+                    <Icon className="size-3.5" />
                     <span>{item.title}</span>
                   </NavLink>
                 )
               }
 
               return (
-                <div key={item.title} className="space-y-1">
+                <div key={item.title} className="space-y-0.5">
                   <button
                     type="button"
                     onClick={() => toggleExpanded(item.title)}
                     className={cn(
-                      'flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition-all duration-200',
+                      'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
                       isActive
                         ? "text-stone-900 dark:text-white bg-sidebar-accent/50"
                         : "text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white"
                     )}
                   >
-                    <div className="flex items-center gap-3.5">
-                      <Icon className="size-5" />
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="size-3.5" />
                       <span>{item.title}</span>
                     </div>
 
                     <ChevronDown
                       className={cn(
-                        'size-3.5 transition-transform duration-200',
+                        'size-3 transition-transform duration-200',
                         isExpanded && 'rotate-180'
                       )}
                     />
@@ -141,13 +141,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                   <div
                     className={cn(
-                      'grid overflow-hidden pl-4 transition-all duration-300 ease-in-out',
+                      'grid overflow-hidden transition-all duration-300 ease-in-out',
                       isExpanded
-                        ? 'mt-1 grid-rows-[1fr] opacity-100'
+                        ? 'mt-0.5 grid-rows-[1fr] opacity-100'
                         : 'grid-rows-[0fr] opacity-0'
                     )}
                   >
-                    <div className="ml-6 space-y-1 overflow-hidden border-l-2 border-sidebar-border pl-3">
+                    <div className="ml-4 space-y-0.5 overflow-hidden border-l border-sidebar-border pl-2.5">
                       {item.children?.filter(canAccess).map((child) => {
                         const ChildIcon = child.icon
 
@@ -158,14 +158,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             onClick={onClose}
                             className={({ isActive }) =>
                               cn(
-                                'flex items-center gap-2.5 rounded-lg px-3.5 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+                                'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium tracking-wide transition-all duration-200',
                                 isActive
-                                  ? 'bg-sidebar-primary/20 text-sidebar-primary font-bold'
+                                  ? 'bg-sidebar-primary/20 text-sidebar-primary font-semibold'
                                   : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                               )
                             }
                           >
-                            <ChildIcon className="size-4" />
+                            <ChildIcon className="size-3" />
                             <span>{child.title}</span>
                           </NavLink>
                         )

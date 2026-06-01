@@ -54,7 +54,7 @@ export default function MainLayout() {
       />
 
       {/* Main Content Area */}
-      <div className="lg:pl-72 flex flex-col min-h-screen">
+      <div className="lg:pl-56 flex flex-col min-h-screen">
         
         {/* Top Header */}
         <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-stone-200/80 bg-white/80 px-6 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-950/80">

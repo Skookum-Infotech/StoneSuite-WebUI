@@ -4,6 +4,7 @@ import MainLayout from '@/layouts/MainLayout';
 import LoginPage from '@/pages/auth/LoginPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import OnboardingPage from '@/pages/customer/OnboardingPage';
+import AddCustomerPage from '@/pages/customer/AddCustomerPage';
 
 export const router = createBrowserRouter([
   {
@@ -21,6 +22,10 @@ export const router = createBrowserRouter([
       {
         path: 'customer/onboarding',
         element: <OnboardingPage />,
+      },
+      {
+        path: 'customer/onboarding/new',
+        element: <AddCustomerPage />,
       },
     ],
   },
