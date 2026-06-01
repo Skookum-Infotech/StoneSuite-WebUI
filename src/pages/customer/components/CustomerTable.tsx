@@ -6,14 +6,14 @@ type Props = {
 };
 
 const statusStyles: Record<string, string> = {
-  draft: 'bg-stone-100 text-stone-600',
+  pendingApproval: 'bg-stone-100 text-stone-600',
   invitation_sent: 'bg-amber-100 text-amber-700',
   active: 'bg-green-100 text-green-700',
   suspended: 'bg-red-100 text-red-600',
 };
 
 const statusLabel: Record<string, string> = {
-  draft: 'Draft',
+  pendingApproval: 'pendingApproval',
   invitation_sent: 'Invitation Sent',
   active: 'Active',
   suspended: 'Suspended',

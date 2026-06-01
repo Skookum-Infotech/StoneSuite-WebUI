@@ -1,4 +1,4 @@
-export type CustomerStatus = 'draft' | 'invitation_sent' | 'active' | 'suspended';
+export type CustomerStatus = 'pendingApproval' | 'invitation_sent' | 'active' | 'suspended';
 
 export type CustomerContact = {
   id: string;
