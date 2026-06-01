@@ -183,7 +183,7 @@ const inputClass =
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded border border-stone-200 bg-white overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-stone-200 bg-stone-50 px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-stone-200 bg-blue-50 px-4 py-2">
         <ChevronDown className="size-3 text-stone-400" />
         <h3 className="text-[11px] font-bold text-stone-700 uppercase tracking-wide">{title}</h3>
       </div>
