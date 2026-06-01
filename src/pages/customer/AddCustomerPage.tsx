@@ -56,14 +56,14 @@ export default function AddCustomerPage() {
               >
                 {isPending ? 'Saving…' : 'Save'}
               </button>
-              <button
+              {/* <button
                 type="button"
                 disabled={isPending}
                 className="rounded border border-stone-300 bg-white px-1.5 py-1.5 text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
                 tabIndex={-1}
               >
                 <ChevronDown className="size-3" />
-              </button>
+              </button> */}
             </div>
             <button
               type="button"
