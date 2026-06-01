@@ -5,6 +5,8 @@ import LoginPage from '@/pages/auth/LoginPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import OnboardingPage from '@/pages/customer/OnboardingPage';
 import AddCustomerPage from '@/pages/customer/AddCustomerPage';
+import LeadPage from '@/pages/crm/LeadPage';
+import AddLeadPage from '@/pages/crm/AddLeadPage';
 
 export const router = createBrowserRouter([
   {
@@ -26,6 +28,14 @@ export const router = createBrowserRouter([
       {
         path: 'customer/onboarding/new',
         element: <AddCustomerPage />,
+      },
+      {
+        path: 'crm/lead',
+        element: <LeadPage />,
+      },
+      {
+        path: 'crm/lead/new',
+        element: <AddLeadPage />,
       },
     ],
   },
