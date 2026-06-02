@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, AlertCircle } from 'lucide-react';
+import { AxiosError } from 'axios';
 import { customerService } from '@/services/customerService';
 import type { CreateCustomerPayload } from '@/types/customer';
 
@@ -8,13 +9,20 @@ export default function AddCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { mutate: createCustomer, isPending } = useMutation({
+  const { mutate: createCustomer, isPending, error } = useMutation({
     mutationFn: (payload: CreateCustomerPayload) => customerService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       navigate('/customer/onboarding');
     },
   });
+
+  const errorMessage =
+    error instanceof AxiosError
+      ? error.response?.data?.message ?? error.message
+      : error instanceof Error
+        ? error.message
+        : null;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,6 +90,14 @@ export default function AddCustomerPage() {
             <span className="text-stone-700 font-semibold">New Customer</span>
           </nav>
         </div>
+
+        {/* Error Banner */}
+        {errorMessage && (
+          <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 px-3 py-2.5 m-1">
+            <AlertCircle className="size-3.5 mt-0.5 shrink-0 text-red-500" />
+            <p className="text-xs text-red-700">{errorMessage}</p>
+          </div>
+        )}
 
         {/* Page Title */}
         <div className="bg-white border-b border-stone-100 px-6 py-2 flex items-center gap-2">

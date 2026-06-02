@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ChevronDown, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { AxiosError } from 'axios';
 import { customerService } from '@/services/customerService';
 import type { OnboardingInvite } from '@/types/customer';
 
@@ -81,7 +82,13 @@ export default function PublicOnboardingPage() {
       });
       setState({ status: 'submitted' });
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Submission failed. Please try again.');
+      const msg =
+        err instanceof AxiosError
+          ? err.response?.data?.message ?? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Submission failed. Please try again.';
+      setSubmitError(msg);
     } finally {
       setIsPending(false);
     }
