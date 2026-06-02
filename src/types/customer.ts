@@ -6,6 +6,7 @@ export type CustomerContact = {
   fullName: string;
   email: string;
   phone: string;
+  jobTitle?: string;
   role: string;
   createdAt: string;
   updatedAt: string;

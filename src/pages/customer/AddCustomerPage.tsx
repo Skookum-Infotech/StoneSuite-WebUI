@@ -24,6 +24,7 @@ export default function AddCustomerPage() {
     createCustomer({
       name: get('companyName'),
       legalName: get('legalName'),
+      industry: get('industry'),
       website: get('website'),
       country: get('country'),
       currency: get('currency'),
@@ -103,6 +104,9 @@ export default function AddCustomerPage() {
               </Field>
               <Field label="Legal Name" required>
                 <input name="legalName" required className={inputClass} />
+              </Field>
+              <Field label="Industry">
+                <input name="industry" className={inputClass} />
               </Field>
               <Field label="Website" required>
                 <input name="website" type="url" required className={inputClass} />
