@@ -7,8 +7,13 @@ import OnboardingPage from '@/pages/customer/OnboardingPage';
 import AddCustomerPage from '@/pages/customer/AddCustomerPage';
 import LeadPage from '@/pages/crm/LeadPage';
 import AddLeadPage from '@/pages/crm/AddLeadPage';
+import PublicOnboardingPage from '@/pages/onboarding/PublicOnboardingPage';
 
 export const router = createBrowserRouter([
+  {
+    path: '/onboarding/invite/:token',
+    element: <PublicOnboardingPage />,
+  },
   {
     path: '/',
     element: <MainLayout />,

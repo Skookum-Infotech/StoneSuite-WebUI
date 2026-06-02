@@ -13,7 +13,7 @@ const statusStyles: Record<string, string> = {
 };
 
 const statusLabel: Record<string, string> = {
-  pendingApproval: 'pendingApproval',
+  pendingApproval: 'Pending Approval',
   invitation_sent: 'Invitation Sent',
   active: 'Active',
   suspended: 'Suspended',
