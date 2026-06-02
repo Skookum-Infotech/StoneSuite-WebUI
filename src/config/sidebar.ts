@@ -18,7 +18,7 @@ export const sidebarItems: SidebarItem[] = [
     access: ['admin', 'manager', 'staff'],
   },
   {
-    title: 'Customer',
+    title: 'Skookum Internals',
     icon: Users,
     access: ['admin', 'manager', 'staff'],
     children: [
