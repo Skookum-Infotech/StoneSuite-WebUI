@@ -1,6 +1,7 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
   Tenant,
+  TenantInvite,
   CreateTenantResult,
   InviteDetails,
   CatalogResponse,
@@ -37,6 +38,7 @@ export interface OnboardCustomerPayload {
   currency?: string;
   timezone?: string;
   taxId?: string;
+  expiresInHours?: number;
   billingAddress?: string;
   shippingAddress?: string;
   returnAddress?: string;
@@ -58,6 +60,19 @@ export const platformService = {
     tenantClient.post<CreateTenantResult>('/platform/tenants', payload).then((r) => r.data),
   lifecycle: (tenantId: string, action: 'suspend' | 'restore' | 'delete') =>
     tenantClient.post(`/platform/tenants/${tenantId}/${action}`).then((r) => r.data),
+
+  // Invite management (keys / expiry / retry).
+  listInvites: (tenantId: string) =>
+    tenantClient
+      .get<{ success: boolean; invites: TenantInvite[] }>(`/platform/tenants/${tenantId}/invites`)
+      .then((r) => r.data.invites ?? []),
+  resendInvite: (tenantId: string, opts: { contactEmail?: string; expiresInHours?: number } = {}) =>
+    tenantClient
+      .post<{ success: boolean; invite: TenantInvite; emailSent: boolean }>(
+        `/platform/tenants/${tenantId}/invites`,
+        opts,
+      )
+      .then((r) => r.data),
 };
 
 // ----- RBAC (Phase 2) --------------------------------------------------------

@@ -48,6 +48,7 @@ export default function AddCustomerPage() {
       financeName: get('financeName'),
       financeEmail: get('financeEmail'),
       financePhone: get('financePhone'),
+      expiresInHours: Number(get('expiresInHours')) || 72,
     });
   };
 
@@ -230,6 +231,18 @@ export default function AddCustomerPage() {
                 <input name="financePhone" type="tel" className={inputClass} />
               </Field>
             </div>
+          </Section>
+
+          {/* Invitation */}
+          <Section title="Invitation">
+            <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+              <Field label="Invite expires in (hours)">
+                <input name="expiresInHours" type="number" min={1} defaultValue={72} className={inputClass} />
+              </Field>
+            </div>
+            <p className="mt-2 text-[10px] text-stone-400">
+              An invite link is emailed to the super admin and can be re-sent (with a fresh key &amp; expiry) from the customer list.
+            </p>
           </Section>
 
         </div>

@@ -5,7 +5,6 @@ import LoginPage from '@/pages/auth/LoginPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import OnboardingPage from '@/pages/customer/OnboardingPage';
 import AddCustomerPage from '@/pages/customer/AddCustomerPage';
-import PublicOnboardingPage from '@/pages/onboarding/PublicOnboardingPage';
 import InviteAcceptPage from '@/pages/onboarding/InviteAcceptPage';
 import WorkflowRecordsPage from '@/pages/workspace/WorkflowRecordsPage';
 import ConfigHomePage from '@/pages/config/ConfigHomePage';
@@ -14,11 +13,7 @@ import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
 import RolesPage from '@/pages/config/RolesPage';
 
 export const router = createBrowserRouter([
-  // Public onboarding-acceptance routes.
-  {
-    path: '/onboarding/invite/:token',
-    element: <PublicOnboardingPage />,
-  },
+  // Public onboarding-acceptance route (tenant invite).
   {
     path: '/onboarding/accept',
     element: <InviteAcceptPage />,

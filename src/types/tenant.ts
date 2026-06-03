@@ -32,6 +32,20 @@ export interface CreateTenantResult {
   tenantId: string;
   slug: string;
   inviteLink: string;
+  expiresAt?: string;
+}
+
+// An onboarding invite (the token is the shareable "invite key").
+export interface TenantInvite {
+  id: string;
+  contactEmail: string;
+  token: string;
+  status: string;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  createdAt: string;
+  expired: boolean;
+  inviteLink: string;
 }
 
 export interface InviteDetails {
