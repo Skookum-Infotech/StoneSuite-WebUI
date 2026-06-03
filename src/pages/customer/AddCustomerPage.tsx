@@ -1,36 +1,36 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, AlertCircle } from 'lucide-react';
-import { AxiosError } from 'axios';
-import { customerService } from '@/services/customerService';
-import type { CreateCustomerPayload } from '@/types/customer';
+import { ChevronDown, AlertCircle, CheckCircle2, Copy } from 'lucide-react';
+import { platformService, type OnboardCustomerPayload } from '@/services/tenantServices';
+import { apiErrorMessage } from '@/api/tenantClient';
+import type { CreateTenantResult } from '@/types/tenant';
 
 export default function AddCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [result, setResult] = useState<CreateTenantResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const { mutate: createCustomer, isPending, error } = useMutation({
-    mutationFn: (payload: CreateCustomerPayload) => customerService.create(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      navigate('/customer/onboarding');
+  const { mutate: onboard, isPending, error } = useMutation({
+    // Provisions an isolated tenant DB (seeded with default workflows + roles)
+    // and generates an onboarding invite link for the customer's super admin.
+    mutationFn: (payload: OnboardCustomerPayload) => platformService.createTenant(payload),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      setResult(res);
     },
   });
 
-  const errorMessage =
-    error instanceof AxiosError
-      ? error.response?.data?.message ?? error.message
-      : error instanceof Error
-        ? error.message
-        : null;
+  const errorMessage = error ? apiErrorMessage(error, 'Onboarding failed.') : null;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const get = (key: string) => String(form.get(key) ?? '').trim();
 
-    createCustomer({
-      name: get('companyName'),
+    onboard({
+      companyName: get('companyName'),
       legalName: get('legalName'),
       industry: get('industry'),
       website: get('website'),
@@ -51,6 +51,56 @@ export default function AddCustomerPage() {
     });
   };
 
+  const copyLink = async () => {
+    if (!result) return;
+    await navigator.clipboard.writeText(result.inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Success screen: tenant provisioning kicked off; show the invite link.
+  if (result) {
+    return (
+      <div className="flex-1 flex flex-col bg-stone-50 min-h-0 p-6">
+        <div className="mx-auto w-full max-w-xl rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
+          <CheckCircle2 className="mx-auto mb-3 size-10 text-green-500" />
+          <h1 className="text-lg font-bold text-stone-900">Customer onboarded</h1>
+          <p className="mt-1 text-sm text-stone-500">
+            Workspace <span className="font-semibold">{result.slug}</span> is provisioning its isolated database and
+            seeding default workflows &amp; roles. Share this invite link with their super admin:
+          </p>
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
+            <code className="flex-1 truncate px-2 text-left text-xs text-stone-700">{result.inviteLink}</code>
+            <button
+              type="button"
+              onClick={copyLink}
+              aria-label="Copy invite link"
+              className="flex items-center gap-1 rounded-md bg-brand px-2.5 py-1.5 text-xs font-semibold text-stone-950"
+            >
+              <Copy className="size-3.5" /> {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+          <div className="mt-6 flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/customer/onboarding')}
+              className="rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-stone-950"
+            >
+              Back to customers
+            </button>
+            <button
+              type="button"
+              onClick={() => setResult(null)}
+              className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50"
+            >
+              Onboard another
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-stone-50 min-h-0">
       <form onSubmit={handleSubmit} className="flex flex-col flex-1">
@@ -63,16 +113,8 @@ export default function AddCustomerPage() {
                 disabled={isPending}
                 className="inline-flex items-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {isPending ? 'Saving…' : 'Save'}
+                {isPending ? 'Provisioning…' : 'Onboard'}
               </button>
-              {/* <button
-                type="button"
-                disabled={isPending}
-                className="rounded border border-stone-300 bg-white px-1.5 py-1.5 text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
-                tabIndex={-1}
-              >
-                <ChevronDown className="size-3" />
-              </button> */}
             </div>
             <button
               type="button"
@@ -118,23 +160,23 @@ export default function AddCustomerPage() {
               <Field label="Company Name" required>
                 <input name="companyName" required className={inputClass} />
               </Field>
-              <Field label="Legal Name" required>
-                <input name="legalName" required className={inputClass} />
+              <Field label="Legal Name">
+                <input name="legalName" className={inputClass} />
               </Field>
               <Field label="Industry">
                 <input name="industry" className={inputClass} />
               </Field>
-              <Field label="Website" required>
-                <input name="website" type="url" required className={inputClass} />
+              <Field label="Website">
+                <input name="website" type="url" className={inputClass} />
               </Field>
-              <Field label="Country" required>
-                <input name="country" required className={inputClass} />
+              <Field label="Country">
+                <input name="country" className={inputClass} />
               </Field>
-              <Field label="Currency" required>
-                <input name="currency" required className={inputClass} placeholder="e.g. USD" />
+              <Field label="Currency">
+                <input name="currency" className={inputClass} placeholder="e.g. USD" />
               </Field>
-              <Field label="Timezone" required>
-                <input name="timezone" required className={inputClass} placeholder="e.g. America/New_York" />
+              <Field label="Timezone">
+                <input name="timezone" className={inputClass} placeholder="e.g. America/New_York" />
               </Field>
               <Field label="Tax / VAT ID or EIN">
                 <input name="taxId" className={inputClass} />
@@ -145,8 +187,8 @@ export default function AddCustomerPage() {
           {/* Address Information */}
           <Section title="Address Information">
             <div className="grid grid-cols-3 gap-x-6 gap-y-3">
-              <Field label="Billing Address" required>
-                <textarea name="billingAddress" required rows={3} className={`${inputClass} resize-none`} />
+              <Field label="Billing Address">
+                <textarea name="billingAddress" rows={3} className={`${inputClass} resize-none`} />
               </Field>
               <Field label="Shipping Address">
                 <textarea name="shippingAddress" rows={3} className={`${inputClass} resize-none`} />
@@ -160,8 +202,8 @@ export default function AddCustomerPage() {
           {/* Super Admin Contact */}
           <Section title="Super Admin Contact">
             <div className="grid grid-cols-3 gap-x-6 gap-y-3">
-              <Field label="Full Name" required>
-                <input name="superAdminName" required className={inputClass} />
+              <Field label="Full Name">
+                <input name="superAdminName" className={inputClass} />
               </Field>
               <Field label="Email" required>
                 <input name="superAdminEmail" type="email" required className={inputClass} />

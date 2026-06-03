@@ -2,7 +2,10 @@ export interface UserProfile {
   id: string;
   email: string;
   fullName: string;
-  createdAt: string;
+  createdAt?: string;
+  // Multi-tenant identity context (from /api/auth/tenant-login).
+  tenantId?: string;
+  isPlatformAdmin?: boolean;
 }
 
 export interface AuthResponse {

@@ -5,54 +5,49 @@ import LoginPage from '@/pages/auth/LoginPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import OnboardingPage from '@/pages/customer/OnboardingPage';
 import AddCustomerPage from '@/pages/customer/AddCustomerPage';
-import LeadPage from '@/pages/crm/LeadPage';
-import AddLeadPage from '@/pages/crm/AddLeadPage';
 import PublicOnboardingPage from '@/pages/onboarding/PublicOnboardingPage';
+import InviteAcceptPage from '@/pages/onboarding/InviteAcceptPage';
+import WorkflowRecordsPage from '@/pages/workspace/WorkflowRecordsPage';
+import ConfigHomePage from '@/pages/config/ConfigHomePage';
+import ConfigWorkflowsPage from '@/pages/config/WorkflowsPage';
+import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
+import RolesPage from '@/pages/config/RolesPage';
 
 export const router = createBrowserRouter([
+  // Public onboarding-acceptance routes.
   {
     path: '/onboarding/invite/:token',
     element: <PublicOnboardingPage />,
   },
   {
+    path: '/onboarding/accept',
+    element: <InviteAcceptPage />,
+  },
+  {
     path: '/',
     element: <MainLayout />,
     children: [
-      {
-        path: '',
-        element: <Navigate to="/dashboard" replace />,
-      },
-      {
-        path: 'dashboard',
-        element: <DashboardPage />,
-      },
-      {
-        path: 'customer/onboarding',
-        element: <OnboardingPage />,
-      },
-      {
-        path: 'customer/onboarding/new',
-        element: <AddCustomerPage />,
-      },
-      {
-        path: 'crm/lead',
-        element: <LeadPage />,
-      },
-      {
-        path: 'crm/lead/new',
-        element: <AddLeadPage />,
-      },
+      { path: '', element: <Navigate to="/dashboard" replace /> },
+      { path: 'dashboard', element: <DashboardPage /> },
+
+      // Workspace: daily use of an enabled workflow (dynamic sidebar links here).
+      { path: 'workflows/:id', element: <WorkflowRecordsPage /> },
+
+      // Configuration hub: build/configure workflows + roles.
+      { path: 'config', element: <ConfigHomePage /> },
+      { path: 'config/workflows', element: <ConfigWorkflowsPage /> },
+      { path: 'config/workflows/:id', element: <WorkflowBuilderPage /> },
+      { path: 'config/roles', element: <RolesPage /> },
+
+      // Platform-owner only: customer onboarding (provisions tenants).
+      { path: 'customer/onboarding', element: <OnboardingPage /> },
+      { path: 'customer/onboarding/new', element: <AddCustomerPage /> },
     ],
   },
   {
     path: '/auth',
     element: <AuthLayout />,
-    children: [
-      {
-        path: 'login',
-        element: <LoginPage />,
-      },
-    ],
+    children: [{ path: 'login', element: <LoginPage /> }],
   },
   {
     path: '*',
