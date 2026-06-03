@@ -51,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [configOpen, setConfigOpen] = useState(true);
 
   // Dynamic: the workspace nav is driven by the tenant's enabled workflows.
-  const { data: workflows = [], isLoading } = useQuery({
+  const { data: workflows = [], isLoading, error } = useQuery({
     queryKey: ['workflows'],
     queryFn: workflowService.list,
   });
@@ -108,7 +108,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Loader2 className="size-3.5 animate-spin" /> Loading…
               </div>
             )}
-            {!isLoading && enabled.length === 0 && (
+            {!isLoading && error && (
+              <p className="px-3 py-1.5 text-[11px] text-red-500">Couldn't load workflows.</p>
+            )}
+            {!isLoading && !error && enabled.length === 0 && (
               <p className="px-3 py-1.5 text-[11px] text-stone-400">No workflows enabled yet.</p>
             )}
             {enabled.map((wf) => (
