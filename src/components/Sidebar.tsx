@@ -11,6 +11,8 @@ import {
   UserPlus,
   Loader2,
   Boxes,
+  Users,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { workflowService } from '@/services/tenantServices';
@@ -48,6 +50,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
+  const [crmOpen, setCrmOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
 
   // Dynamic: the workspace nav is driven by the tenant's enabled workflows.
@@ -103,6 +106,41 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             {/* Workspace — dynamic list of enabled workflows */}
             <SectionLabel>Workspace</SectionLabel>
+
+            {/* CRM — collapsible module containing CRM sub-features */}
+            <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => setCrmOpen((v) => !v)}
+                className={cn(
+                  'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+                  location.pathname.startsWith('/prospects')
+                    ? 'bg-sidebar-accent/50 text-stone-900 dark:text-white'
+                    : 'text-stone-600 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-300 dark:hover:text-white',
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="size-3.5" />
+                  <span>CRM</span>
+                </div>
+                <ChevronDown className={cn('size-3 transition-transform duration-200', crmOpen && 'rotate-180')} />
+              </button>
+
+              <div
+                className={cn(
+                  'grid overflow-hidden transition-all duration-300 ease-in-out',
+                  crmOpen ? 'mt-0.5 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+                )}
+              >
+                <div className="ml-4 space-y-0.5 overflow-hidden border-l border-sidebar-border pl-2.5">
+                  <NavLink to="/prospects" onClick={onClose} className={childLinkClass}>
+                    <Users className="size-3" />
+                    <span>Prospects</span>
+                  </NavLink>
+                </div>
+              </div>
+            </div>
+
             {isLoading && (
               <div className="flex items-center gap-2 px-3 py-2 text-xs text-stone-400">
                 <Loader2 className="size-3.5 animate-spin" /> Loading…

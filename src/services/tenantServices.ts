@@ -146,6 +146,10 @@ export const workflowService = {
         `/tenant/workflows/${workflowId}/records`,
       )
       .then((r) => r.data),
+  getRecord: (recordId: string) =>
+    tenantClient
+      .get<{ success: boolean; record: WorkflowRecord }>(`/tenant/records/${recordId}`)
+      .then((r) => r.data.record),
   createRecord: (
     workflowId: string,
     body: { coreFields: Record<string, unknown>; customFields: Record<string, unknown> },

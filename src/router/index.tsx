@@ -8,6 +8,9 @@ import AddCustomerPage from '@/pages/customer/AddCustomerPage';
 import OnboardingApplyPage from '@/pages/onboarding/OnboardingApplyPage';
 import SetPasswordPage from '@/pages/onboarding/SetPasswordPage';
 import WorkflowRecordsPage from '@/pages/workspace/WorkflowRecordsPage';
+import ProspectListPage from '@/pages/prospect/ProspectListPage';
+import AddProspectPage from '@/pages/prospect/AddProspectPage';
+import ProspectViewPage from '@/pages/prospect/ProspectViewPage';
 import ConfigHomePage from '@/pages/config/ConfigHomePage';
 import ConfigWorkflowsPage from '@/pages/config/WorkflowsPage';
 import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
@@ -32,6 +35,11 @@ export const router = createBrowserRouter([
 
       // Workspace: daily use of an enabled workflow (dynamic sidebar links here).
       { path: 'workflows/:id', element: <WorkflowRecordsPage /> },
+
+      // Prospects: NetSuite-style create / list / view.
+      { path: 'prospects', element: <ProspectListPage /> },
+      { path: 'prospects/new', element: <AddProspectPage /> },
+      { path: 'prospects/:id', element: <ProspectViewPage /> },
 
       // Configuration hub: build/configure workflows + roles.
       { path: 'config', element: <ConfigHomePage /> },
