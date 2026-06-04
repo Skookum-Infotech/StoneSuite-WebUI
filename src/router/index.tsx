@@ -5,7 +5,8 @@ import LoginPage from '@/pages/auth/LoginPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import OnboardingPage from '@/pages/customer/OnboardingPage';
 import AddCustomerPage from '@/pages/customer/AddCustomerPage';
-import InviteAcceptPage from '@/pages/onboarding/InviteAcceptPage';
+import OnboardingApplyPage from '@/pages/onboarding/OnboardingApplyPage';
+import SetPasswordPage from '@/pages/onboarding/SetPasswordPage';
 import WorkflowRecordsPage from '@/pages/workspace/WorkflowRecordsPage';
 import ConfigHomePage from '@/pages/config/ConfigHomePage';
 import ConfigWorkflowsPage from '@/pages/config/WorkflowsPage';
@@ -13,10 +14,14 @@ import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
 import RolesPage from '@/pages/config/RolesPage';
 
 export const router = createBrowserRouter([
-  // Public onboarding-acceptance route (tenant invite).
+  // Public onboarding routes: self-service application + password setup.
   {
-    path: '/onboarding/accept',
-    element: <InviteAcceptPage />,
+    path: '/onboarding/apply',
+    element: <OnboardingApplyPage />,
+  },
+  {
+    path: '/onboarding/set-password',
+    element: <SetPasswordPage />,
   },
   {
     path: '/',

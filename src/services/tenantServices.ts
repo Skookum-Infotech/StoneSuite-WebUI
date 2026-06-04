@@ -3,61 +3,67 @@ import type {
   Tenant,
   TenantInvite,
   CreateTenantResult,
-  InviteDetails,
   CatalogResponse,
   Role,
   Grant,
   Workflow,
   WorkflowDefinition,
   WorkflowRecord,
+  FieldDefinition,
   Scope,
+  OnboardingApplyDetails,
 } from '@/types/tenant';
 
-// ----- Onboarding (public invite acceptance) --------------------------------
+// Flat onboarding form data keyed by Customer-workflow field keys (snake_case),
+// e.g. { company_name, super_admin_email, ...customExtras }.
+export type OnboardingFormData = Record<string, unknown>;
+
+// ----- Public onboarding (self-service) -------------------------------------
 
 export const onboardingService = {
-  getInvite: (token: string) =>
-    tenantClient.get<InviteDetails>(`/onboarding/tenant-invite/${token}`).then((r) => r.data),
-  accept: (token: string, fullName: string, password: string) =>
+  formSchema: () =>
     tenantClient
-      .post('/onboarding/tenant-accept', { token, fullName, password })
+      .get<{ success: boolean; fields: FieldDefinition[] }>('/onboarding/form-schema')
+      .then((r) => r.data.fields ?? []),
+  getApply: (token: string) =>
+    tenantClient.get<OnboardingApplyDetails>(`/onboarding/apply/${token}`).then((r) => r.data),
+  submitApply: (token: string, formData: OnboardingFormData) =>
+    tenantClient.post('/onboarding/apply', { token, formData }).then((r) => r.data),
+  getSetPassword: (token: string) =>
+    tenantClient
+      .get<{ success: boolean; valid: boolean; email: string; fullName: string }>(
+        `/onboarding/set-password/${token}`,
+      )
+      .then((r) => r.data),
+  setPassword: (token: string, password: string) =>
+    tenantClient
+      .post<{ success: boolean; email: string }>('/onboarding/set-password', { token, password })
       .then((r) => r.data),
 };
 
 // ----- Platform admin (Phase 1) ---------------------------------------------
-
-/** Rich customer-onboarding form. Only companyName + superAdminEmail are
- *  strictly required; the backend derives slug/displayName/contactEmail and
- *  stores the rest as tenant metadata, then provisions + invites. */
-export interface OnboardCustomerPayload {
-  companyName: string;
-  legalName?: string;
-  industry?: string;
-  website?: string;
-  country?: string;
-  currency?: string;
-  timezone?: string;
-  taxId?: string;
-  expiresInHours?: number;
-  billingAddress?: string;
-  shippingAddress?: string;
-  returnAddress?: string;
-  superAdminName?: string;
-  superAdminEmail: string;
-  superAdminPhone?: string;
-  superAdminJobTitle?: string;
-  financeName?: string;
-  financeEmail?: string;
-  financePhone?: string;
-}
 
 export const platformService = {
   listTenants: () =>
     tenantClient
       .get<{ success: boolean; tenants: Tenant[] }>('/platform/tenants')
       .then((r) => r.data.tenants ?? []),
-  createTenant: (payload: OnboardCustomerPayload) =>
-    tenantClient.post<CreateTenantResult>('/platform/tenants', payload).then((r) => r.data),
+  // Owner-filled form → provisions immediately (no approval).
+  onboardCustomer: (formData: OnboardingFormData) =>
+    tenantClient.post<CreateTenantResult>('/platform/tenants', { formData }).then((r) => r.data),
+  // Lightweight invite → customer self-fills the form (approval path).
+  inviteCustomer: (payload: {
+    companyName: string;
+    recipientName?: string;
+    contactEmail: string;
+    expiresInHours?: number;
+  }) => tenantClient.post<CreateTenantResult>('/platform/invites', payload).then((r) => r.data),
+  approveTenant: (tenantId: string) =>
+    tenantClient
+      .post<{ success: boolean; passwordSetupLink?: string }>(`/platform/tenants/${tenantId}/approve`)
+      .then((r) => r.data),
+  rejectTenant: (tenantId: string) =>
+    tenantClient.post(`/platform/tenants/${tenantId}/reject`).then((r) => r.data),
   lifecycle: (tenantId: string, action: 'suspend' | 'restore' | 'delete') =>
     tenantClient.post(`/platform/tenants/${tenantId}/${action}`).then((r) => r.data),
 

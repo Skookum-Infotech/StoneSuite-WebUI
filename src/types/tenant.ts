@@ -25,14 +25,27 @@ export interface Tenant {
   dbName: string;
   createdAt: string;
   hardDeleteAfter?: string | null;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CreateTenantResult {
   success: boolean;
   tenantId: string;
   slug: string;
-  inviteLink: string;
+  inviteLink?: string;
+  passwordSetupLink?: string;
   expiresAt?: string;
+  emailSent?: boolean;
+}
+
+// Returned by GET /onboarding/apply/{token} for the public self-service form.
+export interface OnboardingApplyDetails {
+  success: boolean;
+  valid: boolean;
+  status: string;
+  contactEmail: string;
+  tenantName: string;
+  prefill: Record<string, unknown>;
 }
 
 // An onboarding invite (the token is the shareable "invite key").

@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { UserPlus, Plus, ChevronRight, Copy, RefreshCw, KeyRound } from 'lucide-react';
+import { UserPlus, Plus, Send, ChevronRight, Copy, RefreshCw, KeyRound, Check, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { platformService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Badge, Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
+import { InviteCustomerModal } from '@/components/customer/InviteCustomerModal';
 import type { Tenant } from '@/types/tenant';
 
 const STATUS_COLOR: Record<string, string> = {
   active: '#22c55e',
   provisioning: '#f59e0b',
+  submitted: '#8b5cf6',
   invited: '#3b82f6',
   suspended: '#a8a29e',
+  rejected: '#ef4444',
   deleted: '#ef4444',
   pending: '#3b82f6',
   accepted: '#22c55e',
@@ -21,17 +24,20 @@ const STATUS_COLOR: Record<string, string> = {
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const [showInvite, setShowInvite] = useState(false);
 
-  const { data: tenants = [], isLoading, isError, error } = useQuery({
+  const tenantsQ = useQuery({
     queryKey: ['tenants'],
     queryFn: platformService.listTenants,
     enabled: Boolean(user?.isPlatformAdmin),
   });
 
-  // Owner-only: customer onboarding manages all tenants on the platform.
   if (user && !user.isPlatformAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
+
+  const tenants = tenantsQ.data ?? [];
+  const pending = tenants.filter((t) => t.status === 'submitted');
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -44,37 +50,135 @@ export default function OnboardingPage() {
             <div>
               <h1 className="text-base font-bold tracking-tight text-stone-900">Customer Onboarding</h1>
               <p className="text-xs text-stone-500">
-                Provision isolated customer workspaces and manage onboarding invites.
+                Invite customers to self-onboard, or onboard them directly. Review applications before activation.
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => navigate('/customer/onboarding/new')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-3 text-xs font-semibold shadow-sm transition hover:bg-brand/50 cursor-pointer"
-          >
-            <Plus className="size-3.5" />
-            Onboard Customer
-          </button>
-        </div>
-
-        <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
-          {isLoading && <Spinner label="Loading customers…" />}
-          {isError && <ErrorNote>{apiErrorMessage(error, 'Failed to load customers.')}</ErrorNote>}
-          {!isLoading && !isError && tenants.length === 0 && (
-            <EmptyState>No customers yet — onboard your first one.</EmptyState>
-          )}
-
-          <div className="space-y-2">
-            {tenants.map((t) => (
-              <TenantRow key={t.id} tenant={t} />
-            ))}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowInvite(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
+            >
+              <Send className="size-3.5" />
+              Invite
+            </button>
+            <button
+              onClick={() => navigate('/customer/onboarding/new')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50"
+            >
+              <Plus className="size-3.5" />
+              Onboard Customer
+            </button>
           </div>
         </div>
+
+        <div className="mt-5 flex-1 flex flex-col min-h-0 border-t border-stone-100 pt-4">
+          {tenantsQ.isLoading && <Spinner label="Loading customers…" />}
+          {tenantsQ.isError && <ErrorNote>{apiErrorMessage(tenantsQ.error, 'Failed to load customers.')}</ErrorNote>}
+
+          {/* Pending approvals */}
+          {pending.length > 0 && (
+            <section className="mb-6">
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">
+                Pending approvals ({pending.length})
+              </h2>
+              <div className="space-y-2">
+                {pending.map((t) => (
+                  <ApprovalCard key={t.id} tenant={t} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* All customers */}
+          {!tenantsQ.isLoading && !tenantsQ.isError && tenants.length === 0 && (
+            <EmptyState>No customers yet — invite or onboard your first one.</EmptyState>
+          )}
+          {tenants.length > 0 && (
+            <>
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">Customers</h2>
+              <div className="space-y-2">
+                {tenants.map((t) => (
+                  <TenantRow key={t.id} tenant={t} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {showInvite && <InviteCustomerModal onClose={() => setShowInvite(false)} />}
     </div>
   );
 }
+
+// ----- Pending approval card ------------------------------------------------
+
+function ApprovalCard({ tenant }: { tenant: Tenant }) {
+  const qc = useQueryClient();
+  const meta = (tenant.metadata ?? {}) as Record<string, unknown>;
+  const str = (k: string) => (typeof meta[k] === 'string' ? (meta[k] as string) : '');
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['tenants'] });
+
+  const approve = useMutation({
+    mutationFn: () => platformService.approveTenant(tenant.id),
+    onSuccess: invalidate,
+  });
+  const reject = useMutation({
+    mutationFn: () => platformService.rejectTenant(tenant.id),
+    onSuccess: invalidate,
+  });
+
+  // Show the submitted fields (skip empties), prettifying snake_case keys.
+  const entries = Object.entries(meta).filter(([, v]) => typeof v === 'string' && v !== '');
+
+  return (
+    <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-bold text-stone-800">{str('company_name') || tenant.displayName}</p>
+          <p className="text-[11px] text-stone-500">{str('super_admin_email')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => reject.mutate()}
+            disabled={reject.isPending || approve.isPending}
+            className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+          >
+            <X className="size-3" /> Reject
+          </button>
+          <button
+            type="button"
+            onClick={() => approve.mutate()}
+            disabled={approve.isPending || reject.isPending}
+            className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <Check className="size-3" /> {approve.isPending ? 'Approving…' : 'Approve'}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex gap-2 text-[11px]">
+            <span className="shrink-0 font-semibold capitalize text-stone-500">{k.replace(/_/g, ' ')}:</span>
+            <span className="truncate text-stone-700">{String(v)}</span>
+          </div>
+        ))}
+      </div>
+
+      {(approve.error || reject.error) && (
+        <div className="mt-2">
+          <ErrorNote>{apiErrorMessage(approve.error || reject.error)}</ErrorNote>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ----- Customer row + invites panel -----------------------------------------
 
 function TenantRow({ tenant }: { tenant: Tenant }) {
   const [open, setOpen] = useState(false);
@@ -90,9 +194,7 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
           <ChevronRight className={`size-4 text-stone-400 transition-transform ${open ? 'rotate-90' : ''}`} />
           <div>
             <p className="text-sm font-bold text-stone-800">{tenant.displayName}</p>
-            <p className="text-[11px] text-stone-500">
-              {tenant.slug} · {tenant.dbName || 'db pending'}
-            </p>
+            <p className="text-[11px] text-stone-500">{tenant.slug} · {tenant.dbName || 'db pending'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -102,7 +204,6 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
           </span>
         </div>
       </button>
-
       {open && <InvitesPanel tenant={tenant} />}
     </div>
   );
@@ -111,7 +212,7 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
 function InvitesPanel({ tenant }: { tenant: Tenant }) {
   const qc = useQueryClient();
   const [copied, setCopied] = useState<string | null>(null);
-  const [hours, setHours] = useState(72);
+  const [hours, setHours] = useState(24);
 
   const invitesQ = useQuery({
     queryKey: ['invites', tenant.id],
@@ -149,7 +250,7 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
               type="number"
               min={1}
               value={hours}
-              onChange={(e) => setHours(Number(e.target.value) || 72)}
+              onChange={(e) => setHours(Number(e.target.value) || 24)}
               aria-label="Resend expiry in hours"
               className="ml-1.5 w-16 rounded border border-stone-300 px-1.5 py-1 text-xs"
             />
@@ -188,19 +289,10 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
               <div className="mt-2 flex items-center gap-2">
                 <KeyRound className="size-3.5 shrink-0 text-stone-400" />
                 <code className="flex-1 truncate rounded bg-stone-100 px-2 py-1 text-[11px] text-stone-600">{inv.token}</code>
-                <button
-                  type="button"
-                  onClick={() => copy(inv.token, `key-${inv.id}`)}
-                  aria-label="Copy invite key"
-                  className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
-                >
+                <button type="button" onClick={() => copy(inv.token, `key-${inv.id}`)} aria-label="Copy invite key" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
                   <Copy className="size-3.5" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => copy(inv.inviteLink, `link-${inv.id}`)}
-                  className="rounded-md border border-stone-200 px-2 py-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100"
-                >
+                <button type="button" onClick={() => copy(inv.inviteLink, `link-${inv.id}`)} className="rounded-md border border-stone-200 px-2 py-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100">
                   {copied === `link-${inv.id}` ? 'Link copied' : copied === `key-${inv.id}` ? 'Key copied' : 'Copy link'}
                 </button>
               </div>
