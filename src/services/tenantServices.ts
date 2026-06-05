@@ -92,6 +92,10 @@ export const rbacService = {
       .post('/tenant/roles', { key, name, description, permissions })
       .then((r) => r.data),
   deleteRole: (id: string) => tenantClient.delete(`/tenant/roles/${id}`).then((r) => r.data),
+  myPermissions: () =>
+    tenantClient
+      .get<{ success: boolean; grants: Grant[] }>('/tenant/users/me/permissions')
+      .then((r) => r.data.grants ?? []),
 };
 
 // ----- Workflow engine (Phase 3) --------------------------------------------

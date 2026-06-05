@@ -1,19 +1,11 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import {
-  ChevronDown,
-  X,
-  LayoutDashboard,
-  Workflow as WorkflowIcon,
-  SlidersHorizontal,
-  ShieldCheck,
-  UserPlus,
-  Users,
-  Building2,
-  Sparkles,
-} from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { sidebarNav } from '@/config/sidebarNav';
+import type { NavLink as NavLinkItem, NavGroup, NavEntry, NavSection } from '@/config/sidebarNav';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -44,13 +36,115 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Derive initial open state: all groups start open.
+function buildInitialOpenState(): Record<string, boolean> {
+  const state: Record<string, boolean> = {};
+  sidebarNav.sections.forEach((section) => {
+    section.entries.forEach((entry) => {
+      if (entry.type === 'group') state[entry.id] = true;
+    });
+  });
+  return state;
+}
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
-  const [crmOpen, setCrmOpen] = useState(true);
-  const [configOpen, setConfigOpen] = useState(true);
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(buildInitialOpenState);
 
-  const configActive = location.pathname.startsWith('/config');
+  function toggleGroup(id: string) {
+    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  // While permissions are loading, show all items to avoid layout shift.
+  function canShowLink(item: NavLinkItem): boolean {
+    if (item.platformAdminOnly && !user?.isPlatformAdmin) return false;
+    if (permissionsLoading) return true;
+    if (item.permission) return hasPermission(item.permission.resource, item.permission.action);
+    return true;
+  }
+
+  function visibleChildren(group: NavGroup): NavLinkItem[] {
+    return group.children.filter(canShowLink);
+  }
+
+  function canShowEntry(entry: NavEntry): boolean {
+    if (entry.type === 'link') return canShowLink(entry);
+    // Group-level gates: platformAdminOnly and explicit permission (if declared).
+    if (entry.platformAdminOnly && !user?.isPlatformAdmin) return false;
+    if (!permissionsLoading && entry.permission && !hasPermission(entry.permission.resource, entry.permission.action)) return false;
+    // Group is visible only when at least one child passes its own access check.
+    return visibleChildren(entry).length > 0;
+  }
+
+  function canShowSection(section: NavSection): boolean {
+    if (section.platformAdminOnly && !user?.isPlatformAdmin) return false;
+    return section.entries.some(canShowEntry);
+  }
+
+  function isGroupActive(group: NavGroup): boolean {
+    return group.matchPaths.some((p) => location.pathname.startsWith(p));
+  }
+
+  function renderLink(item: NavLinkItem, isChild = false) {
+    const Icon = item.icon;
+    return (
+      <NavLink
+        key={item.id}
+        to={item.path}
+        onClick={onClose}
+        className={isChild ? childLinkClass : linkClass}
+      >
+        <Icon className={isChild ? 'size-3' : 'size-3.5'} />
+        <span>{item.label}</span>
+      </NavLink>
+    );
+  }
+
+  function renderGroup(group: NavGroup) {
+    const children = visibleChildren(group);
+    if (children.length === 0) return null;
+
+    const groupOpen = openGroups[group.id] ?? true;
+    const active = isGroupActive(group);
+    const Icon = group.icon;
+
+    return (
+      <div key={group.id} className="space-y-0.5">
+        <button
+          type="button"
+          onClick={() => toggleGroup(group.id)}
+          aria-label={`Toggle ${group.label} menu`}
+          className={cn(
+            'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+            active
+              ? 'bg-sidebar-accent/50 text-stone-900 dark:text-white'
+              : 'text-stone-600 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-300 dark:hover:text-white',
+          )}
+        >
+          <div className="flex items-center gap-2.5">
+            <Icon className="size-3.5" />
+            <span>{group.label}</span>
+          </div>
+          <ChevronDown
+            className={cn('size-3 transition-transform duration-200', groupOpen && 'rotate-180')}
+          />
+        </button>
+
+        <div
+          className={cn(
+            'grid overflow-hidden transition-all duration-300 ease-in-out',
+            groupOpen ? 'mt-0.5 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+          )}
+        >
+          <div className="ml-4 space-y-0.5 overflow-hidden border-l border-sidebar-border pl-2.5">
+            {children.map((child) => renderLink(child, true))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -89,101 +183,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-0.5 px-2.5 py-2">
-            <NavLink to="/dashboard" onClick={onClose} className={linkClass}>
-              <LayoutDashboard className="size-3.5" />
-              <span>Dashboard</span>
-            </NavLink>
+            {/* Top-level items (e.g. Dashboard) — always visible */}
+            {sidebarNav.topItems.map((item) => renderLink(item))}
 
-            {/* CRM — collapsible module */}
-            <SectionLabel>Workspace</SectionLabel>
-            <div className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => setCrmOpen((v) => !v)}
-                aria-label="Toggle CRM menu"
-                className={cn(
-                  'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
-                  location.pathname.startsWith('/prospects') || location.pathname.startsWith('/crm')
-                    ? 'bg-sidebar-accent/50 text-stone-900 dark:text-white'
-                    : 'text-stone-600 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-300 dark:hover:text-white',
-                )}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Building2 className="size-3.5" />
-                  <span>CRM</span>
-                </div>
-                <ChevronDown className={cn('size-3 transition-transform duration-200', crmOpen && 'rotate-180')} />
-              </button>
-
-              <div
-                className={cn(
-                  'grid overflow-hidden transition-all duration-300 ease-in-out',
-                  crmOpen ? 'mt-0.5 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-                )}
-              >
-                <div className="ml-4 space-y-0.5 overflow-hidden border-l border-sidebar-border pl-2.5">
-                  <NavLink to="/crm/lead" onClick={onClose} className={childLinkClass}>
-                    <Sparkles className="size-3" />
-                    <span>Leads</span>
-                  </NavLink>
-                  <NavLink to="/prospects" onClick={onClose} className={childLinkClass}>
-                    <Users className="size-3" />
-                    <span>Prospects</span>
-                  </NavLink>
+            {/* Sections driven by sidebarNav config */}
+            {sidebarNav.sections.filter(canShowSection).map((section) => (
+              <div key={section.id}>
+                <SectionLabel>{section.label}</SectionLabel>
+                <div className="space-y-0.5">
+                  {section.entries.map((entry) => {
+                    if (!canShowEntry(entry)) return null;
+                    return entry.type === 'link' ? renderLink(entry) : renderGroup(entry);
+                  })}
                 </div>
               </div>
-            </div>
-
-            {/* Configuration — build/configure the platform */}
-            <SectionLabel>Configure</SectionLabel>
-            <div className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => setConfigOpen((v) => !v)}
-                aria-label="Toggle Configuration menu"
-                className={cn(
-                  'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
-                  configActive
-                    ? 'bg-sidebar-accent/50 text-stone-900 dark:text-white'
-                    : 'text-stone-600 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-300 dark:hover:text-white',
-                )}
-              >
-                <div className="flex items-center gap-2.5">
-                  <SlidersHorizontal className="size-3.5" />
-                  <span>Configuration</span>
-                </div>
-                <ChevronDown className={cn('size-3 transition-transform duration-200', configOpen && 'rotate-180')} />
-              </button>
-
-              <div
-                className={cn(
-                  'grid overflow-hidden transition-all duration-300 ease-in-out',
-                  configOpen ? 'mt-0.5 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-                )}
-              >
-                <div className="ml-4 space-y-0.5 overflow-hidden border-l border-sidebar-border pl-2.5">
-                  <NavLink to="/config/workflows" onClick={onClose} className={childLinkClass}>
-                    <WorkflowIcon className="size-3" />
-                    <span>Workflows</span>
-                  </NavLink>
-                  <NavLink to="/config/roles" onClick={onClose} className={childLinkClass}>
-                    <ShieldCheck className="size-3" />
-                    <span>Roles &amp; Access</span>
-                  </NavLink>
-                </div>
-              </div>
-            </div>
-
-            {/* Platform — owner only */}
-            {user?.isPlatformAdmin && (
-              <>
-                <SectionLabel>Platform</SectionLabel>
-                <NavLink to="/customer/onboarding" onClick={onClose} className={linkClass}>
-                  <UserPlus className="size-3.5" />
-                  <span>Customer Onboarding</span>
-                </NavLink>
-              </>
-            )}
+            ))}
           </nav>
         </div>
       </aside>
