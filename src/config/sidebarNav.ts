@@ -74,7 +74,6 @@ export const sidebarNav: SidebarNavConfig = {
           label: 'CRM',
           icon: Building2,
           matchPaths: ['/crm', '/prospects'],
-          permission: { resource: 'record', action: 'read' },
           children: [
             {
               type: 'link',
@@ -82,7 +81,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: 'Leads',
               path: '/crm/lead',
               icon: Sparkles,
-              permission: { resource: 'record', action: 'read' },
+              permission: { resource: 'lead', action: 'read' },
             },
             {
               type: 'link',
@@ -90,7 +89,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: 'Prospects',
               path: '/prospects',
               icon: Users,
-              permission: { resource: 'record', action: 'read' },
+              permission: { resource: 'prospect', action: 'read' },
             },
           ],
         },

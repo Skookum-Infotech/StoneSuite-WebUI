@@ -1,13 +1,74 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Lock } from 'lucide-react';
+import { Plus, Trash2, Lock, ShieldCheck, X, ChevronDown } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { rbacService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PageHeader, Spinner, Badge, ErrorNote, EmptyState } from '@/components/tenant/ui';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge, Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
+import { sidebarNav } from '@/config/sidebarNav';
+import { cn } from '@/lib/utils';
 import type { Grant, Scope, Role } from '@/types/tenant';
+
+// ---------------------------------------------------------------------------
+// Action display — canonical order and human labels shown per resource row.
+// ---------------------------------------------------------------------------
+
+const ACTION_ORDER = ['read', 'create', 'update', 'delete', 'transition', 'configure'];
+
+const ACTION_LABELS: Record<string, string> = {
+  read:       'Read',
+  create:     'Create',
+  update:     'Edit',
+  delete:     'Delete',
+  transition: 'Transition',
+  configure:  'Configure',
+};
+
+// ---------------------------------------------------------------------------
+
+interface ResourceRow {
+  id: string;
+  resource: string;
+  label: string;
+}
+interface PermModule {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  rows: ResourceRow[];
+}
+
+function buildPermModules(): PermModule[] {
+  const modules: PermModule[] = [];
+  for (const section of sidebarNav.sections) {
+    if (section.platformAdminOnly) continue;
+    for (const entry of section.entries) {
+      if (entry.type === 'link') {
+        if (!entry.permission || entry.platformAdminOnly) continue;
+        modules.push({
+          id: entry.id,
+          label: entry.label,
+          icon: entry.icon,
+          rows: [{ id: entry.id, resource: entry.permission.resource, label: entry.label }],
+        });
+        continue;
+      }
+      const rows: ResourceRow[] = [];
+      for (const child of entry.children) {
+        if (!child.permission || child.platformAdminOnly) continue;
+        rows.push({ id: child.id, resource: child.permission.resource, label: child.label });
+      }
+      if (rows.length === 0) continue;
+      modules.push({ id: entry.id, label: entry.label, icon: entry.icon, rows });
+    }
+  }
+  return modules;
+}
+
+// ---------------------------------------------------------------------------
 
 export default function RolesPage() {
   const qc = useQueryClient();
@@ -20,31 +81,73 @@ export default function RolesPage() {
   });
 
   return (
-    <div>
-      <PageHeader
-        title="Roles & Access"
-        subtitle="Roles bundle resource + action + scope permissions. super_admin is system-managed."
-        action={
-          <Button size="sm" className="gap-1" onClick={() => setShowCreate((v) => !v)}>
-            <Plus className="size-3.5" /> New role
-          </Button>
-        }
-      />
+    <div className="flex flex-1 flex-col min-h-0">
+      <div className="flex flex-1 flex-col min-h-0 bg-white p-6">
 
-      {showCreate && <CreateRoleForm onDone={() => { setShowCreate(false); qc.invalidateQueries({ queryKey: ['roles'] }); }} />}
+        {/* Page header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+              <ShieldCheck className="size-4.5" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold tracking-tight text-stone-900">Roles & Access</h1>
+              <p className="text-xs text-stone-500">Control what each role can see and do.</p>
+            </div>
+          </div>
+          {!showCreate && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50 cursor-pointer"
+            >
+              <Plus className="size-3.5" />
+              New Role
+            </button>
+          )}
+        </div>
 
-      {rolesQ.isLoading && <Spinner />}
-      {rolesQ.error && <ErrorNote>{apiErrorMessage(rolesQ.error)}</ErrorNote>}
-      {rolesQ.data && rolesQ.data.length === 0 && <EmptyState>No roles yet.</EmptyState>}
+        {/* Content */}
+        <div className="mt-5 flex flex-1 flex-col min-h-0 border-t border-stone-100 pt-4 space-y-3">
 
-      <div className="space-y-3">
-        {rolesQ.data?.map((role: Role) => (
-          <div key={role.id} className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold">{role.name}</span>
-                <Badge>{role.key}</Badge>
-                {role.isSystem && <Badge color="#8b5cf6"><Lock className="size-3" /> system</Badge>}
+          {showCreate && (
+            <CreateRoleForm
+              onClose={() => setShowCreate(false)}
+              onDone={() => { setShowCreate(false); qc.invalidateQueries({ queryKey: ['roles'] }); }}
+            />
+          )}
+
+          {rolesQ.isLoading && <Spinner label="Loading roles…" />}
+          {rolesQ.isError && <ErrorNote>{apiErrorMessage(rolesQ.error)}</ErrorNote>}
+          {!rolesQ.isLoading && !rolesQ.isError && rolesQ.data?.length === 0 && !showCreate && (
+            <EmptyState>No roles yet — create your first one.</EmptyState>
+          )}
+
+          {rolesQ.data?.map((role: Role) => (
+            <div
+              key={role.id}
+              className="flex items-start justify-between gap-3 rounded-xl border border-stone-200 px-4 py-3"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-bold text-stone-800">{role.name}</span>
+                  <Badge>{role.key}</Badge>
+                  {role.isSystem && (
+                    <Badge color="#8b5cf6">
+                      <Lock className="size-3" /> system
+                    </Badge>
+                  )}
+                </div>
+                {role.description && (
+                  <p className="mt-0.5 text-[11px] text-stone-500">{role.description}</p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {role.permissions.length === 0 && (
+                    <span className="text-[11px] text-stone-400">No permissions</span>
+                  )}
+                  {role.permissions.map((p, i) => (
+                    <Badge key={i}>{p.resource}:{p.action} · {p.scope}</Badge>
+                  ))}
+                </div>
               </div>
               {!role.isSystem && (
                 <button
@@ -52,106 +155,269 @@ export default function RolesPage() {
                   aria-label={`Delete role ${role.name}`}
                   onClick={() => del.mutate(role.id)}
                   disabled={del.isPending}
-                  className="rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                  className="shrink-0 rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
               )}
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {role.permissions.map((p, i) => (
-                <Badge key={i}>
-                  {p.resource}:{p.action} · {p.scope}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        ))}
+          ))}
+
+          {del.error && <ErrorNote>{apiErrorMessage(del.error)}</ErrorNote>}
+        </div>
       </div>
-      {del.error && <div className="mt-3"><ErrorNote>{apiErrorMessage(del.error)}</ErrorNote></div>}
     </div>
   );
 }
 
-function CreateRoleForm({ onDone }: { onDone: () => void }) {
+// ---------------------------------------------------------------------------
+
+// Per-row selection: which actions are checked + what scope applies.
+type RowSelection = { actions: string[]; scope: Scope };
+
+function CreateRoleForm({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
   const catalogQ = useQuery({ queryKey: ['catalog'], queryFn: rbacService.catalog });
   const [key, setKey] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  // selected[`resource:action`] = scope
-  const [selected, setSelected] = useState<Record<string, Scope>>({});
 
-  const toggle = (id: string) =>
-    setSelected((s) => {
-      const next = { ...s };
-      if (next[id]) delete next[id];
-      else next[id] = 'all';
-      return next;
+  // selected is keyed by row.id — each submodule is fully independent.
+  const [selected, setSelected] = useState<Record<string, RowSelection>>({});
+
+  const modules = useMemo(() => buildPermModules(), []);
+  const [openModules, setOpenModules] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(modules.map((m) => [m.id, true])),
+  );
+
+  // resource → actions available in the catalog (e.g. lead → [read, create, update, delete, transition])
+  const actionsByResource = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const p of catalogQ.data?.permissions ?? []) {
+      (map[p.resource] ??= []).push(p.action);
+    }
+    return map;
+  }, [catalogQ.data]);
+
+  const scopes = catalogQ.data?.scopes ?? (['all', 'team', 'own'] as Scope[]);
+
+  function toggleAction(rowId: string, action: string) {
+    setSelected((prev) => {
+      const current = prev[rowId]?.actions ?? [];
+      const has = current.includes(action);
+      const next = has ? current.filter((a) => a !== action) : [...current, action];
+      if (next.length === 0) {
+        const { [rowId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [rowId]: { actions: next, scope: prev[rowId]?.scope ?? 'all' } };
     });
-  const setScope = (id: string, scope: Scope) => setSelected((s) => ({ ...s, [id]: scope }));
+  }
+
+  function setScope(rowId: string, scope: Scope) {
+    setSelected((prev) =>
+      prev[rowId] ? { ...prev, [rowId]: { ...prev[rowId], scope } } : prev,
+    );
+  }
 
   const create = useMutation({
     mutationFn: () => {
-      const permissions: Grant[] = Object.entries(selected).map(([id, scope]) => {
-        const [resource, action] = id.split(':');
-        return { resource, action, scope };
-      });
-      return rbacService.createRole(key, name, description, permissions);
+      const permissions: Grant[] = [];
+      for (const mod of modules) {
+        for (const row of mod.rows) {
+          const sel = selected[row.id];
+          if (!sel || sel.actions.length === 0) continue;
+          for (const action of sel.actions) {
+            permissions.push({ resource: row.resource, action, scope: sel.scope });
+          }
+        }
+      }
+      return rbacService.createRole(key.trim(), name.trim(), description.trim(), permissions);
     },
     onSuccess: onDone,
   });
 
   return (
-    <div className="mb-5 rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-950/40">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="rkey">Key</Label>
-          <Input id="rkey" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sales_rep" />
+    <div className="rounded-xl border border-stone-200 bg-stone-50">
+      {/* Form header */}
+      <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
+            <ShieldCheck className="size-3.5" />
+          </div>
+          <span className="text-sm font-bold text-stone-900">New Role</span>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="rname">Name</Label>
-          <Input id="rname" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sales Rep" />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cancel"
+          className="rounded-lg p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-700"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+
+      {/* Identity */}
+      <div className="grid gap-3 px-4 py-4 sm:grid-cols-3 border-b border-stone-200">
+        <div className="space-y-1">
+          <Label htmlFor="rname" className="text-xs">Display name</Label>
+          <Input id="rname" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sales Rep" className="h-8 text-xs" />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="rdesc">Description</Label>
-          <Input id="rdesc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" />
+        <div className="space-y-1">
+          <Label htmlFor="rkey" className="text-xs">Key</Label>
+          <Input id="rkey" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sales_rep" className="h-8 text-xs" />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="rdesc" className="text-xs">Description</Label>
+          <Input id="rdesc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" className="h-8 text-xs" />
         </div>
       </div>
 
-      <p className="mb-2 mt-4 text-xs font-bold text-stone-500">Permissions</p>
-      {catalogQ.isLoading && <Spinner label="Loading catalog…" />}
-      <div className="grid gap-1.5 sm:grid-cols-2">
-        {catalogQ.data?.permissions.map((p) => {
-          const id = `${p.resource}:${p.action}`;
-          const on = id in selected;
+      {/* Permissions */}
+      <div className="px-4 py-3">
+        <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-stone-500">Access</p>
+
+        {catalogQ.isLoading && <Spinner label="Loading…" />}
+        {catalogQ.isError && <ErrorNote>{apiErrorMessage(catalogQ.error)}</ErrorNote>}
+
+        {!catalogQ.isLoading && (
+          <div className="space-y-1.5">
+            {modules.map((mod) => {
+              const Icon = mod.icon;
+              const open = openModules[mod.id] ?? true;
+              const granted = mod.rows.filter((r) => (selected[r.id]?.actions.length ?? 0) > 0).length;
+              return (
+                <div key={mod.id} className="overflow-hidden rounded-lg border border-stone-200 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setOpenModules((s) => ({ ...s, [mod.id]: !open }))}
+                    aria-expanded={open}
+                    className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-stone-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="size-3.5 text-stone-400" />
+                      <span className="text-xs font-semibold text-stone-700">{mod.label}</span>
+                      {granted > 0 && (
+                        <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-dark">
+                          {granted}
+                        </span>
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={cn('size-3.5 text-stone-400 transition-transform duration-200', open && 'rotate-180')}
+                    />
+                  </button>
+
+                  {open && (
+                    <div className="border-t border-stone-100 divide-y divide-stone-100">
+                      {mod.rows.map((row) => (
+                        <PermissionRow
+                          key={row.id}
+                          row={row}
+                          available={ACTION_ORDER.filter((a) => (actionsByResource[row.resource] ?? []).includes(a))}
+                          checkedActions={selected[row.id]?.actions ?? []}
+                          scope={selected[row.id]?.scope ?? 'all'}
+                          scopes={scopes}
+                          onToggle={(action) => toggleAction(row.id, action)}
+                          onScope={(sc) => setScope(row.id, sc)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-end gap-2 border-t border-stone-200 px-4 py-3">
+        {create.error && (
+          <div className="mr-auto">
+            <ErrorNote>{apiErrorMessage(create.error)}</ErrorNote>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={create.isPending}
+          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-50 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => create.mutate()}
+          disabled={create.isPending || !key.trim() || !name.trim()}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50 disabled:opacity-50"
+        >
+          {create.isPending ? 'Creating…' : 'Create Role'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function PermissionRow({
+  row,
+  available,
+  checkedActions,
+  scope,
+  scopes,
+  onToggle,
+  onScope,
+}: {
+  row: ResourceRow;
+  available: string[];       // actions this resource supports, in canonical order
+  checkedActions: string[];  // actions currently selected
+  scope: Scope;
+  scopes: Scope[];
+  onToggle: (action: string) => void;
+  onScope: (scope: Scope) => void;
+}) {
+  const hasAny = checkedActions.length > 0;
+
+  return (
+    <div className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 shrink-0">
+        <p className="text-xs font-medium text-stone-700">{row.label}</p>
+        <p className="text-[10px] text-stone-400">{row.resource}</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        {available.length === 0 && (
+          <span className="text-[11px] text-stone-300 italic">No actions in catalog</span>
+        )}
+        {available.map((action) => {
+          const checked = checkedActions.includes(action);
           return (
-            <div key={id} className="flex items-center justify-between rounded-lg border border-stone-200 px-3 py-1.5 dark:border-stone-700">
-              <label className="flex items-center gap-2 text-xs font-semibold">
-                <input type="checkbox" checked={on} onChange={() => toggle(id)} className="size-3.5 rounded border-stone-300" aria-label={id} />
-                {id}
-              </label>
-              {on && (
-                <select
-                  aria-label={`Scope for ${id}`}
-                  value={selected[id]}
-                  onChange={(e) => setScope(id, e.target.value as Scope)}
-                  className="h-7 rounded-md border border-stone-200 bg-white px-2 text-[11px] dark:border-stone-700 dark:bg-stone-900"
-                >
-                  {(catalogQ.data?.scopes ?? ['all', 'team', 'own']).map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              )}
-            </div>
+            <label
+              key={action}
+              className="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-stone-600"
+            >
+              <Checkbox
+                checked={checked}
+                onCheckedChange={() => onToggle(action)}
+                aria-label={`${ACTION_LABELS[action] ?? action} for ${row.label}`}
+              />
+              {ACTION_LABELS[action] ?? action}
+            </label>
           );
         })}
-      </div>
 
-      {create.error && <div className="mt-3"><ErrorNote>{apiErrorMessage(create.error)}</ErrorNote></div>}
-      <div className="mt-4">
-        <Button size="sm" onClick={() => create.mutate()} disabled={create.isPending || !key || !name}>
-          {create.isPending ? 'Creating…' : 'Create role'}
-        </Button>
+        <select
+          aria-label={`Scope for ${row.label}`}
+          value={scope}
+          disabled={!hasAny}
+          onChange={(e) => onScope(e.target.value as Scope)}
+          className="h-6 rounded border border-stone-200 bg-white px-1.5 text-[11px] text-stone-600 disabled:opacity-40"
+        >
+          {scopes.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </div>
     </div>
   );
