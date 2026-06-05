@@ -1,176 +1,335 @@
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Lock, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, Lock, ShieldCheck, Check } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { rbacService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { Badge, Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
+import { Badge, ErrorNote, EmptyState } from '@/components/tenant/ui';
+import { sidebarNav } from '@/config/sidebarNav';
 import { cn } from '@/lib/utils';
-import type { Grant, Role } from '@/types/tenant';
+import type { Role } from '@/types/tenant';
+
+// ---------------------------------------------------------------------------
+
+const ACTION_ORDER = ['read', 'create', 'update', 'delete', 'transition', 'configure'];
 
 const ACTION_LABELS: Record<string, string> = {
-  read:       'Read',
-  create:     'Create',
-  update:     'Edit',
-  delete:     'Delete',
-  transition: 'Transition',
-  configure:  'Configure',
+  read: 'Read', create: 'Create', update: 'Edit',
+  delete: 'Delete', transition: 'Transition', configure: 'Configure',
 };
 
-const ACTION_COLORS: Record<string, string> = {
-  read:       'bg-stone-100 text-stone-600 border-stone-200',
-  create:     'bg-green-50 text-green-700 border-green-200',
-  update:     'bg-blue-50 text-blue-700 border-blue-200',
-  delete:     'bg-red-50 text-red-700 border-red-200',
-  transition: 'bg-purple-50 text-purple-700 border-purple-200',
-  configure:  'bg-amber-50 text-amber-700 border-amber-200',
-};
+interface ResourceRow { id: string; resource: string; label: string }
+interface PermModule   { id: string; label: string; icon: LucideIcon; rows: ResourceRow[] }
 
-// Groups grants by resource, preserving the first scope encountered.
-function groupByResource(permissions: Grant[]) {
-  const map = new Map<string, { actions: string[]; scope: string }>();
-  for (const p of permissions) {
-    const existing = map.get(p.resource);
-    if (existing) {
-      if (!existing.actions.includes(p.action)) existing.actions.push(p.action);
-    } else {
-      map.set(p.resource, { actions: [p.action], scope: p.scope });
+function buildPermModules(): PermModule[] {
+  const out: PermModule[] = [];
+  for (const section of sidebarNav.sections) {
+    if (section.platformAdminOnly) continue;
+    for (const entry of section.entries) {
+      if (entry.type === 'link') {
+        if (!entry.permission || entry.platformAdminOnly) continue;
+        out.push({ id: entry.id, label: entry.label, icon: entry.icon,
+          rows: [{ id: entry.id, resource: entry.permission.resource, label: entry.label }] });
+        continue;
+      }
+      const rows: ResourceRow[] = [];
+      for (const child of entry.children) {
+        if (!child.permission || child.platformAdminOnly) continue;
+        rows.push({ id: child.id, resource: child.permission.resource, label: child.label });
+      }
+      if (rows.length) out.push({ id: entry.id, label: entry.label, icon: entry.icon, rows });
     }
   }
-  return map;
+  return out;
 }
 
-function ResourceName({ resource }: { resource: string }) {
-  if (resource === '*') return <span className="text-xs font-semibold text-stone-700">All Resources</span>;
-  const label = resource.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  return <span className="text-xs font-semibold text-stone-700 w-32 shrink-0">{label}</span>;
-}
+// ---------------------------------------------------------------------------
 
 export default function RolesPage() {
-  const navigate = useNavigate();
-  const qc = useQueryClient();
-  const rolesQ = useQuery({ queryKey: ['roles'], queryFn: rbacService.listRoles });
+  const navigate  = useNavigate();
+  const qc        = useQueryClient();
+  const rolesQ    = useQuery({ queryKey: ['roles'],   queryFn: rbacService.listRoles });
+  const catalogQ  = useQuery({ queryKey: ['catalog'], queryFn: rbacService.catalog  });
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const del = useMutation({
     mutationFn: (id: string) => rbacService.deleteRole(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['roles'] }),
+    onSuccess: (_data, deletedId) => {
+      qc.invalidateQueries({ queryKey: ['roles'] });
+      setSelectedId((prev) => (prev === deletedId ? null : prev));
+    },
   });
 
+  const modules = useMemo(() => buildPermModules(), []);
+
+  const actionsByResource = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const p of catalogQ.data?.permissions ?? []) (map[p.resource] ??= []).push(p.action);
+    return map;
+  }, [catalogQ.data]);
+
+  const roles      = rolesQ.data ?? [];
+  const activeId   = selectedId ?? roles[0]?.id ?? null;
+  const activeRole = roles.find((r) => r.id === activeId) ?? null;
+
   return (
-    <div className="flex flex-1 flex-col min-h-0">
-      <div className="flex flex-1 flex-col min-h-0 bg-white p-6">
+    <div className="flex flex-1 flex-col min-h-0 bg-white">
 
-        {/* Page header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
-              <ShieldCheck className="size-4.5" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold tracking-tight text-stone-900">Roles & Access</h1>
-              <p className="text-xs text-stone-500">Control what each role can see and do.</p>
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/config/roles/new')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50 cursor-pointer"
-          >
-            <Plus className="size-3.5" />
-            New Role
-          </button>
+      {/* Page header */}
+      <div className="flex items-center gap-2.5 border-b border-stone-100 px-6 py-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+          <ShieldCheck className="size-4.5" />
         </div>
+        <div>
+          <h1 className="text-base font-bold tracking-tight text-stone-900">Roles & Access</h1>
+          <p className="text-xs text-stone-500">Control what each role can see and do.</p>
+        </div>
+      </div>
 
-        {/* Role list */}
-        <div className="mt-5 flex flex-1 flex-col min-h-0 border-t border-stone-100 pt-4 space-y-3">
-          {rolesQ.isLoading && <Spinner label="Loading roles…" />}
-          {rolesQ.isError && <ErrorNote>{apiErrorMessage(rolesQ.error)}</ErrorNote>}
-          {!rolesQ.isLoading && !rolesQ.isError && rolesQ.data?.length === 0 && (
-            <EmptyState>No roles yet — create your first one.</EmptyState>
+      {/* Split pane */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+
+        {/* ── Left panel: role list ── */}
+        <aside className="flex flex-col w-60 shrink-0 border-r border-stone-100">
+
+          <div className="p-3 border-b border-stone-100">
+            <button
+              onClick={() => navigate('/config/roles/new')}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50"
+            >
+              <Plus className="size-3.5" />
+              New Role
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+            {rolesQ.isLoading && <p className="px-2 py-4 text-xs text-stone-400">Loading…</p>}
+            {rolesQ.isError  && <p className="px-2 py-2 text-xs text-red-500">{apiErrorMessage(rolesQ.error)}</p>}
+
+            {roles.map((role) => {
+              const active = role.id === activeId;
+              return (
+                <button
+                  key={role.id}
+                  type="button"
+                  onClick={() => setSelectedId(role.id)}
+                  className={cn(
+                    'w-full rounded-lg px-3 py-2.5 text-left transition-colors border',
+                    active ? 'bg-brand/10 border-brand/25' : 'border-transparent hover:bg-stone-50',
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {role.isSystem && <Lock className="size-3 text-stone-400 shrink-0" />}
+                    <span className={cn(
+                      'text-xs font-semibold truncate',
+                      active ? 'text-brand-dark' : 'text-stone-700',
+                    )}>
+                      {role.name}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-stone-400 truncate">
+                    {role.permissions.length === 0
+                      ? 'No permissions'
+                      : `${role.permissions.length} permission${role.permissions.length !== 1 ? 's' : ''}`}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* ── Right panel: role detail ── */}
+        <main className="flex-1 overflow-y-auto">
+          {!activeRole && !rolesQ.isLoading && (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <ShieldCheck className="mx-auto mb-2 size-8 text-stone-300" />
+                <p className="text-sm text-stone-400">Select a role to view its permissions.</p>
+              </div>
+            </div>
           )}
 
-          {rolesQ.data?.map((role: Role) => {
-            const grouped = groupByResource(role.permissions);
-            const isWildcard = grouped.has('*');
+          {activeRole && (
+            <RoleDetail
+              role={activeRole}
+              modules={modules}
+              actionsByResource={actionsByResource}
+              onDelete={() => del.mutate(activeRole.id)}
+              deleting={del.isPending}
+              deleteError={del.error ? apiErrorMessage(del.error) : null}
+            />
+          )}
+        </main>
+
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function RoleDetail({
+  role, modules, actionsByResource, onDelete, deleting, deleteError,
+}: {
+  role: Role;
+  modules: PermModule[];
+  actionsByResource: Record<string, string[]>;
+  onDelete: () => void;
+  deleting: boolean;
+  deleteError: string | null;
+}) {
+  // resource → action → scope (for quick grant lookup)
+  const grantedMap = useMemo(() => {
+    const map = new Map<string, Map<string, string>>();
+    for (const p of role.permissions) {
+      if (!map.has(p.resource)) map.set(p.resource, new Map());
+      map.get(p.resource)!.set(p.action, p.scope);
+    }
+    return map;
+  }, [role]);
+
+  const isWildcard = grantedMap.has('*');
+
+  // columns = catalog actions that appear on ≥1 resource in this module, in canonical order
+  function moduleColumns(rows: ResourceRow[]) {
+    const seen = new Set<string>();
+    for (const row of rows)
+      for (const a of (actionsByResource[row.resource] ?? [])) seen.add(a);
+    return ACTION_ORDER.filter((a) => seen.has(a));
+  }
+
+  return (
+    <div className="p-6">
+
+      {/* Detail header */}
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h2 className="text-base font-bold text-stone-900">{role.name}</h2>
+            <Badge>{role.key}</Badge>
+            {role.isSystem && <Badge color="#8b5cf6"><Lock className="size-3" /> system</Badge>}
+          </div>
+          {role.description && <p className="text-xs text-stone-500 mt-0.5">{role.description}</p>}
+          <p className="mt-1 text-[11px] text-stone-400">
+            {role.permissions.length === 0
+              ? 'No permissions assigned.'
+              : `${role.permissions.length} permission${role.permissions.length !== 1 ? 's' : ''} granted`}
+          </p>
+        </div>
+
+        {!role.isSystem && (
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={deleting}
+            aria-label={`Delete role ${role.name}`}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 className="size-3.5" />
+            Delete
+          </button>
+        )}
+      </div>
+
+      {deleteError && <div className="mb-4"><ErrorNote>{deleteError}</ErrorNote></div>}
+
+      {/* Wildcard — super_admin style */}
+      {isWildcard && (
+        <div className="rounded-xl border border-stone-200 p-6 text-center">
+          <ShieldCheck className="mx-auto mb-2 size-6 text-brand-dark" />
+          <p className="text-sm font-semibold text-stone-700">Full Access</p>
+          <p className="mt-1 text-xs text-stone-400">
+            Wildcard grant — all resources and actions are permitted.
+          </p>
+        </div>
+      )}
+
+      {/* Empty */}
+      {!isWildcard && role.permissions.length === 0 && (
+        <EmptyState>No permissions assigned to this role.</EmptyState>
+      )}
+
+      {/* Permission sections */}
+      {!isWildcard && role.permissions.length > 0 && (
+        <div className="space-y-4">
+          {modules.map((mod) => {
+            const Icon    = mod.icon;
+            const cols    = moduleColumns(mod.rows);
+            const hasGrant = mod.rows.some((r) => grantedMap.has(r.resource));
+            if (!cols.length || !hasGrant) return null;
 
             return (
-              <div
-                key={role.id}
-                className="rounded-xl border border-stone-200 bg-white overflow-hidden"
-              >
-                {/* Role header bar */}
-                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50/70 border-b border-stone-100">
-                  <div className="flex flex-wrap items-center gap-2 min-w-0">
-                    <span className="text-sm font-bold text-stone-800">{role.name}</span>
-                    <Badge>{role.key}</Badge>
-                    {role.isSystem && (
-                      <Badge color="#8b5cf6">
-                        <Lock className="size-3" /> system
-                      </Badge>
-                    )}
-                  </div>
-                  {!role.isSystem && (
-                    <button
-                      type="button"
-                      aria-label={`Delete role ${role.name}`}
-                      onClick={() => del.mutate(role.id)}
-                      disabled={del.isPending}
-                      className="shrink-0 rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 transition-colors"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  )}
+              <div key={mod.id} className="overflow-hidden rounded-xl border border-stone-200">
+
+                {/* Section header */}
+                <div className="flex items-center gap-2 border-b border-stone-100 bg-stone-50 px-4 py-2.5">
+                  <Icon className="size-3.5 text-stone-400" />
+                  <span className="text-xs font-bold text-stone-600">{mod.label}</span>
                 </div>
 
-                {/* Role body */}
-                <div className="px-4 py-3">
-                  {role.description && (
-                    <p className="mb-3 text-[11px] text-stone-500">{role.description}</p>
-                  )}
+                {/* Mini permission table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-stone-100 bg-white">
+                        <th className="py-2 pl-4 pr-3 text-left font-semibold text-stone-400 w-36">Resource</th>
+                        {cols.map((c) => (
+                          <th key={c} className="px-4 py-2 text-center font-semibold text-stone-400 whitespace-nowrap">
+                            {ACTION_LABELS[c] ?? c}
+                          </th>
+                        ))}
+                        <th className="px-4 py-2 text-center font-semibold text-stone-400">Scope</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-50">
+                      {mod.rows.map((row) => {
+                        const rowGrants  = grantedMap.get(row.resource);
+                        const scopeVal   = rowGrants ? [...new Set(rowGrants.values())][0] : null;
 
-                  {role.permissions.length === 0 && (
-                    <p className="text-[11px] text-stone-400 italic">No permissions assigned.</p>
-                  )}
-
-                  {isWildcard ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-stone-600">Full Access</span>
-                      <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] text-stone-400">
-                        {grouped.get('*')?.scope}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {[...grouped.entries()].map(([resource, { actions, scope }]) => (
-                        <div key={resource} className="flex flex-wrap items-center gap-2">
-                          <ResourceName resource={resource} />
-                          <div className="flex flex-wrap gap-1">
-                            {actions.map((action) => (
-                              <span
-                                key={action}
-                                className={cn(
-                                  'inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold',
-                                  ACTION_COLORS[action] ?? 'bg-stone-100 text-stone-600 border-stone-200',
-                                )}
-                              >
-                                {ACTION_LABELS[action] ?? action}
-                              </span>
-                            ))}
-                          </div>
-                          <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] text-stone-400">
-                            {scope}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        return (
+                          <tr key={row.id} className="hover:bg-stone-50/60 transition-colors">
+                            <td className="py-3 pl-4 pr-3">
+                              <p className="font-medium text-stone-700">{row.label}</p>
+                              <p className="text-[10px] text-stone-400">{row.resource}</p>
+                            </td>
+                            {cols.map((col) => {
+                              const granted = rowGrants?.has(col) ?? false;
+                              return (
+                                <td key={col} className="px-4 py-3 text-center">
+                                  {granted ? (
+                                    <span className="inline-flex size-5 items-center justify-center rounded-full bg-brand/15 mx-auto">
+                                      <Check className="size-3 text-brand-dark" />
+                                    </span>
+                                  ) : (
+                                    <span className="text-stone-200">—</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            <td className="px-4 py-3 text-center">
+                              {scopeVal ? (
+                                <span className="inline-block rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] text-stone-500">
+                                  {scopeVal}
+                                </span>
+                              ) : (
+                                <span className="text-stone-200">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
+
               </div>
             );
           })}
-
-          {del.error && <ErrorNote>{apiErrorMessage(del.error)}</ErrorNote>}
         </div>
+      )}
 
-      </div>
     </div>
   );
 }
