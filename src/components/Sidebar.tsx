@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import {
   ChevronDown,
   X,
@@ -9,13 +8,11 @@ import {
   SlidersHorizontal,
   ShieldCheck,
   UserPlus,
-  Loader2,
-  Boxes,
   Users,
   Building2,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { workflowService } from '@/services/tenantServices';
 import { useAuthStore } from '@/store/useAuthStore';
 
 interface SidebarProps {
@@ -52,13 +49,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const user = useAuthStore((s) => s.user);
   const [crmOpen, setCrmOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
-
-  // Dynamic: the workspace nav is driven by the tenant's enabled workflows.
-  const { data: workflows = [], isLoading, error } = useQuery({
-    queryKey: ['workflows'],
-    queryFn: workflowService.list,
-  });
-  const enabled = workflows.filter((w) => w.enabled);
 
   const configActive = location.pathname.startsWith('/config');
 
@@ -104,17 +94,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <span>Dashboard</span>
             </NavLink>
 
-            {/* Workspace — dynamic list of enabled workflows */}
+            {/* CRM — collapsible module */}
             <SectionLabel>Workspace</SectionLabel>
-
-            {/* CRM — collapsible module containing CRM sub-features */}
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => setCrmOpen((v) => !v)}
+                aria-label="Toggle CRM menu"
                 className={cn(
                   'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
-                  location.pathname.startsWith('/prospects')
+                  location.pathname.startsWith('/prospects') || location.pathname.startsWith('/crm')
                     ? 'bg-sidebar-accent/50 text-stone-900 dark:text-white'
                     : 'text-stone-600 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-300 dark:hover:text-white',
                 )}
@@ -133,6 +122,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 )}
               >
                 <div className="ml-4 space-y-0.5 overflow-hidden border-l border-sidebar-border pl-2.5">
+                  <NavLink to="/crm/lead" onClick={onClose} className={childLinkClass}>
+                    <Sparkles className="size-3" />
+                    <span>Leads</span>
+                  </NavLink>
                   <NavLink to="/prospects" onClick={onClose} className={childLinkClass}>
                     <Users className="size-3" />
                     <span>Prospects</span>
@@ -141,30 +134,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
             </div>
 
-            {isLoading && (
-              <div className="flex items-center gap-2 px-3 py-2 text-xs text-stone-400">
-                <Loader2 className="size-3.5 animate-spin" /> Loading…
-              </div>
-            )}
-            {!isLoading && error && (
-              <p className="px-3 py-1.5 text-[11px] text-red-500">Couldn't load workflows.</p>
-            )}
-            {!isLoading && !error && enabled.length === 0 && (
-              <p className="px-3 py-1.5 text-[11px] text-stone-400">No workflows enabled yet.</p>
-            )}
-            {enabled.map((wf) => (
-              <NavLink key={wf.id} to={`/workflows/${wf.id}`} onClick={onClose} className={linkClass}>
-                <Boxes className="size-3.5" />
-                <span className="truncate">{wf.name}</span>
-              </NavLink>
-            ))}
-
             {/* Configuration — build/configure the platform */}
             <SectionLabel>Configure</SectionLabel>
             <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => setConfigOpen((v) => !v)}
+                aria-label="Toggle Configuration menu"
                 className={cn(
                   'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
                   configActive

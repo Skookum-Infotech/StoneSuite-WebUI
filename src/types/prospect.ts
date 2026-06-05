@@ -115,6 +115,7 @@ export interface Prospect {
   date_format: string;
   receive_newsletter: boolean;
 
+  customFields?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

@@ -10,29 +10,125 @@ import { Label } from '@/components/ui/label';
 import { PageHeader, Spinner, Badge, ErrorNote } from '@/components/tenant/ui';
 import type { FieldType, WorkflowState, FieldDefinition } from '@/types/tenant';
 
+// BASE_FIELD_LABELS lists the built-in (hardcoded) form fields for each workflow.
+// These are shown read-only in the Config page so admins understand what's already there.
+const BASE_FIELD_LABELS: Record<string, { key: string; label: string }[]> = {
+  lead: [
+    { key: 'type', label: 'Type' },
+    { key: 'lead_status', label: 'Lead Status' },
+    { key: 'company_name', label: 'Company Name' },
+    { key: 'first_name', label: 'First Name' },
+    { key: 'last_name', label: 'Last Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'fax', label: 'Fax' },
+    { key: 'address', label: 'Address' },
+    { key: 'sales_rep', label: 'Sales Rep' },
+    { key: 'territory', label: 'Territory' },
+    { key: 'partner', label: 'Partner' },
+    { key: 'primary_subsidiary', label: 'Primary Subsidiary' },
+    { key: 'crm_account_owner', label: 'CRM Account Owner' },
+    { key: 'customer_type', label: 'Customer Type' },
+    { key: 'estimated_budget', label: 'Estimated Budget' },
+    { key: 'sales_readiness', label: 'Sales Readiness' },
+    { key: 'buying_reason', label: 'Buying Reason' },
+    { key: 'buying_time_frame', label: 'Buying Time Frame' },
+  ],
+  prospect: [
+    { key: 'company_name', label: 'Company Name' },
+    { key: 'status', label: 'Status' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'address', label: 'Address' },
+    { key: 'customer_type', label: 'Customer Type' },
+    { key: 'territory', label: 'Territory' },
+    { key: 'estimated_budget', label: 'Estimated Budget' },
+    { key: 'credit_limit', label: 'Credit Limit' },
+    { key: 'payment_terms', label: 'Payment Terms' },
+    { key: 'currency', label: 'Currency' },
+    { key: 'tax_id', label: 'Tax ID' },
+    { key: 'sales_rep', label: 'Sales Rep' },
+    { key: 'primary_contact', label: 'Primary Contact' },
+    { key: 'billing_account_name', label: 'Billing Account Name' },
+  ],
+  customer: [
+    { key: 'account_email', label: 'Account Email' },
+  ],
+};
+
 export default function WorkflowBuilderPage() {
   const { id = '' } = useParams();
+  const qc = useQueryClient();
   const { data: def, isLoading, error } = useQuery({
     queryKey: ['workflow', id],
     queryFn: () => workflowService.get(id),
+  });
+
+  const toggle = useMutation({
+    mutationFn: (enabled: boolean) => workflowService.setEnabled(id, enabled),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workflow', id] });
+      qc.invalidateQueries({ queryKey: ['workflows'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner /></div>;
   if (error || !def) return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load workflow.')}</ErrorNote></div>;
 
   const stateById = new Map<string, WorkflowState>(def.states.map((s) => [s.id, s]));
+  const baseFields = BASE_FIELD_LABELS[def.workflow.key.toLowerCase()] ?? [];
 
   return (
     <div className="space-y-6 p-6">
       <Link to="/config/workflows" className="inline-flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-800">
-        <ArrowLeft className="size-3.5" /> All workflows
+        <ArrowLeft className="size-3.5" /> All forms
       </Link>
 
-      <PageHeader
-        title={`Configure: ${def.workflow.name}`}
-        subtitle={def.workflow.description || def.workflow.key}
-        action={<Badge color={def.workflow.enabled ? '#22c55e' : '#a8a29e'}>{def.workflow.enabled ? 'enabled' : 'disabled'}</Badge>}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHeader
+          title={`Configure: ${def.workflow.name}`}
+          subtitle={def.workflow.description || def.workflow.key}
+        />
+        <div className="flex items-center gap-2">
+          <Badge color={def.workflow.enabled ? '#22c55e' : '#a8a29e'}>
+            {def.workflow.enabled ? 'enabled' : 'disabled'}
+          </Badge>
+          <button
+            type="button"
+            aria-label={def.workflow.enabled ? `Disable ${def.workflow.name}` : `Enable ${def.workflow.name}`}
+            onClick={() => toggle.mutate(!def.workflow.enabled)}
+            disabled={toggle.isPending}
+            className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition-colors hover:bg-stone-100 disabled:opacity-50 dark:border-stone-700 dark:hover:bg-stone-800"
+          >
+            {def.workflow.enabled ? 'Disable' : 'Enable'}
+          </button>
+        </div>
+      </div>
+
+      {/* Base fields — read-only */}
+      <section className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
+        <div className="mb-3">
+          <h2 className="text-sm font-bold">Base fields</h2>
+          <p className="text-xs text-stone-500">
+            Built-in fields that are always part of this form. These cannot be removed.
+          </p>
+        </div>
+        {baseFields.length === 0 ? (
+          <p className="text-xs text-stone-400">No base fields defined for this workflow.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {baseFields.map((f) => (
+              <span
+                key={f.key}
+                className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
+              >
+                <span className="font-semibold">{f.label}</span>
+                <span className="text-stone-400">· {f.key}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* States */}
       <section className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
@@ -76,6 +172,7 @@ function FieldsSection({ workflowId, fields }: { workflowId: string; fields: Fie
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const refresh = () => qc.invalidateQueries({ queryKey: ['workflow', workflowId] });
+  const cap = 15;
 
   const del = useMutation({
     mutationFn: (fieldId: string) => workflowService.deleteField(workflowId, fieldId),
@@ -87,19 +184,25 @@ function FieldsSection({ workflowId, fields }: { workflowId: string; fields: Fie
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-sm font-bold">Custom fields</h2>
-          <p className="text-xs text-stone-500">{fields.length} / 15 used</p>
+          <p className="text-xs text-stone-500">{fields.length} / {cap} used</p>
         </div>
-        <Button size="sm" onClick={() => setOpen((v) => !v)} className="gap-1">
+        <Button size="sm" onClick={() => setOpen((v) => !v)} className="gap-1" disabled={fields.length >= cap}>
           <Plus className="size-3.5" /> Add field
         </Button>
       </div>
 
-      {open && <AddFieldForm workflowId={workflowId} disabled={fields.length >= 15} onDone={() => { setOpen(false); refresh(); }} />}
+      {open && (
+        <AddFieldForm
+          workflowId={workflowId}
+          disabled={fields.length >= cap}
+          onDone={() => { setOpen(false); refresh(); }}
+        />
+      )}
 
       <div className="space-y-1.5">
         {fields.map((f) => (
           <div key={f.id} className="flex items-center justify-between rounded-lg border border-stone-200 px-3 py-2 text-sm dark:border-stone-800">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold">{f.label}</span>
               <Badge>{f.dataType}</Badge>
               <span className="text-[11px] text-stone-400">key: {f.key}</span>
@@ -117,6 +220,9 @@ function FieldsSection({ workflowId, fields }: { workflowId: string; fields: Fie
             </button>
           </div>
         ))}
+        {fields.length === 0 && (
+          <p className="text-xs text-stone-400 py-2">No custom fields yet. Add one above.</p>
+        )}
       </div>
       {del.error && <div className="mt-2"><ErrorNote>{apiErrorMessage(del.error)}</ErrorNote></div>}
     </section>
@@ -147,12 +253,12 @@ function AddFieldForm({ workflowId, disabled, onDone }: { workflowId: string; di
       {disabled && <div className="mb-3"><ErrorNote>Field cap reached (15). Delete one to add another.</ErrorNote></div>}
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="fkey">Key</Label>
-          <Input id="fkey" value={key} onChange={(e) => setKey(e.target.value)} placeholder="industry" />
+          <Label htmlFor="fkey">Key <span className="text-stone-400 font-normal">(snake_case)</span></Label>
+          <Input id="fkey" value={key} onChange={(e) => setKey(e.target.value)} placeholder="referral_source" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="flabel">Label</Label>
-          <Input id="flabel" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Industry" />
+          <Input id="flabel" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Referral Source" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="ftype">Type</Label>
