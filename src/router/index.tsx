@@ -16,6 +16,7 @@ import ConfigHomePage from '@/pages/config/ConfigHomePage';
 import ConfigWorkflowsPage from '@/pages/config/WorkflowsPage';
 import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
 import RolesPage from '@/pages/config/RolesPage';
+import CreateRolePage from '@/pages/config/CreateRolePage';
 
 export const router = createBrowserRouter([
   // Public onboarding routes: self-service application + password setup.
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
       { path: 'config/workflows', element: <ConfigWorkflowsPage /> },
       { path: 'config/workflows/:id', element: <WorkflowBuilderPage /> },
       { path: 'config/roles', element: <RolesPage /> },
+      { path: 'config/roles/new', element: <CreateRolePage /> },
 
       // Platform-owner only: customer onboarding (provisions tenants).
       { path: 'customer/onboarding', element: <OnboardingPage /> },

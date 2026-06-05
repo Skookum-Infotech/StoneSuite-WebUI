@@ -1,22 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Lock, ShieldCheck, X, ChevronDown } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Plus, Trash2, Lock, ShieldCheck } from 'lucide-react';
 import { rbacService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge, Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
-import { sidebarNav } from '@/config/sidebarNav';
 import { cn } from '@/lib/utils';
-import type { Grant, Scope, Role } from '@/types/tenant';
-
-// ---------------------------------------------------------------------------
-// Action display — canonical order and human labels shown per resource row.
-// ---------------------------------------------------------------------------
-
-const ACTION_ORDER = ['read', 'create', 'update', 'delete', 'transition', 'configure'];
+import type { Grant, Role } from '@/types/tenant';
 
 const ACTION_LABELS: Record<string, string> = {
   read:       'Read',
@@ -27,52 +16,38 @@ const ACTION_LABELS: Record<string, string> = {
   configure:  'Configure',
 };
 
-// ---------------------------------------------------------------------------
+const ACTION_COLORS: Record<string, string> = {
+  read:       'bg-stone-100 text-stone-600 border-stone-200',
+  create:     'bg-green-50 text-green-700 border-green-200',
+  update:     'bg-blue-50 text-blue-700 border-blue-200',
+  delete:     'bg-red-50 text-red-700 border-red-200',
+  transition: 'bg-purple-50 text-purple-700 border-purple-200',
+  configure:  'bg-amber-50 text-amber-700 border-amber-200',
+};
 
-interface ResourceRow {
-  id: string;
-  resource: string;
-  label: string;
-}
-interface PermModule {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  rows: ResourceRow[];
-}
-
-function buildPermModules(): PermModule[] {
-  const modules: PermModule[] = [];
-  for (const section of sidebarNav.sections) {
-    if (section.platformAdminOnly) continue;
-    for (const entry of section.entries) {
-      if (entry.type === 'link') {
-        if (!entry.permission || entry.platformAdminOnly) continue;
-        modules.push({
-          id: entry.id,
-          label: entry.label,
-          icon: entry.icon,
-          rows: [{ id: entry.id, resource: entry.permission.resource, label: entry.label }],
-        });
-        continue;
-      }
-      const rows: ResourceRow[] = [];
-      for (const child of entry.children) {
-        if (!child.permission || child.platformAdminOnly) continue;
-        rows.push({ id: child.id, resource: child.permission.resource, label: child.label });
-      }
-      if (rows.length === 0) continue;
-      modules.push({ id: entry.id, label: entry.label, icon: entry.icon, rows });
+// Groups grants by resource, preserving the first scope encountered.
+function groupByResource(permissions: Grant[]) {
+  const map = new Map<string, { actions: string[]; scope: string }>();
+  for (const p of permissions) {
+    const existing = map.get(p.resource);
+    if (existing) {
+      if (!existing.actions.includes(p.action)) existing.actions.push(p.action);
+    } else {
+      map.set(p.resource, { actions: [p.action], scope: p.scope });
     }
   }
-  return modules;
+  return map;
 }
 
-// ---------------------------------------------------------------------------
+function ResourceName({ resource }: { resource: string }) {
+  if (resource === '*') return <span className="text-xs font-semibold text-stone-700">All Resources</span>;
+  const label = resource.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return <span className="text-xs font-semibold text-stone-700 w-32 shrink-0">{label}</span>;
+}
 
 export default function RolesPage() {
+  const navigate = useNavigate();
   const qc = useQueryClient();
-  const [showCreate, setShowCreate] = useState(false);
   const rolesQ = useQuery({ queryKey: ['roles'], queryFn: rbacService.listRoles });
 
   const del = useMutation({
@@ -95,329 +70,106 @@ export default function RolesPage() {
               <p className="text-xs text-stone-500">Control what each role can see and do.</p>
             </div>
           </div>
-          {!showCreate && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50 cursor-pointer"
-            >
-              <Plus className="size-3.5" />
-              New Role
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/config/roles/new')}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50 cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            New Role
+          </button>
         </div>
 
-        {/* Content */}
+        {/* Role list */}
         <div className="mt-5 flex flex-1 flex-col min-h-0 border-t border-stone-100 pt-4 space-y-3">
-
-          {showCreate && (
-            <CreateRoleForm
-              onClose={() => setShowCreate(false)}
-              onDone={() => { setShowCreate(false); qc.invalidateQueries({ queryKey: ['roles'] }); }}
-            />
-          )}
-
           {rolesQ.isLoading && <Spinner label="Loading roles…" />}
           {rolesQ.isError && <ErrorNote>{apiErrorMessage(rolesQ.error)}</ErrorNote>}
-          {!rolesQ.isLoading && !rolesQ.isError && rolesQ.data?.length === 0 && !showCreate && (
+          {!rolesQ.isLoading && !rolesQ.isError && rolesQ.data?.length === 0 && (
             <EmptyState>No roles yet — create your first one.</EmptyState>
           )}
 
-          {rolesQ.data?.map((role: Role) => (
-            <div
-              key={role.id}
-              className="flex items-start justify-between gap-3 rounded-xl border border-stone-200 px-4 py-3"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-bold text-stone-800">{role.name}</span>
-                  <Badge>{role.key}</Badge>
-                  {role.isSystem && (
-                    <Badge color="#8b5cf6">
-                      <Lock className="size-3" /> system
-                    </Badge>
+          {rolesQ.data?.map((role: Role) => {
+            const grouped = groupByResource(role.permissions);
+            const isWildcard = grouped.has('*');
+
+            return (
+              <div
+                key={role.id}
+                className="rounded-xl border border-stone-200 bg-white overflow-hidden"
+              >
+                {/* Role header bar */}
+                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50/70 border-b border-stone-100">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="text-sm font-bold text-stone-800">{role.name}</span>
+                    <Badge>{role.key}</Badge>
+                    {role.isSystem && (
+                      <Badge color="#8b5cf6">
+                        <Lock className="size-3" /> system
+                      </Badge>
+                    )}
+                  </div>
+                  {!role.isSystem && (
+                    <button
+                      type="button"
+                      aria-label={`Delete role ${role.name}`}
+                      onClick={() => del.mutate(role.id)}
+                      disabled={del.isPending}
+                      className="shrink-0 rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 transition-colors"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
                   )}
                 </div>
-                {role.description && (
-                  <p className="mt-0.5 text-[11px] text-stone-500">{role.description}</p>
-                )}
-                <div className="mt-2 flex flex-wrap gap-1.5">
+
+                {/* Role body */}
+                <div className="px-4 py-3">
+                  {role.description && (
+                    <p className="mb-3 text-[11px] text-stone-500">{role.description}</p>
+                  )}
+
                   {role.permissions.length === 0 && (
-                    <span className="text-[11px] text-stone-400">No permissions</span>
+                    <p className="text-[11px] text-stone-400 italic">No permissions assigned.</p>
                   )}
-                  {role.permissions.map((p, i) => (
-                    <Badge key={i}>{p.resource}:{p.action} · {p.scope}</Badge>
-                  ))}
-                </div>
-              </div>
-              {!role.isSystem && (
-                <button
-                  type="button"
-                  aria-label={`Delete role ${role.name}`}
-                  onClick={() => del.mutate(role.id)}
-                  disabled={del.isPending}
-                  className="shrink-0 rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              )}
-            </div>
-          ))}
 
-          {del.error && <ErrorNote>{apiErrorMessage(del.error)}</ErrorNote>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-
-// Per-row selection: which actions are checked + what scope applies.
-type RowSelection = { actions: string[]; scope: Scope };
-
-function CreateRoleForm({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
-  const catalogQ = useQuery({ queryKey: ['catalog'], queryFn: rbacService.catalog });
-  const [key, setKey] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-
-  // selected is keyed by row.id — each submodule is fully independent.
-  const [selected, setSelected] = useState<Record<string, RowSelection>>({});
-
-  const modules = useMemo(() => buildPermModules(), []);
-  const [openModules, setOpenModules] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(modules.map((m) => [m.id, true])),
-  );
-
-  // resource → actions available in the catalog (e.g. lead → [read, create, update, delete, transition])
-  const actionsByResource = useMemo(() => {
-    const map: Record<string, string[]> = {};
-    for (const p of catalogQ.data?.permissions ?? []) {
-      (map[p.resource] ??= []).push(p.action);
-    }
-    return map;
-  }, [catalogQ.data]);
-
-  const scopes = catalogQ.data?.scopes ?? (['all', 'team', 'own'] as Scope[]);
-
-  function toggleAction(rowId: string, action: string) {
-    setSelected((prev) => {
-      const current = prev[rowId]?.actions ?? [];
-      const has = current.includes(action);
-      const next = has ? current.filter((a) => a !== action) : [...current, action];
-      if (next.length === 0) {
-        const { [rowId]: _, ...rest } = prev;
-        return rest;
-      }
-      return { ...prev, [rowId]: { actions: next, scope: prev[rowId]?.scope ?? 'all' } };
-    });
-  }
-
-  function setScope(rowId: string, scope: Scope) {
-    setSelected((prev) =>
-      prev[rowId] ? { ...prev, [rowId]: { ...prev[rowId], scope } } : prev,
-    );
-  }
-
-  const create = useMutation({
-    mutationFn: () => {
-      const permissions: Grant[] = [];
-      for (const mod of modules) {
-        for (const row of mod.rows) {
-          const sel = selected[row.id];
-          if (!sel || sel.actions.length === 0) continue;
-          for (const action of sel.actions) {
-            permissions.push({ resource: row.resource, action, scope: sel.scope });
-          }
-        }
-      }
-      return rbacService.createRole(key.trim(), name.trim(), description.trim(), permissions);
-    },
-    onSuccess: onDone,
-  });
-
-  return (
-    <div className="rounded-xl border border-stone-200 bg-stone-50">
-      {/* Form header */}
-      <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
-            <ShieldCheck className="size-3.5" />
-          </div>
-          <span className="text-sm font-bold text-stone-900">New Role</span>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Cancel"
-          className="rounded-lg p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-700"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-
-      {/* Identity */}
-      <div className="grid gap-3 px-4 py-4 sm:grid-cols-3 border-b border-stone-200">
-        <div className="space-y-1">
-          <Label htmlFor="rname" className="text-xs">Display name</Label>
-          <Input id="rname" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sales Rep" className="h-8 text-xs" />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="rkey" className="text-xs">Key</Label>
-          <Input id="rkey" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sales_rep" className="h-8 text-xs" />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="rdesc" className="text-xs">Description</Label>
-          <Input id="rdesc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" className="h-8 text-xs" />
-        </div>
-      </div>
-
-      {/* Permissions */}
-      <div className="px-4 py-3">
-        <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-stone-500">Access</p>
-
-        {catalogQ.isLoading && <Spinner label="Loading…" />}
-        {catalogQ.isError && <ErrorNote>{apiErrorMessage(catalogQ.error)}</ErrorNote>}
-
-        {!catalogQ.isLoading && (
-          <div className="space-y-1.5">
-            {modules.map((mod) => {
-              const Icon = mod.icon;
-              const open = openModules[mod.id] ?? true;
-              const granted = mod.rows.filter((r) => (selected[r.id]?.actions.length ?? 0) > 0).length;
-              return (
-                <div key={mod.id} className="overflow-hidden rounded-lg border border-stone-200 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => setOpenModules((s) => ({ ...s, [mod.id]: !open }))}
-                    aria-expanded={open}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-stone-50 transition-colors"
-                  >
+                  {isWildcard ? (
                     <div className="flex items-center gap-2">
-                      <Icon className="size-3.5 text-stone-400" />
-                      <span className="text-xs font-semibold text-stone-700">{mod.label}</span>
-                      {granted > 0 && (
-                        <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-dark">
-                          {granted}
-                        </span>
-                      )}
+                      <span className="text-xs font-semibold text-stone-600">Full Access</span>
+                      <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] text-stone-400">
+                        {grouped.get('*')?.scope}
+                      </span>
                     </div>
-                    <ChevronDown
-                      className={cn('size-3.5 text-stone-400 transition-transform duration-200', open && 'rotate-180')}
-                    />
-                  </button>
-
-                  {open && (
-                    <div className="border-t border-stone-100 divide-y divide-stone-100">
-                      {mod.rows.map((row) => (
-                        <PermissionRow
-                          key={row.id}
-                          row={row}
-                          available={ACTION_ORDER.filter((a) => (actionsByResource[row.resource] ?? []).includes(a))}
-                          checkedActions={selected[row.id]?.actions ?? []}
-                          scope={selected[row.id]?.scope ?? 'all'}
-                          scopes={scopes}
-                          onToggle={(action) => toggleAction(row.id, action)}
-                          onScope={(sc) => setScope(row.id, sc)}
-                        />
+                  ) : (
+                    <div className="space-y-2">
+                      {[...grouped.entries()].map(([resource, { actions, scope }]) => (
+                        <div key={resource} className="flex flex-wrap items-center gap-2">
+                          <ResourceName resource={resource} />
+                          <div className="flex flex-wrap gap-1">
+                            {actions.map((action) => (
+                              <span
+                                key={action}
+                                className={cn(
+                                  'inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold',
+                                  ACTION_COLORS[action] ?? 'bg-stone-100 text-stone-600 border-stone-200',
+                                )}
+                              >
+                                {ACTION_LABELS[action] ?? action}
+                              </span>
+                            ))}
+                          </div>
+                          <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] text-stone-400">
+                            {scope}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+              </div>
+            );
+          })}
 
-      {/* Footer */}
-      <div className="flex items-center justify-end gap-2 border-t border-stone-200 px-4 py-3">
-        {create.error && (
-          <div className="mr-auto">
-            <ErrorNote>{apiErrorMessage(create.error)}</ErrorNote>
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={create.isPending}
-          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-50 disabled:opacity-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => create.mutate()}
-          disabled={create.isPending || !key.trim() || !name.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50 disabled:opacity-50"
-        >
-          {create.isPending ? 'Creating…' : 'Create Role'}
-        </button>
-      </div>
-    </div>
-  );
-}
+          {del.error && <ErrorNote>{apiErrorMessage(del.error)}</ErrorNote>}
+        </div>
 
-// ---------------------------------------------------------------------------
-
-function PermissionRow({
-  row,
-  available,
-  checkedActions,
-  scope,
-  scopes,
-  onToggle,
-  onScope,
-}: {
-  row: ResourceRow;
-  available: string[];       // actions this resource supports, in canonical order
-  checkedActions: string[];  // actions currently selected
-  scope: Scope;
-  scopes: Scope[];
-  onToggle: (action: string) => void;
-  onScope: (scope: Scope) => void;
-}) {
-  const hasAny = checkedActions.length > 0;
-
-  return (
-    <div className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 shrink-0">
-        <p className="text-xs font-medium text-stone-700">{row.label}</p>
-        <p className="text-[10px] text-stone-400">{row.resource}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {available.length === 0 && (
-          <span className="text-[11px] text-stone-300 italic">No actions in catalog</span>
-        )}
-        {available.map((action) => {
-          const checked = checkedActions.includes(action);
-          return (
-            <label
-              key={action}
-              className="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-stone-600"
-            >
-              <Checkbox
-                checked={checked}
-                onCheckedChange={() => onToggle(action)}
-                aria-label={`${ACTION_LABELS[action] ?? action} for ${row.label}`}
-              />
-              {ACTION_LABELS[action] ?? action}
-            </label>
-          );
-        })}
-
-        <select
-          aria-label={`Scope for ${row.label}`}
-          value={scope}
-          disabled={!hasAny}
-          onChange={(e) => onScope(e.target.value as Scope)}
-          className="h-6 rounded border border-stone-200 bg-white px-1.5 text-[11px] text-stone-600 disabled:opacity-40"
-        >
-          {scopes.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
       </div>
     </div>
   );
