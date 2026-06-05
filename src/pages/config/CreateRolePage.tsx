@@ -397,13 +397,13 @@ export default function CreateRolePage() {
                                       return (
                                         <th
                                           key={action}
-                                          className="px-2 py-2 text-center min-w-[80px]"
+                                          className="w-20 py-2 text-center"
                                         >
                                           <button
                                             type="button"
                                             onClick={() => toggleColumn(mod, action)}
                                             className={cn(
-                                              'inline-flex items-center justify-center rounded px-2 py-1 text-[10px] font-bold uppercase tracking-widest transition',
+                                              'mx-auto flex items-center justify-center rounded px-2 py-1 text-[10px] font-bold uppercase tracking-widest transition',
                                               allHave
                                                 ? 'bg-brand/15 text-brand-dark hover:bg-brand/25'
                                                 : 'text-stone-400 hover:bg-stone-100 hover:text-stone-700',
@@ -453,16 +453,18 @@ export default function CreateRolePage() {
                                           const isAvail = available.includes(action);
                                           const isChk   = checkedActions.includes(action);
                                           return (
-                                            <td key={action} className="px-2 py-2.5 text-center">
-                                              {isAvail ? (
-                                                <Checkbox
-                                                  checked={isChk}
-                                                  onCheckedChange={() => toggleAction(row.id, action)}
-                                                  aria-label={`${ACTION_LABELS[action]} for ${row.label}`}
-                                                />
-                                              ) : (
-                                                <span className="text-stone-200">—</span>
-                                              )}
+                                            <td key={action} className="w-20 py-2.5">
+                                              <div className="flex items-center justify-center">
+                                                {isAvail ? (
+                                                  <Checkbox
+                                                    checked={isChk}
+                                                    onCheckedChange={() => toggleAction(row.id, action)}
+                                                    aria-label={`${ACTION_LABELS[action]} for ${row.label}`}
+                                                  />
+                                                ) : (
+                                                  <span className="text-stone-200">—</span>
+                                                )}
+                                              </div>
                                             </td>
                                           );
                                         })}
