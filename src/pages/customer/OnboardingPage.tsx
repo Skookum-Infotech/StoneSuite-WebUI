@@ -226,12 +226,18 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
       qc.invalidateQueries({ queryKey: ['tenants'] });
     },
   });
+
   const resentNote =
     resend.isSuccess && resend.data
       ? resend.data.emailSent
         ? 'Invite re-sent — email delivered.'
         : 'Invite re-issued with a fresh key & expiry. Email could not be sent — copy the link below.'
       : null;
+
+  // Hide resend when there are no invites at all, or every invite has been accepted.
+  const hideResend =
+    invitesQ.data !== undefined &&
+    (invitesQ.data.length === 0 || invitesQ.data.every((inv) => inv.status === 'accepted'));
 
   const copy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -243,28 +249,30 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
     <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-3">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-bold text-stone-600">Invites</h3>
-        <div className="flex items-center gap-2">
-          <label className="text-label font-semibold text-stone-500">
-            Expires in (h)
-            <input
-              type="number"
-              min={1}
-              value={hours}
-              onChange={(e) => setHours(Number(e.target.value) || 24)}
-              aria-label="Resend expiry in hours"
-              className="ml-1.5 w-16 rounded border border-stone-300 px-1.5 py-1 text-xs"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => resend.mutate()}
-            disabled={resend.isPending}
-            className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950 disabled:opacity-50"
-          >
-            <RefreshCw className={`size-3 ${resend.isPending ? 'animate-spin' : ''}`} />
-            {resend.isPending ? 'Sending…' : 'Resend invite'}
-          </button>
-        </div>
+        {!hideResend && (
+          <div className="flex items-center gap-2">
+            <label className="text-label font-semibold text-stone-500">
+              Expires in (h)
+              <input
+                type="number"
+                min={1}
+                value={hours}
+                onChange={(e) => setHours(Number(e.target.value) || 24)}
+                aria-label="Resend expiry in hours"
+                className="ml-1.5 w-16 rounded border border-stone-300 px-1.5 py-1 text-xs"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => resend.mutate()}
+              disabled={resend.isPending}
+              className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950 disabled:opacity-50"
+            >
+              <RefreshCw className={`size-3 ${resend.isPending ? 'animate-spin' : ''}`} />
+              {resend.isPending ? 'Sending…' : 'Resend invite'}
+            </button>
+          </div>
+        )}
       </div>
 
       {invitesQ.isLoading && <Spinner label="Loading invites…" />}
@@ -274,7 +282,7 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
         <p className="mb-2 rounded-lg bg-brand/15 px-3 py-2 text-label font-medium text-stone-600">{resentNote}</p>
       )}
       {invitesQ.data && invitesQ.data.length === 0 && (
-        <EmptyState>No invites yet — use “Resend invite” to send one.</EmptyState>
+        <EmptyState>No invites yet.</EmptyState>
       )}
 
       <div className="space-y-2">
