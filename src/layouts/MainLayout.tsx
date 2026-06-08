@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import Sidebar from '@/components/Sidebar';
+import { GlobalSearch } from '@/components/GlobalSearch';
 import {
   Menu,
   ChevronRight,
@@ -21,9 +22,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const mobileSearchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isProfileOpen) return;
@@ -31,12 +30,6 @@ export default function MainLayout() {
     window.addEventListener('click', handleClose);
     return () => window.removeEventListener('click', handleClose);
   }, [isProfileOpen]);
-
-  useEffect(() => {
-    if (isMobileSearchOpen) {
-      mobileSearchRef.current?.focus();
-    }
-  }, [isMobileSearchOpen]);
 
   // Close mobile search when navigating
   useEffect(() => {
@@ -83,20 +76,7 @@ export default function MainLayout() {
             {/* Center: Global Search — desktop only (sm+) */}
             <div className="pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex">
               <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg">
-                <div className="relative flex items-center">
-                  <Search className="pointer-events-none absolute left-3 size-3.5 text-stone-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search leads, prospects, customers…"
-                    aria-label="Global search"
-                    className="h-9 w-full rounded-xl border border-stone-200 bg-stone-50/80 pl-8 pr-12 text-xs text-stone-700 placeholder:text-stone-400 focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 dark:border-stone-700 dark:bg-stone-900/40 dark:text-stone-200 dark:placeholder:text-stone-500 dark:focus:border-brand transition-all"
-                  />
-                  <kbd className="pointer-events-none absolute right-3 rounded border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-stone-400 shadow-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-500">
-                    ⌘K
-                  </kbd>
-                </div>
+                <GlobalSearch />
               </div>
             </div>
 
@@ -189,22 +169,15 @@ export default function MainLayout() {
           <div
             className={cn(
               'overflow-hidden transition-all duration-200 ease-in-out sm:hidden',
-              isMobileSearchOpen ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0',
+              isMobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
             )}
           >
             <div className="px-4 pb-3 pt-0">
-              <div className="relative flex items-center">
-                <Search className="pointer-events-none absolute left-3 size-3.5 text-stone-400" />
-                <input
-                  ref={mobileSearchRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search leads, prospects, customers…"
-                  aria-label="Global search"
-                  className="h-9 w-full rounded-xl border border-stone-200 bg-stone-50 pl-8 pr-3 text-xs text-stone-700 placeholder:text-stone-400 focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200 dark:placeholder:text-stone-500 transition-all"
-                />
-              </div>
+              <GlobalSearch
+                hideKbd
+                autoFocus={isMobileSearchOpen}
+                onNavigate={() => setIsMobileSearchOpen(false)}
+              />
             </div>
           </div>
         </header>
