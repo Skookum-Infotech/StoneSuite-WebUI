@@ -67,8 +67,6 @@ export const PRIMARY_SECTIONS: ProspectSection[] = [
         defaultValue: 'PROSPECT-In Discussion',
       },
       { key: 'comments', label: 'Comments', type: 'textarea' },
-      { key: 'customer_id', label: 'Customer ID', readOnly: true, placeholder: 'To Be Generated' },
-      { key: 'customer_id_auto', label: 'Auto-generate ID', type: 'checkbox', defaultValue: 'true' },
       { key: 'parent_company', label: 'Parent Company', placeholder: '<Type then tab>' },
       {
         key: 'sfdc_customer_status',

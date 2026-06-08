@@ -21,7 +21,7 @@ export default function LeadPage() {
               <Sparkles className="size-4.5" />
             </div>
             <div>
-              <h1 className="text-base font-bold tracking-tight text-stone-900">CRM — Leads</h1>
+              <h1 className="text-base font-bold tracking-tight text-stone-900">Leads</h1>
               <p className="text-xs text-stone-500">Track and manage your sales leads pipeline.</p>
             </div>
           </div>

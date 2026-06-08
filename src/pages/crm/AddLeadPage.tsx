@@ -134,14 +134,6 @@ export default function AddLeadPage() {
                     <option>Standard Lead Form</option>
                   </Select>
                 </FieldShell>
-                <FieldShell label="Lead ID">
-                  <div className="flex items-center gap-2">
-                    <input readOnly placeholder="To Be Generated" className={`${inputClass} flex-1 bg-stone-50 text-stone-400`} />
-                    <label className="flex items-center gap-1 text-2xs text-stone-500 cursor-pointer">
-                      <input type="checkbox" defaultChecked className="rounded" /> AUTO
-                    </label>
-                  </div>
-                </FieldShell>
                 <FieldShell label="Type" required>
                   <div className="flex items-center gap-4 pt-0.5">
                     {(['Company', 'Individual'] as LeadType[]).map((t) => (
@@ -175,9 +167,38 @@ export default function AddLeadPage() {
                   </Select>
                 </FieldShell>
                 <FieldShell label="Default Order Priority"><input name="defaultOrderPriority" className={inputClass} /></FieldShell>
-                <FieldShell label="Sales Rep"><Select name="salesRep"><option value="">— Select —</option></Select></FieldShell>
-                <FieldShell label="Territory"><Select name="territory"><option value="">— Select —</option></Select></FieldShell>
-                <FieldShell label="Partner"><Select name="partner"><option value="">— Select —</option></Select></FieldShell>
+                <FieldShell label="Sales Rep">
+                  <Select name="salesRep">
+                    <option value="">— Select —</option>
+                    <option>Alex Johnson</option>
+                    <option>Maria Garcia</option>
+                    <option>James Lee</option>
+                    <option>Sarah Chen</option>
+                    <option>David Kim</option>
+                  </Select>
+                </FieldShell>
+                <FieldShell label="Territory">
+                  <Select name="territory">
+                    <option value="">— Select —</option>
+                    <option>North America – East</option>
+                    <option>North America – West</option>
+                    <option>EMEA</option>
+                    <option>APAC</option>
+                    <option>LATAM</option>
+                    <option>Global</option>
+                  </Select>
+                </FieldShell>
+                <FieldShell label="Partner">
+                  <Select name="partner">
+                    <option value="">— Select —</option>
+                    <option>Accenture</option>
+                    <option>Deloitte Digital</option>
+                    <option>KPMG</option>
+                    <option>PwC</option>
+                    <option>Salesforce Partner Network</option>
+                    <option>None</option>
+                  </Select>
+                </FieldShell>
               </div>
             </div>
           </Section>
@@ -196,13 +217,30 @@ export default function AddLeadPage() {
           <Section title="Classification">
             <div className="grid grid-cols-3 gap-x-6 gap-y-3">
               <FieldShell label="Primary Subsidiary" required>
-                <Select name="primarySubsidiary"><option value="">— Select —</option></Select>
+                <Select name="primarySubsidiary">
+                  <option value="">— Select —</option>
+                  <option>Talkdesk Inc.</option>
+                  <option>Talkdesk UK Ltd.</option>
+                  <option>Talkdesk Portugal</option>
+                  <option>Talkdesk Germany GmbH</option>
+                  <option>Talkdesk Australia Pty Ltd.</option>
+                </Select>
               </FieldShell>
               <FieldShell label="Email for Payment Notification">
                 <input name="emailForPaymentNotification" type="email" className={inputClass} />
               </FieldShell>
               <FieldShell label="SFDC Account ID"><input name="sfdcAccountId" className={inputClass} /></FieldShell>
-              <FieldShell label="SFDC Customer Status"><Select name="sfdcCustomerStatus"><option value="">— Select —</option></Select></FieldShell>
+              <FieldShell label="SFDC Customer Status">
+                <Select name="sfdcCustomerStatus">
+                  <option value="">— Select —</option>
+                  <option>Active</option>
+                  <option>Inactive</option>
+                  <option>On Hold</option>
+                  <option>Churned</option>
+                  <option>Prospect</option>
+                  <option>Trial</option>
+                </Select>
+              </FieldShell>
               <FieldShell label="CRM Account Owner"><input name="crmAccountOwner" className={inputClass} /></FieldShell>
               <FieldShell label="Prev External ID"><input name="prevExternalId" className={inputClass} /></FieldShell>
               <FieldShell label="Customer Type">

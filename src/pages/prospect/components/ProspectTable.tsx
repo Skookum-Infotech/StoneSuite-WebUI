@@ -1,55 +1,59 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import type { Lead } from '@/types/lead';
+import type { Prospect } from '@/types/prospect';
 
-type SortField = 'leadId' | 'name' | 'createdAt' | 'updatedAt';
+type SortField = 'id' | 'name' | 'createdAt' | 'updatedAt';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 10;
 
-const LEAD_STATUSES = [
-  'LEAD-Unqualified',
-  'LEAD-Qualified',
-  'LEAD-New',
-  'LEAD-In Progress',
-  'LEAD-Converted',
-  'LEAD-Dead',
-] as const;
-
-const statusStyles: Record<string, string> = {
-  'LEAD-Unqualified': 'bg-stone-100 text-stone-600',
-  'LEAD-Qualified':   'bg-blue-100 text-blue-700',
-  'LEAD-New':         'bg-purple-100 text-purple-700',
-  'LEAD-In Progress': 'bg-amber-100 text-amber-700',
-  'LEAD-Converted':   'bg-green-100 text-green-700',
-  'LEAD-Dead':        'bg-red-100 text-red-600',
-};
-
-function displayName(lead: Lead): string {
-  if (lead.type === 'Individual') {
-    return [lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.companyName || '';
-  }
-  return lead.companyName || '';
-}
-
 const SORT_LABELS: Record<SortField, string> = {
-  leadId:    'Document ID',
+  id:        'Document ID',
   name:      'Document Name',
   createdAt: 'Date Created',
   updatedAt: 'Date Modified',
 };
 
-type Props = { leads: Lead[]; isLoading?: boolean };
+const statusStyles: Record<string, string> = {
+  active:      'bg-green-100 text-green-700',
+  inactive:    'bg-stone-100 text-stone-500',
+  pending:     'bg-amber-100 text-amber-700',
+  suspended:   'bg-red-100 text-red-600',
+  prospect:    'bg-blue-100 text-blue-700',
+  customer:    'bg-emerald-100 text-emerald-700',
+};
 
-export function LeadTable({ leads, isLoading }: Props) {
+function shortId(id: string): string {
+  return id.length > 8 ? `…${id.slice(-8)}` : id;
+}
+
+function statusBadgeClass(status: string): string {
+  return statusStyles[status?.toLowerCase()] ?? 'bg-stone-100 text-stone-600';
+}
+
+type Props = {
+  prospects: Prospect[];
+  isLoading?: boolean;
+};
+
+export function ProspectTable({ prospects, isLoading }: Props) {
+  const navigate = useNavigate();
+
   const [idFilter, setIdFilter]         = useState('');
   const [nameFilter, setNameFilter]     = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [sortBy, setSortBy]             = useState<SortField>('leadId');
-  const [sortDir, setSortDir]           = useState<SortDir>('asc');
+  const [sortBy, setSortBy]             = useState<SortField>('createdAt');
+  const [sortDir, setSortDir]           = useState<SortDir>('desc');
   const [page, setPage]                 = useState(1);
 
   const hasFilters = idFilter || nameFilter || statusFilter;
+
+  // Derive unique statuses from the data for the filter dropdown
+  const uniqueStatuses = useMemo(
+    () => [...new Set(prospects.map((p) => p.status).filter(Boolean))].sort(),
+    [prospects],
+  );
 
   function clearFilters() {
     setIdFilter('');
@@ -69,22 +73,23 @@ export function LeadTable({ leads, isLoading }: Props) {
   }
 
   const filtered = useMemo(() => {
-    return leads.filter((lead) => {
-      if (idFilter && !lead.leadId?.toLowerCase().includes(idFilter.toLowerCase())) return false;
-      if (nameFilter && !displayName(lead).toLowerCase().includes(nameFilter.toLowerCase())) return false;
-      if (statusFilter && lead.leadStatus !== statusFilter) return false;
+    return prospects.filter((p) => {
+      const docId = p.customer_id || p.id;
+      if (idFilter && !docId.toLowerCase().includes(idFilter.toLowerCase())) return false;
+      if (nameFilter && !p.company_name?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
+      if (statusFilter && p.status !== statusFilter) return false;
       return true;
     });
-  }, [leads, idFilter, nameFilter, statusFilter]);
+  }, [prospects, idFilter, nameFilter, statusFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       let av = '';
       let bv = '';
-      if (sortBy === 'leadId')    { av = a.leadId ?? '';    bv = b.leadId ?? ''; }
-      if (sortBy === 'name')      { av = displayName(a);    bv = displayName(b); }
-      if (sortBy === 'createdAt') { av = a.createdAt ?? ''; bv = b.createdAt ?? ''; }
-      if (sortBy === 'updatedAt') { av = a.updatedAt ?? ''; bv = b.updatedAt ?? ''; }
+      if (sortBy === 'id')        { av = a.customer_id || a.id; bv = b.customer_id || b.id; }
+      if (sortBy === 'name')      { av = a.company_name ?? '';  bv = b.company_name ?? ''; }
+      if (sortBy === 'createdAt') { av = a.created_at ?? '';    bv = b.created_at ?? ''; }
+      if (sortBy === 'updatedAt') { av = a.updated_at ?? '';    bv = b.updated_at ?? ''; }
       const cmp = av.localeCompare(bv, undefined, { numeric: true });
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -130,14 +135,14 @@ export function LeadTable({ leads, isLoading }: Props) {
           />
         </div>
 
-        {/* Status */}
+        {/* Status — derived from actual data */}
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           className="h-8 rounded-md border border-stone-200 bg-white px-2.5 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
         >
           <option value="">All Statuses</option>
-          {LEAD_STATUSES.map((s) => (
+          {uniqueStatuses.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
@@ -184,31 +189,50 @@ export function LeadTable({ leads, isLoading }: Props) {
           <table className="w-full text-left text-xs">
             <thead className="bg-brand/20 text-2xs uppercase tracking-wide text-brand-dark">
               <tr>
-                <th className="px-3 py-2.5 font-semibold">Lead ID</th>
-                <th className="px-3 py-2.5 font-semibold">Name / Company</th>
-                <th className="px-3 py-2.5 font-semibold">Type</th>
-                <th className="px-3 py-2.5 font-semibold">Email</th>
-                <th className="px-3 py-2.5 font-semibold">Phone</th>
+                <th className="px-3 py-2.5 font-semibold">ID</th>
+                <th className="px-3 py-2.5 font-semibold">Company Name</th>
                 <th className="px-3 py-2.5 font-semibold">Status</th>
+                <th className="px-3 py-2.5 font-semibold">Email</th>
+                <th className="px-3 py-2.5 font-semibold">Customer Type</th>
+                <th className="px-3 py-2.5 font-semibold">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {pageData.map((lead) => (
-                <tr key={lead.id} className="hover:bg-stone-50/70 transition-colors">
-                  <td className="px-3 py-2 font-mono text-stone-500">{lead.leadId || '—'}</td>
+              {pageData.map((prospect) => (
+                <tr
+                  key={prospect.id}
+                  onClick={() => navigate(`/prospects/${prospect.id}`)}
+                  className="cursor-pointer hover:bg-stone-50/70 transition-colors"
+                  aria-label={`View prospect ${prospect.company_name || prospect.id}`}
+                >
+                  <td className="px-3 py-2 font-mono text-stone-500">
+                    {prospect.customer_id ? prospect.customer_id : shortId(prospect.id)}
+                  </td>
                   <td className="px-3 py-2">
-                    <div className="font-semibold text-stone-900">{displayName(lead) || '—'}</div>
-                    {lead.type === 'Individual' && lead.companyName && (
-                      <div className="text-2xs text-stone-400">{lead.companyName}</div>
+                    <div className="font-semibold text-stone-900">
+                      {prospect.company_name || '(unnamed)'}
+                    </div>
+                    {prospect.billing_account_name && prospect.billing_account_name !== prospect.company_name && (
+                      <div className="text-2xs text-stone-400">{prospect.billing_account_name}</div>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-stone-600">{lead.type}</td>
-                  <td className="px-3 py-2 text-stone-600">{lead.email || '—'}</td>
-                  <td className="px-3 py-2 text-stone-600">{lead.phone || '—'}</td>
                   <td className="px-3 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${statusStyles[lead.leadStatus] ?? 'bg-stone-100 text-stone-600'}`}>
-                      {lead.leadStatus}
-                    </span>
+                    {prospect.status ? (
+                      <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${statusBadgeClass(prospect.status)}`}>
+                        {prospect.status}
+                      </span>
+                    ) : (
+                      <span className="text-stone-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-stone-600">{prospect.email || '—'}</td>
+                  <td className="px-3 py-2 text-stone-600">{prospect.customer_type || '—'}</td>
+                  <td className="px-3 py-2 text-stone-400">
+                    {prospect.created_at
+                      ? new Date(prospect.created_at).toLocaleDateString(undefined, {
+                          year: 'numeric', month: 'short', day: 'numeric',
+                        })
+                      : '—'}
                   </td>
                 </tr>
               ))}
@@ -218,17 +242,17 @@ export function LeadTable({ leads, isLoading }: Props) {
 
         {isLoading && (
           <div className="flex h-32 items-center justify-center text-xs text-stone-400">
-            Loading leads…
+            Loading prospects…
           </div>
         )}
-        {!isLoading && leads.length === 0 && (
+        {!isLoading && prospects.length === 0 && (
           <div className="flex h-32 items-center justify-center text-xs text-stone-400">
-            No leads added yet.
+            No prospects added yet.
           </div>
         )}
-        {!isLoading && leads.length > 0 && pageData.length === 0 && (
+        {!isLoading && prospects.length > 0 && pageData.length === 0 && (
           <div className="flex h-32 items-center justify-center text-xs text-stone-400">
-            No leads match the current filters.
+            No prospects match the current filters.
           </div>
         )}
       </div>
@@ -237,9 +261,7 @@ export function LeadTable({ leads, isLoading }: Props) {
       {sorted.length > 0 && (
         <div className="flex items-center justify-between pt-1">
           <span className="text-2xs text-stone-400">
-            {sorted.length === 0
-              ? 'No results'
-              : `Showing ${(safePageIndex - 1) * PAGE_SIZE + 1}–${Math.min(safePageIndex * PAGE_SIZE, sorted.length)} of ${sorted.length}`}
+            {`Showing ${(safePageIndex - 1) * PAGE_SIZE + 1}–${Math.min(safePageIndex * PAGE_SIZE, sorted.length)} of ${sorted.length}`}
           </span>
           <div className="flex items-center gap-2">
             <button
