@@ -189,7 +189,7 @@ export function ProspectTable({ prospects, isLoading }: Props) {
           <table className="w-full text-left text-xs">
             <thead className="bg-brand/20 text-2xs uppercase tracking-wide text-brand-dark">
               <tr>
-                <th className="px-3 py-2.5 font-semibold">ID</th>
+                <th className="px-3 py-2.5 font-semibold">Prospect ID</th>
                 <th className="px-3 py-2.5 font-semibold">Company Name</th>
                 <th className="px-3 py-2.5 font-semibold">Status</th>
                 <th className="px-3 py-2.5 font-semibold">Email</th>

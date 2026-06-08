@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
 import { leadService } from '@/services/leadService';
 import { workflowService } from '@/services/tenantServices';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { Section, FieldShell, inputClass } from '@/components/prospect/ProspectUI';
 import type { CreateLeadPayload, LeadType } from '@/types/lead';
@@ -29,7 +30,7 @@ export default function AddLeadPage() {
   });
   const customFields: FieldDefinition[] = leadDef?.fields ?? [];
 
-  const { mutate: createLead, isPending } = useMutation({
+  const { mutate: createLead, isPending, error: createError } = useMutation({
     mutationFn: (payload: CreateLeadPayload) => leadService.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -108,6 +109,12 @@ export default function AddLeadPage() {
             >
               Cancel
             </button>
+            {createError && (
+              <div className="flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
+                <AlertCircle className="size-3.5 shrink-0" />
+                {apiErrorMessage(createError, 'Failed to save lead. Please try again.')}
+              </div>
+            )}
           </div>
           <nav className="hidden sm:flex items-center gap-1 text-xs text-stone-400 font-medium">
             <span>CRM</span><span>/</span><span>Lead</span><span>/</span>

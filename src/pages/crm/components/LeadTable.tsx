@@ -195,7 +195,7 @@ export function LeadTable({ leads, isLoading }: Props) {
             <tbody className="divide-y divide-stone-100">
               {pageData.map((lead) => (
                 <tr key={lead.id} className="hover:bg-stone-50/70 transition-colors">
-                  <td className="px-3 py-2 font-mono text-stone-500">{lead.leadId || '—'}</td>
+                  <td className="px-3 py-2 font-mono text-stone-500">{lead.id || '—'}</td>
                   <td className="px-3 py-2">
                     <div className="font-semibold text-stone-900">{displayName(lead) || '—'}</div>
                     {lead.type === 'Individual' && lead.companyName && (
