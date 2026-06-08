@@ -12,7 +12,7 @@ const inviteSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   recipientName: z.string().optional(),
   contactEmail: z.string().min(1, 'Email is required').email('Enter a valid email'),
-  expiresInHours: z.coerce.number().int().min(1, 'Must be at least 1 hour').default(24),
+  expiresInHours: z.number().int().min(1, 'Must be at least 1 hour').default(24),
 });
 type InviteFields = z.infer<typeof inviteSchema>;
 
@@ -106,7 +106,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
               <input {...register('contactEmail')} type="email" placeholder="jane@acme.com" className={inputClass} aria-invalid={Boolean(errors.contactEmail)} />
             </Field>
             <Field label="Invite expires in (hours)" error={errors.expiresInHours?.message}>
-              <input {...register('expiresInHours')} type="number" min={1} className={inputClass} aria-invalid={Boolean(errors.expiresInHours)} />
+              <input {...register('expiresInHours', { valueAsNumber: true })} type="number" min={1} className={inputClass} aria-invalid={Boolean(errors.expiresInHours)} />
             </Field>
             {invite.error && <p className="text-xs text-red-600">{apiErrorMessage(invite.error)}</p>}
             <button type="submit" disabled={invite.isPending} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand py-2 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50">
