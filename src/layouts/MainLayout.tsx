@@ -33,7 +33,8 @@ export default function MainLayout() {
 
   // Close mobile search when navigating
   useEffect(() => {
-    setIsMobileSearchOpen(false);
+    const id = setTimeout(() => setIsMobileSearchOpen(false), 0);
+    return () => clearTimeout(id);
   }, [location.pathname]);
 
   if (!isAuthenticated) {
