@@ -16,13 +16,13 @@ export default function LeadPage() {
     <div className="flex-1 flex flex-col min-h-0">
       <div className="bg-white p-6 flex-1 flex flex-col min-h-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
-              <Sparkles className="size-4.5" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+              <Sparkles className="size-6" />
             </div>
             <div>
-              <h1 className="text-base font-bold tracking-tight text-stone-900">Leads</h1>
-              <p className="text-xs text-stone-500">Track and manage your sales leads pipeline.</p>
+              <h1 className="text-2xl font-bold tracking-tight text-stone-900">Leads</h1>
+              <p className="text-sm text-stone-500">Track and manage your sales leads pipeline.</p>
             </div>
           </div>
           <button

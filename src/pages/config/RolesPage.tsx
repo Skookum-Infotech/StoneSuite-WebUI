@@ -78,13 +78,13 @@ export default function RolesPage() {
     <div className="flex flex-1 flex-col min-h-0 bg-white">
 
       {/* Page header */}
-      <div className="flex items-center gap-2.5 border-b border-stone-100 px-6 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
-          <ShieldCheck className="size-4.5" />
+      <div className="flex items-center gap-3 border-b border-stone-100 px-6 py-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+          <ShieldCheck className="size-6" />
         </div>
         <div>
-          <h1 className="text-base font-bold tracking-tight text-stone-900">Roles & Access</h1>
-          <p className="text-xs text-stone-500">Control what each role can see and do.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Roles & Access</h1>
+          <p className="text-sm text-stone-500">Control what each role can see and do.</p>
         </div>
       </div>
 

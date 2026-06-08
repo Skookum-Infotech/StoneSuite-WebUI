@@ -38,13 +38,13 @@ export default function AddProspectPage() {
 
   return (
     <div className="flex-1 bg-stone-50 p-6">
-      <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
-          <UserPlus className="size-4.5" />
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+          <UserPlus className="size-6" />
         </div>
         <div>
-          <h1 className="text-base font-bold tracking-tight text-stone-900">Prospect</h1>
-          <p className="text-xs text-stone-500">Create a new prospect record.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Prospect</h1>
+          <p className="text-sm text-stone-500">Create a new prospect record.</p>
         </div>
       </div>
 

@@ -16,13 +16,13 @@ export default function ProspectListPage() {
 
         {/* Page header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
-              <Users className="size-4.5" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+              <Users className="size-6" />
             </div>
             <div>
-              <h1 className="text-base font-bold tracking-tight text-stone-900">Prospects</h1>
-              <p className="text-xs text-stone-500">Active sales opportunities. Create and track prospects.</p>
+              <h1 className="text-2xl font-bold tracking-tight text-stone-900">Prospects</h1>
+              <p className="text-sm text-stone-500">Active sales opportunities. Create and track prospects.</p>
             </div>
           </div>
 
