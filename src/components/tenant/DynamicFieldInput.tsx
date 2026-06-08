@@ -23,7 +23,7 @@ export function DynamicFieldInput({
     <Label htmlFor={id} className="flex items-center gap-1">
       {labelText}
       {field.required && <span className="text-red-500">*</span>}
-      <span className="text-[10px] font-normal text-stone-400">({field.dataType})</span>
+      <span className="text-2xs font-normal text-stone-400">({field.dataType})</span>
     </Label>
   );
 

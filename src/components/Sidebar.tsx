@@ -30,7 +30,7 @@ const childLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
+    <p className="px-3 pb-1 pt-4 text-2xs font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
       {children}
     </p>
   );

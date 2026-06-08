@@ -20,10 +20,6 @@ export default function MainLayout() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Close mobile sidebar on navigation
-  useEffect(() => {
-    setIsMobileSidebarOpen(false);
-  }, [location.pathname]);
 
   // Handle clicking outside the profile dropdown to close it
   useEffect(() => {
@@ -69,7 +65,7 @@ export default function MainLayout() {
 
             {/* Dynamic Breadcrumbs */}
             <nav className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-stone-500">
-              <span className="cursor-pointer hover:text-stone-800 dark:hover:text-stone-200 transition-colors" onClick={() => navigate('/')}>
+              <span className="cursor-pointer hover:text-stone-800 dark:hover:text-stone-200 transition-colors" onClick={() => { setIsMobileSidebarOpen(false); navigate('/'); }}>
                 Home
               </span>
               {pathSegments.map((segment, index) => {
@@ -79,7 +75,7 @@ export default function MainLayout() {
                   <React.Fragment key={segment}>
                     <ChevronRight className="size-3.5 text-stone-400 shrink-0" />
                     <span 
-                      onClick={() => !isLast && navigate(url)}
+                      onClick={() => { if (!isLast) { setIsMobileSidebarOpen(false); navigate(url); } }}
                       className={cn(
                         "capitalize transition-colors",
                         isLast 
@@ -112,7 +108,7 @@ export default function MainLayout() {
                 }}
                 className="flex items-center gap-2 rounded-2xl border border-stone-200/80 dark:border-stone-800/80 bg-stone-50/50 dark:bg-stone-900/20 p-1.5 pr-3 text-left hover:bg-stone-100/50 dark:hover:bg-stone-800/30 transition-all cursor-pointer select-none"
               >
-                <div className="flex size-7.5 items-center justify-center rounded-xl bg-brand text-[11px] font-bold text-stone-950 shadow-sm">
+                <div className="flex size-7.5 items-center justify-center rounded-xl bg-brand text-label font-bold text-stone-950 shadow-sm">
                   {user?.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'SS'}
                 </div>
                 <span className="hidden sm:block text-xs font-bold text-stone-700 dark:text-stone-200">
@@ -128,7 +124,7 @@ export default function MainLayout() {
                     <h5 className="text-xs font-bold text-stone-800 dark:text-stone-200">
                       {user?.fullName || 'Guest User'}
                     </h5>
-                    <p className="truncate text-[10px] text-stone-400 mt-0.5">
+                    <p className="truncate text-2xs text-stone-400 mt-0.5">
                       {user?.email || 'guest@stonesuite.com'}
                     </p>
                   </div>

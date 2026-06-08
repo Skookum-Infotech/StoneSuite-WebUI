@@ -58,8 +58,8 @@ export default function AddProspectPage() {
       {/* Dynamic custom fields added by admin in Config */}
       {customFields.length > 0 && (
         <div className="mt-3 overflow-hidden rounded border border-stone-200 bg-white">
-          <div className="flex items-center gap-2 border-b border-stone-200 bg-blue-50 px-4 py-2">
-            <h3 className="text-[11px] font-bold uppercase tracking-wide text-stone-700">Custom Fields</h3>
+          <div className="flex items-center gap-2 border-b border-stone-200 bg-stone-50 px-4 py-2">
+            <h3 className="text-label font-bold uppercase tracking-wide text-stone-700">Custom Fields</h3>
           </div>
           <div className="grid grid-cols-1 gap-x-6 gap-y-3 px-4 py-3 sm:grid-cols-2">
             {customFields.map((f) => (

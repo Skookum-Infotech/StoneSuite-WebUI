@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ArrowLeft, ShieldCheck, ChevronDown, Save } from 'lucide-react';
@@ -61,11 +61,11 @@ export default function CreateRolePage() {
   const navigate = useNavigate();
   const catalogQ = useQuery({ queryKey: ['catalog'], queryFn: rbacService.catalog });
 
-  const [name, setName]               = useState('');
-  const [key, setKey]                 = useState('');
-  const [keyTouched, setKeyTouched]   = useState(false);
-  const [description, setDescription] = useState('');
-  const [selected, setSelected]       = useState<Record<string, RowSel>>({});
+  const [name, setName]               = useState<string>(() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')?.name ?? ''; } catch { return ''; } });
+  const [key, setKey]                 = useState<string>(() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')?.key ?? ''; } catch { return ''; } });
+  const [keyTouched, setKeyTouched]   = useState<boolean>(() => { try { return Boolean(JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')?.key); } catch { return false; } });
+  const [description, setDescription] = useState<string>(() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')?.description ?? ''; } catch { return ''; } });
+  const [selected, setSelected]       = useState<Record<string, RowSel>>(() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')?.selected ?? {}; } catch { return {}; } });
   const [draftSaved, setDraftSaved]   = useState(false);
 
   const modules = useMemo(() => buildPermModules(), []);
@@ -73,18 +73,6 @@ export default function CreateRolePage() {
     Object.fromEntries(modules.map((m) => [m.id, true])),
   );
 
-  // Restore draft from localStorage once on mount.
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) return;
-      const d = JSON.parse(raw);
-      if (d.name)        setName(d.name);
-      if (d.key)         { setKey(d.key); setKeyTouched(true); }
-      if (d.description) setDescription(d.description);
-      if (d.selected)    setSelected(d.selected);
-    } catch { /* ignore corrupt draft */ }
-  }, []);
 
   const actionsByResource = useMemo(() => {
     const map: Record<string, string[]> = {};
@@ -199,7 +187,7 @@ export default function CreateRolePage() {
     },
   });
 
-  const canSubmit       = !!key.trim() && !!name.trim() && !create.isPending;
+  const canSubmit       = Boolean(key.trim()) && Boolean(name.trim()) && !create.isPending;
   const totalGrants     = Object.values(selected).reduce((n, r) => n + r.actions.length, 0);
   const resourcesGiven  = Object.keys(selected).length;
 
@@ -228,7 +216,7 @@ export default function CreateRolePage() {
               <h1 className="text-sm font-bold tracking-tight text-stone-900 truncate">
                 {name || 'Create New Role'}
               </h1>
-              <p className="text-[11px] text-stone-500 truncate">
+              <p className="text-label text-stone-500 truncate">
                 {resourcesGiven === 0
                   ? 'Define permissions and access scope.'
                   : `${totalGrants} permission${totalGrants !== 1 ? 's' : ''} across ${resourcesGiven} resource${resourcesGiven !== 1 ? 's' : ''}.`}
@@ -277,7 +265,7 @@ export default function CreateRolePage() {
                       className="h-9 text-xs font-mono"
                     />
                     {!keyTouched && name && (
-                      <p className="text-[10px] text-stone-400">Auto-generated — edit to override</p>
+                      <p className="text-2xs text-stone-400">Auto-generated — edit to override</p>
                     )}
                   </div>
 
@@ -297,15 +285,15 @@ export default function CreateRolePage() {
 
                   {/* Live summary */}
                   <div className="rounded-lg bg-stone-50 p-3 border border-stone-100">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1.5">Summary</p>
+                    <p className="text-2xs font-bold uppercase tracking-widest text-stone-400 mb-1.5">Summary</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <p className="text-base font-bold text-stone-800 leading-none">{resourcesGiven}</p>
-                        <p className="text-[10px] text-stone-500 mt-0.5">Resources</p>
+                        <p className="text-2xs text-stone-500 mt-0.5">Resources</p>
                       </div>
                       <div>
                         <p className="text-base font-bold text-stone-800 leading-none">{totalGrants}</p>
-                        <p className="text-[10px] text-stone-500 mt-0.5">Permissions</p>
+                        <p className="text-2xs text-stone-500 mt-0.5">Permissions</p>
                       </div>
                     </div>
                   </div>
@@ -323,7 +311,7 @@ export default function CreateRolePage() {
                     <h2 className="text-xs font-bold uppercase tracking-widest text-stone-500">
                       Permissions Matrix
                     </h2>
-                    <p className="mt-0.5 text-[11px] text-stone-400">
+                    <p className="mt-0.5 text-label text-stone-400">
                       Click column headers to toggle that action across the module. Click row labels to grant everything.
                     </p>
                   </div>
@@ -365,11 +353,11 @@ export default function CreateRolePage() {
                               <div className="flex items-center gap-2">
                                 <Icon className="size-3.5 text-stone-400" />
                                 <span className="text-xs font-bold text-stone-700">{mod.label}</span>
-                                <span className="text-[10px] text-stone-400">
+                                <span className="text-2xs text-stone-400">
                                   {mod.rows.length} resource{mod.rows.length !== 1 ? 's' : ''}
                                 </span>
                                 {grantedCount > 0 && (
-                                  <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-bold text-brand-dark">
+                                  <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-2xs font-bold text-brand-dark">
                                     {grantedCount}/{mod.rows.length}
                                   </span>
                                 )}
@@ -387,7 +375,7 @@ export default function CreateRolePage() {
                               <table className="w-full text-xs">
                                 <thead>
                                   <tr className="border-y border-stone-100 bg-white">
-                                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-[10px] font-bold uppercase tracking-widest text-stone-400 w-48">
+                                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-400 w-48">
                                       Resource
                                     </th>
                                     {cols.map((action) => {
@@ -403,7 +391,7 @@ export default function CreateRolePage() {
                                             type="button"
                                             onClick={() => toggleColumn(mod, action)}
                                             className={cn(
-                                              'mx-auto flex items-center justify-center rounded px-2 py-1 text-[10px] font-bold uppercase tracking-widest transition',
+                                              'mx-auto flex items-center justify-center rounded px-2 py-1 text-2xs font-bold uppercase tracking-widest transition',
                                               allHave
                                                 ? 'bg-brand/15 text-brand-dark hover:bg-brand/25'
                                                 : 'text-stone-400 hover:bg-stone-100 hover:text-stone-700',
@@ -415,7 +403,7 @@ export default function CreateRolePage() {
                                         </th>
                                       );
                                     })}
-                                    <th className="px-3 py-2 text-center text-[10px] font-bold uppercase tracking-widest text-stone-400 w-28">
+                                    <th className="px-3 py-2 text-center text-2xs font-bold uppercase tracking-widest text-stone-400 w-28">
                                       Scope
                                     </th>
                                   </tr>
@@ -445,7 +433,7 @@ export default function CreateRolePage() {
                                             title={rowAllSelected ? 'Clear row' : 'Grant all actions'}
                                           >
                                             <p className="text-xs font-semibold text-stone-700">{row.label}</p>
-                                            <p className="text-[10px] font-mono text-stone-400">{row.resource}</p>
+                                            <p className="text-2xs font-mono text-stone-400">{row.resource}</p>
                                           </button>
                                         </td>
 
@@ -476,7 +464,7 @@ export default function CreateRolePage() {
                                             disabled={!hasAny}
                                             onChange={(e) => setRowScope(row.id, e.target.value as Scope)}
                                             className={cn(
-                                              'h-7 w-full rounded-md border px-1.5 text-[11px] transition',
+                                              'h-7 w-full rounded-md border px-1.5 text-label transition',
                                               'focus:outline-none focus:ring-2 focus:ring-brand/30',
                                               hasAny
                                                 ? 'border-stone-200 bg-white text-stone-700 hover:border-stone-300 cursor-pointer'
@@ -513,7 +501,7 @@ export default function CreateRolePage() {
           <div className="min-w-0">
             {create.error && <ErrorNote>{apiErrorMessage(create.error)}</ErrorNote>}
             {draftSaved && !create.error && (
-              <p className="text-[11px] font-medium text-emerald-600">Draft saved locally.</p>
+              <p className="text-label font-medium text-emerald-600">Draft saved locally.</p>
             )}
           </div>
           <div className="flex items-center gap-2">

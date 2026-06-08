@@ -5,7 +5,7 @@ import {
   type ProspectField,
   type ProspectSection,
 } from '@/lib/prospectForm';
-import { Section, FieldShell, TabBar } from '@/components/prospect/prospectUi';
+import { Section, FieldShell, TabBar } from '@/components/prospect/ProspectUI';
 
 /** Read-only rendering of a prospect's stored fields, mirroring the form layout. */
 export function ProspectDetails({ fields }: { fields: Record<string, unknown> }) {

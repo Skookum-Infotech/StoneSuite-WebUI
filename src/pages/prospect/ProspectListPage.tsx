@@ -56,13 +56,13 @@ export default function ProspectListPage() {
                     <p className="text-sm font-bold text-stone-800">
                       {prospect.company_name || '(unnamed prospect)'}
                     </p>
-                    <p className="text-[11px] text-stone-500">
+                    <p className="text-label text-stone-500">
                       {prospect.email || prospect.customer_type || '—'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     {prospect.status && <Badge>{prospect.status}</Badge>}
-                    <span className="hidden text-[11px] text-stone-400 sm:inline">
+                    <span className="hidden text-label text-stone-400 sm:inline">
                       {prospect.created_at ? new Date(prospect.created_at).toLocaleDateString() : ''}
                     </span>
                     <ChevronRight className="size-4 text-stone-400" />

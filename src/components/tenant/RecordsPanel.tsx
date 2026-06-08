@@ -131,7 +131,7 @@ function RecordRow({
           type="button"
           aria-label="Edit fields"
           onClick={() => setEditing((v) => !v)}
-          className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1 text-[11px] font-semibold text-stone-500 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800"
+          className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1 text-label font-semibold text-stone-500 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800"
         >
           <Pencil className="size-3" /> {editing ? 'Close' : 'Edit fields'}
         </button>
@@ -153,7 +153,7 @@ function RecordRow({
       {/* Transition controls */}
       {targets.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold text-stone-400">Move to:</span>
+          <span className="text-label font-semibold text-stone-400">Move to:</span>
           {targets.map((t) => {
             const to = stateById.get(t.toStateId);
             return (
@@ -162,7 +162,7 @@ function RecordRow({
                 type="button"
                 onClick={() => transition.mutate(t.toStateId)}
                 disabled={transition.isPending}
-                className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1 text-[11px] font-semibold text-stone-700 transition-colors hover:border-primary hover:bg-primary/10 disabled:opacity-50 dark:border-stone-700 dark:text-stone-200"
+                className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1 text-label font-semibold text-stone-700 transition-colors hover:border-primary hover:bg-primary/10 disabled:opacity-50 dark:border-stone-700 dark:text-stone-200"
               >
                 {t.name} <ArrowRight className="size-3" /> {to?.name}
               </button>

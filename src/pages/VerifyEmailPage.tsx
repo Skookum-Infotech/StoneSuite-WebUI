@@ -37,7 +37,7 @@ const VerifyEmailPage = () => {
       } else {
         setErrorMessage(data.message || 'Failed to send verification code');
       }
-    } catch (error) {
+    } catch {
       setErrorMessage('Error sending verification code. Please try again.');
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ const VerifyEmailPage = () => {
       } else {
         setErrorMessage(data.message || 'Invalid verification code');
       }
-    } catch (error) {
+    } catch {
       setErrorMessage('Error verifying email. Please try again.');
     } finally {
       setLoading(false);

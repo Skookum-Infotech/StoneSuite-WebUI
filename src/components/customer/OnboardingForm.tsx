@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { onboardingService } from '@/services/tenantServices';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { Section, FieldShell, inputClass } from '@/components/prospect/ProspectUI';
 import type { FieldDefinition } from '@/types/tenant';
 
 // Structured base sections (keys are the Customer-workflow field keys). Any
@@ -52,9 +53,6 @@ const SECTIONS: { title: string; fields: BaseField[] }[] = [
 
 const BASE_KEYS = new Set(SECTIONS.flatMap((s) => s.fields.map((f) => f.key)));
 
-const inputClass =
-  'w-full rounded border border-stone-300 bg-white px-2 py-1 text-xs text-stone-800 outline-none placeholder:text-stone-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition';
-
 export function OnboardingForm({
   prefill,
   submitting,
@@ -96,7 +94,7 @@ export function OnboardingForm({
         <Section key={section.title} title={section.title}>
           <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-3">
             {section.fields.map((f) => (
-              <Field key={f.key} label={f.label} required={f.required}>
+              <FieldShell key={f.key} label={f.label} required={f.required}>
                 {f.textarea ? (
                   <textarea
                     name={f.key}
@@ -116,7 +114,7 @@ export function OnboardingForm({
                     className={inputClass}
                   />
                 )}
-              </Field>
+              </FieldShell>
             ))}
           </div>
         </Section>
@@ -136,7 +134,7 @@ export function OnboardingForm({
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex items-center gap-1 rounded bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1 rounded bg-brand px-4 py-2 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors"
         >
           {submitting ? 'Submitting…' : 'Submit'}
         </button>
@@ -145,26 +143,3 @@ export function OnboardingForm({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded border border-stone-200 bg-white">
-      <div className="flex items-center gap-2 border-b border-stone-200 bg-blue-50 px-4 py-2">
-        <ChevronDown className="size-3 text-stone-400" />
-        <h3 className="text-[11px] font-bold uppercase tracking-wide text-stone-700">{title}</h3>
-      </div>
-      <div className="px-4 py-3">{children}</div>
-    </div>
-  );
-}
-
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label className="block text-[10px] font-semibold uppercase tracking-wide text-stone-500">
-        {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}

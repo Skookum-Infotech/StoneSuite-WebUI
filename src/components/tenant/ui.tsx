@@ -37,7 +37,7 @@ export function Badge({
     <span
       style={style}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold',
+        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-label font-semibold',
         !color && 'border-stone-200 bg-stone-100 text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300',
         className,
       )}

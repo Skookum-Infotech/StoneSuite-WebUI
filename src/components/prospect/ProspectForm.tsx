@@ -7,7 +7,7 @@ import {
   type ProspectField,
   type ProspectSection,
 } from '@/lib/prospectForm';
-import { Section, FieldShell, TabBar, inputClass } from '@/components/prospect/prospectUi';
+import { Section, FieldShell, TabBar, inputClass } from '@/components/prospect/ProspectUI';
 
 export function ProspectForm({
   submitting,
@@ -67,7 +67,7 @@ function SaveBar({ submitting, onCancel }: { submitting: boolean; onCancel: () =
       <button
         type="submit"
         disabled={submitting}
-        className="inline-flex items-center gap-1 rounded bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+        className="inline-flex items-center gap-1 rounded bg-brand px-4 py-2 text-xs font-semibold text-stone-950 transition-colors hover:bg-brand-hover disabled:opacity-50"
       >
         {submitting ? 'Saving…' : 'Save'}
       </button>
@@ -120,9 +120,9 @@ function FieldInput({
           type="checkbox"
           checked={value === true}
           onChange={(e) => set(field.key, e.target.checked)}
-          className="size-3.5 rounded border-stone-300 text-blue-600 focus:ring-blue-200"
+          className="size-3.5 rounded border-stone-300 text-brand-dark focus:ring-brand/20"
         />
-        <span className="text-[11px] font-semibold text-stone-600">{field.label}</span>
+        <span className="text-label font-semibold text-stone-600">{field.label}</span>
       </label>
     );
   }

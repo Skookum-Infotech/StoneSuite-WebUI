@@ -120,7 +120,7 @@ export default function WorkflowBuilderPage() {
             {baseFields.map((f) => (
               <span
                 key={f.key}
-                className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
+                className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-label text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
               >
                 <span className="font-semibold">{f.label}</span>
                 <span className="text-stone-400">· {f.key}</span>
@@ -155,7 +155,7 @@ export default function WorkflowBuilderPage() {
               <span className="text-stone-400">→</span>
               <Badge color={stateById.get(t.toStateId)?.color}>{stateById.get(t.toStateId)?.name}</Badge>
               {t.guard?.requiredFields && t.guard.requiredFields.length > 0 && (
-                <span className="text-[11px] text-amber-600">requires: {t.guard.requiredFields.join(', ')}</span>
+                <span className="text-label text-amber-600">requires: {t.guard.requiredFields.join(', ')}</span>
               )}
             </li>
           ))}
@@ -205,9 +205,9 @@ function FieldsSection({ workflowId, fields }: { workflowId: string; fields: Fie
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold">{f.label}</span>
               <Badge>{f.dataType}</Badge>
-              <span className="text-[11px] text-stone-400">key: {f.key}</span>
+              <span className="text-label text-stone-400">key: {f.key}</span>
               {f.required && <Badge color="#ef4444">required</Badge>}
-              {f.options.length > 0 && <span className="text-[11px] text-stone-400">[{f.options.join(', ')}]</span>}
+              {f.options.length > 0 && <span className="text-label text-stone-400">[{f.options.join(', ')}]</span>}
             </div>
             <button
               type="button"

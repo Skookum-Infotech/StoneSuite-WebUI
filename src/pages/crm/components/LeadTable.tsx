@@ -18,7 +18,7 @@ export function LeadTable({ leads, isLoading }: Props) {
   return (
     <div className="overflow-hidden border border-stone-200 bg-white rounded-md shadow-sm">
       <table className="w-full text-left text-xs">
-        <thead className="bg-brand/20 text-[10px] uppercase tracking-wide text-brand-dark">
+        <thead className="bg-brand/20 text-2xs uppercase tracking-wide text-brand-dark">
           <tr>
             <th className="px-3 py-2.5 font-semibold">Lead ID</th>
             <th className="px-3 py-2.5 font-semibold">Name / Company</th>
@@ -40,7 +40,7 @@ export function LeadTable({ leads, isLoading }: Props) {
                     : lead.companyName || '—'}
                 </div>
                 {lead.type === 'Individual' && lead.companyName && (
-                  <div className="text-[10px] text-stone-400">{lead.companyName}</div>
+                  <div className="text-2xs text-stone-400">{lead.companyName}</div>
                 )}
               </td>
               <td className="px-3 py-2 text-stone-600">{lead.type}</td>
@@ -48,7 +48,7 @@ export function LeadTable({ leads, isLoading }: Props) {
               <td className="px-3 py-2 text-stone-600">{lead.phone || '—'}</td>
               <td className="px-3 py-2">
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusStyles[lead.leadStatus] ?? 'bg-stone-100 text-stone-600'}`}
+                  className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${statusStyles[lead.leadStatus] ?? 'bg-stone-100 text-stone-600'}`}
                 >
                   {lead.leadStatus}
                 </span>

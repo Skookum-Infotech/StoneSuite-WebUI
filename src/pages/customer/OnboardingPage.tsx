@@ -58,7 +58,7 @@ export default function OnboardingPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowInvite(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-brand/30 bg-brand/10 px-3 py-2 text-xs font-semibold text-stone-800 shadow-sm transition hover:bg-brand/20"
             >
               <Send className="size-3.5" />
               Invite
@@ -138,14 +138,14 @@ function ApprovalCard({ tenant }: { tenant: Tenant }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-bold text-stone-800">{str('company_name') || tenant.displayName}</p>
-          <p className="text-[11px] text-stone-500">{str('super_admin_email')}</p>
+          <p className="text-label text-stone-500">{str('super_admin_email')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => reject.mutate()}
             disabled={reject.isPending || approve.isPending}
-            className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-label font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50"
           >
             <X className="size-3" /> Reject
           </button>
@@ -153,7 +153,7 @@ function ApprovalCard({ tenant }: { tenant: Tenant }) {
             type="button"
             onClick={() => approve.mutate()}
             disabled={approve.isPending || reject.isPending}
-            className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1.5 text-label font-semibold text-white hover:bg-green-700 disabled:opacity-50"
           >
             <Check className="size-3" /> {approve.isPending ? 'Approving…' : 'Approve'}
           </button>
@@ -162,7 +162,7 @@ function ApprovalCard({ tenant }: { tenant: Tenant }) {
 
       <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
         {entries.map(([k, v]) => (
-          <div key={k} className="flex gap-2 text-[11px]">
+          <div key={k} className="flex gap-2 text-label">
             <span className="shrink-0 font-semibold capitalize text-stone-500">{k.replace(/_/g, ' ')}:</span>
             <span className="truncate text-stone-700">{String(v)}</span>
           </div>
@@ -194,12 +194,12 @@ function TenantRow({ tenant }: { tenant: Tenant }) {
           <ChevronRight className={`size-4 text-stone-400 transition-transform ${open ? 'rotate-90' : ''}`} />
           <div>
             <p className="text-sm font-bold text-stone-800">{tenant.displayName}</p>
-            <p className="text-[11px] text-stone-500">{tenant.slug} · {tenant.dbName || 'db pending'}</p>
+            <p className="text-label text-stone-500">{tenant.slug} · {tenant.dbName || 'db pending'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Badge color={STATUS_COLOR[tenant.status] ?? undefined}>{tenant.status}</Badge>
-          <span className="hidden text-[11px] text-stone-400 sm:inline">
+          <span className="hidden text-label text-stone-400 sm:inline">
             {tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString() : ''}
           </span>
         </div>
@@ -244,7 +244,7 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-bold text-stone-600">Invites</h3>
         <div className="flex items-center gap-2">
-          <label className="text-[11px] font-semibold text-stone-500">
+          <label className="text-label font-semibold text-stone-500">
             Expires in (h)
             <input
               type="number"
@@ -259,7 +259,7 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
             type="button"
             onClick={() => resend.mutate()}
             disabled={resend.isPending}
-            className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-[11px] font-semibold text-stone-950 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950 disabled:opacity-50"
           >
             <RefreshCw className={`size-3 ${resend.isPending ? 'animate-spin' : ''}`} />
             {resend.isPending ? 'Sending…' : 'Resend invite'}
@@ -271,7 +271,7 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
       {invitesQ.error && <ErrorNote>{apiErrorMessage(invitesQ.error)}</ErrorNote>}
       {resend.error && <div className="mb-2"><ErrorNote>{apiErrorMessage(resend.error)}</ErrorNote></div>}
       {resentNote && (
-        <p className="mb-2 rounded-lg bg-brand/15 px-3 py-2 text-[11px] font-medium text-stone-600">{resentNote}</p>
+        <p className="mb-2 rounded-lg bg-brand/15 px-3 py-2 text-label font-medium text-stone-600">{resentNote}</p>
       )}
       {invitesQ.data && invitesQ.data.length === 0 && (
         <EmptyState>No invites yet — use “Resend invite” to send one.</EmptyState>
@@ -288,15 +288,15 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <KeyRound className="size-3.5 shrink-0 text-stone-400" />
-                <code className="flex-1 truncate rounded bg-stone-100 px-2 py-1 text-[11px] text-stone-600">{inv.token}</code>
+                <code className="flex-1 truncate rounded bg-stone-100 px-2 py-1 text-label text-stone-600">{inv.token}</code>
                 <button type="button" onClick={() => copy(inv.token, `key-${inv.id}`)} aria-label="Copy invite key" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
                   <Copy className="size-3.5" />
                 </button>
-                <button type="button" onClick={() => copy(inv.inviteLink, `link-${inv.id}`)} className="rounded-md border border-stone-200 px-2 py-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100">
+                <button type="button" onClick={() => copy(inv.inviteLink, `link-${inv.id}`)} className="rounded-md border border-stone-200 px-2 py-1 text-2xs font-semibold text-stone-500 hover:bg-stone-100">
                   {copied === `link-${inv.id}` ? 'Link copied' : copied === `key-${inv.id}` ? 'Key copied' : 'Copy link'}
                 </button>
               </div>
-              <p className="mt-1.5 text-[10px] text-stone-400">
+              <p className="mt-1.5 text-2xs text-stone-400">
                 Expires {new Date(inv.expiresAt).toLocaleString()}
                 {inv.acceptedAt && ` · accepted ${new Date(inv.acceptedAt).toLocaleDateString()}`}
               </p>

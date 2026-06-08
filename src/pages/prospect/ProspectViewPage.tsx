@@ -50,7 +50,7 @@ export default function ProspectViewPage() {
               </h1>
               {prospect.status && <Badge>{prospect.status}</Badge>}
             </div>
-            <span className="inline-flex items-center gap-1 text-[11px] text-stone-400">
+            <span className="inline-flex items-center gap-1 text-label text-stone-400">
               <Pencil className="size-3" />
               Created {prospect.created_at ? new Date(prospect.created_at).toLocaleDateString() : '—'}
             </span>

@@ -6,68 +6,11 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: oklch(0.922 0 0);
-  --code-bg: #f4f3ec;
-  --accent: oklch(0.97 0 0);
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  --background: #fafaf9;
-  --foreground: #1c1917;
-
-  --card: #ffffff;
-  --card-foreground: #1c1917;
-
-  --popover: #ffffff;
-  --popover-foreground: #1c1917;
-
-  --primary: #c2f589;
-  --primary-foreground: #1c1917;
-
-  --secondary: #f5f5f4;
-  --secondary-foreground: #292524;
-
-  --muted: #f5f5f4;
-  --muted-foreground: #78716c;
-
-  --accent: #ecfccb;
-  --accent-foreground: #365314;
-
-  --destructive: #ef4444;
-
-  /* --border: #e7e5e4;
-  --input: #e7e5e4;
-  --ring: #a3e635;
-
-  --sidebar: #0f172a;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #c2f589;
-  --sidebar-primary-foreground: #1c1917;
-  --sidebar-accent: rgba(255, 255, 255, 0.06);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #c2f589; */
-
+  color-scheme: light dark;
 
   @media (max-width: 1024px) {
     font-size: 16px;
@@ -151,7 +94,15 @@
 
   --sidebar-border: oklch(0.922 0 0);
 
-  --sidebar-ring: oklch(0.708 0 0)
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Brand overrides — must come last to win over shadcn defaults */
+  --background: #fafaf9;
+  --foreground: #1c1917;
+  --primary: #c2f589;
+  --primary-foreground: #1c1917;
+  --accent: #ecfccb;
+  --accent-foreground: #365314;
 }
 
 
@@ -161,6 +112,14 @@
   --color-brand-hover: #99c466;
   --color-brand-dark: #719c3b;
   --color-brand-dark-hover: #5f8431;
+
+  /* Tab bar colors (used by ProspectForm TabBar) */
+  --color-tab-bg: #2c6e7f;
+  --color-tab-border: #1f7a8c;
+
+  /* Typography scale extensions */
+  --text-2xs: 0.625rem;  /* 10px — field labels, captions */
+  --text-label: 0.6875rem;  /* 11px — compact UI labels */
 
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;

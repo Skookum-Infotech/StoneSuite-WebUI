@@ -40,7 +40,7 @@ const ForgotPasswordPage = () => {
       } else {
         setErrorMessage(data.message || 'Failed to send reset email');
       }
-    } catch (error) {
+    } catch {
       setErrorMessage('Error sending reset email. Please try again.');
     } finally {
       setLoading(false);
@@ -83,7 +83,7 @@ const ForgotPasswordPage = () => {
       } else {
         setErrorMessage(data.message || 'Failed to reset password');
       }
-    } catch (error) {
+    } catch {
       setErrorMessage('Error resetting password. Please try again.');
     } finally {
       setLoading(false);

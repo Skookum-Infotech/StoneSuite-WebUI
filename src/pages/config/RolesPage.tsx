@@ -129,7 +129,7 @@ export default function RolesPage() {
                       {role.name}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[10px] text-stone-400 truncate">
+                  <p className="mt-0.5 text-2xs text-stone-400 truncate">
                     {role.permissions.length === 0
                       ? 'No permissions'
                       : `${role.permissions.length} permission${role.permissions.length !== 1 ? 's' : ''}`}
@@ -212,7 +212,7 @@ function RoleDetail({
             {role.isSystem && <Badge color="#8b5cf6"><Lock className="size-3" /> system</Badge>}
           </div>
           {role.description && <p className="text-xs text-stone-500 mt-0.5">{role.description}</p>}
-          <p className="mt-1 text-[11px] text-stone-400">
+          <p className="mt-1 text-label text-stone-400">
             {role.permissions.length === 0
               ? 'No permissions assigned.'
               : `${role.permissions.length} permission${role.permissions.length !== 1 ? 's' : ''} granted`}
@@ -292,7 +292,7 @@ function RoleDetail({
                           <tr key={row.id} className="hover:bg-stone-50/60 transition-colors">
                             <td className="py-3 pl-4 pr-3">
                               <p className="font-medium text-stone-700">{row.label}</p>
-                              <p className="text-[10px] text-stone-400">{row.resource}</p>
+                              <p className="text-2xs text-stone-400">{row.resource}</p>
                             </td>
                             {cols.map((col) => {
                               const granted = rowGrants?.has(col) ?? false;
@@ -310,7 +310,7 @@ function RoleDetail({
                             })}
                             <td className="px-4 py-3 text-center">
                               {scopeVal ? (
-                                <span className="inline-block rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] text-stone-500">
+                                <span className="inline-block rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-2xs text-stone-500">
                                   {scopeVal}
                                 </span>
                               ) : (
