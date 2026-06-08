@@ -163,15 +163,41 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="flex h-full flex-col overflow-y-auto">
           {/* Header / Brand Logo */}
-          <div className="relative flex h-12 shrink-0 items-center justify-between border-b border-border bg-stone-350 px-4">
-            <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-2">
+          <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-stone-200/80 px-4">
+            {/* StoneSuite branding */}
+            <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-2.5">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden">
                 <img src="/logo-only.png" alt="Stone Suite" className="h-6 w-6 object-contain" />
               </div>
-              <span className="font-heading text-sm font-bold uppercase tracking-wider text-dark transition-colors group-hover:text-stone-700 dark:text-white dark:group-hover:text-stone-200">
-                Stone Suite
-              </span>
+              <div className="flex flex-col leading-none gap-px">
+                <span
+                  className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-stone-800 transition-colors group-hover:text-stone-600 dark:text-white dark:group-hover:text-stone-300"
+                  style={{ fontFamily: 'var(--font-brand)' }}
+                >
+                  Stone
+                </span>
+                <span
+                  className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-stone-800 transition-colors group-hover:text-stone-600 dark:text-white dark:group-hover:text-stone-300"
+                  style={{ fontFamily: 'var(--font-brand)' }}
+                >
+                  Suite
+                </span>
+              </div>
             </NavLink>
+
+            {/* Divider + Client logo placeholder (desktop only — mobile shows X close button) */}
+            <div className="hidden items-center gap-2 lg:flex">
+              <div className="h-7 w-px bg-stone-200 dark:bg-stone-700" />
+              <div
+                title="Client logo"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dashed border-stone-300 bg-stone-100 dark:border-stone-600 dark:bg-stone-800"
+              >
+                <span className="text-[6px] font-bold uppercase tracking-wide text-stone-400 dark:text-stone-500 leading-none">
+                  LOGO
+                </span>
+              </div>
+            </div>
+
             <button
               onClick={onClose}
               aria-label="Close menu"
