@@ -12,7 +12,7 @@ const inviteSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   recipientName: z.string().optional(),
   contactEmail: z.string().min(1, 'Email is required').email('Enter a valid email'),
-  expiresInHours: z.number().int().min(1, 'Must be at least 1 hour').default(24),
+  expiresInHours: z.number().int().min(1, 'Must be at least 1 hour'),
 });
 type InviteFields = z.infer<typeof inviteSchema>;
 
