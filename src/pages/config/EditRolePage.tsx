@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ShieldCheck, ChevronDown } from 'lucide-react';
@@ -64,7 +64,7 @@ function buildInitialSelected(role: Role, modules: PermModule[]): Record<string,
 
 // ---------------------------------------------------------------------------
 
-export default function EditRolePage() {
+export default function EditRolePage(): React.JSX.Element {
   const { id }   = useParams<{ id: string }>();
   const navigate = useNavigate();
   const modules  = useMemo(() => buildPermModules(), []);
@@ -112,7 +112,7 @@ function EditRoleInner({
   modules: PermModule[];
   actionsByResource: Record<string, string[]>;
   scopes: Scope[];
-}) {
+}): React.JSX.Element {
   const navigate = useNavigate();
   const qc       = useQueryClient();
 
@@ -125,11 +125,11 @@ function EditRoleInner({
     () => Object.fromEntries(modules.map((m) => [m.id, true])),
   );
 
-  function getAvailable(resource: string) {
+  function getAvailable(resource: string): string[] {
     return ACTION_ORDER.filter((a) => (actionsByResource[resource] ?? []).includes(a));
   }
 
-  function toggleAction(rowId: string, action: string) {
+  function toggleAction(rowId: string, action: string): void {
     setSelected((prev) => {
       const cur  = prev[rowId]?.actions ?? [];
       const next = cur.includes(action) ? cur.filter((a) => a !== action) : [...cur, action];
@@ -138,11 +138,11 @@ function EditRoleInner({
     });
   }
 
-  function setRowScope(rowId: string, scope: Scope) {
+  function setRowScope(rowId: string, scope: Scope): void {
     setSelected((prev) => prev[rowId] ? { ...prev, [rowId]: { ...prev[rowId], scope } } : prev);
   }
 
-  function toggleRow(row: ResourceRow) {
+  function toggleRow(row: ResourceRow): void {
     const avail = getAvailable(row.resource);
     if (!avail.length) return;
     setSelected((prev) => {
@@ -153,7 +153,7 @@ function EditRoleInner({
     });
   }
 
-  function toggleColumn(mod: PermModule, action: string) {
+  function toggleColumn(mod: PermModule, action: string): void {
     const eligible = mod.rows.filter((r) => getAvailable(r.resource).includes(action));
     if (!eligible.length) return;
     const allHave = eligible.every((r) => selected[r.id]?.actions.includes(action));
@@ -179,7 +179,7 @@ function EditRoleInner({
     return eligible.some((r) => (selected[r.id]?.actions.length ?? 0) > 0) ? 'indeterminate' : false;
   }
 
-  function toggleModule(mod: PermModule) {
+  function toggleModule(mod: PermModule): void {
     const checked = getModuleChecked(mod);
     setSelected((prev) => {
       const next = { ...prev };

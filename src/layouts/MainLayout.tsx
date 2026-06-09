@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
-import { Outlet, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, startTransition } from 'react';
+import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function MainLayout() {
+export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,21 +26,23 @@ export default function MainLayout() {
 
   useEffect(() => {
     if (!isProfileOpen) return;
-    const handleClose = () => setIsProfileOpen(false);
+    const handleClose = (): void => setIsProfileOpen(false);
     window.addEventListener('click', handleClose);
     return () => window.removeEventListener('click', handleClose);
   }, [isProfileOpen]);
 
   // Close mobile search when navigating
   useEffect(() => {
-    setIsMobileSearchOpen(false);
+    startTransition(() => {
+      setIsMobileSearchOpen(false);
+    });
   }, [location.pathname]);
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />;
   }
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     logout();
     navigate('/auth/login');
   };
@@ -49,39 +51,71 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
-      <Sidebar
-        isOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
-      />
 
-      <div className="lg:pl-56 flex flex-col min-h-screen">
+      {/* ── Single unified header (full-width, fixed) ── */}
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-stone-200/80 bg-white/80 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-950/80">
 
-        {/* ── Top Header ── */}
-        <header className="sticky top-0 z-30 w-full border-b border-stone-200/80 bg-white/80 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-950/80">
+        {/* Left column: logo — matches sidebar width on desktop */}
+        <div className="flex h-full w-auto shrink-0 items-center gap-3 px-4 dark:border-stone-800/80 lg:w-56">
+          {/* Mobile: hamburger first */}
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            aria-label="Open menu"
+            className="rounded-xl border border-stone-200 dark:border-stone-800 p-2 text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-900 lg:hidden cursor-pointer"
+          >
+            <Menu className="size-5" />
+          </button>
 
-          {/* Main row */}
-          <div className="relative flex h-16 items-center justify-between px-4 sm:px-6">
-
-            {/* Left: mobile hamburger */}
-            <div className="flex items-center gap-3 shrink-0">
-              <button
-                onClick={() => setIsMobileSidebarOpen(true)}
-                aria-label="Open menu"
-                className="rounded-xl border border-stone-200 dark:border-stone-800 p-2 text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-900 lg:hidden cursor-pointer"
+          {/* Brand logo */}
+          <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden">
+              <img src="/logo-only.png" alt="Stone Suite" className="h-6 w-6 object-contain" />
+            </div>
+            <div className="flex flex-col leading-none gap-px">
+              <span
+                className="text-[10.5px] uppercase tracking-[0.2em] text-stone-800 transition-colors group-hover:text-stone-600 dark:text-white dark:group-hover:text-stone-300"
+                style={{ fontFamily: 'var(--font-brand)', fontWeight: 400 }}
               >
-                <Menu className="size-5" />
-              </button>
+                Stone
+              </span>
+              <span
+                className="text-[10.5px] uppercase tracking-[0.2em] text-stone-800 transition-colors group-hover:text-stone-600 dark:text-white dark:group-hover:text-stone-300"
+                style={{ fontFamily: 'var(--font-brand)', fontWeight: 400 }}
+              >
+                Suite
+              </span>
             </div>
+          </NavLink>
 
-            {/* Center: Global Search — desktop only (sm+) */}
-            <div className="pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex">
-              <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg">
-                <GlobalSearch />
-              </div>
+          {/* Client logo placeholder — desktop only */}
+          <div className="hidden items-center gap-2 lg:flex ml-auto">
+            <div className="h-7 w-px bg-stone-200 dark:bg-stone-700" />
+            <div
+              title="Client logo"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dashed border-stone-300 bg-stone-100 dark:border-stone-600 dark:bg-stone-800"
+            >
+              <span className="text-[6px] font-bold uppercase tracking-wide text-stone-400 dark:text-stone-500 leading-none">
+                LOGO
+              </span>
             </div>
+          </div>
+        </div>
 
-            {/* Right: search toggle (mobile) + notifications + profile */}
-            <div className="flex items-center gap-2 shrink-0">
+        {/* Right column: search + actions */}
+        <div className="relative flex flex-1 items-center justify-between px-4 sm:px-6">
+
+          {/* Center: Global Search — desktop */}
+          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex">
+            <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg">
+              <GlobalSearch />
+            </div>
+          </div>
+
+          {/* Spacer for mobile (left of right-side buttons) */}
+          <div />
+
+          {/* Right: search toggle (mobile) + notifications + profile */}
+          <div className="flex items-center gap-2 shrink-0">
 
               {/* Mobile search toggle — hidden on sm+ */}
               <button
@@ -163,26 +197,32 @@ export default function MainLayout() {
                 )}
               </div>
             </div>
-          </div>
+        </div>
+      </header>
 
-          {/* Mobile search expansion — slides in below the main row */}
-          <div
-            className={cn(
-              'overflow-hidden transition-all duration-200 ease-in-out sm:hidden',
-              isMobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
-            )}
-          >
-            <div className="px-4 pb-3 pt-0">
-              <GlobalSearch
-                hideKbd
-                autoFocus={isMobileSearchOpen}
-                onNavigate={() => setIsMobileSearchOpen(false)}
-              />
-            </div>
-          </div>
-        </header>
+      {/* Mobile search expansion — fixed below header */}
+      <div
+        className={cn(
+          'fixed inset-x-0 top-16 z-20 overflow-hidden border-b border-stone-200 bg-white/95 backdrop-blur-md transition-all duration-200 ease-in-out sm:hidden dark:border-stone-800 dark:bg-stone-950/95',
+          isMobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
+        )}
+      >
+        <div className="px-4 py-3">
+          <GlobalSearch
+            hideKbd
+            autoFocus={isMobileSearchOpen}
+            onNavigate={() => setIsMobileSearchOpen(false)}
+          />
+        </div>
+      </div>
 
-        {/* ── Page Content ── */}
+      <Sidebar
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+      />
+
+      {/* ── Page Content ── */}
+      <div className="flex flex-col min-h-screen pt-16 lg:pl-56">
         <main className="flex-1 w-full flex flex-col min-h-0 bg-white">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}

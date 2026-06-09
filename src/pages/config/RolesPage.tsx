@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -90,7 +90,7 @@ function buildPermModules(): PermModule[] {
 
 // ---------------------------------------------------------------------------
 
-export default function RolesPage() {
+export default function RolesPage(): React.JSX.Element {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const rolesQ = useQuery({
@@ -265,7 +265,7 @@ function RoleDetail({
   onDelete: () => void;
   deleting: boolean;
   deleteError: string | null;
-}) {
+}): React.JSX.Element {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"permissions" | "users">("permissions");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -275,7 +275,8 @@ function RoleDetail({
     const map = new Map<string, Map<string, string>>();
     for (const p of role.permissions) {
       if (!map.has(p.resource)) map.set(p.resource, new Map());
-      map.get(p.resource)!.set(p.action, p.scope);
+      const resMap = map.get(p.resource);
+      if (resMap) resMap.set(p.action, p.scope);
     }
     return map;
   }, [role]);
@@ -283,7 +284,7 @@ function RoleDetail({
   const isWildcard = grantedMap.has("*");
 
   // columns = catalog actions that appear on ≥1 resource in this module, in canonical order
-  function moduleColumns(rows: ResourceRow[]) {
+  function moduleColumns(rows: ResourceRow[]): string[] {
     const seen = new Set<string>();
     for (const row of rows)
       for (const a of actionsByResource[row.resource] ?? []) seen.add(a);
@@ -583,7 +584,7 @@ function RoleDetail({
 
 // ---------------------------------------------------------------------------
 
-function userInitials(name: string) {
+function userInitials(name: string): string {
   return name
     .split(" ")
     .filter(Boolean)
@@ -592,7 +593,7 @@ function userInitials(name: string) {
     .join("");
 }
 
-function userAvatarColor(id: string) {
+function userAvatarColor(id: string): string {
   const palette = [
     "bg-violet-100 text-violet-700",
     "bg-sky-100 text-sky-700",
@@ -613,7 +614,7 @@ function RoleUsersList({
 }: {
   users: WorkspaceUser[];
   loading: boolean;
-}) {
+}): React.JSX.Element {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">

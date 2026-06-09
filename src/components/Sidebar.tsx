@@ -157,51 +157,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          'fixed bottom-0 top-0 left-0 z-50 flex w-56 flex-col justify-between border-r border-sidebar-border bg-background text-sidebar-foreground transition-transform duration-300 ease-in-out lg:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full',
+          'fixed bottom-0 left-0 z-50 flex w-56 flex-col border-r border-sidebar-border bg-background text-sidebar-foreground transition-transform duration-300 ease-in-out',
+          'top-0 lg:top-16',
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
       >
         <div className="flex h-full flex-col overflow-y-auto">
-          {/* Header / Brand Logo */}
-          <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-stone-200/80 px-4">
-            {/* StoneSuite branding */}
-            <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden">
-                <img src="/logo-only.png" alt="Stone Suite" className="h-6 w-6 object-contain" />
-              </div>
-              <div className="flex flex-col leading-none gap-px">
-                <span
-                  className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-stone-800 transition-colors group-hover:text-stone-600 dark:text-white dark:group-hover:text-stone-300"
-                  style={{ fontFamily: 'var(--font-brand)' }}
-                >
-                  Stone
-                </span>
-                <span
-                  className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-stone-800 transition-colors group-hover:text-stone-600 dark:text-white dark:group-hover:text-stone-300"
-                  style={{ fontFamily: 'var(--font-brand)' }}
-                >
-                  Suite
-                </span>
-              </div>
-            </NavLink>
-
-            {/* Divider + Client logo placeholder (desktop only — mobile shows X close button) */}
-            <div className="hidden items-center gap-2 lg:flex">
-              <div className="h-7 w-px bg-stone-200 dark:bg-stone-700" />
-              <div
-                title="Client logo"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-dashed border-stone-300 bg-stone-100 dark:border-stone-600 dark:bg-stone-800"
-              >
-                <span className="text-[6px] font-bold uppercase tracking-wide text-stone-400 dark:text-stone-500 leading-none">
-                  LOGO
-                </span>
-              </div>
-            </div>
-
+          {/* Mobile-only close button row */}
+          <div className="flex items-center justify-between border-b border-stone-200/80 px-4 py-3 lg:hidden">
+            <span className="text-xs font-semibold text-stone-500">Navigation</span>
             <button
               onClick={onClose}
               aria-label="Close menu"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-500 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 lg:hidden"
+              className="rounded-lg p-1 text-stone-500 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
             >
               <X className="size-4" />
             </button>
