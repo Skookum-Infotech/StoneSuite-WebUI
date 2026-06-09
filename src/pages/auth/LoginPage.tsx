@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/useAuthStore'
 import { apiErrorMessage } from '@/api/tenantClient'
@@ -117,9 +117,12 @@ export default function LoginPage() {
                   <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-widest text-stone-500">
                     Password
                   </Label>
-                  <a href="#" className="text-xs font-medium text-stone-400 hover:text-stone-700 transition-colors duration-150">
+                  <Link
+                    to="/auth/forgot-password"
+                    className="text-xs font-medium text-stone-400 transition-colors duration-150 hover:text-stone-700"
+                  >
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
