@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Lock, ShieldCheck, Check } from 'lucide-react';
+import { Plus, Trash2, Lock, ShieldCheck, Check, Pencil } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { rbacService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -180,6 +180,7 @@ function RoleDetail({
   deleting: boolean;
   deleteError: string | null;
 }) {
+  const navigate = useNavigate();
   // resource → action → scope (for quick grant lookup)
   const grantedMap = useMemo(() => {
     const map = new Map<string, Map<string, string>>();
@@ -220,16 +221,27 @@ function RoleDetail({
         </div>
 
         {!role.isSystem && (
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={deleting}
-            aria-label={`Delete role ${role.name}`}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-          >
-            <Trash2 className="size-3.5" />
-            Delete
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(`/config/roles/${role.id}/edit`)}
+              aria-label={`Edit role ${role.name}`}
+              className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+            >
+              <Pencil className="size-3.5" />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={deleting}
+              aria-label={`Delete role ${role.name}`}
+              className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+            >
+              <Trash2 className="size-3.5" />
+              Delete
+            </button>
+          </div>
         )}
       </div>
 

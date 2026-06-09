@@ -20,6 +20,7 @@ import ConfigWorkflowsPage from '@/pages/config/WorkflowsPage';
 import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
 import RolesPage from '@/pages/config/RolesPage';
 import CreateRolePage from '@/pages/config/CreateRolePage';
+import EditRolePage from '@/pages/config/EditRolePage';
 import UsersPage from '@/pages/config/UsersPage';
 import { PermissionGuard } from '@/components/PermissionGuard';
 
@@ -86,6 +87,10 @@ export const router = createBrowserRouter([
       {
         path: 'config/roles/new',
         element: <PermissionGuard resource="role" action="create"><CreateRolePage /></PermissionGuard>,
+      },
+      {
+        path: 'config/roles/:id/edit',
+        element: <PermissionGuard resource="role" action="update"><EditRolePage /></PermissionGuard>,
       },
       {
         path: 'config/users',

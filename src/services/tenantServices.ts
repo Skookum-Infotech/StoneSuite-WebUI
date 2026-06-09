@@ -93,6 +93,10 @@ export const rbacService = {
     tenantClient
       .post('/tenant/roles', { key, name, description, permissions })
       .then((r) => r.data),
+  updateRole: (id: string, name: string, description: string, permissions: Grant[]) =>
+    tenantClient
+      .put(`/tenant/roles/${id}`, { name, description, permissions })
+      .then((r) => r.data),
   deleteRole: (id: string) => tenantClient.delete(`/tenant/roles/${id}`).then((r) => r.data),
   myPermissions: () =>
     tenantClient
