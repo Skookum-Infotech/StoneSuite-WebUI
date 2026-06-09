@@ -12,6 +12,8 @@ import type {
   FieldDefinition,
   Scope,
   OnboardingApplyDetails,
+  WorkspaceUser,
+  UserInvite,
 } from '@/types/tenant';
 
 // Flat onboarding form data keyed by Customer-workflow field keys (snake_case),
@@ -173,4 +175,73 @@ export const workflowService = {
         { toStateId },
       )
       .then((r) => r.data.record),
+};
+
+// ----- User management (Phase 4) --------------------------------------------
+
+export const userService = {
+  listUsers: () =>
+    tenantClient
+      .get<{ success: boolean; users: WorkspaceUser[] }>('/tenant/users')
+      .then((r) => r.data.users ?? []),
+
+  getUser: (id: string) =>
+    tenantClient
+      .get<{ success: boolean; user: WorkspaceUser }>(`/tenant/users/${id}`)
+      .then((r) => r.data.user),
+
+  inviteUser: (payload: { email: string; fullName?: string; initialRoleId?: string }) =>
+    tenantClient
+      .post<{ success: boolean; message: string; inviteId: string; inviteLink: string }>(
+        '/tenant/users/invite',
+        payload,
+      )
+      .then((r) => r.data),
+
+  updateUser: (id: string, payload: { fullName?: string; status?: 'active' | 'suspended' }) =>
+    tenantClient
+      .patch<{ success: boolean; user: WorkspaceUser }>(`/tenant/users/${id}`, payload)
+      .then((r) => r.data.user),
+
+  deactivateUser: (id: string) =>
+    tenantClient
+      .delete<{ success: boolean; message: string }>(`/tenant/users/${id}`)
+      .then((r) => r.data),
+
+  listInvites: () =>
+    tenantClient
+      .get<{ success: boolean; invites: UserInvite[] }>('/tenant/invites')
+      .then((r) => r.data.invites ?? []),
+
+  resendInvite: (id: string) =>
+    tenantClient
+      .post<{ success: boolean; message: string; inviteLink: string }>(
+        `/tenant/invites/${id}/resend`,
+      )
+      .then((r) => r.data),
+
+  revokeInvite: (id: string) =>
+    tenantClient
+      .delete<{ success: boolean; message: string }>(`/tenant/invites/${id}`)
+      .then((r) => r.data),
+
+  // Public — no auth required.
+  getUserInvite: (token: string) =>
+    tenantClient
+      .get<{
+        success: boolean;
+        email: string;
+        fullName: string;
+        workspaceName: string;
+        expiresAt: string;
+      }>(`/onboarding/user-invite/${token}`)
+      .then((r) => r.data),
+
+  acceptUserInvite: (payload: { token: string; password: string; fullName: string }) =>
+    tenantClient
+      .post<{ success: boolean; message: string; email: string }>(
+        '/onboarding/user-invite/accept',
+        payload,
+      )
+      .then((r) => r.data),
 };

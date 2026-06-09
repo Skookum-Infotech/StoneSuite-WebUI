@@ -7,6 +7,7 @@ import {
   Workflow as WorkflowIcon,
   ShieldCheck,
   UserPlus,
+  UsersRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -121,6 +122,14 @@ export const sidebarNav: SidebarNavConfig = {
               path: '/config/roles',
               icon: ShieldCheck,
               permission: { resource: 'role', action: 'read' },
+            },
+            {
+              type: 'link',
+              id: 'users',
+              label: 'Users',
+              path: '/config/users',
+              icon: UsersRound,
+              permission: { resource: 'user', action: 'read' },
             },
           ],
         },

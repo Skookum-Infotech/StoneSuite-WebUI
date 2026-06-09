@@ -164,3 +164,37 @@ export interface WorkflowRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+// ----- User management (Phase 4) --------------------------------------------
+
+export interface RoleSummary {
+  id: string;
+  key: string;
+  name: string;
+}
+
+export interface WorkspaceUser {
+  id: string;
+  identityId: string;
+  email: string;
+  fullName: string;
+  status: 'active' | 'suspended' | 'disabled';
+  createdAt: string;
+  updatedAt: string;
+  roles: RoleSummary[];
+}
+
+// Serialized from tenancy.UserInvite (no json tags → Go default PascalCase keys).
+export interface UserInvite {
+  ID: string;
+  TenantID: string;
+  Email: string;
+  FullName: string;
+  InitialRoleID: string;
+  Token: string;
+  Status: 'pending' | 'accepted' | 'revoked';
+  InvitedBy: string;
+  ExpiresAt: string;
+  AcceptedAt: string | null;
+  CreatedAt: string;
+}

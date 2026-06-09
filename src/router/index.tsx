@@ -7,6 +7,7 @@ import OnboardingPage from '@/pages/customer/OnboardingPage';
 import AddCustomerPage from '@/pages/customer/AddCustomerPage';
 import OnboardingApplyPage from '@/pages/onboarding/OnboardingApplyPage';
 import SetPasswordPage from '@/pages/onboarding/SetPasswordPage';
+import AcceptInvitePage from '@/pages/onboarding/AcceptInvitePage';
 import ProspectListPage from '@/pages/prospect/ProspectListPage';
 import AddProspectPage from '@/pages/prospect/AddProspectPage';
 import ProspectViewPage from '@/pages/prospect/ProspectViewPage';
@@ -17,6 +18,7 @@ import ConfigWorkflowsPage from '@/pages/config/WorkflowsPage';
 import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
 import RolesPage from '@/pages/config/RolesPage';
 import CreateRolePage from '@/pages/config/CreateRolePage';
+import UsersPage from '@/pages/config/UsersPage';
 
 export const router = createBrowserRouter([
   // Public onboarding routes: self-service application + password setup.
@@ -27,6 +29,11 @@ export const router = createBrowserRouter([
   {
     path: '/onboarding/set-password',
     element: <SetPasswordPage />,
+  },
+  // Public workspace invite acceptance route.
+  {
+    path: '/accept-invite',
+    element: <AcceptInvitePage />,
   },
   {
     path: '/',
@@ -50,6 +57,7 @@ export const router = createBrowserRouter([
       { path: 'config/workflows/:id', element: <WorkflowBuilderPage /> },
       { path: 'config/roles', element: <RolesPage /> },
       { path: 'config/roles/new', element: <CreateRolePage /> },
+      { path: 'config/users', element: <UsersPage /> },
 
       // Platform-owner only: customer onboarding (provisions tenants).
       { path: 'customer/onboarding', element: <OnboardingPage /> },

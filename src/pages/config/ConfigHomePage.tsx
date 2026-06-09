@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
 
 /**
@@ -19,6 +19,12 @@ const sections = [
     icon: ShieldCheck,
     title: 'Roles & Access',
     description: 'Compose roles from the permission catalog (resource × action × scope) and control what each user can do.',
+  },
+  {
+    to: '/config/users',
+    icon: UsersRound,
+    title: 'Users',
+    description: 'Invite team members, assign roles, suspend or deactivate accounts, and manage pending invitations.',
   },
 ];
 
