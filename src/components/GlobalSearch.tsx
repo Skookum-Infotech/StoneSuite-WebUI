@@ -170,7 +170,7 @@ export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, on
           onChange={e => { setQuery(e.target.value); setOpen(true); setActiveIndex(-1); }}
           onFocus={() => { if (query.trim().length >= 2) setOpen(true); }}
           onKeyDown={handleKeyDown}
-          placeholder="Search leads, prospects…"
+          placeholder="Search your workspace"
           aria-label="Global search"
           aria-expanded={showDropdown}
           aria-autocomplete="list"
@@ -181,11 +181,6 @@ export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, on
             inputClassName,
           )}
         />
-        {!hideKbd && (
-          <kbd className="pointer-events-none absolute right-3 rounded border border-stone-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-stone-400 shadow-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-500">
-            ⌘K
-          </kbd>
-        )}
       </div>
 
       {/* Dropdown */}
