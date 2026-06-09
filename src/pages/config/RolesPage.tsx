@@ -9,6 +9,7 @@ import {
   Check,
   Pencil,
   Users,
+  AlertTriangle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { rbacService, userService } from "@/services/tenantServices";
@@ -266,9 +267,8 @@ function RoleDetail({
   deleteError: string | null;
 }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"permissions" | "users">(
-    "permissions",
-  );
+  const [activeTab, setActiveTab] = useState<"permissions" | "users">("permissions");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // resource → action → scope (for quick grant lookup)
   const grantedMap = useMemo(() => {
@@ -327,7 +327,7 @@ function RoleDetail({
             </button>
             <button
               type="button"
-              onClick={onDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleting}
               aria-label={`Delete role ${role.name}`}
               className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
@@ -342,6 +342,55 @@ function RoleDetail({
       {deleteError && (
         <div className="px-6 mb-2">
           <ErrorNote>{deleteError}</ErrorNote>
+        </div>
+      )}
+
+      {/* ── Delete confirmation dialog ── */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-role-title"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteConfirm(false); }}
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-50">
+                <AlertTriangle className="size-4 text-red-500" />
+              </span>
+              <div>
+                <h3 id="delete-role-title" className="text-sm font-bold text-stone-900">
+                  Delete role?
+                </h3>
+                <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+                  <span className="font-semibold text-stone-700">{role.name}</span> will be
+                  permanently removed. Users with this role will lose all associated permissions.
+                  This cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => { onDelete(); setShowDeleteConfirm(false); }}
+                disabled={deleting}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5" />
+                {deleting ? 'Deleting…' : 'Delete role'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
