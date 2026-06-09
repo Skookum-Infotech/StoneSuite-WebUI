@@ -19,6 +19,7 @@ import WorkflowBuilderPage from '@/pages/config/WorkflowBuilderPage';
 import RolesPage from '@/pages/config/RolesPage';
 import CreateRolePage from '@/pages/config/CreateRolePage';
 import UsersPage from '@/pages/config/UsersPage';
+import { PermissionGuard } from '@/components/PermissionGuard';
 
 export const router = createBrowserRouter([
   // Public onboarding routes: self-service application + password setup.
@@ -42,26 +43,62 @@ export const router = createBrowserRouter([
       { path: '', element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
 
-      // Prospects: NetSuite-style create / list / view.
-      { path: 'prospects', element: <ProspectListPage /> },
-      { path: 'prospects/new', element: <AddProspectPage /> },
-      { path: 'prospects/:id', element: <ProspectViewPage /> },
+      // Prospects
+      {
+        path: 'prospects',
+        element: <PermissionGuard resource="prospect" action="read"><ProspectListPage /></PermissionGuard>,
+      },
+      {
+        path: 'prospects/new',
+        element: <PermissionGuard resource="prospect" action="create"><AddProspectPage /></PermissionGuard>,
+      },
+      {
+        path: 'prospects/:id',
+        element: <PermissionGuard resource="prospect" action="read"><ProspectViewPage /></PermissionGuard>,
+      },
 
       // CRM: Leads
-      { path: 'crm/lead', element: <LeadPage /> },
-      { path: 'crm/lead/new', element: <AddLeadPage /> },
+      {
+        path: 'crm/lead',
+        element: <PermissionGuard resource="lead" action="read"><LeadPage /></PermissionGuard>,
+      },
+      {
+        path: 'crm/lead/new',
+        element: <PermissionGuard resource="lead" action="create"><AddLeadPage /></PermissionGuard>,
+      },
 
-      // Configuration hub: build/configure workflows + roles.
+      // Configuration hub
       { path: 'config', element: <ConfigHomePage /> },
-      { path: 'config/workflows', element: <ConfigWorkflowsPage /> },
-      { path: 'config/workflows/:id', element: <WorkflowBuilderPage /> },
-      { path: 'config/roles', element: <RolesPage /> },
-      { path: 'config/roles/new', element: <CreateRolePage /> },
-      { path: 'config/users', element: <UsersPage /> },
+      {
+        path: 'config/workflows',
+        element: <PermissionGuard resource="workflow" action="read"><ConfigWorkflowsPage /></PermissionGuard>,
+      },
+      {
+        path: 'config/workflows/:id',
+        element: <PermissionGuard resource="workflow" action="read"><WorkflowBuilderPage /></PermissionGuard>,
+      },
+      {
+        path: 'config/roles',
+        element: <PermissionGuard resource="role" action="read"><RolesPage /></PermissionGuard>,
+      },
+      {
+        path: 'config/roles/new',
+        element: <PermissionGuard resource="role" action="create"><CreateRolePage /></PermissionGuard>,
+      },
+      {
+        path: 'config/users',
+        element: <PermissionGuard resource="user" action="read"><UsersPage /></PermissionGuard>,
+      },
 
       // Platform-owner only: customer onboarding (provisions tenants).
-      { path: 'customer/onboarding', element: <OnboardingPage /> },
-      { path: 'customer/onboarding/new', element: <AddCustomerPage /> },
+      {
+        path: 'customer/onboarding',
+        element: <PermissionGuard platformAdminOnly><OnboardingPage /></PermissionGuard>,
+      },
+      {
+        path: 'customer/onboarding/new',
+        element: <PermissionGuard platformAdminOnly><AddCustomerPage /></PermissionGuard>,
+      },
     ],
   },
   {
