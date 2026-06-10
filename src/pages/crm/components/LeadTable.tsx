@@ -216,6 +216,7 @@ export function LeadTable({ records, isLoading }: Props) {
                         </button>
                         <DeleteRecordDialog
                           recordId={record.id}
+                          workflowKey="lead"
                           label={label}
                           onDeleted={() => queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] })}
                         />

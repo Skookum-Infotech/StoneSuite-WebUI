@@ -6,15 +6,16 @@ import { apiErrorMessage } from '@/api/tenantClient';
 
 type Props = {
   recordId: string;
+  workflowKey: string;
   label: string;
   onDeleted: () => void;
 };
 
-export function DeleteRecordDialog({ recordId, label, onDeleted }: Props) {
+export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: Props) {
   const [open, setOpen] = useState(false);
 
   const del = useMutation({
-    mutationFn: () => crmService.deleteRecord(recordId),
+    mutationFn: () => crmService.deleteRecord(recordId, workflowKey),
     onSuccess: () => {
       setOpen(false);
       onDeleted();

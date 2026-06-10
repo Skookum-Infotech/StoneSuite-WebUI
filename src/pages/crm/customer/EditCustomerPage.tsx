@@ -24,7 +24,7 @@ export default function EditCustomerPage() {
 
   const { data: record, isLoading, error: loadError } = useQuery({
     queryKey: ['crm-record', id],
-    queryFn: () => crmService.getRecord(id),
+    queryFn: () => crmService.getRecord(id, 'customer'),
     enabled: Boolean(id),
   });
 
@@ -43,7 +43,7 @@ export default function EditCustomerPage() {
   const customFieldDefs: FieldDefinition[] = customerDef?.fields ?? [];
 
   const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId),
+    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'customer'),
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
@@ -62,7 +62,7 @@ export default function EditCustomerPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }),
+    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }, 'customer'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
@@ -120,6 +120,7 @@ export default function EditCustomerPage() {
           </div>
           <DeleteRecordDialog
             recordId={id}
+            workflowKey="customer"
             label={`Customer — ${company}`}
             onDeleted={() => {
               queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });

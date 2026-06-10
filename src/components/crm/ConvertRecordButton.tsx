@@ -27,7 +27,7 @@ export function ConvertRecordButton({ recordId, sourceWorkflowKey, onConverted }
   const targetWorkflowKey = TARGET_MAP[sourceWorkflowKey];
 
   const convert = useMutation({
-    mutationFn: () => crmService.convertRecord(recordId, targetWorkflowKey),
+    mutationFn: () => crmService.convertRecord(recordId, targetWorkflowKey, undefined, sourceWorkflowKey),
     onSuccess: ({ record }) => {
       setOpen(false);
       onConverted(record.id);

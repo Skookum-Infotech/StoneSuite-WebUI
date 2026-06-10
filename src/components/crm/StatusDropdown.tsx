@@ -25,7 +25,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
 
   const transitionsQuery = useQuery({
     queryKey: ['crm-transitions', recordId],
-    queryFn: () => crmService.getAvailableTransitions(recordId!),
+    queryFn: () => crmService.getAvailableTransitions(recordId!, workflowKey),
     enabled: mode === 'transitions' && Boolean(recordId),
   });
 

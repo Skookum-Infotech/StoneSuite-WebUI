@@ -15,7 +15,7 @@ export default function LeadDetailPage() {
 
   const { data: record, isLoading, error } = useQuery({
     queryKey: ['crm-record', id],
-    queryFn: () => crmService.getRecord(id),
+    queryFn: () => crmService.getRecord(id, 'lead'),
     enabled: Boolean(id),
   });
 
@@ -60,6 +60,7 @@ export default function LeadDetailPage() {
           </button>
           <DeleteRecordDialog
             recordId={id}
+            workflowKey="lead"
             label={`Lead — ${company}`}
             onDeleted={() => {
               queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });

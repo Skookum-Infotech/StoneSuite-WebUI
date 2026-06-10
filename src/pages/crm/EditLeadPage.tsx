@@ -25,7 +25,7 @@ export default function EditLeadPage() {
 
   const { data: record, isLoading, error: loadError } = useQuery({
     queryKey: ['crm-record', id],
-    queryFn: () => crmService.getRecord(id),
+    queryFn: () => crmService.getRecord(id, 'lead'),
     enabled: Boolean(id),
   });
 
@@ -44,7 +44,7 @@ export default function EditLeadPage() {
   const customFieldDefs: FieldDefinition[] = leadDef?.fields ?? [];
 
   const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId),
+    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'lead'),
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
@@ -63,7 +63,7 @@ export default function EditLeadPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }),
+    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }, 'lead'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
@@ -127,6 +127,7 @@ export default function EditLeadPage() {
             />
             <DeleteRecordDialog
               recordId={id}
+              workflowKey="lead"
               label={`Lead — ${company}`}
               onDeleted={() => {
                 queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });

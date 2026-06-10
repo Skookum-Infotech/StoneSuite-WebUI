@@ -15,7 +15,7 @@ export default function ProspectViewPage() {
 
   const { data: record, isLoading, error } = useQuery({
     queryKey: ['crm-record', id],
-    queryFn: () => crmService.getRecord(id),
+    queryFn: () => crmService.getRecord(id, 'prospect'),
     enabled: Boolean(id),
   });
 
@@ -61,6 +61,7 @@ export default function ProspectViewPage() {
               </button>
               <DeleteRecordDialog
                 recordId={id}
+                workflowKey="prospect"
                 label={`Prospect — ${company}`}
                 onDeleted={() => {
                   queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });

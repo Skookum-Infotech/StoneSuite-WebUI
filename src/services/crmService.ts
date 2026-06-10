@@ -37,31 +37,35 @@ export const crmService = {
       )
       .then((r) => r.data.record),
 
-  getRecord: (id: string): Promise<WorkflowRecord> =>
+  // Per-record endpoints: workflowKey is required by the route pattern but
+  // ignored by the handler (which loads the record by id). Pass the known
+  // workflow key when available; fall back to '_' as a dummy segment.
+  getRecord: (id: string, workflowKey = '_'): Promise<WorkflowRecord> =>
     tenantClient
-      .get<{ success: boolean; record: WorkflowRecord }>(`/tenant/crm/records/${id}`)
+      .get<{ success: boolean; record: WorkflowRecord }>(`/tenant/crm/${workflowKey}/records/${id}`)
       .then((r) => r.data.record),
 
   updateRecord: (
     id: string,
     payload: { coreFields?: Record<string, unknown>; customFields?: Record<string, unknown> },
+    workflowKey = '_',
   ): Promise<void> =>
-    tenantClient.patch(`/tenant/crm/records/${id}`, payload).then(() => undefined),
+    tenantClient.patch(`/tenant/crm/${workflowKey}/records/${id}`, payload).then(() => undefined),
 
-  deleteRecord: (id: string): Promise<void> =>
-    tenantClient.delete(`/tenant/crm/records/${id}`).then(() => undefined),
+  deleteRecord: (id: string, workflowKey = '_'): Promise<void> =>
+    tenantClient.delete(`/tenant/crm/${workflowKey}/records/${id}`).then(() => undefined),
 
-  getAvailableTransitions: (id: string): Promise<StatusInfo[]> =>
+  getAvailableTransitions: (id: string, workflowKey = '_'): Promise<StatusInfo[]> =>
     tenantClient
       .get<{ success: boolean; recordId: string; transitions: StatusInfo[] }>(
-        `/tenant/crm/records/${id}/transitions`,
+        `/tenant/crm/${workflowKey}/records/${id}/transitions`,
       )
       .then((r) => r.data.transitions ?? []),
 
-  transitionRecord: (id: string, toStateId: string): Promise<WorkflowRecord> =>
+  transitionRecord: (id: string, toStateId: string, workflowKey = '_'): Promise<WorkflowRecord> =>
     tenantClient
       .post<{ success: boolean; record: WorkflowRecord }>(
-        `/tenant/crm/records/${id}/transition`,
+        `/tenant/crm/${workflowKey}/records/${id}/transition`,
         { toStateId },
       )
       .then((r) => r.data.record),
@@ -70,10 +74,11 @@ export const crmService = {
     id: string,
     targetWorkflowKey: string,
     payload?: Partial<CRMCreatePayload>,
+    workflowKey = '_',
   ): Promise<{ record: WorkflowRecord; sourceRecordId: string }> =>
     tenantClient
       .post<{ success: boolean; record: WorkflowRecord; sourceRecordId: string }>(
-        `/tenant/crm/records/${id}/convert`,
+        `/tenant/crm/${workflowKey}/records/${id}/convert`,
         { targetWorkflowKey, ...payload },
       )
       .then((r) => ({ record: r.data.record, sourceRecordId: r.data.sourceRecordId })),

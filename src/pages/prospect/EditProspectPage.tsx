@@ -25,7 +25,7 @@ export default function EditProspectPage() {
 
   const { data: record, isLoading, error: loadError } = useQuery({
     queryKey: ['crm-record', id],
-    queryFn: () => crmService.getRecord(id),
+    queryFn: () => crmService.getRecord(id, 'prospect'),
     enabled: Boolean(id),
   });
 
@@ -44,7 +44,7 @@ export default function EditProspectPage() {
   const customFieldDefs: FieldDefinition[] = prospectDef?.fields ?? [];
 
   const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId),
+    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'prospect'),
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
@@ -63,7 +63,7 @@ export default function EditProspectPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }),
+    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }, 'prospect'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
@@ -127,6 +127,7 @@ export default function EditProspectPage() {
             />
             <DeleteRecordDialog
               recordId={id}
+              workflowKey="prospect"
               label={`Prospect — ${company}`}
               onDeleted={() => {
                 queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });

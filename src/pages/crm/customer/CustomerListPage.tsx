@@ -157,6 +157,7 @@ export default function CustomerListPage() {
                             </button>
                             <DeleteRecordDialog
                               recordId={record.id}
+                              workflowKey="customer"
                               label={label}
                               onDeleted={() =>
                                 queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] })
