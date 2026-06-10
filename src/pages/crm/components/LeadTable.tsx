@@ -1,58 +1,54 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import type { Lead } from '@/types/lead';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X, Pencil } from 'lucide-react';
+import { crmService } from '@/services/crmService';
+import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
+import { Badge } from '@/components/tenant/ui';
+import type { WorkflowRecord, StatusInfo } from '@/types/tenant';
 
-type SortField = 'leadId' | 'name' | 'createdAt' | 'updatedAt';
+type SortField = 'id' | 'name' | 'createdAt' | 'updatedAt';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 10;
 
-const LEAD_STATUSES = [
-  'LEAD-Unqualified',
-  'LEAD-Qualified',
-  'LEAD-New',
-  'LEAD-In Progress',
-  'LEAD-Converted',
-  'LEAD-Dead',
-] as const;
-
-const statusStyles: Record<string, string> = {
-  'LEAD-Unqualified': 'bg-stone-100 text-stone-600',
-  'LEAD-Qualified':   'bg-blue-100 text-blue-700',
-  'LEAD-New':         'bg-purple-100 text-purple-700',
-  'LEAD-In Progress': 'bg-amber-100 text-amber-700',
-  'LEAD-Converted':   'bg-green-100 text-green-700',
-  'LEAD-Dead':        'bg-red-100 text-red-600',
-};
-
-function displayName(lead: Lead): string {
-  if (lead.type === 'Individual') {
-    return [lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.companyName || '';
-  }
-  return lead.companyName || '';
-}
-
 const SORT_LABELS: Record<SortField, string> = {
-  leadId:    'Document ID',
-  name:      'Document Name',
+  id:        'Record ID',
+  name:      'Company Name',
   createdAt: 'Date Created',
   updatedAt: 'Date Modified',
 };
 
-type Props = { leads: Lead[]; isLoading?: boolean };
+type Props = { records: WorkflowRecord[]; isLoading?: boolean };
 
-export function LeadTable({ leads, isLoading }: Props) {
-  const [idFilter, setIdFilter]         = useState('');
+export function LeadTable({ records, isLoading }: Props) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [nameFilter, setNameFilter]     = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [sortBy, setSortBy]             = useState<SortField>('leadId');
-  const [sortDir, setSortDir]           = useState<SortDir>('asc');
+  const [sortBy, setSortBy]             = useState<SortField>('createdAt');
+  const [sortDir, setSortDir]           = useState<SortDir>('desc');
   const [page, setPage]                 = useState(1);
 
-  const hasFilters = idFilter || nameFilter || statusFilter;
+  const { data: allStatuses = [] } = useQuery({
+    queryKey: ['crm-all-statuses'],
+    queryFn: crmService.getAllStatuses,
+  });
+
+  const leadStatuses = useMemo(
+    () => allStatuses.filter((s) => s.workflowKey === 'lead'),
+    [allStatuses],
+  );
+
+  const statusMap = useMemo(
+    () => new Map<string, StatusInfo>(leadStatuses.map((s) => [s.stateId, s])),
+    [leadStatuses],
+  );
+
+  const hasFilters = nameFilter || statusFilter;
 
   function clearFilters() {
-    setIdFilter('');
     setNameFilter('');
     setStatusFilter('');
     setPage(1);
@@ -69,22 +65,22 @@ export function LeadTable({ leads, isLoading }: Props) {
   }
 
   const filtered = useMemo(() => {
-    return leads.filter((lead) => {
-      if (idFilter && !lead.leadId?.toLowerCase().includes(idFilter.toLowerCase())) return false;
-      if (nameFilter && !displayName(lead).toLowerCase().includes(nameFilter.toLowerCase())) return false;
-      if (statusFilter && lead.leadStatus !== statusFilter) return false;
+    return records.filter((r) => {
+      const company = String(r.coreFields.company_name ?? '').toLowerCase();
+      if (nameFilter && !company.includes(nameFilter.toLowerCase())) return false;
+      if (statusFilter && r.currentStateId !== statusFilter) return false;
       return true;
     });
-  }, [leads, idFilter, nameFilter, statusFilter]);
+  }, [records, nameFilter, statusFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       let av = '';
       let bv = '';
-      if (sortBy === 'leadId')    { av = a.leadId ?? '';    bv = b.leadId ?? ''; }
-      if (sortBy === 'name')      { av = displayName(a);    bv = displayName(b); }
-      if (sortBy === 'createdAt') { av = a.createdAt ?? ''; bv = b.createdAt ?? ''; }
-      if (sortBy === 'updatedAt') { av = a.updatedAt ?? ''; bv = b.updatedAt ?? ''; }
+      if (sortBy === 'id')        { av = a.id;                                        bv = b.id; }
+      if (sortBy === 'name')      { av = String(a.coreFields.company_name ?? '');      bv = String(b.coreFields.company_name ?? ''); }
+      if (sortBy === 'createdAt') { av = a.createdAt;                                  bv = b.createdAt; }
+      if (sortBy === 'updatedAt') { av = a.updatedAt;                                  bv = b.updatedAt; }
       const cmp = av.localeCompare(bv, undefined, { numeric: true });
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -96,9 +92,7 @@ export function LeadTable({ leads, isLoading }: Props) {
 
   function SortIcon({ field }: { field: SortField }) {
     if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc'
-      ? <ArrowUp className="size-2.5" />
-      : <ArrowDown className="size-2.5" />;
+    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   return (
@@ -106,43 +100,29 @@ export function LeadTable({ leads, isLoading }: Props) {
 
       {/* ── Filter bar ── */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Document ID */}
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-stone-400" />
           <input
             type="text"
-            placeholder="Document ID…"
-            value={idFilter}
-            onChange={(e) => { setIdFilter(e.target.value); setPage(1); }}
-            className="h-8 w-36 rounded-md border border-stone-200 bg-white pl-7 pr-2.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
-          />
-        </div>
-
-        {/* Document Name */}
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-stone-400" />
-          <input
-            type="text"
-            placeholder="Document Name…"
+            placeholder="Company name…"
             value={nameFilter}
             onChange={(e) => { setNameFilter(e.target.value); setPage(1); }}
             className="h-8 w-44 rounded-md border border-stone-200 bg-white pl-7 pr-2.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
           />
         </div>
 
-        {/* Status */}
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           className="h-8 rounded-md border border-stone-200 bg-white px-2.5 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+          aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
-          {LEAD_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+          {leadStatuses.map((s) => (
+            <option key={s.stateId} value={s.stateId}>{s.statusLabel}</option>
           ))}
         </select>
 
-        {/* Right: clear + count */}
         <div className="ml-auto flex items-center gap-2">
           {hasFilters && (
             <button
@@ -184,34 +164,66 @@ export function LeadTable({ leads, isLoading }: Props) {
           <table className="w-full text-left text-xs">
             <thead className="bg-brand/20 text-2xs uppercase tracking-wide text-brand-dark">
               <tr>
-                <th className="px-3 py-2.5 font-semibold">Lead ID</th>
-                <th className="px-3 py-2.5 font-semibold">Name / Company</th>
-                <th className="px-3 py-2.5 font-semibold">Type</th>
-                <th className="px-3 py-2.5 font-semibold">Email</th>
-                <th className="px-3 py-2.5 font-semibold">Phone</th>
+                <th className="px-3 py-2.5 font-semibold">Company</th>
+                <th className="px-3 py-2.5 font-semibold">Email / Owner</th>
                 <th className="px-3 py-2.5 font-semibold">Status</th>
+                <th className="px-3 py-2.5 font-semibold">Created</th>
+                <th className="px-3 py-2.5 font-semibold sr-only">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {pageData.map((lead) => (
-                <tr key={lead.id} className="hover:bg-stone-50/70 transition-colors">
-                  <td className="px-3 py-2 font-mono text-stone-500">{lead.id || '—'}</td>
-                  <td className="px-3 py-2">
-                    <div className="font-semibold text-stone-900">{displayName(lead) || '—'}</div>
-                    {lead.type === 'Individual' && lead.companyName && (
-                      <div className="text-2xs text-stone-400">{lead.companyName}</div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-stone-600">{lead.type}</td>
-                  <td className="px-3 py-2 text-stone-600">{lead.email || '—'}</td>
-                  <td className="px-3 py-2 text-stone-600">{lead.phone || '—'}</td>
-                  <td className="px-3 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${statusStyles[lead.leadStatus] ?? 'bg-stone-100 text-stone-600'}`}>
-                      {lead.leadStatus}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {pageData.map((record) => {
+                const statusInfo = statusMap.get(record.currentStateId);
+                const company = String(record.coreFields.company_name ?? '—');
+                const email = String(record.coreFields.email ?? record.ownerUserId ?? '—');
+                const label = `Lead — ${company}`;
+                return (
+                  <tr
+                    key={record.id}
+                    className="hover:bg-stone-50/70 transition-colors"
+                  >
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/crm/lead/${record.id}`)}
+                        className="font-semibold text-stone-900 hover:text-brand-dark hover:underline text-left"
+                      >
+                        {company}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2 text-stone-600">{email}</td>
+                    <td className="px-3 py-2">
+                      {statusInfo ? (
+                        <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
+                      ) : (
+                        <span className="text-stone-400 text-2xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-stone-400">
+                      {new Date(record.createdAt).toLocaleDateString(undefined, {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                      })}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/crm/lead/${record.id}/edit`)}
+                          aria-label={`Edit ${label}`}
+                          className="rounded p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                        <DeleteRecordDialog
+                          recordId={record.id}
+                          label={label}
+                          onDeleted={() => queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] })}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -221,12 +233,12 @@ export function LeadTable({ leads, isLoading }: Props) {
             Loading leads…
           </div>
         )}
-        {!isLoading && leads.length === 0 && (
+        {!isLoading && records.length === 0 && (
           <div className="flex h-32 items-center justify-center text-xs text-stone-400">
             No leads added yet.
           </div>
         )}
-        {!isLoading && leads.length > 0 && pageData.length === 0 && (
+        {!isLoading && records.length > 0 && pageData.length === 0 && (
           <div className="flex h-32 items-center justify-center text-xs text-stone-400">
             No leads match the current filters.
           </div>
@@ -237,9 +249,7 @@ export function LeadTable({ leads, isLoading }: Props) {
       {sorted.length > 0 && (
         <div className="flex items-center justify-between pt-1">
           <span className="text-2xs text-stone-400">
-            {sorted.length === 0
-              ? 'No results'
-              : `Showing ${(safePageIndex - 1) * PAGE_SIZE + 1}–${Math.min(safePageIndex * PAGE_SIZE, sorted.length)} of ${sorted.length}`}
+            {`Showing ${(safePageIndex - 1) * PAGE_SIZE + 1}–${Math.min(safePageIndex * PAGE_SIZE, sorted.length)} of ${sorted.length}`}
           </span>
           <div className="flex items-center gap-2">
             <button

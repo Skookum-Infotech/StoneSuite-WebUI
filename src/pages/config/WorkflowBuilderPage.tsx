@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { AxiosError } from 'axios';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,8 @@ const BASE_FIELD_LABELS: Record<string, { key: string; label: string }[]> = {
 export default function WorkflowBuilderPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
+  const [toggleError, setToggleError] = useState<string | null>(null);
+
   const { data: def, isLoading, error } = useQuery({
     queryKey: ['workflow', id],
     queryFn: () => workflowService.get(id),
@@ -67,8 +70,16 @@ export default function WorkflowBuilderPage() {
   const toggle = useMutation({
     mutationFn: (enabled: boolean) => workflowService.setEnabled(id, enabled),
     onSuccess: () => {
+      setToggleError(null);
       qc.invalidateQueries({ queryKey: ['workflow', id] });
       qc.invalidateQueries({ queryKey: ['workflows'] });
+    },
+    onError: (err: unknown) => {
+      if (err instanceof AxiosError && err.response?.status === 409) {
+        setToggleError(err.response.data?.message ?? 'Cannot change workflow status due to a dependency conflict.');
+      } else {
+        setToggleError(apiErrorMessage(err, 'Failed to update workflow status.'));
+      }
     },
   });
 
@@ -89,19 +100,26 @@ export default function WorkflowBuilderPage() {
           title={`Configure: ${def.workflow.name}`}
           subtitle={def.workflow.description || def.workflow.key}
         />
-        <div className="flex items-center gap-2">
-          <Badge color={def.workflow.enabled ? '#22c55e' : '#a8a29e'}>
-            {def.workflow.enabled ? 'enabled' : 'disabled'}
-          </Badge>
-          <button
-            type="button"
-            aria-label={def.workflow.enabled ? `Disable ${def.workflow.name}` : `Enable ${def.workflow.name}`}
-            onClick={() => toggle.mutate(!def.workflow.enabled)}
-            disabled={toggle.isPending}
-            className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition-colors hover:bg-stone-100 disabled:opacity-50 dark:border-stone-700 dark:hover:bg-stone-800"
-          >
-            {def.workflow.enabled ? 'Disable' : 'Enable'}
-          </button>
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-2">
+            <Badge color={def.workflow.enabled ? '#22c55e' : '#a8a29e'}>
+              {def.workflow.enabled ? 'enabled' : 'disabled'}
+            </Badge>
+            <button
+              type="button"
+              aria-label={def.workflow.enabled ? `Disable ${def.workflow.name}` : `Enable ${def.workflow.name}`}
+              onClick={() => { setToggleError(null); toggle.mutate(!def.workflow.enabled); }}
+              disabled={toggle.isPending}
+              className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition-colors hover:bg-stone-100 disabled:opacity-50 dark:border-stone-700 dark:hover:bg-stone-800"
+            >
+              {def.workflow.enabled ? 'Disable' : 'Enable'}
+            </button>
+          </div>
+          {toggleError && (
+            <div className="max-w-xs">
+              <ErrorNote>{toggleError}</ErrorNote>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,26 +1,39 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Sparkles, AlertCircle } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Sparkles, AlertCircle, ArrowLeft } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
+import { ConvertRecordButton } from '@/components/crm/ConvertRecordButton';
 import { Section, FieldShell, inputClass } from '@/components/prospect/ProspectUI';
+import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import type { FieldDefinition } from '@/types/tenant';
 
-export default function AddLeadPage() {
+export default function EditLeadPage() {
+  const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [stateId, setStateId] = useState('');
-  const [coreFields, setCoreFields] = useState<Record<string, unknown>>({});
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  // null = not yet modified by user → fall back to record data
+  const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [localStateId, setLocalStateId] = useState<string | null>(null);
 
-  const handleStatusChange = useCallback((id: string) => setStateId(id), []);
+  const { data: record, isLoading, error: loadError } = useQuery({
+    queryKey: ['crm-record', id],
+    queryFn: () => crmService.getRecord(id),
+    enabled: Boolean(id),
+  });
 
-  // Fetch the Lead workflow's custom field definitions
+  const coreFields = localCoreFields ?? record?.coreFields ?? {};
+  const customFieldValues = localCustomFields ?? record?.customFields ?? {};
+  const currentStateId = localStateId ?? record?.currentStateId ?? '';
+
+  // Custom field definitions
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const leadWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'lead');
   const { data: leadDef } = useQuery({
@@ -28,61 +41,99 @@ export default function AddLeadPage() {
     queryFn: () => workflowService.get(leadWorkflow!.id),
     enabled: Boolean(leadWorkflow?.id),
   });
-  const customFields: FieldDefinition[] = leadDef?.fields ?? [];
+  const customFieldDefs: FieldDefinition[] = leadDef?.fields ?? [];
 
-  const { mutate: createLead, isPending, error: createError } = useMutation({
-    mutationFn: () =>
-      crmService.createRecord('lead', {
-        coreFields,
-        customFields: customFieldValues,
-      }),
+  const transition = useMutation({
+    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId),
+    onSuccess: (updated) => {
+      setLocalStateId(updated.currentStateId);
+      queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
+    },
+  });
+
+  const handleStatusChange = useCallback(
+    (toStateId: string) => {
+      if (toStateId !== currentStateId) {
+        setLocalStateId(toStateId);
+        transition.mutate(toStateId);
+      }
+    },
+    [currentStateId, transition],
+  );
+
+  const save = useMutation({
+    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
       navigate('/crm/lead');
     },
   });
 
   const set = (key: string, value: unknown) =>
-    setCoreFields((prev) => ({ ...prev, [key]: value }));
+    setLocalCoreFields((prev) => ({ ...(prev ?? record?.coreFields ?? {}), [key]: value }));
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    createLead();
-  };
+  if (isLoading) return <div className="p-6"><Spinner label="Loading lead…" /></div>;
+  if (loadError || !record)
+    return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load lead.')}</ErrorNote></div>;
+
+  const company = String(coreFields.company_name ?? '—');
 
   return (
     <div className="flex-1 flex flex-col bg-stone-50 min-h-0">
-      <form onSubmit={handleSubmit} className="flex flex-col flex-1">
-
+      <form
+        onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+        className="flex flex-col flex-1"
+      >
         {/* Header Bar */}
         <div className="bg-white border-b border-stone-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <button
+              type="button"
+              onClick={() => navigate('/crm/lead')}
+              className="flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-800"
+            >
+              <ArrowLeft className="size-3.5" />
+              Leads
+            </button>
+            <button
               type="submit"
-              disabled={isPending}
+              disabled={save.isPending}
               className="inline-flex items-center gap-1 rounded bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
-              {isPending ? 'Saving…' : 'Save'}
+              {save.isPending ? 'Saving…' : 'Save'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/crm/lead')}
-              disabled={isPending}
+              disabled={save.isPending}
               className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
             >
               Cancel
             </button>
-            {createError && (
+            {(save.error || transition.error) && (
               <div className="flex items-center gap-1.5 rounded border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
                 <AlertCircle className="size-3.5 shrink-0" />
-                {apiErrorMessage(createError, 'Failed to save lead.')}
+                {apiErrorMessage(save.error ?? transition.error, 'Failed to save.')}
               </div>
             )}
           </div>
-          <nav className="hidden sm:flex items-center gap-1 text-xs text-stone-400 font-medium">
-            <span>CRM</span><span>/</span><span>Lead</span><span>/</span>
-            <span className="text-stone-700 font-semibold">New Lead</span>
-          </nav>
+          <div className="flex items-center gap-2">
+            <ConvertRecordButton
+              recordId={id}
+              sourceWorkflowKey="lead"
+              onConverted={(newId) => navigate(`/prospects/${newId}/edit`)}
+            />
+            <DeleteRecordDialog
+              recordId={id}
+              label={`Lead — ${company}`}
+              onDeleted={() => {
+                queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
+                navigate('/crm/lead');
+              }}
+            />
+          </div>
         </div>
 
         {/* Page Title */}
@@ -90,12 +141,11 @@ export default function AddLeadPage() {
           <div className="h-5 w-5 rounded bg-purple-100 flex items-center justify-center">
             <Sparkles className="h-3 w-3 text-purple-600" />
           </div>
-          <h1 className="text-sm font-bold text-stone-800">New Lead</h1>
+          <h1 className="text-sm font-bold text-stone-800">Lead — {company}</h1>
         </div>
 
         {/* Form Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-
           <Section title="Primary Information">
             <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
               <FieldShell label="Company Name" required>
@@ -104,15 +154,16 @@ export default function AddLeadPage() {
                   value={String(coreFields.company_name ?? '')}
                   onChange={(e) => set('company_name', e.target.value)}
                   className={inputClass}
-                  placeholder="Acme Corp"
                 />
               </FieldShell>
               <FieldShell label="Status">
                 <StatusDropdown
                   workflowKey="lead"
-                  mode="all"
-                  value={stateId}
+                  mode="transitions"
+                  recordId={id}
+                  value={currentStateId}
                   onChange={handleStatusChange}
+                  disabled={transition.isPending}
                 />
               </FieldShell>
               <FieldShell label="First Name">
@@ -164,7 +215,6 @@ export default function AddLeadPage() {
                   value={String(coreFields.source ?? '')}
                   onChange={(e) => set('source', e.target.value)}
                   className={inputClass}
-                  placeholder="e.g. Website, Referral"
                 />
               </FieldShell>
               <FieldShell label="Estimated Value">
@@ -173,22 +223,24 @@ export default function AddLeadPage() {
                   value={String(coreFields.estimated_value ?? '')}
                   onChange={(e) => set('estimated_value', e.target.value)}
                   className={inputClass}
-                  placeholder="0"
                 />
               </FieldShell>
             </div>
           </Section>
 
-          {customFields.length > 0 && (
+          {customFieldDefs.length > 0 && (
             <Section title="Custom Fields">
               <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                {customFields.map((f) => (
+                {customFieldDefs.map((f) => (
                   <DynamicFieldInput
                     key={f.id || f.key}
                     field={f}
                     value={customFieldValues[f.key]}
                     onChange={(key, value) =>
-                      setCustomFieldValues((prev) => ({ ...prev, [key]: value }))
+                      setLocalCustomFields((prev) => ({
+                        ...(prev ?? record?.customFields ?? {}),
+                        [key]: value,
+                      }))
                     }
                   />
                 ))}

@@ -108,6 +108,7 @@ export interface Workflow {
   description: string;
   enabled: boolean;
   isDefault: boolean;
+  pipelineOrder: number;
 }
 
 export interface WorkflowState {
@@ -159,10 +160,30 @@ export interface WorkflowRecord {
   currentStateId: string;
   ownerUserId?: string;
   teamId?: string;
+  parentRecordId?: string;
   coreFields: Record<string, unknown>;
   customFields: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StatusInfo {
+  stateId: string;
+  stateKey: string;
+  statusLabel: string;
+  workflowKey: string;
+  workflowName: string;
+  isInitial: boolean;
+  isTerminal: boolean;
+  sortOrder: number;
+  color: string;
+}
+
+export interface CRMCreatePayload {
+  ownerUserId?: string;
+  teamId?: string;
+  coreFields: Record<string, unknown>;
+  customFields?: Record<string, unknown>;
 }
 
 // ----- User management (Phase 4) --------------------------------------------

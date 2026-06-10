@@ -2,14 +2,14 @@ import { Sparkles, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { LeadTable } from './components/LeadTable';
-import { leadService } from '@/services/leadService';
+import { crmService } from '@/services/crmService';
 
 export default function LeadPage() {
   const navigate = useNavigate();
 
-  const { data: leads = [], isLoading, isError } = useQuery({
-    queryKey: ['leads'],
-    queryFn: leadService.list,
+  const { data: records = [], isLoading, isError } = useQuery({
+    queryKey: ['crm-records', 'lead'],
+    queryFn: () => crmService.listRecords('lead'),
   });
 
   return (
@@ -38,7 +38,7 @@ export default function LeadPage() {
           {isError && (
             <p className="text-xs text-red-500 mb-3">Failed to load leads. Is the backend running?</p>
           )}
-          <LeadTable leads={leads} isLoading={isLoading} />
+          <LeadTable records={records} isLoading={isLoading} />
         </div>
       </div>
     </div>

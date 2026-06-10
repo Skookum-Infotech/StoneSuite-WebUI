@@ -29,8 +29,16 @@ const AddProspectPage = lazy(() => import("@/pages/prospect/AddProspectPage"));
 const ProspectViewPage = lazy(
   () => import("@/pages/prospect/ProspectViewPage"),
 );
+const EditProspectPage = lazy(
+  () => import("@/pages/prospect/EditProspectPage"),
+);
 const LeadPage = lazy(() => import("@/pages/crm/LeadPage"));
 const AddLeadPage = lazy(() => import("@/pages/crm/AddLeadPage"));
+const EditLeadPage = lazy(() => import("@/pages/crm/EditLeadPage"));
+const LeadDetailPage = lazy(() => import("@/pages/crm/LeadDetailPage"));
+const CustomerListPage = lazy(() => import("@/pages/crm/customer/CustomerListPage"));
+const AddCRMCustomerPage = lazy(() => import("@/pages/crm/customer/AddCustomerPage"));
+const EditCustomerPage = lazy(() => import("@/pages/crm/customer/EditCustomerPage"));
 const ConfigHomePage = lazy(() => import("@/pages/config/ConfigHomePage"));
 const ConfigWorkflowsPage = lazy(() => import("@/pages/config/WorkflowsPage"));
 const WorkflowBuilderPage = lazy(
@@ -98,6 +106,14 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+      {
+        path: "prospects/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="prospect" action="update">
+            <EditProspectPage />
+          </PermissionGuard>,
+        ),
+      },
 
       // CRM: Leads
       {
@@ -113,6 +129,48 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="lead" action="create">
             <AddLeadPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "crm/lead/:id",
+        element: lazy_(
+          <PermissionGuard resource="lead" action="read">
+            <LeadDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "crm/lead/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="lead" action="update">
+            <EditLeadPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // CRM: Customers (tenant-side, not platform onboarding)
+      {
+        path: "crm/customer",
+        element: lazy_(
+          <PermissionGuard resource="customer" action="read">
+            <CustomerListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "crm/customer/new",
+        element: lazy_(
+          <PermissionGuard resource="customer" action="create">
+            <AddCRMCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "crm/customer/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="customer" action="update">
+            <EditCustomerPage />
           </PermissionGuard>,
         ),
       },

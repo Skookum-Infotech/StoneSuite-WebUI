@@ -1,7 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import type { Prospect } from '@/types/prospect';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, X, Pencil } from 'lucide-react';
+import { crmService } from '@/services/crmService';
+import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
+import { Badge } from '@/components/tenant/ui';
+import type { WorkflowRecord, StatusInfo } from '@/types/tenant';
 
 type SortField = 'id' | 'name' | 'createdAt' | 'updatedAt';
 type SortDir = 'asc' | 'desc';
@@ -9,54 +13,42 @@ type SortDir = 'asc' | 'desc';
 const PAGE_SIZE = 10;
 
 const SORT_LABELS: Record<SortField, string> = {
-  id:        'Document ID',
-  name:      'Document Name',
+  id:        'Record ID',
+  name:      'Company Name',
   createdAt: 'Date Created',
   updatedAt: 'Date Modified',
 };
 
-const statusStyles: Record<string, string> = {
-  active:      'bg-green-100 text-green-700',
-  inactive:    'bg-stone-100 text-stone-500',
-  pending:     'bg-amber-100 text-amber-700',
-  suspended:   'bg-red-100 text-red-600',
-  prospect:    'bg-blue-100 text-blue-700',
-  customer:    'bg-emerald-100 text-emerald-700',
-};
+type Props = { records: WorkflowRecord[]; isLoading?: boolean };
 
-function shortId(id: string): string {
-  return id.length > 8 ? `…${id.slice(-8)}` : id;
-}
-
-function statusBadgeClass(status: string): string {
-  return statusStyles[status?.toLowerCase()] ?? 'bg-stone-100 text-stone-600';
-}
-
-type Props = {
-  prospects: Prospect[];
-  isLoading?: boolean;
-};
-
-export function ProspectTable({ prospects, isLoading }: Props) {
+export function ProspectTable({ records, isLoading }: Props) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [idFilter, setIdFilter]         = useState('');
   const [nameFilter, setNameFilter]     = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy]             = useState<SortField>('createdAt');
   const [sortDir, setSortDir]           = useState<SortDir>('desc');
   const [page, setPage]                 = useState(1);
 
-  const hasFilters = idFilter || nameFilter || statusFilter;
+  const { data: statusData } = useQuery({
+    queryKey: ['crm-statuses-workflow', 'prospect'],
+    queryFn: () => crmService.getWorkflowStatuses('prospect'),
+  });
 
-  // Derive unique statuses from the data for the filter dropdown
-  const uniqueStatuses = useMemo(
-    () => [...new Set(prospects.map((p) => p.status).filter(Boolean))].sort(),
-    [prospects],
+  const prospectStatuses = useMemo(
+    () => statusData?.statuses ?? [],
+    [statusData],
   );
 
+  const statusMap = useMemo(
+    () => new Map<string, StatusInfo>(prospectStatuses.map((s) => [s.stateId, s])),
+    [prospectStatuses],
+  );
+
+  const hasFilters = nameFilter || statusFilter;
+
   function clearFilters() {
-    setIdFilter('');
     setNameFilter('');
     setStatusFilter('');
     setPage(1);
@@ -73,23 +65,22 @@ export function ProspectTable({ prospects, isLoading }: Props) {
   }
 
   const filtered = useMemo(() => {
-    return prospects.filter((p) => {
-      const docId = p.customer_id || p.id;
-      if (idFilter && !docId.toLowerCase().includes(idFilter.toLowerCase())) return false;
-      if (nameFilter && !p.company_name?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
-      if (statusFilter && p.status !== statusFilter) return false;
+    return records.filter((r) => {
+      const company = String(r.coreFields.company_name ?? '').toLowerCase();
+      if (nameFilter && !company.includes(nameFilter.toLowerCase())) return false;
+      if (statusFilter && r.currentStateId !== statusFilter) return false;
       return true;
     });
-  }, [prospects, idFilter, nameFilter, statusFilter]);
+  }, [records, nameFilter, statusFilter]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       let av = '';
       let bv = '';
-      if (sortBy === 'id')        { av = a.customer_id || a.id; bv = b.customer_id || b.id; }
-      if (sortBy === 'name')      { av = a.company_name ?? '';  bv = b.company_name ?? ''; }
-      if (sortBy === 'createdAt') { av = a.created_at ?? '';    bv = b.created_at ?? ''; }
-      if (sortBy === 'updatedAt') { av = a.updated_at ?? '';    bv = b.updated_at ?? ''; }
+      if (sortBy === 'id')        { av = a.id;                                        bv = b.id; }
+      if (sortBy === 'name')      { av = String(a.coreFields.company_name ?? '');      bv = String(b.coreFields.company_name ?? ''); }
+      if (sortBy === 'createdAt') { av = a.createdAt;                                  bv = b.createdAt; }
+      if (sortBy === 'updatedAt') { av = a.updatedAt;                                  bv = b.updatedAt; }
       const cmp = av.localeCompare(bv, undefined, { numeric: true });
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -101,9 +92,7 @@ export function ProspectTable({ prospects, isLoading }: Props) {
 
   function SortIcon({ field }: { field: SortField }) {
     if (sortBy !== field) return <ArrowUpDown className="size-2.5 opacity-40" />;
-    return sortDir === 'asc'
-      ? <ArrowUp className="size-2.5" />
-      : <ArrowDown className="size-2.5" />;
+    return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
   return (
@@ -111,43 +100,29 @@ export function ProspectTable({ prospects, isLoading }: Props) {
 
       {/* ── Filter bar ── */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Document ID */}
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-stone-400" />
           <input
             type="text"
-            placeholder="Document ID…"
-            value={idFilter}
-            onChange={(e) => { setIdFilter(e.target.value); setPage(1); }}
-            className="h-8 w-36 rounded-md border border-stone-200 bg-white pl-7 pr-2.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
-          />
-        </div>
-
-        {/* Document Name */}
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-stone-400" />
-          <input
-            type="text"
-            placeholder="Document Name…"
+            placeholder="Company name…"
             value={nameFilter}
             onChange={(e) => { setNameFilter(e.target.value); setPage(1); }}
             className="h-8 w-44 rounded-md border border-stone-200 bg-white pl-7 pr-2.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
           />
         </div>
 
-        {/* Status — derived from actual data */}
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           className="h-8 rounded-md border border-stone-200 bg-white px-2.5 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+          aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
-          {uniqueStatuses.map((s) => (
-            <option key={s} value={s}>{s}</option>
+          {prospectStatuses.map((s) => (
+            <option key={s.stateId} value={s.stateId}>{s.statusLabel}</option>
           ))}
         </select>
 
-        {/* Right: clear + count */}
         <div className="ml-auto flex items-center gap-2">
           {hasFilters && (
             <button
@@ -189,53 +164,68 @@ export function ProspectTable({ prospects, isLoading }: Props) {
           <table className="w-full text-left text-xs">
             <thead className="bg-brand/20 text-2xs uppercase tracking-wide text-brand-dark">
               <tr>
-                <th className="px-3 py-2.5 font-semibold">Prospect ID</th>
                 <th className="px-3 py-2.5 font-semibold">Company Name</th>
                 <th className="px-3 py-2.5 font-semibold">Status</th>
                 <th className="px-3 py-2.5 font-semibold">Email</th>
-                <th className="px-3 py-2.5 font-semibold">Customer Type</th>
                 <th className="px-3 py-2.5 font-semibold">Created</th>
+                <th className="px-3 py-2.5 font-semibold sr-only">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {pageData.map((prospect) => (
-                <tr
-                  key={prospect.id}
-                  onClick={() => navigate(`/prospects/${prospect.id}`)}
-                  className="cursor-pointer hover:bg-stone-50/70 transition-colors"
-                  aria-label={`View prospect ${prospect.company_name || prospect.id}`}
-                >
-                  <td className="px-3 py-2 font-mono text-stone-500">
-                    {prospect.customer_id ? prospect.customer_id : shortId(prospect.id)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="font-semibold text-stone-900">
-                      {prospect.company_name || '(unnamed)'}
-                    </div>
-                    {prospect.billing_account_name && prospect.billing_account_name !== prospect.company_name && (
-                      <div className="text-2xs text-stone-400">{prospect.billing_account_name}</div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    {prospect.status ? (
-                      <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${statusBadgeClass(prospect.status)}`}>
-                        {prospect.status}
-                      </span>
-                    ) : (
-                      <span className="text-stone-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-stone-600">{prospect.email || '—'}</td>
-                  <td className="px-3 py-2 text-stone-600">{prospect.customer_type || '—'}</td>
-                  <td className="px-3 py-2 text-stone-400">
-                    {prospect.created_at
-                      ? new Date(prospect.created_at).toLocaleDateString(undefined, {
-                          year: 'numeric', month: 'short', day: 'numeric',
-                        })
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
+              {pageData.map((record) => {
+                const statusInfo = statusMap.get(record.currentStateId);
+                const company = String(record.coreFields.company_name ?? '(unnamed)');
+                const email = String(record.coreFields.email ?? '—');
+                const label = `Prospect — ${company}`;
+                return (
+                  <tr
+                    key={record.id}
+                    className="hover:bg-stone-50/70 transition-colors"
+                  >
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/prospects/${record.id}`)}
+                        className="font-semibold text-stone-900 hover:text-brand-dark hover:underline text-left"
+                      >
+                        {company}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2">
+                      {statusInfo ? (
+                        <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
+                      ) : (
+                        <span className="text-stone-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-stone-600">{email}</td>
+                    <td className="px-3 py-2 text-stone-400">
+                      {new Date(record.createdAt).toLocaleDateString(undefined, {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                      })}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/prospects/${record.id}/edit`)}
+                          aria-label={`Edit ${label}`}
+                          className="rounded p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                        <DeleteRecordDialog
+                          recordId={record.id}
+                          label={label}
+                          onDeleted={() =>
+                            queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] })
+                          }
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -245,12 +235,12 @@ export function ProspectTable({ prospects, isLoading }: Props) {
             Loading prospects…
           </div>
         )}
-        {!isLoading && prospects.length === 0 && (
+        {!isLoading && records.length === 0 && (
           <div className="flex h-32 items-center justify-center text-xs text-stone-400">
             No prospects added yet.
           </div>
         )}
-        {!isLoading && prospects.length > 0 && pageData.length === 0 && (
+        {!isLoading && records.length > 0 && pageData.length === 0 && (
           <div className="flex h-32 items-center justify-center text-xs text-stone-400">
             No prospects match the current filters.
           </div>

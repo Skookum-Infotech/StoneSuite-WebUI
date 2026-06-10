@@ -1,10 +1,4 @@
-export type LeadStatus =
-  | 'LEAD-Unqualified'
-  | 'LEAD-Qualified'
-  | 'LEAD-New'
-  | 'LEAD-In Progress'
-  | 'LEAD-Converted'
-  | 'LEAD-Dead';
+export type LeadStatus = string;
 
 export type LeadType = 'Company' | 'Individual';
 
