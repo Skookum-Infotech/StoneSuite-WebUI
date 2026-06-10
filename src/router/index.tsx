@@ -38,6 +38,7 @@ const EditLeadPage = lazy(() => import("@/pages/crm/EditLeadPage"));
 const LeadDetailPage = lazy(() => import("@/pages/crm/LeadDetailPage"));
 const CustomerListPage = lazy(() => import("@/pages/crm/customer/CustomerListPage"));
 const AddCRMCustomerPage = lazy(() => import("@/pages/crm/customer/AddCustomerPage"));
+const CustomerDetailPage = lazy(() => import("@/pages/crm/customer/CustomerDetailPage"));
 const EditCustomerPage = lazy(() => import("@/pages/crm/customer/EditCustomerPage"));
 const ConfigHomePage = lazy(() => import("@/pages/config/ConfigHomePage"));
 const ConfigWorkflowsPage = lazy(() => import("@/pages/config/WorkflowsPage"));
@@ -163,6 +164,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="customer" action="create">
             <AddCRMCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "crm/customer/:id",
+        element: lazy_(
+          <PermissionGuard resource="customer" action="read">
+            <CustomerDetailPage />
           </PermissionGuard>,
         ),
       },

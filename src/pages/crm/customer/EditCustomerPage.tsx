@@ -5,10 +5,9 @@ import { Building2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { CustomerFormSections } from '@/components/crm/CustomerFormSections';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
-import { Section, FieldShell, inputClass } from '@/components/prospect/ProspectUI';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import type { FieldDefinition } from '@/types/tenant';
 
@@ -17,7 +16,6 @@ export default function EditCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // null = not yet modified by user → fall back to record data
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
   const [localStateId, setLocalStateId] = useState<string | null>(null);
@@ -32,7 +30,6 @@ export default function EditCustomerPage() {
   const customFieldValues = localCustomFields ?? record?.customFields ?? {};
   const currentStateId = localStateId ?? record?.currentStateId ?? '';
 
-  // Custom field definitions
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const customerWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'customer');
   const { data: customerDef } = useQuery({
@@ -139,80 +136,28 @@ export default function EditCustomerPage() {
 
         {/* Form Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          <Section title="Customer Details">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-              <FieldShell label="Company Name" required>
-                <input
-                  required
-                  value={String(coreFields.company_name ?? '')}
-                  onChange={(e) => set('company_name', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Status">
-                <StatusDropdown
-                  workflowKey="customer"
-                  mode="transitions"
-                  recordId={id}
-                  value={currentStateId}
-                  onChange={handleStatusChange}
-                  disabled={transition.isPending}
-                />
-              </FieldShell>
-              <FieldShell label="Email" required>
-                <input
-                  required
-                  type="email"
-                  value={String(coreFields.email ?? '')}
-                  onChange={(e) => set('email', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Phone">
-                <input
-                  type="tel"
-                  value={String(coreFields.phone ?? '')}
-                  onChange={(e) => set('phone', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Industry">
-                <input
-                  value={String(coreFields.industry ?? '')}
-                  onChange={(e) => set('industry', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Website">
-                <input
-                  type="url"
-                  value={String(coreFields.website ?? '')}
-                  onChange={(e) => set('website', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-            </div>
-          </Section>
-
-          {customFieldDefs.length > 0 && (
-            <Section title="Custom Fields">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                {customFieldDefs.map((f) => (
-                  <DynamicFieldInput
-                    key={f.id || f.key}
-                    field={f}
-                    value={customFieldValues[f.key]}
-                    onChange={(key, value) =>
-                      setLocalCustomFields((prev) => ({
-                        ...(prev ?? record?.customFields ?? {}),
-                        [key]: value,
-                      }))
-                    }
-                  />
-                ))}
-              </div>
-            </Section>
-          )}
+          <CustomerFormSections
+            core={{ fields: coreFields, onChange: set }}
+            custom={{
+              defs: customFieldDefs,
+              values: customFieldValues,
+              onChange: (key, value) =>
+                setLocalCustomFields((prev) => ({
+                  ...(prev ?? record?.customFields ?? {}),
+                  [key]: value,
+                })),
+            }}
+            statusNode={
+              <StatusDropdown
+                workflowKey="customer"
+                mode="transitions"
+                recordId={id}
+                value={currentStateId}
+                onChange={handleStatusChange}
+                disabled={transition.isPending}
+              />
+            }
+          />
         </div>
       </form>
     </div>

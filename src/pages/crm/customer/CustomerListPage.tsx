@@ -129,9 +129,13 @@ export default function CustomerListPage() {
                     const company = String(record.coreFields.company_name ?? '(unnamed)');
                     const label = `Customer — ${company}`;
                     return (
-                      <tr key={record.id} className="hover:bg-stone-50/70 transition-colors">
+                      <tr
+                        key={record.id}
+                        className="cursor-pointer hover:bg-stone-50/70 transition-colors"
+                        onClick={() => navigate(`/crm/customer/${record.id}`)}
+                      >
                         <td className="px-3 py-2">
-                          <span className="font-semibold text-stone-900">{company}</span>
+                          <span className="font-semibold text-stone-900 hover:text-brand-dark">{company}</span>
                         </td>
                         <td className="px-3 py-2">
                           {statusInfo ? (
@@ -145,7 +149,7 @@ export default function CustomerListPage() {
                             year: 'numeric', month: 'short', day: 'numeric',
                           })}
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-1 justify-end">
                             <button
                               type="button"

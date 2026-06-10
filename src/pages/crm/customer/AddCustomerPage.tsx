@@ -4,10 +4,9 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
-import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { CustomerFormSections } from '@/components/crm/CustomerFormSections';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { Section, FieldShell, inputClass } from '@/components/prospect/ProspectUI';
 import type { FieldDefinition } from '@/types/tenant';
 
 export default function AddCustomerPage() {
@@ -18,10 +17,8 @@ export default function AddCustomerPage() {
   const [coreFields, setCoreFields] = useState<Record<string, unknown>>({});
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
-  // Handler required by StatusDropdown (disabled on create, so called once for initial state)
   const handleStatusChange = useCallback((id: string) => setStateId(id), []);
 
-  // Custom field definitions for customer workflow
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const customerWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'customer');
   const { data: customerDef } = useQuery({
@@ -93,80 +90,24 @@ export default function AddCustomerPage() {
 
         {/* Form Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          <Section title="Customer Details">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-              <FieldShell label="Company Name" required>
-                <input
-                  required
-                  value={String(coreFields.company_name ?? '')}
-                  onChange={(e) => set('company_name', e.target.value)}
-                  className={inputClass}
-                  placeholder="Acme Corp"
-                />
-              </FieldShell>
-              <FieldShell label="Status">
-                {/* Disabled on create — customers always start at the initial state */}
-                <StatusDropdown
-                  workflowKey="customer"
-                  mode="all"
-                  value={stateId}
-                  onChange={handleStatusChange}
-                  disabled
-                />
-              </FieldShell>
-              <FieldShell label="Email" required>
-                <input
-                  required
-                  type="email"
-                  value={String(coreFields.email ?? '')}
-                  onChange={(e) => set('email', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Phone">
-                <input
-                  type="tel"
-                  value={String(coreFields.phone ?? '')}
-                  onChange={(e) => set('phone', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Industry">
-                <input
-                  value={String(coreFields.industry ?? '')}
-                  onChange={(e) => set('industry', e.target.value)}
-                  className={inputClass}
-                  placeholder="e.g. SaaS, Retail"
-                />
-              </FieldShell>
-              <FieldShell label="Website">
-                <input
-                  type="url"
-                  value={String(coreFields.website ?? '')}
-                  onChange={(e) => set('website', e.target.value)}
-                  className={inputClass}
-                  placeholder="https://"
-                />
-              </FieldShell>
-            </div>
-          </Section>
-
-          {customFields.length > 0 && (
-            <Section title="Custom Fields">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                {customFields.map((f) => (
-                  <DynamicFieldInput
-                    key={f.id || f.key}
-                    field={f}
-                    value={customFieldValues[f.key]}
-                    onChange={(key, value) =>
-                      setCustomFieldValues((prev) => ({ ...prev, [key]: value }))
-                    }
-                  />
-                ))}
-              </div>
-            </Section>
-          )}
+          <CustomerFormSections
+            core={{ fields: coreFields, onChange: set }}
+            custom={{
+              defs: customFields,
+              values: customFieldValues,
+              onChange: (key, value) =>
+                setCustomFieldValues((prev) => ({ ...prev, [key]: value })),
+            }}
+            statusNode={
+              <StatusDropdown
+                workflowKey="customer"
+                mode="all"
+                value={stateId}
+                onChange={handleStatusChange}
+                disabled
+              />
+            }
+          />
         </div>
       </form>
     </div>
