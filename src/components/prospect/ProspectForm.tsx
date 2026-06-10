@@ -10,17 +10,22 @@ import {
 import { Section, FieldShell, TabBar, inputClass } from '@/components/prospect/ProspectUI';
 
 export function ProspectForm({
+  initialValues,
   submitting,
   errorMessage,
   onSubmit,
   onCancel,
 }: {
+  initialValues?: Record<string, unknown>;
   submitting: boolean;
   errorMessage?: string | null;
   onSubmit: (fields: Record<string, unknown>) => void;
   onCancel: () => void;
 }) {
-  const [data, setData] = useState<Record<string, unknown>>(() => prospectDefaults());
+  const [data, setData] = useState<Record<string, unknown>>(() => ({
+    ...prospectDefaults(),
+    ...initialValues,
+  }));
   const [activeTab, setActiveTab] = useState(TABS[0]?.key ?? '');
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
 

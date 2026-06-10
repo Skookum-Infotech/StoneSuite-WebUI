@@ -1,6 +1,5 @@
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ProspectTab } from '@/lib/prospectForm';
 
 export const inputClass =
   'w-full rounded border border-stone-300 bg-white px-2 py-1 text-xs text-stone-800 outline-none placeholder:text-stone-300 focus:border-brand focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
@@ -44,7 +43,7 @@ export function TabBar({
   active,
   onSelect,
 }: {
-  tabs: ProspectTab[];
+  tabs: { key: string; label: string }[];
   active: string;
   onSelect: (key: string) => void;
 }) {

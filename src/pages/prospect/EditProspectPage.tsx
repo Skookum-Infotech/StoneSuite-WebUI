@@ -9,8 +9,10 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { ConvertRecordButton } from '@/components/crm/ConvertRecordButton';
-import { Section, FieldShell, inputClass } from '@/components/prospect/ProspectUI';
+import { Section, FieldShell, TabBar, inputClass } from '@/components/prospect/ProspectUI';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { PRIMARY_SECTIONS, TABS, prospectDefaults } from '@/lib/prospectForm';
+import type { ProspectField, ProspectSection } from '@/lib/prospectForm';
 import type { FieldDefinition } from '@/types/tenant';
 
 export default function EditProspectPage() {
@@ -18,10 +20,10 @@ export default function EditProspectPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // null = not yet modified by user → fall back to record data
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
   const [localStateId, setLocalStateId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState(TABS[0]?.key ?? '');
 
   const { data: record, isLoading, error: loadError } = useQuery({
     queryKey: ['crm-record', id],
@@ -29,11 +31,10 @@ export default function EditProspectPage() {
     enabled: Boolean(id),
   });
 
-  const coreFields = localCoreFields ?? record?.coreFields ?? {};
+  const coreFields = localCoreFields ?? { ...prospectDefaults(), ...record?.coreFields };
   const customFieldValues = localCustomFields ?? record?.customFields ?? {};
   const currentStateId = localStateId ?? record?.currentStateId ?? '';
 
-  // Custom field definitions
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const prospectWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'prospect');
   const { data: prospectDef } = useQuery({
@@ -63,7 +64,8 @@ export default function EditProspectPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }, 'prospect'),
+    mutationFn: () =>
+      crmService.updateRecord(id, { coreFields, customFields: customFieldValues }, 'prospect'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
@@ -72,7 +74,12 @@ export default function EditProspectPage() {
   });
 
   const set = (key: string, value: unknown) =>
-    setLocalCoreFields((prev) => ({ ...(prev ?? record?.coreFields ?? {}), [key]: value }));
+    setLocalCoreFields((prev) => ({
+      ...(prev ?? { ...prospectDefaults(), ...record?.coreFields }),
+      [key]: value,
+    }));
+
+  const activeTabObj = TABS.find((t) => t.key === activeTab) ?? TABS[0];
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading prospect…" /></div>;
   if (loadError || !record)
@@ -86,7 +93,7 @@ export default function EditProspectPage() {
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="flex flex-col flex-1"
       >
-        {/* Header Bar */}
+        {/* Sticky header */}
         <div className="bg-white border-b border-stone-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <button
@@ -120,6 +127,14 @@ export default function EditProspectPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <StatusDropdown
+              workflowKey="prospect"
+              mode="transitions"
+              recordId={id}
+              value={currentStateId}
+              onChange={handleStatusChange}
+              disabled={transition.isPending}
+            />
             <ConvertRecordButton
               recordId={id}
               sourceWorkflowKey="prospect"
@@ -137,7 +152,7 @@ export default function EditProspectPage() {
           </div>
         </div>
 
-        {/* Page Title */}
+        {/* Page title */}
         <div className="bg-white border-b border-stone-100 px-6 py-2 flex items-center gap-2">
           <div className="h-5 w-5 rounded bg-brand/20 flex items-center justify-center">
             <Users className="h-3 w-3 text-brand-dark" />
@@ -145,62 +160,20 @@ export default function EditProspectPage() {
           <h1 className="text-sm font-bold text-stone-800">Prospect — {company}</h1>
         </div>
 
-        {/* Form Body */}
+        {/* Form body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          <Section title="Prospect Details">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-              <FieldShell label="Company Name" required>
-                <input
-                  required
-                  value={String(coreFields.company_name ?? '')}
-                  onChange={(e) => set('company_name', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Status">
-                <StatusDropdown
-                  workflowKey="prospect"
-                  mode="transitions"
-                  recordId={id}
-                  value={currentStateId}
-                  onChange={handleStatusChange}
-                  disabled={transition.isPending}
-                />
-              </FieldShell>
-              <FieldShell label="Email">
-                <input
-                  type="email"
-                  value={String(coreFields.email ?? '')}
-                  onChange={(e) => set('email', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Phone">
-                <input
-                  type="tel"
-                  value={String(coreFields.phone ?? '')}
-                  onChange={(e) => set('phone', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Deal Size">
-                <input
-                  type="number"
-                  value={String(coreFields.deal_size ?? '')}
-                  onChange={(e) => set('deal_size', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
-              <FieldShell label="Expected Close Date">
-                <input
-                  type="date"
-                  value={String(coreFields.close_date ?? '')}
-                  onChange={(e) => set('close_date', e.target.value)}
-                  className={inputClass}
-                />
-              </FieldShell>
+          {PRIMARY_SECTIONS.map((section) => (
+            <ProspectSectionFields key={section.title} section={section} data={coreFields} set={set} />
+          ))}
+
+          <div className="rounded border border-stone-200 bg-white overflow-hidden">
+            <TabBar tabs={TABS} active={activeTabObj.key} onSelect={setActiveTab} />
+            <div className="space-y-3 p-3">
+              {activeTabObj.sections.map((section) => (
+                <ProspectSectionFields key={section.title} section={section} data={coreFields} set={set} />
+              ))}
             </div>
-          </Section>
+          </div>
 
           {customFieldDefs.length > 0 && (
             <Section title="Custom Fields">
@@ -224,5 +197,91 @@ export default function EditProspectPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+function ProspectSectionFields({
+  section,
+  data,
+  set,
+}: {
+  section: ProspectSection;
+  data: Record<string, unknown>;
+  set: (key: string, value: unknown) => void;
+}) {
+  return (
+    <Section title={section.title}>
+      <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+        {section.fields.map((f) => (
+          <ProspectFieldInput key={f.key} field={f} value={data[f.key]} set={set} />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function ProspectFieldInput({
+  field,
+  value,
+  set,
+}: {
+  field: ProspectField;
+  value: unknown;
+  set: (key: string, value: unknown) => void;
+}) {
+  const str = typeof value === 'string' ? value : '';
+
+  if (field.type === 'checkbox') {
+    return (
+      <label className="flex items-center gap-2 self-end pb-1.5 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={value === true}
+          onChange={(e) => set(field.key, e.target.checked)}
+          className="size-3.5 rounded border-stone-300 accent-brand"
+          aria-label={field.label}
+        />
+        <span className="text-label font-semibold text-stone-600">{field.label}</span>
+      </label>
+    );
+  }
+
+  return (
+    <FieldShell label={field.label} required={field.required}>
+      {field.type === 'textarea' ? (
+        <textarea
+          rows={3}
+          required={field.required}
+          value={str}
+          onChange={(e) => set(field.key, e.target.value)}
+          className={`${inputClass} resize-none`}
+          aria-label={field.label}
+        />
+      ) : field.type === 'select' ? (
+        <select
+          required={field.required}
+          value={str}
+          onChange={(e) => set(field.key, e.target.value)}
+          className={inputClass}
+          aria-label={field.label}
+        >
+          <option value="">— Select —</option>
+          {field.options?.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={field.type === 'number' ? 'number' : field.type ?? 'text'}
+          required={field.required}
+          readOnly={field.readOnly}
+          placeholder={field.placeholder}
+          value={str}
+          onChange={(e) => set(field.key, e.target.value)}
+          className={inputClass}
+          aria-label={field.label}
+        />
+      )}
+    </FieldShell>
   );
 }
