@@ -9,6 +9,7 @@ import type {
   Workflow,
   WorkflowDefinition,
   WorkflowRecord,
+  WorkflowNumberingConfig,
   FieldDefinition,
   Scope,
   OnboardingApplyDetails,
@@ -179,6 +180,24 @@ export const workflowService = {
         { toStateId },
       )
       .then((r) => r.data.record),
+};
+
+// ----- Record Numbering -----------------------------------------------------
+
+export const numberingService = {
+  get: (workflowId: string) =>
+    tenantClient
+      .get<{ success: boolean; numbering: WorkflowNumberingConfig }>(
+        `/tenant/workflows/${workflowId}/numbering`,
+      )
+      .then((r) => r.data.numbering),
+  update: (workflowId: string, data: Omit<WorkflowNumberingConfig, 'workflowId'>) =>
+    tenantClient
+      .put<{ success: boolean; numbering: WorkflowNumberingConfig }>(
+        `/tenant/workflows/${workflowId}/numbering`,
+        data,
+      )
+      .then((r) => r.data),
 };
 
 // ----- User management (Phase 4) --------------------------------------------

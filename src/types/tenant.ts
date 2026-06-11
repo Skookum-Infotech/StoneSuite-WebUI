@@ -163,8 +163,18 @@ export interface WorkflowRecord {
   parentRecordId?: string;
   coreFields: Record<string, unknown>;
   customFields: Record<string, unknown>;
+  recordNumber?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WorkflowNumberingConfig {
+  workflowId: string;
+  enabled: boolean;
+  prefix: string;
+  suffix: string;
+  minDigits: number;
+  nextNumber: number;
 }
 
 export interface StatusInfo {

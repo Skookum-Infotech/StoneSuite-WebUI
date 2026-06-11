@@ -68,6 +68,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
     [statuses],
   );
 
+  const hasRecordNumbers = records.some((r) => Boolean(r.recordNumber));
   const hasFilters = nameFilter || statusFilter;
 
   function clearFilters() {
@@ -188,6 +189,9 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           <table className="w-full text-left text-xs">
             <thead className="bg-brand/20 text-2xs uppercase tracking-wide text-brand-dark">
               <tr>
+                {hasRecordNumbers && (
+                  <th className="px-3 py-2.5 font-semibold">Record #</th>
+                )}
                 <th className="px-3 py-2.5 font-semibold">Company</th>
                 <th className="px-3 py-2.5 font-semibold">Status</th>
                 {config.showEmail && (
@@ -205,6 +209,17 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                 const label      = `${config.label} — ${company}`;
                 return (
                   <tr key={record.id} className="hover:bg-stone-50/70 transition-colors">
+                    {hasRecordNumbers && (
+                      <td className="px-3 py-2">
+                        {record.recordNumber ? (
+                          <span className="font-mono text-xs text-stone-500">
+                            {record.recordNumber}
+                          </span>
+                        ) : (
+                          <span className="text-stone-300">—</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-3 py-2">
                       <button
                         type="button"

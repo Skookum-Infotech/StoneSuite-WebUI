@@ -59,6 +59,11 @@ export default function ProspectViewPage() {
           </button>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-stone-900">{company}</span>
+            {record.recordNumber && (
+              <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 font-mono text-2xs text-stone-500">
+                {record.recordNumber}
+              </span>
+            )}
             {statusInfo && <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>}
           </div>
         </div>

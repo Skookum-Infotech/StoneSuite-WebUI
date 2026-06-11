@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   UserPlus,
   UsersRound,
+  Hash,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -138,6 +139,14 @@ export const sidebarNav: SidebarNavConfig = {
               path: '/config/users',
               icon: UsersRound,
               permission: { resource: 'user', action: 'read' },
+            },
+            {
+              type: 'link',
+              id: 'record-numbering',
+              label: 'Record Numbering',
+              path: '/config/record-numbering',
+              icon: Hash,
+              permission: { resource: 'workflow_config', action: 'configure' },
             },
           ],
         },

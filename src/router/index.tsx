@@ -49,6 +49,7 @@ const RolesPage = lazy(() => import("@/pages/config/RolesPage"));
 const CreateRolePage = lazy(() => import("@/pages/config/CreateRolePage"));
 const EditRolePage = lazy(() => import("@/pages/config/EditRolePage"));
 const UsersPage = lazy(() => import("@/pages/config/UsersPage"));
+const RecordNumberingPage = lazy(() => import("@/pages/config/RecordNumberingPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -231,6 +232,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="user" action="read">
             <UsersPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/record-numbering",
+        element: lazy_(
+          <PermissionGuard resource="workflow_config" action="configure">
+            <RecordNumberingPage />
           </PermissionGuard>,
         ),
       },
