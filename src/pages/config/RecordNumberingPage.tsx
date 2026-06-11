@@ -1,23 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Hash, Check } from 'lucide-react';
-import { workflowService, numberingService } from '@/services/tenantServices';
-import { apiErrorMessage } from '@/api/tenantClient';
-import { Spinner, ErrorNote } from '@/components/tenant/ui';
-import { cn } from '@/lib/utils';
-import type { Workflow } from '@/types/tenant';
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm, useWatch } from "react-hook-form";
+import type { Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Hash, Check } from "lucide-react";
+import { workflowService, numberingService } from "@/services/tenantServices";
+import { apiErrorMessage } from "@/api/tenantClient";
+import { Spinner, ErrorNote } from "@/components/tenant/ui";
+import { cn } from "@/lib/utils";
+import type { Workflow } from "@/types/tenant";
 
 // ---------------------------------------------------------------------------
 
 const numberingSchema = z.object({
   enabled: z.boolean(),
-  prefix: z.string().max(20, 'Max 20 characters'),
-  suffix: z.string().max(20, 'Max 20 characters'),
-  minDigits: z.coerce.number().int().min(1, 'Min 1').max(10, 'Max 10'),
-  nextNumber: z.coerce.number().int().min(1, 'Must be ≥ 1'),
+  prefix: z.string().max(20, "Max 20 characters"),
+  suffix: z.string().max(20, "Max 20 characters"),
+  minDigits: z.coerce.number().int().min(1, "Min 1").max(10, "Max 10"),
+  nextNumber: z.coerce.number().int().min(1, "Must be ≥ 1"),
 });
 
 type NumberingFormValues = z.infer<typeof numberingSchema>;
@@ -26,7 +27,7 @@ type NumberingFormValues = z.infer<typeof numberingSchema>;
 
 export default function RecordNumberingPage(): React.JSX.Element {
   const workflowsQ = useQuery({
-    queryKey: ['workflows'],
+    queryKey: ["workflows"],
     queryFn: workflowService.list,
   });
 
@@ -48,7 +49,8 @@ export default function RecordNumberingPage(): React.JSX.Element {
             Record Numbering
           </h1>
           <p className="text-sm text-stone-500">
-            Auto-generate sequential numbers (e.g. LEAD-0001) for new records per workflow.
+            Auto-generate sequential numbers (e.g. LEAD-0001) for new records
+            per workflow.
           </p>
         </div>
       </div>
@@ -74,16 +76,16 @@ export default function RecordNumberingPage(): React.JSX.Element {
                   type="button"
                   onClick={() => setSelectedId(wf.id)}
                   className={cn(
-                    'w-full rounded-lg px-3 py-2.5 text-left transition-colors border',
+                    "w-full rounded-lg px-3 py-2.5 text-left transition-colors border",
                     active
-                      ? 'bg-brand/10 border-brand/25'
-                      : 'border-transparent hover:bg-stone-50',
+                      ? "bg-brand/10 border-brand/25"
+                      : "border-transparent hover:bg-stone-50",
                   )}
                 >
                   <span
                     className={cn(
-                      'block text-xs font-semibold',
-                      active ? 'text-brand-dark' : 'text-stone-700',
+                      "block text-xs font-semibold",
+                      active ? "text-brand-dark" : "text-stone-700",
                     )}
                   >
                     {wf.name}
@@ -118,11 +120,15 @@ export default function RecordNumberingPage(): React.JSX.Element {
 
 // ---------------------------------------------------------------------------
 
-function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element {
+function NumberingPanel({
+  workflow,
+}: {
+  workflow: Workflow;
+}): React.JSX.Element {
   const qc = useQueryClient();
 
   const configQ = useQuery({
-    queryKey: ['workflow-numbering', workflow.id],
+    queryKey: ["workflow-numbering", workflow.id],
     queryFn: () => numberingService.get(workflow.id),
   });
 
@@ -134,8 +140,16 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
     setError,
     formState: { errors, isSubmitting },
   } = useForm<NumberingFormValues>({
-    resolver: zodResolver(numberingSchema),
-    defaultValues: { enabled: false, prefix: '', suffix: '', minDigits: 4, nextNumber: 1 },
+    resolver: zodResolver(
+      numberingSchema,
+    ) as unknown as Resolver<NumberingFormValues>,
+    defaultValues: {
+      enabled: false,
+      prefix: "",
+      suffix: "",
+      minDigits: 4,
+      nextNumber: 1,
+    },
   });
 
   useEffect(() => {
@@ -163,21 +177,27 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
         nextNumber: Number(data.nextNumber),
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['workflow-numbering', workflow.id] });
+      qc.invalidateQueries({ queryKey: ["workflow-numbering", workflow.id] });
       setSaveSuccess(true);
       setGeneralError(null);
       setTimeout(() => setSaveSuccess(false), 3000);
     },
     onError: (err: unknown) => {
       const asAxios = err as {
-        response?: { data?: { errors?: Array<{ field: string; message: string }> } };
+        response?: {
+          data?: { errors?: Array<{ field: string; message: string }> };
+        };
       };
       const apiValidationErrors = asAxios?.response?.data?.errors;
       if (apiValidationErrors?.length) {
         let hadFieldMatch = false;
         for (const ve of apiValidationErrors) {
           const field = ve.field as keyof NumberingFormValues;
-          if (['enabled', 'prefix', 'suffix', 'minDigits', 'nextNumber'].includes(field)) {
+          if (
+            ["enabled", "prefix", "suffix", "minDigits", "nextNumber"].includes(
+              field,
+            )
+          ) {
             setError(field, { message: ve.message });
             hadFieldMatch = true;
           }
@@ -197,16 +217,16 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
 
   const watched = useWatch({ control });
   const enabled = Boolean(watched.enabled);
-  const prefix = watched.prefix ?? '';
-  const suffix = watched.suffix ?? '';
+  const prefix = watched.prefix ?? "";
+  const suffix = watched.suffix ?? "";
   const minDigits = Math.max(1, Number(watched.minDigits) || 4);
   const nextNumber = Math.max(1, Number(watched.nextNumber) || 1);
 
   const previewFirst = enabled
-    ? `${prefix}${String(nextNumber).padStart(minDigits, '0')}${suffix}`
+    ? `${prefix}${String(nextNumber).padStart(minDigits, "0")}${suffix}`
     : null;
   const previewSecond = enabled
-    ? `${prefix}${String(nextNumber + 1).padStart(minDigits, '0')}${suffix}`
+    ? `${prefix}${String(nextNumber + 1).padStart(minDigits, "0")}${suffix}`
     : null;
 
   if (configQ.isLoading) {
@@ -226,13 +246,18 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-full">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col min-h-full"
+    >
       {/* Panel header */}
       <div className="flex items-start justify-between gap-4 border-b border-stone-100 px-6 pt-6 pb-4">
         <div>
-          <h2 className="text-base font-bold text-stone-900">{workflow.name}</h2>
+          <h2 className="text-base font-bold text-stone-900">
+            {workflow.name}
+          </h2>
           <p className="text-xs text-stone-500 mt-0.5">
-            Configure auto-numbering for{' '}
+            Configure auto-numbering for{" "}
             <span className="font-mono">{workflow.key}</span> records.
           </p>
         </div>
@@ -242,7 +267,9 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
         {/* Enable toggle */}
         <div className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3.5">
           <div>
-            <p className="text-sm font-semibold text-stone-800">Enable auto-numbering</p>
+            <p className="text-sm font-semibold text-stone-800">
+              Enable auto-numbering
+            </p>
             <p className="text-xs text-stone-500 mt-0.5">
               Assign a sequential number to every new record in this workflow.
             </p>
@@ -254,18 +281,18 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
             <input
               type="checkbox"
               className="sr-only"
-              {...register('enabled')}
+              {...register("enabled")}
             />
             <div
               className={cn(
-                'relative h-5 w-9 rounded-full transition-colors duration-200',
-                enabled ? 'bg-brand' : 'bg-stone-200',
+                "relative h-5 w-9 rounded-full transition-colors duration-200",
+                enabled ? "bg-brand" : "bg-stone-200",
               )}
             >
               <span
                 className={cn(
-                  'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200',
-                  enabled ? 'left-[18px]' : 'left-0.5',
+                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+                  enabled ? "left-[18px]" : "left-0.5",
                 )}
               />
             </div>
@@ -286,19 +313,23 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
               id={`prefix-${workflow.id}`}
               type="text"
               placeholder="e.g. LEAD-"
-              {...register('prefix')}
+              {...register("prefix")}
               className={cn(
-                'w-full rounded-lg border px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400',
-                'focus:outline-none focus:ring-2 focus:ring-brand/40',
+                "w-full rounded-lg border px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400",
+                "focus:outline-none focus:ring-2 focus:ring-brand/40",
                 errors.prefix
-                  ? 'border-red-400 focus:border-red-400'
-                  : 'border-stone-200 focus:border-brand',
+                  ? "border-red-400 focus:border-red-400"
+                  : "border-stone-200 focus:border-brand",
               )}
             />
             {errors.prefix ? (
-              <p className="mt-1 text-2xs text-red-500">{errors.prefix.message}</p>
+              <p className="mt-1 text-2xs text-red-500">
+                {errors.prefix.message}
+              </p>
             ) : (
-              <p className="mt-1 text-2xs text-stone-400">Up to 20 characters</p>
+              <p className="mt-1 text-2xs text-stone-400">
+                Up to 20 characters
+              </p>
             )}
           </div>
 
@@ -314,19 +345,23 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
               id={`suffix-${workflow.id}`}
               type="text"
               placeholder="Optional"
-              {...register('suffix')}
+              {...register("suffix")}
               className={cn(
-                'w-full rounded-lg border px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400',
-                'focus:outline-none focus:ring-2 focus:ring-brand/40',
+                "w-full rounded-lg border px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400",
+                "focus:outline-none focus:ring-2 focus:ring-brand/40",
                 errors.suffix
-                  ? 'border-red-400 focus:border-red-400'
-                  : 'border-stone-200 focus:border-brand',
+                  ? "border-red-400 focus:border-red-400"
+                  : "border-stone-200 focus:border-brand",
               )}
             />
             {errors.suffix ? (
-              <p className="mt-1 text-2xs text-red-500">{errors.suffix.message}</p>
+              <p className="mt-1 text-2xs text-red-500">
+                {errors.suffix.message}
+              </p>
             ) : (
-              <p className="mt-1 text-2xs text-stone-400">Up to 20 characters</p>
+              <p className="mt-1 text-2xs text-stone-400">
+                Up to 20 characters
+              </p>
             )}
           </div>
 
@@ -343,19 +378,23 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
               type="number"
               min={1}
               max={10}
-              {...register('minDigits')}
+              {...register("minDigits")}
               className={cn(
-                'w-full rounded-lg border px-3 py-2 text-sm text-stone-800',
-                'focus:outline-none focus:ring-2 focus:ring-brand/40',
+                "w-full rounded-lg border px-3 py-2 text-sm text-stone-800",
+                "focus:outline-none focus:ring-2 focus:ring-brand/40",
                 errors.minDigits
-                  ? 'border-red-400 focus:border-red-400'
-                  : 'border-stone-200 focus:border-brand',
+                  ? "border-red-400 focus:border-red-400"
+                  : "border-stone-200 focus:border-brand",
               )}
             />
             {errors.minDigits ? (
-              <p className="mt-1 text-2xs text-red-500">{errors.minDigits.message}</p>
+              <p className="mt-1 text-2xs text-red-500">
+                {errors.minDigits.message}
+              </p>
             ) : (
-              <p className="mt-1 text-2xs text-stone-400">1–10 (zero-pad width)</p>
+              <p className="mt-1 text-2xs text-stone-400">
+                1–10 (zero-pad width)
+              </p>
             )}
           </div>
 
@@ -371,20 +410,23 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
               id={`nextNumber-${workflow.id}`}
               type="number"
               min={1}
-              {...register('nextNumber')}
+              {...register("nextNumber")}
               className={cn(
-                'w-full rounded-lg border px-3 py-2 text-sm text-stone-800',
-                'focus:outline-none focus:ring-2 focus:ring-brand/40',
+                "w-full rounded-lg border px-3 py-2 text-sm text-stone-800",
+                "focus:outline-none focus:ring-2 focus:ring-brand/40",
                 errors.nextNumber
-                  ? 'border-red-400 focus:border-red-400'
-                  : 'border-stone-200 focus:border-brand',
+                  ? "border-red-400 focus:border-red-400"
+                  : "border-stone-200 focus:border-brand",
               )}
             />
             {errors.nextNumber ? (
-              <p className="mt-1 text-2xs text-red-500">{errors.nextNumber.message}</p>
+              <p className="mt-1 text-2xs text-red-500">
+                {errors.nextNumber.message}
+              </p>
             ) : (
               <p className="mt-1 text-2xs text-stone-400">
-                Increasing it skips numbers — cannot be reversed below the highest issued.
+                Increasing it skips numbers — cannot be reversed below the
+                highest issued.
               </p>
             )}
           </div>
@@ -401,13 +443,17 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
                 {previewFirst}
               </span>
               <span className="text-stone-300">→</span>
-              <span className="font-mono text-sm text-stone-400">{previewSecond}</span>
+              <span className="font-mono text-sm text-stone-400">
+                {previewSecond}
+              </span>
               <span className="text-stone-300">→ …</span>
             </div>
             <p className="mt-1.5 text-2xs text-stone-500">
-              The next record created in this workflow will receive{' '}
-              <span className="font-mono font-semibold">{previewFirst}</span>, then{' '}
-              <span className="font-mono font-semibold">{previewSecond}</span>, and so on.
+              The next record created in this workflow will receive{" "}
+              <span className="font-mono font-semibold">{previewFirst}</span>,
+              then{" "}
+              <span className="font-mono font-semibold">{previewSecond}</span>,
+              and so on.
             </p>
           </div>
         )}
@@ -427,7 +473,7 @@ function NumberingPanel({ workflow }: { workflow: Workflow }): React.JSX.Element
             disabled={isSubmitting || save.isPending}
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/70 disabled:opacity-50"
           >
-            {save.isPending ? 'Saving…' : 'Save configuration'}
+            {save.isPending ? "Saving…" : "Save configuration"}
           </button>
         </div>
       </div>
