@@ -50,6 +50,7 @@ const CreateRolePage = lazy(() => import("@/pages/config/CreateRolePage"));
 const EditRolePage = lazy(() => import("@/pages/config/EditRolePage"));
 const UsersPage = lazy(() => import("@/pages/config/UsersPage"));
 const RecordNumberingPage = lazy(() => import("@/pages/config/RecordNumberingPage"));
+const WorkflowPlaceholderPage = lazy(() => import("@/pages/common/WorkflowPlaceholderPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -183,6 +184,16 @@ export const router = createBrowserRouter([
             <EditCustomerPage />
           </PermissionGuard>,
         ),
+      },
+
+      // Sales & Purchases modules (placeholder pages — full functionality coming soon)
+      {
+        path: "sales/:moduleKey",
+        element: lazy_(<WorkflowPlaceholderPage />),
+      },
+      {
+        path: "purchases/:moduleKey",
+        element: lazy_(<WorkflowPlaceholderPage />),
       },
 
       // Configuration hub
