@@ -202,7 +202,7 @@ export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, on
           )}
 
           {!isLoading && results.length > 0 && (
-            <div className="max-h-[22rem] overflow-y-auto">
+            <div className="max-h-[22rem] overflow-y-auto modal-scrollbar">
               {leadResults.length > 0 && (
                 <section>
                   <p className="flex items-center gap-1.5 px-3 pb-1 pt-2.5 text-2xs font-bold uppercase tracking-widest text-stone-400">

@@ -51,7 +51,7 @@ export default function AddProspectPage() {
         </nav>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-4 space-y-3">
         <ProspectForm
           submitting={create.isPending}
           errorMessage={create.error ? apiErrorMessage(create.error, 'Could not save the prospect.') : null}

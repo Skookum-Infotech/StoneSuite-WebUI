@@ -162,7 +162,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
       >
-        <div className="flex h-full flex-col overflow-y-auto">
+        <div className="flex h-full flex-col overflow-y-auto modal-scrollbar">
           {/* Mobile-only close button row */}
           <div className="flex items-center justify-between border-b border-stone-200/80 px-4 py-3 lg:hidden">
             <span className="text-xs font-semibold text-stone-500">Navigation</span>

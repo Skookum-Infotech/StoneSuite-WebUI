@@ -85,7 +85,7 @@ export default function AddLeadPage() {
         </div>
 
         {/* Form body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-4 space-y-3">
           {PRIMARY_SECTIONS.map((section) => (
             <LeadSectionFields key={section.title} section={section} data={data} set={set} />
           ))}
@@ -254,7 +254,7 @@ export function LeadTabBar({
   onSelect: (key: string) => void;
 }) {
   return (
-    <div className="flex overflow-x-auto border-b border-stone-200 bg-stone-50">
+    <div className="flex overflow-x-auto modal-scrollbar border-b border-stone-200 bg-stone-50">
       {tabs.map((t) => (
         <button
           key={t.key}

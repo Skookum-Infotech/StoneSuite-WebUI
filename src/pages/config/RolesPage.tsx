@@ -166,7 +166,7 @@ export default function RolesPage(): React.JSX.Element {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          <div className="flex-1 overflow-y-auto modal-scrollbar p-2 space-y-0.5">
             {rolesQ.isLoading && (
               <p className="px-2 py-4 text-xs text-stone-400">Loading…</p>
             )}
@@ -215,7 +215,7 @@ export default function RolesPage(): React.JSX.Element {
         </aside>
 
         {/* ── Right panel: role detail ── */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto modal-scrollbar">
           {!activeRole && !rolesQ.isLoading && (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
@@ -491,7 +491,7 @@ function RoleDetail({
                           {mod.label}
                         </span>
                       </div>
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto modal-scrollbar">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-stone-100 bg-white">

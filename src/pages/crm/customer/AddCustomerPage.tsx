@@ -89,7 +89,7 @@ export default function AddCustomerPage() {
         </div>
 
         {/* Form Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-4 space-y-3">
           <CustomerFormSections
             core={{ fields: coreFields, onChange: set }}
             custom={{

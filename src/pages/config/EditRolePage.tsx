@@ -350,7 +350,7 @@ function EditRoleInner({
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="mx-auto w-full max-w-[1500px] px-6 py-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(280px,340px)_1fr]">
             {/* Left: Role Details */}
@@ -510,7 +510,7 @@ function EditRoleInner({
                         </div>
 
                         {open && (
-                          <div className="overflow-x-auto">
+                          <div className="overflow-x-auto modal-scrollbar">
                             <table className="w-full text-xs">
                               <thead>
                                 <tr className="border-y border-stone-100 bg-white">

@@ -59,7 +59,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left panel: workflow list */}
         <aside className="flex flex-col w-60 shrink-0 border-r border-stone-100">
-          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          <div className="flex-1 overflow-y-auto modal-scrollbar p-2 space-y-0.5">
             {workflowsQ.isLoading && (
               <p className="px-2 py-4 text-xs text-stone-400">Loading…</p>
             )}
@@ -100,7 +100,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
         </aside>
 
         {/* Right panel */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto modal-scrollbar">
           {!activeWorkflow && !workflowsQ.isLoading && (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">

@@ -96,7 +96,7 @@ export default function CustomerDetailPage() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-4 space-y-3">
 
         {/* Primary sections */}
         {PRIMARY_SECTIONS.map((section) => (

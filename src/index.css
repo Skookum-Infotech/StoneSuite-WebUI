@@ -5,6 +5,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Modernistic thin custom scrollbar — used throughout the app */
+.modal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d0cc transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: #d4d0cc;
+  border-radius: 999px;
+  transition: background 200ms ease;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #92857f;
+}
+
+/* Dark mode custom scrollbar */
+.dark .modal-scrollbar {
+  scrollbar-color: #52504c transparent;
+}
+
+.dark .modal-scrollbar::-webkit-scrollbar-thumb {
+  background: #52504c;
+}
+
+.dark .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #78706a;
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,28 +52,6 @@
 
   @media (max-width: 1024px) {
     font-size: 16px;
-  }
-
-  .modal-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #d6d3d1 transparent;
-  }
-
-  .modal-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .modal-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .modal-scrollbar::-webkit-scrollbar-thumb {
-    background: #d6d3d1;
-    border-radius: 999px;
-  }
-
-  .modal-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #a8a29e;
   }
 
   --foreground: oklch(0.145 0 0);

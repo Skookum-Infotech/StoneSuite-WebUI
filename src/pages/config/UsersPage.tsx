@@ -859,7 +859,7 @@ export default function UsersPage() {
           </div>
 
           {/* List */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          <div className="flex-1 overflow-y-auto modal-scrollbar p-2 space-y-0.5">
             {/* Members tab */}
             {tab === "members" && (
               <>
@@ -976,7 +976,7 @@ export default function UsersPage() {
         </aside>
 
         {/* Right panel */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto modal-scrollbar">
           {tab === "members" && (
             <>
               {!activeUser && !usersQ.isLoading && (

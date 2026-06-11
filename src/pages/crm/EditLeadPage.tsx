@@ -158,7 +158,7 @@ export default function EditLeadPage() {
         </div>
 
         {/* Form body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-4 space-y-3">
           {PRIMARY_SECTIONS.map((section) => (
             <LeadSectionFields key={section.title} section={section} data={coreFields} set={set} />
           ))}
