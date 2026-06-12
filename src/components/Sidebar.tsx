@@ -36,12 +36,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Derive initial open state: all groups start open.
+// Derive initial open state: all groups start collapsed.
 function buildInitialOpenState(): Record<string, boolean> {
   const state: Record<string, boolean> = {};
   sidebarNav.sections.forEach((section) => {
     section.entries.forEach((entry) => {
-      if (entry.type === 'group') state[entry.id] = true;
+      if (entry.type === 'group') state[entry.id] = false;
     });
   });
   return state;
@@ -106,7 +106,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const children = visibleChildren(group);
     if (children.length === 0) return null;
 
-    const groupOpen = openGroups[group.id] ?? true;
+    const groupOpen = openGroups[group.id] ?? false;
     const active = isGroupActive(group);
     const Icon = group.icon;
 
