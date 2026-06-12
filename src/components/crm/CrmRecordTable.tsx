@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown,
   ChevronLeft, ChevronRight, X, Pencil,
 } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { Badge } from '@/components/tenant/ui';
 import type { WorkflowRecord, StatusInfo } from '@/types/tenant';
 
@@ -45,7 +44,6 @@ type Props = {
 
 export function CrmRecordTable({ records, isLoading, config }: Props) {
   const navigate     = useNavigate();
-  const queryClient  = useQueryClient();
 
   const [nameFilter,   setNameFilter]   = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -254,14 +252,6 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                         >
                           <Pencil className="size-3.5" />
                         </button>
-                        <DeleteRecordDialog
-                          recordId={record.id}
-                          workflowKey={config.workflowKey}
-                          label={label}
-                          onDeleted={() =>
-                            queryClient.invalidateQueries({ queryKey: [...config.queryKey] })
-                          }
-                        />
                       </div>
                     </td>
                   </tr>

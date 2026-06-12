@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { crmService } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -28,9 +28,12 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: 
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Delete ${label}`}
-        className="rounded p-1 text-stone-400 transition hover:bg-red-50 hover:text-red-500"
+        className="rounded p-1.5 transition hover:bg-red-50 hover:text-red-500 border border-red-500 text-red-500"
       >
-        <Trash2 className="size-3.5" />
+        <span>
+        Delete
+        </span>
+
       </button>
 
       {open && (
