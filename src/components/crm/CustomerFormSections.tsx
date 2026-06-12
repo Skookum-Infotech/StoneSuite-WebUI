@@ -106,21 +106,21 @@ function SubSection({ title, children }: { title: string; children: React.ReactN
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
 const TABS = [
-  { key: 'sales',            label: 'Sales' },
-  { key: 'financial',        label: 'Financial' },
-  { key: 'subsidiaries',     label: 'Subsidiaries' },
-  { key: 'address',          label: 'Address' },
-  { key: 'relationships',    label: 'Relationships' },
-  { key: 'communication',    label: 'Communication' },
-  { key: 'zab',              label: 'ZAB Subscriptions' },
-  { key: 'zuora_sync',       label: 'Zuora Sync Details' },
-  { key: 'zuora_account',    label: 'Zuora Account' },
-  { key: 'stripe',           label: 'Stripe' },
-  { key: 'cch',              label: 'CCH® SureTax®' },
-  { key: 'edocument',        label: 'E-Document' },
-  { key: 'custom',           label: 'Custom' },
-  { key: 'preferences',      label: 'Preferences' },
-  { key: 'sfdc',             label: 'SFDC' },
+  { key: 'sales',            label: 'Sales',              sections: [] },
+  { key: 'financial',        label: 'Financial',          sections: [] },
+  { key: 'subsidiaries',     label: 'Subsidiaries',       sections: [] },
+  { key: 'address',          label: 'Address',            sections: [] },
+  { key: 'relationships',    label: 'Relationships',      sections: [] },
+  { key: 'communication',    label: 'Communication',      sections: [] },
+  { key: 'zab',              label: 'ZAB Subscriptions',  sections: [] },
+  { key: 'zuora_sync',       label: 'Zuora Sync Details', sections: [] },
+  { key: 'zuora_account',    label: 'Zuora Account',      sections: [] },
+  { key: 'stripe',           label: 'Stripe',             sections: [] },
+  { key: 'cch',              label: 'CCH® SureTax®',      sections: [] },
+  { key: 'edocument',        label: 'E-Document',         sections: [] },
+  { key: 'custom',           label: 'Custom',             sections: [] },
+  { key: 'preferences',      label: 'Preferences',        sections: [] },
+  { key: 'sfdc',             label: 'SFDC',               sections: [] },
 ];
 
 // ── Tab panels ─────────────────────────────────────────────────────────────────

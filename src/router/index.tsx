@@ -51,6 +51,8 @@ const EditRolePage = lazy(() => import("@/pages/config/EditRolePage"));
 const UsersPage = lazy(() => import("@/pages/config/UsersPage"));
 const RecordNumberingPage = lazy(() => import("@/pages/config/RecordNumberingPage"));
 const WorkflowPlaceholderPage = lazy(() => import("@/pages/common/WorkflowPlaceholderPage"));
+const SalesOrderListPage = lazy(() => import("@/pages/sales/SalesOrderListPage"));
+const AddSalesOrderPage = lazy(() => import("@/pages/sales/AddSalesOrderPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -184,6 +186,16 @@ export const router = createBrowserRouter([
             <EditCustomerPage />
           </PermissionGuard>,
         ),
+      },
+
+      // Sales Orders (specific routes must come before the catch-all)
+      {
+        path: "sales/sales_order",
+        element: lazy_(<SalesOrderListPage />),
+      },
+      {
+        path: "sales/sales_order/new",
+        element: lazy_(<AddSalesOrderPage />),
       },
 
       // Sales & Purchases modules (placeholder pages — full functionality coming soon)
