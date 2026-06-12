@@ -4,8 +4,7 @@ import type { FieldDefinition } from '@/types/tenant';
 
 /**
  * Renders the appropriate control for a workflow custom field definition.
- * Values are kept as strings/booleans in form state; the caller coerces
- * numbers before sending to the API.
+ * Number fields emit a JS number (or empty string when blank); all others emit strings/booleans.
  */
 export function DynamicFieldInput({
   field,
@@ -23,7 +22,6 @@ export function DynamicFieldInput({
     <Label htmlFor={id} className="flex items-center gap-1">
       {labelText}
       {field.required && <span className="text-red-500">*</span>}
-      <span className="text-2xs font-normal text-stone-400">({field.dataType})</span>
     </Label>
   );
 
@@ -80,8 +78,14 @@ export function DynamicFieldInput({
         id={id}
         type={inputType}
         value={(value as string) ?? ''}
-        onChange={(e) => onChange(field.key, e.target.value)}
-        placeholder={labelText}
+        onChange={(e) => {
+          if (field.dataType === 'number') {
+            onChange(field.key, e.target.value === '' ? '' : parseFloat(e.target.value));
+          } else {
+            onChange(field.key, e.target.value);
+          }
+        }}
+        // placeholder={labelText}
       />
     </div>
   );
