@@ -95,7 +95,7 @@ export default function AddLeadPage() {
     <div className="flex flex-1 min-h-0 bg-stone-50">
       <form
         onSubmit={(e) => { e.preventDefault(); createLead(); }}
-        className="flex flex-1 min-h-0"
+        className="flex flex-1 min-h-0 min-w-0"
       >
         {/* ── Left: scrollable form ── */}
         <div className="flex flex-col flex-1 min-h-0 min-w-0">

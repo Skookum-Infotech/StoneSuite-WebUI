@@ -188,7 +188,7 @@ export default function EditLeadPage() {
     <div className="flex flex-1 min-h-0 bg-stone-50">
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
-        className="flex flex-1 min-h-0"
+        className="flex flex-1 min-h-0 min-w-0"
       >
         {/* ── Left: scrollable form ── */}
         <div className="flex flex-col flex-1 min-h-0 min-w-0">
