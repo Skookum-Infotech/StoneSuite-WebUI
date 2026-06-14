@@ -2,6 +2,7 @@ import { tenantClient } from '@/api/tenantClient';
 import type {
   Tenant,
   TenantInvite,
+  AsyncJob,
   CreateTenantResult,
   CatalogResponse,
   Role,
@@ -82,6 +83,14 @@ export const platformService = {
         opts,
       )
       .then((r) => r.data),
+
+  // Async job status (e.g. tenant provisioning) + retry for failed/dead jobs.
+  listJobs: (tenantId: string) =>
+    tenantClient
+      .get<{ success: boolean; jobs: AsyncJob[] }>(`/platform/tenants/${tenantId}/jobs`)
+      .then((r) => r.data.jobs ?? []),
+  retryJob: (tenantId: string, jobId: string) =>
+    tenantClient.post(`/platform/tenants/${tenantId}/jobs/${jobId}/retry`).then((r) => r.data),
 };
 
 // ----- RBAC (Phase 2) --------------------------------------------------------
