@@ -2,11 +2,9 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Sparkles, Users } from 'lucide-react';
-import { leadService } from '@/services/leadService';
-import { prospectService } from '@/services/prospectService';
+import { crmService } from '@/services/crmService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
-import type { Lead } from '@/types/lead';
 
 type ResultItem = {
   id: string;
@@ -19,11 +17,11 @@ type ResultItem = {
 
 const MAX_PER_GROUP = 5;
 
-function leadLabel(l: Lead): string {
-  if (l.type === 'Individual') {
-    return [l.firstName, l.lastName].filter(Boolean).join(' ') || l.companyName || 'Unnamed';
-  }
-  return l.companyName || 'Unnamed';
+function recordLabel(coreFields: Record<string, unknown>): string {
+  const company = coreFields.company_name;
+  if (typeof company === 'string' && company) return company;
+  const name = [coreFields.first_name, coreFields.last_name].filter(Boolean).join(' ');
+  return name || 'Unnamed';
 }
 
 interface Props {
@@ -48,14 +46,14 @@ export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, on
 
   // Fetch once and cache for 5 min — reused across all search keystrokes
   const leadsQ = useQuery({
-    queryKey: ['leads'],
-    queryFn: leadService.list,
+    queryKey: ['crm-records', 'lead'],
+    queryFn: () => crmService.listRecords('lead'),
     staleTime: 5 * 60 * 1000,
     enabled: isAuthenticated,
   });
   const prospectsQ = useQuery({
-    queryKey: ['prospects'],
-    queryFn: prospectService.list,
+    queryKey: ['crm-records', 'prospect'],
+    queryFn: () => crmService.listRecords('prospect'),
     staleTime: 5 * 60 * 1000,
     enabled: isAuthenticated,
   });
@@ -99,26 +97,36 @@ export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, on
       fields.some(f => f?.toLowerCase().includes(lq));
 
     const leadResults: ResultItem[] = (leadsQ.data ?? [])
-      .filter(l => match(l.companyName, l.firstName, l.lastName, l.email, l.leadId))
+      .filter(l => match(
+        String(l.coreFields.company_name ?? ''),
+        String(l.coreFields.first_name ?? ''),
+        String(l.coreFields.last_name ?? ''),
+        String(l.coreFields.email ?? ''),
+        l.recordNumber,
+      ))
       .slice(0, MAX_PER_GROUP)
       .map(l => ({
         id: l.id,
         kind: 'lead',
-        label: leadLabel(l),
-        subtitle: l.email || l.leadId || '',
-        status: l.leadStatus,
-        path: '/crm/lead',
+        label: recordLabel(l.coreFields),
+        subtitle: String(l.coreFields.email ?? l.recordNumber ?? ''),
+        status: '',
+        path: `/crm/lead/${l.id}`,
       }));
 
     const prospectResults: ResultItem[] = (prospectsQ.data ?? [])
-      .filter(p => match(p.company_name, p.email, p.customer_id, p.billing_account_name))
+      .filter(p => match(
+        String(p.coreFields.company_name ?? ''),
+        String(p.coreFields.email ?? ''),
+        p.recordNumber,
+      ))
       .slice(0, MAX_PER_GROUP)
       .map(p => ({
         id: p.id,
         kind: 'prospect',
-        label: p.company_name || 'Unnamed',
-        subtitle: p.email || p.customer_id || '',
-        status: p.status,
+        label: recordLabel(p.coreFields),
+        subtitle: String(p.coreFields.email ?? p.recordNumber ?? ''),
+        status: '',
         path: `/prospects/${p.id}`,
       }));
 

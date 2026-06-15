@@ -1,23 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle, Loader2, Save, X } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { workflowService } from '@/services/tenantServices';
-import { StatusDropdown } from '@/components/crm/StatusDropdown';
-import { CustomerFormSections } from '@/components/crm/CustomerFormSections';
+import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { crmCoreDefaults } from '@/lib/crmFields';
 import type { FieldDefinition } from '@/types/tenant';
 
 export default function AddCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const [stateId, setStateId] = useState('');
-  const [coreFields, setCoreFields] = useState<Record<string, unknown>>({});
+  const [coreFields, setCoreFields] = useState<Record<string, unknown>>(crmCoreDefaults);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [ownerUserId, setOwnerUserId] = useState('');
 
-  const handleStatusChange = useCallback((id: string) => setStateId(id), []);
+  const set = (key: string, value: unknown) => setCoreFields((d) => ({ ...d, [key]: value }));
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const customerWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'customer');
@@ -26,26 +25,29 @@ export default function AddCustomerPage() {
     queryFn: () => workflowService.get(customerWorkflow!.id),
     enabled: Boolean(customerWorkflow?.id),
   });
-  const customFields: FieldDefinition[] = customerDef?.fields ?? [];
+  const customFieldDefs: FieldDefinition[] = customerDef?.fields ?? [];
 
-  const create = useMutation({
+  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+
+  const { mutate: createCustomer, isPending, error: createError } = useMutation({
     mutationFn: () =>
-      crmService.createRecord('customer', { coreFields, customFields: customFieldValues }),
+      crmService.createRecord('customer', {
+        coreFields,
+        customFields: customFieldValues,
+        ownerUserId: ownerUserId || undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
       navigate('/crm/customer');
     },
   });
 
-  const set = (key: string, value: unknown) =>
-    setCoreFields((prev) => ({ ...prev, [key]: value }));
-
   const displayName = String(coreFields.company_name ?? '');
 
   return (
     <div className="flex flex-1 min-h-0 bg-stone-50">
       <form
-        onSubmit={(e) => { e.preventDefault(); create.mutate(); }}
+        onSubmit={(e) => { e.preventDefault(); createCustomer(); }}
         className="flex flex-1 min-h-0 min-w-0"
       >
         {/* ── Left: scrollable form ── */}
@@ -61,24 +63,12 @@ export default function AddCustomerPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden modal-scrollbar px-6 py-5 space-y-4">
-            <CustomerFormSections
+            <CrmRecordForm
               core={{ fields: coreFields, onChange: set }}
-              custom={{
-                defs: customFields,
-                values: customFieldValues,
-                onChange: (key, value) =>
-                  setCustomFieldValues((prev) => ({ ...prev, [key]: value })),
-              }}
-              statusNode={
-                <StatusDropdown
-                  workflowKey="customer"
-                  mode="all"
-                  value={stateId}
-                  onChange={handleStatusChange}
-                  disabled
-                />
-              }
+              custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
+              owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
             />
+
             <div className="h-4" />
           </div>
         </div>
@@ -88,10 +78,10 @@ export default function AddCustomerPage() {
           <div className="p-4 border-b border-stone-100 space-y-2">
             <button
               type="submit"
-              disabled={create.isPending}
+              disabled={isPending}
               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all duration-150 shadow-sm hover:shadow"
             >
-              {create.isPending ? (
+              {isPending ? (
                 <><Loader2 className="size-3.5 animate-spin" />Saving…</>
               ) : (
                 <><Save className="size-3.5" />Save Customer</>
@@ -100,17 +90,17 @@ export default function AddCustomerPage() {
             <button
               type="button"
               onClick={() => navigate('/crm/customer')}
-              disabled={create.isPending}
+              disabled={isPending}
               className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all duration-150"
             >
               <X className="size-3.5" />
               Cancel
             </button>
 
-            {create.error && (
+            {createError && (
               <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5 text-xs text-red-700">
                 <AlertCircle className="size-3.5 shrink-0 mt-0.5" />
-                <span>{apiErrorMessage(create.error, 'Failed to save customer.')}</span>
+                <span>{apiErrorMessage(createError, 'Failed to save customer.')}</span>
               </div>
             )}
           </div>
@@ -148,7 +138,7 @@ export default function AddCustomerPage() {
             <div className="rounded-lg bg-amber-50 border border-amber-100 p-3">
               <p className="text-2xs font-semibold text-amber-700 mb-1">Tip</p>
               <p className="text-2xs text-amber-600 leading-relaxed">
-                Fields marked <span className="text-red-400 font-semibold">*</span> are required. Company name and email must be set before saving.
+                Fields marked <span className="text-red-400 font-semibold">*</span> are required. A company name must be set before saving.
               </p>
             </div>
           </div>

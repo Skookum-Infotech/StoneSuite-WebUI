@@ -1,22 +1,22 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, AlertCircle, Loader2, Save, X, Clock } from 'lucide-react';
+import {
+  Users, AlertCircle, Loader2, Save, X, Clock,
+} from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { workflowService } from '@/services/tenantServices';
+import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { ConvertRecordButton } from '@/components/crm/ConvertRecordButton';
+import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
-import { PRIMARY_SECTIONS, TABS, prospectDefaults } from '@/lib/prospectForm';
-import { ProspectSectionFields, ProspectFieldInput } from './AddProspectPage';
-import { ModernSection, ModernFieldShell, LeadTabBar } from '@/pages/crm/AddLeadPage';
+import { crmCoreDefaults } from '@/lib/crmFields';
 import { cn } from '@/lib/utils';
-import type { LeadTab } from '@/lib/leadForm';
 import type { FieldDefinition } from '@/types/tenant';
 
+// ── Mock history (TODO: replace with crmService.getRecordHistory(id) when ready) ──
 type HistoryEntry = {
   id: string;
   type: 'created' | 'transition' | 'edit';
@@ -37,8 +37,8 @@ const MOCK_HISTORY: HistoryEntry[] = [
     initials: 'AJ',
     color: 'bg-blue-100 text-blue-700',
     at: '2 hours ago',
-    fromState: 'In Discussion',
-    toState: 'Qualified',
+    fromState: 'New',
+    toState: 'In Discussion',
   },
   {
     id: '2',
@@ -118,7 +118,6 @@ export default function EditProspectPage() {
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
   const [localStateId, setLocalStateId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState(TABS[0]?.key ?? '');
 
   const { data: record, isLoading, error: loadError } = useQuery({
     queryKey: ['crm-record', id],
@@ -126,7 +125,7 @@ export default function EditProspectPage() {
     enabled: Boolean(id),
   });
 
-  const coreFields = localCoreFields ?? { ...prospectDefaults(), ...record?.coreFields };
+  const coreFields = localCoreFields ?? { ...crmCoreDefaults(), ...record?.coreFields };
   const customFieldValues = localCustomFields ?? record?.customFields ?? {};
   const currentStateId = localStateId ?? record?.currentStateId ?? '';
 
@@ -138,6 +137,9 @@ export default function EditProspectPage() {
     enabled: Boolean(prospectWorkflow?.id),
   });
   const customFieldDefs: FieldDefinition[] = prospectDef?.fields ?? [];
+
+  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+  const owner = users.find((u) => u.id === record?.ownerUserId);
 
   const transition = useMutation({
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'prospect'),
@@ -169,18 +171,13 @@ export default function EditProspectPage() {
   });
 
   const set = (key: string, value: unknown) =>
-    setLocalCoreFields((prev) => ({
-      ...(prev ?? { ...prospectDefaults(), ...record?.coreFields }),
-      [key]: value,
-    }));
-
-  const activeTabObj = TABS.find((t) => t.key === activeTab) ?? TABS[0];
+    setLocalCoreFields((prev) => ({ ...(prev ?? { ...crmCoreDefaults(), ...record?.coreFields }), [key]: value }));
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading prospect…" /></div>;
   if (loadError || !record)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load prospect.')}</ErrorNote></div>;
 
-  const company = String(coreFields.company_name ?? '—');
+  const company = String(coreFields.company_name ?? coreFields.first_name ?? '—');
   const saveError = save.error ?? transition.error;
 
   return (
@@ -191,12 +188,16 @@ export default function EditProspectPage() {
       >
         {/* ── Left: scrollable form ── */}
         <div className="flex flex-col flex-1 min-h-0 min-w-0">
+
+          {/* Page title */}
           <div className="shrink-0 bg-white border-b border-stone-100 px-6 py-3.5 flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
               <Users className="h-4 w-4 text-blue-600" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">{company}</h1>
+              <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">
+                {company}
+              </h1>
               <p className="text-2xs text-stone-400 mt-0.5">Editing prospect record</p>
             </div>
             {record.recordNumber && (
@@ -206,73 +207,27 @@ export default function EditProspectPage() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden modal-scrollbar px-6 py-5 space-y-4">
-            {/* Primary Information — inject Status field first */}
-            <ModernSection title="Primary Information">
-              <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                <ModernFieldShell label="Status">
-                  <StatusDropdown
-                    workflowKey="prospect"
-                    mode="transitions"
-                    recordId={id}
-                    value={currentStateId}
-                    onChange={handleStatusChange}
-                    disabled={transition.isPending}
-                  />
-                </ModernFieldShell>
-                {PRIMARY_SECTIONS[0].fields.map((f) => (
-                  <ProspectFieldInput key={f.key} field={f} value={coreFields[f.key]} set={set} />
-                ))}
-              </div>
-            </ModernSection>
-
-            {PRIMARY_SECTIONS.slice(1).map((section) => (
-              <ProspectSectionFields key={section.title} section={section} data={coreFields} set={set} />
-            ))}
-
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-              <LeadTabBar
-                tabs={TABS as unknown as LeadTab[]}
-                active={activeTabObj.key}
-                onSelect={setActiveTab}
-              />
-              <div className="px-5 py-4">
-                {activeTabObj.sections.length > 0 ? (
-                  <div className="space-y-4">
-                    {activeTabObj.sections.map((section) => (
-                      <ProspectSectionFields key={section.title} section={section} data={coreFields} set={set} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 py-6">
-                    <div className="h-1.5 w-1.5 rounded-full bg-stone-300" />
-                    <p className="text-xs text-stone-400">
-                      {activeTabObj.label} information is not yet available
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {customFieldDefs.length > 0 && (
-              <ModernSection title="Custom Fields">
-                <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                  {customFieldDefs.map((f) => (
-                    <DynamicFieldInput
-                      key={f.id || f.key}
-                      field={f}
-                      value={customFieldValues[f.key]}
-                      onChange={(key, value) =>
-                        setLocalCustomFields((prev) => ({
-                          ...(prev ?? record?.customFields ?? {}),
-                          [key]: value,
-                        }))
-                      }
-                    />
-                  ))}
-                </div>
-              </ModernSection>
-            )}
+          {/* Scrollable form body */}
+          <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-5 space-y-4">
+            <CrmRecordForm
+              core={{ fields: coreFields, onChange: set }}
+              custom={{
+                defs: customFieldDefs,
+                values: customFieldValues,
+                onChange: (key, value) =>
+                  setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value })),
+              }}
+              statusNode={(
+                <StatusDropdown
+                  workflowKey="prospect"
+                  mode="transitions"
+                  recordId={id}
+                  value={currentStateId}
+                  onChange={handleStatusChange}
+                  disabled={transition.isPending}
+                />
+              )}
+            />
 
             <div className="h-4" />
           </div>
@@ -280,6 +235,8 @@ export default function EditProspectPage() {
 
         {/* ── Right: actions + history panel ── */}
         <div className="w-60 xl:w-64 shrink-0 border-l border-stone-200 bg-white flex flex-col overflow-y-auto modal-scrollbar">
+
+          {/* Save / Cancel */}
           <div className="p-4 border-b border-stone-100 space-y-2">
             <button
               type="submit"
@@ -334,6 +291,15 @@ export default function EditProspectPage() {
             </div>
           </div>
 
+          {/* Owner */}
+          <div className="px-4 py-3 border-b border-stone-100">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">Owner</p>
+            <p className="text-xs font-medium text-stone-700">
+              {owner ? (owner.fullName || owner.email) : <span className="text-stone-300 italic">Unassigned</span>}
+            </p>
+          </div>
+
+          {/* Activity feed */}
           <ActivityFeed />
         </div>
       </form>

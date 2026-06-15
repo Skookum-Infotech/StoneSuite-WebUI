@@ -3,24 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Users, AlertCircle, Loader2, Save, X } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { workflowService } from '@/services/tenantServices';
+import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
-import { PRIMARY_SECTIONS, TABS, prospectDefaults } from '@/lib/prospectForm';
-import { ModernSection, ModernFieldShell, LeadTabBar, fieldCls } from '@/pages/crm/AddLeadPage';
-import { cn } from '@/lib/utils';
-import type { ProspectField, ProspectSection } from '@/lib/prospectForm';
-import type { LeadTab } from '@/lib/leadForm';
+import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { crmCoreDefaults } from '@/lib/crmFields';
 import type { FieldDefinition } from '@/types/tenant';
 
 export default function AddProspectPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [data, setData] = useState<Record<string, unknown>>(prospectDefaults());
-  const [activeTab, setActiveTab] = useState(TABS[0]?.key ?? '');
+  const [coreFields, setCoreFields] = useState<Record<string, unknown>>(crmCoreDefaults);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [ownerUserId, setOwnerUserId] = useState('');
 
-  const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
+  const set = (key: string, value: unknown) => setCoreFields((d) => ({ ...d, [key]: value }));
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const prospectWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'prospect');
@@ -31,17 +27,22 @@ export default function AddProspectPage() {
   });
   const customFieldDefs: FieldDefinition[] = prospectDef?.fields ?? [];
 
+  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+
   const { mutate: createProspect, isPending, error: createError } = useMutation({
     mutationFn: () =>
-      crmService.createRecord('prospect', { coreFields: data, customFields: customFieldValues }),
+      crmService.createRecord('prospect', {
+        coreFields,
+        customFields: customFieldValues,
+        ownerUserId: ownerUserId || undefined,
+      }),
     onSuccess: (record) => {
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
       navigate(`/prospects/${record.id}`);
     },
   });
 
-  const activeTabObj = TABS.find((t) => t.key === activeTab) ?? TABS[0];
-  const displayName = String(data.company_name ?? '');
+  const displayName = String(coreFields.company_name ?? '');
 
   return (
     <div className="flex flex-1 min-h-0 bg-stone-50">
@@ -62,50 +63,11 @@ export default function AddProspectPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden modal-scrollbar px-6 py-5 space-y-4">
-            {PRIMARY_SECTIONS.map((section) => (
-              <ProspectSectionFields key={section.title} section={section} data={data} set={set} />
-            ))}
-
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-              <LeadTabBar
-                tabs={TABS as unknown as LeadTab[]}
-                active={activeTabObj.key}
-                onSelect={setActiveTab}
-              />
-              <div className="px-5 py-4">
-                {activeTabObj.sections.length > 0 ? (
-                  <div className="space-y-4">
-                    {activeTabObj.sections.map((section) => (
-                      <ProspectSectionFields key={section.title} section={section} data={data} set={set} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 py-6">
-                    <div className="h-1.5 w-1.5 rounded-full bg-stone-300" />
-                    <p className="text-xs text-stone-400">
-                      {activeTabObj.label} details will be available after saving
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {customFieldDefs.length > 0 && (
-              <ModernSection title="Custom Fields">
-                <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                  {customFieldDefs.map((f) => (
-                    <DynamicFieldInput
-                      key={f.id || f.key}
-                      field={f}
-                      value={customFieldValues[f.key]}
-                      onChange={(key, value) =>
-                        setCustomFieldValues((prev) => ({ ...prev, [key]: value }))
-                      }
-                    />
-                  ))}
-                </div>
-              </ModernSection>
-            )}
+            <CrmRecordForm
+              core={{ fields: coreFields, onChange: set }}
+              custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
+              owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
+            />
 
             <div className="h-4" />
           </div>
@@ -158,13 +120,13 @@ export default function AddProspectPage() {
                   <p className="text-2xs text-stone-400 mt-0.5">Company</p>
                 </div>
               </div>
-              {(Boolean(data.email) || Boolean(data.phone)) && (
+              {(Boolean(coreFields.email) || Boolean(coreFields.phone)) && (
                 <div className="pt-2 space-y-1 border-t border-stone-200">
-                  {Boolean(data.email) && (
-                    <p className="text-2xs text-stone-500 truncate">{String(data.email)}</p>
+                  {Boolean(coreFields.email) && (
+                    <p className="text-2xs text-stone-500 truncate">{String(coreFields.email)}</p>
                   )}
-                  {Boolean(data.phone) && (
-                    <p className="text-2xs text-stone-500 truncate">{String(data.phone)}</p>
+                  {Boolean(coreFields.phone) && (
+                    <p className="text-2xs text-stone-500 truncate">{String(coreFields.phone)}</p>
                   )}
                 </div>
               )}
@@ -183,106 +145,5 @@ export default function AddProspectPage() {
         </div>
       </form>
     </div>
-  );
-}
-
-export function ProspectSectionFields({
-  section,
-  data,
-  set,
-}: {
-  section: ProspectSection;
-  data: Record<string, unknown>;
-  set: (key: string, value: unknown) => void;
-}) {
-  return (
-    <ModernSection title={section.title}>
-      <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-        {section.fields.map((f) => (
-          <ProspectFieldInput key={f.key} field={f} value={data[f.key]} set={set} />
-        ))}
-      </div>
-    </ModernSection>
-  );
-}
-
-export function ProspectFieldInput({
-  field,
-  value,
-  set,
-}: {
-  field: ProspectField;
-  value: unknown;
-  set: (key: string, value: unknown) => void;
-}) {
-  const str = typeof value === 'string' ? value : '';
-
-  if (field.type === 'checkbox') {
-    return (
-      <label className="flex items-center gap-2.5 self-end pb-1 cursor-pointer group">
-        <div
-          className={cn(
-            'h-4 w-4 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-150',
-            value === true
-              ? 'bg-stone-800 border-stone-800'
-              : 'border-stone-300 group-hover:border-stone-400 bg-white',
-          )}
-        >
-          {value === true && (
-            <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-          <input
-            type="checkbox"
-            checked={value === true}
-            onChange={(e) => set(field.key, e.target.checked)}
-            className="sr-only"
-            aria-label={field.label}
-          />
-        </div>
-        <span className="text-xs text-stone-600 font-medium select-none">{field.label}</span>
-      </label>
-    );
-  }
-
-  return (
-    <ModernFieldShell label={field.label} required={field.required}>
-      {field.type === 'textarea' ? (
-        <textarea
-          rows={3}
-          required={field.required}
-          value={str}
-          onChange={(e) => set(field.key, e.target.value)}
-          className={`${fieldCls} resize-none`}
-          aria-label={field.label}
-          placeholder={field.placeholder}
-        />
-      ) : field.type === 'select' ? (
-        <select
-          required={field.required}
-          value={str}
-          onChange={(e) => set(field.key, e.target.value)}
-          className={fieldCls}
-          aria-label={field.label}
-        >
-          <option value="">— Select —</option>
-          {field.options?.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-      ) : (
-        <input
-          type={field.type === 'number' ? 'number' : field.type ?? 'text'}
-          required={field.required}
-          readOnly={field.readOnly}
-          placeholder={field.placeholder}
-          value={str}
-          onChange={(e) => set(field.key, e.target.value)}
-          className={fieldCls}
-          aria-label={field.label}
-        />
-      )}
-    </ModernFieldShell>
   );
 }

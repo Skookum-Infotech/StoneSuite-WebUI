@@ -5,18 +5,14 @@ import {
   Sparkles, AlertCircle, Loader2, Save, X, Clock,
 } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { workflowService } from '@/services/tenantServices';
+import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { ConvertRecordButton } from '@/components/crm/ConvertRecordButton';
+import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
-import { PRIMARY_SECTIONS, TABS, leadDefaults } from '@/lib/leadForm';
-import {
-  LeadSectionFields, LeadTabBar, LeadFieldInput,
-  ModernSection, ModernFieldShell,
-} from './AddLeadPage';
+import { crmCoreDefaults } from '@/lib/crmFields';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/types/tenant';
 
@@ -122,7 +118,6 @@ export default function EditLeadPage() {
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
   const [localStateId, setLocalStateId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState(TABS[0]?.key ?? '');
 
   const { data: record, isLoading, error: loadError } = useQuery({
     queryKey: ['crm-record', id],
@@ -130,7 +125,7 @@ export default function EditLeadPage() {
     enabled: Boolean(id),
   });
 
-  const coreFields = localCoreFields ?? { ...leadDefaults(), ...record?.coreFields };
+  const coreFields = localCoreFields ?? { ...crmCoreDefaults(), ...record?.coreFields };
   const customFieldValues = localCustomFields ?? record?.customFields ?? {};
   const currentStateId = localStateId ?? record?.currentStateId ?? '';
 
@@ -142,6 +137,9 @@ export default function EditLeadPage() {
     enabled: Boolean(leadWorkflow?.id),
   });
   const customFieldDefs: FieldDefinition[] = leadDef?.fields ?? [];
+
+  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+  const owner = users.find((u) => u.id === record?.ownerUserId);
 
   const transition = useMutation({
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'lead'),
@@ -173,9 +171,7 @@ export default function EditLeadPage() {
   });
 
   const set = (key: string, value: unknown) =>
-    setLocalCoreFields((prev) => ({ ...(prev ?? { ...leadDefaults(), ...record?.coreFields }), [key]: value }));
-
-  const activeTabObj = TABS.find((t) => t.key === activeTab) ?? TABS[0];
+    setLocalCoreFields((prev) => ({ ...(prev ?? { ...crmCoreDefaults(), ...record?.coreFields }), [key]: value }));
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading lead…" /></div>;
   if (loadError || !record)
@@ -213,76 +209,25 @@ export default function EditLeadPage() {
 
           {/* Scrollable form body */}
           <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-5 space-y-4">
-
-            {/* Primary Information — rendered manually to inject Status field */}
-            <ModernSection title="Primary Information">
-              <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Status — placed first, next to Custom Form */}
-                <ModernFieldShell label="Status">
-                  <StatusDropdown
-                    workflowKey="lead"
-                    mode="transitions"
-                    recordId={id}
-                    value={currentStateId}
-                    onChange={handleStatusChange}
-                    disabled={transition.isPending}
-                  />
-                </ModernFieldShell>
-
-                {/* Core primary fields */}
-                {PRIMARY_SECTIONS[0].fields
-                  .filter((f) => !f.showWhen || coreFields[f.showWhen.key] === f.showWhen.value)
-                  .map((f) => (
-                    <LeadFieldInput key={f.key} field={f} value={coreFields[f.key]} set={set} />
-                  ))}
-              </div>
-            </ModernSection>
-
-            {/* Remaining primary sections */}
-            {PRIMARY_SECTIONS.slice(1).map((section) => (
-              <LeadSectionFields key={section.title} section={section} data={coreFields} set={set} />
-            ))}
-
-            {/* Tab panel */}
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-              <LeadTabBar tabs={TABS} active={activeTabObj.key} onSelect={setActiveTab} />
-              <div className="px-5 py-4">
-                {activeTabObj.sections.length > 0 ? (
-                  <div className="space-y-4">
-                    {activeTabObj.sections.map((section) => (
-                      <LeadSectionFields key={section.title} section={section} data={coreFields} set={set} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 py-6">
-                    <div className="h-1.5 w-1.5 rounded-full bg-stone-300" />
-                    <p className="text-xs text-stone-400">
-                      {activeTabObj.label} information is not yet available
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {customFieldDefs.length > 0 && (
-              <ModernSection title="Custom Fields">
-                <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                  {customFieldDefs.map((f) => (
-                    <DynamicFieldInput
-                      key={f.id || f.key}
-                      field={f}
-                      value={customFieldValues[f.key]}
-                      onChange={(key, value) =>
-                        setLocalCustomFields((prev) => ({
-                          ...(prev ?? record?.customFields ?? {}),
-                          [key]: value,
-                        }))
-                      }
-                    />
-                  ))}
-                </div>
-              </ModernSection>
-            )}
+            <CrmRecordForm
+              core={{ fields: coreFields, onChange: set }}
+              custom={{
+                defs: customFieldDefs,
+                values: customFieldValues,
+                onChange: (key, value) =>
+                  setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value })),
+              }}
+              statusNode={(
+                <StatusDropdown
+                  workflowKey="lead"
+                  mode="transitions"
+                  recordId={id}
+                  value={currentStateId}
+                  onChange={handleStatusChange}
+                  disabled={transition.isPending}
+                />
+              )}
+            />
 
             <div className="h-4" />
           </div>
@@ -344,6 +289,14 @@ export default function EditLeadPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Owner */}
+          <div className="px-4 py-3 border-b border-stone-100">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">Owner</p>
+            <p className="text-xs font-medium text-stone-700">
+              {owner ? (owner.fullName || owner.email) : <span className="text-stone-300 italic">Unassigned</span>}
+            </p>
           </div>
 
           {/* Activity feed */}

@@ -1,16 +1,15 @@
-import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, Pencil, Clock, ArrowLeft } from "lucide-react";
 import { crmService } from "@/services/crmService";
+import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { ConvertRecordButton } from "@/components/crm/ConvertRecordButton";
-import { PRIMARY_SECTIONS, TABS } from "@/lib/leadForm";
-import { LeadTabBar, ModernSection } from "./AddLeadPage";
+import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
+import { ModernSection } from "@/components/crm/FormPrimitives";
 import { cn } from "@/lib/utils";
-import type { LeadField, LeadSection } from "@/lib/leadForm";
 import type { StatusInfo } from "@/types/tenant";
 
 // ── Mock history (TODO: replace with crmService.getRecordHistory(id) when ready) ──
@@ -131,7 +130,6 @@ export default function LeadDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState(TABS[0]?.key ?? "");
 
   const {
     data: record,
@@ -147,6 +145,8 @@ export default function LeadDetailPage() {
     queryKey: ["crm-statuses-workflow", "lead"],
     queryFn: () => crmService.getWorkflowStatuses("lead"),
   });
+
+  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
 
   const statusMap = new Map<string, StatusInfo>(
     (statusData?.statuses ?? []).map((s) => [s.stateId, s]),
@@ -168,7 +168,7 @@ export default function LeadDetailPage() {
   const statusInfo = statusMap.get(record.currentStateId);
   const cf = record.coreFields;
   const company = String(cf.company_name ?? cf.first_name ?? "(unnamed)");
-  const activeTabObj = TABS.find((t) => t.key === activeTab) ?? TABS[0];
+  const owner = users.find((u) => u.id === record.ownerUserId);
 
   return (
     <div className="flex flex-1 min-h-0 bg-stone-50">
@@ -211,42 +211,7 @@ export default function LeadDetailPage() {
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-5 space-y-4">
-          {PRIMARY_SECTIONS.map((section) => (
-            <ReadOnlySectionFields
-              key={section.title}
-              section={section}
-              data={cf}
-            />
-          ))}
-
-          <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-            <LeadTabBar
-              tabs={TABS}
-              active={activeTabObj.key}
-              onSelect={setActiveTab}
-            />
-            <div className="px-5 py-4">
-              {activeTabObj.sections.length > 0 ? (
-                <div className="space-y-4">
-                  {activeTabObj.sections.map((section) => (
-                    <ReadOnlySectionFields
-                      key={section.title}
-                      section={section}
-                      data={cf}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2 py-6">
-                  <div className="h-1.5 w-1.5 rounded-full bg-stone-300" />
-                  <p className="text-xs text-stone-400">
-                    {activeTabObj.label} information is not available for this
-                    record
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <CrmRecordDetail coreFields={cf} />
 
           {Object.keys(record.customFields).length > 0 && (
             <ModernSection title="Custom Fields">
@@ -312,98 +277,35 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-        {/* Status info */}
-        {statusInfo && (
-          <div className="px-4 py-3 border-b border-stone-100">
-            <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">
-              Current Status
-            </p>
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2 w-2 rounded-full shrink-0"
-                style={{ backgroundColor: statusInfo.color || "#a8a29e" }}
-              />
-              <span className="text-xs font-medium text-stone-700">
-                {statusInfo.statusLabel}
-              </span>
+        {/* Status & Owner */}
+        <div className="px-4 py-3 border-b border-stone-100 space-y-3">
+          {statusInfo && (
+            <div>
+              <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">
+                Current Status
+              </p>
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2 w-2 rounded-full shrink-0"
+                  style={{ backgroundColor: statusInfo.color || "#a8a29e" }}
+                />
+                <span className="text-xs font-medium text-stone-700">
+                  {statusInfo.statusLabel}
+                </span>
+              </div>
             </div>
+          )}
+          <div>
+            <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">Owner</p>
+            <p className="text-xs font-medium text-stone-700">
+              {owner ? (owner.fullName || owner.email) : <span className="text-stone-300 italic">Unassigned</span>}
+            </p>
           </div>
-        )}
+        </div>
 
         {/* Activity feed */}
         <ActivityFeed />
       </div>
-    </div>
-  );
-}
-
-function ReadOnlySectionFields({
-  section,
-  data,
-}: {
-  section: LeadSection;
-  data: Record<string, unknown>;
-}) {
-  const visible = section.fields.filter((f) => {
-    if (f.type === "type_toggle") return false;
-    if (f.showWhen && data[f.showWhen.key] !== f.showWhen.value) return false;
-    // Always show checkboxes; hide truly empty text fields
-    if (f.type !== "checkbox") {
-      const v = data[f.key];
-      if (v === null || v === undefined || v === "") return false;
-    }
-    return true;
-  });
-  if (visible.length === 0) return null;
-  return (
-    <ModernSection title={section.title}>
-      <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-        {visible.map((f) => (
-          <ReadOnlyField key={f.key} field={f} value={data[f.key]} />
-        ))}
-      </div>
-    </ModernSection>
-  );
-}
-
-function ReadOnlyField({ field, value }: { field: LeadField; value: unknown }) {
-  if (field.type === "checkbox") {
-    const checked = value === true;
-    return (
-      <div className="flex flex-col gap-0.5">
-        <span className="text-2xs font-medium uppercase tracking-wide text-stone-400 leading-none">
-          {field.label}
-        </span>
-        <span
-          className={cn(
-            "inline-flex w-fit items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium",
-            checked
-              ? "bg-brand/20 text-brand-dark"
-              : "bg-stone-100 text-stone-400",
-          )}
-        >
-          <span
-            className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              checked ? "bg-brand-dark" : "bg-stone-300",
-            )}
-          />
-          {checked ? "Yes" : "No"}
-        </span>
-      </div>
-    );
-  }
-
-  const displayValue = String(value ?? "");
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-2xs font-medium uppercase tracking-wide text-stone-400 leading-none">
-        {field.label}
-      </span>
-      <span className="text-sm font-medium text-stone-800 leading-snug break-words">
-        {displayValue || <span className="text-stone-300 font-normal text-xs">—</span>}
-      </span>
     </div>
   );
 }

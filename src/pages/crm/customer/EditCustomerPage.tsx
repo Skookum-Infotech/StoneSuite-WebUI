@@ -1,17 +1,21 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, AlertCircle, Loader2, Save, X, Clock } from 'lucide-react';
+import {
+  Building2, AlertCircle, Loader2, Save, X, Clock,
+} from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { workflowService } from '@/services/tenantServices';
+import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
-import { CustomerFormSections } from '@/components/crm/CustomerFormSections';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
+import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { crmCoreDefaults } from '@/lib/crmFields';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/types/tenant';
 
+// ── Mock history (TODO: replace with crmService.getRecordHistory(id) when ready) ──
 type HistoryEntry = {
   id: string;
   type: 'created' | 'transition' | 'edit';
@@ -120,7 +124,7 @@ export default function EditCustomerPage() {
     enabled: Boolean(id),
   });
 
-  const coreFields = localCoreFields ?? record?.coreFields ?? {};
+  const coreFields = localCoreFields ?? { ...crmCoreDefaults(), ...record?.coreFields };
   const customFieldValues = localCustomFields ?? record?.customFields ?? {};
   const currentStateId = localStateId ?? record?.currentStateId ?? '';
 
@@ -132,6 +136,9 @@ export default function EditCustomerPage() {
     enabled: Boolean(customerWorkflow?.id),
   });
   const customFieldDefs: FieldDefinition[] = customerDef?.fields ?? [];
+
+  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+  const owner = users.find((u) => u.id === record?.ownerUserId);
 
   const transition = useMutation({
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'customer'),
@@ -153,7 +160,8 @@ export default function EditCustomerPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => crmService.updateRecord(id, { coreFields, customFields: customFieldValues }, 'customer'),
+    mutationFn: () =>
+      crmService.updateRecord(id, { coreFields, customFields: customFieldValues }, 'customer'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
@@ -162,7 +170,7 @@ export default function EditCustomerPage() {
   });
 
   const set = (key: string, value: unknown) =>
-    setLocalCoreFields((prev) => ({ ...(prev ?? record?.coreFields ?? {}), [key]: value }));
+    setLocalCoreFields((prev) => ({ ...(prev ?? { ...crmCoreDefaults(), ...record?.coreFields }), [key]: value }));
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading customer…" /></div>;
   if (loadError || !record)
@@ -179,12 +187,16 @@ export default function EditCustomerPage() {
       >
         {/* ── Left: scrollable form ── */}
         <div className="flex flex-col flex-1 min-h-0 min-w-0">
+
+          {/* Page title */}
           <div className="shrink-0 bg-white border-b border-stone-100 px-6 py-3.5 flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
               <Building2 className="h-4 w-4 text-emerald-600" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">{company}</h1>
+              <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">
+                {company}
+              </h1>
               <p className="text-2xs text-stone-400 mt-0.5">Editing customer record</p>
             </div>
             {record.recordNumber && (
@@ -194,19 +206,17 @@ export default function EditCustomerPage() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden modal-scrollbar px-6 py-5 space-y-4">
-            <CustomerFormSections
+          {/* Scrollable form body */}
+          <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-5 space-y-4">
+            <CrmRecordForm
               core={{ fields: coreFields, onChange: set }}
               custom={{
                 defs: customFieldDefs,
                 values: customFieldValues,
                 onChange: (key, value) =>
-                  setLocalCustomFields((prev) => ({
-                    ...(prev ?? record?.customFields ?? {}),
-                    [key]: value,
-                  })),
+                  setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value })),
               }}
-              statusNode={
+              statusNode={(
                 <StatusDropdown
                   workflowKey="customer"
                   mode="transitions"
@@ -215,14 +225,17 @@ export default function EditCustomerPage() {
                   onChange={handleStatusChange}
                   disabled={transition.isPending}
                 />
-              }
+              )}
             />
+
             <div className="h-4" />
           </div>
         </div>
 
         {/* ── Right: actions + history panel ── */}
         <div className="w-60 xl:w-64 shrink-0 border-l border-stone-200 bg-white flex flex-col overflow-y-auto modal-scrollbar">
+
+          {/* Save / Cancel */}
           <div className="p-4 border-b border-stone-100 space-y-2">
             <button
               type="submit"
@@ -268,6 +281,15 @@ export default function EditCustomerPage() {
             </div>
           </div>
 
+          {/* Owner */}
+          <div className="px-4 py-3 border-b border-stone-100">
+            <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">Owner</p>
+            <p className="text-xs font-medium text-stone-700">
+              {owner ? (owner.fullName || owner.email) : <span className="text-stone-300 italic">Unassigned</span>}
+            </p>
+          </div>
+
+          {/* Activity feed */}
           <ActivityFeed />
         </div>
       </form>
