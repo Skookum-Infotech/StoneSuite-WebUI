@@ -48,6 +48,20 @@ export interface OnboardingApplyDetails {
   prefill: Record<string, unknown>;
 }
 
+// An async_jobs row (e.g. tenant provisioning), used to surface long-running
+// task status/progress and let admins retry failed/dead jobs.
+export interface AsyncJob {
+  id: string;
+  jobType: string;
+  status: 'pending' | 'running' | 'succeeded' | 'failed' | 'dead' | string;
+  attempts: number;
+  maxAttempts: number;
+  lastError?: string;
+  progress?: { step?: string } & Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // An onboarding invite (the token is the shareable "invite key").
 export interface TenantInvite {
   id: string;
