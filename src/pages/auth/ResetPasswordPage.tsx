@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -164,11 +164,11 @@ export default function ResetPasswordPage() {
     register,
     handleSubmit,
     setError,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<Fields>({ resolver: zodResolver(schema) })
 
-  const passwordValue = watch('newPassword', '')
+  const passwordValue = useWatch({ control, name: 'newPassword', defaultValue: '' })
 
   const onSubmit = async (data: Fields) => {
     try {
