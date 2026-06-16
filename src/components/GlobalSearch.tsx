@@ -35,7 +35,7 @@ interface Props {
   onNavigate?: () => void;
 }
 
-export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, onNavigate }: Props) {
+export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate }: Props) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const [query, setQuery] = useState('');
@@ -170,7 +170,6 @@ export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, on
     <div ref={containerRef} className={cn('relative', className)}>
       {/* Input */}
       <div className="relative flex items-center">
-        <Search className="pointer-events-none absolute left-3 size-3.5 text-stone-400" />
         <input
           ref={inputRef}
           type="text"
@@ -184,11 +183,14 @@ export function GlobalSearch({ className, inputClassName, hideKbd, autoFocus, on
           aria-autocomplete="list"
           autoComplete="off"
           className={cn(
-            'h-9 w-full rounded-xl border border-stone-200 bg-stone-50/80 pl-8 text-xs text-stone-700 placeholder:text-stone-400 focus:border-brand focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 dark:border-stone-700 dark:bg-stone-900/40 dark:text-stone-200 dark:placeholder:text-stone-500 dark:focus:border-brand transition-all',
-            hideKbd ? 'pr-3' : 'pr-12',
+            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 text-sm text-stone-200 placeholder:text-stone-500 focus:border-white/25 focus:bg-white/[0.11] focus:outline-none transition-all',
             inputClassName,
           )}
         />
+        {/* Search icon button — right side */}
+        <div className="pointer-events-none absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.10]">
+          <Search className="size-3.5 text-stone-400" />
+        </div>
       </div>
 
       {/* Dropdown */}

@@ -111,20 +111,26 @@ export default function MainLayout(): React.JSX.Element {
         </div>
 
         {/* Main header area: search + actions */}
-        <div className="relative flex flex-1 items-center justify-between px-4 sm:px-5">
+        <div className="relative flex flex-1 items-center px-4 sm:px-5 gap-3">
 
-          {/* GlobalSearch — centered in the full flex-1 zone, desktop */}
-          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex">
+          {/* GlobalSearch — small bar on medium (sm to lg) */}
+          <div className="hidden sm:flex lg:hidden max-w-xs">
+            <GlobalSearch />
+          </div>
+
+          {/* GlobalSearch — full bar on desktop (lg+) */}
+          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
             <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg">
               <GlobalSearch />
             </div>
           </div>
 
-          {/* Spacer mobile */}
-          <div />
+          {/* Spacer — pushes actions to the right on mobile, takes center space on medium */}
+          <div className="flex-1 sm:hidden" />
+          <div className="hidden sm:flex lg:hidden flex-1" />
 
           {/* Right actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             <button
               onClick={() => setIsMobileSearchOpen((o) => !o)}
               aria-label={isMobileSearchOpen ? 'Close search' : 'Open search'}
