@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
-import { ModernSection, ModernFieldShell, fieldCls } from './FormPrimitives';
+import { ModernSection, ModernFieldShell } from './FormPrimitives';
+import { fieldCls } from './formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
 
@@ -63,7 +64,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
     <>
       {CRM_CORE_SECTIONS.map((section, idx) => (
         <ModernSection key={section.title} title={section.title}>
-          <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
             {idx === 0 && statusNode && (
               <ModernFieldShell label="Status" required>
                 {statusNode}
@@ -105,7 +106,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
 
       {showCustomerBalances && (
         <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title}>
-          <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {CRM_CUSTOMER_BALANCE_SECTION.fields.map((field) => (
               <CrmFieldInput
                 key={field.key}
@@ -122,7 +123,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
 
       {custom.defs.length > 0 && (
         <ModernSection title="Custom Fields">
-          <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             {custom.defs.map((f) => (
               <DynamicFieldInput
                 key={f.id || f.key}
@@ -156,18 +157,25 @@ function CrmFieldInput({
 
   if (field.type === 'checkbox') {
     return (
-      <ModernFieldShell label={field.label} required={field.required}>
-        <div className="flex items-center h-[30px]">
+      <div className="flex items-end pb-0.5">
+        <label
+          htmlFor={field.key}
+          className="flex items-center gap-2.5 cursor-pointer select-none group"
+        >
           <input
             type="checkbox"
             id={field.key}
             checked={checked}
             onChange={(e) => onChange(field.key, e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-stone-300 accent-stone-800"
+            className="h-4 w-4 rounded border-stone-300 accent-brand cursor-pointer"
             aria-label={field.label}
           />
-        </div>
-      </ModernFieldShell>
+          <span className="text-xs font-medium text-stone-600 group-hover:text-stone-800 transition-colors leading-none">
+            {field.label}
+            {field.required && <span className="ml-0.5 text-red-400">*</span>}
+          </span>
+        </label>
+      </div>
     );
   }
 

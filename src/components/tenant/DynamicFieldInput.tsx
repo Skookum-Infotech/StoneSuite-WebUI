@@ -1,5 +1,4 @@
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { fieldCls } from '@/components/crm/formUtils';
 import type { FieldDefinition } from '@/types/tenant';
 
 /**
@@ -19,10 +18,10 @@ export function DynamicFieldInput({
   const labelText = field.label || field.key;
 
   const label = (
-    <Label htmlFor={id} className="flex items-center gap-1">
+    <label htmlFor={id} className="block text-xs font-medium text-stone-500 leading-none">
       {labelText}
-      {field.required && <span className="text-red-500">*</span>}
-    </Label>
+      {field.required && <span className="ml-0.5 text-red-400">*</span>}
+    </label>
   );
 
   if (field.dataType === 'enum') {
@@ -34,7 +33,7 @@ export function DynamicFieldInput({
           aria-label={labelText}
           value={(value as string) ?? ''}
           onChange={(e) => onChange(field.key, e.target.value)}
-          className="h-9 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm outline-none focus-visible:border-stone-400 dark:border-stone-700 dark:bg-stone-900"
+          className={fieldCls}
         >
           <option value="">Select…</option>
           {field.options.map((opt) => (
@@ -49,15 +48,23 @@ export function DynamicFieldInput({
 
   if (field.dataType === 'bool') {
     return (
-      <div className="flex items-center gap-2 pt-6">
-        <input
-          id={id}
-          type="checkbox"
-          checked={Boolean(value)}
-          onChange={(e) => onChange(field.key, e.target.checked)}
-          className="size-4 rounded border-stone-300"
-        />
-        <Label htmlFor={id}>{labelText}</Label>
+      <div className="flex items-end pb-0.5">
+        <label
+          htmlFor={id}
+          className="flex items-center gap-2.5 cursor-pointer select-none group"
+        >
+          <input
+            id={id}
+            type="checkbox"
+            checked={Boolean(value)}
+            onChange={(e) => onChange(field.key, e.target.checked)}
+            className="h-4 w-4 rounded border-stone-300 accent-brand cursor-pointer"
+          />
+          <span className="text-xs font-medium text-stone-600 group-hover:text-stone-800 transition-colors leading-none">
+            {labelText}
+            {field.required && <span className="ml-0.5 text-red-400">*</span>}
+          </span>
+        </label>
       </div>
     );
   }
@@ -74,10 +81,11 @@ export function DynamicFieldInput({
   return (
     <div className="space-y-1.5">
       {label}
-      <Input
+      <input
         id={id}
         type={inputType}
         value={(value as string) ?? ''}
+        className={fieldCls}
         onChange={(e) => {
           if (field.dataType === 'number') {
             onChange(field.key, e.target.value === '' ? '' : parseFloat(e.target.value));
@@ -85,7 +93,6 @@ export function DynamicFieldInput({
             onChange(field.key, e.target.value);
           }
         }}
-        // placeholder={labelText}
       />
     </div>
   );
