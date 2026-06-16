@@ -91,12 +91,21 @@ export default function MainLayout(): React.JSX.Element {
           {/* Divider between the two logos */}
           <div className="hidden lg:block h-7 w-px bg-white/12 mx-1" />
 
-          {/* Elevation Stone logo */}
+          {/* Elevation Stone — pill logo on desktop */}
           <div className="hidden lg:flex items-center px-3">
             <img
               src="/elevation-stone-logo.svg"
               alt="Elevation Stone"
               className="h-9 w-auto object-contain"
+            />
+          </div>
+
+          {/* Elevation Stone — circular badge on mobile */}
+          <div className="flex lg:hidden items-center pl-2">
+            <img
+              src="/elevation-stone-badge.svg"
+              alt="Elevation Stone"
+              className="h-9 w-9 object-contain"
             />
           </div>
         </div>
