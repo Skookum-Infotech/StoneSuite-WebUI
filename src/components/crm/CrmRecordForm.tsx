@@ -157,23 +157,21 @@ function CrmFieldInput({
 
   if (field.type === 'checkbox') {
     return (
-      <div className="flex items-end pb-0.5">
+      <div className="col-span-full flex items-center gap-3 py-2.5">
+        <input
+          type="checkbox"
+          id={field.key}
+          checked={checked}
+          onChange={(e) => onChange(field.key, e.target.checked)}
+          className="h-4 w-4 rounded border-stone-300 accent-brand cursor-pointer shrink-0"
+          aria-label={field.label}
+        />
         <label
           htmlFor={field.key}
-          className="flex items-center gap-2.5 cursor-pointer select-none group"
+          className="text-sm font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 transition-colors leading-none flex-1"
         >
-          <input
-            type="checkbox"
-            id={field.key}
-            checked={checked}
-            onChange={(e) => onChange(field.key, e.target.checked)}
-            className="h-4 w-4 rounded border-stone-300 accent-brand cursor-pointer"
-            aria-label={field.label}
-          />
-          <span className="text-xs font-medium text-stone-600 group-hover:text-stone-800 transition-colors leading-none">
-            {field.label}
-            {field.required && <span className="ml-0.5 text-red-400">*</span>}
-          </span>
+          {field.label}
+          {field.required && <span className="ml-0.5 text-red-400">*</span>}
         </label>
       </div>
     );
@@ -191,10 +189,28 @@ function CrmFieldInput({
 
   if (field.type === 'textarea') {
     return (
-      <div className="sm:col-span-2 lg:col-span-3">
+      <div className="col-span-full">
         <ModernFieldShell label={field.label} required={field.required}>
           <textarea
             rows={3}
+            required={field.required}
+            value={str}
+            onChange={(e) => onChange(field.key, e.target.value)}
+            className={`${fieldCls} resize-none`}
+            aria-label={field.label}
+            placeholder={field.placeholder}
+          />
+        </ModernFieldShell>
+      </div>
+    );
+  }
+
+  if (field.type === 'address') {
+    return (
+      <div className="sm:col-span-2">
+        <ModernFieldShell label={field.label} required={field.required}>
+          <textarea
+            rows={2}
             required={field.required}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}

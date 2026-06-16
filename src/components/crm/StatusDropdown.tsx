@@ -72,7 +72,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
         aria-expanded={open}
         onClick={() => !isDisabled && setOpen((v) => !v)}
         disabled={isDisabled}
-        className="flex w-full items-center gap-2 rounded border border-stone-300 bg-white px-2 py-1.5 text-xs text-stone-800 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400"
+        className="flex w-full items-center gap-2 rounded-sm bg-gray-100 px-3.5 py-2.5 text-sm text-stone-800 outline-none border-2 border-transparent transition-all duration-150 focus:bg-white focus:border-brand/50 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-stone-100/70"
       >
         {selected ? (
           <>
@@ -91,7 +91,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
       </button>
 
       {open && !isDisabled && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded border border-stone-200 bg-white shadow-lg">
+        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-sm border border-stone-200 bg-white shadow-md">
           {statuses.map((s) => (
             <button
               key={s.stateId}
@@ -100,8 +100,8 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
                 onChange(s.stateId, s.statusLabel);
                 setOpen(false);
               }}
-              className={`flex w-full items-center gap-2 px-2 py-1.5 text-xs transition hover:bg-stone-50 ${
-                s.stateId === value ? 'bg-brand/10 font-semibold text-stone-900' : 'text-stone-700'
+              className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-sm transition ${
+                s.stateId === value ? 'bg-brand/10 font-semibold text-stone-900' : 'text-stone-700 hover:bg-stone-50'
               }`}
             >
               <span
@@ -112,7 +112,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
             </button>
           ))}
           {statuses.length === 0 && (
-            <p className="px-2 py-2 text-xs text-stone-400">No statuses available.</p>
+            <p className="px-3.5 py-2.5 text-sm text-stone-400">No statuses available.</p>
           )}
         </div>
       )}

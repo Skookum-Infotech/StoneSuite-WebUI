@@ -5,6 +5,7 @@ export type CrmCoreFieldType =
   | 'email'
   | 'tel'
   | 'textarea'
+  | 'address'
   | 'lookup-select'
   | 'user-select'
   | 'date'
@@ -62,8 +63,8 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
       { key: 'customer_contact_email', label: 'Contact Email', type: 'email', required: true, placeholder: 'contact@acme.com' },
       { key: 'customer_accounts_email', label: 'Accounting Email', type: 'email' },
       { key: 'customer_addl_email', label: 'Additional Email', type: 'email' },
-      { key: 'customer_addr_line1', label: 'Address Line 1', type: 'text' },
-      { key: 'customer_addr_line2', label: 'Address Line 2', type: 'text' },
+      { key: 'customer_addr_line1', label: 'Address Line 1', type: 'address' },
+      { key: 'customer_addr_line2', label: 'Address Line 2', type: 'address' },
       { key: 'customer_addr_suitenum', label: 'Suite / Unit #', type: 'text' },
       { key: 'customer_addr_city', label: 'City', type: 'text' },
       { key: 'customer_addr_country', label: 'Country', type: 'lookup-select', lookupKey: 'countries' },
@@ -75,8 +76,8 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
     title: 'Billing Address',
     fields: [
       { key: 'customer_is_bill_as_primary', label: 'Billing Same as Primary', type: 'checkbox' },
-      { key: 'customer_bill_addr_line1', label: 'Address Line 1', type: 'text', showIfFieldFalse: 'customer_is_bill_as_primary' },
-      { key: 'customer_bill_addr_line2', label: 'Address Line 2', type: 'text', showIfFieldFalse: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_line1', label: 'Address Line 1', type: 'address', showIfFieldFalse: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_line2', label: 'Address Line 2', type: 'address', showIfFieldFalse: 'customer_is_bill_as_primary' },
       { key: 'customer_bill_addr_suitenum', label: 'Suite / Unit #', type: 'text', showIfFieldFalse: 'customer_is_bill_as_primary' },
       { key: 'customer_bill_addr_city', label: 'City', type: 'text', showIfFieldFalse: 'customer_is_bill_as_primary' },
       { key: 'customer_bill_addr_country', label: 'Country', type: 'lookup-select', lookupKey: 'countries', showIfFieldFalse: 'customer_is_bill_as_primary' },
@@ -88,8 +89,8 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
     title: 'Shipping Address',
     fields: [
       { key: 'customer_is_ship_as_primary', label: 'Shipping Same as Primary', type: 'checkbox' },
-      { key: 'customer_ship_addr_line1', label: 'Address Line 1', type: 'text', showIfFieldFalse: 'customer_is_ship_as_primary' },
-      { key: 'customer_ship_addr_line2', label: 'Address Line 2', type: 'text', showIfFieldFalse: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_line1', label: 'Address Line 1', type: 'address', showIfFieldFalse: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_line2', label: 'Address Line 2', type: 'address', showIfFieldFalse: 'customer_is_ship_as_primary' },
       { key: 'customer_ship_addr_suitenum', label: 'Suite / Unit #', type: 'text', showIfFieldFalse: 'customer_is_ship_as_primary' },
       { key: 'customer_ship_addr_city', label: 'City', type: 'text', showIfFieldFalse: 'customer_is_ship_as_primary' },
       { key: 'customer_ship_addr_country', label: 'Country', type: 'lookup-select', lookupKey: 'countries', showIfFieldFalse: 'customer_is_ship_as_primary' },
