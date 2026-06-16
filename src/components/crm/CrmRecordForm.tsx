@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
-import { CRM_CORE_SECTIONS, type CrmCoreField } from '@/lib/crmFields';
+import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell, fieldCls } from './FormPrimitives';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
@@ -27,13 +27,24 @@ type Props = {
   custom: CustomProps;
   statusNode?: React.ReactNode;
   owner?: OwnerProps;
+  showCustomerBalances?: boolean;
 };
 
 /** Shared editable form for the unified CRM core fields, used by Lead, Prospect, and Customer Add/Edit pages. */
-export function CrmRecordForm({ core, custom, statusNode, owner }: Props) {
+export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBalances }: Props) {
   const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups });
 
   const fieldStr = (key: string) => String(core.fields[key] ?? '');
+
+  function isFieldVisible(field: CrmCoreField): boolean {
+    if (field.showIfFieldTrue) {
+      return Boolean(core.fields[field.showIfFieldTrue]);
+    }
+    if (field.showIfFieldFalse) {
+      return !core.fields[field.showIfFieldFalse];
+    }
+    return true;
+  }
 
   function lookupOptions(field: CrmCoreField): LookupItem[] {
     if (!lookups || !field.lookupKey) return [];
@@ -46,6 +57,8 @@ export function CrmRecordForm({ core, custom, statusNode, owner }: Props) {
     return items;
   }
 
+  const users = owner?.users ?? [];
+
   return (
     <>
       {CRM_CORE_SECTIONS.map((section, idx) => (
@@ -57,12 +70,12 @@ export function CrmRecordForm({ core, custom, statusNode, owner }: Props) {
               </ModernFieldShell>
             )}
             {idx === 0 && owner && (
-              <ModernFieldShell label="Owner">
+              <ModernFieldShell label="CRM Account Owner">
                 <select
                   value={owner.userId}
                   onChange={(e) => owner.onChange(e.target.value)}
                   className={fieldCls}
-                  aria-label="Owner"
+                  aria-label="CRM Account Owner"
                 >
                   <option value="">— Unassigned —</option>
                   {owner.users.map((u) => (
@@ -73,18 +86,39 @@ export function CrmRecordForm({ core, custom, statusNode, owner }: Props) {
                 </select>
               </ModernFieldShell>
             )}
-            {section.fields.map((field) => (
+            {section.fields.map((field) => {
+              if (!isFieldVisible(field)) return null;
+              return (
+                <CrmFieldInput
+                  key={field.key}
+                  field={field}
+                  value={core.fields[field.key]}
+                  onChange={core.onChange}
+                  options={lookupOptions(field)}
+                  users={users}
+                />
+              );
+            })}
+          </div>
+        </ModernSection>
+      ))}
+
+      {showCustomerBalances && (
+        <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title}>
+          <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+            {CRM_CUSTOMER_BALANCE_SECTION.fields.map((field) => (
               <CrmFieldInput
                 key={field.key}
                 field={field}
                 value={core.fields[field.key]}
                 onChange={core.onChange}
                 options={lookupOptions(field)}
+                users={users}
               />
             ))}
           </div>
         </ModernSection>
-      ))}
+      )}
 
       {custom.defs.length > 0 && (
         <ModernSection title="Custom Fields">
@@ -109,13 +143,43 @@ function CrmFieldInput({
   value,
   onChange,
   options,
+  users,
 }: {
   field: CrmCoreField;
   value: unknown;
   onChange: (key: string, value: unknown) => void;
   options: LookupItem[];
+  users: WorkspaceUser[];
 }) {
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
+  const checked = value === true || value === 'true';
+
+  if (field.type === 'checkbox') {
+    return (
+      <ModernFieldShell label={field.label} required={field.required}>
+        <div className="flex items-center h-[30px]">
+          <input
+            type="checkbox"
+            id={field.key}
+            checked={checked}
+            onChange={(e) => onChange(field.key, e.target.checked)}
+            className="h-3.5 w-3.5 rounded border-stone-300 accent-stone-800"
+            aria-label={field.label}
+          />
+        </div>
+      </ModernFieldShell>
+    );
+  }
+
+  if (field.type === 'readonly') {
+    return (
+      <ModernFieldShell label={field.label}>
+        <div className={`${fieldCls} bg-stone-50 text-stone-500 cursor-not-allowed select-none`}>
+          {str || '—'}
+        </div>
+      </ModernFieldShell>
+    );
+  }
 
   if (field.type === 'textarea') {
     return (
@@ -156,6 +220,28 @@ function CrmFieldInput({
     );
   }
 
+  if (field.type === 'user-select') {
+    return (
+      <ModernFieldShell label={field.label} required={field.required}>
+        <select
+          required={field.required}
+          value={str}
+          onChange={(e) => onChange(field.key, e.target.value)}
+          className={fieldCls}
+          aria-label={field.label}
+        >
+          <option value="">— Unassigned —</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.fullName || u.email}
+            </option>
+          ))}
+        </select>
+      </ModernFieldShell>
+    );
+  }
+
+  // text, email, tel, date, number
   return (
     <ModernFieldShell label={field.label} required={field.required}>
       <input

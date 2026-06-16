@@ -87,7 +87,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
 
   const filtered = useMemo(() => {
     return records.filter((r) => {
-      const company = String(r.coreFields.company_name ?? '').toLowerCase();
+      const company = String(r.coreFields.customer_name ?? '').toLowerCase();
       if (nameFilter   && !company.includes(nameFilter.toLowerCase())) return false;
       if (statusFilter && r.currentStateId !== statusFilter)           return false;
       return true;
@@ -99,7 +99,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       let av = '';
       let bv = '';
       if (sortBy === 'id')        { av = a.id;                                   bv = b.id; }
-      if (sortBy === 'name')      { av = String(a.coreFields.company_name ?? ''); bv = String(b.coreFields.company_name ?? ''); }
+      if (sortBy === 'name')      { av = String(a.coreFields.customer_name ?? ''); bv = String(b.coreFields.customer_name ?? ''); }
       if (sortBy === 'createdAt') { av = a.createdAt;                             bv = b.createdAt; }
       if (sortBy === 'updatedAt') { av = a.updatedAt;                             bv = b.updatedAt; }
       const cmp = av.localeCompare(bv, undefined, { numeric: true });
@@ -202,8 +202,8 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
             <tbody className="divide-y divide-stone-100">
               {pageData.map((record) => {
                 const statusInfo = statusMap.get(record.currentStateId);
-                const company    = String(record.coreFields.company_name ?? '(unnamed)');
-                const email      = String(record.coreFields.email ?? record.ownerUserId ?? '—');
+                const company    = String(record.coreFields.customer_name ?? '(unnamed)');
+                const email      = String(record.coreFields.customer_contact_email ?? '—');
                 const label      = `${config.label} — ${company}`;
                 return (
                   <tr key={record.id} className="hover:bg-stone-50/70 transition-colors">

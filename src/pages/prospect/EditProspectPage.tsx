@@ -11,6 +11,7 @@ import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { ConvertRecordButton } from '@/components/crm/ConvertRecordButton';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { cn } from '@/lib/utils';
@@ -177,7 +178,7 @@ export default function EditProspectPage() {
   if (loadError || !record)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load prospect.')}</ErrorNote></div>;
 
-  const company = String(coreFields.company_name ?? coreFields.first_name ?? '—');
+  const company = String(coreFields.customer_name ?? '—');
   const saveError = save.error ?? transition.error;
 
   return (
@@ -228,6 +229,8 @@ export default function EditProspectPage() {
                 />
               )}
             />
+
+            <EditableFilesPanel />
 
             <div className="h-4" />
           </div>

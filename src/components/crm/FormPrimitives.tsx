@@ -5,9 +5,14 @@ export const fieldCls =
 
 const SECTION_ACCENTS: Record<string, string> = {
   'Primary Information': 'bg-purple-400',
-  'Contact Details': 'bg-blue-400',
-  'Classification & Terms': 'bg-amber-400',
-  'Custom Fields': 'bg-emerald-400',
+  'Contact Information': 'bg-blue-400',
+  'Billing Address': 'bg-sky-400',
+  'Shipping Address': 'bg-cyan-400',
+  'CRM Fields': 'bg-violet-400',
+  'Sales Fields': 'bg-amber-400',
+  'Credit Fields': 'bg-orange-400',
+  'Customer Balances': 'bg-emerald-400',
+  'Custom Fields': 'bg-teal-400',
 };
 
 export function ModernSection({ title, children }: { title: string; children: React.ReactNode }) {

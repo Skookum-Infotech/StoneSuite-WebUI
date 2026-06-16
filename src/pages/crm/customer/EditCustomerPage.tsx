@@ -10,6 +10,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { cn } from '@/lib/utils';
@@ -176,7 +177,7 @@ export default function EditCustomerPage() {
   if (loadError || !record)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load customer.')}</ErrorNote></div>;
 
-  const company = String(coreFields.company_name ?? '—');
+  const company = String(coreFields.customer_name ?? '—');
   const saveError = save.error ?? transition.error;
 
   return (
@@ -216,6 +217,7 @@ export default function EditCustomerPage() {
                 onChange: (key, value) =>
                   setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value })),
               }}
+              showCustomerBalances
               statusNode={(
                 <StatusDropdown
                   workflowKey="customer"
@@ -227,6 +229,8 @@ export default function EditCustomerPage() {
                 />
               )}
             />
+
+            <EditableFilesPanel />
 
             <div className="h-4" />
           </div>

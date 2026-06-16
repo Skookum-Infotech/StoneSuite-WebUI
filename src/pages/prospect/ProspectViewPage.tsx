@@ -9,6 +9,8 @@ import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { ConvertRecordButton } from "@/components/crm/ConvertRecordButton";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { ModernSection } from "@/components/crm/FormPrimitives";
+import { CrmSubTabsPanel } from "@/components/crm/CrmSubTabsPanel";
+import { CRM_LEAD_PROSPECT_SUB_TABS } from "@/lib/crmFields";
 import { cn } from "@/lib/utils";
 import type { StatusInfo } from "@/types/tenant";
 
@@ -167,7 +169,7 @@ export default function ProspectViewPage() {
 
   const statusInfo = statusMap.get(record.currentStateId);
   const cf = record.coreFields;
-  const company = String(cf.company_name ?? cf.first_name ?? "(unnamed)");
+  const company = String(cf.customer_name ?? "(unnamed)");
   const owner = users.find((u) => u.id === record.ownerUserId);
 
   return (
@@ -229,6 +231,9 @@ export default function ProspectViewPage() {
               </div>
             </ModernSection>
           )}
+
+          {/* Sub-tabs: Audit, Files */}
+          <CrmSubTabsPanel tabs={CRM_LEAD_PROSPECT_SUB_TABS} />
 
           <div className="h-4" />
         </div>

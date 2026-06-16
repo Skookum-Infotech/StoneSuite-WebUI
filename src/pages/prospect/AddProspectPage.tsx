@@ -6,6 +6,7 @@ import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import type { FieldDefinition } from '@/types/tenant';
 
@@ -42,7 +43,7 @@ export default function AddProspectPage() {
     },
   });
 
-  const displayName = String(coreFields.company_name ?? '');
+  const displayName = String(coreFields.customer_name ?? '');
 
   return (
     <div className="flex flex-1 min-h-0 bg-stone-50">
@@ -68,6 +69,8 @@ export default function AddProspectPage() {
               custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
               owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
             />
+
+            <EditableFilesPanel />
 
             <div className="h-4" />
           </div>
@@ -120,13 +123,13 @@ export default function AddProspectPage() {
                   <p className="text-2xs text-stone-400 mt-0.5">Company</p>
                 </div>
               </div>
-              {(Boolean(coreFields.email) || Boolean(coreFields.phone)) && (
+              {(Boolean(coreFields.customer_contact_email) || Boolean(coreFields.customer_primary_phonenum)) && (
                 <div className="pt-2 space-y-1 border-t border-stone-200">
-                  {Boolean(coreFields.email) && (
-                    <p className="text-2xs text-stone-500 truncate">{String(coreFields.email)}</p>
+                  {Boolean(coreFields.customer_contact_email) && (
+                    <p className="text-2xs text-stone-500 truncate">{String(coreFields.customer_contact_email)}</p>
                   )}
-                  {Boolean(coreFields.phone) && (
-                    <p className="text-2xs text-stone-500 truncate">{String(coreFields.phone)}</p>
+                  {Boolean(coreFields.customer_primary_phonenum) && (
+                    <p className="text-2xs text-stone-500 truncate">{String(coreFields.customer_primary_phonenum)}</p>
                   )}
                 </div>
               )}

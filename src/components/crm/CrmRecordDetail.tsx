@@ -1,10 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
-import { CRM_CORE_SECTIONS, type CrmCoreField } from '@/lib/crmFields';
+import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
+import type { WorkspaceUser } from '@/types/tenant';
+
+type Props = {
+  coreFields: Record<string, unknown>;
+  showCustomerBalances?: boolean;
+  users?: WorkspaceUser[];
+};
 
 /** Read-only renderer for the unified CRM core fields, used by Lead, Prospect, and Customer detail pages. */
-export function CrmRecordDetail({ coreFields }: { coreFields: Record<string, unknown> }) {
+export function CrmRecordDetail({ coreFields, showCustomerBalances, users = [] }: Props) {
   const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups });
 
   function resolveLookup(field: CrmCoreField, value: unknown): string {
@@ -14,14 +21,56 @@ export function CrmRecordDetail({ coreFields }: { coreFields: Record<string, unk
     return match?.name ?? '';
   }
 
+  function resolveUser(value: unknown): string {
+    if (!value) return '';
+    const user = users.find((u) => u.id === String(value));
+    return user ? (user.fullName || user.email) : String(value);
+  }
+
+  function isFieldVisible(field: CrmCoreField): boolean {
+    if (field.showIfFieldTrue) return Boolean(coreFields[field.showIfFieldTrue]);
+    if (field.showIfFieldFalse) return !coreFields[field.showIfFieldFalse];
+    return true;
+  }
+
+  function renderValue(field: CrmCoreField): string {
+    const raw = coreFields[field.key];
+    if (field.type === 'lookup-select') return resolveLookup(field, raw);
+    if (field.type === 'user-select') return resolveUser(raw);
+    if (field.type === 'checkbox') return raw === true || raw === 'true' ? 'Yes' : 'No';
+    return raw ? String(raw) : '';
+  }
+
+  function renderSection(section: typeof CRM_CORE_SECTIONS[number]) {
+    const visibleFields = section.fields.filter(isFieldVisible);
+    if (visibleFields.length === 0) return null;
+    return (
+      <ModernSection key={section.title} title={section.title}>
+        <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+          {visibleFields.map((field) => {
+            const display = renderValue(field);
+            return (
+              <ModernFieldShell key={field.key} label={field.label}>
+                <p className="text-xs text-stone-700 min-h-[1.25rem]">
+                  {display || <span className="text-stone-300 italic">—</span>}
+                </p>
+              </ModernFieldShell>
+            );
+          })}
+        </div>
+      </ModernSection>
+    );
+  }
+
   return (
     <>
-      {CRM_CORE_SECTIONS.map((section) => (
-        <ModernSection key={section.title} title={section.title}>
+      {CRM_CORE_SECTIONS.map(renderSection)}
+
+      {showCustomerBalances && (
+        <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title}>
           <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-            {section.fields.map((field) => {
-              const raw = coreFields[field.key];
-              const display = field.type === 'lookup-select' ? resolveLookup(field, raw) : raw ? String(raw) : '';
+            {CRM_CUSTOMER_BALANCE_SECTION.fields.map((field) => {
+              const display = renderValue(field);
               return (
                 <ModernFieldShell key={field.key} label={field.label}>
                   <p className="text-xs text-stone-700 min-h-[1.25rem]">
@@ -32,7 +81,7 @@ export function CrmRecordDetail({ coreFields }: { coreFields: Record<string, unk
             })}
           </div>
         </ModernSection>
-      ))}
+      )}
     </>
   );
 }
