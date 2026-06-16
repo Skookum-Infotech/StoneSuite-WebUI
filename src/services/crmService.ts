@@ -82,4 +82,22 @@ export const crmService = {
         { targetWorkflowKey, ...payload },
       )
       .then((r) => ({ record: r.data.record, sourceRecordId: r.data.sourceRecordId })),
+
+  getRecordAudit: (id: string, workflowKey = '_'): Promise<AuditEntry[]> =>
+    tenantClient
+      .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(
+        `/tenant/crm/${workflowKey}/records/${id}/audit`,
+      )
+      .then((r) => r.data.audit ?? []),
+};
+
+export type AuditEntry = {
+  action: string;
+  resource: string;
+  actorUserId: string;
+  ipAddress: string;
+  appVersion: string;
+  oldValue?: Record<string, unknown>;
+  newValue?: Record<string, unknown>;
+  at: string;
 };

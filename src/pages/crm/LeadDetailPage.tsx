@@ -234,7 +234,7 @@ export default function LeadDetailPage() {
           )}
 
           {/* Sub-tabs: Audit, Files */}
-          <CrmSubTabsPanel tabs={CRM_LEAD_PROSPECT_SUB_TABS} />
+          <CrmSubTabsPanel tabs={CRM_LEAD_PROSPECT_SUB_TABS} recordId={id} workflowKey="lead" />
 
           <div className="h-4" />
         </div>

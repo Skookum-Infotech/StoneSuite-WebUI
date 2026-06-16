@@ -233,7 +233,7 @@ export default function ProspectViewPage() {
           )}
 
           {/* Sub-tabs: Audit, Files */}
-          <CrmSubTabsPanel tabs={CRM_LEAD_PROSPECT_SUB_TABS} />
+          <CrmSubTabsPanel tabs={CRM_LEAD_PROSPECT_SUB_TABS} recordId={id} workflowKey="prospect" />
 
           <div className="h-4" />
         </div>

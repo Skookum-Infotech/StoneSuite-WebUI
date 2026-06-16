@@ -99,7 +99,7 @@ export default function CustomerDetailPage() {
           )}
 
           {/* Sub-tabs: Transactions, Audit, Files */}
-          <CrmSubTabsPanel tabs={CRM_CUSTOMER_SUB_TABS} />
+          <CrmSubTabsPanel tabs={CRM_CUSTOMER_SUB_TABS} recordId={id} workflowKey="customer" />
 
           <div className="h-4" />
         </div>

@@ -106,7 +106,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
 
       {showCustomerBalances && (
         <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title}>
-          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
             {CRM_CUSTOMER_BALANCE_SECTION.fields.map((field) => (
               <CrmFieldInput
                 key={field.key}
@@ -123,7 +123,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
 
       {custom.defs.length > 0 && (
         <ModernSection title="Custom Fields">
-          <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
             {custom.defs.map((f) => (
               <DynamicFieldInput
                 key={f.id || f.key}

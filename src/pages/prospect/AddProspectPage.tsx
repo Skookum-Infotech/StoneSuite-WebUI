@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Users, AlertCircle, Loader2, Save, X, ChevronLeft } from 'lucide-react';
@@ -6,16 +6,18 @@ import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
-import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
+import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import type { FieldDefinition } from '@/types/tenant';
 
 export default function AddProspectPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const panelRef = useRef<EditableFilesPanelHandle>(null);
   const [coreFields, setCoreFields] = useState<Record<string, unknown>>(crmCoreDefaults);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
   const [ownerUserId, setOwnerUserId] = useState('');
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
   const set = (key: string, value: unknown) => setCoreFields((d) => ({ ...d, [key]: value }));
 
@@ -23,7 +25,7 @@ export default function AddProspectPage() {
   const prospectWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'prospect');
   const { data: prospectDef } = useQuery({
     queryKey: ['workflow', prospectWorkflow?.id],
-    queryFn: () => workflowService.get(prospectWorkflow!.id),
+    queryFn: () => workflowService.get(prospectWorkflow?.id ?? ''),
     enabled: Boolean(prospectWorkflow?.id),
   });
   const customFieldDefs: FieldDefinition[] = prospectDef?.fields ?? [];
@@ -37,8 +39,12 @@ export default function AddProspectPage() {
         customFields: customFieldValues,
         ownerUserId: ownerUserId || undefined,
       }),
-    onSuccess: (record) => {
+    onSuccess: async (record) => {
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
+      if (panelRef.current?.hasStagedFiles()) {
+        setIsUploadingFiles(true);
+        try { await panelRef.current.uploadStagedTo(record.id); } finally { setIsUploadingFiles(false); }
+      }
       navigate(`/prospects/${record.id}`);
     },
   });
@@ -79,11 +85,11 @@ export default function AddProspectPage() {
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isUploadingFiles}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
             >
-              {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-              {isPending ? 'Saving…' : 'Save Prospect'}
+              {(isPending || isUploadingFiles) ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {isPending ? 'Saving…' : isUploadingFiles ? 'Uploading files…' : 'Save Prospect'}
             </button>
           </div>
         </div>
@@ -104,7 +110,7 @@ export default function AddProspectPage() {
               custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
               owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
             />
-            <EditableFilesPanel />
+            <EditableFilesPanel ref={panelRef} />
             <div className="h-6" />
           </div>
         </div>

@@ -188,7 +188,7 @@ export default function EditLeadPage() {
                 />
               )}
             />
-            <EditableFilesPanel />
+            <EditableFilesPanel recordId={id} />
             <div className="h-6" />
           </div>
         </div>

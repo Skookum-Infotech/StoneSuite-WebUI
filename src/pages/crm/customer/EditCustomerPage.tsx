@@ -179,7 +179,7 @@ export default function EditCustomerPage() {
                 />
               )}
             />
-            <EditableFilesPanel />
+            <EditableFilesPanel recordId={id} />
             <div className="h-6" />
           </div>
         </div>
