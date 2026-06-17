@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, Pencil, ArrowLeft } from "lucide-react";
+import { Sparkles, Pencil, ChevronLeft } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -55,140 +55,87 @@ export default function LeadDetailPage() {
   const cf = record.coreFields;
   const nameParts = [cf.customer_authorized_person_fname, cf.customer_authorized_person_lname].filter(Boolean).join(' ');
   const company = String((cf.customer_name ?? nameParts) || '(unnamed)');
-  const owner = users.find((u) => u.id === record.ownerUserId);
 
   return (
-    <div className="flex flex-1 min-h-0 bg-stone-50">
-      {/* ── Left: scrollable content ── */}
-      <div className="flex flex-col flex-1 min-h-0 min-w-0">
-        {/* Page title */}
-        <div className="shrink-0 bg-white border-b border-stone-100 px-6 py-3.5 flex items-center gap-3">
-
-          <button
-            type="button"
-            onClick={() => navigate("/crm/lead")}
-            className="text-2xs text-stone-400 hover:text-stone-600 transition-colors"
-          >
-            <ArrowLeft className="size-5" />
-          </button>
-
-          <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-            <Sparkles className="h-4 w-4 text-purple-600" />
+    <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      {/* Sticky top bar */}
+      <div className="shrink-0 bg-white border-b border-stone-100 px-4 py-2.5 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate("/crm/lead")}
+          className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition-colors px-1.5 py-1 rounded-md hover:bg-stone-100 shrink-0"
+          aria-label="Back to leads"
+        >
+          <ChevronLeft className="size-3.5" />
+          Leads
+        </button>
+        <div className="w-px h-4 bg-stone-200 shrink-0" />
+        <div className="h-7 w-7 rounded-md bg-purple-100 flex items-center justify-center shrink-0">
+          <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">{company}</h1>
+            {record.recordNumber && (
+              <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 font-mono text-2xs text-stone-400">
+                {record.recordNumber}
+              </span>
+            )}
+            {statusInfo && (
+              <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
+            )}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">
-                {company}
-              </h1>
-              {record.recordNumber && (
-                <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 font-mono text-2xs text-stone-400">
-                  {record.recordNumber}
-                </span>
-              )}
-              {statusInfo && (
-                <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
-              )}
-            </div>
-            <p className="text-2xs text-stone-400 mt-0.5">
-              Created {new Date(record.createdAt).toLocaleDateString()} ·
-              Updated {new Date(record.updatedAt).toLocaleDateString()}
-            </p>
+          <p className="text-2xs text-stone-400">Lead</p>
+        </div>
+        <div className="w-px h-4 bg-stone-200 shrink-0" />
+        {/* Record actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="[&>button]:text-xs [&>button]:px-2.5 [&>button]:py-1.5 [&>button]:rounded-lg">
+            <DeleteRecordDialog
+              recordId={id}
+              workflowKey="lead"
+              label={`Lead — ${company}`}
+              onDeleted={() => {
+                queryClient.invalidateQueries({ queryKey: ["crm-records", "lead"] });
+                navigate("/crm/lead");
+              }}
+            />
           </div>
         </div>
+        <div className="w-px h-4 bg-stone-200 shrink-0" />
+        <button
+          type="button"
+          onClick={() => navigate(`/crm/lead/${id}/edit`)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all shadow-sm shrink-0"
+        >
+          <Pencil className="size-3" />
+          Edit Lead
+        </button>
+      </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-5 space-y-4">
-          <CrmRecordDetail coreFields={cf} />
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto modal-scrollbar">
+        <div className="px-5 py-5 space-y-5">
+          <CrmRecordDetail coreFields={cf} users={users} />
 
           {Object.keys(record.customFields).length > 0 && (
             <ModernSection title="Custom Fields">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
                 {Object.entries(record.customFields).map(([key, value]) => (
-                  <div key={key} className="flex flex-col gap-0.5">
-                    <span className="text-2xs font-medium uppercase tracking-wide text-stone-400 leading-none">
-                      {key}
-                    </span>
-                    <span className="text-sm font-medium text-stone-800 leading-snug break-words">
-                      {String(value ?? "") || <span className="text-stone-300 font-normal text-xs">—</span>}
-                    </span>
+                  <div key={key} className="space-y-1.5">
+                    <label className="block text-xs font-medium text-stone-500 leading-none">{key}</label>
+                    <div className="w-full bg-gray-100 rounded-sm px-3.5 py-2.5 text-sm text-stone-800 border-2 border-transparent min-h-[2.25rem]">
+                      {String(value ?? "") || <span className="text-stone-400">—</span>}
+                    </div>
                   </div>
                 ))}
               </div>
             </ModernSection>
           )}
 
-          {/* Sub-tabs: Audit, Files */}
           <CrmSubTabsPanel tabs={CRM_LEAD_PROSPECT_SUB_TABS} recordId={id} workflowKey="lead" />
 
-          <div className="h-4" />
-        </div>
-      </div>
-
-      {/* ── Right: actions + history panel ── */}
-      <div className="w-60 xl:w-64 shrink-0 border-l border-stone-200 bg-white flex flex-col overflow-y-auto modal-scrollbar">
-        {/* Primary actions */}
-        <div className="p-4 border-b border-stone-100 space-y-2">
-          <button
-            type="button"
-            onClick={() => navigate(`/crm/lead/${id}/edit`)}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-stone-800 px-4 py-2.5 text-xs font-semibold text-white hover:bg-stone-700 transition-all duration-150 shadow-sm"
-          >
-            <Pencil className="size-3.5" />
-            Edit Lead
-          </button>
-        </div>
-
-        {/* Record actions */}
-        <div className="p-4 border-b border-stone-100">
-          <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2.5">
-            Record Actions
-          </p>
-          <div className="space-y-1.5">
-            <div className="[&>button]:w-full [&>button]:justify-start [&>button]:rounded-lg [&>button]:text-xs">
-              <DeleteRecordDialog
-                recordId={id}
-                workflowKey="lead"
-                label={`Lead — ${company}`}
-                onDeleted={() => {
-                  queryClient.invalidateQueries({
-                    queryKey: ["crm-records", "lead"],
-                  });
-                  navigate("/crm/lead");
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Status & Owner */}
-        <div className="px-4 py-3 border-b border-stone-100 space-y-3">
-          {statusInfo && (
-            <div>
-              <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">
-                Current Status
-              </p>
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2 w-2 rounded-full shrink-0"
-                  style={{ backgroundColor: statusInfo.color || "#a8a29e" }}
-                />
-                <span className="text-xs font-medium text-stone-700">
-                  {statusInfo.statusLabel}
-                </span>
-              </div>
-            </div>
-          )}
-          <div>
-            <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2">Owner</p>
-            <p className="text-xs font-medium text-stone-700">
-              {owner ? (owner.fullName || owner.email) : <span className="text-stone-300 italic">Unassigned</span>}
-            </p>
-          </div>
-        </div>
-
-        {/* Activity feed */}
-        <div className="p-4 flex-1">
-          <p className="text-2xs text-stone-400 italic">History coming soon.</p>
+          <div className="h-6" />
         </div>
       </div>
     </div>
