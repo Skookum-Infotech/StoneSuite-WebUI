@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useEffect, startTransition } from 'react';
 import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { apiClient } from '@/api/client';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -52,6 +53,7 @@ export default function MainLayout(): React.JSX.Element {
   };
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
+  const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
@@ -267,7 +269,7 @@ export default function MainLayout(): React.JSX.Element {
                           : 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200',
                       )}
                     >
-                      {segment.replace(/-/g, ' ')}
+                      {breadcrumbLabels[segment] ?? segment.replace(/-/g, ' ')}
                     </span>
                   </React.Fragment>
                 );

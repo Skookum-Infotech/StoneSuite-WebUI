@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Pencil, ChevronLeft } from "lucide-react";
@@ -10,6 +11,7 @@ import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import { CrmSubTabsPanel } from "@/components/crm/CrmSubTabsPanel";
 import { CRM_CUSTOMER_SUB_TABS } from "@/lib/crmFields";
+import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import type { StatusInfo } from "@/types/tenant";
 
 export default function CustomerDetailPage() {
@@ -33,6 +35,15 @@ export default function CustomerDetailPage() {
   const statusMap = new Map<string, StatusInfo>(
     (statusData?.statuses ?? []).map((s) => [s.stateId, s]),
   );
+
+  const setLabel = useBreadcrumbStore((s) => s.setLabel);
+  const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
+  useEffect(() => {
+    if (record?.recordNumber) {
+      setLabel(id, record.recordNumber);
+      return () => clearLabel(id);
+    }
+  }, [id, record?.recordNumber, setLabel, clearLabel]);
 
   if (isLoading)
     return <div className="p-6"><Spinner label="Loading customer…" /></div>;
@@ -63,11 +74,6 @@ export default function CustomerDetailPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">{company}</h1>
-            {record.recordNumber && (
-              <span className="rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 font-mono text-2xs text-stone-400">
-                {record.recordNumber}
-              </span>
-            )}
             {statusInfo && <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>}
           </div>
           <p className="text-2xs text-stone-400">Customer</p>

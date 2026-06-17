@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -13,6 +13,7 @@ import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
+import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import type { FieldDefinition } from '@/types/tenant';
 
 export default function EditProspectPage() {
@@ -85,6 +86,15 @@ export default function EditProspectPage() {
   const set = (key: string, value: unknown) =>
     setLocalCoreFields((prev) => ({ ...(prev ?? { ...crmCoreDefaults(), ...record?.coreFields }), [key]: value }));
 
+  const setLabel = useBreadcrumbStore((s) => s.setLabel);
+  const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
+  useEffect(() => {
+    if (record?.recordNumber) {
+      setLabel(id, record.recordNumber);
+      return () => clearLabel(id);
+    }
+  }, [id, record?.recordNumber, setLabel, clearLabel]);
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading prospect…" /></div>;
   if (loadError || !record)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load prospect.')}</ErrorNote></div>;
@@ -117,11 +127,6 @@ export default function EditProspectPage() {
             <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">{company}</h1>
             <p className="text-2xs text-stone-400">Prospect</p>
           </div>
-          {record.recordNumber && (
-            <span className="shrink-0 rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 font-mono text-2xs text-stone-400">
-              {record.recordNumber}
-            </span>
-          )}
           <div className="w-px h-4 bg-stone-200 shrink-0" />
           <div className="flex items-center gap-1.5 shrink-0">
             <div className="[&>button]:text-xs [&>button]:px-2.5 [&>button]:py-1.5 [&>button]:rounded-lg">
