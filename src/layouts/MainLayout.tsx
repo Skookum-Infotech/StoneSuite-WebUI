@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 
 export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, logout } = useAuthStore();
+  const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -53,7 +54,6 @@ export default function MainLayout(): React.JSX.Element {
   };
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
-  const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
