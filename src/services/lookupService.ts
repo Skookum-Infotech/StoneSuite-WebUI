@@ -21,6 +21,8 @@ export interface CrmLookups {
   states: StateLookupItem[];
   leadSources: LookupItem[];
   contactMethods: LookupItem[];
+  employees: LookupItem[];
+  parentCustomers: LookupItem[];
 }
 
 export const lookupService = {

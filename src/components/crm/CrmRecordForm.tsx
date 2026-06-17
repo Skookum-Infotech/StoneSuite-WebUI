@@ -20,7 +20,7 @@ type CustomProps = {
 type OwnerProps = {
   userId: string;
   onChange: (userId: string) => void;
-  users: WorkspaceUser[];
+  users: WorkspaceUser[]; // used for the CRM Account Owner select (not core field registry)
 };
 
 type Props = {
@@ -58,8 +58,6 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
     return items;
   }
 
-  const users = owner?.users ?? [];
-
   return (
     <>
       {CRM_CORE_SECTIONS.map((section, idx) => (
@@ -96,7 +94,6 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
                   value={core.fields[field.key]}
                   onChange={core.onChange}
                   options={lookupOptions(field)}
-                  users={users}
                 />
               );
             })}
@@ -114,7 +111,6 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
                 value={core.fields[field.key]}
                 onChange={core.onChange}
                 options={lookupOptions(field)}
-                users={users}
               />
             ))}
           </div>
@@ -144,13 +140,11 @@ function CrmFieldInput({
   value,
   onChange,
   options,
-  users,
 }: {
   field: CrmCoreField;
   value: unknown;
   onChange: (key: string, value: unknown) => void;
   options: LookupItem[];
-  users: WorkspaceUser[];
 }) {
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
   const checked = value === true || value === 'true';
@@ -237,27 +231,6 @@ function CrmFieldInput({
           {options.map((opt) => (
             <option key={opt.id} value={String(opt.id)}>
               {opt.name}
-            </option>
-          ))}
-        </select>
-      </ModernFieldShell>
-    );
-  }
-
-  if (field.type === 'user-select') {
-    return (
-      <ModernFieldShell label={field.label} required={field.required}>
-        <select
-          required={field.required}
-          value={str}
-          onChange={(e) => onChange(field.key, e.target.value)}
-          className={fieldCls}
-          aria-label={field.label}
-        >
-          <option value="">— Unassigned —</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.fullName || u.email}
             </option>
           ))}
         </select>

@@ -2,16 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
-import type { WorkspaceUser } from '@/types/tenant';
 
 type Props = {
   coreFields: Record<string, unknown>;
   showCustomerBalances?: boolean;
-  users?: WorkspaceUser[];
 };
 
 /** Read-only renderer for the unified CRM core fields, used by Lead, Prospect, and Customer detail pages. */
-export function CrmRecordDetail({ coreFields, showCustomerBalances, users = [] }: Props) {
+export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
   const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups });
 
   function resolveLookup(field: CrmCoreField, value: unknown): string {
@@ -19,12 +17,6 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances, users = [] }
     const items = lookups[field.lookupKey] as LookupItem[];
     const match = items.find((item) => String(item.id) === String(value));
     return match?.name ?? '';
-  }
-
-  function resolveUser(value: unknown): string {
-    if (!value) return '';
-    const user = users.find((u) => u.id === String(value));
-    return user ? (user.fullName || user.email) : String(value);
   }
 
   function isFieldVisible(field: CrmCoreField): boolean {
@@ -36,7 +28,6 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances, users = [] }
   function renderValue(field: CrmCoreField): string {
     const raw = coreFields[field.key];
     if (field.type === 'lookup-select') return resolveLookup(field, raw);
-    if (field.type === 'user-select') return resolveUser(raw);
     if (field.type === 'checkbox') return raw === true || raw === 'true' ? 'Yes' : 'No';
     return raw ? String(raw) : '';
   }

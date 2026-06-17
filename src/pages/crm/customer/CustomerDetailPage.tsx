@@ -79,7 +79,7 @@ export default function CustomerDetailPage() {
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar px-6 py-5 space-y-4">
-          <CrmRecordDetail coreFields={cf} showCustomerBalances users={users} />
+          <CrmRecordDetail coreFields={cf} showCustomerBalances />
 
           {Object.keys(record.customFields).length > 0 && (
             <ModernSection title="Custom Fields">

@@ -7,7 +7,6 @@ export type CrmCoreFieldType =
   | 'textarea'
   | 'address'
   | 'lookup-select'
-  | 'user-select'
   | 'date'
   | 'number'
   | 'checkbox'
@@ -47,7 +46,7 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
       { key: 'customer_authorized_person_fname', label: 'Authorized Person First Name', type: 'text' },
       { key: 'customer_authorized_person_lname', label: 'Authorized Person Last Name', type: 'text' },
       { key: 'customer_is_child', label: 'Is Child Customer', type: 'checkbox' },
-      { key: 'customer_parent_company', label: 'Parent Customer', type: 'text', showIfFieldTrue: 'customer_is_child' },
+      { key: 'customer_parent_company', label: 'Parent Customer', type: 'lookup-select', lookupKey: 'parentCustomers', showIfFieldTrue: 'customer_is_child' },
       { key: 'customer_ar_status', label: 'AR Status', type: 'lookup-select', lookupKey: 'arStatuses' },
     ],
   },
@@ -112,7 +111,7 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
   {
     title: 'Sales Fields',
     fields: [
-      { key: 'customer_sales_rep', label: 'Sales Rep', type: 'user-select' },
+      { key: 'customer_sales_rep', label: 'Sales Rep', type: 'lookup-select', lookupKey: 'employees' },
       { key: 'customer_price_level', label: 'Price Level', type: 'lookup-select', lookupKey: 'priceLevels' },
       { key: 'customer_is_tax_exempt', label: 'Tax Exempt', type: 'checkbox' },
       { key: 'customer_tax_exempt_reason', label: 'Tax Exempt Reason', type: 'textarea', showIfFieldTrue: 'customer_is_tax_exempt' },
