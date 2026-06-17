@@ -1,15 +1,19 @@
-import { Sparkles, Plus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { LeadTable } from './components/LeadTable';
-import { crmService } from '@/services/crmService';
+import { Sparkles, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { LeadTable } from "./components/LeadTable";
+import { crmService } from "@/services/crmService";
 
 export default function LeadPage() {
   const navigate = useNavigate();
 
-  const { data: records = [], isLoading, isError } = useQuery({
-    queryKey: ['crm-records', 'lead'],
-    queryFn: () => crmService.listRecords('lead'),
+  const {
+    data: records = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["crm-records", "lead"],
+    queryFn: () => crmService.listRecords("lead"),
   });
 
   return (
@@ -21,12 +25,16 @@ export default function LeadPage() {
               <Sparkles className="size-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-stone-900">Leads</h1>
-              <p className="text-sm text-stone-500">Track and manage your sales leads pipeline.</p>
+              <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+                Leads
+              </h1>
+              <p className="text-sm text-stone-500">
+                Track and manage your sales leads pipeline.
+              </p>
             </div>
           </div>
           <button
-            onClick={() => navigate('/crm/lead/new')}
+            onClick={() => navigate("/crm/lead/new")}
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-3 text-xs font-semibold shadow-sm transition hover:bg-brand/50 cursor-pointer"
           >
             <Plus className="size-3.5" />
@@ -36,7 +44,9 @@ export default function LeadPage() {
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
           {isError && (
-            <p className="text-xs text-red-500 mb-3">Failed to load leads. Is the backend running?</p>
+            <p className="text-xs text-red-500 mb-3">
+              Failed to load leads. Is the backend running?
+            </p>
           )}
           <LeadTable records={records} isLoading={isLoading} />
         </div>

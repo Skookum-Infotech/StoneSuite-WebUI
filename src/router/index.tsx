@@ -3,7 +3,7 @@ import React, { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import AuthLayout from "@/layouts/AuthLayout";
 import MainLayout from "@/layouts/MainLayout";
-import{ PermissionGuard } from "@/components/PermissionGuard";
+import { PermissionGuard } from "@/components/PermissionGuard";
 
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const ForgotPasswordPage = lazy(
@@ -25,21 +25,31 @@ const AcceptInvitePage = lazy(
 const ProspectListPage = lazy(
   () => import("@/pages/crm/prospect/ProspectListPage"),
 );
-const AddProspectPage = lazy(() => import("@/pages/crm/prospect/AddProspectPage"));
+const AddProspectPage = lazy(
+  () => import("@/pages/crm/prospect/AddProspectPage"),
+);
 const ProspectViewPage = lazy(
   () => import("@/pages/crm/prospect/ProspectViewPage"),
 );
 const EditProspectPage = lazy(
   () => import("@/pages/crm/prospect/EditProspectPage"),
 );
-const LeadPage = lazy(() => import("@/pages/crm/LeadPage"));
-const AddLeadPage = lazy(() => import("@/pages/crm/AddLeadPage"));
-const EditLeadPage = lazy(() => import("@/pages/crm/EditLeadPage"));
-const LeadDetailPage = lazy(() => import("@/pages/crm/LeadDetailPage"));
-const CustomerListPage = lazy(() => import("@/pages/crm/customer/CustomerListPage"));
-const AddCRMCustomerPage = lazy(() => import("@/pages/crm/customer/AddCustomerPage"));
-const CustomerDetailPage = lazy(() => import("@/pages/crm/customer/CustomerDetailPage"));
-const EditCustomerPage = lazy(() => import("@/pages/crm/customer/EditCustomerPage"));
+const LeadPage = lazy(() => import("@/pages/crm/lead/LeadPage"));
+const AddLeadPage = lazy(() => import("@/pages/crm/lead/AddLeadPage"));
+const EditLeadPage = lazy(() => import("@/pages/crm/lead/EditLeadPage"));
+const LeadDetailPage = lazy(() => import("@/pages/crm/lead/LeadDetailPage"));
+const CustomerListPage = lazy(
+  () => import("@/pages/crm/customer/CustomerListPage"),
+);
+const AddCRMCustomerPage = lazy(
+  () => import("@/pages/crm/customer/AddCustomerPage"),
+);
+const CustomerDetailPage = lazy(
+  () => import("@/pages/crm/customer/CustomerDetailPage"),
+);
+const EditCustomerPage = lazy(
+  () => import("@/pages/crm/customer/EditCustomerPage"),
+);
 const ConfigHomePage = lazy(() => import("@/pages/config/ConfigHomePage"));
 const ConfigWorkflowsPage = lazy(() => import("@/pages/config/WorkflowsPage"));
 const WorkflowBuilderPage = lazy(
@@ -49,9 +59,15 @@ const RolesPage = lazy(() => import("@/pages/config/RolesPage"));
 const CreateRolePage = lazy(() => import("@/pages/config/CreateRolePage"));
 const EditRolePage = lazy(() => import("@/pages/config/EditRolePage"));
 const UsersPage = lazy(() => import("@/pages/config/UsersPage"));
-const RecordNumberingPage = lazy(() => import("@/pages/config/RecordNumberingPage"));
-const WorkflowPlaceholderPage = lazy(() => import("@/pages/common/WorkflowPlaceholderPage"));
-const SalesOrderListPage = lazy(() => import("@/pages/sales/SalesOrderListPage"));
+const RecordNumberingPage = lazy(
+  () => import("@/pages/config/RecordNumberingPage"),
+);
+const WorkflowPlaceholderPage = lazy(
+  () => import("@/pages/common/WorkflowPlaceholderPage"),
+);
+const SalesOrderListPage = lazy(
+  () => import("@/pages/sales/SalesOrderListPage"),
+);
 const AddSalesOrderPage = lazy(() => import("@/pages/sales/AddSalesOrderPage"));
 
 const PageLoader = () => (
