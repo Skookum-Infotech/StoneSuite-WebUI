@@ -68,7 +68,7 @@ export default function MainLayout(): React.JSX.Element {
           </button>
 
           {/* Stone Suite logo + name */}
-          <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-1.5 px-4">
+          <NavLink to="/dashboard" className="group flex min-w-0 items-center px-5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden">
               <img src="/logo-only.png" alt="Stone Suite" className="h-7 w-7 object-contain" />
             </div>
@@ -96,7 +96,7 @@ export default function MainLayout(): React.JSX.Element {
             <img
               src="/elevation-stone-logo.svg"
               alt="Elevation Stone"
-              className="h-9 w-auto object-contain"
+              className="h-45 w-auto object-contain"
             />
           </div>
 
