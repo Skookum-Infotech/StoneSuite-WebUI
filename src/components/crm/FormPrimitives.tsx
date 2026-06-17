@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { fieldLabelCls } from './formUtils';
 
 const SECTION_ACCENTS: Record<string, string> = {
   'Primary Information': 'bg-purple-400',
@@ -38,7 +39,7 @@ export function ModernFieldShell({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-xs font-medium text-stone-500 leading-none">
+        <label className={fieldLabelCls}>
           {label}
           {required && <span className="ml-0.5 text-red-400">*</span>}
         </label>

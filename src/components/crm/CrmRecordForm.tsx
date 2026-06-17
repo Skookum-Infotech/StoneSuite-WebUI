@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
-import { fieldCls } from './formUtils';
+import { fieldCls, checkboxLabelCls } from './formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
 
@@ -162,7 +162,7 @@ function CrmFieldInput({
         />
         <label
           htmlFor={field.key}
-          className="text-sm font-medium text-stone-600 cursor-pointer select-none hover:text-stone-800 transition-colors leading-none flex-1"
+          className={`${checkboxLabelCls} cursor-pointer select-none hover:text-stone-900 transition-colors flex-1`}
         >
           {field.label}
           {field.required && <span className="ml-0.5 text-red-400">*</span>}

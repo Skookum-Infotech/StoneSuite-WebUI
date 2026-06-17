@@ -1,4 +1,4 @@
-import { fieldCls } from '@/components/crm/formUtils';
+import { fieldCls, fieldLabelCls, checkboxLabelCls } from '@/components/crm/formUtils';
 import type { FieldDefinition } from '@/types/tenant';
 
 /**
@@ -18,7 +18,7 @@ export function DynamicFieldInput({
   const labelText = field.label || field.key;
 
   const label = (
-    <label htmlFor={id} className="block text-xs font-medium text-stone-500 leading-none">
+    <label htmlFor={id} className={fieldLabelCls}>
       {labelText}
       {field.required && <span className="ml-0.5 text-red-400">*</span>}
     </label>
@@ -60,7 +60,7 @@ export function DynamicFieldInput({
             onChange={(e) => onChange(field.key, e.target.checked)}
             className="h-4 w-4 rounded border-stone-300 accent-brand cursor-pointer"
           />
-          <span className="text-xs font-medium text-stone-600 group-hover:text-stone-800 transition-colors leading-none">
+          <span className={`${checkboxLabelCls} group-hover:text-stone-900 transition-colors`}>
             {labelText}
             {field.required && <span className="ml-0.5 text-red-400">*</span>}
           </span>

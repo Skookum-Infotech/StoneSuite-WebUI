@@ -3,9 +3,6 @@ import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
 
-const readonlyCls =
-  'w-full bg-gray-100 rounded-sm px-3.5 py-2.5 text-sm text-stone-800 border-2 border-transparent min-h-[2.25rem]';
-
 type Props = {
   coreFields: Record<string, unknown>;
   showCustomerBalances?: boolean;
@@ -44,7 +41,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
           <div className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 ${display === 'Yes' ? 'bg-brand border-brand' : 'bg-gray-100 border-stone-300'}`}>
             {display === 'Yes' && <svg viewBox="0 0 10 8" className="w-2.5 h-2 fill-stone-900"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           </div>
-          <span className="text-sm font-medium text-stone-600 leading-none">{field.label}</span>
+          <span className={checkboxLabelCls}>{field.label}</span>
         </div>
       );
     }

@@ -183,7 +183,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
           aria-autocomplete="list"
           autoComplete="off"
           className={cn(
-            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 text-sm text-stone-200 placeholder:text-stone-500 focus:border-white/25 focus:bg-white/[0.11] focus:outline-none transition-all',
+            'h-10 w-full rounded-full border border-white/[0.13] bg-white/[0.07] pl-4 pr-11 text-sm text-stone-200 placeholder:text-white focus:border-white/25 focus:bg-white/[0.11] focus:outline-none transition-all',
             inputClassName,
           )}
         />

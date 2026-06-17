@@ -59,7 +59,7 @@ export default function MainLayout(): React.JSX.Element {
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
 
       {/* ── Unified header ── */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07] bg-[#111111]">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07]" style={{ background: 'linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%)' }}>
 
         {/* Left: both brand logos in one zone */}
         <div className="flex h-full w-auto shrink-0 items-center border-r border-white/[0.07]">
@@ -74,19 +74,19 @@ export default function MainLayout(): React.JSX.Element {
           </button>
 
           {/* Stone Suite logo + name */}
-          <NavLink to="/dashboard" className="group flex min-w-0 items-center px-5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden">
-              <img src="/logo-only.png" alt="Stone Suite" className="h-7 w-7 object-contain" />
+          <NavLink to="/dashboard" className="group flex min-w-0 items-center gap-1 px-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden">
+              <img src="/logo-only.png" alt="Stone Suite" className="h-10 w-10 object-contain drop-shadow-[0_0_6px_rgba(255,255,255,0.15)]" />
             </div>
-            <div className="hidden lg:flex flex-col leading-tight">
+            <div className="hidden lg:flex flex-col leading-none">
               <span
-                className="text-label uppercase text-white/90 transition-colors group-hover:text-white font-normal tracking-[0.22em]"
+                className="text-sm uppercase text-white/95 transition-colors group-hover:text-white font-semibold tracking-[0.26em]"
                 style={{ fontFamily: 'var(--font-brand)' }}
               >
                 Stone
               </span>
               <span
-                className="text-label uppercase text-white/90 transition-colors group-hover:text-white font-normal tracking-[0.22em]"
+                className="text-sm uppercase text-white/95 transition-colors group-hover:text-white font-semibold tracking-[0.26em]"
                 style={{ fontFamily: 'var(--font-brand)' }}
               >
                 Suite
@@ -116,19 +116,19 @@ export default function MainLayout(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Main header area: search + actions */}
-        <div className="relative flex flex-1 items-center px-4 sm:px-5 gap-3">
+        {/* GlobalSearch — truly centered on the full header width (desktop lg+) */}
+        <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
+          <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg">
+            <GlobalSearch />
+          </div>
+        </div>
+
+        {/* Main header area: search (sm only) + actions */}
+        <div className="flex flex-1 items-center px-4 sm:px-5 gap-3">
 
           {/* GlobalSearch — small bar on medium (sm to lg) */}
           <div className="hidden sm:flex lg:hidden max-w-xs">
             <GlobalSearch />
-          </div>
-
-          {/* GlobalSearch — full bar on desktop (lg+) */}
-          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
-            <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg">
-              <GlobalSearch />
-            </div>
           </div>
 
           {/* Spacer — pushes actions to the right on mobile, takes center space on medium */}
@@ -220,9 +220,10 @@ export default function MainLayout(): React.JSX.Element {
       {/* Mobile search expansion — fixed below header */}
       <div
         className={cn(
-          'fixed inset-x-0 top-16 z-20 overflow-hidden border-b border-white/[0.07] bg-[#111111]/95 backdrop-blur-md transition-all duration-200 ease-in-out sm:hidden',
+          'fixed inset-x-0 top-16 z-20 overflow-hidden border-b border-white/[0.07] backdrop-blur-md transition-all duration-200 ease-in-out sm:hidden',
           isMobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
         )}
+        style={{ background: 'linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%)' }}
       >
         <div className="px-4 py-3">
           <GlobalSearch

@@ -13,6 +13,7 @@ import { CrmSubTabsPanel } from "@/components/crm/CrmSubTabsPanel";
 import { CRM_LEAD_PROSPECT_SUB_TABS } from "@/lib/crmFields";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
+import { readonlyCls, fieldLabelCls } from "@/components/crm/formUtils";
 import type { StatusInfo } from "@/types/tenant";
 
 export default function LeadDetailPage() {
@@ -113,8 +114,8 @@ export default function LeadDetailPage() {
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
                 {Object.entries(record.customFields).map(([key, value]) => (
                   <div key={key} className="space-y-1.5">
-                    <label className="block text-xs font-medium text-stone-500 leading-none">{key}</label>
-                    <div className="w-full bg-gray-100 rounded-sm px-3.5 py-2.5 text-sm text-stone-800 border-2 border-transparent min-h-[2.25rem]">
+                    <label className={fieldLabelCls}>{key}</label>
+                    <div className={readonlyCls}>
                       {String(value ?? "") || <span className="text-stone-400">—</span>}
                     </div>
                   </div>
