@@ -28,7 +28,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: 
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Delete ${label}`}
-        className="rounded p-1.5 transition hover:bg-red-50 hover:text-red-500 border border-red-500 text-red-500"
+        className="rounded py-1.5 transition bg-red-500 hover:bg-red-800 text-white shadow-sm"
       >
         <span>
         Delete

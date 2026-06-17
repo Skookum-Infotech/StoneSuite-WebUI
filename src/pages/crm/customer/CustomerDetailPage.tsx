@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Pencil, ChevronLeft } from "lucide-react";
+import { Building2, Pencil } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -12,6 +12,7 @@ import { ModernSection } from "@/components/crm/FormPrimitives";
 import { CrmSubTabsPanel } from "@/components/crm/CrmSubTabsPanel";
 import { CRM_CUSTOMER_SUB_TABS } from "@/lib/crmFields";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
+import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import type { StatusInfo } from "@/types/tenant";
 
 export default function CustomerDetailPage() {
