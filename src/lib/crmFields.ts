@@ -38,7 +38,7 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
   {
     title: 'Primary Information',
     fields: [
-      { key: 'customer_doc_num', label: 'Record #', type: 'readonly' },
+      // { key: 'customer_doc_num', label: 'Record #', type: 'readonly' },
       { key: 'customer_name', label: 'Customer Name', type: 'text', required: true, placeholder: 'Acme Corp' },
       { key: 'customer_dba_name', label: 'Customer DBA Name', type: 'text' },
       { key: 'customer_tax_id', label: 'EIN / TAN / GSTIN ID', type: 'text' },

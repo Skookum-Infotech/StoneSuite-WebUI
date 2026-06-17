@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
-import { fieldCls, checkboxLabelCls } from './formUtils';
+import { fieldCls, textareaCls, readonlyCls, checkboxLabelCls } from './formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
 
@@ -174,7 +174,7 @@ function CrmFieldInput({
   if (field.type === 'readonly') {
     return (
       <ModernFieldShell label={field.label}>
-        <div className={`${fieldCls} bg-stone-50 text-stone-500 cursor-not-allowed select-none`}>
+        <div className={`${readonlyCls} cursor-not-allowed select-none`}>
           {str || '—'}
         </div>
       </ModernFieldShell>
@@ -190,7 +190,7 @@ function CrmFieldInput({
             required={field.required}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}
-            className={`${fieldCls} resize-none`}
+            className={textareaCls}
             aria-label={field.label}
             placeholder={field.placeholder}
           />
@@ -208,7 +208,7 @@ function CrmFieldInput({
             required={field.required}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}
-            className={`${fieldCls} resize-none`}
+            className={textareaCls}
             aria-label={field.label}
             placeholder={field.placeholder}
           />

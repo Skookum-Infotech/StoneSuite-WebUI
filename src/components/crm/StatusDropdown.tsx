@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
 import { crmService } from '@/services/crmService';
+import { fieldCls } from '@/components/crm/formUtils';
 import type { StatusInfo } from '@/types/tenant';
 
 type Props = {
@@ -71,7 +72,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
         aria-expanded={open}
         onClick={() => !isDisabled && setOpen((v) => !v)}
         disabled={isDisabled}
-        className="flex w-full items-center gap-2 rounded-sm bg-gray-100 px-3.5 py-2.5 text-sm text-stone-800 outline-none border-2 border-transparent transition-all duration-150 focus:bg-white focus:border-brand/50 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-stone-100/70"
+        className={`${fieldCls} flex items-center gap-2`}
       >
         {selected ? (
           <>
@@ -90,7 +91,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
       </button>
 
       {open && !isDisabled && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-sm border border-stone-200 bg-white shadow-md">
+        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
           {statuses.map((s) => (
             <button
               key={s.stateId}

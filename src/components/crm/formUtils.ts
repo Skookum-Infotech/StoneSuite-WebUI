@@ -1,14 +1,17 @@
 export const fieldCls =
-  'w-full bg-gray-100 rounded-sm px-3.5 py-2.5 text-sm text-stone-800 outline-none border-2 border-transparent placeholder:text-stone-400 focus:bg-white focus:border-brand/50 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed hover:bg-stone-100/70';
+  'w-full h-11 px-4 text-sm text-slate-700 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed';
+
+export const textareaCls =
+  'w-full px-4 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed resize-none';
 
 export const readonlyCls =
-  'w-full bg-gray-100 rounded-sm px-3.5 py-2.5 text-sm text-stone-800 border-2 border-transparent min-h-[2.25rem]';
+  'w-full min-h-11 px-4 py-2.5 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl';
 
-/** Standard label above every form field. */
-export const fieldLabelCls = 'block text-xs font-medium text-stone-500 leading-none';
+export const fieldLabelCls =
+  'block text-sm font-medium text-slate-700 mb-2';
 
-/** Standard label for checkboxes / toggles (inline, next to the control). */
-export const checkboxLabelCls = 'text-sm font-medium text-stone-700 leading-none';
+export const checkboxLabelCls =
+  'text-sm font-medium text-slate-700';
 
 /** Generates a stable DOM id for a form section title — used by section jump nav. */
 export function sectionId(title: string): string {
