@@ -61,7 +61,7 @@ export default function ProspectViewPage() {
       <div className="shrink-0 bg-white border-b border-stone-100 px-4 py-2.5 flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate("/prospects")}
+          onClick={() => navigate("/crm/prospect")}
           className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition-colors px-1.5 py-1 rounded-md hover:bg-stone-100 shrink-0"
           aria-label="Back to prospects"
         >
@@ -96,7 +96,7 @@ export default function ProspectViewPage() {
               label={`Prospect — ${company}`}
               onDeleted={() => {
                 queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
-                navigate("/prospects");
+                navigate("/crm/prospect");
               }}
             />
           </div>
@@ -104,7 +104,7 @@ export default function ProspectViewPage() {
         <div className="w-px h-4 bg-stone-200 shrink-0" />
         <button
           type="button"
-          onClick={() => navigate(`/prospects/${id}/edit`)}
+          onClick={() => navigate(`/crm/prospect/${id}/edit`)}
           className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all shadow-sm shrink-0"
         >
           <Pencil className="size-3" />

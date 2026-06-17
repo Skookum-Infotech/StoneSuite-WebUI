@@ -93,7 +93,7 @@ export const sidebarNav: SidebarNavConfig = {
           id: 'crm',
           label: 'CRM',
           icon: Building2,
-          matchPaths: ['/crm', '/prospects'],
+          matchPaths: ['/crm'],
           children: [
             {
               type: 'link',
@@ -107,7 +107,7 @@ export const sidebarNav: SidebarNavConfig = {
               type: 'link',
               id: 'prospects',
               label: 'Prospects',
-              path: '/prospects',
+              path: '/crm/prospect',
               icon: Users,
               permission: { resource: 'prospect', action: 'read' },
             },

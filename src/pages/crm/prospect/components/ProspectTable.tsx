@@ -4,8 +4,8 @@ import type { WorkflowRecord } from '@/types/tenant';
 const CONFIG = {
   workflowKey: 'prospect',
   label:       'Prospect',
-  detailPath:  (id: string) => `/prospects/${id}`,
-  editPath:    (id: string) => `/prospects/${id}/edit`,
+  detailPath:  (id: string) => `/crm/prospect/${id}`,
+  editPath:    (id: string) => `/crm/prospect/${id}/edit`,
   queryKey:    ['crm-records', 'prospect'] as const,
   showEmail:   true,
 } as const;

@@ -23,14 +23,14 @@ const AcceptInvitePage = lazy(
   () => import("@/pages/onboarding/AcceptInvitePage"),
 );
 const ProspectListPage = lazy(
-  () => import("@/pages/prospect/ProspectListPage"),
+  () => import("@/pages/crm/prospect/ProspectListPage"),
 );
-const AddProspectPage = lazy(() => import("@/pages/prospect/AddProspectPage"));
+const AddProspectPage = lazy(() => import("@/pages/crm/prospect/AddProspectPage"));
 const ProspectViewPage = lazy(
-  () => import("@/pages/prospect/ProspectViewPage"),
+  () => import("@/pages/crm/prospect/ProspectViewPage"),
 );
 const EditProspectPage = lazy(
-  () => import("@/pages/prospect/EditProspectPage"),
+  () => import("@/pages/crm/prospect/EditProspectPage"),
 );
 const LeadPage = lazy(() => import("@/pages/crm/LeadPage"));
 const AddLeadPage = lazy(() => import("@/pages/crm/AddLeadPage"));
@@ -86,9 +86,9 @@ export const router = createBrowserRouter([
       { path: "", element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: lazy_(<DashboardPage />) },
 
-      // Prospects
+      // CRM: Prospects
       {
-        path: "prospects",
+        path: "crm/prospect",
         element: lazy_(
           <PermissionGuard resource="prospect" action="read">
             <ProspectListPage />
@@ -96,7 +96,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "prospects/new",
+        path: "crm/prospect/new",
         element: lazy_(
           <PermissionGuard resource="prospect" action="create">
             <AddProspectPage />
@@ -104,7 +104,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "prospects/:id",
+        path: "crm/prospect/:id",
         element: lazy_(
           <PermissionGuard resource="prospect" action="read">
             <ProspectViewPage />
@@ -112,7 +112,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "prospects/:id/edit",
+        path: "crm/prospect/:id/edit",
         element: lazy_(
           <PermissionGuard resource="prospect" action="update">
             <EditProspectPage />

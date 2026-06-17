@@ -78,7 +78,7 @@ export default function EditProspectPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
-      navigate('/prospects');
+      navigate('/crm/prospect');
     },
   });
 
@@ -102,7 +102,7 @@ export default function EditProspectPage() {
         <div className="shrink-0 bg-white border-b border-stone-100 px-4 py-2.5 flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate('/prospects')}
+            onClick={() => navigate('/crm/prospect')}
             className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition-colors px-1.5 py-1 rounded-md hover:bg-stone-100 shrink-0"
             aria-label="Back to prospects"
           >
@@ -131,7 +131,7 @@ export default function EditProspectPage() {
                 label={`Prospect — ${company}`}
                 onDeleted={() => {
                   queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
-                  navigate('/prospects');
+                  navigate('/crm/prospect');
                 }}
               />
             </div>
@@ -140,7 +140,7 @@ export default function EditProspectPage() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => navigate('/prospects')}
+              onClick={() => navigate('/crm/prospect')}
               disabled={save.isPending}
               className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
             >
