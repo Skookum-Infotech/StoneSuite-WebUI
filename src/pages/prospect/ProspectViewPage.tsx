@@ -1,132 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Users, Pencil, Clock, ArrowLeft } from "lucide-react";
+import { Users, Pencil, ArrowLeft } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
-import { ConvertRecordButton } from "@/components/crm/ConvertRecordButton";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import { CrmSubTabsPanel } from "@/components/crm/CrmSubTabsPanel";
 import { CRM_LEAD_PROSPECT_SUB_TABS } from "@/lib/crmFields";
-import { cn } from "@/lib/utils";
 import type { StatusInfo } from "@/types/tenant";
-
-// ── Mock history (TODO: replace with crmService.getRecordHistory(id) when ready) ──
-type HistoryEntry = {
-  id: string;
-  type: "created" | "transition" | "edit";
-  actor: string;
-  initials: string;
-  color: string;
-  at: string;
-  fromState?: string;
-  toState?: string;
-  summary?: string;
-};
-
-const MOCK_HISTORY: HistoryEntry[] = [
-  {
-    id: "3",
-    type: "transition",
-    actor: "Alex Johnson",
-    initials: "AJ",
-    color: "bg-blue-100 text-blue-700",
-    at: "2 hours ago",
-    fromState: "New",
-    toState: "In Discussion",
-  },
-  {
-    id: "2",
-    type: "edit",
-    actor: "Maria Garcia",
-    initials: "MG",
-    color: "bg-emerald-100 text-emerald-700",
-    at: "Yesterday",
-    summary: "Updated company name and email",
-  },
-  {
-    id: "1",
-    type: "created",
-    actor: "Sarah Chen",
-    initials: "SC",
-    color: "bg-purple-100 text-purple-700",
-    at: "2 days ago",
-  },
-];
-
-function ActivityFeed() {
-  return (
-    <div className="p-4 flex-1">
-      <div className="flex items-center gap-2 mb-3">
-        <Clock className="h-3 w-3 text-stone-400" />
-        <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400">
-          Activity
-        </p>
-      </div>
-      <div>
-        {MOCK_HISTORY.map((entry, i) => (
-          <div key={entry.id} className="relative flex gap-2.5 pb-4 last:pb-0">
-            {i < MOCK_HISTORY.length - 1 && (
-              <div className="absolute left-3.5 top-7 bottom-0 w-px bg-stone-100" />
-            )}
-            <div
-              className={cn(
-                "w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-2xs font-semibold z-10",
-                entry.color,
-              )}
-            >
-              {entry.initials}
-            </div>
-            <div className="flex-1 min-w-0 pt-0.5">
-              {entry.type === "transition" && (
-                <>
-                  <p className="text-2xs text-stone-500 leading-relaxed">
-                    <span className="font-medium text-stone-700">
-                      {entry.actor}
-                    </span>{" "}
-                    moved to{" "}
-                    <span className="font-medium text-stone-700">
-                      {entry.toState}
-                    </span>
-                  </p>
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <span className="text-2xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded-md">
-                      {entry.fromState}
-                    </span>
-                    <span className="text-2xs text-stone-300">→</span>
-                    <span className="text-2xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-medium">
-                      {entry.toState}
-                    </span>
-                  </div>
-                </>
-              )}
-              {entry.type === "edit" && (
-                <p className="text-2xs text-stone-500 leading-relaxed">
-                  <span className="font-medium text-stone-700">
-                    {entry.actor}
-                  </span>{" "}
-                  {entry.summary}
-                </p>
-              )}
-              {entry.type === "created" && (
-                <p className="text-2xs text-stone-500 leading-relaxed">
-                  <span className="font-medium text-stone-700">
-                    {entry.actor}
-                  </span>{" "}
-                  created this prospect
-                </p>
-              )}
-              <p className="text-2xs text-stone-300 mt-0.5">{entry.at}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function ProspectViewPage() {
   const { id = "" } = useParams();
@@ -260,13 +144,6 @@ export default function ProspectViewPage() {
           </p>
           <div className="space-y-1.5">
             <div className="[&>button]:w-full [&>button]:justify-start [&>button]:rounded-lg [&>button]:text-xs">
-              <ConvertRecordButton
-                recordId={id}
-                sourceWorkflowKey="prospect"
-                onConverted={(newId) => navigate(`/crm/customer/${newId}/edit`)}
-              />
-            </div>
-            <div className="[&>button]:w-full [&>button]:justify-start [&>button]:rounded-lg [&>button]:text-xs">
               <DeleteRecordDialog
                 recordId={id}
                 workflowKey="prospect"
@@ -309,7 +186,9 @@ export default function ProspectViewPage() {
         </div>
 
         {/* Activity feed */}
-        <ActivityFeed />
+        <div className="p-4 flex-1">
+          <p className="text-2xs text-stone-400 italic">History coming soon.</p>
+        </div>
       </div>
     </div>
   );

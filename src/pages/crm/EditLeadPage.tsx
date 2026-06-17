@@ -9,7 +9,6 @@ import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
-import { ConvertRecordButton } from '@/components/crm/ConvertRecordButton';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
@@ -44,12 +43,22 @@ export default function EditLeadPage() {
   });
   const customFieldDefs: FieldDefinition[] = leadDef?.fields ?? [];
 
+  const routeMap: Record<string, string> = {
+    lead: '/crm/lead',
+    prospect: '/crm/prospect',
+    customer: '/crm/customer',
+  };
+
   const transition = useMutation({
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'lead'),
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
+      const newType = updated.workflowId?.toLowerCase();
+      if (newType && newType !== 'lead' && routeMap[newType]) {
+        navigate(`${routeMap[newType]}/${updated.id}`);
+      }
     },
   });
 
@@ -60,7 +69,9 @@ export default function EditLeadPage() {
         transition.mutate(toStateId);
       }
     },
-    [currentStateId, transition],
+    // transition.mutate is a stable reference from TanStack Query; transition object is not
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentStateId, transition.mutate],
   );
 
   const save = useMutation({
@@ -117,13 +128,6 @@ export default function EditLeadPage() {
           <div className="w-px h-4 bg-stone-200 shrink-0" />
           {/* Record actions inline */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <div className="[&>button]:text-xs [&>button]:px-2.5 [&>button]:py-1.5 [&>button]:rounded-lg">
-              <ConvertRecordButton
-                recordId={id}
-                sourceWorkflowKey="lead"
-                onConverted={(newId) => navigate(`/prospects/${newId}/edit`)}
-              />
-            </div>
             <div className="[&>button]:text-xs [&>button]:px-2.5 [&>button]:py-1.5 [&>button]:rounded-lg">
               <DeleteRecordDialog
                 recordId={id}

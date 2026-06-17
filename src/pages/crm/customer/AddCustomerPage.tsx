@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle, Loader2, Save, X, ChevronLeft } from 'lucide-react';
@@ -6,6 +6,7 @@ import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import type { FieldDefinition } from '@/types/tenant';
@@ -14,12 +15,15 @@ export default function AddCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
-  const [coreFields, setCoreFields] = useState<Record<string, unknown>>(crmCoreDefaults);
+  const [coreFields, setCoreFields] = useState<Record<string, unknown>>(() => crmCoreDefaults());
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
   const [ownerUserId, setOwnerUserId] = useState('');
+  const [crmStatusId, setCrmStatusId] = useState('');
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const set = (key: string, value: unknown) => setCoreFields((d) => ({ ...d, [key]: value }));
+  const handleStatusChange = useCallback((stateId: string) => setCrmStatusId(stateId), []);
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const customerWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'customer');
@@ -38,12 +42,20 @@ export default function AddCustomerPage() {
         coreFields,
         customFields: customFieldValues,
         ownerUserId: ownerUserId || undefined,
+        crmStatusId: crmStatusId || undefined,
       }),
     onSuccess: async (record) => {
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
       if (panelRef.current?.hasStagedFiles()) {
         setIsUploadingFiles(true);
-        try { await panelRef.current.uploadStagedTo(record.id); } finally { setIsUploadingFiles(false); }
+        try {
+          await panelRef.current.uploadStagedTo(record.id);
+        } catch {
+          // Record was created; surface the upload failure but still navigate
+          setUploadError('Customer saved, but file upload failed. Re-upload from the record page.');
+        } finally {
+          setIsUploadingFiles(false);
+        }
       }
       navigate('/crm/customer');
     },
@@ -101,6 +113,12 @@ export default function AddCustomerPage() {
             {apiErrorMessage(createError, 'Failed to save customer.')}
           </div>
         )}
+        {uploadError && (
+          <div className="shrink-0 bg-amber-50 border-b border-amber-100 px-6 py-2 flex items-center gap-2 text-xs text-amber-800">
+            <AlertCircle className="size-3.5 shrink-0" />
+            {uploadError}
+          </div>
+        )}
 
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar">
@@ -109,6 +127,14 @@ export default function AddCustomerPage() {
               core={{ fields: coreFields, onChange: set }}
               custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
               owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
+              statusNode={(
+                <StatusDropdown
+                  workflowKey="customer"
+                  mode="all"
+                  value={crmStatusId}
+                  onChange={handleStatusChange}
+                />
+              )}
             />
             <EditableFilesPanel ref={panelRef} />
             <div className="h-6" />

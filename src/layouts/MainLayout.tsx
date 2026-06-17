@@ -74,14 +74,14 @@ export default function MainLayout(): React.JSX.Element {
             </div>
             <div className="hidden lg:flex flex-col leading-tight">
               <span
-                className="text-label uppercase text-white/90 transition-colors group-hover:text-white"
-                style={{ fontFamily: 'var(--font-brand)', fontWeight: 400, letterSpacing: '0.22em' }}
+                className="text-label uppercase text-white/90 transition-colors group-hover:text-white font-normal tracking-[0.22em]"
+                style={{ fontFamily: 'var(--font-brand)' }}
               >
                 Stone
               </span>
               <span
-                className="text-label uppercase text-white/90 transition-colors group-hover:text-white"
-                style={{ fontFamily: 'var(--font-brand)', fontWeight: 400, letterSpacing: '0.22em' }}
+                className="text-label uppercase text-white/90 transition-colors group-hover:text-white font-normal tracking-[0.22em]"
+                style={{ fontFamily: 'var(--font-brand)' }}
               >
                 Suite
               </span>

@@ -13,7 +13,6 @@ export interface StateLookupItem extends LookupItem {
 export interface CrmLookups {
   customerTypes: LookupItem[];
   crmStatuses: LookupItem[];
-  customerStatuses: LookupItem[];
   arStatuses: LookupItem[];
   paymentTerms: LookupItem[];
   priceLevels: LookupItem[];

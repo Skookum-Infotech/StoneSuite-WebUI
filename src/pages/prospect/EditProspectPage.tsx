@@ -9,7 +9,6 @@ import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
-import { ConvertRecordButton } from '@/components/crm/ConvertRecordButton';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
@@ -44,12 +43,22 @@ export default function EditProspectPage() {
   });
   const customFieldDefs: FieldDefinition[] = prospectDef?.fields ?? [];
 
+  const routeMap: Record<string, string> = {
+    lead: '/crm/lead',
+    prospect: '/crm/prospect',
+    customer: '/crm/customer',
+  };
+
   const transition = useMutation({
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'prospect'),
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
+      const newType = updated.workflowId?.toLowerCase();
+      if (newType && newType !== 'prospect' && routeMap[newType]) {
+        navigate(`${routeMap[newType]}/${updated.id}`);
+      }
     },
   });
 
@@ -115,13 +124,6 @@ export default function EditProspectPage() {
           )}
           <div className="w-px h-4 bg-stone-200 shrink-0" />
           <div className="flex items-center gap-1.5 shrink-0">
-            <div className="[&>button]:text-xs [&>button]:px-2.5 [&>button]:py-1.5 [&>button]:rounded-lg">
-              <ConvertRecordButton
-                recordId={id}
-                sourceWorkflowKey="prospect"
-                onConverted={(newId) => navigate(`/crm/customer/${newId}/edit`)}
-              />
-            </div>
             <div className="[&>button]:text-xs [&>button]:px-2.5 [&>button]:py-1.5 [&>button]:rounded-lg">
               <DeleteRecordDialog
                 recordId={id}

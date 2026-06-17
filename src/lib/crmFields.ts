@@ -39,17 +39,15 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
   {
     title: 'Primary Information',
     fields: [
-      { key: 'customer_doc_num', label: 'Customer Number', type: 'text', placeholder: 'customer num' },
+      { key: 'customer_doc_num', label: 'Record #', type: 'readonly' },
       { key: 'customer_name', label: 'Customer Name', type: 'text', required: true, placeholder: 'Acme Corp' },
       { key: 'customer_dba_name', label: 'Customer DBA Name', type: 'text' },
       { key: 'customer_tax_id', label: 'EIN / TAN / GSTIN ID', type: 'text' },
       { key: 'customer_type', label: 'Customer Type', type: 'lookup-select', lookupKey: 'customerTypes' },
-      { key: 'customer_crm_status', label: 'CRM Status', type: 'lookup-select', lookupKey: 'crmStatuses' },
       { key: 'customer_authorized_person_fname', label: 'Authorized Person First Name', type: 'text' },
       { key: 'customer_authorized_person_lname', label: 'Authorized Person Last Name', type: 'text' },
       { key: 'customer_is_child', label: 'Is Child Customer', type: 'checkbox' },
       { key: 'customer_parent_company', label: 'Parent Customer', type: 'text', showIfFieldTrue: 'customer_is_child' },
-      { key: 'customer_status', label: 'Customer Status', type: 'lookup-select', lookupKey: 'customerStatuses' },
       { key: 'customer_ar_status', label: 'AR Status', type: 'lookup-select', lookupKey: 'arStatuses' },
     ],
   },

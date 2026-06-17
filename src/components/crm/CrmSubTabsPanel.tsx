@@ -287,6 +287,7 @@ const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentProps>(
     const [dragging, setDragging] = useState(false);
     const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
+    const [actionError, setActionError] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const dragCounter = useRef(0);
@@ -420,21 +421,27 @@ const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentProps>(
     const handleDownload = async (att: Attachment) => {
       if (!recordId) return;
       setDownloadingId(att.id);
+      setActionError(null);
       try {
         const { downloadUrl, fileName } = await attachmentService.downloadAttachment(recordId, att.id);
         const a = document.createElement('a');
         a.href = downloadUrl; a.download = fileName; a.target = '_blank'; a.rel = 'noopener noreferrer';
         a.click();
-      } catch { /* silent */ } finally { setDownloadingId(null); }
+      } catch (err) {
+        setActionError(apiErrorMessage(err, 'Download failed. Please try again.'));
+      } finally { setDownloadingId(null); }
     };
 
     const handleDelete = async (att: Attachment) => {
       if (!recordId) return;
       setDeletingId(att.id);
+      setActionError(null);
       try {
         await attachmentService.deleteAttachment(recordId, att.id);
         queryClient.invalidateQueries({ queryKey: ['record-attachments', recordId] });
-      } catch { /* silent */ } finally { setDeletingId(null); }
+      } catch (err) {
+        setActionError(apiErrorMessage(err, 'Delete failed. Please try again.'));
+      } finally { setDeletingId(null); }
     };
 
     const activeUploads = uploadQueue.filter((it) => it.status !== 'done');
@@ -519,6 +526,18 @@ const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentProps>(
                 });
               }} />
             ))}
+          </div>
+        )}
+
+        {/* Action error (download / delete failures) */}
+        {actionError && (
+          <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 flex items-start gap-2">
+            <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-xs text-red-600">{actionError}</p>
+            </div>
+            <button type="button" onClick={() => setActionError(null)}
+              className="text-2xs text-red-400 hover:text-red-600 shrink-0">Dismiss</button>
           </div>
         )}
 

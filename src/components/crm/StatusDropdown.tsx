@@ -39,15 +39,14 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
 
   const isLoading = mode === 'all' ? allQuery.isLoading : transitionsQuery.isLoading;
 
-  // Auto-select initial state when statuses first load and no value is set
+  // Auto-select initial state when statuses first load and no value is set.
+  // Callers must wrap onChange in useCallback to prevent unnecessary effect runs.
   useEffect(() => {
     if (mode === 'all' && !value && statuses.length > 0) {
       const initial = statuses.find((s) => s.isInitial) ?? statuses[0];
       onChange(initial.stateId, initial.statusLabel);
     }
-  // onChange intentionally omitted — it's a callback, callers must memoize it if needed
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, value, statuses]);
+  }, [mode, value, statuses, onChange]);
 
   // Close on outside click
   useEffect(() => {

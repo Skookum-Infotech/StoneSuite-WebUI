@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import type { UserProfile } from '@/types/auth';
 
+// Token is set as httpOnly cookie by the backend on login.
+// Do not store in localStorage — any XSS script can read localStorage.
+// The cookie is sent automatically by the browser on every request
+// when withCredentials: true is set on the Axios instance.
+
 const USER_KEY = 'auth-user';
 
 function loadUser(): UserProfile | null {
@@ -15,6 +20,10 @@ function loadUser(): UserProfile | null {
 
 interface AuthState {
   user: UserProfile | null;
+  // Token held in memory only — not persisted to localStorage.
+  // Used as a fallback Authorization header in environments that do not
+  // support cookies (e.g. React Native). The backend httpOnly cookie is
+  // the primary auth mechanism.
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -24,19 +33,19 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  // Rehydrate from localStorage so the tenant context + platform-admin flag
-  // survive a page reload (no /me round-trip needed for the tenant identity).
+  // Rehydrate non-sensitive display data (name, email, roles) from localStorage.
+  // Authentication state is determined by whether the httpOnly cookie is present,
+  // but we cannot read httpOnly cookies from JS — we infer it from the persisted user profile.
   user: loadUser(),
-  token: localStorage.getItem('auth-token'),
-  isAuthenticated: Boolean(localStorage.getItem('auth-token')),
+  token: null, // never persisted; lives in memory only
+  isAuthenticated: Boolean(localStorage.getItem(USER_KEY)),
   isLoading: false,
   setAuth: (user, token) => {
-    localStorage.setItem('auth-token', token);
+    // Persist only non-sensitive display data, not the token
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     set({ user, token, isAuthenticated: true });
   },
   logout: () => {
-    localStorage.removeItem('auth-token');
     localStorage.removeItem(USER_KEY);
     set({ user: null, token: null, isAuthenticated: false });
   },

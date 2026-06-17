@@ -43,12 +43,22 @@ export default function EditCustomerPage() {
   });
   const customFieldDefs: FieldDefinition[] = customerDef?.fields ?? [];
 
+  const routeMap: Record<string, string> = {
+    lead: '/crm/lead',
+    prospect: '/crm/prospect',
+    customer: '/crm/customer',
+  };
+
   const transition = useMutation({
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, 'customer'),
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
+      const newType = updated.workflowId?.toLowerCase();
+      if (newType && newType !== 'customer' && routeMap[newType]) {
+        navigate(`${routeMap[newType]}/${updated.id}`);
+      }
     },
   });
 
@@ -59,7 +69,9 @@ export default function EditCustomerPage() {
         transition.mutate(toStateId);
       }
     },
-    [currentStateId, transition],
+    // transition.mutate is a stable reference from TanStack Query; transition object is not
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentStateId, transition.mutate],
   );
 
   const save = useMutation({
