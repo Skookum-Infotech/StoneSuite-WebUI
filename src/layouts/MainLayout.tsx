@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState, useEffect, startTransition } from 'react';
 import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
+import { apiClient } from '@/api/client';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import {
@@ -43,6 +44,9 @@ export default function MainLayout(): React.JSX.Element {
   }
 
   const handleLogout = (): void => {
+    // Clear the httpOnly cookie server-side before wiping local state.
+    // Fire-and-forget — navigate regardless of whether the call succeeds.
+    apiClient.post('/auth/logout').catch(() => undefined);
     logout();
     navigate('/auth/login');
   };
