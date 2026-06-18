@@ -34,6 +34,7 @@ export function CrmPageHeader({
   iconColor,
   title,
   subtitle,
+  recordNumber,
   statusBadge,
   deleteSlot,
   actions,
@@ -48,22 +49,27 @@ export function CrmPageHeader({
         className="flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-stone-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-stone-100 shrink-0"
       >
         <ChevronLeft className="size-3.5" />
+        {backLabel}
       </button>
 
       {/* Entity icon */}
       <div
-        className={`h-11 w-11 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}
+        className={`h-10 w-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 ring-1 ring-black/5`}
       >
         <Icon className={`h-4 w-4 ${iconColor}`} />
       </div>
 
       {/* Title Block */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-xl font-semibold tracking-tight text-stone-900 truncate">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-xl font-bold tracking-tight text-stone-900 truncate">
             {title}
           </h1>
-
+          {recordNumber && (
+            <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-md text-stone-400 shrink-0">
+              {recordNumber}
+            </span>
+          )}
           {statusBadge}
         </div>
 

@@ -91,7 +91,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
       </button>
 
       {open && !isDisabled && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
+        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md">
           {statuses.map((s) => (
             <button
               key={s.stateId}

@@ -28,12 +28,9 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: 
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Delete ${label}`}
-        className="rounded py-1.5 transition bg-red-500 hover:bg-red-800 text-white shadow-sm"
+        className="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
       >
-        <span>
         Delete
-        </span>
-
       </button>
 
       {open && (
@@ -69,7 +66,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: 
                 type="button"
                 onClick={() => setOpen(false)}
                 disabled={del.isPending}
-                className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -77,7 +74,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: 
                 type="button"
                 onClick={() => del.mutate()}
                 disabled={del.isPending}
-                className="rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50 active:scale-95"
               >
                 {del.isPending ? 'Deleting…' : 'Delete'}
               </button>

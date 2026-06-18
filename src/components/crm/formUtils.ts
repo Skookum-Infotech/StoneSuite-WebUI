@@ -1,17 +1,17 @@
 export const fieldCls =
-  'w-full h-11 px-4 text-sm text-slate-700 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed';
+  'w-full h-10 px-3.5 text-sm text-stone-800 bg-white border border-stone-200 rounded-lg outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-brand focus:ring-2 focus:ring-brand/30 disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed';
 
 export const textareaCls =
-  'w-full px-4 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-xl outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed resize-none';
+  'w-full px-3.5 py-2.5 text-sm text-stone-800 bg-white border border-stone-200 rounded-lg outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-brand focus:ring-2 focus:ring-brand/30 disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed resize-none';
 
 export const readonlyCls =
-  'w-full min-h-11 px-4 py-2.5 text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl';
+  'w-full min-h-10 px-3.5 py-2.5 text-sm text-stone-800 bg-stone-50 border border-stone-200 rounded-lg';
 
 export const fieldLabelCls =
-  'block text-sm font-medium text-slate-700 mb-2';
+  'block text-xs font-semibold uppercase tracking-wide text-stone-500';
 
 export const checkboxLabelCls =
-  'text-sm font-medium text-slate-700';
+  'text-sm font-medium text-stone-700';
 
 /** Generates a stable DOM id for a form section title — used by section jump nav. */
 export function sectionId(title: string): string {

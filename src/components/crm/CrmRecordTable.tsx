@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown,
-  ChevronLeft, ChevronRight, X, Pencil,
+  ChevronLeft, ChevronRight, X, Pencil, Inbox,
 } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { Badge } from '@/components/tenant/ui';
@@ -124,20 +124,20 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       {/* ── Filter bar ── */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-stone-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input
             type="text"
             placeholder="Company name…"
             value={nameFilter}
             onChange={(e) => { setNameFilter(e.target.value); setPage(1); }}
-            className="h-8 w-44 rounded-md border border-stone-200 bg-white pl-7 pr-2.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+            className="h-9 w-48 rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="h-8 rounded-md border border-stone-200 bg-white px-2.5 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+          className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
@@ -150,13 +150,13 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 rounded-md border border-stone-200 px-2 py-1 text-2xs text-stone-500 hover:bg-stone-50 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
             >
-              <X className="size-2.5" />
+              <X className="size-3" />
               Clear filters
             </button>
           )}
-          <span className="text-2xs text-stone-400">
+          <span className="text-xs text-stone-400 tabular-nums">
             {filtered.length} result{filtered.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -169,7 +169,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           <button
             key={field}
             onClick={() => handleSort(field)}
-            className={`flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-semibold transition-colors ${
+            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold transition-colors ${
               sortBy === field
                 ? 'bg-brand/20 text-brand-dark ring-1 ring-brand/30'
                 : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
@@ -182,106 +182,138 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-md border border-stone-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full text-left text-xs">
-            <thead className="bg-brand/20 text-2xs uppercase tracking-wide text-brand-dark">
+            <thead className="bg-stone-50/80 border-b border-stone-200">
               <tr>
+                {/* Left accent bar column */}
+                <th className="w-0.5 p-0" aria-hidden="true" />
                 {hasRecordNumbers && (
-                  <th className="px-3 py-2.5 font-semibold">Record #</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Record #</th>
                 )}
-                <th className="px-3 py-2.5 font-semibold">Company</th>
-                <th className="px-3 py-2.5 font-semibold">Status</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Company</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Status</th>
                 {config.showEmail && (
-                  <th className="px-3 py-2.5 font-semibold">Email</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Email</th>
                 )}
-                <th className="px-3 py-2.5 font-semibold">Created</th>
-                <th className="px-3 py-2.5 font-semibold sr-only">Actions</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Created</th>
+                <th className="px-4 py-3 sr-only">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {pageData.map((record) => {
-                const statusInfo = statusMap.get(record.currentStateId);
-                const company    = String(record.coreFields.customer_name ?? '(unnamed)');
-                const email      = String(record.coreFields.customer_contact_email ?? '—');
-                const label      = `${config.label} — ${company}`;
-                return (
-                  <tr key={record.id} className="hover:bg-stone-50/70 transition-colors">
-                    {hasRecordNumbers && (
-                      <td className="px-3 py-2">
-                        {record.recordNumber ? (
-                          <span className="font-mono text-xs text-stone-500">
-                            {record.recordNumber}
-                          </span>
-                        ) : (
-                          <span className="text-stone-300">—</span>
+              {isLoading ? (
+                <>
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <tr key={i}>
+                      <td className="w-0.5 p-0" />
+                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-40" /></td>
+                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-20" /></td>
+                      {config.showEmail && <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-32" /></td>}
+                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-24" /></td>
+                      <td className="px-4 py-3" />
+                    </tr>
+                  ))}
+                </>
+              ) : pageData.length > 0 ? (
+                <>
+                  {pageData.map((record) => {
+                    const statusInfo = statusMap.get(record.currentStateId);
+                    const company    = String(record.coreFields.customer_name ?? '(unnamed)');
+                    const email      = String(record.coreFields.customer_contact_email ?? '—');
+                    const label      = `${config.label} — ${company}`;
+                    return (
+                      <tr key={record.id} className="group hover:bg-brand/5 transition-colors duration-150">
+                        {/* Hover accent bar */}
+                        <td className="w-0.5 p-0 relative">
+                          <span className="absolute inset-y-0 left-0 w-0.5 bg-brand opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+                        </td>
+                        {hasRecordNumbers && (
+                          <td className="px-4 py-3">
+                            {record.recordNumber ? (
+                              <span className="font-mono text-xs text-stone-400">
+                                {record.recordNumber}
+                              </span>
+                            ) : (
+                              <span className="text-stone-300">—</span>
+                            )}
+                          </td>
                         )}
-                      </td>
-                    )}
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => navigate(config.detailPath(record.id))}
-                        className="text-left font-semibold text-stone-900 hover:text-brand-dark hover:underline"
-                      >
-                        {company}
-                      </button>
-                    </td>
-                    <td className="px-3 py-2">
-                      {statusInfo ? (
-                        <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
-                      ) : (
-                        <span className="text-2xs text-stone-400">—</span>
-                      )}
-                    </td>
-                    {config.showEmail && (
-                      <td className="px-3 py-2 text-stone-600">{email}</td>
-                    )}
-                    <td className="px-3 py-2 text-stone-400">
-                      {new Date(record.createdAt).toLocaleDateString(undefined, {
-                        year: 'numeric', month: 'short', day: 'numeric',
-                      })}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => navigate(config.editPath(record.id))}
-                          aria-label={`Edit ${label}`}
-                          className="rounded p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => navigate(config.detailPath(record.id))}
+                            className="text-left text-sm font-semibold text-stone-800 hover:text-brand-dark hover:underline"
+                          >
+                            {company}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          {statusInfo ? (
+                            <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
+                          ) : (
+                            <span className="text-xs text-stone-400">—</span>
+                          )}
+                        </td>
+                        {config.showEmail && (
+                          <td className="px-4 py-3 text-sm text-stone-500">{email}</td>
+                        )}
+                        <td className="px-4 py-3 font-mono text-xs text-stone-400 tabular-nums">
+                          {new Date(record.createdAt).toLocaleDateString(undefined, {
+                            year: 'numeric', month: 'short', day: 'numeric',
+                          })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                            <button
+                              type="button"
+                              onClick={() => navigate(config.editPath(record.id))}
+                              aria-label={`Edit ${label}`}
+                              className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+                            >
+                              <Pencil className="size-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </>
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5 + (hasRecordNumbers ? 1 : 0) + (config.showEmail ? 1 : 0)}
+                    className="py-16 text-center"
+                  >
+                    {records.length === 0 ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="rounded-2xl bg-stone-100 p-4">
+                          <Inbox className="size-6 text-stone-400" />
+                        </div>
+                        <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s added yet.</p>
+                        <p className="text-xs text-stone-400">Create your first {lowerLabel} to get started.</p>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="rounded-2xl bg-stone-100 p-4">
+                          <Search className="size-6 text-stone-400" />
+                        </div>
+                        <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s match the current filters.</p>
+                        <p className="text-xs text-stone-400">Try adjusting your search or status filter.</p>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-
-        {isLoading && (
-          <div className="flex h-32 items-center justify-center text-xs text-stone-400">
-            Loading {lowerLabel}s…
-          </div>
-        )}
-        {!isLoading && records.length === 0 && (
-          <div className="flex h-32 items-center justify-center text-xs text-stone-400">
-            No {lowerLabel}s added yet.
-          </div>
-        )}
-        {!isLoading && records.length > 0 && pageData.length === 0 && (
-          <div className="flex h-32 items-center justify-center text-xs text-stone-400">
-            No {lowerLabel}s match the current filters.
-          </div>
-        )}
       </div>
 
       {/* ── Pagination ── */}
       {sorted.length > 0 && (
         <div className="flex items-center justify-between pt-1">
-          <span className="text-2xs text-stone-400">
+          <span className="text-xs text-stone-400 tabular-nums">
             {`Showing ${(safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, sorted.length)} of ${sorted.length}`}
           </span>
           <div className="flex items-center gap-2">
@@ -289,18 +321,18 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
               aria-label="Previous page"
-              className="flex items-center gap-1 rounded-md border border-stone-200 px-2 py-1 text-2xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="size-3" /> Prev
             </button>
-            <span className="min-w-[72px] text-center text-2xs text-stone-500">
+            <span className="min-w-[72px] text-center text-xs text-stone-500 tabular-nums">
               Page {safePage} of {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
               aria-label="Next page"
-              className="flex items-center gap-1 rounded-md border border-stone-200 px-2 py-1 text-2xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
             >
               Next <ChevronRight className="size-3" />
             </button>

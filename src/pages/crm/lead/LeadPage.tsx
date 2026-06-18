@@ -21,11 +21,11 @@ export default function LeadPage() {
       <div className="bg-white p-6 flex-1 flex flex-col min-h-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
-              <Sparkles className="size-6" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 ring-1 ring-black/5 shrink-0">
+              <Sparkles className="size-5 text-purple-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+              <h1 className="text-xl font-bold tracking-tight text-stone-900">
                 Leads
               </h1>
               <p className="text-sm text-stone-500">
@@ -35,7 +35,7 @@ export default function LeadPage() {
           </div>
           <button
             onClick={() => navigate("/crm/lead/new")}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-3 text-xs font-semibold shadow-sm transition hover:bg-brand/50 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95 cursor-pointer"
           >
             <Plus className="size-3.5" />
             New Lead

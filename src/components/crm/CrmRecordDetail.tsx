@@ -61,7 +61,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
           className="col-span-full flex items-center gap-3 py-2"
         >
           <div
-            className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 ${display === "Yes" ? "bg-brand border-brand" : "bg-gray-100 border-stone-300"}`}
+            className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 ${display === "Yes" ? "bg-brand border-brand" : "bg-stone-100 border-stone-300"}`}
           >
             {display === "Yes" && (
               <svg viewBox="0 0 10 8" className="w-2.5 h-2 fill-stone-900">

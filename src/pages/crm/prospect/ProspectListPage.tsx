@@ -19,18 +19,18 @@ export default function ProspectListPage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
-              <Users className="size-6" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 ring-1 ring-black/5 shrink-0">
+              <Users className="size-5 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-stone-900">Prospects</h1>
+              <h1 className="text-xl font-bold tracking-tight text-stone-900">Prospects</h1>
               <p className="text-sm text-stone-500">Active sales opportunities. Create and track prospects.</p>
             </div>
           </div>
 
           <button
             onClick={() => navigate('/crm/prospect/new')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
           >
             <Plus className="size-3.5" />
             New Prospect

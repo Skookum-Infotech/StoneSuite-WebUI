@@ -17,17 +17,17 @@ export default function CustomerListPage() {
       <div className="bg-white p-6 flex-1 flex flex-col min-h-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
-              <Building2 className="size-6" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 ring-1 ring-black/5 shrink-0">
+              <Building2 className="size-5 text-emerald-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-stone-900">Customers</h1>
+              <h1 className="text-xl font-bold tracking-tight text-stone-900">Customers</h1>
               <p className="text-sm text-stone-500">Closed deals and active customer accounts.</p>
             </div>
           </div>
           <button
             onClick={() => navigate('/crm/customer/new')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-3 text-xs font-semibold shadow-sm transition hover:bg-brand/50"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
           >
             <Plus className="size-3.5" />
             New Customer
