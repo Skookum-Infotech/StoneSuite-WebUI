@@ -8,6 +8,7 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
+import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,
@@ -134,10 +135,11 @@ export default function ProspectViewPage() {
         ))}
       </div>
 
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto modal-scrollbar">
-        <div className="px-5 py-5 space-y-5">
+      {/* Two-column body — browser scrolls, not an inner div */}
+      <div className="flex flex-row gap-6 px-5 py-5">
 
+        {/* Left column — main content */}
+        <div className="flex-1 space-y-5 min-w-0">
           {activeTab === "overview" && (
             <>
               <CrmRecordDetail coreFields={cf} users={users} />
@@ -167,6 +169,17 @@ export default function ProspectViewPage() {
           )}
 
           <div className="h-6" />
+        </div>
+
+        {/* Right sidebar — sticks below the fixed app header (h-16 = 64px, +8px gap) */}
+        <div className="w-72 shrink-0 sticky top-[4.5rem] h-fit self-start">
+          <CrmDetailSidebar
+            statusInfo={statusInfo}
+            ownerUserId={record.ownerUserId}
+            users={users}
+            createdAt={record.createdAt}
+            updatedAt={record.updatedAt}
+          />
         </div>
       </div>
     </div>

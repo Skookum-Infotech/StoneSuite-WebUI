@@ -40,7 +40,7 @@ export function CrmPageHeader({
   actions,
 }: CrmPageHeaderProps) {
   return (
-    <div className="shrink-0 bg-white border-b border-stone-100 px-5 py-3 flex items-center gap-3">
+    <div className="shrink-0 bg-white border-b border-stone-100 px-5 py-4 flex items-center gap-3">
       {/* Entity icon */}
       <div
         className={`h-10 w-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 ring-1 ring-black/5`}
