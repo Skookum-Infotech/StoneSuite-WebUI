@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Pencil } from "lucide-react";
+import { Building2, ChevronLeft, Pencil } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -12,7 +12,7 @@ import { ModernSection } from "@/components/crm/FormPrimitives";
 import { CrmSubTabsPanel } from "@/components/crm/CrmSubTabsPanel";
 import { CRM_CUSTOMER_SUB_TABS } from "@/lib/crmFields";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
-import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
+// Removed unused CrmPageHeader import
 import { readonlyCls, fieldLabelCls } from "@/components/crm/formUtils";
 import type { StatusInfo } from "@/types/tenant";
 
@@ -21,7 +21,11 @@ export default function CustomerDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: record, isLoading, error } = useQuery({
+  const {
+    data: record,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["crm-record", id],
     queryFn: () => crmService.getRecord(id, "customer"),
     enabled: Boolean(id),
@@ -32,7 +36,10 @@ export default function CustomerDetailPage() {
     queryFn: () => crmService.getWorkflowStatuses("customer"),
   });
 
-  const { data: users = [] } = useQuery({ queryKey: ["workspace-users"], queryFn: userService.listUsers });
+  const { data: users = [] } = useQuery({
+    queryKey: ["workspace-users"],
+    queryFn: userService.listUsers,
+  });
 
   const statusMap = new Map<string, StatusInfo>(
     (statusData?.statuses ?? []).map((s) => [s.stateId, s]),
@@ -48,9 +55,19 @@ export default function CustomerDetailPage() {
   }, [id, record?.recordNumber, setLabel, clearLabel]);
 
   if (isLoading)
-    return <div className="p-6"><Spinner label="Loading customer…" /></div>;
+    return (
+      <div className="p-6">
+        <Spinner label="Loading customer…" />
+      </div>
+    );
   if (error || !record)
-    return <div className="p-6"><ErrorNote>{apiErrorMessage(error, "Failed to load customer.")}</ErrorNote></div>;
+    return (
+      <div className="p-6">
+        <ErrorNote>
+          {apiErrorMessage(error, "Failed to load customer.")}
+        </ErrorNote>
+      </div>
+    );
 
   const statusInfo = statusMap.get(record.currentStateId);
   const cf = record.coreFields;
@@ -75,8 +92,12 @@ export default function CustomerDetailPage() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">{company}</h1>
-            {statusInfo && <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>}
+            <h1 className="text-sm font-semibold text-stone-800 leading-tight truncate">
+              {company}
+            </h1>
+            {statusInfo && (
+              <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
+            )}
           </div>
           <p className="text-2xs text-stone-400">Customer</p>
         </div>
@@ -93,8 +114,12 @@ export default function CustomerDetailPage() {
                     <span className="text-2xs font-medium uppercase tracking-wide text-stone-400 leading-none">
                       {key}
                     </span>
-                    <span className="text-sm font-medium text-stone-800 leading-snug break-words">
-                      {String(value ?? "") || <span className="text-stone-300 font-normal text-xs">—</span>}
+                    <span className="text-sm font-medium text-stone-800 leading-snug wrap-break-word">
+                      {String(value ?? "") || (
+                        <span className="text-stone-300 font-normal text-xs">
+                          —
+                        </span>
+                      )}
                     </span>
                   </div>
                 ))}
@@ -103,7 +128,11 @@ export default function CustomerDetailPage() {
           )}
 
           {/* Sub-tabs: Transactions, Audit, Files */}
-          <CrmSubTabsPanel tabs={CRM_CUSTOMER_SUB_TABS} recordId={id} workflowKey="customer" />
+          <CrmSubTabsPanel
+            tabs={CRM_CUSTOMER_SUB_TABS}
+            recordId={id}
+            workflowKey="customer"
+          />
 
           <div className="h-4" />
         </div>
@@ -123,14 +152,18 @@ export default function CustomerDetailPage() {
         </div>
 
         <div className="p-4 border-b border-stone-100">
-          <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2.5">Record Actions</p>
+          <p className="text-2xs font-semibold uppercase tracking-wider text-stone-400 mb-2.5">
+            Record Actions
+          </p>
           <div className="[&>button]:w-full [&>button]:justify-start [&>button]:rounded-lg [&>button]:text-xs">
             <DeleteRecordDialog
               recordId={id}
               workflowKey="customer"
               label={`Customer — ${company}`}
               onDeleted={() => {
-                queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
+                queryClient.invalidateQueries({
+                  queryKey: ["crm-records", "customer"],
+                });
                 navigate("/crm/customer");
               }}
             />
@@ -159,7 +192,9 @@ export default function CustomerDetailPage() {
                   <div key={key} className="space-y-1.5">
                     <label className={fieldLabelCls}>{key}</label>
                     <div className={readonlyCls}>
-                      {String(value ?? "") || <span className="text-stone-400">—</span>}
+                      {String(value ?? "") || (
+                        <span className="text-stone-400">—</span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -167,7 +202,11 @@ export default function CustomerDetailPage() {
             </ModernSection>
           )}
 
-          <CrmSubTabsPanel tabs={CRM_CUSTOMER_SUB_TABS} recordId={id} workflowKey="customer" />
+          <CrmSubTabsPanel
+            tabs={CRM_CUSTOMER_SUB_TABS}
+            recordId={id}
+            workflowKey="customer"
+          />
 
           <div className="h-6" />
         </div>
