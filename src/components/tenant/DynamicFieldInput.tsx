@@ -58,7 +58,7 @@ export function DynamicFieldInput({
             type="checkbox"
             checked={Boolean(value)}
             onChange={(e) => onChange(field.key, e.target.checked)}
-            className="h-4 w-4 rounded border-stone-300 accent-brand cursor-pointer"
+            className="h-4 w-4 rounded border border-stone-300 accent-brand cursor-pointer bg-white [color-scheme:light]"
           />
           <span className={`${checkboxLabelCls} group-hover:text-stone-900 transition-colors`}>
             {labelText}
