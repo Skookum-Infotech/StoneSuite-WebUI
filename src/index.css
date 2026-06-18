@@ -1,11 +1,16 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap"); /* --font-brand fallback */
+
+/* ── Font imports — change fonts here, nowhere else ─────────────────────── */
+@import "@fontsource-variable/geist"; /* --font-sans */
+@import "@fontsource/ibm-plex-mono/400.css"; /* --font-mono */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @font-face {
-  font-family: 'All Round Gothic';
-  src: url('/fonts/allroundgothic-book.otf') format('opentype');
+  font-family: "All Round Gothic";
+  src: url("/fonts/allroundgothic-book.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -129,8 +134,6 @@
   --accent-foreground: #365314;
 }
 
-
-
 @theme inline {
   --color-brand: #c2f589;
   --color-brand-hover: #99c466;
@@ -142,12 +145,13 @@
   --color-tab-border: #1f7a8c;
 
   /* Typography scale extensions */
-  --text-2xs: 0.625rem;  /* 10px — field labels, captions */
-  --text-label: 0.6875rem;  /* 11px — compact UI labels */
+  --text-2xs: 0.625rem; /* 10px — field labels, captions */
+  --text-label: 0.6875rem; /* 11px — compact UI labels */
 
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Geist Mono", ui-monospace, monospace;
+  --font-brand: "All Round Gothic", "Nunito", sans-serif;
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
-  --font-brand: 'All Round Gothic', 'Nunito', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

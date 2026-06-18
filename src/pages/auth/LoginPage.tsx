@@ -58,8 +58,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen md:h-screen md:overflow-hidden md:flex md:flex-row"
-      style={{ fontFamily: "'DM Sans', 'Geist', system-ui, sans-serif" }}
+      className="min-h-screen md:h-screen md:overflow-hidden md:flex md:flex-row font-sans"
     >
       {/* ── LEFT — Login ── */}
       <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden md:min-h-0 md:h-full bg-stone-50 px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10">
