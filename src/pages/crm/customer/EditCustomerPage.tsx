@@ -152,17 +152,22 @@ export default function EditCustomerPage() {
           )}
         />
 
-        {/* Error bar */}
+        {/* Error banner */}
         {saveError && (
-          <div className="shrink-0 bg-red-50 border-b border-red-100 px-6 py-2 flex items-center gap-2 text-xs text-red-700">
-            <AlertCircle className="size-3.5 shrink-0" />
-            {apiErrorMessage(saveError, 'Failed to save.')}
+          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertCircle className="size-3 text-red-600" />
+            </span>
+            <p className="text-xs text-red-700">
+              <span className="font-bold">Error: </span>
+              {apiErrorMessage(saveError, 'Failed to save.')}
+            </p>
           </div>
         )}
 
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar">
-          <div className="px-5 py-5 space-y-5">
+          <div className="px-4 py-3 pb-24 space-y-3">
             <CrmRecordForm
               core={{ fields: coreFields, onChange: set }}
               custom={{
@@ -184,8 +189,28 @@ export default function EditCustomerPage() {
               )}
             />
             <EditableFilesPanel recordId={id} />
-            <div className="h-6" />
           </div>
+        </div>
+
+        {/* Fixed bottom action bar — offset by sidebar width on desktop */}
+        <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
+          <button
+            type="button"
+            onClick={() => navigate('/crm/customer')}
+            disabled={save.isPending}
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
+          >
+            <X className="size-3.5" />
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={save.isPending}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm active:scale-95"
+          >
+            {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {save.isPending ? 'Saving…' : 'Save Changes'}
+          </button>
         </div>
       </form>
     </div>
