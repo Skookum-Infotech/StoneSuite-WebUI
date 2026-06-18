@@ -22,8 +22,8 @@ interface CrmPageHeaderProps {
   statusBadge?: ReactNode;
   /** DeleteRecordDialog trigger — omit on create pages */
   deleteSlot?: ReactNode;
-  /** Right-side action buttons (Cancel+Save or Edit button) */
-  actions: ReactNode;
+  /** Right-side action buttons (Save on edit pages; omit on view pages — actions live in sidebar) */
+  actions?: ReactNode;
 }
 
 export function CrmPageHeader({

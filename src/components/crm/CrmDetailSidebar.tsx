@@ -1,4 +1,5 @@
-import { Upload, Plus } from "lucide-react";
+import { type ReactNode } from "react";
+import { Upload, Plus, Pencil } from "lucide-react";
 import { Badge } from "@/components/tenant/ui";
 import type { StatusInfo, WorkspaceUser } from "@/types/tenant";
 
@@ -8,6 +9,12 @@ type Props = {
   users: WorkspaceUser[];
   createdAt: string;
   updatedAt: string;
+  /** Called when "Upload file" is clicked — switches to Files tab (edit) or navigates to edit+files (view). */
+  onUploadFile?: () => void;
+  /** If provided, renders an "Edit record" action (view mode only). */
+  onEdit?: () => void;
+  /** Renders the DeleteRecordDialog trigger inside the Danger Zone card. */
+  deleteSlot?: ReactNode;
 };
 
 function fmtDate(iso: string): string {
@@ -25,15 +32,18 @@ const headingCls =
 const rowCls =
   "flex justify-between items-center py-2 border-b border-stone-100 last:border-0 text-sm";
 const actionRowCls =
-  "flex items-center gap-2.5 hover:bg-gray-50 rounded-lg px-3 py-2 cursor-pointer text-sm text-stone-700 w-full transition-colors";
+  "flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-sm text-stone-700 w-full transition-colors text-left";
 
-/** Sticky right-panel shown on all CRM record detail pages. */
+/** Sticky right-panel shown on all CRM record detail and edit pages. */
 export function CrmDetailSidebar({
   statusInfo,
   ownerUserId,
   users,
   createdAt,
   updatedAt,
+  onUploadFile,
+  onEdit,
+  deleteSlot,
 }: Props) {
   const owner = ownerUserId
     ? users.find((u) => u.id === ownerUserId)
@@ -45,11 +55,31 @@ export function CrmDetailSidebar({
       <div className={cardCls}>
         <p className={headingCls}>Quick Actions</p>
         <div className="space-y-0.5">
-          <button type="button" className={actionRowCls}>
+          <button
+            type="button"
+            onClick={onUploadFile}
+            className={actionRowCls}
+            aria-label="Upload file"
+          >
             <Upload className="size-4 text-stone-400 shrink-0" />
             Upload file
           </button>
-          <button type="button" className={actionRowCls}>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className={actionRowCls}
+              aria-label="Edit record"
+            >
+              <Pencil className="size-4 text-stone-400 shrink-0" />
+              Edit record
+            </button>
+          )}
+          <button
+            type="button"
+            className={actionRowCls}
+            aria-label="Add note"
+          >
             <Plus className="size-4 text-stone-400 shrink-0" />
             Add note
           </button>
@@ -69,48 +99,31 @@ export function CrmDetailSidebar({
         </div>
         <div className={rowCls}>
           <span className="text-stone-500">Account owner</span>
-          <span
-            className={
-              owner ? "text-stone-800 font-medium" : "text-stone-400"
-            }
-          >
+          <span className={owner ? "text-stone-800 font-medium" : "text-stone-400"}>
             {owner?.fullName ?? "—"}
           </span>
         </div>
         <div className={rowCls}>
           <span className="text-stone-500">Created</span>
-          <span className="font-semibold text-stone-700">
-            {fmtDate(createdAt)}
-          </span>
+          <span className="font-semibold text-stone-700">{fmtDate(createdAt)}</span>
         </div>
         <div className={rowCls}>
           <span className="text-stone-500">Updated</span>
-          <span className="font-semibold text-stone-700">
-            {fmtDate(updatedAt)}
-          </span>
+          <span className="font-semibold text-stone-700">{fmtDate(updatedAt)}</span>
         </div>
       </div>
 
-      {/* Activity Summary */}
-      <div className={cardCls}>
-        <p className={headingCls}>Activity Summary</p>
-        <div className={rowCls}>
-          <span className="text-stone-500">Open opportunities</span>
-          <span className="font-semibold text-stone-700">0</span>
+      {/* Danger Zone */}
+      {deleteSlot && (
+        <div className="rounded-xl border border-red-100 bg-white shadow-sm p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400 mb-3">
+            Danger Zone
+          </p>
+          <div className="[&>button]:w-full [&>button]:justify-start [&>button]:text-left">
+            {deleteSlot}
+          </div>
         </div>
-        <div className={rowCls}>
-          <span className="text-stone-500">Open tasks</span>
-          <span className="font-semibold text-stone-700">0</span>
-        </div>
-        <div className={rowCls}>
-          <span className="text-stone-500">Total revenue</span>
-          <span className="text-stone-400">—</span>
-        </div>
-        <div className={rowCls}>
-          <span className="text-stone-500">Last contact</span>
-          <span className="text-stone-400">—</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

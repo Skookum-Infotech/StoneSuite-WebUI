@@ -1,20 +1,21 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, AlertCircle, Loader2, Save, X } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { workflowService } from '@/services/tenantServices';
+import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { CrmDetailSidebar } from '@/components/crm/CrmDetailSidebar';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
-import type { FieldDefinition } from '@/types/tenant';
+import type { FieldDefinition, StatusInfo } from '@/types/tenant';
 
 const TABS = [
   { key: 'details', label: 'Details' },
@@ -26,8 +27,11 @@ type Tab = (typeof TABS)[number]['key'];
 export default function EditProspectPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('details');
+
+  const initialTab = (location.state as { initialTab?: Tab } | null)?.initialTab ?? 'details';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
@@ -51,6 +55,15 @@ export default function EditProspectPage() {
     enabled: Boolean(prospectWorkflow?.id),
   });
   const customFieldDefs: FieldDefinition[] = prospectDef?.fields ?? [];
+
+  const { data: statusData } = useQuery({
+    queryKey: ['crm-statuses-workflow', 'prospect'],
+    queryFn: () => crmService.getWorkflowStatuses('prospect'),
+  });
+  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+
+  const statusMap = new Map<string, StatusInfo>((statusData?.statuses ?? []).map((s) => [s.stateId, s]));
+  const statusInfo = statusMap.get(currentStateId);
 
   const routeMap: Record<string, string> = {
     lead: '/crm/lead',
@@ -125,17 +138,6 @@ export default function EditProspectPage() {
           title={company}
           subtitle="Prospect"
           recordNumber={record.recordNumber}
-          deleteSlot={(
-            <DeleteRecordDialog
-              recordId={id}
-              workflowKey="prospect"
-              label={`Prospect — ${company}`}
-              onDeleted={() => {
-                queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
-                navigate('/crm/prospect');
-              }}
-            />
-          )}
           actions={(
             <button
               type="submit"
@@ -180,9 +182,9 @@ export default function EditProspectPage() {
           ))}
         </div>
 
-        {/* Scrollable form body */}
-        <div className="flex-1 overflow-y-auto modal-scrollbar">
-          <div className="px-4 py-3 pb-24 space-y-3">
+        {/* Two-column body — browser scrolls, not an inner div */}
+        <div className="flex flex-row gap-6 px-5 py-5 pb-24">
+          <div className="flex-1 space-y-3 min-w-0">
             {activeTab === 'details' && (
               <CrmRecordForm
                 core={{ fields: coreFields, onChange: set }}
@@ -208,6 +210,29 @@ export default function EditProspectPage() {
             <div className={activeTab === 'files' ? '' : 'hidden'}>
               <EditableFilesPanel recordId={id} />
             </div>
+          </div>
+
+          {/* Right sidebar — sticks below the fixed app header */}
+          <div className="w-72 shrink-0 sticky top-[4.5rem] h-fit self-start">
+            <CrmDetailSidebar
+              statusInfo={statusInfo}
+              ownerUserId={record.ownerUserId}
+              users={users}
+              createdAt={record.createdAt}
+              updatedAt={record.updatedAt}
+              onUploadFile={() => setActiveTab('files')}
+              deleteSlot={(
+                <DeleteRecordDialog
+                  recordId={id}
+                  workflowKey="prospect"
+                  label={`Prospect — ${company}`}
+                  onDeleted={() => {
+                    queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
+                    navigate('/crm/prospect');
+                  }}
+                />
+              )}
+            />
           </div>
         </div>
 

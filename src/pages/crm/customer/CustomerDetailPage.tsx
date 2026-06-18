@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Pencil } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -100,29 +100,6 @@ export default function CustomerDetailPage() {
         subtitle="Customer"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>}
-        deleteSlot={(
-          <DeleteRecordDialog
-            recordId={id}
-            workflowKey="customer"
-            label={`Customer — ${company}`}
-            onDeleted={() => {
-              queryClient.invalidateQueries({
-                queryKey: ["crm-records", "customer"],
-              });
-              navigate("/crm/customer");
-            }}
-          />
-        )}
-        actions={(
-          <button
-            type="button"
-            onClick={() => navigate(`/crm/customer/${id}/edit`)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all shadow-sm"
-          >
-            <Pencil className="size-3" />
-            Edit Customer
-          </button>
-        )}
       />
 
       {/* Tab bar */}
@@ -192,6 +169,19 @@ export default function CustomerDetailPage() {
             users={users}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
+            onEdit={() => navigate(`/crm/customer/${id}/edit`)}
+            onUploadFile={() => navigate(`/crm/customer/${id}/edit`, { state: { initialTab: "files" } })}
+            deleteSlot={(
+              <DeleteRecordDialog
+                recordId={id}
+                workflowKey="customer"
+                label={`Customer — ${company}`}
+                onDeleted={() => {
+                  queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
+                  navigate("/crm/customer");
+                }}
+              />
+            )}
           />
         </div>
       </div>

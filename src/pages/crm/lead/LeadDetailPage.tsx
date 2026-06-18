@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, Pencil } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -94,27 +94,6 @@ export default function LeadDetailPage() {
         subtitle="Lead"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>}
-        deleteSlot={(
-          <DeleteRecordDialog
-            recordId={id}
-            workflowKey="lead"
-            label={`Lead — ${company}`}
-            onDeleted={() => {
-              queryClient.invalidateQueries({ queryKey: ["crm-records", "lead"] });
-              navigate("/crm/lead");
-            }}
-          />
-        )}
-        actions={(
-          <button
-            type="button"
-            onClick={() => navigate(`/crm/lead/${id}/edit`)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all shadow-sm"
-          >
-            <Pencil className="size-3" />
-            Edit Lead
-          </button>
-        )}
       />
 
       {/* Tab bar */}
@@ -180,6 +159,19 @@ export default function LeadDetailPage() {
             users={users}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
+            onEdit={() => navigate(`/crm/lead/${id}/edit`)}
+            onUploadFile={() => navigate(`/crm/lead/${id}/edit`, { state: { initialTab: "files" } })}
+            deleteSlot={(
+              <DeleteRecordDialog
+                recordId={id}
+                workflowKey="lead"
+                label={`Lead — ${company}`}
+                onDeleted={() => {
+                  queryClient.invalidateQueries({ queryKey: ["crm-records", "lead"] });
+                  navigate("/crm/lead");
+                }}
+              />
+            )}
           />
         </div>
       </div>

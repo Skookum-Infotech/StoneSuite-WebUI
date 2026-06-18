@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Users, Pencil } from "lucide-react";
+import { Users } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -93,27 +93,6 @@ export default function ProspectViewPage() {
         subtitle="Prospect"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>}
-        deleteSlot={(
-          <DeleteRecordDialog
-            recordId={id}
-            workflowKey="prospect"
-            label={`Prospect — ${company}`}
-            onDeleted={() => {
-              queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
-              navigate("/crm/prospect");
-            }}
-          />
-        )}
-        actions={(
-          <button
-            type="button"
-            onClick={() => navigate(`/crm/prospect/${id}/edit`)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all shadow-sm"
-          >
-            <Pencil className="size-3" />
-            Edit Prospect
-          </button>
-        )}
       />
 
       {/* Tab bar */}
@@ -179,6 +158,19 @@ export default function ProspectViewPage() {
             users={users}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
+            onEdit={() => navigate(`/crm/prospect/${id}/edit`)}
+            onUploadFile={() => navigate(`/crm/prospect/${id}/edit`, { state: { initialTab: "files" } })}
+            deleteSlot={(
+              <DeleteRecordDialog
+                recordId={id}
+                workflowKey="prospect"
+                label={`Prospect — ${company}`}
+                onDeleted={() => {
+                  queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
+                  navigate("/crm/prospect");
+                }}
+              />
+            )}
           />
         </div>
       </div>
