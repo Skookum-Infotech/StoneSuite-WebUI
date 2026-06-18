@@ -61,8 +61,13 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
   return (
     <>
       {CRM_CORE_SECTIONS.map((section, idx) => (
-        <ModernSection key={section.title} title={section.title} index={idx + 1}>
-          <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ModernSection
+          key={section.title}
+          title={section.title}
+          index={idx + 1}
+          defaultCollapsed={section.title === 'Billing Address' || section.title === 'Shipping Address'}
+        >
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {idx === 0 && statusNode && (
               <ModernFieldShell label="Status" required>
                 {statusNode}
@@ -103,7 +108,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
 
       {showCustomerBalances && (
         <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title} index={CRM_CORE_SECTIONS.length + 1}>
-          <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {CRM_CUSTOMER_BALANCE_SECTION.fields.map((field) => (
               <CrmFieldInput
                 key={field.key}
@@ -119,7 +124,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
 
       {custom.defs.length > 0 && (
         <ModernSection title="Custom Fields" index={CRM_CORE_SECTIONS.length + (showCustomerBalances ? 2 : 1)}>
-          <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {custom.defs.map((f) => (
               <DynamicFieldInput
                 key={f.id || f.key}
@@ -157,7 +162,7 @@ function CrmFieldInput({
           id={field.key}
           checked={checked}
           onChange={(e) => onChange(field.key, e.target.checked)}
-          className="h-4 w-4 rounded border-stone-300 accent-brand cursor-pointer shrink-0"
+          className="h-5 w-5 rounded border-stone-300 accent-brand cursor-pointer shrink-0"
           aria-label={field.label}
         />
         <label
@@ -186,7 +191,7 @@ function CrmFieldInput({
       <div className="col-span-full">
         <ModernFieldShell label={field.label} required={field.required}>
           <textarea
-            rows={3}
+            rows={4}
             required={field.required}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}
