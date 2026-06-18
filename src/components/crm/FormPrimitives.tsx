@@ -29,19 +29,19 @@ export function ModernSection({
   const accent = SECTION_ACCENTS[title] ?? 'bg-stone-400';
   const id = `form-section-${title.toLowerCase().replace(/[\s/]+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
   return (
-    <div id={id} className="rounded-md border border-stone-200 bg-white overflow-hidden scroll-mt-16">
+    <div id={id} className="rounded-[10px] border border-stone-200 bg-white overflow-hidden scroll-mt-16">
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         className={cn(
           'w-full flex items-center justify-between gap-2 px-4 py-3 bg-stone-50/70 hover:bg-stone-100/60 transition-colors text-left',
-          isOpen && 'border-b border-gray-200',
+          isOpen && 'border-b border-stone-200',
         )}
       >
         <div className="flex items-center gap-2">
           <div className={cn('w-1 h-4 rounded-full shrink-0', accent)} />
-          <h3 className="text-xs font-bold uppercase tracking-widest text-black">{title}</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-950">{title}</h3>
         </div>
         <ChevronDown
           className={cn(

@@ -55,7 +55,7 @@ export function CrmPageHeader({
             {title}
           </h1>
           {recordNumber && (
-            <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-md text-stone-400 shrink-0">
+            <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-lg text-stone-400 shrink-0">
               {recordNumber}
             </span>
           )}

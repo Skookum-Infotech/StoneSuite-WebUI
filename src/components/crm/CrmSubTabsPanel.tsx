@@ -103,10 +103,10 @@ export function CrmSubTabsPanel({ tabs, readOnly = true, recordId, workflowKey }
             type="button"
             onClick={() => setActive(tab.key)}
             className={cn(
-              'px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors',
+              'px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors duration-150',
               active === tab.key
-                ? 'border-stone-800 text-stone-800'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+                ? 'border-brand text-stone-950'
+                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
             )}
           >
             {tab.label}

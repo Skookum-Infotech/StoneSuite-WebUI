@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Upload, Plus, Pencil } from "lucide-react";
+import { Upload, Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/tenant/ui";
 import type { StatusInfo, WorkspaceUser } from "@/types/tenant";
 
@@ -9,11 +9,8 @@ type Props = {
   users: WorkspaceUser[];
   createdAt: string;
   updatedAt: string;
-  /** Called when "Upload file" is clicked — switches to Files tab (edit) or navigates to edit+files (view). */
   onUploadFile?: () => void;
-  /** If provided, renders an "Edit record" action (view mode only). */
   onEdit?: () => void;
-  /** Renders the DeleteRecordDialog trigger inside the Danger Zone card. */
   deleteSlot?: ReactNode;
 };
 
@@ -75,11 +72,7 @@ export function CrmDetailSidebar({
               Edit record
             </button>
           )}
-          <button
-            type="button"
-            className={actionRowCls}
-            aria-label="Add note"
-          >
+          <button type="button" className={actionRowCls} aria-label="Add note">
             <Plus className="size-4 text-stone-400 shrink-0" />
             Add note
           </button>
@@ -99,31 +92,60 @@ export function CrmDetailSidebar({
         </div>
         <div className={rowCls}>
           <span className="text-stone-500">Account owner</span>
-          <span className={owner ? "text-stone-800 font-medium" : "text-stone-400"}>
+          <span
+            className={owner ? "text-stone-900 font-medium" : "text-stone-400"}
+          >
             {owner?.fullName ?? "—"}
           </span>
         </div>
         <div className={rowCls}>
           <span className="text-stone-500">Created</span>
-          <span className="font-semibold text-stone-700">{fmtDate(createdAt)}</span>
+          <span className="font-semibold text-stone-700">
+            {fmtDate(createdAt)}
+          </span>
         </div>
         <div className={rowCls}>
           <span className="text-stone-500">Updated</span>
-          <span className="font-semibold text-stone-700">{fmtDate(updatedAt)}</span>
+          <span className="font-semibold text-stone-700">
+            {fmtDate(updatedAt)}
+          </span>
         </div>
       </div>
 
       {/* Danger Zone */}
       {deleteSlot && (
-        <div className="rounded-xl border border-red-100 bg-white shadow-sm p-4">
+        <div className="rounded-xl border border-red-100 bg-red-50/60 shadow-sm p-4 mb-4">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400 mb-3">
             Danger Zone
           </p>
-          <div className="[&>button]:w-full [&>button]:justify-start [&>button]:text-left">
-            {deleteSlot}
+          <div
+            className="[&>button]:flex [&>button]:w-full [&>button]:items-center [&>button]:gap-2.5
+                       [&>button]:rounded-lg [&>button]:px-3 [&>button]:py-2 [&>button]:text-sm
+                       [&>button]:font-medium [&>button]:text-red-600 [&>button]:transition-colors
+                       [&>button]:text-left [&>button]:cursor-pointer
+                       [&>button]:hover:bg-red-100/70"
+          >
+            {/* Inject the Trash2 icon before the deleteSlot label via a wrapper */}
+            <DeleteSlotWrapper>{deleteSlot}</DeleteSlotWrapper>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Wraps the deleteSlot trigger with a Trash2 icon prepended.
+ * Works when deleteSlot renders a <button> as its root element.
+ */
+function DeleteSlotWrapper({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative">
+      <Trash2
+        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-red-500"
+        aria-hidden
+      />
+      <div className="[&>button]:pl-9">{children}</div>
     </div>
   );
 }

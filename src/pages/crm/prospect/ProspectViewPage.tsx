@@ -103,10 +103,10 @@ export default function ProspectViewPage() {
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors",
+              "px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150",
               activeTab === tab.key
-                ? "border-stone-800 text-stone-900"
-                : "border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300",
+                ? "border-brand text-stone-950"
+                : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200",
             )}
           >
             {tab.label}

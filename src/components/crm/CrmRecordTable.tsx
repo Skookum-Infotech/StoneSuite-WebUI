@@ -130,14 +130,14 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
             placeholder="Company name…"
             value={nameFilter}
             onChange={(e) => { setNameFilter(e.target.value); setPage(1); }}
-            className="h-9 w-48 rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-9 w-48 rounded-lg border border-stone-300 bg-white pl-8 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+          className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
@@ -182,7 +182,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-sm border border-stone-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-[10px] border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full text-left text-xs">
             <thead className="bg-stone-50/80 border-b border-stone-200">
@@ -243,7 +243,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                           <button
                             type="button"
                             onClick={() => navigate(config.detailPath(record.id))}
-                            className="text-left text-sm font-semibold text-stone-800 hover:text-brand-dark hover:underline"
+                            className="text-left text-sm font-semibold text-stone-900 hover:text-brand transition-colors duration-150"
                           >
                             {company}
                           </button>
