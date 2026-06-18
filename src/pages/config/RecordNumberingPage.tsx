@@ -36,7 +36,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-stone-50/60">
       {/* Page header */}
-      <div className="bg-white border-b border-stone-100 px-6 py-5">
+      <div className="bg-background border-b border-stone-200 px-6 py-5">
         <div className="flex items-center gap-3.5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
             <Hash className="size-5" strokeWidth={2.5} />

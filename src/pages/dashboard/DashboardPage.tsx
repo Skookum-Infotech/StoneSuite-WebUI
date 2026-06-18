@@ -3,7 +3,7 @@ import { LayoutDashboard } from 'lucide-react';
 export default function DashboardPage() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="bg-white p-8 flex-1 flex flex-col min-h-0">
+      <div className="p-8 flex-1 flex flex-col min-h-0">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
             <LayoutDashboard className="size-6" />

@@ -15,12 +15,12 @@ export default function ProspectListPage() {
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
-      <div className="flex flex-1 flex-col min-h-0 bg-white p-6">
+      <div className="flex flex-1 flex-col min-h-0 p-6">
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 ring-1 ring-black/5 shrink-0">
-              <Users className="size-5 text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent ring-1 ring-accent-foreground/10 shrink-0">
+              <Users className="size-5 text-accent-foreground" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-stone-900">Prospects</h1>

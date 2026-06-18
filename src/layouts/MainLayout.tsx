@@ -239,7 +239,7 @@ export default function MainLayout(): React.JSX.Element {
 
       {/* ── Page Content ── */}
       <div className="flex flex-col min-h-screen pt-16 lg:pl-56">
-        <main className="flex-1 w-full flex flex-col min-h-0 bg-white">
+        <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}
           {pathSegments.length > 0 && (

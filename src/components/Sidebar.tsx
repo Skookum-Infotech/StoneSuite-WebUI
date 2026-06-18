@@ -16,16 +16,16 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
     isActive
-      ? 'bg-brand text-stone-950 shadow-[0_4px_12px_rgba(194,245,137,0.25)] font-bold'
-      : 'text-stone-600 dark:text-stone-300 hover:bg-sidebar-accent hover:text-stone-900 dark:hover:text-white',
+      ? 'bg-accent text-accent-foreground font-bold'
+      : 'text-stone-600 hover:bg-accent/60 hover:text-stone-900',
   );
 
 const childLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium tracking-wide transition-all duration-200',
     isActive
-      ? 'bg-sidebar-primary/20 text-sidebar-primary font-semibold'
-      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+      ? 'bg-accent text-accent-foreground font-semibold'
+      : 'text-stone-500 hover:bg-accent/50 hover:text-stone-900',
   );
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -119,8 +119,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           className={cn(
             'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
             active
-              ? 'bg-sidebar-accent/50 text-stone-900 dark:text-white'
-              : 'text-stone-600 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-300 dark:hover:text-white',
+              ? 'bg-accent/60 text-accent-foreground'
+              : 'text-stone-600 hover:bg-accent/40 hover:text-stone-900',
           )}
         >
           <div className="flex items-center gap-2.5">

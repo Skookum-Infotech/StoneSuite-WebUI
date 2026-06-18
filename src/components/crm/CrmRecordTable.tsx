@@ -3,12 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown,
-  ChevronLeft, ChevronRight, X, Pencil, Inbox,
+  ChevronLeft, ChevronRight, X, Inbox,
 } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { Badge } from '@/components/tenant/ui';
 import { resolveStatusColor } from '@/components/crm/formUtils';
 import type { WorkflowRecord, StatusInfo } from '@/types/tenant';
+
+// ── Avatar helpers ─────────────────────────────────────────────────────────────
+
+const AVATAR_PALETTE = [
+  { bg: '#fef3c7', fg: '#92400e' },
+  { bg: '#d1fae5', fg: '#065f46' },
+  { bg: '#dbeafe', fg: '#1e40af' },
+  { bg: '#fce7f3', fg: '#9d174d' },
+  { bg: '#ede9fe', fg: '#5b21b6' },
+  { bg: '#ecfccb', fg: '#365314' },
+  { bg: '#ffedd5', fg: '#9a3412' },
+  { bg: '#e0f2fe', fg: '#0c4a6e' },
+  { bg: '#f1f5f9', fg: '#334155' },
+] as const;
+
+function companyInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function companyAvatar(name: string) {
+  const hash = [...name].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+}
 
 // ── Public config type — import this in each thin wrapper ─────────────────────
 
@@ -67,7 +92,6 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
     [statuses],
   );
 
-  const hasRecordNumbers = records.some((r) => Boolean(r.recordNumber));
   const hasFilters = nameFilter || statusFilter;
 
   function clearFilters() {
@@ -128,17 +152,17 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input
             type="text"
-            placeholder="Company name…"
+            placeholder={`Search ${config.label.toLowerCase()}s…`}
             value={nameFilter}
             onChange={(e) => { setNameFilter(e.target.value); setPage(1); }}
-            className="h-9 w-48 rounded-sm border border-stone-300 bg-white pl-8 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-9 w-52 rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="h-9 rounded-sm border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+          className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
@@ -151,10 +175,10 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 rounded-sm border border-stone-200 px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
             >
               <X className="size-3" />
-              Clear filters
+              Clear
             </button>
           )}
           <span className="text-xs text-stone-400 tabular-nums">
@@ -165,15 +189,15 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
 
       {/* ── Sort chips ── */}
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-2xs uppercase tracking-wider text-stone-400">Sort:</span>
+        <span className="mr-1 text-2xs font-semibold uppercase tracking-wider text-stone-400">Sort:</span>
         {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
           <button
             key={field}
             onClick={() => handleSort(field)}
-            className={`flex items-center gap-1 rounded-sm px-2.5 py-1 text-2xs font-semibold transition-colors ${
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors ${
               sortBy === field
-                ? 'bg-brand/20 text-brand-dark ring-1 ring-brand/30'
-                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
+                : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700'
             }`}
           >
             {label}
@@ -183,23 +207,18 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-[10px] border border-stone-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full text-left text-xs">
-            <thead className="bg-stone-50/80 border-b border-stone-200">
+            <thead className="border-b border-stone-200" style={{ backgroundColor: 'color-mix(in srgb, #ecfccb 22%, #ffffff)' }}>
               <tr>
-                {/* Left accent bar column */}
-                <th className="w-0.5 p-0" aria-hidden="true" />
-                {hasRecordNumbers && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Record #</th>
-                )}
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Company</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Status</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 {config.showEmail && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Email</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
                 )}
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-400">Created</th>
-                <th className="px-4 py-3 sr-only">Actions</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Created</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -207,11 +226,15 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                 <>
                   {Array.from({ length: 5 }, (_, i) => (
                     <tr key={i}>
-                      <td className="w-0.5 p-0" />
-                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-40" /></td>
-                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-20" /></td>
-                      {config.showEmail && <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-32" /></td>}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="animate-pulse size-8 rounded-full bg-stone-100 shrink-0" />
+                          <div className="animate-pulse h-3.5 rounded bg-stone-100 w-36" />
+                        </div>
+                      </td>
                       <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-24" /></td>
+                      {config.showEmail && <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-32" /></td>}
+                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-20" /></td>
                       <td className="px-4 py-3" />
                     </tr>
                   ))}
@@ -223,33 +246,33 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                     const company    = String(record.coreFields.customer_name ?? '(unnamed)');
                     const email      = String(record.coreFields.customer_contact_email ?? '—');
                     const label      = `${config.label} — ${company}`;
+                    const avatar     = companyAvatar(company);
                     return (
-                      <tr key={record.id} className="group hover:bg-brand/5 transition-colors duration-150">
-                        {/* Hover accent bar */}
-                        <td className="w-0.5 p-0 relative">
-                          <span className="absolute inset-y-0 left-0 w-0.5 bg-brand opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+                      <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                              style={{ backgroundColor: avatar.bg, color: avatar.fg }}
+                              aria-hidden="true"
+                            >
+                              {companyInitials(company)}
+                            </span>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => navigate(config.detailPath(record.id))}
+                                className="text-left text-sm font-semibold text-stone-900 hover:text-accent-foreground transition-colors duration-150"
+                              >
+                                {company}
+                              </button>
+                              {record.recordNumber && (
+                                <p className="font-mono text-2xs text-stone-400 mt-0.5">{record.recordNumber}</p>
+                              )}
+                            </div>
+                          </div>
                         </td>
-                        {hasRecordNumbers && (
-                          <td className="px-4 py-3">
-                            {record.recordNumber ? (
-                              <span className="font-mono text-xs text-stone-400">
-                                {record.recordNumber}
-                              </span>
-                            ) : (
-                              <span className="text-stone-300">—</span>
-                            )}
-                          </td>
-                        )}
-                        <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            onClick={() => navigate(config.detailPath(record.id))}
-                            className="text-left text-sm font-semibold text-stone-900 hover:text-brand transition-colors duration-150"
-                          >
-                            {company}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3.5">
                           {statusInfo ? (
                             <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
                           ) : (
@@ -257,24 +280,22 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                           )}
                         </td>
                         {config.showEmail && (
-                          <td className="px-4 py-3 text-sm text-stone-500">{email}</td>
+                          <td className="px-4 py-3.5 text-sm text-stone-500">{email}</td>
                         )}
-                        <td className="px-4 py-3 font-mono text-xs text-stone-400 tabular-nums">
+                        <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums">
                           {new Date(record.createdAt).toLocaleDateString(undefined, {
                             year: 'numeric', month: 'short', day: 'numeric',
                           })}
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                            <button
-                              type="button"
-                              onClick={() => navigate(config.editPath(record.id))}
-                              aria-label={`Edit ${label}`}
-                              className="rounded-sm p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
-                            >
-                              <Pencil className="size-3.5" />
-                            </button>
-                          </div>
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => navigate(config.editPath(record.id))}
+                            aria-label={`Edit ${label}`}
+                            className="rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-600 transition-colors hover:border-accent-foreground/30 hover:bg-accent hover:text-accent-foreground"
+                          >
+                            Edit
+                          </button>
                         </td>
                       </tr>
                     );
@@ -283,7 +304,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
               ) : (
                 <tr>
                   <td
-                    colSpan={5 + (hasRecordNumbers ? 1 : 0) + (config.showEmail ? 1 : 0)}
+                    colSpan={4 + (config.showEmail ? 1 : 0)}
                     className="py-16 text-center"
                   >
                     {records.length === 0 ? (

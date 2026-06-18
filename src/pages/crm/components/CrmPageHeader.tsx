@@ -8,10 +8,10 @@ interface CrmPageHeaderProps {
   onBack: () => void;
   /** Lucide icon component for the entity type */
   icon: LucideIcon;
-  /** Tailwind bg class for the icon pill, e.g. 'bg-purple-100' */
-  iconBg: string;
-  /** Tailwind text class for the icon colour, e.g. 'text-purple-600' */
-  iconColor: string;
+  /** @deprecated — icon color is now derived from the brand token system */
+  iconBg?: string;
+  /** @deprecated — icon color is now derived from the brand token system */
+  iconColor?: string;
   /** Primary title — company name or "New Lead" */
   title: string;
   /** Entity label shown below the title ("Lead", "Prospect", "Customer") */
@@ -30,8 +30,6 @@ export function CrmPageHeader({
   backLabel,
   onBack,
   icon: Icon,
-  iconBg,
-  iconColor,
   title,
   subtitle,
   recordNumber,
@@ -40,12 +38,10 @@ export function CrmPageHeader({
   actions,
 }: CrmPageHeaderProps) {
   return (
-    <div className="shrink-0 bg-white border-b border-stone-100 px-5 py-4 flex items-center gap-3">
-      {/* Entity icon */}
-      <div
-        className={`h-10 w-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0 ring-1 ring-black/5`}
-      >
-        <Icon className={`h-4 w-4 ${iconColor}`} />
+    <div className="shrink-0 bg-background border-b border-stone-200 px-5 py-4 flex items-center gap-3">
+      {/* Entity icon — always uses brand accent for consistency */}
+      <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shrink-0 ring-1 ring-accent-foreground/10">
+        <Icon className="h-4 w-4 text-accent-foreground" />
       </div>
 
       {/* Title Block */}

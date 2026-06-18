@@ -136,7 +136,7 @@ export default function RolesPage(): React.JSX.Element {
   }, [usersQ.data, activeId]);
 
   return (
-    <div className="flex flex-1 flex-col min-h-0 bg-white">
+    <div className="flex flex-1 flex-col min-h-0 bg-background">
       {/* Page header */}
       <div className="flex items-center gap-3 border-b border-stone-100 px-6 py-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
