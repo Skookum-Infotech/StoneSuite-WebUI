@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { fieldCls } from '@/components/crm/formUtils';
+import { fieldCls, resolveStatusColor } from '@/components/crm/formUtils';
 import type { StatusInfo } from '@/types/tenant';
 
 type Props = {
@@ -78,7 +78,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
           <>
             <span
               className="size-2 flex-shrink-0 rounded-full"
-              style={{ backgroundColor: selected.color || '#a8a29e' }}
+              style={{ backgroundColor: resolveStatusColor(selected.stateKey, selected.color) }}
             />
             <span className="flex-1 text-left">{selected.statusLabel}</span>
           </>
@@ -106,7 +106,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
             >
               <span
                 className="size-2 flex-shrink-0 rounded-full"
-                style={{ backgroundColor: s.color || '#a8a29e' }}
+                style={{ backgroundColor: resolveStatusColor(s.stateKey, s.color) }}
               />
               {s.statusLabel}
             </button>

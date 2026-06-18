@@ -17,7 +17,7 @@ import {
 } from "@/components/crm/CrmSubTabsPanel";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
-import { readonlyCls, fieldLabelCls } from "@/components/crm/formUtils";
+import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
 import type { StatusInfo } from "@/types/tenant";
 
@@ -99,7 +99,7 @@ export default function CustomerDetailPage() {
         title={company}
         subtitle="Customer"
         recordNumber={record.recordNumber}
-        statusBadge={statusInfo && <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>}
+        statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
       />
 
       {/* Tab bar */}

@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { Upload, Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/tenant/ui";
+import { resolveStatusColor } from "@/components/crm/formUtils";
 import type { StatusInfo, WorkspaceUser } from "@/types/tenant";
 
 type Props = {
@@ -85,7 +86,7 @@ export function CrmDetailSidebar({
         <div className={rowCls}>
           <span className="text-stone-500">Status</span>
           {statusInfo ? (
-            <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
+            <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
           ) : (
             <span className="text-stone-400">—</span>
           )}

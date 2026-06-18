@@ -32,16 +32,23 @@ export function Badge({
   className?: string;
 }) {
   // When a hex color is provided (workflow state), tint with it; otherwise use a neutral chip.
-  const style = color ? { backgroundColor: `${color}22`, color, borderColor: `${color}55` } : undefined;
+  const style = color ? { backgroundColor: `${color}28`, color, borderColor: `${color}70` } : undefined;
   return (
     <span
       style={style}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-label font-semibold',
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-label font-semibold',
         !color && 'border-stone-200 bg-stone-100 text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300',
         className,
       )}
     >
+      {color && (
+        <span
+          className="size-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: color }}
+          aria-hidden="true"
+        />
+      )}
       {children}
     </span>
   );

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { Badge } from '@/components/tenant/ui';
+import { resolveStatusColor } from '@/components/crm/formUtils';
 import type { WorkflowRecord, StatusInfo } from '@/types/tenant';
 
 // ── Public config type — import this in each thin wrapper ─────────────────────
@@ -130,14 +131,14 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
             placeholder="Company name…"
             value={nameFilter}
             onChange={(e) => { setNameFilter(e.target.value); setPage(1); }}
-            className="h-9 w-48 rounded-lg border border-stone-300 bg-white pl-8 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-9 w-48 rounded-sm border border-stone-300 bg-white pl-8 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+          className="h-9 rounded-sm border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
@@ -150,7 +151,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+              className="flex items-center gap-1 rounded-sm border border-stone-200 px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
             >
               <X className="size-3" />
               Clear filters
@@ -169,7 +170,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           <button
             key={field}
             onClick={() => handleSort(field)}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold transition-colors ${
+            className={`flex items-center gap-1 rounded-sm px-2.5 py-1 text-2xs font-semibold transition-colors ${
               sortBy === field
                 ? 'bg-brand/20 text-brand-dark ring-1 ring-brand/30'
                 : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
@@ -250,7 +251,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                         </td>
                         <td className="px-4 py-3">
                           {statusInfo ? (
-                            <Badge color={statusInfo.color}>{statusInfo.statusLabel}</Badge>
+                            <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
                           ) : (
                             <span className="text-xs text-stone-400">—</span>
                           )}
@@ -269,7 +270,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                               type="button"
                               onClick={() => navigate(config.editPath(record.id))}
                               aria-label={`Edit ${label}`}
-                              className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+                              className="rounded-sm p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
                             >
                               <Pencil className="size-3.5" />
                             </button>
@@ -321,7 +322,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
               aria-label="Previous page"
-              className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 rounded-sm border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="size-3" /> Prev
             </button>
@@ -332,7 +333,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
               aria-label="Next page"
-              className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 rounded-sm border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
             >
               Next <ChevronRight className="size-3" />
             </button>
