@@ -17,7 +17,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: 
   const [reason, setReason] = useState('');
 
   const del = useMutation({
-    mutationFn: () => crmService.deleteRecord(recordId, workflowKey),
+    mutationFn: () => crmService.deleteRecord(recordId, workflowKey, reason.trim()),
     onSuccess: () => {
       setOpen(false);
       setReason('');
@@ -68,7 +68,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted }: 
             </p>
 
             <div className="space-y-1.5">
-              <label htmlFor="delete-reason" className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <label htmlFor="delete-reason" className="text-xs font-semibold text-stone-500">
                 Reason for deletion <span className="text-red-400">*</span>
               </label>
               <textarea

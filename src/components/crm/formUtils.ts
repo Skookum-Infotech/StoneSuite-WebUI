@@ -8,7 +8,7 @@ export const readonlyCls =
   'w-full min-h-10 px-3.5 py-2.5 text-sm text-stone-900 bg-stone-50 border border-stone-300 rounded-[10px]';
 
 export const fieldLabelCls =
-  'block text-xs font-semibold uppercase tracking-wide text-stone-500';
+  'block text-xs font-semibold text-stone-500';
 
 export const checkboxLabelCls =
   'text-sm font-medium text-stone-700';

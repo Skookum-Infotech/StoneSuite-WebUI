@@ -52,8 +52,8 @@ export const crmService = {
   ): Promise<void> =>
     tenantClient.patch(`/tenant/crm/${workflowKey}/records/${id}`, payload).then(() => undefined),
 
-  deleteRecord: (id: string, workflowKey = '_'): Promise<void> =>
-    tenantClient.delete(`/tenant/crm/${workflowKey}/records/${id}`).then(() => undefined),
+  deleteRecord: (id: string, workflowKey = '_', reason = ''): Promise<void> =>
+    tenantClient.delete(`/tenant/crm/${workflowKey}/records/${id}`, { data: { reason } }).then(() => undefined),
 
   getAvailableTransitions: (id: string, workflowKey = '_'): Promise<StatusInfo[]> =>
     tenantClient
