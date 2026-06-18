@@ -79,15 +79,6 @@ export default function AddCustomerPage() {
           actions={(
             <>
               <button
-                type="button"
-                onClick={() => navigate('/crm/customer')}
-                disabled={isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
-              >
-                <X className="size-3" />
-                Cancel
-              </button>
-              <button
                 type="submit"
                 disabled={isPending || isUploadingFiles}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
