@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Upload, Plus, Pencil, Trash2 } from "lucide-react";
+import { Upload, Plus, Pencil } from "lucide-react";
 import { Badge } from "@/components/tenant/ui";
 import { resolveStatusColor } from "@/components/crm/formUtils";
 import type { StatusInfo, WorkspaceUser } from "@/types/tenant";
@@ -115,38 +115,15 @@ export function CrmDetailSidebar({
 
       {/* Danger Zone */}
       {deleteSlot && (
-        <div className="rounded-xl border border-red-100 bg-red-50/60 shadow-sm p-4 mb-4">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400 mb-3">
+        <div className={cardCls}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400">
             Danger Zone
           </p>
-          <div
-            className="[&>button]:flex [&>button]:w-full [&>button]:items-center [&>button]:gap-2.5
-                       [&>button]:rounded-lg [&>button]:px-3 [&>button]:py-2 [&>button]:text-sm
-                       [&>button]:font-medium [&>button]:text-red-600 [&>button]:transition-colors
-                       [&>button]:text-left [&>button]:cursor-pointer
-                       [&>button]:hover:bg-red-100/70"
-          >
-            {/* Inject the Trash2 icon before the deleteSlot label via a wrapper */}
-            <DeleteSlotWrapper>{deleteSlot}</DeleteSlotWrapper>
+          <div className="space-y-0.5">
+            {deleteSlot}
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/**
- * Wraps the deleteSlot trigger with a Trash2 icon prepended.
- * Works when deleteSlot renders a <button> as its root element.
- */
-function DeleteSlotWrapper({ children }: { children: ReactNode }) {
-  return (
-    <div className="relative">
-      <Trash2
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-red-500"
-        aria-hidden
-      />
-      <div className="[&>button]:pl-9">{children}</div>
     </div>
   );
 }
