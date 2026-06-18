@@ -155,7 +155,7 @@ EditableFilesPanel.displayName = 'EditableFilesPanel';
 
 // ── Transactions tab ──────────────────────────────────────────────────────────
 
-function TransactionsContent() {
+export function TransactionsContent() {
   return (
     <p className="py-6 text-center text-xs text-stone-400 italic">No transactions yet.</p>
   );
@@ -163,7 +163,7 @@ function TransactionsContent() {
 
 // ── Audit tab ─────────────────────────────────────────────────────────────────
 
-function AuditContent({ recordId, workflowKey }: { recordId?: string; workflowKey?: string }) {
+export function AuditContent({ recordId, workflowKey }: { recordId?: string; workflowKey?: string }) {
   const { data: entries = [], isLoading, error } = useQuery({
     queryKey: ['record-audit', recordId],
     queryFn: () => crmService.getRecordAudit(recordId ?? '', workflowKey),
@@ -280,7 +280,7 @@ function flattenChanges(obj: Record<string, unknown>, prefix = ''): [string, str
 
 type FilesContentProps = { recordId?: string; readOnly: boolean };
 
-const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentProps>(
+export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentProps>(
   ({ recordId, readOnly }, ref) => {
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);

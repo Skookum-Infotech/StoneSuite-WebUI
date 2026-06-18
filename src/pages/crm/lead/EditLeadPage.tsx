@@ -13,12 +13,21 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/types/tenant';
+
+const TABS = [
+  { key: 'details', label: 'Details' },
+  { key: 'files', label: 'Files' },
+] as const;
+
+type Tab = (typeof TABS)[number]['key'];
 
 export default function EditLeadPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<Tab>('details');
 
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
@@ -131,16 +140,14 @@ export default function EditLeadPage() {
             />
           )}
           actions={(
-            <>
-              <button
-                type="submit"
-                disabled={save.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
-              >
-                {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-                {save.isPending ? 'Saving…' : 'Save Changes'}
-              </button>
-            </>
+            <button
+              type="submit"
+              disabled={save.isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
+            >
+              {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {save.isPending ? 'Saving…' : 'Save Changes'}
+            </button>
           )}
         />
 
@@ -157,33 +164,57 @@ export default function EditLeadPage() {
           </div>
         )}
 
+        {/* Tab bar */}
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
+                activeTab === tab.key
+                  ? 'border-stone-800 text-stone-900'
+                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar">
           <div className="px-4 py-3 pb-24 space-y-3">
-            <CrmRecordForm
-              core={{ fields: coreFields, onChange: set }}
-              custom={{
-                defs: customFieldDefs,
-                values: customFieldValues,
-                onChange: (key, value) =>
-                  setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value })),
-              }}
-              statusNode={(
-                <StatusDropdown
-                  workflowKey="lead"
-                  mode="transitions"
-                  recordId={id}
-                  value={currentStateId}
-                  onChange={handleStatusChange}
-                  disabled={transition.isPending}
-                />
-              )}
-            />
-            <EditableFilesPanel recordId={id} />
+            {activeTab === 'details' && (
+              <CrmRecordForm
+                core={{ fields: coreFields, onChange: set }}
+                custom={{
+                  defs: customFieldDefs,
+                  values: customFieldValues,
+                  onChange: (key, value) =>
+                    setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value })),
+                }}
+                statusNode={(
+                  <StatusDropdown
+                    workflowKey="lead"
+                    mode="transitions"
+                    recordId={id}
+                    value={currentStateId}
+                    onChange={handleStatusChange}
+                    disabled={transition.isPending}
+                  />
+                )}
+              />
+            )}
+            {/* Always mounted so upload state is preserved across tab switches */}
+            <div className={activeTab === 'files' ? '' : 'hidden'}>
+              <EditableFilesPanel recordId={id} />
+            </div>
           </div>
         </div>
 
-        {/* Fixed bottom action bar — offset by sidebar width on desktop */}
+        {/* Fixed bottom action bar */}
         <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
           <button
             type="button"

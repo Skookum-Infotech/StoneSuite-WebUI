@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, Pencil } from "lucide-react";
@@ -9,17 +9,29 @@ import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { ModernSection } from "@/components/crm/FormPrimitives";
-import { CrmSubTabsPanel } from "@/components/crm/CrmSubTabsPanel";
-import { CRM_LEAD_PROSPECT_SUB_TABS } from "@/lib/crmFields";
+import {
+  AuditContent,
+  FilesContent,
+} from "@/components/crm/CrmSubTabsPanel";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls } from "@/components/crm/formUtils";
+import { cn } from "@/lib/utils";
 import type { StatusInfo } from "@/types/tenant";
+
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "files", label: "Files" },
+  { key: "audit", label: "Audit" },
+] as const;
+
+type Tab = (typeof TABS)[number]["key"];
 
 export default function LeadDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
 
   const {
     data: record,
@@ -104,27 +116,56 @@ export default function LeadDetailPage() {
         )}
       />
 
+      {/* Tab bar */}
+      <div className="flex shrink-0 border-b border-stone-200 bg-white px-5">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              "px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors",
+              activeTab === tab.key
+                ? "border-stone-800 text-stone-900"
+                : "border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="px-5 py-5 space-y-5">
-          <CrmRecordDetail coreFields={cf} users={users} />
 
-          {Object.keys(record.customFields).length > 0 && (
-            <ModernSection title="Custom Fields">
-              <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-                {Object.entries(record.customFields).map(([key, value]) => (
-                  <div key={key} className="space-y-1.5">
-                    <label className={fieldLabelCls}>{key}</label>
-                    <div className={readonlyCls}>
-                      {String(value ?? "") || <span className="text-stone-400">—</span>}
-                    </div>
+          {activeTab === "overview" && (
+            <>
+              <CrmRecordDetail coreFields={cf} users={users} />
+              {Object.keys(record.customFields).length > 0 && (
+                <ModernSection title="Custom Fields">
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {Object.entries(record.customFields).map(([key, value]) => (
+                      <div key={key} className="space-y-1.5">
+                        <label className={fieldLabelCls}>{key}</label>
+                        <div className={readonlyCls}>
+                          {String(value ?? "") || <span className="text-stone-400">—</span>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </ModernSection>
+                </ModernSection>
+              )}
+            </>
           )}
 
-          <CrmSubTabsPanel tabs={CRM_LEAD_PROSPECT_SUB_TABS} recordId={id} workflowKey="lead" />
+          {activeTab === "files" && (
+            <FilesContent ref={null} recordId={id} readOnly={true} />
+          )}
+
+          {activeTab === "audit" && (
+            <AuditContent recordId={id} workflowKey="lead" />
+          )}
 
           <div className="h-6" />
         </div>

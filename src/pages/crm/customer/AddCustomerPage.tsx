@@ -10,12 +10,21 @@ import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/types/tenant';
+
+const TABS = [
+  { key: 'details', label: 'Details' },
+  { key: 'files', label: 'Files' },
+] as const;
+
+type Tab = (typeof TABS)[number]['key'];
 
 export default function AddCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('details');
   const [coreFields, setCoreFields] = useState<Record<string, unknown>>(() => crmCoreDefaults());
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
   const [ownerUserId, setOwnerUserId] = useState('');
@@ -79,6 +88,15 @@ export default function AddCustomerPage() {
           actions={(
             <>
               <button
+                type="button"
+                onClick={() => navigate('/crm/customer')}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
+              >
+                <X className="size-3" />
+                Cancel
+              </button>
+              <button
                 type="submit"
                 disabled={isPending || isUploadingFiles}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
@@ -114,27 +132,51 @@ export default function AddCustomerPage() {
           </div>
         )}
 
+        {/* Tab bar */}
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
+                activeTab === tab.key
+                  ? 'border-stone-800 text-stone-900'
+                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar">
           <div className="px-4 py-3 pb-24 space-y-3">
-            <CrmRecordForm
-              core={{ fields: coreFields, onChange: set }}
-              custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
-              owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
-              statusNode={(
-                <StatusDropdown
-                  workflowKey="customer"
-                  mode="all"
-                  value={crmStatusId}
-                  onChange={handleStatusChange}
-                />
-              )}
-            />
-            <EditableFilesPanel ref={panelRef} />
+            {activeTab === 'details' && (
+              <CrmRecordForm
+                core={{ fields: coreFields, onChange: set }}
+                custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
+                owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
+                statusNode={(
+                  <StatusDropdown
+                    workflowKey="customer"
+                    mode="all"
+                    value={crmStatusId}
+                    onChange={handleStatusChange}
+                  />
+                )}
+              />
+            )}
+            {/* Always mounted so staged files survive tab switches and are available in onSuccess */}
+            <div className={activeTab === 'files' ? '' : 'hidden'}>
+              <EditableFilesPanel ref={panelRef} />
+            </div>
           </div>
         </div>
 
-        {/* Fixed bottom action bar — offset by sidebar width on desktop */}
+        {/* Fixed bottom action bar */}
         <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
           <button
             type="button"

@@ -182,7 +182,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-sm border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full text-left text-xs">
             <thead className="bg-stone-50/80 border-b border-stone-200">
