@@ -114,11 +114,11 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
     );
   }
 
-  function renderSection(section: (typeof CRM_CORE_SECTIONS)[number]) {
+  function renderSection(section: (typeof CRM_CORE_SECTIONS)[number], idx: number) {
     const visibleFields = section.fields.filter(isFieldVisible);
     if (visibleFields.length === 0) return null;
     return (
-      <ModernSection key={section.title} title={section.title}>
+      <ModernSection key={section.title} title={section.title} defaultCollapsed={idx > 0}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleFields.map(renderFieldBox)}
         </div>
@@ -131,7 +131,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
       {CRM_CORE_SECTIONS.map(renderSection)}
 
       {showCustomerBalances && (
-        <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title}>
+        <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title} defaultCollapsed>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {CRM_CUSTOMER_BALANCE_SECTION.fields.map(renderFieldBox)}
           </div>

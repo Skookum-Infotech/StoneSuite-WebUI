@@ -65,7 +65,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
           key={section.title}
           title={section.title}
           index={idx + 1}
-          defaultCollapsed={section.title === 'Billing Address' || section.title === 'Shipping Address'}
+          defaultCollapsed={idx > 0}
         >
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {idx === 0 && statusNode && (
@@ -107,7 +107,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
       ))}
 
       {showCustomerBalances && (
-        <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title} index={CRM_CORE_SECTIONS.length + 1}>
+        <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title} index={CRM_CORE_SECTIONS.length + 1} defaultCollapsed>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {CRM_CUSTOMER_BALANCE_SECTION.fields.map((field) => (
               <CrmFieldInput
@@ -123,7 +123,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
       )}
 
       {custom.defs.length > 0 && (
-        <ModernSection title="Custom Fields" index={CRM_CORE_SECTIONS.length + (showCustomerBalances ? 2 : 1)}>
+        <ModernSection title="Custom Fields" index={CRM_CORE_SECTIONS.length + (showCustomerBalances ? 2 : 1)} defaultCollapsed>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {custom.defs.map((f) => (
               <DynamicFieldInput

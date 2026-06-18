@@ -153,7 +153,7 @@ export default function CustomerDetailPage() {
             <>
               <CrmRecordDetail coreFields={cf} showCustomerBalances users={users} />
               {Object.keys(record.customFields).length > 0 && (
-                <ModernSection title="Custom Fields">
+                <ModernSection title="Custom Fields" defaultCollapsed>
                   <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
                     {Object.entries(record.customFields).map(([key, value]) => (
                       <div key={key} className="space-y-1.5">
