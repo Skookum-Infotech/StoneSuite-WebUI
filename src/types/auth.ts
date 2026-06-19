@@ -12,7 +12,17 @@ export interface AuthResponse {
   success: boolean;
   message?: string;
   token?: string;
+  // Unix ms timestamp when the access token expires.
+  // Returned by login and refresh endpoints so the frontend can drive the session timer.
+  expiresAt?: number;
   user?: UserProfile;
+}
+
+export interface RefreshResponse {
+  success: boolean;
+  token?: string;
+  expiresAt?: number;
+  message?: string;
 }
 
 export interface LoginCredentials {

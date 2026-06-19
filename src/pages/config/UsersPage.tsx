@@ -124,7 +124,13 @@ function fmtDate(iso: string): string {
 
 const inviteSchema = z.object({
   email: z.string().email("Enter a valid email address"),
-  fullName: z.string().optional(),
+  fullName: z
+    .string()
+    .optional()
+    .refine(
+      (v) => !v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+      { message: "This looks like an email address — please enter a display name instead" },
+    ),
   initialRoleId: z.string().optional(),
 });
 type InviteFields = z.infer<typeof inviteSchema>;

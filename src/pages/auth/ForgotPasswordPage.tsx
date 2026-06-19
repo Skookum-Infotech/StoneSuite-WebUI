@@ -122,7 +122,7 @@ function HeroPanel() {
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false)
-  const [sentTo, setSentTo] = useState('')
+  const [serverMessage, setServerMessage] = useState('')
 
   const {
     register,
@@ -133,8 +133,8 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: Fields) => {
     try {
-      await authService.forgotPassword(data.email)
-      setSentTo(data.email)
+      const res = await authService.forgotPassword(data.email)
+      setServerMessage(res.message ?? 'If that email is registered, a reset link has been sent.')
       setSent(true)
     } catch (err: unknown) {
       setError('root', { message: apiErrorMessage(err, 'Something went wrong. Please try again.') })
@@ -166,14 +166,12 @@ export default function ForgotPasswordPage() {
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-100 bg-amber-50">
                   <MailCheck className="size-8 text-amber-500" />
                 </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-stone-950">Check your inbox</h2>
+                <h2 className="text-2xl font-semibold tracking-tight text-stone-950">Request submitted</h2>
                 <p className="mt-2 text-sm text-stone-500">
-                  We sent a password reset link to{' '}
-                  <span className="font-semibold text-stone-700">{sentTo}</span>
+                  {serverMessage}
                 </p>
                 <p className="mt-3 text-xs text-stone-400 leading-relaxed">
-                  The link expires in 24 hours. Didn&apos;t receive it?{' '}
-                  Check your spam folder or{' '}
+                  If a link was sent, it expires in 24 hours. Check your spam folder or{' '}
                   <button
                     type="button"
                     onClick={() => setSent(false)}

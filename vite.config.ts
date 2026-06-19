@@ -11,4 +11,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: '0.0.0.0', // bind to all interfaces so Docker can expose the port
+    port: 5173,
+  },
 })

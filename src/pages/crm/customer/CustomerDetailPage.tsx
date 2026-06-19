@@ -151,7 +151,7 @@ export default function CustomerDetailPage() {
           {activeTab === "transactions" && <TransactionsContent />}
 
           {activeTab === "files" && (
-            <FilesContent ref={null} recordId={id} readOnly={true} />
+            <FilesContent ref={null} recordId={id} readOnly={false} />
           )}
 
           {activeTab === "audit" && (

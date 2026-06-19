@@ -46,7 +46,7 @@ export default function LoginPage() {
     try {
       const response = await authService.login({ email: data.email, password: data.password, rememberMe: false })
       if (response.success && response.user && response.token) {
-        setAuth(response.user, response.token)
+        setAuth(response.user, response.token, response.expiresAt ?? Date.now() + 60 * 60 * 1000)
         navigate('/dashboard')
       } else {
         setError('root', { message: response.message ?? 'Login failed' })

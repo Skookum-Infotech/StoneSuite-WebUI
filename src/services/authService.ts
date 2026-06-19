@@ -1,5 +1,5 @@
 import { apiClient } from '@/api/client';
-import type { LoginCredentials, RegisterData, AuthResponse, UserProfile } from '@/types/auth';
+import type { LoginCredentials, RegisterData, AuthResponse, RefreshResponse, UserProfile } from '@/types/auth';
 
 export const authService = {
   // Authenticate against the multi-tenant control plane. The response carries
@@ -16,6 +16,13 @@ export const authService = {
 
   getCurrentUser: async (): Promise<{ success: boolean; user: UserProfile }> => {
     const response = await apiClient.get('/auth/me');
+    return response.data;
+  },
+
+  // Exchange the refresh_token httpOnly cookie for a new access token.
+  // Called by useSessionTimer ("Stay") and by the Axios 401 interceptor.
+  refreshSession: async (): Promise<RefreshResponse> => {
+    const response = await apiClient.post<RefreshResponse>('/auth/refresh');
     return response.data;
   },
 

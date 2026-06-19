@@ -3,6 +3,8 @@ import { useState, useEffect, startTransition } from 'react';
 import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import { useSessionTimer } from '@/hooks/useSessionTimer';
+import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { apiClient } from '@/api/client';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -26,6 +28,8 @@ export default function MainLayout(): React.JSX.Element {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+
+  const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
 
   useEffect(() => {
     if (!isProfileOpen) return;
@@ -57,6 +61,15 @@ export default function MainLayout(): React.JSX.Element {
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
+
+      {showWarning && (
+        <SessionExpiryModal
+          secondsRemaining={secondsRemaining}
+          onStay={onStay}
+          onLogout={onLogout}
+          isExtending={isExtending}
+        />
+      )}
 
       {/* ── Unified header ── */}
       <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07]" style={{ background: 'linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%)' }}>

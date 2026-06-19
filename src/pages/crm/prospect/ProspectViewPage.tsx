@@ -140,7 +140,7 @@ export default function ProspectViewPage() {
           )}
 
           {activeTab === "files" && (
-            <FilesContent ref={null} recordId={id} readOnly={true} />
+            <FilesContent ref={null} recordId={id} readOnly={false} />
           )}
 
           {activeTab === "audit" && (
