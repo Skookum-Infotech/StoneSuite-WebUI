@@ -3,19 +3,17 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, AlertCircle, Loader2, Save, X } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { workflowService, userService } from '@/services/tenantServices';
+import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
-import { DeleteRecordDialog } from '@/components/crm/DeleteRecordDialog';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
-import { CrmDetailSidebar } from '@/components/crm/CrmDetailSidebar';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
-import type { FieldDefinition, StatusInfo } from '@/types/tenant';
+import type { FieldDefinition } from '@/types/tenant';
 
 const TABS = [
   { key: 'details', label: 'Details' },
@@ -55,15 +53,6 @@ export default function EditCustomerPage() {
     enabled: Boolean(customerWorkflow?.id),
   });
   const customFieldDefs: FieldDefinition[] = customerDef?.fields ?? [];
-
-  const { data: statusData } = useQuery({
-    queryKey: ['crm-statuses-workflow', 'customer'],
-    queryFn: () => crmService.getWorkflowStatuses('customer'),
-  });
-  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
-
-  const statusMap = new Map<string, StatusInfo>((statusData?.statuses ?? []).map((s) => [s.stateId, s]));
-  const statusInfo = statusMap.get(currentStateId);
 
   const routeMap: Record<string, string> = {
     lead: '/crm/lead',
@@ -215,28 +204,6 @@ export default function EditCustomerPage() {
             </div>
           </div>
 
-          {/* Right sidebar — sticks below the fixed app header */}
-          <div className="w-72 shrink-0 sticky top-[4.5rem] h-fit self-start">
-            <CrmDetailSidebar
-              statusInfo={statusInfo}
-              ownerUserId={record.ownerUserId}
-              users={users}
-              createdAt={record.createdAt}
-              updatedAt={record.updatedAt}
-              onUploadFile={() => setActiveTab('files')}
-              deleteSlot={(
-                <DeleteRecordDialog
-                  recordId={id}
-                  workflowKey="customer"
-                  label={`Customer — ${company}`}
-                  onDeleted={() => {
-                    queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
-                    navigate('/crm/customer');
-                  }}
-                />
-              )}
-            />
-          </div>
         </div>
 
         {/* Fixed bottom action bar */}
