@@ -192,36 +192,141 @@ function ApprovalCard({ tenant }: { tenant: Tenant }) {
 
 // ----- Customer row + invites panel -----------------------------------------
 
+const MIGRATION_COLOR: Record<string, string> = {
+  migrated: '#22c55e',
+  pending: '#f59e0b',
+  failed: '#ef4444',
+};
+
+function tenantInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] ?? '')
+    .join('')
+    .toUpperCase();
+}
+
 function TenantRow({ tenant }: { tenant: Tenant }) {
   const [open, setOpen] = useState(false);
+  const meta = (tenant.metadata ?? {}) as Record<string, unknown>;
+  const str = (k: string) => (typeof meta[k] === 'string' ? (meta[k] as string) : '');
+
+  const contactEmail = str('super_admin_email') || str('contact_email') || str('email');
+  const phone = str('phone') || str('contact_phone');
+  const industry = str('industry') || str('business_type');
+  const website = str('website') || str('company_website');
+
+  // Non-empty metadata entries not already shown in the header detail row
+  const primaryKeys = new Set(['company_name', 'super_admin_email', 'contact_email', 'email', 'phone', 'contact_phone', 'industry', 'business_type', 'website', 'company_website']);
+  const extraMeta = Object.entries(meta).filter(
+    ([k, v]) => !primaryKeys.has(k) && typeof v === 'string' && (v as string) !== '',
+  );
+
   return (
-    <div className="rounded-xl border border-stone-200">
+    <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+      {/* ── Collapsed header row ── */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={`Toggle invites for ${tenant.displayName}`}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-stone-50/60"
+        aria-expanded={open}
+        aria-label={`Toggle details for ${tenant.displayName}`}
+        className="flex w-full items-center gap-4 px-4 py-3.5 text-left hover:bg-stone-50 transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <ChevronRight className={`size-4 text-stone-400 transition-transform ${open ? 'rotate-90' : ''}`} />
-          <div>
-            <p className="text-sm font-bold text-stone-800">{tenant.displayName}</p>
-            <p className="text-label text-stone-500">{tenant.slug} · {tenant.dbName || 'db pending'}</p>
+        {/* Avatar */}
+        <div
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white"
+          style={{ backgroundColor: STATUS_COLOR[tenant.status] ?? '#a8a29e' }}
+        >
+          {tenantInitials(tenant.displayName)}
+        </div>
+
+        {/* Name + identifiers */}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-bold text-stone-900">{tenant.displayName}</p>
+            <Badge color={STATUS_COLOR[tenant.status] ?? undefined}>{tenant.status}</Badge>
+            {tenant.migrationStatus && (
+              <Badge color={MIGRATION_COLOR[tenant.migrationStatus] ?? '#a8a29e'}>
+                db {tenant.migrationStatus}
+              </Badge>
+            )}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            <span className="text-label text-stone-400 font-mono">{tenant.slug}</span>
+            {contactEmail && (
+              <span className="text-label text-stone-500">{contactEmail}</span>
+            )}
+            {phone && (
+              <span className="text-label text-stone-500">{phone}</span>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge color={STATUS_COLOR[tenant.status] ?? undefined}>{tenant.status}</Badge>
-          <span className="hidden text-label text-stone-400 sm:inline">
-            {tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString() : ''}
+
+        {/* Right meta */}
+        <div className="hidden sm:flex flex-col items-end gap-0.5 shrink-0">
+          <span className="text-label text-stone-400">
+            {tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
           </span>
+          {tenant.dbName && (
+            <span className="font-mono text-2xs text-stone-300">{tenant.dbName}</span>
+          )}
         </div>
+
+        <ChevronRight
+          className={`size-4 shrink-0 text-stone-300 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+        />
       </button>
+
+      {/* ── Expanded detail panel ── */}
       {open && (
-        <>
+        <div className="border-t border-stone-100">
+          {/* Detail grid */}
+          <div className="grid grid-cols-2 gap-px bg-stone-100 sm:grid-cols-4">
+            <DetailCell label="Database" value={tenant.dbName || '—'} mono />
+            <DetailCell label="DB Migration" value={tenant.migrationStatus || '—'} />
+            <DetailCell
+              label="Onboarded"
+              value={tenant.createdAt ? new Date(tenant.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+            />
+            <DetailCell
+              label="Auto-delete after"
+              value={tenant.hardDeleteAfter ? new Date(tenant.hardDeleteAfter).toLocaleDateString() : 'Not scheduled'}
+              dimmed={!tenant.hardDeleteAfter}
+            />
+          </div>
+
+          {/* Extra onboarding metadata */}
+          {(industry || website || extraMeta.length > 0) && (
+            <div className="grid grid-cols-2 gap-px bg-stone-100 sm:grid-cols-4 border-t border-stone-100">
+              {industry && <DetailCell label="Industry" value={industry} />}
+              {website && <DetailCell label="Website" value={website} />}
+              {extraMeta.map(([k, v]) => (
+                <DetailCell key={k} label={k.replace(/_/g, ' ')} value={String(v)} />
+              ))}
+            </div>
+          )}
+
           <JobsPanel tenant={tenant} />
           <InvitesPanel tenant={tenant} />
-        </>
+        </div>
       )}
+    </div>
+  );
+}
+
+function DetailCell({ label, value, mono = false, dimmed = false }: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  dimmed?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5 bg-white px-4 py-3">
+      <span className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</span>
+      <span className={`text-xs truncate ${mono ? 'font-mono' : 'font-medium'} ${dimmed ? 'text-stone-300' : 'text-stone-700'}`}>
+        {value}
+      </span>
     </div>
   );
 }
