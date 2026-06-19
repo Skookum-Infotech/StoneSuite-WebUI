@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Building2, AlertCircle, Loader2, Save, X } from 'lucide-react';
+import { Building2, AlertCircle, Loader2, Save, X, ChevronRight } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -9,6 +9,7 @@ import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { crmCoreDefaults } from '@/lib/crmFields';
+import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/types/tenant';
@@ -31,8 +32,12 @@ export default function AddCustomerPage() {
   const [crmStatusId, setCrmStatusId] = useState('');
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<CrmFieldError[]>([]);
 
-  const set = (key: string, value: unknown) => setCoreFields((d) => ({ ...d, [key]: value }));
+  const set = (key: string, value: unknown) => {
+    if (validationErrors.length > 0) setValidationErrors([]);
+    setCoreFields((d) => ({ ...d, [key]: value }));
+  };
   const handleStatusChange = useCallback((stateId: string) => setCrmStatusId(stateId), []);
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
@@ -74,7 +79,13 @@ export default function AddCustomerPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <form
-        onSubmit={(e) => { e.preventDefault(); createCustomer(); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const errors = validateCrmRecord(coreFields, customFieldDefs, customFieldValues);
+          if (errors.length > 0) { setValidationErrors(errors); setActiveTab('details'); return; }
+          setValidationErrors([]);
+          createCustomer();
+        }}
         className="flex flex-col flex-1 min-h-0"
       >
         <CrmPageHeader
@@ -131,6 +142,23 @@ export default function AddCustomerPage() {
             </p>
           </div>
         )}
+        {validationErrors.length > 0 && (
+          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertCircle className="size-3 text-red-600" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-red-700 mb-1.5">Please fill in the required fields before saving:</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {validationErrors.map((e) => (
+                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-red-600">
+                    <ChevronRight className="size-3 shrink-0" />{e.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab bar */}
         <div className="flex shrink-0 border-b border-stone-200 bg-white px-5">
@@ -157,8 +185,9 @@ export default function AddCustomerPage() {
             {activeTab === 'details' && (
               <CrmRecordForm
                 core={{ fields: coreFields, onChange: set }}
-                custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => setCustomFieldValues((prev) => ({ ...prev, [key]: value })) }}
+                custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => { if (validationErrors.length > 0) setValidationErrors([]); setCustomFieldValues((prev) => ({ ...prev, [key]: value })); } }}
                 owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
+                invalidKeys={validationErrors.length > 0 ? new Set(validationErrors.map((e) => e.key)) : undefined}
                 statusNode={(
                   <StatusDropdown
                     workflowKey="customer"

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
-import { fieldCls, textareaCls, readonlyCls, checkboxLabelCls } from './formUtils';
+import { fieldCls, fieldErrorCls, textareaCls, textareaErrorCls, readonlyCls, checkboxLabelCls } from './formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
 
@@ -29,10 +29,11 @@ type Props = {
   statusNode?: React.ReactNode;
   owner?: OwnerProps;
   showCustomerBalances?: boolean;
+  invalidKeys?: Set<string>;
 };
 
 /** Shared editable form for the unified CRM core fields, used by Lead, Prospect, and Customer Add/Edit pages. */
-export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBalances }: Props) {
+export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBalances, invalidKeys }: Props) {
   const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups });
 
   const fieldStr = (key: string) => String(core.fields[key] ?? '');
@@ -99,6 +100,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
                   value={core.fields[field.key]}
                   onChange={core.onChange}
                   options={lookupOptions(field)}
+                  invalid={invalidKeys?.has(field.key)}
                 />
               );
             })}
@@ -131,6 +133,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
                 field={f}
                 value={custom.values[f.key]}
                 onChange={custom.onChange}
+                invalid={invalidKeys?.has(f.key)}
               />
             ))}
           </div>
@@ -145,14 +148,18 @@ function CrmFieldInput({
   value,
   onChange,
   options,
+  invalid,
 }: {
   field: CrmCoreField;
   value: unknown;
   onChange: (key: string, value: unknown) => void;
   options: LookupItem[];
+  invalid?: boolean;
 }) {
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
   const checked = value === true || value === 'true';
+  const inputCls = invalid ? fieldErrorCls : fieldCls;
+  const areaCls = invalid ? textareaErrorCls : textareaCls;
 
   if (field.type === 'checkbox') {
     return (
@@ -195,7 +202,7 @@ function CrmFieldInput({
             required={field.required}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}
-            className={textareaCls}
+            className={areaCls}
             aria-label={field.label}
             placeholder={field.placeholder}
           />
@@ -213,7 +220,7 @@ function CrmFieldInput({
             required={field.required}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}
-            className={textareaCls}
+            className={areaCls}
             aria-label={field.label}
             placeholder={field.placeholder}
           />
@@ -229,7 +236,7 @@ function CrmFieldInput({
           required={field.required}
           value={str}
           onChange={(e) => onChange(field.key, e.target.value)}
-          className={fieldCls}
+          className={inputCls}
           aria-label={field.label}
         >
           <option value="">— Select —</option>
@@ -251,7 +258,7 @@ function CrmFieldInput({
         required={field.required}
         value={str}
         onChange={(e) => onChange(field.key, e.target.value)}
-        className={fieldCls}
+        className={inputCls}
         aria-label={field.label}
         placeholder={field.placeholder}
       />

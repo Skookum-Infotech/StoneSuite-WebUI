@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, AlertCircle, Loader2, Save, X } from 'lucide-react';
+import { Users, AlertCircle, Loader2, Save, X, ChevronRight } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -10,6 +10,7 @@ import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
+import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ export default function EditProspectPage() {
   const [localCoreFields, setLocalCoreFields] = useState<Record<string, unknown> | null>(null);
   const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
   const [localStateId, setLocalStateId] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<CrmFieldError[]>([]);
 
   const { data: record, isLoading, error: loadError } = useQuery({
     queryKey: ['crm-record', id],
@@ -93,8 +95,10 @@ export default function EditProspectPage() {
     },
   });
 
-  const set = (key: string, value: unknown) =>
+  const set = (key: string, value: unknown) => {
+    if (validationErrors.length > 0) setValidationErrors([]);
     setLocalCoreFields((prev) => ({ ...(prev ?? { ...crmCoreDefaults(), ...record?.coreFields }), [key]: value }));
+  };
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -115,7 +119,13 @@ export default function EditProspectPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <form
-        onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const errors = validateCrmRecord(coreFields, customFieldDefs, customFieldValues);
+          if (errors.length > 0) { setValidationErrors(errors); setActiveTab('details'); return; }
+          setValidationErrors([]);
+          save.mutate();
+        }}
         className="flex flex-col flex-1 min-h-0"
       >
         <CrmPageHeader
@@ -139,7 +149,6 @@ export default function EditProspectPage() {
           )}
         />
 
-        {/* Error banner */}
         {saveError && (
           <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
@@ -149,6 +158,23 @@ export default function EditProspectPage() {
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save.')}
             </p>
+          </div>
+        )}
+        {validationErrors.length > 0 && (
+          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-3">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertCircle className="size-3 text-red-600" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-red-700 mb-1.5">Please fill in the required fields before saving:</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {validationErrors.map((e) => (
+                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-red-600">
+                    <ChevronRight className="size-3 shrink-0" />{e.label}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -180,9 +206,12 @@ export default function EditProspectPage() {
                 custom={{
                   defs: customFieldDefs,
                   values: customFieldValues,
-                  onChange: (key, value) =>
-                    setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value })),
+                  onChange: (key, value) => {
+                    if (validationErrors.length > 0) setValidationErrors([]);
+                    setLocalCustomFields((prev) => ({ ...(prev ?? record?.customFields ?? {}), [key]: value }));
+                  },
                 }}
+                invalidKeys={validationErrors.length > 0 ? new Set(validationErrors.map((e) => e.key)) : undefined}
                 statusNode={(
                   <StatusDropdown
                     workflowKey="prospect"

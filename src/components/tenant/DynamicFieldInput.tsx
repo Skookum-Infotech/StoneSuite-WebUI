@@ -1,4 +1,4 @@
-import { fieldCls, fieldLabelCls, checkboxLabelCls } from '@/components/crm/formUtils';
+import { fieldCls, fieldErrorCls, fieldLabelCls, checkboxLabelCls } from '@/components/crm/formUtils';
 import type { FieldDefinition } from '@/types/tenant';
 
 /**
@@ -9,10 +9,12 @@ export function DynamicFieldInput({
   field,
   value,
   onChange,
+  invalid,
 }: {
   field: FieldDefinition;
   value: unknown;
   onChange: (key: string, value: unknown) => void;
+  invalid?: boolean;
 }) {
   const id = `field-${field.key}`;
   const labelText = field.label || field.key;
@@ -33,7 +35,7 @@ export function DynamicFieldInput({
           aria-label={labelText}
           value={(value as string) ?? ''}
           onChange={(e) => onChange(field.key, e.target.value)}
-          className={fieldCls}
+          className={invalid ? fieldErrorCls : fieldCls}
         >
           <option value="">Select…</option>
           {field.options.map((opt) => (
@@ -85,7 +87,7 @@ export function DynamicFieldInput({
         id={id}
         type={inputType}
         value={(value as string) ?? ''}
-        className={fieldCls}
+        className={invalid ? fieldErrorCls : fieldCls}
         onChange={(e) => {
           if (field.dataType === 'number') {
             onChange(field.key, e.target.value === '' ? '' : parseFloat(e.target.value));
