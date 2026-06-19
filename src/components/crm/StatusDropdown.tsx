@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
 import { crmService } from '@/services/crmService';
-import { fieldCls, resolveStatusColor } from '@/components/crm/formUtils';
+import { fieldCls } from '@/components/crm/formUtils';
 import type { StatusInfo } from '@/types/tenant';
 
 type Props = {
@@ -76,18 +76,14 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
       >
         {selected ? (
           <>
-            <span
-              className="size-2 flex-shrink-0 rounded-full"
-              style={{ backgroundColor: resolveStatusColor(selected.stateKey, selected.color) }}
-            />
             <span className="flex-1 text-left">{selected.statusLabel}</span>
           </>
         ) : (
-          <span className="flex-1 text-left text-stone-400">
+          <span className="flex-1 text-left text-stone-900">
             {isLoading ? 'Loading…' : 'Select status…'}
           </span>
         )}
-        <ChevronDown className="size-3 flex-shrink-0 text-stone-400" />
+        <ChevronDown className="size-3 shrink-0 text-stone-400" />
       </button>
 
       {open && !isDisabled && (
@@ -104,10 +100,6 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
                 s.stateId === value ? 'bg-brand/10 font-semibold text-stone-900' : 'text-stone-700 hover:bg-stone-50'
               }`}
             >
-              <span
-                className="size-2 flex-shrink-0 rounded-full"
-                style={{ backgroundColor: resolveStatusColor(s.stateKey, s.color) }}
-              />
               {s.statusLabel}
             </button>
           ))}

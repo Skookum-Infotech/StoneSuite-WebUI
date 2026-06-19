@@ -3,20 +3,10 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fieldLabelCls } from './formUtils';
 
-const SECTION_ACCENTS: Record<string, string> = {
-  'Primary Information': 'bg-brand',
-  'Contact Information': 'bg-brand',
-  'Billing Address': 'bg-brand',
-  'Shipping Address': 'bg-brand',
-  'CRM Fields': 'bg-brand',
-  'Sales Fields': 'bg-brand',
-  'Credit Fields': 'bg-brand',
-  'Customer Balances': 'bg-brand',
-  'Custom Fields': 'bg-brand',
-};
 
 export function ModernSection({
   title,
+  index,
   children,
   defaultCollapsed = false,
 }: {
@@ -26,7 +16,6 @@ export function ModernSection({
   defaultCollapsed?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(!defaultCollapsed);
-  const accent = SECTION_ACCENTS[title] ?? 'bg-stone-400';
   const id = `form-section-${title.toLowerCase().replace(/[\s/]+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
   return (
     <div id={id} className="rounded-[10px] border border-stone-200 bg-white overflow-hidden scroll-mt-16">
@@ -39,8 +28,10 @@ export function ModernSection({
           isOpen && 'border-b border-stone-200',
         )}
       >
-        <div className="flex items-center gap-2">
-          <div className={cn('w-1 h-4 rounded-full shrink-0', accent)} />
+        <div className="flex items-center">
+          {index !== undefined && (
+            <span className="text-xs font-bold text-stone-400 w-5 shrink-0 tabular-nums">{index}.</span>
+          )}
           <h3 className="text-xs font-bold text-stone-950">{title}</h3>
         </div>
         <ChevronDown

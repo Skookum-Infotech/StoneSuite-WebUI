@@ -162,7 +162,7 @@ function CrmFieldInput({
           id={field.key}
           checked={checked}
           onChange={(e) => onChange(field.key, e.target.checked)}
-          className="h-5 w-5 rounded border border-stone-300 accent-brand cursor-pointer shrink-0 bg-white [color-scheme:light]"
+          className="h-4 w-4 rounded border border-stone-300 accent-brand cursor-pointer shrink-0 bg-white [color-scheme:light]"
           aria-label={field.label}
         />
         <label
