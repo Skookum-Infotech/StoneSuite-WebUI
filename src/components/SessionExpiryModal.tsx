@@ -15,7 +15,6 @@ function formatTime(totalSeconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// Progress ring dimensions.
 const RADIUS = 26;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const MAX_SECONDS = 5 * 60;
@@ -31,127 +30,100 @@ export function SessionExpiryModal({
   const isUrgent = secondsRemaining <= 60;
 
   return (
-    // Backdrop
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="session-expiry-title"
       aria-describedby="session-expiry-desc"
     >
-      {/* Dimmed backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
 
-      {/* Card */}
-      <div
-        className={cn(
-          'relative z-10 w-full max-w-sm mx-4 rounded-2xl border shadow-2xl overflow-hidden',
-          'bg-[#0f1923] border-white/[0.08]',
-          'animate-in fade-in zoom-in-95 duration-200',
-        )}
-      >
-        {/* Top accent bar — turns red when urgent */}
-        <div
-          className={cn(
-            'h-0.5 w-full transition-colors duration-1000',
-            isUrgent ? 'bg-red-500' : 'bg-amber-500',
-          )}
-        />
+        {/* Header row: icon + titles */}
+        <div className="mb-4 flex items-center gap-3">
+          <div
+            className={cn(
+              'flex size-9 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-700',
+              isUrgent ? 'bg-red-100' : 'bg-amber-100',
+            )}
+          >
+            <Clock
+              className={cn(
+                'size-4 transition-colors duration-700',
+                isUrgent ? 'text-red-600' : 'text-amber-600',
+              )}
+            />
+          </div>
+          <div>
+            <h3 id="session-expiry-title" className="text-sm font-bold text-stone-900">
+              Your session is expiring
+            </h3>
+            <p className="text-xs text-stone-400 mt-0.5">You'll be signed out automatically.</p>
+          </div>
+        </div>
 
-        <div className="px-6 pt-6 pb-7 flex flex-col items-center gap-5 text-center">
+        {/* Body copy */}
+        <p id="session-expiry-desc" className="text-xs text-stone-600 mb-4">
+          You've been idle for a while. Stay logged in to continue, or log out now.
+        </p>
 
-          {/* Countdown ring */}
+        {/* Countdown ring + timer */}
+        <div className="flex items-center justify-center gap-4 rounded-lg border border-stone-100 bg-stone-50 py-4 mb-5">
           <div className="relative flex items-center justify-center">
-            <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
-              {/* Track */}
+            <svg width="56" height="56" viewBox="0 0 72 72" className="-rotate-90">
               <circle
                 cx="36" cy="36" r={RADIUS}
                 fill="none"
-                stroke="rgba(255,255,255,0.07)"
-                strokeWidth="4"
+                stroke={isUrgent ? '#fee2e2' : '#fef3c7'}
+                strokeWidth="5"
               />
-              {/* Progress arc */}
               <circle
                 cx="36" cy="36" r={RADIUS}
                 fill="none"
-                stroke={isUrgent ? '#ef4444' : '#f59e0b'}
-                strokeWidth="4"
+                stroke={isUrgent ? '#dc2626' : '#d97706'}
+                strokeWidth="5"
                 strokeLinecap="round"
                 strokeDasharray={CIRCUMFERENCE}
                 strokeDashoffset={dashOffset}
-                style={{ transition: 'stroke-dashoffset 1s linear, stroke 1s ease' }}
+                className="motion-safe:[transition:stroke-dashoffset_1s_linear,stroke_0.7s_ease]"
               />
             </svg>
-            {/* Icon in center */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Clock
-                className={cn(
-                  'size-6 transition-colors duration-1000',
-                  isUrgent ? 'text-red-400' : 'text-amber-400',
-                )}
-              />
-            </div>
           </div>
-
-          {/* Countdown time */}
           <span
             className={cn(
-              'font-mono text-3xl font-bold tracking-widest tabular-nums transition-colors duration-1000',
-              isUrgent ? 'text-red-400' : 'text-amber-300',
+              'font-mono text-3xl font-bold tabular-nums transition-colors duration-700',
+              isUrgent ? 'text-red-600' : 'text-amber-600',
             )}
           >
             {formatTime(secondsRemaining)}
           </span>
+        </div>
 
-          {/* Heading + description */}
-          <div className="space-y-1.5">
-            <h2 id="session-expiry-title" className="text-base font-bold text-white">
-              Your session is expiring
-            </h2>
-            <p id="session-expiry-desc" className="text-sm text-stone-400 leading-relaxed">
-              You've been idle for a while. Stay logged in to continue,
-              or we'll sign you out automatically.
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div className="w-full flex flex-col gap-2 pt-1">
-            <button
-              onClick={onStay}
-              disabled={isExtending}
-              className={cn(
-                'relative w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5',
-                'text-sm font-bold text-stone-950 transition-all duration-150',
-                'bg-amber-400 hover:bg-amber-300 active:scale-[0.98]',
-                'disabled:opacity-60 disabled:cursor-not-allowed',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1923]',
-              )}
-              aria-label="Stay logged in and extend session"
-            >
-              {isExtending ? (
-                <RefreshCw className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <RefreshCw className="size-4" aria-hidden="true" />
-              )}
-              {isExtending ? 'Extending session…' : 'Stay logged in'}
-            </button>
-
-            <button
-              onClick={onLogout}
-              disabled={isExtending}
-              className={cn(
-                'w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5',
-                'text-sm font-semibold text-stone-400 hover:text-white transition-colors duration-150',
-                'hover:bg-white/[0.06] active:scale-[0.98]',
-                'disabled:opacity-60 disabled:cursor-not-allowed',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1923]',
-              )}
-              aria-label="Log out now"
-            >
-              <LogOut className="size-4" aria-hidden="true" />
-              Log out now
-            </button>
-          </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onLogout}
+            disabled={isExtending}
+            aria-label="Log out now"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <LogOut className="size-3.5" aria-hidden="true" />
+            Log out
+          </button>
+          <button
+            type="button"
+            onClick={onStay}
+            disabled={isExtending}
+            aria-label="Stay logged in and extend session"
+            className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+          >
+            <RefreshCw
+              className={cn('size-3.5', isExtending && 'animate-spin motion-reduce:animate-none')}
+              aria-hidden="true"
+            />
+            {isExtending ? 'Extending…' : 'Stay logged in'}
+          </button>
         </div>
       </div>
     </div>
