@@ -39,6 +39,19 @@ export function useSessionTimer(): SessionTimerState {
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
   }, []);
 
+  const startCountdown = useCallback(() => {
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    countdownIntervalRef.current = setInterval(() => {
+      setSecondsRemaining((s) => {
+        if (s <= 1) {
+          clearInterval(countdownIntervalRef.current!);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }, []);
+
   const performLogout = useCallback(() => {
     clearAllTimers();
     setShowWarning(false);
@@ -53,13 +66,14 @@ export function useSessionTimer(): SessionTimerState {
 
     const msUntilExpiry = sessionExpiresAt - Date.now();
 
-    // Token is already expired — logout immediately.
+    // Token is already expired — logout immediately (deferred to avoid setState-in-effect).
     if (msUntilExpiry <= 0) {
-      performLogout();
+      setTimeout(() => performLogout(), 0);
       return;
     }
 
     clearAllTimers();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowWarning(false);
 
     const msUntilWarning = msUntilExpiry - WARNING_MS;
@@ -87,19 +101,6 @@ export function useSessionTimer(): SessionTimerState {
     return () => clearAllTimers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionExpiresAt]);
-
-  function startCountdown(): void {
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    countdownIntervalRef.current = setInterval(() => {
-      setSecondsRemaining((s) => {
-        if (s <= 1) {
-          clearInterval(countdownIntervalRef.current!);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-  }
 
   // Listen for events from other tabs via BroadcastChannel.
   useEffect(() => {
