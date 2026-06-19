@@ -94,7 +94,7 @@ export const crmService = {
 export type AuditEntry = {
   action: string;
   resource: string;
-  actorUserId: string;
+  actorName: string;
   ipAddress: string;
   appVersion: string;
   oldValue?: Record<string, unknown>;

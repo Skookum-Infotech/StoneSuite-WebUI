@@ -210,8 +210,8 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
         <td className="py-2.5 pr-4"><ActionBadge action={entry.action} /></td>
-        <td className="py-2.5 pr-4 text-stone-600 capitalize">{entry.resource}</td>
-        <td className="py-2.5 pr-4 text-stone-500 font-mono text-2xs">{entry.actorUserId || <span className="text-stone-300 italic">system</span>}</td>
+        <td className="py-2.5 pr-4 text-stone-900 capitalize">{entry.resource}</td>
+        <td className="py-2.5 pr-4 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-300 italic">system</span>}</td>
         <td className="py-2.5 pr-4 text-stone-400 font-mono text-2xs">{entry.ipAddress || '—'}</td>
         <td className="py-2.5 pr-4 text-stone-400 text-2xs">{entry.appVersion || '—'}</td>
         <td className="py-2.5 text-stone-400 text-2xs whitespace-nowrap">
