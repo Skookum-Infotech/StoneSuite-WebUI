@@ -1,2 +1,2 @@
-# StoneSuite
-StoneSuite frontend
+# StoneSuite-WebUI
+StoneSuite Frontend WebUI
