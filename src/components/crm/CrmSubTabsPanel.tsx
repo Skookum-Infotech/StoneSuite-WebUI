@@ -79,13 +79,13 @@ function getFileType(fileName: string, contentType?: string): FileTypeConfig {
   const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
   const mime = contentType ?? '';
   if (ext === 'pdf' || mime === 'application/pdf')
-    return { label: 'PDF', color: 'text-rose-600', bg: 'bg-rose-50', Icon: FileText };
+    return { label: 'PDF', color: 'text-file-pdf-text', bg: 'bg-file-pdf-bg', Icon: FileText };
   if (ext === 'docx' || mime.includes('wordprocessingml'))
-    return { label: 'DOCX', color: 'text-blue-600', bg: 'bg-blue-50', Icon: FileText };
+    return { label: 'DOCX', color: 'text-file-doc-text', bg: 'bg-file-doc-bg', Icon: FileText };
   if (ext === 'xlsx' || mime.includes('spreadsheetml'))
-    return { label: 'XLSX', color: 'text-emerald-600', bg: 'bg-emerald-50', Icon: FileSpreadsheet };
+    return { label: 'XLSX', color: 'text-file-sheet-text', bg: 'bg-file-sheet-bg', Icon: FileSpreadsheet };
   if (['png', 'jpg', 'jpeg'].includes(ext) || mime.startsWith('image/'))
-    return { label: ext.toUpperCase(), color: 'text-amber-600', bg: 'bg-amber-50', Icon: Image };
+    return { label: ext.toUpperCase(), color: 'text-file-image-text', bg: 'bg-file-image-bg', Icon: Image };
   return { label: ext.toUpperCase() || 'FILE', color: 'text-stone-500', bg: 'bg-stone-100', Icon: File };
 }
 
@@ -141,7 +141,7 @@ export const EditableFilesPanel = forwardRef<EditableFilesPanelHandle, EditableF
     return (
       <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
         <div className="flex items-center gap-2.5 px-5 py-3 border-b border-stone-100">
-          <div className="w-1 h-4 rounded-full shrink-0 bg-teal-400" />
+          <div className="w-1 h-4 rounded-full shrink-0 bg-brand" />
           <h3 className="text-xs font-semibold text-stone-700">Files</h3>
         </div>
         <div className="px-5 py-4">
@@ -175,7 +175,7 @@ export function AuditContent({ recordId, workflowKey }: { recordId?: string; wor
   if (isLoading)
     return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error)
-    return <p className="py-6 text-center text-xs text-red-400 italic">Failed to load audit trail.</p>;
+    return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
   if (entries.length === 0)
     return <p className="py-6 text-center text-xs text-stone-400 italic">No audit events recorded yet.</p>;
 
@@ -235,9 +235,9 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
 
 function ActionBadge({ action }: { action: string }) {
   const color =
-    action === 'create' ? 'bg-emerald-50 text-emerald-700' :
-    action === 'delete' ? 'bg-red-50 text-red-600' :
-    action === 'update' ? 'bg-blue-50 text-blue-700' :
+    action === 'create' ? 'bg-accent-lime text-accent-foreground' :
+    action === 'delete' ? 'bg-destructive/10 text-destructive' :
+    action === 'update' ? 'bg-workflow-prospect-bg text-workflow-prospect-text' :
     'bg-stone-100 text-stone-600';
   return (
     <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-2xs font-semibold capitalize', color)}>
@@ -321,6 +321,11 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
         return;
       }
 
+      // Track which indices succeeded locally — do NOT read back from uploadQueueRef
+      // because React 18 batching may not have flushed the setUploadQueue updater
+      // (where the ref is written) by the time we check it below.
+      const succeeded = new Set<number>();
+
       await Promise.all(
         presigned.map(async (p, i) => {
           updateItem(items[i].id, { status: 'uploading' });
@@ -328,6 +333,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             await attachmentService.uploadToR2(p.uploadUrl, items[i].file, (pct) => {
               updateItem(items[i].id, { progress: pct });
             });
+            succeeded.add(i);
             updateItem(items[i].id, { status: 'confirming', progress: 100 });
           } catch (err) {
             updateItem(items[i].id, { status: 'error', error: apiErrorMessage(err, 'Upload failed') });
@@ -335,9 +341,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
         }),
       );
 
-      const successIdx = presigned.map((_, i) => i).filter(
-        (i) => uploadQueueRef.current.find((it) => it.id === items[i].id)?.status === 'confirming',
-      );
+      const successIdx = [...succeeded];
       if (successIdx.length === 0) return;
 
       try {
@@ -477,9 +481,9 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             </p>
             <p className="text-2xs text-stone-400">PDF, DOCX, XLSX, PNG, JPG · Max 25 MB each</p>
             {!recordId && (
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-100 px-3 py-1">
-                <CloudUpload className="h-3 w-3 text-amber-500" />
-                <span className="text-2xs text-amber-700 font-medium">Files will upload automatically when you save</span>
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-3 py-1">
+                <CloudUpload className="h-3 w-3 text-warning" />
+                <span className="text-2xs text-stone-600 font-medium">Files will upload automatically when you save</span>
               </div>
             )}
           </div>
@@ -487,15 +491,15 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
 
         {/* Validation errors */}
         {validationErrors.length > 0 && (
-          <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 space-y-1">
+          <div className="rounded-lg border border-destructive/15 bg-destructive/5 px-4 py-3 space-y-1">
             {validationErrors.map((e, i) => (
               <div key={i} className="flex items-start gap-2">
-                <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-red-600">{e}</p>
+                <AlertCircle className="h-3.5 w-3.5 text-destructive/70 shrink-0 mt-0.5" />
+                <p className="text-xs text-destructive">{e}</p>
               </div>
             ))}
             <button type="button" onClick={() => setValidationErrors([])}
-              className="text-2xs text-red-400 hover:text-red-600 mt-1">Dismiss</button>
+              className="text-2xs text-destructive/60 hover:text-destructive mt-1">Dismiss</button>
           </div>
         )}
 
@@ -505,8 +509,8 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             <div className="px-4 py-2 flex items-center gap-1.5">
               {stagedCount > 0 && !isUploading ? (
                 <>
-                  <CloudUpload className="h-3 w-3 text-amber-400" />
-                  <span className="text-2xs font-semibold uppercase tracking-wide text-amber-500">
+                  <CloudUpload className="h-3 w-3 text-warning" />
+                  <span className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
                     {stagedCount} file{stagedCount > 1 ? 's' : ''} queued · uploads on save
                   </span>
                 </>
@@ -531,13 +535,13 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
 
         {/* Action error (download / delete failures) */}
         {actionError && (
-          <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 flex items-start gap-2">
-            <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+          <div className="rounded-lg border border-destructive/15 bg-destructive/5 px-4 py-3 flex items-start gap-2">
+            <AlertCircle className="h-3.5 w-3.5 text-destructive/70 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-xs text-red-600">{actionError}</p>
+              <p className="text-xs text-destructive">{actionError}</p>
             </div>
             <button type="button" onClick={() => setActionError(null)}
-              className="text-2xs text-red-400 hover:text-red-600 shrink-0">Dismiss</button>
+              className="text-2xs text-destructive/60 hover:text-destructive shrink-0">Dismiss</button>
           </div>
         )}
 
@@ -592,23 +596,23 @@ function UploadProgressRow({ item, onDismiss }: { item: UploadItem; onDismiss: (
           <p className="text-xs font-medium text-stone-700 truncate pr-2">{item.file.name}</p>
           <span className={cn(
             'text-2xs shrink-0',
-            item.status === 'error' ? 'text-red-500' : 'text-stone-400',
+            item.status === 'error' ? 'text-destructive' : 'text-stone-400',
           )}>
             {statusLabel}
           </span>
         </div>
         {item.status === 'error' ? (
-          <p className="text-2xs text-red-500 truncate">{item.error ?? 'Upload failed'}</p>
+          <p className="text-2xs text-destructive truncate">{item.error ?? 'Upload failed'}</p>
         ) : item.status === 'staged' ? (
-          <div className="h-1 rounded-full bg-amber-100">
-            <div className="h-full w-1/3 rounded-full bg-amber-300 animate-pulse" />
+          <div className="h-1 rounded-full bg-warning/20">
+            <div className="h-full w-1/3 rounded-full bg-warning/60 animate-pulse" />
           </div>
         ) : (
           <div className="h-1 rounded-full bg-stone-200 overflow-hidden">
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-300',
-                item.status === 'confirming' ? 'bg-amber-400 animate-pulse' : 'bg-stone-700',
+                item.status === 'confirming' ? 'bg-warning animate-pulse' : 'bg-stone-700',
               )}
               style={{ width: `${item.status === 'confirming' ? 100 : item.progress}%` }}
             />
@@ -662,12 +666,12 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
             </>
           )}
           {att.status === 'infected' && (
-            <span className="text-2xs text-red-500 font-medium flex items-center gap-0.5">
+            <span className="text-2xs text-destructive font-medium flex items-center gap-0.5">
               <AlertCircle className="h-3 w-3" /> Infected
             </span>
           )}
           {att.status === 'clean' && (
-            <span className="text-2xs text-emerald-500 flex items-center gap-0.5">
+            <span className="text-2xs text-brand-dark flex items-center gap-0.5">
               <CheckCircle2 className="h-3 w-3" />
             </span>
           )}
@@ -697,7 +701,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
                 type="button"
                 onClick={onDelete}
                 disabled={isDeleting}
-                className="px-2 py-1.5 rounded text-2xs text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="px-2 py-1.5 rounded text-2xs text-white bg-destructive hover:bg-destructive/90 transition-colors disabled:opacity-50"
               >
                 {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Delete'}
               </button>
@@ -713,7 +717,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-2xs text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-2xs text-stone-400 hover:text-destructive hover:bg-destructive/5 transition-colors"
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />

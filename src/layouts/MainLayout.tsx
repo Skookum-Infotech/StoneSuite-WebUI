@@ -72,7 +72,7 @@ export default function MainLayout(): React.JSX.Element {
       )}
 
       {/* ── Unified header ── */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07]" style={{ background: 'linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%)' }}>
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07]" style={{ background: 'var(--gradient-header)' }}>
 
         {/* Left: both brand logos in one zone */}
         <div className="flex h-full w-auto shrink-0 items-center border-r border-white/[0.07]">
@@ -166,7 +166,7 @@ export default function MainLayout(): React.JSX.Element {
               className="relative rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
             >
               <Bell className="size-4.5" />
-              <span className="absolute right-2 top-2 flex h-1.5 w-1.5 rounded-full bg-red-500" />
+              <span className="absolute right-2 top-2 flex h-1.5 w-1.5 rounded-full bg-destructive" />
             </button>
 
             <div className="relative">
@@ -216,7 +216,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   <button
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-950/30 transition-colors text-left cursor-pointer"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors text-left cursor-pointer"
                   >
                     <LogOut className="size-4" />
                     <span>Sign Out</span>

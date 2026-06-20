@@ -410,15 +410,13 @@ function JobRow({ job, onRetry, retrying }: { job: AsyncJob; onRetry: () => void
 function InvitesPanel({ tenant }: { tenant: Tenant }) {
   const qc = useQueryClient();
   const [copied, setCopied] = useState<string | null>(null);
-  const [hours, setHours] = useState(24);
-
   const invitesQ = useQuery({
     queryKey: ['invites', tenant.id],
     queryFn: () => platformService.listInvites(tenant.id),
   });
 
   const resend = useMutation({
-    mutationFn: () => platformService.resendInvite(tenant.id, { expiresInHours: hours }),
+    mutationFn: () => platformService.resendInvite(tenant.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invites', tenant.id] });
       qc.invalidateQueries({ queryKey: ['tenants'] });
@@ -448,28 +446,15 @@ function InvitesPanel({ tenant }: { tenant: Tenant }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-bold text-stone-600">Invites</h3>
         {!hideResend && (
-          <div className="flex items-center gap-2">
-            <label className="text-label font-semibold text-stone-500">
-              Expires in (h)
-              <input
-                type="number"
-                min={1}
-                value={hours}
-                onChange={(e) => setHours(Number(e.target.value) || 24)}
-                aria-label="Resend expiry in hours"
-                className="ml-1.5 w-16 rounded border border-stone-300 px-1.5 py-1 text-xs"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => resend.mutate()}
-              disabled={resend.isPending}
-              className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950 disabled:opacity-50"
-            >
-              <RefreshCw className={`size-3 ${resend.isPending ? 'animate-spin' : ''}`} />
-              {resend.isPending ? 'Sending…' : 'Resend invite'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => resend.mutate()}
+            disabled={resend.isPending}
+            className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950 disabled:opacity-50"
+          >
+            <RefreshCw className={`size-3 ${resend.isPending ? 'animate-spin' : ''}`} />
+            {resend.isPending ? 'Sending…' : 'Resend invite'}
+          </button>
         )}
       </div>
 

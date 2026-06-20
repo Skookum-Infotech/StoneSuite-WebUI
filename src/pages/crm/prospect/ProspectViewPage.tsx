@@ -87,8 +87,8 @@ export default function ProspectViewPage() {
         backLabel="Prospects"
         onBack={() => navigate("/crm/prospect")}
         icon={Users}
-        iconBg="bg-blue-100"
-        iconColor="text-blue-600"
+        iconBg="bg-workflow-prospect-bg"
+        iconColor="text-workflow-prospect-text"
         title={company}
         subtitle="Prospect"
         recordNumber={record.recordNumber}

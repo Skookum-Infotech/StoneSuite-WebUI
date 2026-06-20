@@ -60,7 +60,6 @@ export const platformService = {
     companyName: string;
     recipientName?: string;
     contactEmail: string;
-    expiresInHours?: number;
   }) => tenantClient.post<CreateTenantResult>('/platform/invites', payload).then((r) => r.data),
   approveTenant: (tenantId: string) =>
     tenantClient
@@ -76,7 +75,7 @@ export const platformService = {
     tenantClient
       .get<{ success: boolean; invites: TenantInvite[] }>(`/platform/tenants/${tenantId}/invites`)
       .then((r) => r.data.invites ?? []),
-  resendInvite: (tenantId: string, opts: { contactEmail?: string; expiresInHours?: number } = {}) =>
+  resendInvite: (tenantId: string, opts: { contactEmail?: string } = {}) =>
     tenantClient
       .post<{ success: boolean; invite: TenantInvite; emailSent: boolean }>(
         `/platform/tenants/${tenantId}/invites`,

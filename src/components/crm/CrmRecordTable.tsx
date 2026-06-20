@@ -12,27 +12,21 @@ import type { WorkflowRecord, StatusInfo } from '@/types/tenant';
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
-const AVATAR_PALETTE = [
-  { bg: '#fef3c7', fg: '#92400e' },
-  { bg: '#d1fae5', fg: '#065f46' },
-  { bg: '#dbeafe', fg: '#1e40af' },
-  { bg: '#fce7f3', fg: '#9d174d' },
-  { bg: '#ede9fe', fg: '#5b21b6' },
-  { bg: '#ecfccb', fg: '#365314' },
-  { bg: '#ffedd5', fg: '#9a3412' },
-  { bg: '#e0f2fe', fg: '#0c4a6e' },
-  { bg: '#f1f5f9', fg: '#334155' },
-] as const;
+const AVATAR_SLOTS = 9;
+
+function companyAvatarVars(name: string): { bg: string; fg: string } {
+  const hash = [...name].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const slot = (hash % AVATAR_SLOTS) + 1;
+  return {
+    bg: `var(--avatar-${slot}-bg)`,
+    fg: `var(--avatar-${slot}-fg)`,
+  };
+}
 
 function companyInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
-}
-
-function companyAvatar(name: string) {
-  const hash = [...name].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
 }
 
 // ── Public config type — import this in each thin wrapper ─────────────────────
@@ -210,7 +204,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-stone-200" style={{ backgroundColor: 'color-mix(in srgb, #ecfccb 22%, #ffffff)' }}>
+            <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
@@ -246,7 +240,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                     const company    = String(record.coreFields.customer_name ?? '(unnamed)');
                     const email      = String(record.coreFields.customer_contact_email ?? '—');
                     const label      = `${config.label} — ${company}`;
-                    const avatar     = companyAvatar(company);
+                    const avatar     = companyAvatarVars(company);
                     return (
                       <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
                         <td className="px-4 py-3.5">

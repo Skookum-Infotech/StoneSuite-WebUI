@@ -60,7 +60,7 @@ export function ModernFieldShell({
       {label && (
         <label className={fieldLabelCls}>
           {label}
-          {required && <span className="ml-0.5 text-red-400">*</span>}
+          {required && <span className="ml-0.5 text-destructive">*</span>}
         </label>
       )}
       {children}

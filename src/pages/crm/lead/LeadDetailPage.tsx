@@ -88,8 +88,8 @@ export default function LeadDetailPage() {
         backLabel="Leads"
         onBack={() => navigate("/crm/lead")}
         icon={Sparkles}
-        iconBg="bg-purple-100"
-        iconColor="text-purple-600"
+        iconBg="bg-workflow-lead-bg"
+        iconColor="text-workflow-lead-text"
         title={company}
         subtitle="Lead"
         recordNumber={record.recordNumber}

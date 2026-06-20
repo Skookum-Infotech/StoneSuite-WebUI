@@ -130,6 +130,12 @@
   --input: #ffffff;               /* input fill */
   --ring: #c2f589;                /* focus ring — brand lime */
 
+  /* ── App header gradient ────────────────────────────────────────────────
+     Dark teal-to-navy gradient used by the top navigation bar.
+     Change this one var to retheme the header across all breakpoints.
+     ─────────────────────────────────────────────────────────────────── */
+  --gradient-header: linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%);
+
   /* ── Sidebar tokens ─────────────────────────────────────────────────────
      Sidebar background is stone-100 (#f7f7f7), slightly behind the main canvas.
      Active items use the lime-light accent fill + dark lime text.
@@ -174,6 +180,43 @@
 
   /* Destructive */
   --color-destructive-red: #d94f36;
+
+  /* ── Semantic: destructive shades (all modelled off --destructive #d94f36) ── */
+  --color-destructive-ring: #fecaca;     /* focus ring track — red-200 equivalent */
+  --color-warning: #d97706;              /* amber-600 — single warning accent */
+  --color-warning-ring: #fde68a;         /* warning focus ring track — amber-200 */
+
+  /* ── Workflow type icon badge palettes ───────────────────────────────── */
+  --color-workflow-lead-bg: #f3e8ff;     /* purple-100 */
+  --color-workflow-lead-text: #7e22ce;   /* purple-700 */
+  --color-workflow-prospect-bg: #dbeafe; /* blue-100 */
+  --color-workflow-prospect-text: #1d4ed8; /* blue-700 */
+  --color-workflow-customer-bg: #ecfccb; /* accent-lime */
+  --color-workflow-customer-text: #365314; /* accent-lime-text */
+
+  /* ── File type icon badge palettes ──────────────────────────────────── */
+  --color-file-pdf-bg: #fff1f2;          /* rose-50 */
+  --color-file-pdf-text: #be123c;        /* rose-700 */
+  --color-file-doc-bg: #eff6ff;          /* blue-50 */
+  --color-file-doc-text: #1d4ed8;        /* blue-700 */
+  --color-file-sheet-bg: #f0fdf4;        /* green-50 */
+  --color-file-sheet-text: #15803d;      /* green-700 */
+  --color-file-image-bg: #fffbeb;        /* amber-50 */
+  --color-file-image-text: #b45309;      /* amber-700 */
+
+  /* ── Table header tint ───────────────────────────────────────────────── */
+  --color-table-header: #f4fce8;         /* replaces color-mix(in srgb, #ecfccb 22%, white) */
+
+  /* ── Avatar palette slots (9 entries, used via var() in JS) ─────────── */
+  --avatar-1-bg: #fef3c7; --avatar-1-fg: #92400e;
+  --avatar-2-bg: #d1fae5; --avatar-2-fg: #065f46;
+  --avatar-3-bg: #dbeafe; --avatar-3-fg: #1e40af;
+  --avatar-4-bg: #fce7f3; --avatar-4-fg: #9d174d;
+  --avatar-5-bg: #ede9fe; --avatar-5-fg: #5b21b6;
+  --avatar-6-bg: #ecfccb; --avatar-6-fg: #365314;
+  --avatar-7-bg: #ffedd5; --avatar-7-fg: #9a3412;
+  --avatar-8-bg: #e0f2fe; --avatar-8-fg: #0c4a6e;
+  --avatar-9-bg: #f1f5f9; --avatar-9-fg: #475569;
 
   /* ── Typography ─────────────────────────────────────────────────────── */
   --text-2xs: 0.625rem;             /* 10px — field labels, captions */

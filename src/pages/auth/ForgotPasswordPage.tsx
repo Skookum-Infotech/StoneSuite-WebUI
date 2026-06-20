@@ -19,14 +19,14 @@ type Fields = z.infer<typeof schema>
 
 function HeroPanel() {
   return (
-    <aside className="relative hidden h-screen w-1/2 flex-col overflow-hidden bg-slate-950 md:flex">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-stone-900 to-slate-950" />
+    <aside className="relative hidden h-screen w-1/2 flex-col overflow-hidden bg-stone-950 md:flex">
+      <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-950 to-stone-950" />
       <div
         className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/10 blur-[120px]"
         style={{ animationDuration: '4s' }}
       />
       <div
-        className="absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-amber-500/10 blur-[120px]"
+        className="absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/5 blur-[120px]"
         style={{ animationDuration: '5s', animationDelay: '1s' }}
       />
       <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-brand/5 to-transparent blur-3xl" />
@@ -78,11 +78,11 @@ function HeroPanel() {
           </div>
           <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
             Regain access to <br />
-            <span className="bg-gradient-to-r from-brand via-amber-400 to-yellow-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand via-brand-hover to-brand-dark bg-clip-text text-transparent">
               your workspace.
             </span>
           </h1>
-          <p className="mt-4 max-w-lg text-sm lg:text-base leading-relaxed text-slate-300">
+          <p className="mt-4 max-w-lg text-sm lg:text-base leading-relaxed text-white/60">
             We'll send a secure, one-time reset link to your inbox. Your data stays
             protected throughout the entire process.
           </p>
@@ -92,16 +92,16 @@ function HeroPanel() {
                 <ShieldCheck className="size-4 lg:size-5" />
               </div>
               <h3 className="text-xs lg:text-sm font-semibold text-white">Zero-Trust Reset</h3>
-              <p className="mt-1 text-label lg:text-xs leading-relaxed text-slate-400">
+              <p className="mt-1 text-label lg:text-xs leading-relaxed text-white/40">
                 Every link is single-use and expires in 24 hours.
               </p>
             </div>
             <div className="group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-              <div className="mb-2 inline-flex rounded-lg bg-emerald-500/20 p-1.5 lg:p-2 text-emerald-400 transition-transform group-hover:scale-110 group-hover:bg-emerald-500/30">
+              <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 lg:p-2 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
                 <MailCheck className="size-4 lg:size-5" />
               </div>
               <h3 className="text-xs lg:text-sm font-semibold text-white">Instant Delivery</h3>
-              <p className="mt-1 text-label lg:text-xs leading-relaxed text-slate-400">
+              <p className="mt-1 text-label lg:text-xs leading-relaxed text-white/40">
                 Reset email arrives in seconds — check spam if needed.
               </p>
             </div>
@@ -109,7 +109,7 @@ function HeroPanel() {
         </div>
 
         <div className="flex items-center justify-between border-t border-white/10 pt-4 lg:pt-6">
-          <p className="text-2xs lg:text-xs font-medium uppercase tracking-widest text-slate-500">
+          <p className="text-2xs lg:text-xs font-medium uppercase tracking-widest text-white/30">
             © {new Date().getFullYear()} Stone Suite
           </p>
         </div>
@@ -154,7 +154,7 @@ export default function ForgotPasswordPage() {
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E")`,
           }}
         />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-amber-100/60 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-stone-200/80 blur-3xl" />
 
         <div className="relative w-full max-w-sm sm:max-w-md">
@@ -163,8 +163,8 @@ export default function ForgotPasswordPage() {
             {sent ? (
               /* ── Success state ── */
               <div className="text-center">
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-100 bg-amber-50">
-                  <MailCheck className="size-8 text-amber-500" />
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-brand/30 bg-brand/10">
+                  <MailCheck className="size-8 text-brand-dark" />
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight text-stone-950">Request submitted</h2>
                 <p className="mt-2 text-sm text-stone-500">
@@ -239,14 +239,14 @@ export default function ForgotPasswordPage() {
                       />
                     </div>
                     {errors.email && (
-                      <p id="email-error" className="text-xs text-red-500">
+                      <p id="email-error" className="text-xs text-destructive">
                         {errors.email.message}
                       </p>
                     )}
                   </div>
 
                   {errors.root && (
-                    <div className="rounded-md border border-red-100 bg-red-50 p-2 text-sm font-medium text-red-500">
+                    <div className="rounded-md border border-destructive/15 bg-destructive/5 p-2 text-sm font-medium text-destructive">
                       {errors.root.message}
                     </div>
                   )}

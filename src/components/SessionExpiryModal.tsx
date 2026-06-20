@@ -44,13 +44,13 @@ export function SessionExpiryModal({
           <div
             className={cn(
               'flex size-9 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-700',
-              isUrgent ? 'bg-red-100' : 'bg-amber-100',
+              isUrgent ? 'bg-destructive/10' : 'bg-warning/10',
             )}
           >
             <Clock
               className={cn(
                 'size-4 transition-colors duration-700',
-                isUrgent ? 'text-red-600' : 'text-amber-600',
+                isUrgent ? 'text-destructive' : 'text-warning',
               )}
             />
           </div>
@@ -74,13 +74,13 @@ export function SessionExpiryModal({
               <circle
                 cx="36" cy="36" r={RADIUS}
                 fill="none"
-                stroke={isUrgent ? '#fee2e2' : '#fef3c7'}
+                stroke={isUrgent ? 'var(--color-destructive-ring)' : 'var(--color-warning-ring)'}
                 strokeWidth="5"
               />
               <circle
                 cx="36" cy="36" r={RADIUS}
                 fill="none"
-                stroke={isUrgent ? '#dc2626' : '#d97706'}
+                stroke={isUrgent ? 'var(--color-destructive)' : 'var(--color-warning)'}
                 strokeWidth="5"
                 strokeLinecap="round"
                 strokeDasharray={CIRCUMFERENCE}
@@ -92,7 +92,7 @@ export function SessionExpiryModal({
           <span
             className={cn(
               'font-mono text-3xl font-bold tabular-nums transition-colors duration-700',
-              isUrgent ? 'text-red-600' : 'text-amber-600',
+              isUrgent ? 'text-destructive' : 'text-warning',
             )}
           >
             {formatTime(secondsRemaining)}
@@ -116,7 +116,7 @@ export function SessionExpiryModal({
             onClick={onStay}
             disabled={isExtending}
             aria-label="Stay logged in and extend session"
-            className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className="flex items-center gap-1.5 rounded-lg bg-warning px-3 py-1.5 text-xs font-semibold text-white hover:bg-warning/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
           >
             <RefreshCw
               className={cn('size-3.5', isExtending && 'animate-spin motion-reduce:animate-none')}
