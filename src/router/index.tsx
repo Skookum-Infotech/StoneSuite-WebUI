@@ -3,72 +3,92 @@ import React, { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import AuthLayout from "@/layouts/AuthLayout";
 import MainLayout from "@/layouts/MainLayout";
+
+// Wraps lazy() so that a ChunkLoadError (stale CDN chunk after a new deploy)
+// triggers a one-time hard reload instead of showing a crash screen.
+function lazyWithRetry<T extends React.ComponentType<unknown>>(
+  factory: () => Promise<{ default: T }>,
+): React.LazyExoticComponent<T> {
+  return lazy(() =>
+    factory().catch((err: unknown) => {
+      const reloadKey = "chunk_reload_attempted";
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, "1");
+        window.location.reload();
+        // Return a never-resolving promise — reload takes over.
+        return new Promise<never>(() => {});
+      }
+      return Promise.reject(err);
+    }),
+  );
+}
+
 import { PermissionGuard } from "@/components/PermissionGuard";
 
-const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
-const ForgotPasswordPage = lazy(
+const LoginPage = lazyWithRetry(() => import("@/pages/auth/LoginPage"));
+const ForgotPasswordPage = lazyWithRetry(
   () => import("@/pages/auth/ForgotPasswordPage"),
 );
-const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage"));
-const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage"));
-const OnboardingPage = lazy(() => import("@/pages/customer/OnboardingPage"));
-const AddCustomerPage = lazy(() => import("@/pages/customer/AddCustomerPage"));
-const OnboardingApplyPage = lazy(
+const ResetPasswordPage = lazyWithRetry(() => import("@/pages/auth/ResetPasswordPage"));
+const DashboardPage = lazyWithRetry(() => import("@/pages/dashboard/DashboardPage"));
+const OnboardingPage = lazyWithRetry(() => import("@/pages/customer/OnboardingPage"));
+const AddCustomerPage = lazyWithRetry(() => import("@/pages/customer/AddCustomerPage"));
+const OnboardingApplyPage = lazyWithRetry(
   () => import("@/pages/onboarding/OnboardingApplyPage"),
 );
-const SetPasswordPage = lazy(
+const SetPasswordPage = lazyWithRetry(
   () => import("@/pages/onboarding/SetPasswordPage"),
 );
-const AcceptInvitePage = lazy(
+const AcceptInvitePage = lazyWithRetry(
   () => import("@/pages/onboarding/AcceptInvitePage"),
 );
-const ProspectListPage = lazy(
+const ProspectListPage = lazyWithRetry(
   () => import("@/pages/crm/prospect/ProspectListPage"),
 );
-const AddProspectPage = lazy(
+const AddProspectPage = lazyWithRetry(
   () => import("@/pages/crm/prospect/AddProspectPage"),
 );
-const ProspectViewPage = lazy(
+const ProspectViewPage = lazyWithRetry(
   () => import("@/pages/crm/prospect/ProspectViewPage"),
 );
-const EditProspectPage = lazy(
+const EditProspectPage = lazyWithRetry(
   () => import("@/pages/crm/prospect/EditProspectPage"),
 );
-const LeadPage = lazy(() => import("@/pages/crm/lead/LeadPage"));
-const AddLeadPage = lazy(() => import("@/pages/crm/lead/AddLeadPage"));
-const EditLeadPage = lazy(() => import("@/pages/crm/lead/EditLeadPage"));
-const LeadDetailPage = lazy(() => import("@/pages/crm/lead/LeadDetailPage"));
-const CustomerListPage = lazy(
+const LeadPage = lazyWithRetry(() => import("@/pages/crm/lead/LeadPage"));
+const AddLeadPage = lazyWithRetry(() => import("@/pages/crm/lead/AddLeadPage"));
+const EditLeadPage = lazyWithRetry(() => import("@/pages/crm/lead/EditLeadPage"));
+const LeadDetailPage = lazyWithRetry(() => import("@/pages/crm/lead/LeadDetailPage"));
+const CustomerListPage = lazyWithRetry(
   () => import("@/pages/crm/customer/CustomerListPage"),
 );
-const AddCRMCustomerPage = lazy(
+const AddCRMCustomerPage = lazyWithRetry(
   () => import("@/pages/crm/customer/AddCustomerPage"),
 );
-const CustomerDetailPage = lazy(
+const CustomerDetailPage = lazyWithRetry(
   () => import("@/pages/crm/customer/CustomerDetailPage"),
 );
-const EditCustomerPage = lazy(
+const EditCustomerPage = lazyWithRetry(
   () => import("@/pages/crm/customer/EditCustomerPage"),
 );
-const ConfigHomePage = lazy(() => import("@/pages/config/ConfigHomePage"));
-const ConfigWorkflowsPage = lazy(() => import("@/pages/config/WorkflowsPage"));
-const WorkflowBuilderPage = lazy(
+const ConfigHomePage = lazyWithRetry(() => import("@/pages/config/ConfigHomePage"));
+const ConfigWorkflowsPage = lazyWithRetry(() => import("@/pages/config/WorkflowsPage"));
+const WorkflowBuilderPage = lazyWithRetry(
   () => import("@/pages/config/WorkflowBuilderPage"),
 );
-const RolesPage = lazy(() => import("@/pages/config/RolesPage"));
-const CreateRolePage = lazy(() => import("@/pages/config/CreateRolePage"));
-const EditRolePage = lazy(() => import("@/pages/config/EditRolePage"));
-const UsersPage = lazy(() => import("@/pages/config/UsersPage"));
-const RecordNumberingPage = lazy(
+const RolesPage = lazyWithRetry(() => import("@/pages/config/RolesPage"));
+const CreateRolePage = lazyWithRetry(() => import("@/pages/config/CreateRolePage"));
+const EditRolePage = lazyWithRetry(() => import("@/pages/config/EditRolePage"));
+const UsersPage = lazyWithRetry(() => import("@/pages/config/UsersPage"));
+const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/RecordNumberingPage"),
 );
-const WorkflowPlaceholderPage = lazy(
+const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
 );
-const SalesOrderListPage = lazy(
+const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
-const AddSalesOrderPage = lazy(() => import("@/pages/sales/AddSalesOrderPage"));
+const AddSalesOrderPage = lazyWithRetry(() => import("@/pages/sales/AddSalesOrderPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
