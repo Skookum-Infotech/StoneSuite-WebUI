@@ -182,7 +182,7 @@ export default function AddCustomerPage() {
 
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar">
-          <div className="px-4 py-3 pb-24 space-y-2">
+          <div className="px-4 py-3 pb-24 space-y-2 xl:px-6 2xl:px-10">
             {activeTab === 'details' && (
               <CrmRecordForm
                 core={{ fields: coreFields, onChange: set }}

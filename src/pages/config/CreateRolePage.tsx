@@ -228,7 +228,7 @@ export default function CreateRolePage() {
 
       {/* ── Main content ── */}
       <div className="flex-1 overflow-y-auto modal-scrollbar">
-        <div className="mx-auto w-full max-w-[1500px] px-6 py-6">
+        <div className="mx-auto w-full max-w-[1500px] xl:max-w-[1800px] 2xl:max-w-full px-6 py-6">
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(280px,340px)_1fr]">
 
@@ -497,7 +497,7 @@ export default function CreateRolePage() {
 
       {/* ── Sticky action bar ── */}
       <div className="border-t border-stone-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-3 px-6 py-3">
+        <div className="mx-auto flex w-full max-w-[1500px] xl:max-w-[1800px] 2xl:max-w-full items-center justify-between gap-3 px-6 py-3">
           <div className="min-w-0">
             {create.error && <ErrorNote>{apiErrorMessage(create.error)}</ErrorNote>}
             {draftSaved && !create.error && (

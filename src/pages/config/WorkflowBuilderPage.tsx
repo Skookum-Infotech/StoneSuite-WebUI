@@ -269,7 +269,7 @@ function AddFieldForm({ workflowId, disabled, onDone }: { workflowId: string; di
   return (
     <div className="mb-4 rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-950/40">
       {disabled && <div className="mb-3"><ErrorNote>Field cap reached (15). Delete one to add another.</ErrorNote></div>}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="fkey">Key <span className="text-stone-400 font-normal">(snake_case)</span></Label>
           <Input id="fkey" value={key} onChange={(e) => setKey(e.target.value)} placeholder="referral_source" />

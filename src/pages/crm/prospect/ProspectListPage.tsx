@@ -15,7 +15,7 @@ export default function ProspectListPage() {
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
-      <div className="flex flex-1 flex-col min-h-0 p-6">
+      <div className="flex flex-1 flex-col min-h-0 p-6 xl:p-8 2xl:p-10">
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">

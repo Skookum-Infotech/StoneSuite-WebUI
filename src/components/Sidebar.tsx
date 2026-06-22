@@ -157,7 +157,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          'fixed bottom-0 left-0 z-50 flex w-56 flex-col border-r border-sidebar-border bg-background text-sidebar-foreground transition-transform duration-300 ease-in-out',
+          'fixed bottom-0 left-0 z-50 flex w-56 xl:w-64 2xl:w-72 flex-col border-r border-sidebar-border bg-background text-sidebar-foreground transition-transform duration-300 ease-in-out',
           'top-0 lg:top-16',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}

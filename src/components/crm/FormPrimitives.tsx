@@ -69,7 +69,7 @@ export function FormActionBar({
   const busy = isPending || isUploadingFiles;
   const saveLabel = isPending ? 'Saving…' : isUploadingFiles ? 'Uploading…' : submitLabel;
   return (
-    <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-sm">
+    <div className="fixed bottom-0 left-0 right-0 lg:left-56 xl:left-64 2xl:left-72 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-sm">
       <button
         type="button"
         onClick={onCancel}

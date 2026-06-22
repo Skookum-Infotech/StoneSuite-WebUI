@@ -129,7 +129,7 @@ export default function MainLayout(): React.JSX.Element {
 
         {/* GlobalSearch — truly centered on the full header width (desktop lg+) */}
         <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
-          <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg">
+          <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
             <GlobalSearch />
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function MainLayout(): React.JSX.Element {
       />
 
       {/* ── Page Content ── */}
-      <div className="flex flex-col min-h-screen pt-16 lg:pl-56">
+      <div className="flex flex-col min-h-screen pt-16 lg:pl-56 xl:pl-64 2xl:pl-72">
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}
