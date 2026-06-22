@@ -4,6 +4,15 @@ import { cn } from '@/lib/utils';
 import { fieldLabelCls } from './formUtils';
 
 
+const PILL_COLORS = [
+  'bg-brand',
+  'bg-sky-400',
+  'bg-violet-400',
+  'bg-amber-400',
+  'bg-rose-400',
+  'bg-teal-400',
+];
+
 export function ModernSection({
   title,
   index,
@@ -30,7 +39,7 @@ export function ModernSection({
       >
         <div className="flex items-center gap-2">
           {index !== undefined && (
-            <div className="w-1 h-4 rounded-full shrink-0 bg-brand" />
+            <div className={cn('w-1 h-4 rounded-full shrink-0', PILL_COLORS[index % PILL_COLORS.length])} />
           )}
           <h3 className="text-sm font-semibold text-stone-950">{title}</h3>
         </div>
