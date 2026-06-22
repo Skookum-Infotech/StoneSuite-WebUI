@@ -212,16 +212,17 @@
   /* ── Table header tint ───────────────────────────────────────────────── */
   --color-table-header: #f4fce8;         /* replaces color-mix(in srgb, #ecfccb 22%, white) */
 
+  /* NOT USING THIS */
   /* ── Avatar palette slots (9 entries, used via var() in JS) ─────────── */
-  --avatar-1-bg: #fef3c7; --avatar-1-fg: #92400e;
-  --avatar-2-bg: #d1fae5; --avatar-2-fg: #065f46;
-  --avatar-3-bg: #dbeafe; --avatar-3-fg: #1e40af;
-  --avatar-4-bg: #fce7f3; --avatar-4-fg: #9d174d;
-  --avatar-5-bg: #ede9fe; --avatar-5-fg: #5b21b6;
-  --avatar-6-bg: #ecfccb; --avatar-6-fg: #365314;
-  --avatar-7-bg: #ffedd5; --avatar-7-fg: #9a3412;
-  --avatar-8-bg: #e0f2fe; --avatar-8-fg: #0c4a6e;
-  --avatar-9-bg: #f1f5f9; --avatar-9-fg: #475569;
+  --avatar-1-bg: #6366f1; --avatar-1-fg: #ffffff;  /* indigo */
+  --avatar-2-bg: #10b981; --avatar-2-fg: #ffffff;  /* emerald */
+  --avatar-3-bg: #3b82f6; --avatar-3-fg: #ffffff;  /* blue */
+  --avatar-4-bg: #f43f5e; --avatar-4-fg: #ffffff;  /* rose */
+  --avatar-5-bg: #a855f7; --avatar-5-fg: #ffffff;  /* purple */
+  --avatar-6-bg: #f59e0b; --avatar-6-fg: #ffffff;  /* amber */
+  --avatar-7-bg: #14b8a6; --avatar-7-fg: #ffffff;  /* teal */
+  --avatar-8-bg: #f97316; --avatar-8-fg: #ffffff;  /* orange */
+  --avatar-9-bg: #ec4899; --avatar-9-fg: #ffffff;  /* pink */
 
   /* ── Typography ─────────────────────────────────────────────────────── */
   --text-2xs: 0.625rem;             /* 10px — field labels, captions */

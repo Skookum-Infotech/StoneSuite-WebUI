@@ -12,15 +12,21 @@ import type { WorkflowRecord, StatusInfo } from '@/types/tenant';
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
-const AVATAR_SLOTS = 9;
+const AVATAR_PALETTE: { bg: string; fg: string }[] = [
+  { bg: '#6366f1', fg: '#ffffff' }, // indigo
+  { bg: '#10b981', fg: '#ffffff' }, // emerald
+  { bg: '#3b82f6', fg: '#ffffff' }, // blue
+  { bg: '#f43f5e', fg: '#ffffff' }, // rose
+  { bg: '#a855f7', fg: '#ffffff' }, // purple
+  { bg: '#f59e0b', fg: '#ffffff' }, // amber
+  { bg: '#14b8a6', fg: '#ffffff' }, // teal
+  { bg: '#f97316', fg: '#ffffff' }, // orange
+  { bg: '#ec4899', fg: '#ffffff' }, // pink
+];
 
 function companyAvatarVars(name: string): { bg: string; fg: string } {
   const hash = [...name].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  const slot = (hash % AVATAR_SLOTS) + 1;
-  return {
-    bg: `var(--avatar-${slot}-bg)`,
-    fg: `var(--avatar-${slot}-fg)`,
-  };
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
 }
 
 function companyInitials(name: string): string {
