@@ -201,7 +201,7 @@ export default function EditCustomerPage() {
         </div>
 
         {/* Two-column body — browser scrolls, not an inner div */}
-        <div className="flex flex-row gap-6 px-5 py-5 pb-24 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+        <div className="flex flex-col px-4 py-4 pb-24 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 4xl:px-16 4xl:py-10">
           <div className="flex-1 space-y-2 min-w-0">
             {activeTab === 'details' && (
               <CrmRecordForm

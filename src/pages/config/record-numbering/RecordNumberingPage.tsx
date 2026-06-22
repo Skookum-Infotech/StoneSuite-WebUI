@@ -36,7 +36,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-stone-50/60">
       {/* Page header */}
-      <div className="bg-background border-b border-stone-200 px-6 py-5">
+      <div className="bg-background border-b border-stone-200 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center gap-3.5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
             <Hash className="size-5" strokeWidth={2.5} />
@@ -57,7 +57,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         {workflowsQ.isLoading && (
           <div className="flex items-center justify-center h-40">
             <Spinner label="Loading workflows…" />
@@ -78,32 +78,36 @@ export default function RecordNumberingPage(): React.JSX.Element {
           )}
         {workflows.length > 0 && (
           <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-            {/* Table header */}
-            <div
-              className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 text-2xs font-bold uppercase tracking-widest text-stone-400 select-none"
-              style={{
-                gridTemplateColumns:
-                  "minmax(120px,1.2fr) 72px minmax(100px,1fr) minmax(100px,1fr) 90px 106px minmax(140px,1.4fr) 88px",
-              }}
-            >
-              <span>Workflow</span>
-              <span className="text-center">Active</span>
-              <span>Prefix</span>
-              <span>Suffix</span>
-              <span>Digits</span>
-              <span>Next #</span>
-              <span>Preview</span>
-              <span />
-            </div>
+            <div className="overflow-x-auto modal-scrollbar">
+              <div style={{ minWidth: '720px' }}>
+                {/* Table header */}
+                <div
+                  className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 text-2xs font-bold uppercase tracking-widest text-stone-400 select-none"
+                  style={{
+                    gridTemplateColumns:
+                      "minmax(120px,1.2fr) 72px minmax(100px,1fr) minmax(100px,1fr) 90px 106px minmax(140px,1.4fr) 88px",
+                  }}
+                >
+                  <span>Workflow</span>
+                  <span className="text-center">Active</span>
+                  <span>Prefix</span>
+                  <span>Suffix</span>
+                  <span>Digits</span>
+                  <span>Next #</span>
+                  <span>Preview</span>
+                  <span />
+                </div>
 
-            {/* Workflow rows */}
-            {workflows.map((wf, idx) => (
-              <WorkflowRow
-                key={wf.id}
-                workflow={wf}
-                isLast={idx === workflows.length - 1}
-              />
-            ))}
+                {/* Workflow rows */}
+                {workflows.map((wf, idx) => (
+                  <WorkflowRow
+                    key={wf.id}
+                    workflow={wf}
+                    isLast={idx === workflows.length - 1}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

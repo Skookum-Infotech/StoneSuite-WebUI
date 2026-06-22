@@ -22,7 +22,7 @@ interface CrmPageHeaderProps {
   statusBadge?: ReactNode;
   /** DeleteRecordDialog trigger — omit on create pages */
   deleteSlot?: ReactNode;
-  /** Right-side action buttons (Save on edit pages; omit on view pages — actions live in sidebar) */
+  /** Right-side action buttons (Save on edit pages; omit on view pages) */
   actions?: ReactNode;
 }
 
@@ -38,55 +38,111 @@ export function CrmPageHeader({
   actions,
 }: CrmPageHeaderProps) {
   return (
-    <div className="shrink-0 bg-background border-b border-stone-200 px-5 py-4 3xl:px-10 3xl:py-5 4xl:px-14 4xl:py-6 flex items-center gap-3">
-      {/* Entity icon — always uses brand accent for consistency */}
-      <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shrink-0 ring-1 ring-accent-foreground/10">
-        <Icon className="h-4 w-4 text-accent-foreground" />
-      </div>
+    <div className="shrink-0 bg-background border-b border-stone-200 3xl:px-10 4xl:px-14">
 
-      {/* Title Block */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-xl font-bold tracking-tight text-stone-900 truncate">
-            {title}
-          </h1>
-          {recordNumber && (
-            <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-lg text-stone-400 shrink-0">
-              {recordNumber}
-            </span>
+      {/* ── Mobile layout (< sm) — two rows ── */}
+      <div className="sm:hidden">
+        {/* Row 1: back + actions */}
+        <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={`Back to ${backLabel}`}
+            className="flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-800 transition-colors py-1 pr-2 rounded-lg hover:bg-stone-100"
+          >
+            <ChevronLeft className="size-3.5 shrink-0" />
+            {backLabel}
+          </button>
+
+          {/* Right-side: delete + save */}
+          {(deleteSlot || actions) && (
+            <div className="flex items-center gap-1.5">
+              {deleteSlot && (
+                <div className="[&>button]:text-2xs [&>button]:px-2 [&>button]:py-1 [&>button]:rounded-lg shrink-0">
+                  {deleteSlot}
+                </div>
+              )}
+              {actions && (
+                <div className="[&>button]:text-2xs [&>button]:px-2.5 [&>button]:py-1 [&>button]:rounded-lg shrink-0">
+                  {actions}
+                </div>
+              )}
+            </div>
           )}
-          {statusBadge}
         </div>
 
-        {subtitle && (
-          <p className="text-sm text-stone-500 leading-relaxed truncate">
-            {subtitle}
-          </p>
-        )}
+        {/* Row 2: icon + entity info */}
+        <div className="flex items-center gap-2.5 px-3 pb-3">
+          <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0 ring-1 ring-accent-foreground/10">
+            <Icon className="h-3.5 w-3.5 text-accent-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="text-sm font-bold tracking-tight text-stone-900 truncate max-w-[160px]">
+                {title}
+              </h1>
+              {recordNumber && (
+                <span className="font-mono text-2xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-400 shrink-0">
+                  {recordNumber}
+                </span>
+              )}
+              {statusBadge}
+            </div>
+            {subtitle && (
+              <p className="text-2xs text-stone-400 leading-relaxed mt-0.5">{subtitle}</p>
+            )}
+          </div>
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label={`Back to ${backLabel}`}
-        className="flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-stone-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-stone-100 shrink-0"
-      >
-        <ChevronLeft className="size-3.5" />
-        Back
-      </button>
+      {/* ── Desktop layout (sm+) — single row (unchanged) ── */}
+      <div className="hidden sm:flex items-center gap-3 px-5 py-4 3xl:py-5 4xl:py-6">
+        {/* Entity icon */}
+        <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shrink-0 ring-1 ring-accent-foreground/10">
+          <Icon className="h-4 w-4 text-accent-foreground" />
+        </div>
 
-      {/* Delete (view / edit only) */}
-      {deleteSlot && (
-        <>
+        {/* Title block */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-bold tracking-tight text-stone-900 truncate">
+              {title}
+            </h1>
+            {recordNumber && (
+              <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-lg text-stone-400 shrink-0">
+                {recordNumber}
+              </span>
+            )}
+            {statusBadge}
+          </div>
+          {subtitle && (
+            <p className="text-sm text-stone-500 leading-relaxed truncate">{subtitle}</p>
+          )}
+        </div>
+
+        {/* Back button */}
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label={`Back to ${backLabel}`}
+          className="flex items-center gap-1 text-xs font-medium text-stone-400 hover:text-stone-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-stone-100 shrink-0"
+        >
+          <ChevronLeft className="size-3.5" />
+          Back
+        </button>
+
+        {/* Delete */}
+        {deleteSlot && (
           <div className="shrink-0 [&>button]:text-xs [&>button]:px-2.5 [&>button]:rounded-lg">
             {deleteSlot}
           </div>
-        </>
-      )}
+        )}
 
-      {/* Right-side actions */}
-
-      <div className="flex items-center gap-2 shrink-0">{actions}</div>
+        {/* Actions */}
+        {actions && (
+          <div className="flex items-center gap-2 shrink-0">{actions}</div>
+        )}
+      </div>
     </div>
   );
 }

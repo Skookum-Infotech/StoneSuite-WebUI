@@ -12,6 +12,7 @@ import {
   XCircle,
   AlertTriangle,
   ChevronRight,
+  ChevronLeft,
   Pencil,
   Ban,
   RotateCcw,
@@ -415,12 +416,12 @@ function UserDetail({ user }: { user: WorkspaceUser }) {
   const aviColor = avatarColor(user.id);
 
   return (
-    <div className="flex flex-col h-full p-6">
+    <div className="flex flex-col h-full p-3 sm:p-6">
       {/* Header */}
-      <div className="flex items-start gap-4 mb-6">
+      <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div
           className={cn(
-            "flex size-14 shrink-0 items-center justify-center rounded-2xl text-base font-bold",
+            "flex size-10 sm:size-14 shrink-0 items-center justify-center rounded-2xl text-sm sm:text-base font-bold",
             aviColor,
           )}
         >
@@ -428,7 +429,7 @@ function UserDetail({ user }: { user: WorkspaceUser }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h2 className="text-base font-bold text-stone-900 truncate">
+            <h2 className="text-sm sm:text-base font-bold text-stone-900 truncate">
               {user.fullName || "(no name)"}
             </h2>
             <StatusBadge status={user.status} />
@@ -441,7 +442,7 @@ function UserDetail({ user }: { user: WorkspaceUser }) {
       </div>
 
       {/* Roles */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">
           Roles
         </h3>
@@ -479,7 +480,7 @@ function UserDetail({ user }: { user: WorkspaceUser }) {
           <button
             type="button"
             onClick={() => setShowEditName(true)}
-            className="flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+            className="flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-50"
           >
             <Pencil className="size-4 text-stone-400" />
             Edit display name
@@ -494,7 +495,7 @@ function UserDetail({ user }: { user: WorkspaceUser }) {
             }}
             disabled={busy}
             className={cn(
-              "flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition",
+              "flex w-full items-center gap-2 rounded-lg border px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition",
               user.status === "active"
                 ? "border-amber-200 text-amber-700 hover:bg-amber-50"
                 : "border-emerald-200 text-emerald-700 hover:bg-emerald-50",
@@ -523,7 +524,7 @@ function UserDetail({ user }: { user: WorkspaceUser }) {
               onClick={() => setConfirmDeactivate(true)}
               disabled={busy}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50",
+                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-600 transition hover:bg-red-50",
                 busy && "opacity-50 cursor-not-allowed",
               )}
             >
@@ -693,7 +694,7 @@ function InviteDetail({ invite }: { invite: UserInvite }) {
               }}
               disabled={busy}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50",
+                "flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-50",
                 busy && "opacity-50 cursor-not-allowed",
               )}
             >
@@ -711,7 +712,7 @@ function InviteDetail({ invite }: { invite: UserInvite }) {
               onClick={() => setConfirmRevoke(true)}
               disabled={busy}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50",
+                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-600 transition hover:bg-red-50",
                 busy && "opacity-50 cursor-not-allowed",
               )}
             >
@@ -799,7 +800,7 @@ export default function UsersPage() {
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-background">
       {/* Page header */}
-      <div className="flex items-center justify-between gap-3 border-b border-stone-100 px-6 py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
             <UsersRound className="size-6" />
@@ -824,10 +825,15 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {/* Split pane */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Left panel */}
-        <aside className="flex flex-col w-64 shrink-0 border-r border-stone-100">
+      {/* Split pane — stacks on mobile, side-by-side on md+ */}
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+        {/* Left panel — hidden on mobile when a member/invite is selected */}
+        <aside className={cn(
+          "flex flex-col md:w-64 md:shrink-0 md:border-r border-stone-100",
+          (tab === "members" ? selectedUserId !== null : selectedInviteId !== null)
+            ? "hidden md:flex"
+            : "flex flex-1 md:flex-none",
+        )}>
           {/* Tab switcher */}
           <div className="flex border-b border-stone-100">
             <button
@@ -981,12 +987,30 @@ export default function UsersPage() {
           </div>
         </aside>
 
-        {/* Right panel */}
-        <main className="flex-1 overflow-y-auto modal-scrollbar">
+        {/* Right panel — hidden on mobile until a selection is made */}
+        <main className={cn(
+          "flex-1 overflow-y-auto modal-scrollbar",
+          (tab === "members" ? selectedUserId === null : selectedInviteId === null) && "hidden md:block",
+        )}>
+          {/* Mobile back button */}
+          {(tab === "members" ? selectedUserId !== null : selectedInviteId !== null) && (
+            <button
+              type="button"
+              onClick={() => {
+                if (tab === "members") setSelectedUserId(null);
+                else setSelectedInviteId(null);
+              }}
+              className="md:hidden flex items-center gap-1.5 w-full px-4 py-3 text-xs font-semibold text-brand-dark border-b border-stone-100 hover:bg-stone-50 transition-colors"
+            >
+              <ChevronLeft className="size-3.5" />
+              Back to {tab === "members" ? "Members" : "Invites"}
+            </button>
+          )}
+
           {tab === "members" && (
             <>
               {!activeUser && !usersQ.isLoading && (
-                <div className="flex h-full items-center justify-center">
+                <div className="hidden md:flex h-full items-center justify-center">
                   <div className="text-center">
                     <UsersRound className="mx-auto mb-2 size-8 text-stone-300" />
                     <p className="text-sm text-stone-400">
@@ -1004,7 +1028,7 @@ export default function UsersPage() {
           {tab === "invites" && (
             <>
               {!activeInvite && !invitesQ.isLoading && (
-                <div className="flex h-full items-center justify-center">
+                <div className="hidden md:flex h-full items-center justify-center">
                   <div className="text-center">
                     <Mail className="mx-auto mb-2 size-8 text-stone-300" />
                     <p className="text-sm text-stone-400">

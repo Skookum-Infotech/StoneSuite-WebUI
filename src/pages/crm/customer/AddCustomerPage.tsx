@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Building2, AlertCircle, ChevronRight, Loader2, Save, X } from 'lucide-react';
+import { Building2, AlertCircle, ChevronRight, Loader2, Save  } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -99,15 +99,6 @@ export default function AddCustomerPage() {
           subtitle="Fields marked * are required."
           actions={(
             <>
-              <button
-                type="button"
-                onClick={() => navigate('/crm/customer')}
-                disabled={isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
-              >
-                <X className="size-3" />
-                Cancel
-              </button>
               <button
                 type="submit"
                 disabled={isPending || isUploadingFiles}

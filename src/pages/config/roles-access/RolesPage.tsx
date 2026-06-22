@@ -10,6 +10,7 @@ import {
   Pencil,
   Users,
   AlertTriangle,
+  ChevronLeft,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { rbacService, userService } from "@/services/tenantServices";
@@ -138,7 +139,7 @@ export default function RolesPage(): React.JSX.Element {
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-background">
       {/* Page header */}
-      <div className="flex items-center gap-3 border-b border-stone-100 px-6 py-4">
+      <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
           <ShieldCheck className="size-6" />
         </div>
@@ -152,10 +153,13 @@ export default function RolesPage(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Split pane */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* ── Left panel: role list ── */}
-        <aside className="flex flex-col w-60 shrink-0 border-r border-stone-100">
+      {/* Split pane — stacks on mobile, side-by-side on md+ */}
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+        {/* ── Left panel: role list — hidden on mobile when a role is selected ── */}
+        <aside className={cn(
+          "flex flex-col md:w-60 md:shrink-0 md:border-r border-stone-100",
+          selectedId !== null ? "hidden md:flex" : "flex flex-1 md:flex-none",
+        )}>
           <div className="p-3 border-b border-stone-100">
             <button
               onClick={() => navigate("/config/roles/new")}
@@ -214,10 +218,25 @@ export default function RolesPage(): React.JSX.Element {
           </div>
         </aside>
 
-        {/* ── Right panel: role detail ── */}
-        <main className="flex-1 overflow-y-auto modal-scrollbar">
+        {/* ── Right panel: role detail — hidden on mobile until a role is selected ── */}
+        <main className={cn(
+          "flex-1 overflow-y-auto modal-scrollbar",
+          selectedId === null && "hidden md:block",
+        )}>
+          {/* Mobile back button */}
+          {selectedId !== null && (
+            <button
+              type="button"
+              onClick={() => setSelectedId(null)}
+              className="md:hidden flex items-center gap-1.5 w-full px-4 py-3 text-xs font-semibold text-brand-dark border-b border-stone-100 hover:bg-stone-50 transition-colors"
+            >
+              <ChevronLeft className="size-3.5" />
+              Back to Roles
+            </button>
+          )}
+
           {!activeRole && !rolesQ.isLoading && (
-            <div className="flex h-full items-center justify-center">
+            <div className="hidden md:flex h-full items-center justify-center">
               <div className="text-center">
                 <ShieldCheck className="mx-auto mb-2 size-8 text-stone-300" />
                 <p className="text-sm text-stone-400">
@@ -294,7 +313,7 @@ function RoleDetail({
   return (
     <div className="flex flex-col min-h-full">
       {/* ── Detail header ── */}
-      <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-4">
+      <div className="flex items-start justify-between gap-3 px-3 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h2 className="text-base font-bold text-stone-900">{role.name}</h2>
@@ -396,7 +415,7 @@ function RoleDetail({
       )}
 
       {/* ── Tab bar ── */}
-      <div className="flex items-center gap-0 border-b border-stone-100 px-6">
+      <div className="flex items-center gap-0 border-b border-stone-100 px-3 sm:px-6">
         {(
           [
             {
@@ -450,7 +469,7 @@ function RoleDetail({
       </div>
 
       {/* ── Tab content ── */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-3 sm:p-6">
         {/* Permissions tab */}
         {activeTab === "permissions" && (
           <>
@@ -632,16 +651,16 @@ function RoleUsersList({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-stone-100 bg-stone-50">
-            <th className="py-2.5 pl-4 pr-3 text-left font-semibold text-stone-400">
+            <th className="py-2 pl-3 pr-2 sm:py-2.5 sm:pl-4 sm:pr-3 text-left text-2xs sm:text-xs font-semibold text-stone-400">
               User
             </th>
-            <th className="px-4 py-2.5 text-left font-semibold text-stone-400 hidden sm:table-cell">
+            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-2xs sm:text-xs font-semibold text-stone-400 hidden sm:table-cell">
               Email
             </th>
-            <th className="px-4 py-2.5 text-left font-semibold text-stone-400">
+            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-2xs sm:text-xs font-semibold text-stone-400">
               Status
             </th>
-            <th className="px-4 py-2.5 text-left font-semibold text-stone-400 hidden md:table-cell">
+            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-2xs sm:text-xs font-semibold text-stone-400 hidden md:table-cell">
               Joined
             </th>
           </tr>
@@ -652,38 +671,38 @@ function RoleUsersList({
               key={user.id}
               className="hover:bg-stone-50/60 transition-colors"
             >
-              <td className="py-3 pl-4 pr-3">
-                <div className="flex items-center gap-2.5">
+              <td className="py-2 pl-3 pr-2 sm:py-3 sm:pl-4 sm:pr-3">
+                <div className="flex items-center gap-2">
                   <span
                     className={cn(
-                      "flex size-7 shrink-0 items-center justify-center rounded-full text-2xs font-bold",
+                      "flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-full text-2xs font-bold",
                       userAvatarColor(user.id),
                     )}
                   >
                     {userInitials(user.fullName || user.email)}
                   </span>
-                  <span className="font-medium text-stone-800 truncate max-w-[120px]">
+                  <span className="font-medium text-stone-800 truncate max-w-[90px] sm:max-w-[120px]">
                     {user.fullName || "—"}
                   </span>
                 </div>
               </td>
-              <td className="px-4 py-3 hidden sm:table-cell">
+              <td className="px-2 py-2 sm:px-4 sm:py-3 hidden sm:table-cell">
                 <span className="text-stone-500 truncate">{user.email}</span>
               </td>
-              <td className="px-4 py-3">
+              <td className="px-2 py-2 sm:px-4 sm:py-3">
                 {user.status === "active" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-2xs font-semibold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-2xs font-semibold text-emerald-700">
                     <span className="size-1.5 rounded-full bg-emerald-500" />
                     Active
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-2xs font-semibold text-amber-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-700">
                     <span className="size-1.5 rounded-full bg-amber-500" />
                     Suspended
                   </span>
                 )}
               </td>
-              <td className="px-4 py-3 hidden md:table-cell">
+              <td className="px-2 py-2 sm:px-4 sm:py-3 hidden md:table-cell">
                 <span className="text-stone-400">
                   {new Date(user.createdAt).toLocaleDateString("en-US", {
                     month: "short",

@@ -26,10 +26,12 @@ export function Badge({
   children,
   color,
   className,
+  size = 'default',
 }: {
   children: ReactNode;
   color?: string;
   className?: string;
+  size?: 'sm' | 'default';
 }) {
   // When a hex color is provided (workflow state), tint with it; otherwise use a neutral chip.
   const style = color ? { backgroundColor: `${color}28`, color, borderColor: `${color}70` } : undefined;
@@ -37,14 +39,17 @@ export function Badge({
     <span
       style={style}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-label font-semibold',
+        'inline-flex items-center rounded-full border font-semibold whitespace-nowrap',
+        size === 'sm'
+          ? 'gap-1 px-1.5 py-px text-[10px]'
+          : 'gap-1.5 px-2.5 py-0.5 text-label',
         !color && 'border-stone-200 bg-stone-100 text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300',
         className,
       )}
     >
       {color && (
         <span
-          className="size-1.5 shrink-0 rounded-full"
+          className={cn('shrink-0 rounded-full', size === 'sm' ? 'size-1' : 'size-1.5')}
           style={{ backgroundColor: color }}
           aria-hidden="true"
         />

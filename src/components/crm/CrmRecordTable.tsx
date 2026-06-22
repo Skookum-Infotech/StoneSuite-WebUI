@@ -147,22 +147,22 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
     <div className="flex flex-col gap-3">
 
       {/* ── Filter bar ── */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-1.5 sm:gap-2">
+        <div className="relative flex-1 sm:flex-none">
+          <Search className="pointer-events-none absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 size-3 sm:size-3.5 text-stone-400" />
           <input
             type="text"
             placeholder={`Search ${config.label.toLowerCase()}s…`}
             value={nameFilter}
             onChange={(e) => { setNameFilter(e.target.value); setPage(1); }}
-            className="h-9 w-52 rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 sm:h-9 w-full sm:w-52 rounded-lg border border-stone-200 bg-white pl-7 sm:pl-8 pr-3 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+          className="h-8 sm:h-9 w-full sm:w-auto rounded-lg border border-stone-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
@@ -171,30 +171,30 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
           ))}
         </select>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:ml-auto">
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 sm:px-2.5 sm:py-1.5 text-2xs sm:text-xs text-stone-500 hover:bg-stone-50 transition-colors"
             >
               <X className="size-3" />
               Clear
             </button>
           )}
-          <span className="text-xs text-stone-400 tabular-nums">
+          <span className="text-2xs sm:text-xs text-stone-400 tabular-nums">
             {filtered.length} result{filtered.length !== 1 ? 's' : ''}
           </span>
         </div>
       </div>
 
       {/* ── Sort chips ── */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-2xs font-semibold uppercase tracking-wider text-stone-400">Sort:</span>
+      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+        <span className="mr-0.5 sm:mr-1 text-2xs font-semibold uppercase tracking-wider text-stone-400">Sort:</span>
         {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
           <button
             key={field}
             onClick={() => handleSort(field)}
-            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors ${
+            className={`flex items-center gap-1 sm:gap-1.5 rounded-md px-2 py-0.5 sm:px-2.5 sm:py-1 text-2xs font-semibold transition-colors ${
               sortBy === field
                 ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
                 : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700'
@@ -209,16 +209,17 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       {/* ── Table ── */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full text-left text-xs">
+          {/* min-w forces horizontal scroll on mobile so all columns stay visible */}
+          <table className="w-full min-w-[520px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3 text-2xs sm:text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3 text-2xs sm:text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 {config.showEmail && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
+                  <th className="px-3 py-2 sm:px-4 sm:py-3 text-2xs sm:text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
                 )}
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Created</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3 text-2xs sm:text-xs font-semibold uppercase tracking-wider text-stone-500">Created</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3 text-2xs sm:text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -226,16 +227,16 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                 <>
                   {Array.from({ length: 5 }, (_, i) => (
                     <tr key={i}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="animate-pulse size-8 rounded-full bg-stone-100 shrink-0" />
-                          <div className="animate-pulse h-3.5 rounded bg-stone-100 w-36" />
+                      <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="animate-pulse size-7 sm:size-8 rounded-full bg-stone-100 shrink-0" />
+                          <div className="animate-pulse h-3 rounded bg-stone-100 w-24 sm:w-36" />
                         </div>
                       </td>
-                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-24" /></td>
-                      {config.showEmail && <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-32" /></td>}
-                      <td className="px-4 py-3"><div className="animate-pulse h-3.5 rounded bg-stone-100 w-20" /></td>
-                      <td className="px-4 py-3" />
+                      <td className="px-3 py-2.5 sm:px-4 sm:py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 sm:w-24" /></td>
+                      {config.showEmail && <td className="px-3 py-2.5 sm:px-4 sm:py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24 sm:w-32" /></td>}
+                      <td className="px-3 py-2.5 sm:px-4 sm:py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-14 sm:w-20" /></td>
+                      <td className="px-3 py-2.5 sm:px-4 sm:py-3" />
                     </tr>
                   ))}
                 </>
@@ -249,20 +250,20 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                     const avatar     = companyAvatarVars(company);
                     return (
                       <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-3">
+                        <td className="px-3 py-2.5 sm:px-4 sm:py-3.5">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             <span
-                              className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                              className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full text-2xs sm:text-xs font-bold"
                               style={{ backgroundColor: avatar.bg, color: avatar.fg }}
                               aria-hidden="true"
                             >
                               {companyInitials(company)}
                             </span>
-                            <div>
+                            <div className="min-w-0">
                               <button
                                 type="button"
                                 onClick={() => navigate(config.detailPath(record.id))}
-                                className="text-left text-sm font-semibold text-stone-900 hover:text-accent-foreground transition-colors duration-150"
+                                className="text-left text-2xs sm:text-sm font-semibold text-stone-900 hover:text-accent-foreground transition-colors duration-150 truncate max-w-[100px] sm:max-w-[200px] block"
                               >
                                 {company}
                               </button>
@@ -272,27 +273,34 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5 sm:px-4 sm:py-3.5">
                           {statusInfo ? (
-                            <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
+                            <>
+                              <Badge size="sm" color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)} className="sm:hidden">
+                                {statusInfo.statusLabel}
+                              </Badge>
+                              <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)} className="hidden sm:inline-flex">
+                                {statusInfo.statusLabel}
+                              </Badge>
+                            </>
                           ) : (
-                            <span className="text-xs text-stone-400">—</span>
+                            <span className="text-2xs sm:text-xs text-stone-400">—</span>
                           )}
                         </td>
                         {config.showEmail && (
-                          <td className="px-4 py-3.5 text-sm text-stone-500">{email}</td>
+                          <td className="px-3 py-2.5 sm:px-4 sm:py-3.5 text-2xs sm:text-sm text-stone-500 truncate max-w-[120px] sm:max-w-none">{email}</td>
                         )}
-                        <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums">
+                        <td className="px-3 py-2.5 sm:px-4 sm:py-3.5 text-2xs sm:text-xs text-stone-400 tabular-nums whitespace-nowrap">
                           {new Date(record.createdAt).toLocaleDateString(undefined, {
-                            year: 'numeric', month: 'short', day: 'numeric',
+                            year: '2-digit', month: 'short', day: 'numeric',
                           })}
                         </td>
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-3 py-2.5 sm:px-4 sm:py-3.5 text-right">
                           <button
                             type="button"
                             onClick={() => navigate(config.editPath(record.id))}
                             aria-label={`Edit ${label}`}
-                            className="rounded-md border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-stone-600 transition-colors hover:border-accent-foreground/30 hover:bg-accent hover:text-accent-foreground"
+                            className="rounded-md border border-stone-200 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 text-2xs sm:text-xs font-semibold text-stone-600 transition-colors hover:border-accent-foreground/30 hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
                           >
                             Edit
                           </button>
@@ -305,23 +313,23 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
                 <tr>
                   <td
                     colSpan={4 + (config.showEmail ? 1 : 0)}
-                    className="py-16 text-center"
+                    className="py-10 sm:py-16 text-center"
                   >
                     {records.length === 0 ? (
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="rounded-2xl bg-stone-100 p-4">
-                          <Inbox className="size-6 text-stone-400" />
+                      <div className="flex flex-col items-center gap-2 sm:gap-3">
+                        <div className="rounded-2xl bg-stone-100 p-3 sm:p-4">
+                          <Inbox className="size-5 sm:size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first {lowerLabel} to get started.</p>
+                        <p className="text-xs sm:text-sm font-semibold text-stone-700">No {lowerLabel}s added yet.</p>
+                        <p className="text-2xs sm:text-xs text-stone-400">Create your first {lowerLabel} to get started.</p>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="rounded-2xl bg-stone-100 p-4">
-                          <Search className="size-6 text-stone-400" />
+                      <div className="flex flex-col items-center gap-2 sm:gap-3">
+                        <div className="rounded-2xl bg-stone-100 p-3 sm:p-4">
+                          <Search className="size-5 sm:size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s match the current filters.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or status filter.</p>
+                        <p className="text-xs sm:text-sm font-semibold text-stone-700">No {lowerLabel}s match the current filters.</p>
+                        <p className="text-2xs sm:text-xs text-stone-400">Try adjusting your search or status filter.</p>
                       </div>
                     )}
                   </td>
@@ -335,26 +343,26 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
       {/* ── Pagination ── */}
       {sorted.length > 0 && (
         <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-stone-400 tabular-nums">
+          <span className="text-2xs sm:text-xs text-stone-400 tabular-nums">
             {`Showing ${(safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, sorted.length)} of ${sorted.length}`}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
               aria-label="Previous page"
-              className="flex items-center gap-1 rounded-sm border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              className="flex items-center gap-0.5 sm:gap-1 rounded-sm border border-stone-200 px-2 py-1 sm:px-2.5 sm:py-1.5 text-2xs sm:text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="size-3" /> Prev
             </button>
-            <span className="min-w-[72px] text-center text-xs text-stone-500 tabular-nums">
-              Page {safePage} of {totalPages}
+            <span className="min-w-[52px] sm:min-w-[72px] text-center text-2xs sm:text-xs text-stone-500 tabular-nums">
+              {safePage}/{totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
               aria-label="Next page"
-              className="flex items-center gap-1 rounded-sm border border-stone-200 px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              className="flex items-center gap-0.5 sm:gap-1 rounded-sm border border-stone-200 px-2 py-1 sm:px-2.5 sm:py-1.5 text-2xs sm:text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
             >
               Next <ChevronRight className="size-3" />
             </button>

@@ -36,7 +36,7 @@ export default function ConfigWorkflowsPage() {
   return (
     <div className="flex flex-1 flex-col min-h-0">
       {/* Page header — consistent with RolesPage */}
-      <div className="flex items-center gap-3 border-b border-stone-100 px-6 py-4 dark:border-stone-800">
+      <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4 dark:border-stone-800">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
           <Workflow className="size-6" />
         </div>
@@ -51,7 +51,7 @@ export default function ConfigWorkflowsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto modal-scrollbar p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto modal-scrollbar p-4 sm:p-6 space-y-6">
         {data.length === 0 && <EmptyState>No workflows found.</EmptyState>}
 
         {FORM_GROUPS.map((group) => {

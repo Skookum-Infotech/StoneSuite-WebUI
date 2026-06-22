@@ -14,7 +14,7 @@ export default function CustomerListPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="p-6 3xl:p-10 4xl:p-14 flex-1 flex flex-col min-h-0">
+      <div className="p-4 sm:p-6 3xl:p-10 4xl:p-14 flex-1 flex flex-col min-h-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent ring-1 ring-accent-foreground/10 shrink-0">

@@ -90,7 +90,7 @@ export default function WorkflowBuilderPage() {
   const baseFields = BASE_FIELD_LABELS[def.workflow.key.toLowerCase()] ?? [];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <Link to="/config/workflows" className="inline-flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-800">
         <ArrowLeft className="size-3.5" /> All forms
       </Link>
