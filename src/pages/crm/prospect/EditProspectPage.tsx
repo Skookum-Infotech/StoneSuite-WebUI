@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, AlertCircle, Loader2, Save, X, ChevronRight } from 'lucide-react';
+import { Users, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { crmCoreDefaults } from '@/lib/crmFields';
@@ -232,26 +233,10 @@ export default function EditProspectPage() {
 
         </div>
 
-        {/* Fixed bottom action bar */}
-        <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
-          <button
-            type="button"
-            onClick={() => navigate('/crm/prospect')}
-            disabled={save.isPending}
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
-          >
-            <X className="size-3.5" />
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={save.isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm active:scale-95"
-          >
-            {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {save.isPending ? 'Saving…' : 'Save Changes'}
-          </button>
-        </div>
+        <FormActionBar
+          onCancel={() => navigate('/crm/prospect')}
+          isPending={save.isPending}
+        />
       </form>
     </div>
   );

@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Sparkles, AlertCircle, Loader2, Save, X, ChevronRight } from 'lucide-react';
+import { Sparkles, AlertCircle, ChevronRight, Loader2, Save, X } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
+import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { crmCoreDefaults } from '@/lib/crmFields';
@@ -205,26 +206,12 @@ export default function AddLeadPage() {
           </div>
         </div>
 
-        {/* Fixed bottom action bar */}
-        <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
-          <button
-            type="button"
-            onClick={() => navigate('/crm/lead')}
-            disabled={isPending}
-            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
-          >
-            <X className="size-3.5" />
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isPending || isUploadingFiles}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm active:scale-95"
-          >
-            {(isPending || isUploadingFiles) ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {isPending ? 'Saving…' : isUploadingFiles ? 'Uploading…' : 'Save Lead'}
-          </button>
-        </div>
+        <FormActionBar
+          onCancel={() => navigate('/crm/lead')}
+          isPending={isPending}
+          isUploadingFiles={isUploadingFiles}
+          submitLabel="Save Lead"
+        />
       </form>
     </div>
   );
