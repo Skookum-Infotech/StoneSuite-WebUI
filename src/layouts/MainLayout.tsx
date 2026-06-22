@@ -127,27 +127,27 @@ export default function MainLayout(): React.JSX.Element {
           </div>
         </div>
 
-        {/* GlobalSearch — truly centered on the full header width (desktop lg+) */}
-        <div className="pointer-events-none absolute inset-0 hidden items-center justify-center lg:flex">
-          <div className="pointer-events-auto w-full max-w-sm px-4 sm:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
+        {/* GlobalSearch — flex-centered between logos and actions on lg+ */}
+        <div className="hidden lg:flex flex-1 items-center justify-center px-4">
+          <div className="w-full max-w-lg 3xl:max-w-xl 4xl:max-w-2xl">
             <GlobalSearch />
           </div>
         </div>
 
-        {/* Main header area: search (sm only) + actions */}
-        <div className="flex flex-1 items-center px-4 sm:px-5 gap-3">
+        {/* Right area: sm search + spacer + actions (flex-1 on mobile, shrink-0 on lg+) */}
+        <div className="flex flex-1 lg:flex-none items-center px-4 sm:px-5 gap-3">
 
-          {/* GlobalSearch — small bar on medium (sm to lg) */}
+          {/* GlobalSearch — small bar on sm only (hidden lg+) */}
           <div className="hidden sm:flex lg:hidden max-w-xs">
             <GlobalSearch />
           </div>
 
-          {/* Spacer — pushes actions to the right on mobile, takes center space on medium */}
+          {/* Spacer — only active on mobile/sm, lg+ center div handles the space */}
           <div className="flex-1 sm:hidden" />
           <div className="hidden sm:flex lg:hidden flex-1" />
 
           {/* Right actions */}
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
             <button
               onClick={() => setIsMobileSearchOpen((o) => !o)}
               aria-label={isMobileSearchOpen ? 'Close search' : 'Open search'}
@@ -251,14 +251,14 @@ export default function MainLayout(): React.JSX.Element {
       />
 
       {/* ── Page Content ── */}
-      <div className="flex flex-col min-h-screen pt-16 lg:pl-56 xl:pl-64 2xl:pl-72">
+      <div className="flex flex-col min-h-screen pt-16 lg:pl-56 3xl:pl-60 4xl:pl-64">
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}
           {pathSegments.length > 0 && (
             <nav
               aria-label="Breadcrumb"
-              className="flex items-center gap-1.5 px-6 pt-4 pb-1 text-2xs font-semibold text-stone-400"
+              className="flex items-center gap-1.5 px-6 pt-4 pb-1 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs font-semibold text-stone-400"
             >
               <span
                 className="cursor-pointer hover:text-stone-600 dark:hover:text-stone-200 transition-colors"

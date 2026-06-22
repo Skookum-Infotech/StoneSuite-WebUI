@@ -103,7 +103,7 @@ export default function CustomerDetailPage() {
       />
 
       {/* Tab bar */}
-      <div className="flex shrink-0 border-b border-stone-200 bg-white px-5">
+      <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -122,7 +122,7 @@ export default function CustomerDetailPage() {
       </div>
 
       {/* Two-column body — browser scrolls, not an inner div */}
-      <div className="flex flex-row gap-6 px-5 py-5 xl:px-8 xl:gap-8 2xl:px-12 2xl:gap-10">
+      <div className="flex flex-row gap-6 px-5 py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
 
         {/* Left column — main content */}
         <div className="flex-1 space-y-3 min-w-0">
@@ -131,7 +131,7 @@ export default function CustomerDetailPage() {
               <CrmRecordDetail coreFields={cf} showCustomerBalances users={users} />
               {Object.keys(record.customFields).length > 0 && (
                 <ModernSection title="Custom Fields" index={0} defaultCollapsed>
-                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-5 4xl:grid-cols-6">
                     {Object.entries(record.customFields).map(([key, value]) => (
                       <div key={key} className="space-y-1.5">
                         <label className={fieldLabelCls}>{key}</label>

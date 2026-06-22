@@ -162,7 +162,7 @@ export default function AddLeadPage() {
         )}
 
         {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5">
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16">
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -182,7 +182,7 @@ export default function AddLeadPage() {
 
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar">
-          <div className="px-4 py-3 pb-24 space-y-2 xl:px-6 2xl:px-10">
+          <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             {activeTab === 'details' && (
               <CrmRecordForm
                 core={{ fields: coreFields, onChange: set }}

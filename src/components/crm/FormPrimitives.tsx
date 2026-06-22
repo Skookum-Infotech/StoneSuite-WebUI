@@ -50,7 +50,7 @@ export function ModernSection({
           )}
         />
       </button>
-      {isOpen && <div className="px-5 py-6">{children}</div>}
+      {isOpen && <div className="px-5 py-6 3xl:px-8 3xl:py-8 4xl:px-12 4xl:py-10">{children}</div>}
     </div>
   );
 }
@@ -69,7 +69,7 @@ export function FormActionBar({
   const busy = isPending || isUploadingFiles;
   const saveLabel = isPending ? 'Saving…' : isUploadingFiles ? 'Uploading…' : submitLabel;
   return (
-    <div className="fixed bottom-0 left-0 right-0 lg:left-56 xl:left-64 2xl:left-72 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-sm">
+    <div className="fixed bottom-0 left-0 right-0 lg:left-56 3xl:left-60 4xl:left-64 z-20 border-t border-stone-200 bg-white px-6 py-3 flex items-center justify-end gap-3 shadow-sm">
       <button
         type="button"
         onClick={onCancel}

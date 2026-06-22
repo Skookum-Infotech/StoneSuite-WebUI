@@ -80,7 +80,7 @@ function CreateRecordForm({ def, onDone }: { def: WorkflowDefinition; onDone: ()
 
   return (
     <div className="mb-4 rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-950/40">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="rec-name">Name</Label>
           <Input id="rec-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Globex Corp" />
@@ -195,7 +195,7 @@ function EditFieldsForm({
 
   return (
     <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-950/40">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4">
         {def.fields.map((f) => (
           <DynamicFieldInput key={f.id} field={f} value={custom[f.key]} onChange={setField} />
         ))}

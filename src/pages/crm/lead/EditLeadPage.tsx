@@ -183,7 +183,7 @@ export default function EditLeadPage() {
         )}
 
         {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5">
+        <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -202,7 +202,7 @@ export default function EditLeadPage() {
         </div>
 
         {/* Two-column body — browser scrolls, not an inner div */}
-        <div className="flex flex-row gap-6 px-5 py-5 pb-24 xl:px-8 xl:gap-8 2xl:px-12 2xl:gap-10">
+        <div className="flex flex-row gap-6 px-5 py-5 pb-24 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
           <div className="flex-1 space-y-2 min-w-0">
             {activeTab === 'details' && (
               <CrmRecordForm

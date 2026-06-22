@@ -8,6 +8,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@theme {
+  --breakpoint-3xl: 2048px;
+  --breakpoint-4xl: 3840px;
+}
+
 @font-face {
   font-family: "All Round Gothic";
   src: url("/fonts/allroundgothic-book.otf") format("opentype");

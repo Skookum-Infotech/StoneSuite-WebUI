@@ -30,7 +30,7 @@ const sections = [
 
 export default function ConfigHomePage() {
   return (
-    <div className="p-6 xl:p-8 2xl:p-10">
+    <div className="p-6 3xl:p-10 4xl:p-14">
       <PageHeader
         title="Configuration"
         subtitle="Build and configure your workspace. Changes here drive the dynamic UI everywhere else."

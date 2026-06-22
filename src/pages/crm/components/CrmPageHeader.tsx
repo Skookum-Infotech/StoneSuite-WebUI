@@ -38,7 +38,7 @@ export function CrmPageHeader({
   actions,
 }: CrmPageHeaderProps) {
   return (
-    <div className="shrink-0 bg-background border-b border-stone-200 px-5 py-4 flex items-center gap-3">
+    <div className="shrink-0 bg-background border-b border-stone-200 px-5 py-4 3xl:px-10 3xl:py-5 4xl:px-14 4xl:py-6 flex items-center gap-3">
       {/* Entity icon — always uses brand accent for consistency */}
       <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shrink-0 ring-1 ring-accent-foreground/10">
         <Icon className="h-4 w-4 text-accent-foreground" />
