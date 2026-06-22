@@ -9,8 +9,8 @@
 @import "shadcn/tailwind.css";
 
 @theme {
-  --breakpoint-3xl: 2048px;
-  --breakpoint-4xl: 3840px;
+  --breakpoint-3xl: 128rem;  /* 2048px — must use rem so Tailwind sorts after 2xl (96rem) */
+  --breakpoint-4xl: 240rem;  /* 3840px */
 }
 
 @font-face {
