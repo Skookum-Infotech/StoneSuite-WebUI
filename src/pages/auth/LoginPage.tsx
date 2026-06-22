@@ -63,18 +63,78 @@ export default function LoginPage() {
       className="min-h-screen md:h-screen md:overflow-hidden md:flex md:flex-row font-sans"
     >
       {/* ── LEFT — Login ── */}
-      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden md:min-h-0 md:h-full bg-stone-50 px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10">
+      <main
+        className="relative flex min-h-screen w-full items-center justify-center overflow-hidden md:min-h-0 md:h-full px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10"
+        style={{ background: 'linear-gradient(150deg, #f9fafa 0%, #f2f7f8 45%, #e8f3f5 100%)' }}
+      >
+        {/* Fine teal grid */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundImage: `linear-gradient(rgba(0,95,115,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(0,95,115,0.045) 1px, transparent 1px)`,
+            backgroundSize: '44px 44px',
           }}
         />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-stone-200/80 blur-3xl" />
+
+        {/* Concentric circles — top right */}
+        <div className="pointer-events-none absolute right-0 top-0 overflow-hidden">
+          <svg width="220" height="220" viewBox="0 0 220 220" fill="none" aria-hidden="true">
+            <circle cx="220" cy="0" r="80"  stroke="rgba(0,95,115,0.09)" strokeWidth="0.75" />
+            <circle cx="220" cy="0" r="120" stroke="rgba(0,95,115,0.06)" strokeWidth="0.75" />
+            <circle cx="220" cy="0" r="165" stroke="rgba(0,95,115,0.04)" strokeWidth="0.75" />
+          </svg>
+        </div>
+
+        {/* Concentric circles — bottom left */}
+        <div className="pointer-events-none absolute bottom-0 left-0 overflow-hidden">
+          <svg width="160" height="160" viewBox="0 0 160 160" fill="none" aria-hidden="true">
+            <circle cx="0" cy="160" r="60"  stroke="rgba(0,95,115,0.07)" strokeWidth="0.75" />
+            <circle cx="0" cy="160" r="100" stroke="rgba(0,95,115,0.04)" strokeWidth="0.75" />
+          </svg>
+        </div>
+
+        {/* Dot cluster — left-center */}
+        <div className="pointer-events-none absolute left-6 top-1/3 hidden md:block" aria-hidden="true">
+          {Array.from({ length: 4 }, (_, row) => (
+            <div key={row} className="flex gap-2 mb-2">
+              {Array.from({ length: 4 }, (_, col) => (
+                <div key={col} className="h-0.5 w-0.5 rounded-full bg-[#005f73]/25" />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Soft glow pools */}
+        <div className="pointer-events-none absolute right-0 top-1/4 h-72 w-72 -translate-y-1/2 rounded-full blur-3xl" style={{ background: 'rgba(0,95,115,0.07)' }} />
+        <div className="pointer-events-none absolute -left-8 bottom-1/4 h-52 w-52 rounded-full blur-3xl" style={{ background: 'rgba(163,230,53,0.07)' }} />
 
         <div className="relative w-full max-w-sm sm:max-w-md">
-          <div className="rounded-3xl border border-stone-200/80 bg-white/80 p-7 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.9)_inset] backdrop-blur-sm sm:p-9">
+
+          {/* Eyebrow label above card */}
+          <div className="mb-4 flex items-center gap-3">
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, rgba(0,95,115,0.2))' }} />
+            <span className="text-2xs font-bold uppercase tracking-[0.35em]" style={{ color: 'rgba(0,95,115,0.45)' }}>Workspace Portal</span>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(0,95,115,0.2))' }} />
+          </div>
+
+          {/* Card */}
+          <div
+            className="relative overflow-hidden rounded-3xl bg-white/80 p-7 backdrop-blur-xl sm:p-9"
+            style={{
+              border: '1px solid rgba(0,95,115,0.1)',
+              boxShadow: '0 32px 72px -12px rgba(0,95,115,0.14), 0 8px 24px -4px rgba(0,0,0,0.05), 0 0 0 1px rgba(255,255,255,0.85) inset',
+            }}
+          >
+            {/* Top shimmer line */}
+            <div className="absolute left-10 right-10 top-0 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(0,95,115,0.25), transparent)' }} />
+
+            {/* Corner accent dots */}
+            <div className="absolute right-4 top-4 flex gap-1" aria-hidden="true">
+              <div className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(0,95,115,0.18)' }} />
+              <div className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(0,95,115,0.1)' }} />
+            </div>
+
+            {/* Logo + Heading */}
             <div className="mb-8 text-center">
               <div className="mx-auto mb-5 flex h-10 w-20 items-center justify-center">
                 <img
@@ -84,7 +144,7 @@ export default function LoginPage() {
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).style.display = 'none'
                     const parent = e.currentTarget.parentElement
-                    if (parent) parent.innerHTML = '<span style="color:white;font-size:1.25rem;font-weight:700">S</span>'
+                    if (parent) parent.innerHTML = '<span style="color:#001219;font-size:1.25rem;font-weight:700">S</span>'
                   }}
                 />
               </div>
@@ -94,11 +154,11 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-widest text-stone-500">
+                <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
                   Email
                 </Label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
                   <Input
                     id="email"
                     type="email"
@@ -107,7 +167,8 @@ export default function LoginPage() {
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'email-error' : undefined}
                     {...register('email')}
-                    className="h-11 rounded-xl border-stone-200 bg-stone-50/80 pl-10 text-stone-950 placeholder:text-stone-400 focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-stone-300/40 transition-colors duration-150"
+                    className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+                    style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
                   />
                 </div>
                 {errors.email && <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>}
@@ -115,18 +176,19 @@ export default function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-widest text-stone-500">
+                  <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
                     Password
                   </Label>
                   <Link
                     to="/auth/forgot-password"
-                    className="text-xs font-medium text-stone-400 transition-colors duration-150 hover:text-stone-700"
+                    className="text-xs font-medium transition-colors duration-150 hover:opacity-100"
+                    style={{ color: 'rgba(0,95,115,0.55)' }}
                   >
                     Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+                  <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
                   <Input
                     id="password"
                     type="password"
@@ -135,7 +197,8 @@ export default function LoginPage() {
                     aria-invalid={Boolean(errors.password)}
                     aria-describedby={errors.password ? 'password-error' : undefined}
                     {...register('password')}
-                    className="h-11 rounded-xl border-stone-200 bg-stone-50/80 pl-10 text-stone-950 placeholder:text-stone-400 focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-stone-300/40 transition-colors duration-150"
+                    className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+                    style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
                   />
                 </div>
                 {errors.password && <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>}
@@ -151,6 +214,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={isSubmitting}
                 className="mt-1 h-11 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
+                style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
               >
                 {isSubmitting ? (
                   <><Loader2 className="mr-2 size-4 animate-spin" />Signing in...</>
@@ -161,13 +225,13 @@ export default function LoginPage() {
             </form>
 
             <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-stone-200" />
-              <span className="text-2xs font-bold uppercase tracking-[0.4em] text-stone-400">or</span>
-              <div className="h-px flex-1 bg-stone-200" />
+              <div className="h-px flex-1 bg-stone-100" />
+              <span className="text-2xs font-bold uppercase tracking-[0.4em] text-stone-300">or</span>
+              <div className="h-px flex-1 bg-stone-100" />
             </div>
 
             <div className="flex flex-col items-center space-y-3">
-              <span className="text-sm font-medium text-stone-500">Continue with</span>
+              <span className="text-xs font-medium text-stone-400">Continue with</span>
               <div className="grid w-full grid-cols-2 gap-3">
                 <OAuthButton
                   label="Microsoft Entra ID"
@@ -184,7 +248,11 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <p className="mt-6 text-center text-xs text-stone-400">Protected by enterprise-grade security</p>
+            {/* Footer */}
+            <div className="mt-6 flex items-center justify-center gap-1.5">
+              <Lock className="size-3 text-stone-300" aria-hidden="true" />
+              <p className="text-center text-xs text-stone-300">Protected by enterprise-grade security</p>
+            </div>
           </div>
         </div>
       </main>

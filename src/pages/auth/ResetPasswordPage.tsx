@@ -42,17 +42,10 @@ type Fields = z.infer<typeof schema>
 
 function HeroPanel() {
   return (
-    <aside className="relative hidden h-screen w-1/2 flex-col overflow-hidden bg-slate-950 md:flex">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-stone-900 to-slate-950" />
-      <div
-        className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/10 blur-[120px]"
-        style={{ animationDuration: '4s' }}
-      />
-      <div
-        className="absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-emerald-500/10 blur-[120px]"
-        style={{ animationDuration: '5s', animationDelay: '1s' }}
-      />
-      <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-brand/5 to-transparent blur-3xl" />
+    <aside className="relative hidden h-screen w-1/2 flex-col overflow-hidden md:flex" style={{ background: 'var(--gradient-header)' }}>
+      <div className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-[#005f73]/25 blur-[120px]" style={{ animationDuration: '4s' }} />
+      <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/10 blur-[120px]" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+      <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-[#005f73]/10 to-transparent blur-3xl" />
       <div
         className="absolute inset-0 opacity-[0.2]"
         style={{
@@ -196,28 +189,68 @@ export default function ResetPasswordPage() {
   const strengthColor = ['', 'bg-red-400', 'bg-amber-400', 'bg-blue-400', 'bg-emerald-500'][strength]
 
   const card = (children: React.ReactNode) => (
-    <div className="rounded-3xl border border-stone-200/80 bg-white/80 p-7 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.9)_inset] backdrop-blur-sm sm:p-9">
+    <div
+      className="relative overflow-hidden rounded-3xl bg-white/80 p-7 backdrop-blur-xl sm:p-9"
+      style={{ border: '1px solid rgba(0,95,115,0.1)', boxShadow: '0 32px 72px -12px rgba(0,95,115,0.14), 0 8px 24px -4px rgba(0,0,0,0.05), 0 0 0 1px rgba(255,255,255,0.85) inset' }}
+    >
+      <div className="absolute left-10 right-10 top-0 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(0,95,115,0.25), transparent)' }} />
+      <div className="absolute right-4 top-4 flex gap-1" aria-hidden="true">
+        <div className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(0,95,115,0.18)' }} />
+        <div className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(0,95,115,0.1)' }} />
+      </div>
       {children}
     </div>
   )
 
   return (
-    <div
-      className="min-h-screen md:h-screen md:overflow-hidden md:flex md:flex-row font-sans"
-    >
+    <div className="min-h-screen md:h-screen md:overflow-hidden md:flex md:flex-row font-sans">
       {/* ── LEFT — Form ── */}
-      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden md:min-h-0 md:h-full bg-stone-50 px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10">
-        {/* Noise texture */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E")`,
-          }}
-        />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-amber-100/60 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-stone-200/80 blur-3xl" />
+      <main
+        className="relative flex min-h-screen w-full items-center justify-center overflow-hidden md:min-h-0 md:h-full px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10"
+        style={{ background: 'linear-gradient(150deg, #f9fafa 0%, #f2f7f8 45%, #e8f3f5 100%)' }}
+      >
+        {/* Fine teal grid */}
+        <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: `linear-gradient(rgba(0,95,115,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(0,95,115,0.045) 1px, transparent 1px)`, backgroundSize: '44px 44px' }} />
+
+        {/* Concentric circles — top right */}
+        <div className="pointer-events-none absolute right-0 top-0 overflow-hidden">
+          <svg width="220" height="220" viewBox="0 0 220 220" fill="none" aria-hidden="true">
+            <circle cx="220" cy="0" r="80"  stroke="rgba(0,95,115,0.09)" strokeWidth="0.75" />
+            <circle cx="220" cy="0" r="120" stroke="rgba(0,95,115,0.06)" strokeWidth="0.75" />
+            <circle cx="220" cy="0" r="165" stroke="rgba(0,95,115,0.04)" strokeWidth="0.75" />
+          </svg>
+        </div>
+
+        {/* Concentric circles — bottom left */}
+        <div className="pointer-events-none absolute bottom-0 left-0 overflow-hidden">
+          <svg width="160" height="160" viewBox="0 0 160 160" fill="none" aria-hidden="true">
+            <circle cx="0" cy="160" r="60"  stroke="rgba(0,95,115,0.07)" strokeWidth="0.75" />
+            <circle cx="0" cy="160" r="100" stroke="rgba(0,95,115,0.04)" strokeWidth="0.75" />
+          </svg>
+        </div>
+
+        {/* Dot cluster */}
+        <div className="pointer-events-none absolute left-6 top-1/3 hidden md:block" aria-hidden="true">
+          {Array.from({ length: 4 }, (_, row) => (
+            <div key={row} className="flex gap-2 mb-2">
+              {Array.from({ length: 4 }, (_, col) => (
+                <div key={col} className="h-0.5 w-0.5 rounded-full bg-[#005f73]/25" />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Soft glow pools */}
+        <div className="pointer-events-none absolute right-0 top-1/4 h-72 w-72 -translate-y-1/2 rounded-full blur-3xl" style={{ background: 'rgba(0,95,115,0.07)' }} />
+        <div className="pointer-events-none absolute -left-8 bottom-1/4 h-52 w-52 rounded-full blur-3xl" style={{ background: 'rgba(163,230,53,0.07)' }} />
 
         <div className="relative w-full max-w-sm sm:max-w-md">
+          {/* Eyebrow */}
+          <div className="mb-4 flex items-center gap-3">
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, rgba(0,95,115,0.2))' }} />
+            <span className="text-2xs font-bold uppercase tracking-[0.35em]" style={{ color: 'rgba(0,95,115,0.45)' }}>Workspace Portal</span>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(0,95,115,0.2))' }} />
+          </div>
           {/* ── Missing token ── */}
           {!token &&
             card(
@@ -225,7 +258,7 @@ export default function ResetPasswordPage() {
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-100 bg-red-50">
                   <ShieldAlert className="size-8 text-red-400" />
                 </div>
-                <h2 className="text-xl font-semibold tracking-tight text-stone-950">Invalid link</h2>
+                <h2 className="font-brand text-xl font-bold tracking-tight text-stone-950">Invalid link</h2>
                 <p className="mt-2 text-sm text-stone-500">
                   This reset link is missing its token. Please request a new one.
                 </p>
@@ -254,7 +287,7 @@ export default function ResetPasswordPage() {
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-100 bg-red-50">
                   <ShieldAlert className="size-8 text-red-400" />
                 </div>
-                <h2 className="text-xl font-semibold tracking-tight text-stone-950">Link expired</h2>
+                <h2 className="font-brand text-xl font-bold tracking-tight text-stone-950">Link expired</h2>
                 <p className="mt-2 text-sm text-stone-500">
                   {apiErrorMessage(tokenQuery.error, 'This reset link is invalid or has expired.')}
                 </p>
@@ -282,10 +315,8 @@ export default function ResetPasswordPage() {
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50">
                   <CheckCircle2 className="size-8 text-emerald-500" />
                 </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-stone-950">
-                  Password updated
-                </h2>
-                <p className="mt-2 text-sm text-stone-500">
+                <h2 className="font-brand text-2xl font-bold tracking-tight text-stone-950">Password updated</h2>
+                <p className="mt-2 text-sm font-light text-stone-400">
                   Your password has been reset successfully. Redirecting you to sign in…
                 </p>
                 <Link
@@ -310,19 +341,14 @@ export default function ResetPasswordPage() {
                       onError={(e) => {
                         ;(e.currentTarget as HTMLImageElement).style.display = 'none'
                         const parent = e.currentTarget.parentElement
-                        if (parent)
-                          parent.innerHTML =
-                            '<span style="color:#1c1917;font-size:1.25rem;font-weight:700">S</span>'
+                        if (parent) parent.innerHTML = '<span style="color:#001219;font-size:1.25rem;font-weight:700">S</span>'
                       }}
                     />
                   </div>
-                  <h2 className="text-2xl font-semibold tracking-tight text-stone-950">
-                    Create new password
-                  </h2>
+                  <h2 className="font-brand text-3xl font-bold tracking-tight text-stone-950">Create new password</h2>
                   {tokenQuery.data?.email && (
-                    <p className="mt-2 text-sm text-stone-500">
-                      for{' '}
-                      <span className="font-semibold text-stone-700">{tokenQuery.data.email}</span>
+                    <p className="mt-2 text-sm font-light text-stone-400">
+                      for <span className="font-semibold text-stone-600">{tokenQuery.data.email}</span>
                     </p>
                   )}
                 </div>
@@ -332,12 +358,12 @@ export default function ResetPasswordPage() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="newPassword"
-                      className="text-xs font-semibold uppercase tracking-widest text-stone-500"
+                      className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400"
                     >
                       New Password
                     </Label>
                     <div className="relative">
-                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
                       <Input
                         id="newPassword"
                         type={showPassword ? 'text' : 'password'}
@@ -346,7 +372,7 @@ export default function ResetPasswordPage() {
                         aria-invalid={Boolean(errors.newPassword)}
                         aria-describedby={errors.newPassword ? 'pw-error' : undefined}
                         {...register('newPassword')}
-                        className="h-11 rounded-xl border-stone-200 bg-stone-50/80 pl-10 pr-11 text-stone-950 placeholder:text-stone-400 focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-stone-300/40 transition-colors duration-150"
+                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
                       />
                       <button
                         type="button"
@@ -400,12 +426,12 @@ export default function ResetPasswordPage() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="confirm"
-                      className="text-xs font-semibold uppercase tracking-widest text-stone-500"
+                      className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400"
                     >
                       Confirm Password
                     </Label>
                     <div className="relative">
-                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
                       <Input
                         id="confirm"
                         type={showConfirm ? 'text' : 'password'}
@@ -414,7 +440,7 @@ export default function ResetPasswordPage() {
                         aria-invalid={Boolean(errors.confirm)}
                         aria-describedby={errors.confirm ? 'confirm-error' : undefined}
                         {...register('confirm')}
-                        className="h-11 rounded-xl border-stone-200 bg-stone-50/80 pl-10 pr-11 text-stone-950 placeholder:text-stone-400 focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-stone-300/40 transition-colors duration-150"
+                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
                       />
                       <button
                         type="button"
@@ -442,6 +468,7 @@ export default function ResetPasswordPage() {
                     type="submit"
                     disabled={isSubmitting}
                     className="mt-1 h-11 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:cursor-not-allowed disabled:opacity-70"
+                    style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
                   >
                     {isSubmitting ? (
                       <>
@@ -459,7 +486,7 @@ export default function ResetPasswordPage() {
                 <div className="mt-6 text-center">
                   <Link
                     to="/auth/login"
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors duration-150 hover:text-stone-900"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors duration-150 hover:text-stone-900"
                     aria-label="Go back to sign in"
                   >
                     <ArrowLeft className="size-3.5" />
