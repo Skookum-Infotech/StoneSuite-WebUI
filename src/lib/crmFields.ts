@@ -48,6 +48,7 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
       { key: 'customer_is_child', label: 'Is Child Customer', type: 'checkbox' },
       { key: 'customer_parent_company', label: 'Parent Customer', type: 'lookup-select', lookupKey: 'parentCustomers', showIfFieldTrue: 'customer_is_child' },
       { key: 'customer_ar_status', label: 'AR Status', type: 'lookup-select', lookupKey: 'arStatuses' },
+      // { key: 'customer_ar_status', label: 'Customer Status', type: 'lookup-select', lookupKey}
     ],
   },
   {

@@ -124,7 +124,7 @@ export default function ProspectViewPage() {
               <CrmRecordDetail coreFields={cf} users={users} />
               {Object.keys(record.customFields).length > 0 && (
                 <ModernSection title="Custom Fields" index={0} defaultCollapsed>
-                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-5 4xl:grid-cols-6">
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                     {Object.entries(record.customFields).map(([key, value]) => (
                       <div key={key} className="space-y-1.5">
                         <label className={fieldLabelCls}>{key}</label>

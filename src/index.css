@@ -13,6 +13,26 @@
   --breakpoint-4xl: 240rem;  /* 3840px */
 }
 
+/* ── Fluid sidebar width ────────────────────────────────────────────────────
+   --sidebar-w   : actual sidebar visual width (used by <aside>)
+   --sidebar-offset: content left-padding; 0 on mobile (sidebar is an overlay),
+                     equals --sidebar-w on lg+ (sidebar is in-flow)
+   clamp keeps the sidebar proportional on ultra-wide screens:
+     min  14rem = 224px  (≈ Tailwind w-56, default desktop)
+     pref 12vw           (fluid — at 2560px → 307px, at 3840px → 461px→capped)
+     max  20rem = 320px  (cap so it never gets absurdly wide)
+   ─────────────────────────────────────────────────────────────────────── */
+:root {
+  --sidebar-w: clamp(14rem, 12vw, 20rem);
+  --sidebar-offset: 0rem;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --sidebar-offset: var(--sidebar-w);
+  }
+}
+
 @font-face {
   font-family: "All Round Gothic";
   src: url("/fonts/allroundgothic-book.otf") format("opentype");

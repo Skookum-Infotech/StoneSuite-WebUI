@@ -251,7 +251,7 @@ export default function MainLayout(): React.JSX.Element {
       />
 
       {/* ── Page Content ── */}
-      <div className="flex flex-col min-h-screen pt-16 lg:pl-56 3xl:pl-60 4xl:pl-64">
+      <div className="flex flex-col min-h-screen pt-16" style={{ paddingLeft: 'var(--sidebar-offset)' }}>
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}

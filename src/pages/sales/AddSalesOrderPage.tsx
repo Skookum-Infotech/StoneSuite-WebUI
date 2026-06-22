@@ -158,7 +158,7 @@ function SOSectionFields({
 }) {
   return (
     <SOSection title={section.title}>
-      <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
         {section.fields.map((f) => (
           <SOFieldInput key={f.key} field={f} value={data[f.key]} set={set} />
         ))}
@@ -769,7 +769,7 @@ export default function AddSalesOrderPage() {
                   <div className="space-y-4">
                     {activeTabObj.sections.map((section) => (
                       <div key={section.title}>
-                        <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5">
+                        <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
                           {section.fields.map((f) => (
                             <SOFieldInput key={f.key} field={f} value={data[f.key]} set={set} />
                           ))}
