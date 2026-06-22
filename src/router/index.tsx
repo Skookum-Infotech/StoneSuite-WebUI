@@ -71,16 +71,16 @@ const EditCustomerPage = lazyWithRetry(
   () => import("@/pages/crm/customer/EditCustomerPage"),
 );
 const ConfigHomePage = lazyWithRetry(() => import("@/pages/config/ConfigHomePage"));
-const ConfigWorkflowsPage = lazyWithRetry(() => import("@/pages/config/WorkflowsPage"));
+const ConfigWorkflowsPage = lazyWithRetry(() => import("@/pages/config/workflows/WorkflowsPage"));
 const WorkflowBuilderPage = lazyWithRetry(
-  () => import("@/pages/config/WorkflowBuilderPage"),
+  () => import("@/pages/config/workflows/WorkflowBuilderPage"),
 );
-const RolesPage = lazyWithRetry(() => import("@/pages/config/RolesPage"));
-const CreateRolePage = lazyWithRetry(() => import("@/pages/config/CreateRolePage"));
-const EditRolePage = lazyWithRetry(() => import("@/pages/config/EditRolePage"));
-const UsersPage = lazyWithRetry(() => import("@/pages/config/UsersPage"));
+const RolesPage = lazyWithRetry(() => import("@/pages/config/roles-access/RolesPage"));
+const CreateRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/CreateRolePage"));
+const EditRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/EditRolePage"));
+const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const RecordNumberingPage = lazyWithRetry(
-  () => import("@/pages/config/RecordNumberingPage"),
+  () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
