@@ -28,9 +28,9 @@ const cardCls =
 const headingCls =
   "text-xs font-semibold text-stone-400";
 const rowCls =
-  "flex justify-between items-center py-2 border-b border-stone-100 last:border-0 text-sm";
+  "flex justify-between items-center py-2 border-b border-stone-100 last:border-0 text-xs";
 const actionRowCls =
-  "flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-sm text-stone-700 w-full transition-colors text-left";
+  "flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left";
 
 /** Sticky right-panel shown on all CRM record detail and edit pages. */
 export function CrmDetailSidebar({
@@ -84,7 +84,7 @@ export function CrmDetailSidebar({
       <div className={cardCls}>
         <p className={headingCls}>Status</p>
         <div className={rowCls}>
-          <span className="text-stone-500">Status</span>
+          <span className="text-xs text-stone-500">Status</span>
           {statusInfo ? (
             <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
           ) : (
@@ -92,22 +92,20 @@ export function CrmDetailSidebar({
           )}
         </div>
         <div className={rowCls}>
-          <span className="text-stone-500">Account owner</span>
-          <span
-            className={owner ? "text-stone-900 font-medium" : "text-stone-400"}
-          >
+          <span className="text-xs text-stone-500">Account owner</span>
+          <span className={owner ? "text-xs text-stone-700" : "text-xs text-stone-400"}>
             {owner?.fullName ?? "—"}
           </span>
         </div>
         <div className={rowCls}>
-          <span className="text-stone-500">Created</span>
-          <span className="font-semibold text-stone-700">
+          <span className="text-xs text-stone-500">Created</span>
+          <span className="text-xs text-stone-700">
             {fmtDate(createdAt)}
           </span>
         </div>
         <div className={rowCls}>
-          <span className="text-stone-500">Updated</span>
-          <span className="font-semibold text-stone-700">
+          <span className="text-xs text-stone-500">Updated</span>
+          <span className="text-xs text-stone-700">
             {fmtDate(updatedAt)}
           </span>
         </div>

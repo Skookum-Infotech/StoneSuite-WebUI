@@ -161,7 +161,7 @@ export default function AddProspectPage() {
 
         {/* Scrollable form body */}
         <div className="flex-1 overflow-y-auto modal-scrollbar">
-          <div className="px-4 py-3 pb-24 space-y-3">
+          <div className="px-4 py-3 pb-24 space-y-2">
             {activeTab === 'details' && (
               <CrmRecordForm
                 core={{ fields: coreFields, onChange: set }}

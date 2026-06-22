@@ -1,23 +1,23 @@
 export const fieldCls =
-  'w-full h-10 px-3.5 py-2.5 text-sm text-stone-900 bg-white border border-stone-300 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-brand focus:ring-2 focus:ring-brand/30 disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed';
+  'w-full h-10 px-3.5 py-2.5 text-xs text-stone-900 bg-white border border-stone-300 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-brand focus:ring-2 focus:ring-brand/30 disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed';
 
 export const fieldErrorCls =
-  'w-full h-10 px-3.5 py-2.5 text-sm text-stone-900 bg-white border border-red-400 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 ring-1 ring-red-200';
+  'w-full h-10 px-3.5 py-2.5 text-xs text-stone-900 bg-white border border-red-400 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 ring-1 ring-red-200';
 
 export const textareaCls =
-  'w-full px-3.5 py-2.5 text-sm text-stone-900 bg-white border border-stone-300 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-brand focus:ring-2 focus:ring-brand/30 disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed resize-none';
+  'w-full px-3.5 py-2.5 text-xs text-stone-900 bg-white border border-stone-300 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-brand focus:ring-2 focus:ring-brand/30 disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed resize-none';
 
 export const textareaErrorCls =
-  'w-full px-3.5 py-2.5 text-sm text-stone-900 bg-white border border-red-400 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 ring-1 ring-red-200 resize-none';
+  'w-full px-3.5 py-2.5 text-xs text-stone-900 bg-white border border-red-400 rounded-[10px] outline-none transition-all duration-150 placeholder:text-stone-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 ring-1 ring-red-200 resize-none';
 
 export const readonlyCls =
-  'w-full min-h-10 px-3.5 py-2.5 text-sm text-stone-900 bg-stone-50 border border-stone-300 rounded-[10px]';
+  'w-full min-h-10 px-3.5 py-2.5 text-xs text-stone-900 bg-stone-50 border border-stone-300 rounded-[10px]';
 
 export const fieldLabelCls =
   'block text-xs font-semibold text-stone-900';
 
 export const checkboxLabelCls =
-  'text-sm font-medium text-stone-700';
+  'text-xs font-medium text-stone-700';
 
 /** Generates a stable DOM id for a form section title — used by section jump nav. */
 export function sectionId(title: string): string {

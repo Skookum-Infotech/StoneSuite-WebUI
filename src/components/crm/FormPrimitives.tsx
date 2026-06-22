@@ -28,11 +28,11 @@ export function ModernSection({
           isOpen && 'border-b border-stone-200',
         )}
       >
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           {index !== undefined && (
-            <span className="text-xs font-bold text-stone-400 w-5 shrink-0 tabular-nums">{index}.</span>
+            <div className="w-1 h-4 rounded-full shrink-0 bg-brand" />
           )}
-          <h3 className="text-xs font-bold text-stone-950">{title}</h3>
+          <h3 className="text-sm font-semibold text-stone-950">{title}</h3>
         </div>
         <ChevronDown
           className={cn(

@@ -125,7 +125,7 @@ export default function CustomerDetailPage() {
       <div className="flex flex-row gap-6 px-5 py-5">
 
         {/* Left column — main content */}
-        <div className="flex-1 space-y-5 min-w-0">
+        <div className="flex-1 space-y-3 min-w-0">
           {activeTab === "overview" && (
             <>
               <CrmRecordDetail coreFields={cf} showCustomerBalances users={users} />

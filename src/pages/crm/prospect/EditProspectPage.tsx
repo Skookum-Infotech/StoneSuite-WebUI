@@ -199,7 +199,7 @@ export default function EditProspectPage() {
 
         {/* Two-column body — browser scrolls, not an inner div */}
         <div className="flex flex-row gap-6 px-5 py-5 pb-24">
-          <div className="flex-1 space-y-3 min-w-0">
+          <div className="flex-1 space-y-2 min-w-0">
             {activeTab === 'details' && (
               <CrmRecordForm
                 core={{ fields: coreFields, onChange: set }}
