@@ -139,7 +139,7 @@
      Dark teal-to-navy gradient used by the top navigation bar.
      Change this one var to retheme the header across all breakpoints.
      ─────────────────────────────────────────────────────────────────── */
-  --gradient-header: linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%);
+  --gradient-header: linear-gradient(135deg, #001219 0%, #005f73 15%, #0a2540 50%, #050e1a 100%);
 
   /* ── Sidebar tokens ─────────────────────────────────────────────────────
      Sidebar background is stone-100 (#f7f7f7), slightly behind the main canvas.
