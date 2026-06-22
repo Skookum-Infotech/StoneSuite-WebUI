@@ -119,7 +119,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
     if (visibleFields.length === 0) return null;
     return (
       <ModernSection key={section.title} title={section.title} index={idx + 1} defaultCollapsed={idx > 0}>
-        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleFields.map(renderFieldBox)}
         </div>
       </ModernSection>
@@ -132,7 +132,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
 
       {showCustomerBalances && (
         <ModernSection title={CRM_CUSTOMER_BALANCE_SECTION.title} index={CRM_CORE_SECTIONS.length + 1} defaultCollapsed>
-          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {CRM_CUSTOMER_BALANCE_SECTION.fields.map(renderFieldBox)}
           </div>
         </ModernSection>
