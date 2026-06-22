@@ -190,11 +190,10 @@ export default function LoginPage() {
       </main>
 
       {/* ── RIGHT — Hero ── */}
-      <aside className="relative hidden h-screen w-1/2 flex-col overflow-hidden bg-stone-950 md:flex">
-        <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-950 to-stone-950" />
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/10 blur-[120px]" style={{ animationDuration: '4s' }} />
-        <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/5 blur-[120px]" style={{ animationDuration: '5s', animationDelay: '1s' }} />
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-brand/5 to-transparent blur-3xl" />
+      <aside className="relative hidden h-screen w-1/2 flex-col overflow-hidden md:flex" style={{ background: 'var(--gradient-header)' }}>
+        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-[#005f73]/25 blur-[120px]" style={{ animationDuration: '4s' }} />
+        <div className="absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/10 blur-[120px]" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-[#005f73]/10 to-transparent blur-3xl" />
         <div
           className="absolute inset-0 opacity-[0.2]"
           style={{ backgroundImage: `radial-gradient(circle at center, #ffffff 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
