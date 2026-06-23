@@ -6,11 +6,13 @@ import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/useAuthStore'
+import { userService } from '@/services/tenantServices'
 import { apiErrorMessage } from '@/api/tenantClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FaAws } from 'react-icons/fa'
+import type { UserRole } from '@/types/auth'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
@@ -47,8 +49,29 @@ export default function LoginPage() {
     try {
       const response = await authService.login({ email: data.email, password: data.password, rememberMe: false })
       if (response.success && response.user && response.token) {
+        // Fetch user with roles
+        let userWithRoles = response.user
+        try {
+          const workspaceUser = await userService.listUsers()
+          const currentUser = workspaceUser.find((u) => u.email === response.user!.email)
+          if (currentUser && currentUser.roles) {
+            const roles: UserRole[] = currentUser.roles.map((r) => ({
+              id: r.id,
+              name: r.name,
+              key: r.key,
+            }))
+            userWithRoles = {
+              ...response.user,
+              roles,
+              selectedRoleId: roles.length > 0 ? roles[0].id : undefined,
+            }
+          }
+        } catch (err) {
+          // Non-fatal: login still works without roles
+          console.warn('Failed to fetch user roles:', err)
+        }
         // eslint-disable-next-line react-hooks/purity
-        setAuth(response.user, response.token, response.expiresAt ?? Date.now() + 60 * 60 * 1000)
+        setAuth(userWithRoles, response.token, response.expiresAt ?? Date.now() + 60 * 60 * 1000)
         navigate('/dashboard')
       } else {
         setError('root', { message: response.message ?? 'Login failed' })

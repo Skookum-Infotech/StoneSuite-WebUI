@@ -16,6 +16,9 @@ import {
   Settings,
   Search,
   X,
+  CreditCard,
+  Shield,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -190,7 +193,7 @@ export default function MainLayout(): React.JSX.Element {
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-0 mt-2.5 w-56 origin-top-right rounded-2xl border border-white/10 bg-[#1c1c1c] p-2 shadow-2xl ring-1 ring-white/[0.04] animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="absolute right-0 mt-2.5 w-60 origin-top-right rounded-2xl border border-white/10 bg-[#1c1c1c] p-2 shadow-2xl ring-1 ring-white/[0.04] animate-in fade-in slide-in-from-top-1 duration-150 max-h-96 overflow-y-auto">
                   <div className="px-3.5 py-2.5 border-b border-white/[0.08]">
                     <h5 className="text-xs font-bold text-stone-200">
                       {user?.fullName || 'Guest User'}
@@ -207,6 +210,42 @@ export default function MainLayout(): React.JSX.Element {
                       <Settings className="size-4 text-stone-500" />
                       <span>Account Settings</span>
                     </button>
+                  </div>
+                  <div className="h-px bg-white/[0.08] my-1" />
+                  <div className="py-1">
+                    <button
+                      onClick={() => navigate('/transactions')}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
+                    >
+                      <CreditCard className="size-4 text-stone-500" />
+                      <span>My Transactions</span>
+                    </button>
+                  </div>
+                  <div className="h-px bg-white/[0.08] my-1" />
+                  <div className="py-1">
+                    <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                      Roles
+                    </div>
+                    {user?.roles && user.roles.length > 0 ? (
+                      <div className="space-y-0.5">
+                        {user.roles.map((role) => (
+                          <div
+                            key={role.id}
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left"
+                          >
+                            <Shield className="size-4 text-stone-500 flex-shrink-0" />
+                            <span className="flex-1">{role.name}</span>
+                            {role.id === user.selectedRoleId && (
+                              <Check className="size-4 text-brand flex-shrink-0" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 text-2xs text-stone-500">
+                        No roles assigned
+                      </div>
+                    )}
                   </div>
                   <div className="h-px bg-white/[0.08] my-1" />
                   <button
