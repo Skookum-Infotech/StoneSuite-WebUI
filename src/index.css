@@ -98,6 +98,19 @@
     font-size: 16px;
   }
 
+  /* Scale the entire UI up on large desktop monitors (not laptops).
+     rem-based Tailwind text sizes (text-xs, text-sm, etc.) scale automatically.
+     px-based values (icon size-*, most spacing) are unaffected — intentional.
+     1920px = standard desktop 1080p monitor
+     2560px = 1440p / ultrawide */
+  @media (min-width: 1920px) {
+    font-size: 17px;
+  }
+
+  @media (min-width: 2560px) {
+    font-size: 18.67px;
+  }
+
   /* ── shadcn base tokens (overridden below by brand tokens) ── */
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
