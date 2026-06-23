@@ -34,29 +34,50 @@ function HeroPanel() {
         @keyframes float-slow { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(0, -20px) rotate(3deg); } }
         .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
         .animate-float-delayed { animation: float-slow 7s ease-in-out infinite 2s; }
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes comet { 0% { opacity: 0; transform: translate(0,0); } 5% { opacity: 0.75; } 100% { opacity: 0; transform: translate(-520px, 520px); } }
+        @keyframes card-spot { 0%, 33%, 100% { border-color: rgba(255,255,255,0.08); box-shadow: none; } 8%, 25% { border-color: rgba(163,230,53,0.28); box-shadow: 0 0 22px rgba(163,230,53,0.09), inset 0 0 0 1px rgba(163,230,53,0.12); } }
+        .spot-1 { animation: card-spot 12s ease-in-out 0s infinite; }
+        .spot-2 { animation: card-spot 12s ease-in-out 4s infinite; }
+        .spot-3 { animation: card-spot 12s ease-in-out 8s infinite; }
       `}</style>
-      <div className="absolute right-16 top-1/4 h-32 w-32 animate-float-slow rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-md" />
-      <div className="absolute bottom-1/3 left-16 h-20 w-20 animate-float-delayed rounded-full border border-brand/20 bg-brand/10 shadow-2xl backdrop-blur-md" />
+
+      {/* Rotating gem */}
+      <div className="absolute bottom-1/3 left-10 animate-float-delayed">
+        <div style={{ animation: 'spin-slow 28s linear infinite' }}>
+          <svg width="58" height="58" viewBox="0 0 58 58" fill="none" aria-hidden="true">
+            <polygon points="29,2 54,15.5 54,42.5 29,56 4,42.5 4,15.5" stroke="rgba(163,230,53,0.28)" strokeWidth="1" fill="rgba(163,230,53,0.07)" />
+            <polygon points="29,12 44,20.5 44,37.5 29,46 14,37.5 14,20.5" stroke="rgba(163,230,53,0.15)" strokeWidth="0.75" fill="rgba(163,230,53,0.04)" />
+            <circle cx="29" cy="29" r="3" fill="rgba(163,230,53,0.45)" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Shooting star comets */}
+      {([
+        { top: '4%',  right: '8%',  delay: '0s',   dur: '2.4s', w: 65 },
+        { top: '10%', right: '35%', delay: '2.1s',  dur: '1.9s', w: 45 },
+        { top: '2%',  right: '18%', delay: '4.5s',  dur: '2.2s', w: 72 },
+        { top: '16%', right: '5%',  delay: '1.3s',  dur: '2.6s', w: 52 },
+        { top: '7%',  right: '52%', delay: '6s',    dur: '2s',   w: 58 },
+        { top: '1%',  right: '42%', delay: '3.2s',  dur: '1.8s', w: 40 },
+        { top: '20%', right: '22%', delay: '5.4s',  dur: '2.3s', w: 48 },
+      ] as { top: string; right: string; delay: string; dur: string; w: number }[]).map((c, i) => (
+        <div
+          key={i}
+          className="pointer-events-none absolute"
+          style={{ top: c.top, right: c.right, animation: `comet ${c.dur} ease-in ${c.delay} infinite` }}
+        >
+          <div style={{ width: `${c.w}px`, height: '1px', background: 'linear-gradient(to right, rgba(255,255,255,0.55), rgba(255,255,255,0))', transform: 'rotate(-45deg)', transformOrigin: 'right center' }} />
+        </div>
+      ))}
 
       <div className="relative z-10 flex h-full flex-col justify-between p-8 lg:p-12">
-        <div className="flex items-center justify-between">
-          <div className="flex h-10 items-center lg:h-12">
-            <img
-              src="/logo-white.png"
-              alt="Stone Suite"
-              className="h-full w-auto object-contain drop-shadow-lg"
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).style.display = 'none'
-                const parent = e.currentTarget.parentElement
-                if (parent)
-                  parent.innerHTML =
-                    '<span style="color:white;font-size:1.15rem;font-weight:700;letter-spacing:0.05em">STONE SUITE</span>'
-              }}
-            />
-          </div>
-          <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-label lg:px-4 lg:py-1.5 font-medium tracking-wide text-white backdrop-blur-sm transition-transform hover:scale-105">
-            Secure Recovery
-          </div>
+        <div className="flex items-center gap-3">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(163,230,53,0.8)', animation: 'pulse 2.4s ease-in-out 0s infinite' }} />
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(163,230,53,0.45)', animation: 'pulse 2.4s ease-in-out 0.8s infinite' }} />
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(163,230,53,0.18)', animation: 'pulse 2.4s ease-in-out 1.6s infinite' }} />
+          <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
         </div>
 
         <div className="max-w-xl">
@@ -79,23 +100,32 @@ function HeroPanel() {
             We'll send a secure, one-time reset link to your inbox. Your data stays
             protected throughout the entire process.
           </p>
-          <div className="mt-6 grid max-w-lg gap-3 sm:grid-cols-2 lg:mt-8">
-            <div className="group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-              <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 lg:p-2 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
-                <ShieldCheck className="size-4 lg:size-5" />
+          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:mt-8">
+            <div className="spot-1 group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-4 backdrop-blur-sm transition-colors duration-500 hover:bg-white/10">
+              <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
+                <ShieldCheck className="size-4" />
               </div>
-              <h3 className="text-xs lg:text-sm font-semibold text-white">Zero-Trust Reset</h3>
-              <p className="mt-1 text-label lg:text-xs leading-relaxed text-white/40">
+              <h3 className="text-xs font-semibold text-white">Zero-Trust Reset</h3>
+              <p className="mt-1 text-label leading-relaxed text-white/40">
                 Every link is single-use and expires in 24 hours.
               </p>
             </div>
-            <div className="group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-              <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 lg:p-2 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
-                <MailCheck className="size-4 lg:size-5" />
+            <div className="spot-2 group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-4 backdrop-blur-sm transition-colors duration-500 hover:bg-white/10">
+              <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
+                <MailCheck className="size-4" />
               </div>
-              <h3 className="text-xs lg:text-sm font-semibold text-white">Instant Delivery</h3>
-              <p className="mt-1 text-label lg:text-xs leading-relaxed text-white/40">
+              <h3 className="text-xs font-semibold text-white">Instant Delivery</h3>
+              <p className="mt-1 text-label leading-relaxed text-white/40">
                 Reset email arrives in seconds — check spam if needed.
+              </p>
+            </div>
+            <div className="spot-3 group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-4 backdrop-blur-sm transition-colors duration-500 hover:bg-white/10">
+              <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+              </div>
+              <h3 className="text-xs font-semibold text-white">Full Audit Trail</h3>
+              <p className="mt-1 text-label leading-relaxed text-white/40">
+                Every reset is logged and fully traceable.
               </p>
             </div>
           </div>
