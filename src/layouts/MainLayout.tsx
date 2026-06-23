@@ -11,7 +11,6 @@ import { GlobalSearch } from '@/components/GlobalSearch';
 import {
   Menu,
   ChevronRight,
-  User as UserIcon,
   LogOut,
   Bell,
   Settings,
@@ -201,13 +200,6 @@ export default function MainLayout(): React.JSX.Element {
                     </p>
                   </div>
                   <div className="py-1">
-                    <button
-                      onClick={() => navigate('/dashboard')}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
-                    >
-                      <UserIcon className="size-4 text-stone-500" />
-                      <span>My Profile</span>
-                    </button>
                     <button
                       onClick={() => navigate('/dashboard')}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
