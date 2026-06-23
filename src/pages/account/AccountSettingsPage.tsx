@@ -62,7 +62,7 @@ function ReadOnlyField({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">{label}</Label>
+      <Label className="text-xs font-semibold text-stone-500">{label}</Label>
       <div className="flex h-11 items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5">
         {Icon && <Icon className="size-4 shrink-0 text-stone-300" />}
         <span className="flex-1 text-xs text-stone-600 select-all">{value || '—'}</span>
@@ -223,10 +223,10 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
 
 // ── Avatar initials ──────────────────────────────────────────────────────────
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, className }: { name: string; className?: string }) {
   const initials = name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('')
   return (
-    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand text-3xl font-bold text-stone-900 shrink-0">
+    <div className={cn('flex items-center justify-center bg-brand font-bold text-stone-900 shrink-0', className)}>
       {initials || '?'}
     </div>
   )
@@ -294,7 +294,7 @@ export default function AccountSettingsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="p-4 sm:p-6 3xl:p-10 4xl:p-14 flex flex-col gap-5 h-full">
+      <div className="p-3 sm:p-6 3xl:p-10 4xl:p-14 flex flex-col gap-4 sm:gap-5 h-full">
 
         {/* ── Page header ── */}
         <div className="flex items-center justify-between">
@@ -305,43 +305,46 @@ export default function AccountSettingsPage() {
         </div>
 
         {/* ── Two-panel layout ── */}
-        <div className="flex gap-5 flex-1 min-h-0 items-start">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 flex-1 min-h-0 sm:items-start">
 
-          {/* Left nav */}
-          <aside className="w-52 shrink-0 sticky top-0">
+          {/* Left nav — sidebar on desktop, compact strip + pill tabs on mobile */}
+          <aside className="w-full sm:w-52 shrink-0 sm:sticky sm:top-0">
             <nav className="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow">
-              {/* Avatar block */}
-              <div className="flex flex-col items-center gap-3 px-4 py-6 bg-gradient-to-b from-stone-50 to-white border-b border-stone-100">
-                <Avatar name={user?.fullName ?? ''} />
-                <div className="text-center">
-                  <p className="text-xs font-bold text-stone-900 leading-tight">{user?.fullName ?? '—'}</p>
-                  <p className="text-xs text-stone-400 mt-0.5 truncate max-w-[168px]">{user?.email ?? '—'}</p>
+              {/* Avatar block — vertical on desktop, horizontal on mobile */}
+              <div className="flex sm:flex-col items-center gap-3 px-4 py-3.5 sm:py-6 bg-gradient-to-b from-stone-50 to-white border-b border-stone-100">
+                <Avatar
+                  name={user?.fullName ?? ''}
+                  className="h-12 w-12 sm:h-20 sm:w-20 rounded-xl sm:rounded-2xl text-xl sm:text-3xl"
+                />
+                <div className="flex-1 sm:flex-none sm:text-center min-w-0">
+                  <p className="text-xs font-bold text-stone-900 leading-tight truncate">{user?.fullName ?? '—'}</p>
+                  <p className="text-xs text-stone-400 mt-0.5 truncate sm:max-w-[168px]">{user?.email ?? '—'}</p>
                 </div>
                 {roles.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-2xs font-bold text-brand-dark">
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-2xs font-bold text-brand-dark">
                     <Shield className="size-3" />
                     {roles.find(r => r.id === selectedRoleId)?.name ?? roles[0]?.name}
                   </span>
                 )}
               </div>
 
-              {/* Nav links */}
-              <div className="p-2.5 space-y-1.5">
+              {/* Nav links — horizontal scroll on mobile, vertical stack on desktop */}
+              <div className="p-2 sm:p-2.5 flex sm:flex-col gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {navItems.map(({ id, label, icon: Icon, badge }) => (
                   <button
                     key={id}
                     onClick={() => setActiveTab(id)}
                     className={cn(
-                      'group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all duration-150 cursor-pointer',
+                      'group flex shrink-0 sm:w-full items-center gap-2 sm:gap-2.5 rounded-xl px-3 py-2 sm:py-2.5 text-left transition-all duration-150 cursor-pointer',
                       activeTab === id
                         ? 'bg-[#001219] text-white shadow-sm'
                         : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
                     )}
                   >
-                    <Icon className={cn('size-4 shrink-0', activeTab === id ? 'text-brand' : 'text-stone-400 group-hover:text-stone-600')} />
-                    <span className="flex-1 text-xs font-semibold">{label}</span>
+                    <Icon className={cn('size-3.5 sm:size-4 shrink-0', activeTab === id ? 'text-brand' : 'text-stone-400 group-hover:text-stone-600')} />
+                    <span className="text-xs font-semibold whitespace-nowrap">{label}</span>
                     {badge && (
-                      <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-2xs font-bold', activeTab === id ? 'bg-brand/20 text-brand' : 'bg-stone-200 text-stone-500')}>
+                      <span className={cn('flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full text-2xs font-bold', activeTab === id ? 'bg-brand/20 text-brand' : 'bg-stone-200 text-stone-500')}>
                         {badge}
                       </span>
                     )}
@@ -357,7 +360,7 @@ export default function AccountSettingsPage() {
             {/* ── Profile tab ── */}
             {activeTab === 'profile' && (
               <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-stone-100 bg-stone-50/60">
+                <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
                       <UserCircle className="size-4.5" />
@@ -368,8 +371,8 @@ export default function AccountSettingsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="px-6 py-6 space-y-5">
-                  <div className="grid gap-5 sm:grid-cols-2">
+                <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
+                  <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
                     <ReadOnlyField label="First Name" value={firstName} />
                     <ReadOnlyField label="Last Name" value={lastName} />
                   </div>
@@ -388,13 +391,13 @@ export default function AccountSettingsPage() {
                   {/* Account meta */}
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-stone-100">
                     <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-3">
-                      <p className="text-2xs font-bold uppercase tracking-[0.15em] text-stone-400">Account Type</p>
+                      <p className="text-xs font-semibold text-stone-500">Account Type</p>
                       <p className="text-xs font-semibold text-stone-800 mt-1">
                         {user?.isPlatformAdmin ? 'Platform Admin' : 'Workspace Member'}
                       </p>
                     </div>
                     <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-3">
-                      <p className="text-2xs font-bold uppercase tracking-[0.15em] text-stone-400">Active Role</p>
+                      <p className="text-xs font-semibold text-stone-500">Active Role</p>
                       <p className="text-xs font-semibold text-stone-800 mt-1">
                         {roles.find(r => r.id === selectedRoleId)?.name ?? (roles[0]?.name ?? 'None')}
                       </p>
@@ -407,7 +410,7 @@ export default function AccountSettingsPage() {
             {/* ── Password tab ── */}
             {activeTab === 'password' && (
               <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-stone-100 bg-stone-50/60">
+                <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
                       <KeyRound className="size-4.5" />
@@ -418,7 +421,7 @@ export default function AccountSettingsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="px-6 py-6">
+                <div className="px-4 sm:px-6 py-4 sm:py-6">
                   {passwordSuccess && (
                     <div className="mb-5 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5">
                       <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
@@ -432,7 +435,7 @@ export default function AccountSettingsPage() {
                   <form onSubmit={handleSubmit(onPasswordSubmit)} className="space-y-5">
                     {/* Current password — full width */}
                     <div className="space-y-1.5">
-                      <Label htmlFor="currentPassword" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+                      <Label htmlFor="currentPassword" className="text-xs font-semibold text-stone-500">
                         Current Password
                       </Label>
                       <div className="relative">
@@ -453,10 +456,10 @@ export default function AccountSettingsPage() {
                       {errors.currentPassword && <p className="text-xs text-destructive">{errors.currentPassword.message}</p>}
                     </div>
 
-                    {/* New + Confirm — side by side */}
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    {/* New + Confirm — side by side on sm+ */}
+                    <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label htmlFor="newPassword" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+                        <Label htmlFor="newPassword" className="text-xs font-semibold text-stone-500">
                           New Password
                         </Label>
                         <div className="relative">
@@ -479,7 +482,7 @@ export default function AccountSettingsPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="confirmPassword" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+                        <Label htmlFor="confirmPassword" className="text-xs font-semibold text-stone-500">
                           Confirm Password
                         </Label>
                         <div className="relative">
@@ -543,7 +546,7 @@ export default function AccountSettingsPage() {
             {/* ── Roles tab ── */}
             {activeTab === 'roles' && (
               <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-stone-100 bg-stone-50/60">
+                <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
@@ -561,7 +564,7 @@ export default function AccountSettingsPage() {
                     )}
                   </div>
                 </div>
-                <div className="px-6 py-6">
+                <div className="px-4 sm:px-6 py-4 sm:py-6">
                   {roles.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-stone-200 py-12 text-center">
                       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 mb-3">
@@ -572,7 +575,7 @@ export default function AccountSettingsPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {roles.map((role) => (
                           <RoleCard
                             key={role.id}
