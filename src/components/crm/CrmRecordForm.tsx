@@ -34,7 +34,7 @@ type Props = {
 
 /** Shared editable form for the unified CRM core fields, used by Lead, Prospect, and Customer Add/Edit pages. */
 export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBalances, invalidKeys }: Props) {
-  const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups });
+  const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups, staleTime: 10 * 60 * 1000 });
 
   const fieldStr = (key: string) => String(core.fields[key] ?? '');
 

@@ -20,6 +20,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
   const { data: lookups } = useQuery({
     queryKey: ["crm-lookups"],
     queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
   });
 
   function resolveLookup(field: CrmCoreField, value: unknown): string {

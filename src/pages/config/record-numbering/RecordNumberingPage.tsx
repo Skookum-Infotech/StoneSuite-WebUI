@@ -29,6 +29,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
   const workflowsQ = useQuery({
     queryKey: ["workflows"],
     queryFn: workflowService.list,
+    staleTime: 10 * 60 * 1000,
   });
 
   const workflows = workflowsQ.data ?? [];

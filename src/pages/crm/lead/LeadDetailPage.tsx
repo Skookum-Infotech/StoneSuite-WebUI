@@ -47,6 +47,7 @@ export default function LeadDetailPage() {
   const { data: statusData } = useQuery({
     queryKey: ["crm-statuses-workflow", "lead"],
     queryFn: () => crmService.getWorkflowStatuses("lead"),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });

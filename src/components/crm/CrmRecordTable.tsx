@@ -80,6 +80,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
   const { data: statusData } = useQuery({
     queryKey: ['crm-statuses-workflow', config.workflowKey],
     queryFn:  () => crmService.getWorkflowStatuses(config.workflowKey),
+    staleTime: 10 * 60 * 1000,
   });
 
   const statuses = useMemo<StatusInfo[]>(

@@ -24,6 +24,7 @@ export default function ConfigWorkflowsPage() {
   const { data = [], isLoading, error } = useQuery({
     queryKey: ['workflows'],
     queryFn: workflowService.list,
+    staleTime: 10 * 60 * 1000,
   });
 
   if (isLoading) return <div className="p-6"><Spinner /></div>;

@@ -65,6 +65,7 @@ export default function WorkflowBuilderPage() {
   const { data: def, isLoading, error } = useQuery({
     queryKey: ['workflow', id],
     queryFn: () => workflowService.get(id),
+    staleTime: 10 * 60 * 1000,
   });
 
   const toggle = useMutation({

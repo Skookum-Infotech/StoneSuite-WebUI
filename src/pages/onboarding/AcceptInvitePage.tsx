@@ -52,6 +52,7 @@ export default function AcceptInvitePage() {
     queryFn: () => userService.getUserInvite(token),
     enabled: Boolean(token),
     retry: false,
+    staleTime: Infinity,
   });
 
   const {

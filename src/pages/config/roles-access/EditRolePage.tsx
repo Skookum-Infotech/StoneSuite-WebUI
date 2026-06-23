@@ -113,10 +113,12 @@ export default function EditRolePage(): React.JSX.Element | null {
   const catalogQ = useQuery({
     queryKey: ["catalog"],
     queryFn: rbacService.catalog,
+    staleTime: 15 * 60 * 1000,
   });
   const rolesQ = useQuery({
     queryKey: ["roles"],
     queryFn: rbacService.listRoles,
+    staleTime: 5 * 60 * 1000,
   });
 
   const role = (rolesQ.data ?? []).find((r) => r.id === id) ?? null;

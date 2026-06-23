@@ -47,6 +47,7 @@ export default function ProspectViewPage() {
   const { data: statusData } = useQuery({
     queryKey: ["crm-statuses-workflow", "prospect"],
     queryFn: () => crmService.getWorkflowStatuses("prospect"),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });

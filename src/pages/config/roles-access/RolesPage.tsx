@@ -97,14 +97,17 @@ export default function RolesPage(): React.JSX.Element {
   const rolesQ = useQuery({
     queryKey: ["roles"],
     queryFn: rbacService.listRoles,
+    staleTime: 5 * 60 * 1000,
   });
   const catalogQ = useQuery({
     queryKey: ["catalog"],
     queryFn: rbacService.catalog,
+    staleTime: 15 * 60 * 1000,
   });
   const usersQ = useQuery({
     queryKey: ["users"],
     queryFn: userService.listUsers,
+    staleTime: 5 * 60 * 1000,
   });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
