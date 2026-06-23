@@ -310,7 +310,7 @@ export default function MainLayout(): React.JSX.Element {
                     <span
                       onClick={() => { if (isClickable) navigate(url); }}
                       className={cn(
-                        'capitalize transition-colors',
+                        'transition-colors',
                         isLast
                           ? 'text-stone-600 dark:text-stone-300 font-bold'
                           : isClickable
@@ -318,7 +318,7 @@ export default function MainLayout(): React.JSX.Element {
                             : 'text-stone-400',
                       )}
                     >
-                      {breadcrumbLabels[segment] ?? segment.replace(/-/g, ' ')}
+                      {breadcrumbLabels[segment] ?? (segment === 'crm' ? 'CRM' : segment.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase()))}
                     </span>
                   </React.Fragment>
                 );
