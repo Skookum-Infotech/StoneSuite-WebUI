@@ -59,6 +59,9 @@ export default function MainLayout(): React.JSX.Element {
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
+  // Segments that are namespace prefixes with no real index page — non-navigable in breadcrumb.
+  const nonNavigableSegments = new Set(['crm', 'sales', 'purchases', 'customer', 'onboarding']);
+
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
 
@@ -269,16 +272,19 @@ export default function MainLayout(): React.JSX.Element {
               {pathSegments.map((segment, index) => {
                 const url = `/${pathSegments.slice(0, index + 1).join('/')}`;
                 const isLast = index === pathSegments.length - 1;
+                const isClickable = !isLast && !nonNavigableSegments.has(segment);
                 return (
                   <React.Fragment key={segment}>
                     <ChevronRight className="size-3 text-stone-300 shrink-0" />
                     <span
-                      onClick={() => { if (!isLast) navigate(url); }}
+                      onClick={() => { if (isClickable) navigate(url); }}
                       className={cn(
                         'capitalize transition-colors',
                         isLast
                           ? 'text-stone-600 dark:text-stone-300 font-bold'
-                          : 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200',
+                          : isClickable
+                            ? 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200'
+                            : 'text-stone-400',
                       )}
                     >
                       {breadcrumbLabels[segment] ?? segment.replace(/-/g, ' ')}
