@@ -204,7 +204,7 @@ export default function MainLayout(): React.JSX.Element {
                   </div>
                   <div className="py-1">
                     <button
-                      onClick={() => navigate('/dashboard')}
+                      onClick={() => { setIsProfileOpen(false); navigate('/account/settings'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
                       <Settings className="size-4 text-stone-500" />
@@ -214,7 +214,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   <div className="py-1">
                     <button
-                      onClick={() => navigate('/transactions')}
+                      onClick={() => { setIsProfileOpen(false); navigate('/transactions'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
                       <CreditCard className="size-4 text-stone-500" />

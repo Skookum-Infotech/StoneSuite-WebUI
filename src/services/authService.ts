@@ -43,4 +43,10 @@ export const authService = {
     const response = await apiClient.post('/auth/reset-password', { token, newPassword });
     return response.data;
   },
+
+  // Change password while authenticated (requires current password for verification).
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.post('/auth/change-password', { currentPassword, newPassword });
+    return response.data;
+  },
 };
