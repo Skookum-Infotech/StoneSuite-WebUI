@@ -292,7 +292,7 @@ export default function MainLayout(): React.JSX.Element {
           {pathSegments.length > 0 && (
             <nav
               aria-label="Breadcrumb"
-              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs font-semibold text-stone-400"
+              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs xl:text-xs font-semibold text-stone-400"
             >
               <span
                 className="cursor-pointer hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
@@ -306,7 +306,7 @@ export default function MainLayout(): React.JSX.Element {
                 const isClickable = !isLast && !nonNavigableSegments.has(segment);
                 return (
                   <React.Fragment key={segment}>
-                    <ChevronRight className="size-3 text-stone-300 shrink-0" />
+                    <ChevronRight className="size-3 xl:size-3.5 text-stone-300 shrink-0" />
                     <span
                       onClick={() => { if (isClickable) navigate(url); }}
                       className={cn(

@@ -14,7 +14,7 @@ interface SidebarProps {
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+    'flex items-center gap-2.5 rounded-md px-3 py-2 text-xs xl:text-sm font-semibold tracking-wide transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground font-bold'
       : 'text-stone-600 hover:bg-accent/60 hover:text-stone-900',
@@ -22,7 +22,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 const childLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium tracking-wide transition-all duration-200',
+    'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs xl:text-sm font-medium tracking-wide transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground font-semibold'
       : 'text-stone-500 hover:bg-accent/50 hover:text-stone-900',
@@ -30,7 +30,7 @@ const childLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1 pt-4 text-2xs font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
+    <p className="px-3 pb-1 pt-4 text-2xs xl:text-xs font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
       {children}
     </p>
   );
@@ -96,7 +96,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onClick={onClose}
         className={isChild ? childLinkClass : linkClass}
       >
-        <Icon className={isChild ? 'size-3' : 'size-3.5'} />
+        <Icon className={isChild ? 'size-3 xl:size-3.5' : 'size-3.5 xl:size-4'} />
         <span>{item.label}</span>
       </NavLink>
     );
@@ -117,7 +117,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onClick={() => toggleGroup(group.id)}
           aria-label={`Toggle ${group.label} menu`}
           className={cn(
-            'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+            'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs xl:text-sm font-semibold tracking-wide transition-all duration-200',
             active
               ? 'bg-accent/60 text-accent-foreground'
               : 'text-stone-600 hover:bg-accent/40 hover:text-stone-900',
@@ -128,7 +128,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <span>{group.label}</span>
           </div>
           <ChevronDown
-            className={cn('size-3 transition-transform duration-200', groupOpen && 'rotate-180')}
+            className={cn('size-3 xl:size-3.5 transition-transform duration-200', groupOpen && 'rotate-180')}
           />
         </button>
 
