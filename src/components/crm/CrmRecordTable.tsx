@@ -163,7 +163,7 @@ export function CrmRecordTable({ records, isLoading, config }: Props) {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="h-8 sm:h-9 w-full sm:w-auto rounded-lg border border-stone-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+          className={`h-8 sm:h-9 w-full sm:w-auto rounded-lg border border-stone-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 ${statusFilter === '' ? 'text-stone-400' : 'text-stone-900'}`}
           aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
