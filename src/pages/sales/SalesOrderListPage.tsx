@@ -1,16 +1,9 @@
 import { ShoppingCart, Plus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { SalesOrderTable } from './components/SalesOrderTable';
-import { crmService } from '@/services/crmService';
 
 export default function SalesOrderListPage() {
   const navigate = useNavigate();
-
-  const { data: records = [], isLoading, isError } = useQuery({
-    queryKey: ['crm-records', 'sales_order'],
-    queryFn: () => crmService.listRecords('sales_order'),
-  });
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -35,12 +28,7 @@ export default function SalesOrderListPage() {
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
-          {isError && (
-            <p className="text-xs text-red-500 mb-3">
-              Failed to load sales orders. Is the backend running?
-            </p>
-          )}
-          <SalesOrderTable records={records} isLoading={isLoading} />
+          <SalesOrderTable />
         </div>
       </div>
     </div>

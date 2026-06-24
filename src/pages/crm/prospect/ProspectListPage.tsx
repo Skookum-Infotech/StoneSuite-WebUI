@@ -1,17 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Users, Plus } from 'lucide-react';
-import { crmService } from '@/services/crmService';
-import { apiErrorMessage } from '@/api/tenantClient';
 import { ProspectTable } from './components/ProspectTable';
 
 export default function ProspectListPage() {
   const navigate = useNavigate();
-  const prospectsQ = useQuery({
-    queryKey: ['crm-records', 'prospect'],
-    queryFn: () => crmService.listRecords('prospect'),
-  });
-  const records = prospectsQ.data ?? [];
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
@@ -37,14 +29,8 @@ export default function ProspectListPage() {
           </button>
         </div>
 
-        {prospectsQ.isError && (
-          <p className="mt-4 text-xs text-red-500">
-            {apiErrorMessage(prospectsQ.error, 'Failed to load prospects.')}
-          </p>
-        )}
-
         <div className="mt-5 flex flex-1 flex-col min-h-0 border-t border-stone-100 pt-4">
-          <ProspectTable records={records} isLoading={prospectsQ.isLoading} />
+          <ProspectTable />
         </div>
       </div>
     </div>

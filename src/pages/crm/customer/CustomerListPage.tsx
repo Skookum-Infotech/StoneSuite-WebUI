@@ -1,16 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Building2, Plus } from 'lucide-react';
-import { crmService } from '@/services/crmService';
 import { CustomerTable } from './components/CustomerTable';
 
 export default function CustomerListPage() {
   const navigate = useNavigate();
-
-  const { data: records = [], isLoading, isError } = useQuery({
-    queryKey: ['crm-records', 'customer'],
-    queryFn: () => crmService.listRecords('customer'),
-  });
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -34,12 +27,8 @@ export default function CustomerListPage() {
           </button>
         </div>
 
-        {isError && (
-          <p className="mt-4 text-xs text-red-500">Failed to load customers. Is the backend running?</p>
-        )}
-
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
-          <CustomerTable records={records} isLoading={isLoading} />
+          <CustomerTable />
         </div>
       </div>
     </div>

@@ -182,6 +182,37 @@ export interface WorkflowRecord {
   updatedAt: string;
 }
 
+// ── Record filter / pagination (server-side search engine) ───────────────────
+
+export type FilterOperator =
+  | 'eq' | 'neq' | 'contains' | 'startswith' | 'in'
+  | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'is_empty' | 'is_null';
+
+export interface FilterClause {
+  field: string;        // logical key: "status", "core:customer_name", "cf:budget"
+  op: FilterOperator;
+  value?: unknown;
+}
+
+export interface SortKey {
+  field: string;        // "created_at" | "updated_at" | "record_number"
+  dir: 'asc' | 'desc';
+}
+
+export interface FilterRequest {
+  filters?: FilterClause[];
+  sort?: SortKey[];
+  limit?: number;
+  cursor?: string;
+}
+
+export interface RecordPage {
+  records: WorkflowRecord[];
+  nextCursor: string;
+  hasMore: boolean;
+  scope: string;
+}
+
 export interface WorkflowNumberingConfig {
   workflowId: string;
   enabled: boolean;

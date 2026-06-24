@@ -1,5 +1,7 @@
 import { tenantClient } from '@/api/tenantClient';
-import type { WorkflowRecord, Workflow, StatusInfo, CRMCreatePayload } from '@/types/tenant';
+import type {
+  WorkflowRecord, Workflow, StatusInfo, CRMCreatePayload, FilterRequest, RecordPage,
+} from '@/types/tenant';
 
 export const CRM_WORKFLOW_KEYS = {
   LEAD: 'lead',
@@ -28,6 +30,22 @@ export const crmService = {
         `/tenant/crm/${workflowKey}/records`,
       )
       .then((r) => r.data.records ?? []),
+
+  // searchRecords drives server-side filtering, sorting, and keyset pagination.
+  // The backend composes the request onto the caller's RBAC scope, so results
+  // never include records outside the caller's scope.
+  searchRecords: (workflowKey: string, req: FilterRequest): Promise<RecordPage> =>
+    tenantClient
+      .post<{
+        success: boolean; scope: string; records: WorkflowRecord[];
+        nextCursor: string; hasMore: boolean;
+      }>(`/tenant/crm/${workflowKey}/records/search`, req)
+      .then((r) => ({
+        records: r.data.records ?? [],
+        nextCursor: r.data.nextCursor ?? '',
+        hasMore: Boolean(r.data.hasMore),
+        scope: r.data.scope ?? '',
+      })),
 
   createRecord: (workflowKey: string, payload: CRMCreatePayload): Promise<WorkflowRecord> =>
     tenantClient

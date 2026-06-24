@@ -1,5 +1,4 @@
 import { CrmRecordTable } from '@/components/crm/CrmRecordTable';
-import type { WorkflowRecord } from '@/types/tenant';
 
 const CONFIG = {
   workflowKey: 'sales_order',
@@ -10,8 +9,6 @@ const CONFIG = {
   showEmail: false,
 } as const;
 
-type Props = { records: WorkflowRecord[]; isLoading?: boolean };
-
-export function SalesOrderTable({ records, isLoading = false }: Props) {
-  return <CrmRecordTable records={records} isLoading={isLoading} config={CONFIG} />;
+export function SalesOrderTable() {
+  return <CrmRecordTable config={CONFIG} />;
 }
