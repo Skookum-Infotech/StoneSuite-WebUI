@@ -85,6 +85,12 @@ const RecordNumberingPage = lazyWithRetry(
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
 );
+const AccountSettingsPage = lazyWithRetry(
+  () => import("@/pages/account/AccountSettingsPage"),
+);
+const TransactionsPage = lazyWithRetry(
+  () => import("@/pages/transactions/TransactionsPage"),
+);
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
@@ -121,6 +127,8 @@ export const router = createBrowserRouter([
     children: [
       { path: "", element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: lazy_(<DashboardPage />) },
+      { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
+      { path: "transactions", element: lazy_(<TransactionsPage />) },
 
       // CRM: Prospects
       {

@@ -34,6 +34,7 @@ export default function SetPasswordPage() {
     queryFn: () => onboardingService.getSetPassword(token),
     enabled: Boolean(token),
     retry: false,
+    staleTime: Infinity,
   });
 
   const {

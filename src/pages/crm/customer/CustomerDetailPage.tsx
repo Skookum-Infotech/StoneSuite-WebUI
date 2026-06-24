@@ -49,6 +49,7 @@ export default function CustomerDetailPage() {
   const { data: statusData } = useQuery({
     queryKey: ["crm-statuses-workflow", "customer"],
     queryFn: () => crmService.getWorkflowStatuses("customer"),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: users = [] } = useQuery({

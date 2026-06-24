@@ -1,3 +1,9 @@
+export interface UserRole {
+  id: string;
+  name: string;
+  key: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -6,6 +12,8 @@ export interface UserProfile {
   // Multi-tenant identity context (from /api/auth/tenant-login).
   tenantId?: string;
   isPlatformAdmin?: boolean;
+  roles?: UserRole[];
+  selectedRoleId?: string;
 }
 
 export interface AuthResponse {

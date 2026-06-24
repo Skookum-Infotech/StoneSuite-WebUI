@@ -11,12 +11,14 @@ import { GlobalSearch } from '@/components/GlobalSearch';
 import {
   Menu,
   ChevronRight,
-  User as UserIcon,
   LogOut,
   Bell,
   Settings,
   Search,
   X,
+  CreditCard,
+  Shield,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +60,9 @@ export default function MainLayout(): React.JSX.Element {
   };
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
+
+  // Segments that are namespace prefixes with no real index page — non-navigable in breadcrumb.
+  const nonNavigableSegments = new Set(['crm', 'sales', 'purchases', 'customer', 'onboarding']);
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
@@ -188,7 +193,7 @@ export default function MainLayout(): React.JSX.Element {
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-0 mt-2.5 w-56 origin-top-right rounded-2xl border border-white/10 bg-[#1c1c1c] p-2 shadow-2xl ring-1 ring-white/[0.04] animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="absolute right-0 mt-2.5 w-60 origin-top-right rounded-2xl border border-white/10 bg-[#1c1c1c] p-2 shadow-2xl ring-1 ring-white/[0.04] animate-in fade-in slide-in-from-top-1 duration-150 max-h-96 overflow-y-auto">
                   <div className="px-3.5 py-2.5 border-b border-white/[0.08]">
                     <h5 className="text-xs font-bold text-stone-200">
                       {user?.fullName || 'Guest User'}
@@ -199,19 +204,48 @@ export default function MainLayout(): React.JSX.Element {
                   </div>
                   <div className="py-1">
                     <button
-                      onClick={() => navigate('/dashboard')}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
-                    >
-                      <UserIcon className="size-4 text-stone-500" />
-                      <span>My Profile</span>
-                    </button>
-                    <button
-                      onClick={() => navigate('/dashboard')}
+                      onClick={() => { setIsProfileOpen(false); navigate('/account/settings'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
                       <Settings className="size-4 text-stone-500" />
                       <span>Account Settings</span>
                     </button>
+                  </div>
+                  <div className="h-px bg-white/[0.08] my-1" />
+                  <div className="py-1">
+                    <button
+                      onClick={() => { setIsProfileOpen(false); navigate('/transactions'); }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
+                    >
+                      <CreditCard className="size-4 text-stone-500" />
+                      <span>My Transactions</span>
+                    </button>
+                  </div>
+                  <div className="h-px bg-white/[0.08] my-1" />
+                  <div className="py-1">
+                    <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                      Roles
+                    </div>
+                    {user?.roles && user.roles.length > 0 ? (
+                      <div className="space-y-0.5">
+                        {user.roles.map((role) => (
+                          <div
+                            key={role.id}
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left"
+                          >
+                            <Shield className="size-4 text-stone-500 flex-shrink-0" />
+                            <span className="flex-1">{role.name}</span>
+                            {role.id === user.selectedRoleId && (
+                              <Check className="size-4 text-brand flex-shrink-0" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 text-2xs text-stone-500">
+                        No roles assigned
+                      </div>
+                    )}
                   </div>
                   <div className="h-px bg-white/[0.08] my-1" />
                   <button
@@ -258,7 +292,7 @@ export default function MainLayout(): React.JSX.Element {
           {pathSegments.length > 0 && (
             <nav
               aria-label="Breadcrumb"
-              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs font-semibold text-stone-400"
+              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs xl:text-xs font-semibold text-stone-400"
             >
               <span
                 className="cursor-pointer hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
@@ -269,19 +303,22 @@ export default function MainLayout(): React.JSX.Element {
               {pathSegments.map((segment, index) => {
                 const url = `/${pathSegments.slice(0, index + 1).join('/')}`;
                 const isLast = index === pathSegments.length - 1;
+                const isClickable = !isLast && !nonNavigableSegments.has(segment);
                 return (
                   <React.Fragment key={segment}>
-                    <ChevronRight className="size-3 text-stone-300 shrink-0" />
+                    <ChevronRight className="size-3 xl:size-3.5 text-stone-300 shrink-0" />
                     <span
-                      onClick={() => { if (!isLast) navigate(url); }}
+                      onClick={() => { if (isClickable) navigate(url); }}
                       className={cn(
-                        'capitalize transition-colors',
+                        'transition-colors',
                         isLast
                           ? 'text-stone-600 dark:text-stone-300 font-bold'
-                          : 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200',
+                          : isClickable
+                            ? 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200'
+                            : 'text-stone-400',
                       )}
                     >
-                      {breadcrumbLabels[segment] ?? segment.replace(/-/g, ' ')}
+                      {breadcrumbLabels[segment] ?? (segment === 'crm' ? 'CRM' : segment.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase()))}
                     </span>
                   </React.Fragment>
                 );

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox,
+  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
 } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { Badge } from '@/components/tenant/ui';
@@ -88,6 +88,7 @@ export function CrmRecordTable({ config }: Props) {
   const { data: statusData } = useQuery({
     queryKey: ['crm-statuses-workflow', config.workflowKey],
     queryFn:  () => crmService.getWorkflowStatuses(config.workflowKey),
+    staleTime: 10 * 60 * 1000,
   });
 
   const statuses = useMemo<StatusInfo[]>(
@@ -168,7 +169,7 @@ export function CrmRecordTable({ config }: Props) {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-8 sm:h-9 w-full sm:w-auto rounded-lg border border-stone-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+          className={`h-8 sm:h-9 w-full sm:w-auto rounded-lg border border-stone-200 bg-white px-2.5 sm:px-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 ${statusFilter === '' ? 'text-stone-400' : 'text-stone-900'}`}
           aria-label="Filter by status"
         >
           <option value="">All Statuses</option>
@@ -275,7 +276,7 @@ export function CrmRecordTable({ config }: Props) {
                               <button
                                 type="button"
                                 onClick={() => navigate(config.detailPath(record.id))}
-                                className="text-left text-2xs sm:text-sm font-semibold text-stone-900 hover:text-accent-foreground transition-colors duration-150 truncate max-w-[100px] sm:max-w-[200px] block"
+                                className="text-left text-2xs sm:text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors duration-150 truncate max-w-[100px] sm:max-w-[200px] block"
                               >
                                 {company}
                               </button>
@@ -300,7 +301,7 @@ export function CrmRecordTable({ config }: Props) {
                           )}
                         </td>
                         {config.showEmail && (
-                          <td className="px-3 py-2.5 sm:px-4 sm:py-3.5 text-2xs sm:text-sm text-stone-500 truncate max-w-[120px] sm:max-w-none">{email}</td>
+                          <td className="px-3 py-2.5 sm:px-4 sm:py-3.5 text-2xs sm:text-xs text-stone-500 truncate max-w-[120px] sm:max-w-none">{email}</td>
                         )}
                         <td className="px-3 py-2.5 sm:px-4 sm:py-3.5 text-2xs sm:text-xs text-stone-400 tabular-nums whitespace-nowrap">
                           {new Date(record.createdAt).toLocaleDateString(undefined, {
@@ -312,9 +313,9 @@ export function CrmRecordTable({ config }: Props) {
                             type="button"
                             onClick={() => navigate(config.editPath(record.id))}
                             aria-label={`Edit ${label}`}
-                            className="rounded-md border border-stone-200 bg-white px-2 py-0.5 sm:px-2.5 sm:py-1 text-2xs sm:text-xs font-semibold text-stone-600 transition-colors hover:border-accent-foreground/30 hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
+                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 sm:p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
-                            Edit
+                            <Pencil className="size-3.5 sm:size-4" />
                           </button>
                         </td>
                       </tr>

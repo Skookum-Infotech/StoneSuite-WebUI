@@ -23,6 +23,7 @@ export default function OnboardingApplyPage() {
     queryKey: ['apply', token],
     queryFn: () => onboardingService.getApply(token),
     enabled: Boolean(token),
+    staleTime: Infinity,
   });
 
   const submit = useMutation({

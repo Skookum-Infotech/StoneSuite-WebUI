@@ -30,7 +30,7 @@ const childLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1 pt-4 text-2xs font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
+    <p className="px-3 pb-1 pt-4 text-2xs xl:text-xs font-semibold tracking-wide text-stone-400 dark:text-stone-500">
       {children}
     </p>
   );
@@ -96,7 +96,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onClick={onClose}
         className={isChild ? childLinkClass : linkClass}
       >
-        <Icon className={isChild ? 'size-3' : 'size-3.5'} />
+        <Icon className={isChild ? 'size-3 xl:size-3.5' : 'size-3.5 xl:size-4'} />
         <span>{item.label}</span>
       </NavLink>
     );
@@ -128,7 +128,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <span>{group.label}</span>
           </div>
           <ChevronDown
-            className={cn('size-3 transition-transform duration-200', groupOpen && 'rotate-180')}
+            className={cn('size-3 xl:size-3.5 transition-transform duration-200', groupOpen && 'rotate-180')}
           />
         </button>
 

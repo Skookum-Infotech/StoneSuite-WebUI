@@ -59,7 +59,7 @@ type RowSel = { actions: string[]; scope: Scope };
 
 export default function CreateRolePage() {
   const navigate = useNavigate();
-  const catalogQ = useQuery({ queryKey: ['catalog'], queryFn: rbacService.catalog });
+  const catalogQ = useQuery({ queryKey: ['catalog'], queryFn: rbacService.catalog, staleTime: 15 * 60 * 1000 });
 
   const [name, setName]               = useState<string>(() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')?.name ?? ''; } catch { return ''; } });
   const [key, setKey]                 = useState<string>(() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null')?.key ?? ''; } catch { return ''; } });

@@ -22,6 +22,7 @@ export function StatusDropdown({ workflowKey, mode, recordId, value, onChange, d
     queryKey: ['crm-statuses-workflow', workflowKey],
     queryFn: () => crmService.getWorkflowStatuses(workflowKey),
     enabled: mode === 'all',
+    staleTime: 10 * 60 * 1000,
   });
 
   const transitionsQuery = useQuery({

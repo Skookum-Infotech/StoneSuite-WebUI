@@ -6,11 +6,13 @@ import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/useAuthStore'
+import { userService } from '@/services/tenantServices'
 import { apiErrorMessage } from '@/api/tenantClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FaAws } from 'react-icons/fa'
+import type { UserRole } from '@/types/auth'
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
@@ -47,8 +49,29 @@ export default function LoginPage() {
     try {
       const response = await authService.login({ email: data.email, password: data.password, rememberMe: false })
       if (response.success && response.user && response.token) {
+        // Fetch user with roles
+        let userWithRoles = response.user
+        try {
+          const workspaceUser = await userService.listUsers()
+          const currentUser = workspaceUser.find((u) => u.email === response.user!.email)
+          if (currentUser && currentUser.roles) {
+            const roles: UserRole[] = currentUser.roles.map((r) => ({
+              id: r.id,
+              name: r.name,
+              key: r.key,
+            }))
+            userWithRoles = {
+              ...response.user,
+              roles,
+              selectedRoleId: roles.length > 0 ? roles[0].id : undefined,
+            }
+          }
+        } catch (err) {
+          // Non-fatal: login still works without roles
+          console.warn('Failed to fetch user roles:', err)
+        }
         // eslint-disable-next-line react-hooks/purity
-        setAuth(response.user, response.token, response.expiresAt ?? Date.now() + 60 * 60 * 1000)
+        setAuth(userWithRoles, response.token, response.expiresAt ?? Date.now() + 60 * 60 * 1000)
         navigate('/dashboard')
       } else {
         setError('root', { message: response.message ?? 'Login failed' })
@@ -60,11 +83,11 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen md:h-screen md:overflow-hidden md:flex md:flex-row font-sans"
+      className="h-screen overflow-hidden flex flex-col md:flex-row font-sans"
     >
       {/* ── LEFT — Login ── */}
       <main
-        className="relative flex min-h-screen w-full items-center justify-center overflow-hidden md:min-h-0 md:h-full px-4 py-12 text-stone-950 sm:px-6 md:w-1/2 lg:px-10"
+        className="relative flex h-full w-full items-center justify-center overflow-hidden px-4 py-2 md:py-6 text-stone-950 sm:px-6 md:w-1/2 lg:px-10"
         style={{ background: 'linear-gradient(150deg, #f9fafa 0%, #f2f7f8 45%, #e8f3f5 100%)' }}
       >
         {/* Fine teal grid */}
@@ -111,7 +134,7 @@ export default function LoginPage() {
         <div className="relative w-full max-w-sm sm:max-w-md">
 
           {/* Eyebrow label above card */}
-          <div className="mb-4 flex items-center gap-3">
+          <div className="mb-4 hidden md:flex items-center gap-3">
             <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, rgba(0,95,115,0.2))' }} />
             <span className="text-2xs font-bold uppercase tracking-[0.35em]" style={{ color: 'rgba(0,95,115,0.45)' }}>Workspace Portal</span>
             <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(0,95,115,0.2))' }} />
@@ -119,7 +142,7 @@ export default function LoginPage() {
 
           {/* Card */}
           <div
-            className="relative overflow-hidden rounded-3xl bg-white/80 p-7 backdrop-blur-xl sm:p-9"
+            className="relative overflow-hidden rounded-3xl bg-white/80 p-4 backdrop-blur-xl sm:p-7"
             style={{
               border: '1px solid rgba(0,95,115,0.1)',
               boxShadow: '0 32px 72px -12px rgba(0,95,115,0.14), 0 8px 24px -4px rgba(0,0,0,0.05), 0 0 0 1px rgba(255,255,255,0.85) inset',
@@ -135,12 +158,12 @@ export default function LoginPage() {
             </div>
 
             {/* Logo + Heading */}
-            <div className="mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-10 w-20 items-center justify-center">
+            <div className="mb-3 text-center sm:mb-8">
+              <div className="mx-auto mb-2 flex h-12 w-28 items-center justify-center sm:mb-5 sm:h-20 sm:w-40">
                 <img
                   src="/logo-dark.png"
                   alt="Stone Suite logo"
-                  className="h-24 w-auto object-contain"
+                  className="h-16 w-auto object-contain sm:h-32"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).style.display = 'none'
                     const parent = e.currentTarget.parentElement
@@ -148,8 +171,8 @@ export default function LoginPage() {
                   }}
                 />
               </div>
-              <h2 className="text-2xl font-semibold tracking-tight text-stone-950">Welcome back</h2>
-              <p className="mt-2 text-sm text-stone-500">Sign in to your Stone Suite workspace</p>
+              <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">Welcome back</h2>
+              <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">Sign in to your Stone Suite workspace</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -224,7 +247,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="my-6 flex items-center gap-3">
+            <div className="my-2 flex items-center gap-3 sm:my-6">
               <div className="h-px flex-1 bg-stone-100" />
               <span className="text-2xs font-bold uppercase tracking-[0.4em] text-stone-300">or</span>
               <div className="h-px flex-1 bg-stone-100" />
@@ -249,7 +272,7 @@ export default function LoginPage() {
             </div>
 
             {/* Footer */}
-            <div className="mt-6 flex items-center justify-center gap-1.5">
+            <div className="mt-3 hidden items-center justify-center gap-1.5 sm:flex sm:mt-6">
               <Lock className="size-3 text-stone-300" aria-hidden="true" />
               <p className="text-center text-xs text-stone-300">Protected by enterprise-grade security</p>
             </div>
@@ -270,26 +293,49 @@ export default function LoginPage() {
           @keyframes float-slow { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(0, -20px) rotate(3deg); } }
           .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
           .animate-float-delayed { animation: float-slow 7s ease-in-out infinite 2s; }
+          @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes comet { 0% { opacity: 0; transform: translate(0,0); } 5% { opacity: 0.75; } 100% { opacity: 0; transform: translate(-520px, 520px); } }
+          @keyframes card-spot { 0%, 33%, 100% { border-color: rgba(255,255,255,0.08); box-shadow: none; } 8%, 25% { border-color: rgba(163,230,53,0.28); box-shadow: 0 0 22px rgba(163,230,53,0.09), inset 0 0 0 1px rgba(163,230,53,0.12); } }
+          .spot-1 { animation: card-spot 12s ease-in-out 0s infinite; }
+          .spot-2 { animation: card-spot 12s ease-in-out 4s infinite; }
+          .spot-3 { animation: card-spot 12s ease-in-out 8s infinite; }
         `}</style>
-        <div className="absolute right-16 top-1/4 h-32 w-32 animate-float-slow rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-md" />
-        <div className="absolute bottom-1/3 left-16 h-20 w-20 animate-float-delayed rounded-full border border-brand/20 bg-brand/10 shadow-2xl backdrop-blur-md" />
+
+        {/* Rotating gem */}
+        <div className="absolute bottom-1/3 left-10 animate-float-delayed">
+          <div style={{ animation: 'spin-slow 28s linear infinite' }}>
+            <svg width="58" height="58" viewBox="0 0 58 58" fill="none" aria-hidden="true">
+              <polygon points="29,2 54,15.5 54,42.5 29,56 4,42.5 4,15.5" stroke="rgba(163,230,53,0.28)" strokeWidth="1" fill="rgba(163,230,53,0.07)" />
+              <polygon points="29,12 44,20.5 44,37.5 29,46 14,37.5 14,20.5" stroke="rgba(163,230,53,0.15)" strokeWidth="0.75" fill="rgba(163,230,53,0.04)" />
+              <circle cx="29" cy="29" r="3" fill="rgba(163,230,53,0.45)" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Shooting star comets */}
+        {([
+          { top: '4%',  right: '8%',  delay: '0s',   dur: '2.4s', w: 65 },
+          { top: '10%', right: '35%', delay: '2.1s',  dur: '1.9s', w: 45 },
+          { top: '2%',  right: '18%', delay: '4.5s',  dur: '2.2s', w: 72 },
+          { top: '16%', right: '5%',  delay: '1.3s',  dur: '2.6s', w: 52 },
+          { top: '7%',  right: '52%', delay: '6s',    dur: '2s',   w: 58 },
+          { top: '1%',  right: '42%', delay: '3.2s',  dur: '1.8s', w: 40 },
+          { top: '20%', right: '22%', delay: '5.4s',  dur: '2.3s', w: 48 },
+        ] as { top: string; right: string; delay: string; dur: string; w: number }[]).map((c, i) => (
+          <div
+            key={i}
+            className="pointer-events-none absolute"
+            style={{ top: c.top, right: c.right, animation: `comet ${c.dur} ease-in ${c.delay} infinite` }}
+          >
+            <div style={{ width: `${c.w}px`, height: '1px', background: 'linear-gradient(to right, rgba(255,255,255,0.55), rgba(255,255,255,0))', transform: 'rotate(-45deg)', transformOrigin: 'right center' }} />
+          </div>
+        ))}
         <div className="relative z-10 flex h-full flex-col justify-between p-8 lg:p-12">
-          <div className="flex items-center justify-between">
-            <div className="flex h-10 items-center lg:h-12">
-              <img
-                src="/logo-white.png"
-                alt="Stone Suite"
-                className="h-full w-auto object-contain drop-shadow-lg"
-                onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).style.display = 'none'
-                  const parent = e.currentTarget.parentElement
-                  if (parent) parent.innerHTML = '<span style="color:white;font-size:1.15rem;font-weight:700;letter-spacing:0.05em">STONE SUITE</span>'
-                }}
-              />
-            </div>
-            <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-label lg:px-4 lg:py-1.5 font-medium tracking-wide text-white backdrop-blur-sm transition-transform hover:scale-105">
-              Enterprise Ready
-            </div>
+          <div className="flex items-center gap-3">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(163,230,53,0.8)', animation: 'pulse 2.4s ease-in-out 0s infinite' }} />
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(163,230,53,0.45)', animation: 'pulse 2.4s ease-in-out 0.8s infinite' }} />
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(163,230,53,0.18)', animation: 'pulse 2.4s ease-in-out 1.6s infinite' }} />
+            <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
           </div>
           <div className="max-w-xl">
             <div className="mb-4 inline-flex transform items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1.5 lg:px-4 lg:py-2 transition-all hover:-translate-y-1 hover:bg-brand/20">
@@ -306,20 +352,27 @@ export default function LoginPage() {
             <p className="mt-4 max-w-lg text-sm lg:text-base leading-relaxed text-white/60">
               Experience seamless workflow management, real-time material tracking, and unmatched clarity across your entire fabrication process.
             </p>
-            <div className="mt-6 grid max-w-lg gap-3 sm:grid-cols-2 lg:mt-8">
-              <div className="group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-                <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 lg:p-2 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
-                  <svg className="size-4 lg:size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:mt-8">
+              <div className="spot-1 group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-4 backdrop-blur-sm transition-colors duration-500 hover:bg-white/10">
+                <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                 </div>
-                <h3 className="text-xs lg:text-sm font-semibold text-white">Smart Workflows</h3>
-                <p className="mt-1 text-label lg:text-xs leading-relaxed text-white/40">Automate tasks and streamline team coordination effortlessly.</p>
+                <h3 className="text-xs font-semibold text-white">Smart Workflows</h3>
+                <p className="mt-1 text-label leading-relaxed text-white/40">Automate tasks and streamline coordination.</p>
               </div>
-              <div className="group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-4 lg:p-5 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
-                <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 lg:p-2 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
-                  <svg className="size-4 lg:size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              <div className="spot-2 group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-4 backdrop-blur-sm transition-colors duration-500 hover:bg-white/10">
+                <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                 </div>
-                <h3 className="text-xs lg:text-sm font-semibold text-white">Ironclad Security</h3>
-                <p className="mt-1 text-label lg:text-xs leading-relaxed text-white/40">Enterprise-grade protection for your critical business data.</p>
+                <h3 className="text-xs font-semibold text-white">Ironclad Security</h3>
+                <p className="mt-1 text-label leading-relaxed text-white/40">Enterprise-grade protection for your data.</p>
+              </div>
+              <div className="spot-3 group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-3 lg:p-4 backdrop-blur-sm transition-colors duration-500 hover:bg-white/10">
+                <div className="mb-2 inline-flex rounded-lg bg-brand/20 p-1.5 text-brand transition-transform group-hover:scale-110 group-hover:bg-brand/30">
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+                </div>
+                <h3 className="text-xs font-semibold text-white">Material Tracking</h3>
+                <p className="mt-1 text-label leading-relaxed text-white/40">Real-time slab and inventory visibility.</p>
               </div>
             </div>
           </div>
