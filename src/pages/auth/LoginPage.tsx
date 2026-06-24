@@ -48,8 +48,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFields) => {
     try {
       const response = await authService.login({ email: data.email, password: data.password, rememberMe: false })
-      if (response.success && response.user && response.token) {
-        const expiresAt = response.expiresAt ?? Date.now() + 60 * 60 * 1000
+      if (response.success && response.user && response.token && response.expiresAt) {
+        const expiresAt = response.expiresAt
         // Set auth BEFORE any subsequent API calls so the in-memory Bearer token
         // is available. On cross-origin deployments (Cloudflare Pages → Fly.io)
         // SameSite=Lax blocks the auth_token cookie from being sent in XHR — the
