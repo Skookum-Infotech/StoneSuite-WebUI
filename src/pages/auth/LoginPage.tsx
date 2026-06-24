@@ -20,6 +20,15 @@ const loginSchema = z.object({
 })
 type LoginFields = z.infer<typeof loginSchema>
 
+const DEFAULT_SESSION_MS = 60 * 60 * 1000 // 1 hour
+
+// defaultExpiry returns a fallback session expiry timestamp. Kept at module
+// scope (not in the component body) so the impure Date.now() call isn't flagged
+// by react-hooks/purity — it is only ever invoked from the submit handler.
+function defaultExpiry(): number {
+  return Date.now() + DEFAULT_SESSION_MS
+}
+
 function OAuthButton({ icon, label }: { icon: ReactNode; label: string }) {
   return (
     <Button
@@ -49,7 +58,7 @@ export default function LoginPage() {
     try {
       const response = await authService.login({ email: data.email, password: data.password, rememberMe: false })
       if (response.success && response.user && response.token) {
-        const expiresAt = response.expiresAt ?? Date.now() + 60 * 60 * 1000
+        const expiresAt = response.expiresAt ?? defaultExpiry()
         // Set auth BEFORE any subsequent API calls so the in-memory Bearer token
         // is available. On cross-origin deployments (Cloudflare Pages → Fly.io)
         // SameSite=Lax blocks the auth_token cookie from being sent in XHR — the
