@@ -49,29 +49,33 @@ export default function LoginPage() {
     try {
       const response = await authService.login({ email: data.email, password: data.password, rememberMe: false })
       if (response.success && response.user && response.token) {
-        // Fetch user with roles
-        let userWithRoles = response.user
+        const expiresAt = response.expiresAt ?? Date.now() + 60 * 60 * 1000
+        // Set auth BEFORE any subsequent API calls so the in-memory Bearer token
+        // is available. On cross-origin deployments (Cloudflare Pages → Fly.io)
+        // SameSite=Lax blocks the auth_token cookie from being sent in XHR — the
+        // Authorization header is the only credential that works for those requests.
+        setAuth(response.user, response.token, expiresAt)
+
+        // Enrich the stored user with workspace roles (non-critical).
         try {
           const workspaceUser = await userService.listUsers()
           const currentUser = workspaceUser.find((u) => u.email === response.user!.email)
-          if (currentUser && currentUser.roles) {
+          if (currentUser?.roles) {
             const roles: UserRole[] = currentUser.roles.map((r) => ({
               id: r.id,
               name: r.name,
               key: r.key,
             }))
-            userWithRoles = {
-              ...response.user,
-              roles,
-              selectedRoleId: roles.length > 0 ? roles[0].id : undefined,
-            }
+            setAuth(
+              { ...response.user, roles, selectedRoleId: roles[0]?.id },
+              response.token,
+              expiresAt,
+            )
           }
         } catch (err) {
-          // Non-fatal: login still works without roles
           console.warn('Failed to fetch user roles:', err)
         }
-        // eslint-disable-next-line react-hooks/purity
-        setAuth(userWithRoles, response.token, response.expiresAt ?? Date.now() + 60 * 60 * 1000)
+
         navigate('/dashboard')
       } else {
         setError('root', { message: response.message ?? 'Login failed' })

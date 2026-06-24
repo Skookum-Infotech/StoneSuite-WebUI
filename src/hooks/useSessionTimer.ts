@@ -52,10 +52,13 @@ export function useSessionTimer(): SessionTimerState {
     }, 1000);
   }, []);
 
-  const performLogout = useCallback(() => {
+  const performLogout = useCallback(async () => {
     clearAllTimers();
     setShowWarning(false);
-    apiClient.post('/auth/logout').catch(() => undefined);
+    // Await logout so the server clears cookies before we navigate. Without this,
+    // a fast re-login could race against a late-arriving logout response that
+    // would delete the freshly-issued auth_token cookie.
+    await apiClient.post('/auth/logout').catch(() => undefined);
     logout();
     navigate('/auth/login', { replace: true });
   }, [clearAllTimers, logout, navigate]);

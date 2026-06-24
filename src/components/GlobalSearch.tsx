@@ -16,11 +16,12 @@ interface Props {
 // Entities the global search fans out across. Each maps a CRM workflow to its
 // detail route. The search reuses the per-entity scope-safe search endpoint, so
 // the backend never returns records outside the caller's RBAC scope.
+// sales_order is intentionally excluded — it is not yet wired into the CRM
+// relational store (crmKeyToCode) so searching it returns 400.
 const SEARCHABLE = [
-  { key: 'lead',        label: 'Lead',        detailPath: (id: string) => `/crm/lead/${id}` },
-  { key: 'prospect',    label: 'Prospect',    detailPath: (id: string) => `/crm/prospect/${id}` },
-  { key: 'customer',    label: 'Customer',    detailPath: (id: string) => `/crm/customer/${id}` },
-  { key: 'sales_order', label: 'Sales Order', detailPath: (id: string) => `/sales/sales_order/${id}` },
+  { key: 'lead',     label: 'Lead',     detailPath: (id: string) => `/crm/lead/${id}` },
+  { key: 'prospect', label: 'Prospect', detailPath: (id: string) => `/crm/prospect/${id}` },
+  { key: 'customer', label: 'Customer', detailPath: (id: string) => `/crm/customer/${id}` },
 ] as const;
 
 const MIN_CHARS = 2;
@@ -240,7 +241,7 @@ export function GlobalSearch({ className, inputClassName, autoFocus, onNavigate 
                 No matches for “{debounced}”
               </p>
               <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-                Searches leads, prospects, customers, and sales orders you can access.
+                Searches leads, prospects, and customers you can access.
               </p>
             </div>
           )}
