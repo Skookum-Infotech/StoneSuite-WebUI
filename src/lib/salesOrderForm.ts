@@ -1,363 +1,399 @@
-export type SOFieldType =
-  | 'text'
-  | 'textarea'
-  | 'select'
-  | 'checkbox'
-  | 'email'
-  | 'tel'
-  | 'number'
-  | 'date';
+// Sales Order form field definitions — derived from StoneSuite_Forms.xlsx "Sales Order" sheet.
+// Only fields NOT marked "Don't Display in UI" are included here.
 
-export interface SOField {
+export interface SOFormField {
   key: string;
   label: string;
-  type?: SOFieldType;
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'email' | 'tel' | 'number' | 'date' | 'readonly';
   required?: boolean;
   options?: string[];
   placeholder?: string;
-  readOnly?: boolean;
-  defaultValue?: string | boolean;
+  /** Span two grid columns */
+  colSpan2?: boolean;
+  /** Span all grid columns */
+  colSpanFull?: boolean;
+  /** Only render when the referenced field is false/unchecked */
+  showIfFieldFalse?: string;
+  /** Textarea row count (only used when type === 'textarea') */
+  rows?: number;
 }
 
-export interface SOSection {
-  title: string;
-  fields: SOField[];
-}
+// ── Lookup option lists ───────────────────────────────────────────────────────
 
-export interface SOTab {
-  key: string;
-  label: string;
-  sections: SOSection[];
-}
+export const US_STATES = [
+  '', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+  'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+  'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
+  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+  'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma',
+  'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
+  'West Virginia', 'Wisconsin', 'Wyoming',
+];
 
-export interface SOLineItem {
-  id: string;
-  item: string;
-  quantity: string;
-  units: string;
-  description: string;
-  priceLevel: string;
-  rate: string;
-  amount: string;
-  commit: boolean;
-  commitmentConfirmed: boolean;
-  orderPriority: string;
-  grossAmt: string;
-}
+export const COUNTRIES = [
+  '', 'United States', 'Canada', 'United Kingdom', 'Australia', 'Germany',
+  'France', 'Japan', 'India', 'Brazil', 'Mexico', 'China', 'Singapore', 'Other',
+];
 
-// ── Primary Information ───────────────────────────────────────────────────────
+export const PAYMENT_TERMS_OPTIONS = [
+  '', 'Due on Receipt', 'Net 15', 'Net 30', 'Net 45', 'Net 60', 'Net 90', 'COD',
+];
 
-export const PRIMARY_INFO_FIELDS: SOField[] = [
+export const PRICE_LEVEL_OPTIONS = [
+  '', 'Standard', 'Online Price', 'Partner Price', 'Wholesale', 'Retail', 'Custom',
+];
+
+export const SO_STATUSES = [
+  '', 'Pending Fulfillment', 'Pending Billing / Partially Fulfilled',
+  'Pending Billing', 'Fulfilled', 'Billed', 'Cancelled', 'Closed',
+];
+
+// ── Form section field definitions ───────────────────────────────────────────
+
+export const PRIMARY_INFO_FIELDS: SOFormField[] = [
   {
-    key: 'custom_form',
-    label: 'Custom Form',
+    key: 'sales_order_status',
+    label: 'Sales Order Status',
     type: 'select',
     required: true,
-    options: ['Standard Sales Order'],
-    defaultValue: 'Standard Sales Order',
+    options: SO_STATUSES,
   },
   {
-    key: 'order_number',
-    label: 'Order #',
-    readOnly: true,
+    key: 'sales_doc_num',
+    label: 'Sales Order #',
+    type: 'readonly',
     placeholder: 'Auto-generated',
   },
   {
-    key: 'customer_project',
-    label: 'Customer : Project',
-    required: true,
-    placeholder: '<Type then tab>',
+    key: 'purchase_doc_num',
+    label: 'Purchase Order #',
+    type: 'text',
+    placeholder: 'Enter PO number',
   },
-  { key: 'date', label: 'Date', type: 'date', required: true },
   {
-    key: 'status',
-    label: 'Status',
-    type: 'select',
+    key: 'date_created',
+    label: 'Date Created',
+    type: 'date',
     required: true,
-    options: [
-      'Pending Fulfillment',
-      'Pending Billing/Partially Fulfilled',
-      'Pending Billing',
-      'Billed',
-      'Cancelled',
-      'Closed',
-    ],
-    defaultValue: 'Pending Fulfillment',
   },
-  { key: 'start_date', label: 'Start Date', type: 'date' },
-  { key: 'end_date', label: 'End Date', type: 'date' },
-  { key: 'po_number', label: 'PO #' },
-  { key: 'memo', label: 'Memo', type: 'textarea' },
+  {
+    key: 'sales_tax_pct',
+    label: 'Sales Tax %',
+    type: 'number',
+    placeholder: '0.00',
+  },
+  {
+    key: 'memo',
+    label: 'Memo',
+    type: 'textarea',
+    placeholder: 'Notes related to this sales order…',
+    colSpanFull: true,
+  },
 ];
 
-// ── Sales Information ─────────────────────────────────────────────────────────
+export const BILL_TO_FIELDS: SOFormField[] = [
+  {
+    key: 'bill_customer',
+    label: 'Billing Customer',
+    type: 'text',
+    required: true,
+    placeholder: 'Billing customer name',
+  },
+  {
+    key: 'bill_attn',
+    label: 'Attn:',
+    type: 'text',
+    placeholder: 'Authorized contact person',
+  },
+  {
+    key: 'bill_address1',
+    label: 'Address Line 1',
+    type: 'textarea',
+    rows: 2,
+    colSpan2: true,
+    placeholder: '123 Main Street',
+  },
+  {
+    key: 'bill_address2',
+    label: 'Address Line 2',
+    type: 'textarea',
+    rows: 2,
+    colSpan2: true,
+    placeholder: 'Apt, suite, floor, etc.',
+  },
+  {
+    key: 'bill_suite',
+    label: 'Suite / Unit #',
+    type: 'text',
+    placeholder: 'Suite 100',
+  },
+  { key: 'bill_city', label: 'City', type: 'text', placeholder: 'City' },
+  { key: 'bill_state', label: 'State', type: 'select', options: US_STATES },
+  {
+    key: 'bill_zip',
+    label: 'Zip / Postal Code',
+    type: 'text',
+    placeholder: '12345',
+  },
+  { key: 'bill_country', label: 'Country', type: 'select', options: COUNTRIES },
+  {
+    key: 'bill_phone',
+    label: 'Phone',
+    type: 'tel',
+    placeholder: '+1 (555) 000-0000',
+  },
+  {
+    key: 'bill_fax',
+    label: 'Fax',
+    type: 'tel',
+    placeholder: '+1 (555) 000-0000',
+  },
+  {
+    key: 'bill_email',
+    label: 'Email',
+    type: 'email',
+    placeholder: 'billing@company.com',
+  },
+  {
+    key: 'payment_terms',
+    label: 'Payment Terms',
+    type: 'select',
+    options: PAYMENT_TERMS_OPTIONS,
+  },
+  {
+    key: 'price_level',
+    label: 'Price Level',
+    type: 'select',
+    options: PRICE_LEVEL_OPTIONS,
+  },
+];
 
-export const SALES_INFO_FIELDS: SOField[] = [
+export const SHIP_TO_FIELDS: SOFormField[] = [
+  {
+    key: 'ship_same_as_bill',
+    label: 'Is Same as Billing Customer',
+    type: 'checkbox',
+    colSpanFull: true,
+  },
+  {
+    key: 'ship_customer',
+    label: 'Shipping Customer',
+    type: 'text',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: 'Shipping customer name',
+  },
+  {
+    key: 'ship_attn',
+    label: 'Attn:',
+    type: 'text',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: 'Authorized contact person',
+  },
+  {
+    key: 'ship_address1',
+    label: 'Address Line 1',
+    type: 'textarea',
+    rows: 2,
+    showIfFieldFalse: 'ship_same_as_bill',
+    colSpan2: true,
+    placeholder: '123 Main Street',
+  },
+  {
+    key: 'ship_address2',
+    label: 'Address Line 2',
+    type: 'textarea',
+    rows: 2,
+    showIfFieldFalse: 'ship_same_as_bill',
+    colSpan2: true,
+    placeholder: 'Apt, suite, floor, etc.',
+  },
+  {
+    key: 'ship_suite',
+    label: 'Suite / Unit #',
+    type: 'text',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: 'Suite 100',
+  },
+  {
+    key: 'ship_city',
+    label: 'City',
+    type: 'text',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: 'City',
+  },
+  {
+    key: 'ship_state',
+    label: 'State',
+    type: 'select',
+    showIfFieldFalse: 'ship_same_as_bill',
+    options: US_STATES,
+  },
+  {
+    key: 'ship_zip',
+    label: 'Zip / Postal Code',
+    type: 'text',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: '12345',
+  },
+  {
+    key: 'ship_country',
+    label: 'Country',
+    type: 'select',
+    showIfFieldFalse: 'ship_same_as_bill',
+    options: COUNTRIES,
+  },
+  {
+    key: 'ship_phone',
+    label: 'Phone',
+    type: 'tel',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: '+1 (555) 000-0000',
+  },
+  {
+    key: 'ship_fax',
+    label: 'Fax',
+    type: 'tel',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: '+1 (555) 000-0000',
+  },
+  {
+    key: 'ship_email',
+    label: 'Email',
+    type: 'email',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: 'shipping@company.com',
+  },
+];
+
+export const SALES_INFO_FIELDS: SOFormField[] = [
   {
     key: 'sales_rep',
     label: 'Sales Rep',
-    type: 'select',
-    options: ['', 'Alex Johnson', 'Maria Garcia', 'James Lee', 'Sarah Chen', 'David Kim'],
+    type: 'text',
+    placeholder: 'Assigned sales representative',
   },
-  { key: 'sales_effective_date', label: 'Sales Effective Date', type: 'date' },
   {
-    key: 'partner',
-    label: 'Partner',
-    type: 'select',
-    options: ['', 'Accenture', 'Deloitte Digital', 'KPMG', 'PwC', 'Salesforce Partner Network', 'None'],
+    key: 'customer_owner',
+    label: 'Customer Owner',
+    type: 'text',
+    placeholder: 'Account owner',
   },
 ];
 
-// ── Classification ────────────────────────────────────────────────────────────
+// ── Items sub-tab ─────────────────────────────────────────────────────────────
 
-export const CLASSIFICATION_FIELDS: SOField[] = [
-  {
-    key: 'subsidiary',
-    label: 'Subsidiary',
-    type: 'select',
-    required: true,
-    options: [
-      '',
-      'Talkdesk Inc.',
-      'Talkdesk UK Ltd.',
-      'Talkdesk Portugal',
-      'Talkdesk Germany GmbH',
-      'Talkdesk Australia Pty Ltd.',
-    ],
-  },
-  {
-    key: 'class',
-    label: 'Class',
-    type: 'select',
-    options: ['', 'Enterprise', 'Mid-Market', 'SMB', 'Partner', 'Internal'],
-  },
-  {
-    key: 'china_cash_flow_item',
-    label: 'China Cash Flow Item',
-    type: 'select',
-    options: ['', 'Not Applicable', 'Operating', 'Investing', 'Financing'],
-  },
-  {
-    key: 'department',
-    label: 'Department',
-    type: 'select',
-    options: ['', 'Sales', 'Engineering', 'Finance', 'Operations', 'HR', 'Marketing'],
-  },
-  {
-    key: 'location',
-    label: 'Location',
-    type: 'select',
-    options: [
-      '',
-      'US – New York',
-      'US – San Francisco',
-      'UK – London',
-      'Portugal – Lisbon',
-      'Germany – Munich',
-      'Australia – Sydney',
-    ],
-  },
-];
+export interface SOLineItem {
+  id: string;
+  lineNo: number;
+  itemName: string;
+  itemDescription: string;
+  itemSku: string;
+  quantity: string;
+  units: string;
+  unitPrice: string;
+  discount: string;
+  amount: string;   // calculated
+  tax: string;
+  total: string;    // calculated
+}
 
-// ── Intercompany Management ───────────────────────────────────────────────────
+export const EMPTY_LINE_ITEM: Omit<SOLineItem, 'id' | 'lineNo'> = {
+  itemName: '',
+  itemDescription: '',
+  itemSku: '',
+  quantity: '',
+  units: '',
+  unitPrice: '',
+  discount: '0',
+  amount: '',
+  tax: '0',
+  total: '',
+};
 
-export const INTERCOMPANY_FIELDS: SOField[] = [
-  { key: 'paired_intercompany_transaction', label: 'Paired Intercompany Transaction', placeholder: '<Type then tab>' },
-  { key: 'intercompany_status', label: 'Intercompany Status' },
-  { key: 'zuora_payment_number', label: 'Zuora Payment Number' },
-  { key: 'customer_notes', label: 'Customer Notes' },
-  { key: 'local_amount_due', label: 'Local Amount Due', type: 'number', required: true },
-  { key: 'zuora_invoice_number', label: 'Zuora Invoice Number' },
-  {
-    key: 'e_commerce_operator',
-    label: 'E-Commerce Operator',
-    type: 'select',
-    options: ['', 'Amazon', 'eBay', 'Shopify', 'WooCommerce', 'Magento', 'Other'],
-  },
-  { key: 'local_inv_amt', label: 'Local Inv Amt', type: 'number', required: true },
-  { key: 'document_date', label: 'Document Date', type: 'date' },
-  {
-    key: 'e_commerce_gstin',
-    label: 'E-Commerce GSTIN',
-    type: 'select',
-    options: ['', 'Registered', 'Unregistered', 'Composite', 'SEZ'],
-  },
-  {
-    key: 'local_invoice',
-    label: 'Local Invoice',
-    type: 'select',
-    required: true,
-    options: ['', 'Yes', 'No'],
-  },
-  { key: 'customer_vat', label: 'Customer VAT #' },
-  {
-    key: 'export_type',
-    label: 'Export Type',
-    type: 'select',
-    options: ['', 'WPAY', 'WOPAY', 'SEZ WPAY', 'SEZ WOPAY', 'Deemed Exports'],
-  },
-  { key: 'credit_amount', label: 'Credit Amount', type: 'number', readOnly: true },
-  {
-    key: 'exclude_from_electronic_bank_payments',
-    label: 'Exclude From Electronic Bank Payments Processing',
-    type: 'checkbox',
-  },
-  {
-    key: 'place_of_supply',
-    label: 'Place of Supply',
-    type: 'select',
-    options: [
-      '',
-      'IN-AP', 'IN-AR', 'IN-AS', 'IN-BR', 'IN-CG', 'IN-CH', 'IN-DL',
-      'IN-GA', 'IN-GJ', 'IN-HP', 'IN-HR', 'IN-JH', 'IN-JK', 'IN-KA',
-      'IN-KL', 'IN-MH', 'IN-ML', 'IN-MN', 'IN-MP', 'IN-MZ', 'IN-NL',
-      'IN-OR', 'IN-PB', 'IN-PY', 'IN-RJ', 'IN-SK', 'IN-TG', 'IN-TN',
-      'IN-TR', 'IN-UP', 'IN-UT', 'IN-WB',
-    ],
-  },
-  { key: 'paid_amount', label: 'Paid Amount', type: 'number', readOnly: true },
-  { key: 'amount_remaining_on_invoice', label: 'Amount Remaining on Invoice', type: 'number', readOnly: true },
-  { key: 'local_invoice_number', label: 'Local Invoice #', required: true },
-  {
-    key: 'write_off_journal',
-    label: 'Write-Off Journal',
-    type: 'select',
-    options: ['', 'General Ledger', 'Accounts Receivable', 'Write-Off'],
-  },
-  { key: 'follow_up_date', label: 'Follow Up Date', type: 'date' },
-  {
-    key: 'dunning_status',
-    label: 'Status',
-    type: 'select',
-    options: ['Normal Dunning', 'Suspended', 'On Hold'],
-    defaultValue: 'Normal Dunning',
-  },
-  { key: 'white_glove_review_required', label: 'White Glove Review Required', type: 'checkbox' },
-  { key: 'dunning_suspension', label: 'Dunning Suspension', type: 'checkbox' },
-];
+export function calcLineItem(item: Omit<SOLineItem, 'id' | 'lineNo' | 'amount' | 'total'>): { amount: string; total: string } {
+  const qty = parseFloat(item.quantity) || 0;
+  const price = parseFloat(item.unitPrice) || 0;
+  const disc = parseFloat(item.discount) || 0;
+  const tax = parseFloat(item.tax) || 0;
+  const amount = qty * price * (1 - disc / 100);
+  const total = amount * (1 + tax / 100);
+  return {
+    amount: qty && price ? amount.toFixed(2) : '',
+    total: qty && price ? total.toFixed(2) : '',
+  };
+}
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
+// ── Inventory sub-tab ─────────────────────────────────────────────────────────
 
-export const SO_TABS: SOTab[] = [
-  { key: 'items', label: 'Items', sections: [] },
-  {
-    key: 'shipping',
-    label: 'Shipping',
-    sections: [
-      {
-        title: 'Shipping',
-        fields: [
-          { key: 'ship_date', label: 'Ship Date', type: 'date' },
-          {
-            key: 'ship_method',
-            label: 'Ship Method',
-            type: 'select',
-            options: ['', 'Standard', 'Express', 'Overnight', 'International'],
-          },
-          { key: 'tracking_number', label: 'Tracking Number' },
-          { key: 'shipping_cost', label: 'Shipping Cost', type: 'number' },
-          { key: 'ship_to', label: 'Ship To', type: 'textarea' },
-        ],
-      },
-    ],
-  },
-  {
-    key: 'billing',
-    label: 'Billing',
-    sections: [
-      {
-        title: 'Billing',
-        fields: [
-          {
-            key: 'payment_terms',
-            label: 'Payment Terms',
-            type: 'select',
-            options: ['', 'Net 30', 'Net 60', 'Net 90', 'Due on Receipt', 'Net 15'],
-          },
-          { key: 'bill_to', label: 'Bill To', type: 'textarea' },
-          {
-            key: 'payment_method',
-            label: 'Payment Method',
-            type: 'select',
-            options: ['', 'Credit Card', 'ACH', 'Wire Transfer', 'Check', 'Invoice'],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    key: 'accounting',
-    label: 'Accounting',
-    sections: [
-      {
-        title: 'Accounting',
-        fields: [
-          {
-            key: 'revenue_recognition_rule',
-            label: 'Revenue Recognition Rule',
-            type: 'select',
-            options: ['', 'Immediate', 'Straight-line', 'Event-based'],
-          },
-          { key: 'deferred_revenue_account', label: 'Deferred Revenue Account' },
-          { key: 'revenue_account', label: 'Revenue Account' },
-          { key: 'cogs_account', label: 'Cost of Goods Sold Account' },
-        ],
-      },
-    ],
-  },
-  {
-    key: 'tax_details',
-    label: 'Tax Details',
-    sections: [
-      {
-        title: 'Tax Details',
-        fields: [
-          {
-            key: 'tax_code',
-            label: 'Tax Code',
-            type: 'select',
-            options: ['', 'US-CA', 'US-NY', 'EU-VAT', 'UK-VAT', 'IN-GST', 'AU-GST'],
-          },
-          { key: 'tax_rate', label: 'Tax Rate (%)', type: 'number' },
-          {
-            key: 'nexus',
-            label: 'Nexus',
-            type: 'select',
-            options: ['', 'California', 'New York', 'Texas', 'Florida'],
-          },
-        ],
-      },
-    ],
-  },
-  { key: 'relationships', label: 'Relationships', sections: [] },
-  { key: 'communication', label: 'Communication', sections: [] },
-  { key: 'related_records', label: 'Related Records', sections: [] },
-  { key: 'system_information', label: 'System Information', sections: [] },
-  { key: 'custom', label: 'Custom', sections: [] },
-  { key: 'accounting_books', label: 'Accounting Books', sections: [] },
-  { key: 'eft', label: 'EFT', sections: [] },
-  { key: 'tax_reporting', label: 'Tax Reporting', sections: [] },
-  { key: 'zuora_subscription', label: 'Zuora Subscription', sections: [] },
-];
+export interface SOInventoryItem {
+  id: string;
+  itemName: string;
+  itemSku: string;
+  onhandQty: number;
+  availableQty: number;
+  salesOrderQty: number;
+  allocatedQty: number;
+}
 
-// ── Defaults ──────────────────────────────────────────────────────────────────
+// ── Drawings sub-tab ──────────────────────────────────────────────────────────
 
-export function salesOrderDefaults(): Record<string, unknown> {
+export type DrawingType =
+  | 'floor_plan'
+  | 'elevation'
+  | 'section'
+  | 'detail'
+  | 'fabrication'
+  | 'installation'
+  | 'shop_drawing'
+  | 'as_built'
+  | 'other';
+
+export type DrawingStatus = 'draft' | 'pending_review' | 'approved' | 'rejected';
+
+export interface SODrawing {
+  id: string;
+  name: string;
+  type: DrawingType;
+  revision: string;
+  status: DrawingStatus;
+  fileName: string;
+  fileSize: number;
+  uploadedBy: string;
+  uploadedAt: string;
+  notes: string;
+}
+
+export const DRAWING_TYPE_LABELS: Record<DrawingType, string> = {
+  floor_plan: 'Floor Plan',
+  elevation: 'Elevation',
+  section: 'Section',
+  detail: 'Detail',
+  fabrication: 'Fabrication',
+  installation: 'Installation',
+  shop_drawing: 'Shop Drawing',
+  as_built: 'As-Built',
+  other: 'Other',
+};
+
+export const DRAWING_STATUS_CONFIG: Record<DrawingStatus, { label: string; bg: string; text: string }> = {
+  draft:          { label: 'Draft',          bg: 'bg-stone-100',   text: 'text-stone-600' },
+  pending_review: { label: 'Pending Review', bg: 'bg-amber-100',   text: 'text-amber-700' },
+  approved:       { label: 'Approved',       bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  rejected:       { label: 'Rejected',       bg: 'bg-red-100',     text: 'text-red-700' },
+};
+
+// ── Form defaults ─────────────────────────────────────────────────────────────
+
+export function soDefaults(): Record<string, unknown> {
   const today = new Date().toISOString().split('T')[0];
-  const allFields: SOField[] = [
-    ...PRIMARY_INFO_FIELDS,
-    ...SALES_INFO_FIELDS,
-    ...CLASSIFICATION_FIELDS,
-    ...INTERCOMPANY_FIELDS,
-    ...SO_TABS.flatMap((t) => t.sections.flatMap((s) => s.fields)),
-  ];
-  const out: Record<string, unknown> = { date: today };
-  for (const f of allFields) {
-    if (f.type === 'checkbox') {
-      out[f.key] = f.defaultValue === true;
-    } else if (f.defaultValue !== undefined && f.defaultValue !== false) {
-      out[f.key] = f.defaultValue;
-    }
-  }
-  return out;
+  return {
+    date_created: today,
+    sales_order_status: 'Pending Fulfillment',
+    ship_same_as_bill: false,
+    bill_country: 'United States',
+    ship_country: 'United States',
+    sales_tax_pct: '0',
+  };
 }

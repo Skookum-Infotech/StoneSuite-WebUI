@@ -211,18 +211,9 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
-                    Password
-                  </Label>
-                  <Link
-                    to="/auth/forgot-password"
-                    className="text-xs font-medium transition-colors duration-150 hover:opacity-100"
-                    style={{ color: 'rgba(0,95,115,0.55)' }}
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+                  Password
+                </Label>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
                   <Input
@@ -236,6 +227,15 @@ export default function LoginPage() {
                     className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
                     style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
                   />
+                </div>
+                <div className="flex justify-end">
+                  <Link
+                    to="/auth/forgot-password"
+                    className="text-xs font-medium transition-colors duration-150 hover:opacity-100"
+                    style={{ color: 'rgba(0,95,115,0.55)' }}
+                  >
+                    Forgot password?
+                  </Link>
                 </div>
                 {errors.password && <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>}
               </div>
