@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <path id="esTopArc"    d="M 38,200 A 162,162 0 0,1 362,200"/>
+    <path id="esBottomArc" d="M 38,200 A 162,162 0 0,0 362,200"/>
+  </defs>
+
+  <!-- Outer red double ring -->
+  <circle cx="200" cy="200" r="197" fill="white" stroke="#CC1B1B" stroke-width="4.5"/>
+  <circle cx="200" cy="200" r="188" fill="none"  stroke="#CC1B1B" stroke-width="2"/>
+
+  <!-- White background -->
+  <circle cx="200" cy="200" r="184" fill="white"/>
+
+  <!-- Outer black border -->
+  <circle cx="200" cy="200" r="184" fill="none" stroke="#0e0e0e" stroke-width="3.5"/>
+
+  <!-- Inner black border (edge of text zone) -->
+  <circle cx="200" cy="200" r="122" fill="none" stroke="#0e0e0e" stroke-width="2.5"/>
+
+  <!-- Inner black disc -->
+  <circle cx="200" cy="200" r="119" fill="#0e0e0e"/>
+
+  <!-- "es" monogram — red italic -->
+  <text x="200" y="242"
+    font-family="Georgia,'Times New Roman',serif"
+    font-size="122" font-weight="700" font-style="italic"
+    fill="#CC1B1B" text-anchor="middle">es</text>
+
+  <!-- ELEVATION — top arc -->
+  <text font-family="'Arial Black',Arial,sans-serif"
+    font-size="27" font-weight="900" fill="#0e0e0e" letter-spacing="4">
+    <textPath href="#esTopArc" startOffset="50%" text-anchor="middle">ELEVATION</textPath>
+  </text>
+
+  <!-- STONE — bottom arc -->
+  <text font-family="'Arial Black',Arial,sans-serif"
+    font-size="22" font-weight="700" fill="#0e0e0e" letter-spacing="16" dy="-3">
+    <textPath href="#esBottomArc" startOffset="50%" text-anchor="middle">STONE</textPath>
+  </text>
+
+  <!-- EST. -->
+  <text x="72" y="206" font-family="Arial,sans-serif" font-size="14"
+    font-weight="700" fill="#0e0e0e" text-anchor="middle">EST.</text>
+  <line x1="36" y1="210" x2="55"  y2="210" stroke="#CC1B1B" stroke-width="2"/>
+  <line x1="91" y1="210" x2="110" y2="210" stroke="#CC1B1B" stroke-width="2"/>
+
+  <!-- 2019 -->
+  <text x="328" y="206" font-family="Arial,sans-serif" font-size="14"
+    font-weight="700" fill="#0e0e0e" text-anchor="middle">2019</text>
+  <line x1="290" y1="210" x2="309" y2="210" stroke="#CC1B1B" stroke-width="2"/>
+  <line x1="346" y1="210" x2="365" y2="210" stroke="#CC1B1B" stroke-width="2"/>
+</svg>

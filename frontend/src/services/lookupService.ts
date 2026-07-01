@@ -1,0 +1,33 @@
+import { tenantClient } from '@/api/tenantClient';
+
+export interface LookupItem {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface StateLookupItem extends LookupItem {
+  countryId: number;
+}
+
+export interface CrmLookups {
+  customerTypes: LookupItem[];
+  crmStatuses: LookupItem[];
+  arStatuses: LookupItem[];
+  paymentTerms: LookupItem[];
+  priceLevels: LookupItem[];
+  currencies: LookupItem[];
+  countries: LookupItem[];
+  states: StateLookupItem[];
+  leadSources: LookupItem[];
+  contactMethods: LookupItem[];
+  employees: LookupItem[];
+  parentCustomers: LookupItem[];
+}
+
+export const lookupService = {
+  getCrmLookups: (): Promise<CrmLookups> =>
+    tenantClient
+      .get<{ success: boolean; lookups: CrmLookups }>('/tenant/crm/lookups')
+      .then((r) => r.data.lookups),
+};

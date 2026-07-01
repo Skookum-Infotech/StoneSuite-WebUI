@@ -1,0 +1,355 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap"); /* --font-brand fallback */
+
+/* ── Font imports — change fonts here, nowhere else ─────────────────────── */
+@import "@fontsource-variable/geist"; /* --font-sans */
+@import "@fontsource/ibm-plex-mono/400.css"; /* --font-mono */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme {
+  --breakpoint-3xl: 128rem;  /* 2048px — must use rem so Tailwind sorts after 2xl (96rem) */
+  --breakpoint-4xl: 240rem;  /* 3840px */
+}
+
+/* ── Fluid sidebar width ────────────────────────────────────────────────────
+   --sidebar-w   : actual sidebar visual width (used by <aside>)
+   --sidebar-offset: content left-padding; 0 on mobile (sidebar is an overlay),
+                     equals --sidebar-w on lg+ (sidebar is in-flow)
+   clamp keeps the sidebar proportional on ultra-wide screens:
+     min  14rem = 224px  (≈ Tailwind w-56, default desktop)
+     pref 12vw           (fluid — at 2560px → 307px, at 3840px → 461px→capped)
+     max  20rem = 320px  (cap so it never gets absurdly wide)
+   ─────────────────────────────────────────────────────────────────────── */
+:root {
+  --sidebar-w: clamp(14rem, 12vw, 20rem);
+  --sidebar-offset: 0rem;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --sidebar-offset: var(--sidebar-w);
+  }
+}
+
+@font-face {
+  font-family: "All Round Gothic";
+  src: url("/fonts/allroundgothic-book.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+/* Modernistic thin custom scrollbar — used throughout the app */
+.modal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d0cc transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: #d4d0cc;
+  border-radius: 999px;
+  transition: background 200ms ease;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #92857f;
+}
+
+/* Dark mode custom scrollbar */
+.dark .modal-scrollbar {
+  scrollbar-color: #52504c transparent;
+}
+
+.dark .modal-scrollbar::-webkit-scrollbar-thumb {
+  background: #52504c;
+}
+
+.dark .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #78706a;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STONESUITE DESIGN TOKENS — single source of truth
+   To change colors, fonts, or spacing across the whole app, edit here only.
+   Components reference these via Tailwind utilities (bg-brand, text-accent-foreground, etc.)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light dark;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+
+  /* Scale the entire UI up on large desktop monitors (not laptops).
+     rem-based Tailwind text sizes (text-xs, text-sm, etc.) scale automatically.
+     px-based values (icon size-*, most spacing) are unaffected — intentional.
+     1920px = standard desktop 1080p monitor
+     2560px = 1440p / ultrawide */
+  @media (min-width: 1920px) {
+    font-size: 17px;
+  }
+
+  @media (min-width: 2560px) {
+    font-size: 18.67px;
+  }
+
+  /* ── shadcn base tokens (overridden below by brand tokens) ── */
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+
+  /* ── StoneSuite brand palette ─────────────────────────────────────────────
+     The warm stone & lime-green system.
+     Lime green is the single action accent — used for buttons, active states,
+     focus rings. Its scarcity is what makes it communicate "action."
+     ────────────────────────────────────────────────────────────────────── */
+
+  /* Canvas & ink */
+  --background: #fafaf9;          /* warm stone canvas — never pure white */
+  --foreground: #1c1917;          /* stone-950 ink — brown-black, not neutral-gray */
+
+  /* Surfaces */
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+
+  /* Brand accent — lime green */
+  --primary: #c2f589;             /* brand-lime: primary CTA buttons */
+  --primary-foreground: #1c1917;
+  --accent: #ecfccb;              /* accent-lime-light: active nav bg, chip fills */
+  --accent-foreground: #365314;   /* accent-lime-text: text on lime-light surfaces */
+
+  /* Neutral layers */
+  --secondary: #f7f7f7;           /* stone-100: secondary surfaces */
+  --secondary-foreground: #1c1917;
+  --muted: #f7f7f7;               /* stone-100 */
+  --muted-foreground: #787878;    /* stone-500: placeholder, secondary text */
+
+  /* Semantic */
+  --destructive: #d94f36;
+  --border: #e8e8e8;              /* stone-300: subtle borders */
+  --input: #ffffff;               /* input fill */
+  --ring: #c2f589;                /* focus ring — brand lime */
+
+  /* ── App header gradient ────────────────────────────────────────────────
+     Dark teal-to-navy gradient used by the top navigation bar.
+     Change this one var to retheme the header across all breakpoints.
+     ─────────────────────────────────────────────────────────────────── */
+  --gradient-header: linear-gradient(135deg, #001219 0%, #005f73 15%, #0a2540 50%, #050e1a 100%);
+
+  /* ── Sidebar tokens ─────────────────────────────────────────────────────
+     Sidebar background is stone-100 (#f7f7f7), slightly behind the main canvas.
+     Active items use the lime-light accent fill + dark lime text.
+     ────────────────────────────────────────────────────────────────────── */
+  --sidebar: #f7f7f7;                  /* stone-100 — slightly behind page canvas */
+  --sidebar-foreground: #1c1917;       /* stone-950 */
+  --sidebar-primary: #c2f589;          /* brand-lime for primary marks */
+  --sidebar-primary-foreground: #1c1917;
+  --sidebar-accent: #ecfccb;           /* lime-light — hover & active bg */
+  --sidebar-accent-foreground: #365314; /* dark lime text on active */
+  --sidebar-border: #e8e8e8;           /* stone-300 */
+  --sidebar-ring: #c2f589;
+}
+
+@theme inline {
+  /* ── Brand color ramp ─────────────────────────────────────────────────── */
+  --color-brand: #c2f589;           /* primary CTA background */
+  --color-brand-hover: #99c466;     /* primary CTA hover */
+  --color-brand-dark: #719c3b;      /* text on lime, dark active */
+  --color-brand-dark-hover: #5f8431;
+
+  /* Stone neutral ramp (warm-tinted grays) */
+  --color-stone-bg: #fafaf9;
+  --color-stone-50: #f9f9f8;
+  --color-stone-100: #f7f7f7;
+  --color-stone-200: #eeeeee;
+  --color-stone-300: #e8e8e8;
+  --color-stone-400: #ababab;
+  --color-stone-500: #787878;
+  --color-stone-950: #1c1917;
+
+  /* Accent lime — for active states, chip fills, subtle highlights */
+  --color-accent-lime: #ecfccb;
+  --color-accent-lime-text: #365314;
+
+  /* Tab bar / teal (used by ProspectForm TabBar, and as a secondary palette) */
+  --color-tab-bg: #2c6e7f;
+  --color-tab-border: #1f7a8c;
+  --color-teal: #2c6e7f;
+  --color-teal-light: #dbeafe;
+  --color-teal-text: #1e40af;
+
+  /* Destructive */
+  --color-destructive-red: #d94f36;
+
+  /* ── Semantic: destructive shades (all modelled off --destructive #d94f36) ── */
+  --color-destructive-ring: #fecaca;     /* focus ring track — red-200 equivalent */
+  --color-warning: #d97706;              /* amber-600 — single warning accent */
+  --color-warning-ring: #fde68a;         /* warning focus ring track — amber-200 */
+
+  /* ── Workflow type icon badge palettes ───────────────────────────────── */
+  --color-workflow-lead-bg: #f3e8ff;     /* purple-100 */
+  --color-workflow-lead-text: #7e22ce;   /* purple-700 */
+  --color-workflow-prospect-bg: #dbeafe; /* blue-100 */
+  --color-workflow-prospect-text: #1d4ed8; /* blue-700 */
+  --color-workflow-customer-bg: #ecfccb; /* accent-lime */
+  --color-workflow-customer-text: #365314; /* accent-lime-text */
+
+  /* ── File type icon badge palettes ──────────────────────────────────── */
+  --color-file-pdf-bg: #fff1f2;          /* rose-50 */
+  --color-file-pdf-text: #be123c;        /* rose-700 */
+  --color-file-doc-bg: #eff6ff;          /* blue-50 */
+  --color-file-doc-text: #1d4ed8;        /* blue-700 */
+  --color-file-sheet-bg: #f0fdf4;        /* green-50 */
+  --color-file-sheet-text: #15803d;      /* green-700 */
+  --color-file-image-bg: #fffbeb;        /* amber-50 */
+  --color-file-image-text: #b45309;      /* amber-700 */
+
+  /* ── Table header tint ───────────────────────────────────────────────── */
+  --color-table-header: #f4fce8;         /* replaces color-mix(in srgb, #ecfccb 22%, white) */
+
+  /* NOT USING THIS */
+  /* ── Avatar palette slots (9 entries, used via var() in JS) ─────────── */
+  --avatar-1-bg: #6366f1; --avatar-1-fg: #ffffff;  /* indigo */
+  --avatar-2-bg: #10b981; --avatar-2-fg: #ffffff;  /* emerald */
+  --avatar-3-bg: #3b82f6; --avatar-3-fg: #ffffff;  /* blue */
+  --avatar-4-bg: #f43f5e; --avatar-4-fg: #ffffff;  /* rose */
+  --avatar-5-bg: #a855f7; --avatar-5-fg: #ffffff;  /* purple */
+  --avatar-6-bg: #f59e0b; --avatar-6-fg: #ffffff;  /* amber */
+  --avatar-7-bg: #14b8a6; --avatar-7-fg: #ffffff;  /* teal */
+  --avatar-8-bg: #f97316; --avatar-8-fg: #ffffff;  /* orange */
+  --avatar-9-bg: #ec4899; --avatar-9-fg: #ffffff;  /* pink */
+
+  /* ── Typography ─────────────────────────────────────────────────────── */
+  --text-2xs: 0.625rem;             /* 10px — field labels, captions */
+  --text-label: 0.6875rem;          /* 11px — compact UI labels */
+
+  /* Font families — change font here, nowhere else */
+  --font-sans: "Geist Variable", system-ui, sans-serif;    /* all UI text */
+  --font-mono: "IBM Plex Mono", "Geist Mono", ui-monospace, monospace; /* code, IDs */
+  --font-brand: "All Round Gothic", "Nunito", sans-serif;  /* display/brand moments only */
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  html {
+    @apply font-sans;
+  }
+}
