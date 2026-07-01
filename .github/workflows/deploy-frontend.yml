@@ -1,0 +1,62 @@
+name: Deploy Frontend to Cloudflare Pages
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  deploy:
+    name: Lint → Build → Deploy → Verify
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    environment: Prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: stonesuite
+          directory: frontend/dist
+          branch: master
+
+      - name: Health check
+        run: |
+          echo "Waiting for edge propagation..."
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://stonesuite.pages.dev)
+          if [ "$STATUS" != "200" ]; then
+            echo "Frontend health check failed — HTTP $STATUS"
+            echo "Roll back via: Cloudflare Pages dashboard → Deployments → previous deploy → Rollback"
+            exit 1
+          fi
+          echo "Frontend health check passed — HTTP $STATUS"
