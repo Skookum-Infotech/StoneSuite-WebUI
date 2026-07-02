@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# PreToolUse guard for StoneSuite. Blocks edits/writes that violate the
-# inviolable rules in CLAUDE.md (multi-tenancy, migrations, banned patterns).
-# Deterministic: no AI tokens. Exit 2 => block (reason printed to stderr).
+# PreToolUse guard for StoneSuite-WebUI. Blocks edits/writes that violate the
+# inviolable rules in CLAUDE.md. Deterministic: no AI tokens. Exit 2 => block
+# (reason printed to stderr).
 #
 # Wired in .claude/settings.json on Edit|Write|MultiEdit. Reads the tool call
 # as JSON on stdin: { tool_name, tool_input: { file_path, content?, new_string? } }.
@@ -35,46 +35,6 @@ new_text="$(printf '%s' "$extracted" | sed -n '2,$p')"
 block() { echo "BLOCKED by StoneSuite guard: $1" >&2; exit 2; }
 
 base="$(basename "$file_path")"
-
-# ---- Rule: no tenant down-migrations (recovery is via Neon PITR) ------------
-case "$file_path" in
-  */migrations/*.down.sql)
-    block "down-migrations are forbidden (CLAUDE.md). Recover via Neon point-in-time restore, not down SQL." ;;
-esac
-
-# ---- Rule: migration schema must be idempotent -----------------------------
-#  The schema is a single canonical schema.sql re-applied on any DB state, so
-#  ADD COLUMN and CREATE TABLE MUST be guarded with IF NOT EXISTS.
-if [[ "$file_path" == */migrations/* ]]; then
-  while IFS= read -r line; do
-    low="$(printf '%s' "$line" | tr 'A-Z' 'a-z')"
-    case "$low" in
-      *"add column"*)
-        printf '%s' "$low" | grep -q 'if not exists' || \
-          block "migration 'ADD COLUMN' must use 'ADD COLUMN IF NOT EXISTS' (idempotent schema): $line" ;;
-      *"create table"*)
-        printf '%s' "$low" | grep -q 'if not exists' || \
-          block "migration 'CREATE TABLE' must use 'CREATE TABLE IF NOT EXISTS' (idempotent schema): $line" ;;
-    esac
-  done <<< "$new_text"
-fi
-
-# ---- Rule: tenant-DB stores are scoped by the DB connection, never by a -----
-#           WHERE tenant_id filter. (Control-plane code is intentionally excluded.)
-case "$file_path" in
-  */backend/lead/*|*/backend/prospect/*|*/backend/workflow/*|*/backend/crmstore/*)
-    if printf '%s' "$new_text" | grep -iqE 'where[[:space:]].*tenant_id'; then
-      block "tenant-DB queries are scoped by the database connection, not 'WHERE tenant_id' (CLAUDE.md multi-tenancy rule #1)."
-    fi ;;
-esac
-
-# ---- Rule: no panic() in backend request paths (return errors instead) ------
-if [[ "$base" == *.go && "$base" != *_test.go && "$base" != main.go ]]; then
-  # ignore commented lines; flag a real panic( call
-  if printf '%s' "$new_text" | grep -nE '^[[:space:]]*panic\(' >/dev/null; then
-    block "panic() is forbidden in production paths (CLAUDE.md Go rules). Return a wrapped error up the stack."
-  fi
-fi
 
 # ---- Frontend: no 'any', no inline style={{ }} -----------------------------
 if [[ "$base" == *.ts || "$base" == *.tsx ]]; then
