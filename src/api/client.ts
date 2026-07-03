@@ -100,6 +100,8 @@ apiClient.interceptors.response.use(
       error.response?.status === 401 &&
       !originalRequest._retried &&
       !originalRequest.url?.includes('/auth/refresh') &&
+      !originalRequest.url?.includes('/auth/tenant-login') &&
+      !originalRequest.url?.includes('/auth/register') &&
       !isLoggingOut
     ) {
       originalRequest._retried = true;
