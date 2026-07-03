@@ -239,6 +239,16 @@ export const userService = {
       .delete<{ success: boolean; message: string }>(`/tenant/users/${id}`)
       .then((r) => r.data),
 
+  assignRole: (userId: string, roleId: string) =>
+    tenantClient
+      .post<{ success: boolean; message: string }>(`/tenant/users/${userId}/roles`, { roleId })
+      .then((r) => r.data),
+
+  removeRole: (userId: string, roleId: string) =>
+    tenantClient
+      .delete<{ success: boolean; message: string }>(`/tenant/users/${userId}/roles/${roleId}`)
+      .then((r) => r.data),
+
   listInvites: () =>
     tenantClient
       .get<{ success: boolean; invites: UserInvite[] }>('/tenant/invites')
