@@ -9,6 +9,7 @@ import {
   Check,
   Pencil,
   Users,
+  UserPlus,
   AlertTriangle,
   ChevronLeft,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { Badge, ErrorNote, EmptyState } from "@/components/tenant/ui";
 import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
 import type { Role, WorkspaceUser } from "@/types/tenant";
+import { AssignUsersModal } from "./components/AssignUsersModal";
 
 // ---------------------------------------------------------------------------
 
@@ -291,6 +293,7 @@ function RoleDetail({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"permissions" | "users">("permissions");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAssignUsers, setShowAssignUsers] = useState(false);
 
   // resource → action → scope (for quick grant lookup)
   const grantedMap = useMemo(() => {
@@ -337,29 +340,40 @@ function RoleDetail({
           </p>
         </div>
 
-        {!role.isSystem && (
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate(`/config/roles/${role.id}/edit`)}
-              aria-label={`Edit role ${role.name}`}
-              className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
-            >
-              <Pencil className="size-3.5" />
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={deleting}
-              aria-label={`Delete role ${role.name}`}
-              className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-            >
-              <Trash2 className="size-3.5" />
-              Delete
-            </button>
-          </div>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowAssignUsers(true)}
+            aria-label={`Add user to role ${role.name}`}
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+          >
+            <UserPlus className="size-3.5" />
+            Add user
+          </button>
+          {!role.isSystem && (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate(`/config/roles/${role.id}/edit`)}
+                aria-label={`Edit role ${role.name}`}
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+              >
+                <Pencil className="size-3.5" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={deleting}
+                aria-label={`Delete role ${role.name}`}
+                className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5" />
+                Delete
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {deleteError && (
@@ -415,6 +429,10 @@ function RoleDetail({
             </div>
           </div>
         </div>
+      )}
+
+      {showAssignUsers && (
+        <AssignUsersModal role={role} onClose={() => setShowAssignUsers(false)} />
       )}
 
       {/* ── Tab bar ── */}
