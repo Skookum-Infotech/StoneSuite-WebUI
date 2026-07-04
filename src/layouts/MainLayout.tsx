@@ -8,6 +8,7 @@ import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { apiClient } from '@/api/client';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { AssistantPanel } from '@/components/ai/AssistantPanel';
 import {
   Menu,
   ChevronRight,
@@ -329,6 +330,8 @@ export default function MainLayout(): React.JSX.Element {
           <Outlet />
         </main>
       </div>
+
+      <AssistantPanel />
     </div>
   );
 }
