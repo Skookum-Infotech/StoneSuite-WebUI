@@ -17,7 +17,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     'flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground font-bold'
-      : 'text-stone-600 hover:bg-accent/60 hover:text-stone-900',
+      : 'text-stone-700 hover:bg-accent/60 hover:text-stone-900',
   );
 
 const childLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -25,12 +25,12 @@ const childLinkClass = ({ isActive }: { isActive: boolean }) =>
     'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium tracking-wide transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground font-semibold'
-      : 'text-stone-500 hover:bg-accent/50 hover:text-stone-900',
+      : 'text-stone-700 hover:bg-accent/50 hover:text-stone-900',
   );
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1 pt-4 text-2xs xl:text-xs font-semibold tracking-wide text-stone-400 dark:text-stone-500">
+    <p className="px-3 pb-1 pt-4 text-2xs xl:text-xs font-semibold tracking-wide text-stone-700 dark:text-stone-700">
       {children}
     </p>
   );
@@ -120,7 +120,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
             active
               ? 'bg-accent/60 text-accent-foreground'
-              : 'text-stone-600 hover:bg-accent/40 hover:text-stone-900',
+              : 'text-stone-700 hover:bg-accent/40 hover:text-stone-900',
           )}
         >
           <div className="flex items-center gap-2.5">
@@ -166,11 +166,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex h-full flex-col overflow-y-auto modal-scrollbar">
           {/* Mobile-only close button row */}
           <div className="flex items-center justify-between border-b border-stone-200/80 px-4 py-3 lg:hidden">
-            <span className="text-xs font-semibold text-stone-500">Navigation</span>
+            <span className="text-xs font-semibold text-stone-700">Navigation</span>
             <button
               onClick={onClose}
               aria-label="Close menu"
-              className="rounded-lg p-1 text-stone-500 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+              className="rounded-lg p-1 text-stone-700 hover:bg-sidebar-accent hover:text-stone-900 dark:text-stone-700 dark:hover:text-stone-100"
             >
               <X className="size-4" />
             </button>
