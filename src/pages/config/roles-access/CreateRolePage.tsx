@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ArrowLeft, ShieldCheck, ChevronDown, Save } from 'lucide-react';
@@ -79,6 +79,27 @@ export default function CreateRolePage() {
     for (const p of catalogQ.data?.permissions ?? []) (map[p.resource] ??= []).push(p.action);
     return map;
   }, [catalogQ.data]);
+
+  // A locally saved draft can predate a catalog change and still reference an
+  // action that no longer exists (e.g. a removed/renamed permission). Prune
+  // those once the catalog loads so a stale draft can't silently resubmit an
+  // action the backend will reject with "unknown permission".
+  useEffect(() => {
+    if (!catalogQ.data) return;
+    const rowResource: Record<string, string> = {};
+    for (const mod of modules) for (const row of mod.rows) rowResource[row.id] = row.resource;
+    setSelected((prev) => {
+      let changed = false;
+      const next: Record<string, RowSel> = {};
+      for (const [rowId, sel] of Object.entries(prev)) {
+        const avail = actionsByResource[rowResource[rowId] ?? ''] ?? [];
+        const actions = sel.actions.filter((a) => avail.includes(a));
+        if (actions.length !== sel.actions.length) changed = true;
+        if (actions.length) next[rowId] = { ...sel, actions };
+      }
+      return changed ? next : prev;
+    });
+  }, [catalogQ.data, modules, actionsByResource]);
 
   const scopes = catalogQ.data?.scopes ?? (['all', 'team', 'own'] as Scope[]);
 
