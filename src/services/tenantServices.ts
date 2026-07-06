@@ -107,10 +107,24 @@ export const rbacService = {
       .put(`/tenant/roles/${id}`, { name, description, permissions })
       .then((r) => r.data),
   deleteRole: (id: string) => tenantClient.delete(`/tenant/roles/${id}`).then((r) => r.data),
+  // activeRoleId is '' when the caller has no active-role restriction (all
+  // assigned roles' grants apply, unioned) — the server-side source of truth
+  // for which role, if any, the switch-role flow last narrowed to.
   myPermissions: () =>
     tenantClient
-      .get<{ success: boolean; grants: Grant[] }>('/tenant/users/me/permissions')
-      .then((r) => r.data.grants ?? []),
+      .get<{ success: boolean; grants: Grant[]; activeRoleId: string }>('/tenant/users/me/permissions')
+      .then((r) => ({ grants: r.data.grants ?? [], activeRoleId: r.data.activeRoleId ?? '' })),
+  // Sets (or clears, when roleId is '') which one of the caller's assigned
+  // roles is enforced server-side. Returns a freshly-signed token — the
+  // caller must persist it, since the old token still carries the previous
+  // (or no) active-role claim.
+  switchRole: (roleId: string) =>
+    tenantClient
+      .post<{ success: boolean; token: string; expiresAt: number; activeRoleId: string }>(
+        '/tenant/auth/switch-role',
+        { roleId },
+      )
+      .then((r) => r.data),
 };
 
 // ----- Workflow engine (Phase 3) --------------------------------------------

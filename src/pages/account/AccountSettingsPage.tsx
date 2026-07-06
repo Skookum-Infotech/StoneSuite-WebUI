@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Lock,
   Shield,
@@ -18,7 +18,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { authService } from '@/services/authService'
-import { userService } from '@/services/tenantServices'
+import { userService, rbacService } from '@/services/tenantServices'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useUserPermissions } from '@/hooks/useUserPermissions'
 import { apiErrorMessage } from '@/api/tenantClient'
@@ -103,20 +103,34 @@ function StrengthMeter({ password }: { password: string }) {
 
 // ── Role card ────────────────────────────────────────────────────────────────
 
-function RoleCard({ role, isActive, onSelect }: { role: UserRole; isActive: boolean; onSelect: () => void }) {
+function RoleCard({
+  role,
+  isActive,
+  isSwitching,
+  disabled,
+  onSelect,
+}: {
+  role: UserRole
+  isActive: boolean
+  isSwitching: boolean
+  disabled: boolean
+  onSelect: () => void
+}) {
   return (
     <button
       type="button"
       onClick={onSelect}
+      disabled={disabled}
       className={cn(
-        'group relative w-full rounded-xl border-2 p-4 text-left transition-all duration-200 cursor-pointer',
+        'group relative w-full rounded-xl border-2 p-4 text-left transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60',
         isActive ? 'border-brand bg-brand/5 shadow-sm shadow-brand/10' : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50',
       )}
       aria-pressed={isActive}
+      aria-busy={isSwitching}
     >
       <div className="flex items-start gap-3">
         <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors', isActive ? 'bg-brand/20 text-brand-dark' : 'bg-stone-100 text-stone-400 group-hover:bg-stone-200')}>
-          <Shield className="size-4.5" />
+          {isSwitching ? <Loader2 className="size-4.5 animate-spin" /> : <Shield className="size-4.5" />}
         </div>
         <div className="flex-1 min-w-0">
           <span className={cn('block text-xs font-bold transition-colors', isActive ? 'text-stone-900' : 'text-stone-700 group-hover:text-stone-900')}>
@@ -235,16 +249,14 @@ function Avatar({ name, className }: { name: string; className?: string }) {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AccountSettingsPage() {
-  const { user, setAuth, token, sessionExpiresAt } = useAuthStore()
-  const { grants, isLoading: permissionsLoading } = useUserPermissions()
+  const { user, setAuth } = useAuthStore()
+  const { grants, isLoading: permissionsLoading, activeRoleId } = useUserPermissions()
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
-  const [selectedRoleId, setSelectedRoleId] = useState<string>(
-    user?.selectedRoleId ?? user?.roles?.[0]?.id ?? '',
-  )
 
   const [firstName, ...lastParts] = (user?.fullName ?? '').split(' ')
   const lastName = lastParts.join(' ')
@@ -260,6 +272,11 @@ export default function AccountSettingsPage() {
   const roles: UserRole[] =
     currentWorkspaceUser?.roles?.map((r) => ({ id: r.id, key: r.key, name: r.name })) ??
     user?.roles ?? []
+
+  // Server's active-role claim is the source of truth; user?.selectedRoleId
+  // (persisted locally) and the first assigned role are fallbacks only for
+  // while permissions are still loading — no separate state to reconcile.
+  const selectedRoleId = activeRoleId || user?.selectedRoleId || roles[0]?.id || ''
 
   const { register, handleSubmit, reset, control, setError, formState: { errors, isSubmitting } } =
     useForm<PasswordFields>({ resolver: zodResolver(passwordSchema) })
@@ -277,12 +294,17 @@ export default function AccountSettingsPage() {
     }
   }
 
+  // Switching roles re-signs the JWT server-side with an active_role_id claim
+  // that narrows authz enforcement to that one role — this is a real context
+  // switch, not a UI-only filter, so it must round-trip through the backend.
   const switchRoleMutation = useMutation({
-    mutationFn: async (roleId: string) => {
-      setSelectedRoleId(roleId)
-      if (user && token && sessionExpiresAt) {
-        setAuth({ ...user, selectedRoleId: roleId }, token, sessionExpiresAt)
+    mutationFn: (roleId: string) => rbacService.switchRole(roleId),
+    onSuccess: (data, roleId) => {
+      if (user) {
+        setAuth({ ...user, selectedRoleId: roleId }, data.token, data.expiresAt)
       }
+      // The active role changed server-side — the cached grant set is stale.
+      queryClient.invalidateQueries({ queryKey: ['user-permissions', user?.id] })
     },
   })
 
@@ -581,14 +603,27 @@ export default function AccountSettingsPage() {
                             key={role.id}
                             role={role}
                             isActive={selectedRoleId === role.id}
+                            isSwitching={switchRoleMutation.isPending && switchRoleMutation.variables === role.id}
+                            disabled={switchRoleMutation.isPending}
                             onSelect={() => switchRoleMutation.mutate(role.id)}
                           />
                         ))}
                       </div>
 
+                      {switchRoleMutation.isError && (
+                        <div className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
+                          <AlertCircle className="size-4 shrink-0 text-destructive" />
+                          <p className="text-xs text-destructive">
+                            {apiErrorMessage(switchRoleMutation.error, 'Failed to switch role. Please try again.')}
+                          </p>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-3 rounded-xl border border-stone-100 bg-stone-50 px-4 py-3.5">
                         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand shadow-sm">
-                          <Check className="size-3.5 text-stone-900" />
+                          {switchRoleMutation.isPending
+                            ? <Loader2 className="size-3.5 animate-spin text-stone-900" />
+                            : <Check className="size-3.5 text-stone-900" />}
                         </div>
                         <p className="text-xs text-stone-600">
                           Active role:{' '}
