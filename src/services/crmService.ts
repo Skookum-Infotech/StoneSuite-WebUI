@@ -88,6 +88,17 @@ export const crmService = {
       )
       .then((r) => r.data.record),
 
+  // Backend validates the caller is one of the workflow's configured
+  // approverUserIds; the frontend's own check is only for showing/hiding the
+  // Approve action, not the source of truth.
+  approveRecord: (id: string, workflowKey = '_'): Promise<WorkflowRecord> =>
+    tenantClient
+      .post<{ success: boolean; record: WorkflowRecord }>(
+        `/tenant/crm/${workflowKey}/records/${id}/approve`,
+        {},
+      )
+      .then((r) => r.data.record),
+
   convertRecord: (
     id: string,
     targetWorkflowKey: string,

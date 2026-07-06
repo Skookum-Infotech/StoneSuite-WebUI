@@ -135,7 +135,7 @@ export const rbacService = {
  */
 function normalizeDefinition(def: WorkflowDefinition): WorkflowDefinition {
   return {
-    workflow: def.workflow,
+    workflow: { ...def.workflow, approverUserIds: def.workflow.approverUserIds ?? [] },
     states: def.states ?? [],
     transitions: (def.transitions ?? []).map((t) => ({
       ...t,
@@ -160,6 +160,12 @@ export const workflowService = {
       .then((r) => normalizeDefinition(r.data.definition)),
   setEnabled: (id: string, enabled: boolean) =>
     tenantClient.post(`/tenant/workflows/${id}/enabled`, { enabled }).then((r) => r.data),
+  updateApprovers: (id: string, approverUserIds: string[]) =>
+    tenantClient
+      .patch<{ success: boolean; workflow: Workflow }>(`/tenant/workflows/${id}/approvers`, {
+        approverUserIds,
+      })
+      .then((r) => r.data.workflow),
   createField: (
     workflowId: string,
     field: {
