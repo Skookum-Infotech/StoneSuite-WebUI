@@ -123,6 +123,9 @@ export interface Workflow {
   enabled: boolean;
   isDefault: boolean;
   pipelineOrder: number;
+  // Up to 2 active users (see MAX_APPROVERS) whose sign-off is required before
+  // records created under this workflow can be approved. Empty = no approval required.
+  approverUserIds: string[];
 }
 
 export interface WorkflowState {
@@ -180,6 +183,9 @@ export interface WorkflowRecord {
   recordNumber?: string;
   createdAt: string;
   updatedAt: string;
+  // Absent/'pending' means not yet approved. Only meaningful when the owning
+  // workflow has approverUserIds configured.
+  approvalStatus?: 'pending' | 'approved';
 }
 
 // ── Record filter / pagination (server-side search engine) ───────────────────

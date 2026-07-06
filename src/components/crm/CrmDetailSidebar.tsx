@@ -13,6 +13,7 @@ type Props = {
   updatedAt: string;
   onUploadFile?: () => void;
   onEdit?: () => void;
+  approvalSlot?: ReactNode;
   deleteSlot?: ReactNode;
 };
 
@@ -43,6 +44,7 @@ export function CrmDetailSidebar({
   updatedAt,
   onUploadFile,
   onEdit,
+  approvalSlot,
   deleteSlot,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -83,6 +85,8 @@ export function CrmDetailSidebar({
           </button>
         </div>
       </div>
+
+      {approvalSlot}
 
       {/* Status */}
       <div className={cardCls}>

@@ -13,6 +13,8 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0', // bind to all interfaces so Docker can expose the port
-    port: 5173,
+    // Falls back to 5173 for local/Docker use; honors PORT so tooling that
+    // assigns an alternate port (e.g. when 5173 is already taken) still works.
+    port: Number(process.env.PORT) || 5173,
   },
 })
