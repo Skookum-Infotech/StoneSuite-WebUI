@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { crmService } from '@/services/crmService';
 import { resolveStatusColor } from '@/components/crm/formUtils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import type { StatusInfo, FilterRequest, FilterClause } from '@/types/tenant';
+import { recordApprovalState, type StatusInfo, type FilterRequest, type FilterClause } from '@/types/tenant';
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
@@ -344,6 +344,15 @@ export function CrmRecordTable({ config }: Props) {
                           );
                         })() : (
                           <span className="text-xs text-stone-400">—</span>
+                        )}
+                        {recordApprovalState(record) === 'pending' && (
+                          <span
+                            className="ml-1.5 inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-700 whitespace-nowrap"
+                            title="Awaiting approver sign-off"
+                          >
+                            <ShieldAlert className="size-2.5" aria-hidden="true" />
+                            Needs Approval
+                          </span>
                         )}
                       </td>
                       {config.showEmail && (
