@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus } from 'lucide-react';
 import { ProspectTable } from './components/ProspectTable';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 export default function ProspectListPage() {
   const navigate = useNavigate();
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canCreate = permissionsLoading || hasPermission('prospect', 'create');
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
@@ -20,13 +23,15 @@ export default function ProspectListPage() {
             </div>
           </div>
 
-          <button
-            onClick={() => navigate('/crm/prospect/new')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
-          >
-            <Plus className="size-3.5" />
-            New Prospect
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => navigate('/crm/prospect/new')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+            >
+              <Plus className="size-3.5" />
+              New Prospect
+            </button>
+          )}
         </div>
 
         <div className="mt-5 flex flex-1 flex-col min-h-0 border-t border-stone-100 pt-4">

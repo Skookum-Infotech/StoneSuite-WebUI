@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { Building2, Plus } from 'lucide-react';
 import { CustomerTable } from './components/CustomerTable';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 export default function CustomerListPage() {
   const navigate = useNavigate();
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canCreate = permissionsLoading || hasPermission('customer', 'create');
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -18,13 +21,15 @@ export default function CustomerListPage() {
               <p className="text-sm text-stone-500">Closed deals and active customer accounts.</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/crm/customer/new')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
-          >
-            <Plus className="size-3.5" />
-            New Customer
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => navigate('/crm/customer/new')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+            >
+              <Plus className="size-3.5" />
+              New Customer
+            </button>
+          )}
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">

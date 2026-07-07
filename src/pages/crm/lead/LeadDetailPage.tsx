@@ -20,6 +20,7 @@ import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { StatusInfo } from "@/types/tenant";
 
 const TABS = [
@@ -35,6 +36,8 @@ export default function LeadDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canEdit = permissionsLoading || hasPermission("lead", "update");
 
   const {
     data: record,
@@ -174,7 +177,7 @@ export default function LeadDetailPage() {
             users={users}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
-            onEdit={() => navigate(`/crm/lead/${id}/edit`)}
+            onEdit={canEdit ? () => navigate(`/crm/lead/${id}/edit`) : undefined}
             onUploadFile={() => navigate(`/crm/lead/${id}/edit`, { state: { initialTab: "files" } })}
             approvalSlot={(
               <>
