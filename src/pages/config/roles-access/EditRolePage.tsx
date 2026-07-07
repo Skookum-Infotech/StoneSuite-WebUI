@@ -84,14 +84,23 @@ function buildPermModules(): PermModule[] {
 
 type RowSel = { actions: string[]; scope: Scope };
 
+// Only carries forward grants whose action still exists in the current
+// catalog. A role may hold a stale action from before a catalog change
+// (e.g. a removed/renamed permission); resubmitting it unchanged would fail
+// backend validation with "unknown permission" since there's no checkbox to
+// let the user drop it.
 function buildInitialSelected(
   role: Role,
   modules: PermModule[],
+  actionsByResource: Record<string, string[]>,
 ): Record<string, RowSel> {
   const init: Record<string, RowSel> = {};
   for (const mod of modules) {
     for (const row of mod.rows) {
-      const perms = role.permissions.filter((p) => p.resource === row.resource);
+      const avail = actionsByResource[row.resource] ?? [];
+      const perms = role.permissions.filter(
+        (p) => p.resource === row.resource && avail.includes(p.action),
+      );
       if (perms.length > 0) {
         init[row.id] = {
           actions: perms.map((p) => p.action),
@@ -176,7 +185,7 @@ function EditRoleInner({
   const [name, setName] = useState(role.name);
   const [description, setDescription] = useState(role.description ?? "");
   const [selected, setSelected] = useState<Record<string, RowSel>>(() =>
-    buildInitialSelected(role, modules),
+    buildInitialSelected(role, modules, actionsByResource),
   );
   const [openModules, setOpenModules] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(modules.map((m) => [m.id, true])),

@@ -1,11 +1,14 @@
 import * as React from 'react';
 import { useState, useEffect, startTransition } from 'react';
 import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { apiClient } from '@/api/client';
+import { rbacService } from '@/services/tenantServices';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
@@ -20,12 +23,15 @@ import {
   CreditCard,
   Shield,
   Check,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function MainLayout(): React.JSX.Element {
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, setAuth, logout } = useAuthStore();
   const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
+  const { activeRoleId } = useUserPermissions();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -33,6 +39,19 @@ export default function MainLayout(): React.JSX.Element {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
+
+  // Same switch-role round-trip as the Account Settings > Roles & Access tab —
+  // re-signs the JWT server-side so the active-role claim actually narrows
+  // authz enforcement, not just what this menu displays.
+  const switchRoleMutation = useMutation({
+    mutationFn: (roleId: string) => rbacService.switchRole(roleId),
+    onSuccess: (data, roleId) => {
+      if (user) {
+        setAuth({ ...user, selectedRoleId: roleId }, data.token, data.expiresAt);
+      }
+      queryClient.invalidateQueries({ queryKey: ['user-permissions', user?.id] });
+    },
+  });
 
   useEffect(() => {
     if (!isProfileOpen) return;
@@ -229,23 +248,38 @@ export default function MainLayout(): React.JSX.Element {
                     </div>
                     {user?.roles && user.roles.length > 0 ? (
                       <div className="space-y-0.5">
-                        {user.roles.map((role) => (
-                          <div
-                            key={role.id}
-                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left"
-                          >
-                            <Shield className="size-4 text-stone-500 flex-shrink-0" />
-                            <span className="flex-1">{role.name}</span>
-                            {role.id === user.selectedRoleId && (
-                              <Check className="size-4 text-brand flex-shrink-0" />
-                            )}
-                          </div>
-                        ))}
+                        {user.roles.map((role) => {
+                          const isActive = role.id === (activeRoleId || user.selectedRoleId);
+                          const isSwitching = switchRoleMutation.isPending && switchRoleMutation.variables === role.id;
+                          return (
+                            <button
+                              key={role.id}
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); switchRoleMutation.mutate(role.id); }}
+                              disabled={switchRoleMutation.isPending || isActive}
+                              aria-pressed={isActive}
+                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            >
+                              {isSwitching ? (
+                                <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
+                              ) : (
+                                <Shield className="size-4 text-stone-500 flex-shrink-0" />
+                              )}
+                              <span className="flex-1">{role.name}</span>
+                              {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="px-3 py-2 text-2xs text-stone-500">
                         No roles assigned
                       </div>
+                    )}
+                    {switchRoleMutation.isError && (
+                      <p className="px-3 pt-1 text-2xs text-destructive">
+                        Failed to switch role. Try again.
+                      </p>
                     )}
                   </div>
                   <div className="h-px bg-white/[0.08] my-1" />

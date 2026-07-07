@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
+import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,
@@ -51,6 +53,12 @@ export default function ProspectViewPage() {
   });
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+  const currentUserId = useAuthStore((s) => s.user?.id);
+
+  const approve = useMutation({
+    mutationFn: () => crmService.approveRecord(id, "prospect"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
+  });
 
   const statusMap = new Map<string, StatusInfo>(
     (statusData?.statuses ?? []).map((s) => [s.stateId, s]),
@@ -81,6 +89,12 @@ export default function ProspectViewPage() {
   const statusInfo = statusMap.get(record.currentStateId);
   const cf = record.coreFields;
   const company = String(cf.customer_name ?? "(unnamed)");
+
+  const approverIds = statusData?.workflow.approverUserIds ?? [];
+  const approvalStatus: ApprovalStatus =
+    approverIds.length === 0 ? "not_required" : record.approvalStatus === "approved" ? "approved" : "pending";
+  const canApprove = currentUserId ? approverIds.includes(currentUserId) : false;
+  const approverNames = approverIds.map((uid) => users.find((u) => u.id === uid)?.fullName || users.find((u) => u.id === uid)?.email || "Unknown user");
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -161,6 +175,22 @@ export default function ProspectViewPage() {
             updatedAt={record.updatedAt}
             onEdit={() => navigate(`/crm/prospect/${id}/edit`)}
             onUploadFile={() => navigate(`/crm/prospect/${id}/edit`, { state: { initialTab: "files" } })}
+            approvalSlot={(
+              <>
+                <ApprovalCard
+                  approverNames={approverNames}
+                  status={approvalStatus}
+                  canApprove={canApprove}
+                  onApprove={() => approve.mutate()}
+                  approving={approve.isPending}
+                />
+                {approve.error && (
+                  <div className="mb-4">
+                    <ErrorNote>{apiErrorMessage(approve.error, "Failed to approve record.")}</ErrorNote>
+                  </div>
+                )}
+              </>
+            )}
             deleteSlot={(
               <DeleteRecordDialog
                 recordId={id}

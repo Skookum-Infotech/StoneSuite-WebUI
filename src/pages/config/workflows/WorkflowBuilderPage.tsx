@@ -3,12 +3,13 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { AxiosError } from 'axios';
-import { workflowService } from '@/services/tenantServices';
+import { workflowService, userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageHeader, Spinner, Badge, ErrorNote } from '@/components/tenant/ui';
+import { ApproverPicker, MAX_APPROVERS } from '@/components/tenant/ApproverPicker';
 import type { FieldType, WorkflowState, FieldDefinition } from '@/types/tenant';
 
 // BASE_FIELD_LABELS lists the built-in (hardcoded) form fields for each workflow.
@@ -181,9 +182,62 @@ export default function WorkflowBuilderPage() {
         </ul>
       </section>
 
+      {/* Approvers */}
+      <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
+
       {/* Custom fields */}
       <FieldsSection workflowId={id} fields={def.fields} />
     </div>
+  );
+}
+
+function ApproversSection({ workflowId, approverUserIds }: { workflowId: string; approverUserIds: string[] }) {
+  const qc = useQueryClient();
+  const usersQ = useQuery({ queryKey: ['users'], queryFn: userService.listUsers, staleTime: 5 * 60 * 1000 });
+  const [error, setError] = useState<string | null>(null);
+
+  const activeUsers = (usersQ.data ?? []).filter((u) => u.status === 'active');
+
+  const update = useMutation({
+    mutationFn: (approverIds: string[]) => workflowService.updateApprovers(workflowId, approverIds),
+    onSuccess: () => {
+      setError(null);
+      qc.invalidateQueries({ queryKey: ['workflow', workflowId] });
+    },
+    onError: (err: unknown) => setError(apiErrorMessage(err, 'Failed to update approvers.')),
+  });
+
+  const addApprover = (userId: string) => {
+    if (approverUserIds.length >= MAX_APPROVERS || approverUserIds.includes(userId)) return;
+    update.mutate([...approverUserIds, userId]);
+  };
+  const removeApprover = (userId: string) => update.mutate(approverUserIds.filter((id) => id !== userId));
+
+  return (
+    <section className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
+      <div className="mb-3">
+        <h2 className="text-sm font-bold">Approver(s)</h2>
+        <p className="text-xs text-stone-500">
+          Choose up to {MAX_APPROVERS} active users required to approve records created under this form. Leave empty if no approval is required.
+        </p>
+      </div>
+      {usersQ.isLoading ? (
+        <Spinner label="Loading users…" />
+      ) : (
+        <ApproverPicker
+          users={activeUsers}
+          selected={approverUserIds}
+          onAdd={addApprover}
+          onRemove={removeApprover}
+          disabled={update.isPending}
+        />
+      )}
+      {error && (
+        <div className="mt-2">
+          <ErrorNote>{error}</ErrorNote>
+        </div>
+      )}
+    </section>
   );
 }
 
