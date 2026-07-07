@@ -99,6 +99,10 @@ const InvoiceListPage = lazyWithRetry(
   () => import("@/pages/sales/InvoiceListPage"),
 );
 const AddInvoicePage = lazyWithRetry(() => import("@/pages/sales/AddInvoicePage"));
+const PaymentListPage = lazyWithRetry(
+  () => import("@/pages/sales/PaymentListPage"),
+);
+const AddPaymentPage = lazyWithRetry(() => import("@/pages/sales/AddPaymentPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -254,6 +258,16 @@ export const router = createBrowserRouter([
       {
         path: "sales/invoice/new",
         element: lazy_(<AddInvoicePage />),
+      },
+
+      // Payments (specific routes must come before the catch-all)
+      {
+        path: "sales/payment",
+        element: lazy_(<PaymentListPage />),
+      },
+      {
+        path: "sales/payment/new",
+        element: lazy_(<AddPaymentPage />),
       },
 
       // Sales & Purchases modules (placeholder pages — full functionality coming soon)
