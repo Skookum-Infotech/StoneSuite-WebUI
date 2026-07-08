@@ -40,6 +40,7 @@ export default function WorkflowBuilderPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [fieldFormOpen, setFieldFormOpen] = useState(false);
 
   const { data: def, isLoading, error } = useQuery({
     queryKey: ['workflow', id],
@@ -141,8 +142,25 @@ export default function WorkflowBuilderPage() {
             <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
           </Section>
 
-          <Section title="Custom fields" action={<FieldsCounter count={def.fields.length} />}>
-            <FieldsSection workflowId={id} fields={def.fields} />
+          <Section
+            title="Custom fields"
+            action={
+              <div className="flex items-center gap-3">
+                <FieldsCounter count={def.fields.length} />
+                {!fieldFormOpen && (
+                  <button
+                    type="button"
+                    onClick={() => setFieldFormOpen(true)}
+                    disabled={def.fields.length >= FIELD_CAP}
+                    className="inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-colors hover:bg-brand-hover disabled:opacity-50"
+                  >
+                    <Plus className="size-3.5" /> Add field
+                  </button>
+                )}
+              </div>
+            }
+          >
+            <FieldsSection workflowId={id} fields={def.fields} open={fieldFormOpen} onOpenChange={setFieldFormOpen} />
           </Section>
 
           <StatesReference workflowKey={def.workflow.key} states={def.states} transitions={def.transitions} />
@@ -296,9 +314,18 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
 
 const FIELD_COLS = 'grid-cols-[1.4fr_1fr_0.7fr_0.6fr_1fr_3.25rem]';
 
-function FieldsSection({ workflowId, fields }: { workflowId: string; fields: FieldDefinition[] }) {
+function FieldsSection({
+  workflowId,
+  fields,
+  open,
+  onOpenChange,
+}: {
+  workflowId: string;
+  fields: FieldDefinition[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
   const refresh = () => qc.invalidateQueries({ queryKey: ['workflow', workflowId] });
   const atCap = fields.length >= FIELD_CAP;
 
@@ -309,22 +336,12 @@ function FieldsSection({ workflowId, fields }: { workflowId: string; fields: Fie
 
   return (
     <div>
-      {!open && (
-        <div className="mb-3">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            disabled={atCap}
-            className="inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-colors hover:bg-brand-hover disabled:opacity-50"
-          >
-            <Plus className="size-3.5" /> Add field
-          </button>
-          {atCap && <p className="mt-1.5 text-xs text-stone-400">Field cap reached ({FIELD_CAP}). Delete one to add another.</p>}
-        </div>
+      {atCap && !open && (
+        <p className="mb-3 text-xs text-stone-400">Field cap reached ({FIELD_CAP}). Delete one to add another.</p>
       )}
 
       {fields.length === 0 && !open ? (
-        <EmptyState>No custom fields yet — add one above to extend this form.</EmptyState>
+        <EmptyState>No custom fields yet — add one to extend this form.</EmptyState>
       ) : (
         <div className="overflow-x-auto">
           <div className={cn('grid min-w-[560px] gap-x-3 border-b border-stone-200 pb-2 text-xs font-semibold text-stone-900 dark:border-stone-800 dark:text-stone-100', FIELD_COLS)}>
@@ -338,8 +355,8 @@ function FieldsSection({ workflowId, fields }: { workflowId: string; fields: Fie
           {open && (
             <NewFieldRow
               workflowId={workflowId}
-              onDone={() => { setOpen(false); refresh(); }}
-              onCancel={() => setOpen(false)}
+              onDone={() => { onOpenChange(false); refresh(); }}
+              onCancel={() => onOpenChange(false)}
             />
           )}
           {fields.map((f) => (
