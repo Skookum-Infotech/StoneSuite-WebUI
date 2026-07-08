@@ -138,6 +138,8 @@ export default function WorkflowBuilderPage() {
           narrow column. */}
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="space-y-6 px-4 py-8 sm:px-8">
+          <StatesReference workflowKey={def.workflow.key} states={def.states} transitions={def.transitions} />
+
           <Section title="Approval chain">
             <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
           </Section>
@@ -163,7 +165,6 @@ export default function WorkflowBuilderPage() {
             <FieldsSection workflowId={id} fields={def.fields} open={fieldFormOpen} onOpenChange={setFieldFormOpen} />
           </Section>
 
-          <StatesReference workflowKey={def.workflow.key} states={def.states} transitions={def.transitions} />
         </div>
       </div>
     </div>
