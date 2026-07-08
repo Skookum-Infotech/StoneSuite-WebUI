@@ -5,12 +5,12 @@ import { Sparkles } from "lucide-react";
 import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
-import { useAuthStore } from "@/store/useAuthStore";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
+import { ApprovalBanner } from "@/components/crm/ApprovalBanner";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,
@@ -20,7 +20,8 @@ import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
-import type { StatusInfo } from "@/types/tenant";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { recordApprovalState, type StatusInfo } from "@/types/tenant";
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -35,6 +36,8 @@ export default function LeadDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canEdit = permissionsLoading || hasPermission("lead", "update");
 
   const {
     data: record,
@@ -53,7 +56,6 @@ export default function LeadDetailPage() {
   });
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
-  const currentUserId = useAuthStore((s) => s.user?.id);
 
   const approve = useMutation({
     mutationFn: () => crmService.approveRecord(id, "lead"),
@@ -93,8 +95,8 @@ export default function LeadDetailPage() {
 
   const approverIds = statusData?.workflow.approverUserIds ?? [];
   const approvalStatus: ApprovalStatus =
-    approverIds.length === 0 ? "not_required" : record.approvalStatus === "approved" ? "approved" : "pending";
-  const canApprove = currentUserId ? approverIds.includes(currentUserId) : false;
+    approverIds.length === 0 ? "not_required" : recordApprovalState(record) === "approved" ? "approved" : "pending";
+  const canApprove = Boolean(record.canApprove);
   const approverNames = approverIds.map((uid) => users.find((u) => u.id === uid)?.fullName || users.find((u) => u.id === uid)?.email || "Unknown user");
 
   return (
@@ -110,6 +112,15 @@ export default function LeadDetailPage() {
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
       />
+
+      {approvalStatus === "pending" && (
+        <ApprovalBanner
+          approverNames={approverNames}
+          canApprove={canApprove}
+          onApprove={() => approve.mutate()}
+          approving={approve.isPending}
+        />
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
@@ -174,17 +185,11 @@ export default function LeadDetailPage() {
             users={users}
             createdAt={record.createdAt}
             updatedAt={record.updatedAt}
-            onEdit={() => navigate(`/crm/lead/${id}/edit`)}
+            onEdit={canEdit ? () => navigate(`/crm/lead/${id}/edit`) : undefined}
             onUploadFile={() => navigate(`/crm/lead/${id}/edit`, { state: { initialTab: "files" } })}
             approvalSlot={(
               <>
-                <ApprovalCard
-                  approverNames={approverNames}
-                  status={approvalStatus}
-                  canApprove={canApprove}
-                  onApprove={() => approve.mutate()}
-                  approving={approve.isPending}
-                />
+                <ApprovalCard approverNames={approverNames} status={approvalStatus} />
                 {approve.error && (
                   <div className="mb-4">
                     <ErrorNote>{apiErrorMessage(approve.error, "Failed to approve record.")}</ErrorNote>

@@ -183,9 +183,19 @@ export interface WorkflowRecord {
   recordNumber?: string;
   createdAt: string;
   updatedAt: string;
-  // Absent/'pending' means not yet approved. Only meaningful when the owning
-  // workflow has approverUserIds configured.
-  approvalStatus?: 'pending' | 'approved';
+  // Server-authoritative: whether the logged-in caller may approve this record
+  // right now (accounts for "already approved by you" when 2 approvers are
+  // configured). Attached client-side from the sibling `canApprove` field the
+  // GET endpoint returns alongside the record — see crmService.getRecord.
+  canApprove?: boolean;
+}
+
+// The record's actual approval state ('none' | 'pending' | 'approved') lives
+// in coreFields.approval_status (snake_case, set by the backend), not as a
+// top-level field — read it via this helper rather than record.approvalStatus.
+export function recordApprovalState(record: Pick<WorkflowRecord, 'coreFields'>): 'none' | 'pending' | 'approved' {
+  const v = record.coreFields.approval_status;
+  return v === 'pending' || v === 'approved' ? v : 'none';
 }
 
 // ── Record filter / pagination (server-side search engine) ───────────────────

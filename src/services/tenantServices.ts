@@ -162,10 +162,10 @@ export const workflowService = {
     tenantClient.post(`/tenant/workflows/${id}/enabled`, { enabled }).then((r) => r.data),
   updateApprovers: (id: string, approverUserIds: string[]) =>
     tenantClient
-      .patch<{ success: boolean; workflow: Workflow }>(`/tenant/workflows/${id}/approvers`, {
+      .patch<{ success: boolean; approverUserIds: string[] }>(`/tenant/workflows/${id}/approvers`, {
         approverUserIds,
       })
-      .then((r) => r.data.workflow),
+      .then((r) => r.data.approverUserIds),
   createField: (
     workflowId: string,
     field: {

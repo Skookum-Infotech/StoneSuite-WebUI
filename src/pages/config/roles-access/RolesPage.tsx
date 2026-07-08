@@ -19,6 +19,7 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { Badge, ErrorNote, EmptyState } from "@/components/tenant/ui";
 import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { Role, WorkspaceUser } from "@/types/tenant";
 import { AssignUsersModal } from "./components/AssignUsersModal";
 
@@ -96,6 +97,10 @@ function buildPermModules(): PermModule[] {
 export default function RolesPage(): React.JSX.Element {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canCreate = permissionsLoading || hasPermission("role", "create");
+  const canEdit = permissionsLoading || hasPermission("role", "update");
+  const canDelete = permissionsLoading || hasPermission("role", "delete");
   const rolesQ = useQuery({
     queryKey: ["roles"],
     queryFn: rbacService.listRoles,
@@ -165,15 +170,17 @@ export default function RolesPage(): React.JSX.Element {
           "flex flex-col md:w-60 md:shrink-0 md:border-r border-stone-100",
           selectedId !== null ? "hidden md:flex" : "flex flex-1 md:flex-none",
         )}>
-          <div className="p-3 border-b border-stone-100">
-            <button
-              onClick={() => navigate("/config/roles/new")}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50"
-            >
-              <Plus className="size-3.5" />
-              New Role
-            </button>
-          </div>
+          {canCreate && (
+            <div className="p-3 border-b border-stone-100">
+              <button
+                onClick={() => navigate("/config/roles/new")}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50"
+              >
+                <Plus className="size-3.5" />
+                New Role
+              </button>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto modal-scrollbar p-2 space-y-0.5">
             {rolesQ.isLoading && (
@@ -261,6 +268,8 @@ export default function RolesPage(): React.JSX.Element {
               onDelete={() => del.mutate(activeRole.id)}
               deleting={del.isPending}
               deleteError={del.error ? apiErrorMessage(del.error) : null}
+              canEdit={canEdit}
+              canDelete={canDelete}
             />
           )}
         </main>
@@ -280,6 +289,8 @@ function RoleDetail({
   onDelete,
   deleting,
   deleteError,
+  canEdit,
+  canDelete,
 }: {
   role: Role;
   modules: PermModule[];
@@ -289,6 +300,8 @@ function RoleDetail({
   onDelete: () => void;
   deleting: boolean;
   deleteError: string | null;
+  canEdit: boolean;
+  canDelete: boolean;
 }): React.JSX.Element {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"permissions" | "users">("permissions");
@@ -341,36 +354,42 @@ function RoleDetail({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowAssignUsers(true)}
-            aria-label={`Add user to role ${role.name}`}
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
-          >
-            <UserPlus className="size-3.5" />
-            Add user
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setShowAssignUsers(true)}
+              aria-label={`Add user to role ${role.name}`}
+              className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+            >
+              <UserPlus className="size-3.5" />
+              Add user
+            </button>
+          )}
           {!role.isSystem && (
             <>
-              <button
-                type="button"
-                onClick={() => navigate(`/config/roles/${role.id}/edit`)}
-                aria-label={`Edit role ${role.name}`}
-                className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
-              >
-                <Pencil className="size-3.5" />
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={deleting}
-                aria-label={`Delete role ${role.name}`}
-                className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-              >
-                <Trash2 className="size-3.5" />
-                Delete
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/config/roles/${role.id}/edit`)}
+                  aria-label={`Edit role ${role.name}`}
+                  className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+                >
+                  <Pencil className="size-3.5" />
+                  Edit
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleting}
+                  aria-label={`Delete role ${role.name}`}
+                  className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                >
+                  <Trash2 className="size-3.5" />
+                  Delete
+                </button>
+              )}
             </>
           )}
         </div>

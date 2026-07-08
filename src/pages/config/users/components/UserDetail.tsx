@@ -5,6 +5,7 @@ import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { cn } from "@/lib/utils";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { WorkspaceUser } from "@/types/tenant";
 import { initials, avatarColor, fmtDate } from "../userHelpers";
 import { StatusBadge } from "./StatusBadge";
@@ -16,6 +17,8 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
   const [showEditName, setShowEditName] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canEdit = permissionsLoading || hasPermission("user", "update");
 
   const suspendMut = useMutation({
     mutationFn: () =>
@@ -84,15 +87,17 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
             Actions
           </h3>
 
-          <button
-            type="button"
-            onClick={() => setShowEditName(true)}
-            className="flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-50"
-          >
-            <Pencil className="size-4 text-stone-400" />
-            Edit display name
-            <ChevronRight className="size-4 text-stone-300 ml-auto" />
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setShowEditName(true)}
+              className="flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+            >
+              <Pencil className="size-4 text-stone-400" />
+              Edit display name
+              <ChevronRight className="size-4 text-stone-300 ml-auto" />
+            </button>
+          )}
 
           <button
             type="button"

@@ -60,8 +60,8 @@ export const crmService = {
   // workflow key when available; fall back to '_' as a dummy segment.
   getRecord: (id: string, workflowKey = '_'): Promise<WorkflowRecord> =>
     tenantClient
-      .get<{ success: boolean; record: WorkflowRecord }>(`/tenant/crm/${workflowKey}/records/${id}`)
-      .then((r) => r.data.record),
+      .get<{ success: boolean; record: WorkflowRecord; canApprove?: boolean }>(`/tenant/crm/${workflowKey}/records/${id}`)
+      .then((r) => ({ ...r.data.record, canApprove: r.data.canApprove })),
 
   updateRecord: (
     id: string,
