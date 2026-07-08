@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageHeader, Spinner, Badge, ErrorNote } from '@/components/tenant/ui';
 import { ApproverPicker, MAX_APPROVERS } from '@/components/tenant/ApproverPicker';
+import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import type { FieldType, WorkflowState, FieldDefinition } from '@/types/tenant';
 
 // BASE_FIELD_LABELS lists the built-in (hardcoded) form fields for each workflow.
@@ -68,6 +69,15 @@ export default function WorkflowBuilderPage() {
     queryFn: () => workflowService.get(id),
     staleTime: 10 * 60 * 1000,
   });
+
+  const setLabel = useBreadcrumbStore((s) => s.setLabel);
+  const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
+  useEffect(() => {
+    if (def?.workflow.name) {
+      setLabel(id, def.workflow.name);
+      return () => clearLabel(id);
+    }
+  }, [id, def?.workflow.name, setLabel, clearLabel]);
 
   const toggle = useMutation({
     mutationFn: (enabled: boolean) => workflowService.setEnabled(id, enabled),
