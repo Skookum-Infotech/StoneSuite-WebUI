@@ -125,7 +125,7 @@ export default function WorkflowBuilderPage() {
             className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200"
           >
             <ChevronLeft className="size-3.5" />
-            All forms
+            Back
           </Link>
         </div>
       </div>
