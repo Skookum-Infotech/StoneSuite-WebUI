@@ -165,7 +165,7 @@
   /* Semantic */
   --destructive: #d94f36;
   --border: #e8e8e8;              /* stone-300: subtle borders */
-  --input: #ffffff;               /* input fill */
+  --input: #d4d0cc;               /* input border — darker than --border so form fields read as clearly interactive */
   --ring: #c2f589;                /* focus ring — brand lime */
 
   /* ── App header gradient ────────────────────────────────────────────────
@@ -351,5 +351,21 @@
 
   html {
     @apply font-sans;
+  }
+
+  /* :root declares `color-scheme: light dark` so the OS picks a sensible
+     default before the app's own .dark class applies. But plain native
+     checkboxes/radios (unlike the shadcn Checkbox component, which forces
+     light) inherit that and render dark-mode chrome — a solid dark "hole" —
+     whenever the OS prefers dark, even though the page itself is still
+     light. Pin native controls to whichever theme is actually active. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    color-scheme: light;
+  }
+
+  .dark input[type='checkbox'],
+  .dark input[type='radio'] {
+    color-scheme: dark;
   }
 }
