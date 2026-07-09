@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Users } from "lucide-react";
-import { crmService } from "@/services/crmService";
+import { crmService, CRM_RECORD_TYPE_CODES } from "@/services/crmService";
+import { crmAdminService } from "@/services/crmAdminService";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
@@ -57,6 +58,12 @@ export default function ProspectViewPage() {
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
 
+  const { data: crmApprovers = [] } = useQuery({
+    queryKey: ["crm-approvers"],
+    queryFn: crmAdminService.listApprovers,
+    staleTime: 60 * 1000,
+  });
+
   const approve = useMutation({
     mutationFn: () => crmService.approveRecord(id, "prospect"),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
@@ -92,11 +99,19 @@ export default function ProspectViewPage() {
   const cf = record.coreFields;
   const company = String(cf.customer_name ?? "(unnamed)");
 
-  const approverIds = statusData?.workflow.approverUserIds ?? [];
-  const approvalStatus: ApprovalStatus =
-    approverIds.length === 0 ? "not_required" : recordApprovalState(record) === "approved" ? "approved" : "pending";
+  // approvalStatus is authoritative from the record itself — the server
+  // already accounts for both wildcard and status-specific approvers.
+  // approverIds below is only the wildcard chain, used for display alongside
+  // any status-specific approvers configured for the record's current status.
+  const recordApproval = recordApprovalState(record);
+  const approvalStatus: ApprovalStatus = recordApproval === "none" ? "not_required" : recordApproval;
   const canApprove = Boolean(record.canApprove);
-  const approverNames = approverIds.map((uid) => users.find((u) => u.id === uid)?.fullName || users.find((u) => u.id === uid)?.email || "Unknown user");
+  const approverIds = statusData?.workflow.approverUserIds ?? [];
+  const wildcardNames = approverIds.map((uid) => users.find((u) => u.id === uid)?.fullName || users.find((u) => u.id === uid)?.email || "Unknown user");
+  const statusApproverNames = crmApprovers
+    .filter((a) => a.recordTypeCode === CRM_RECORD_TYPE_CODES.prospect && a.crmStatusCode !== "" && a.crmStatusCode === statusInfo?.stateKey)
+    .map((a) => a.approverName);
+  const approverNames = [...wildcardNames, ...statusApproverNames];
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">

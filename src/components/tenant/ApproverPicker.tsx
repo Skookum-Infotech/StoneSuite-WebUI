@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import type { WorkspaceUser } from '@/types/tenant';
 
 export const MAX_APPROVERS = 2;
 
-// Searchable multi-select for choosing 0–MAX_APPROVERS active users as
-// document approvers (leads/prospects/customers). Selection and persistence
-// are owned by the caller; this component is presentation-only.
+// Minimal shape ApproverPicker needs to render a candidate — satisfied
+// structurally by WorkspaceUser (tenant users) as well as CRM employee
+// lookups, which have no email so callers pass ''.
+export interface ApproverCandidate {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
+// Searchable multi-select for choosing 0–MAX_APPROVERS active users/employees
+// as document approvers. Selection and persistence are owned by the caller;
+// this component is presentation-only.
 export function ApproverPicker({
   users,
   selected,
@@ -14,7 +22,7 @@ export function ApproverPicker({
   onRemove,
   disabled,
 }: {
-  users: WorkspaceUser[];
+  users: ApproverCandidate[];
   selected: string[];
   onAdd: (userId: string) => void;
   onRemove: (userId: string) => void;
