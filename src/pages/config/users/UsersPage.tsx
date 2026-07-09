@@ -11,6 +11,7 @@ import { InviteStatusBadge } from "./components/InviteStatusBadge";
 import { InviteModal } from "./components/InviteModal";
 import { UserDetail } from "./components/UserDetail";
 import { InviteDetail } from "./components/InviteDetail";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 
 type Tab = "members" | "invites";
 
@@ -19,6 +20,8 @@ export default function UsersPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedInviteId, setSelectedInviteId] = useState<string | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canInvite = permissionsLoading || hasPermission("user", "create");
 
   const usersQ = useQuery({
     queryKey: ["users"],
@@ -65,15 +68,17 @@ export default function UsersPage() {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowInviteModal(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/80"
-          aria-label="Invite team member"
-        >
-          <Plus className="size-3.5" />
-          Invite member
-        </button>
+        {canInvite && (
+          <button
+            type="button"
+            onClick={() => setShowInviteModal(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/80"
+            aria-label="Invite team member"
+          >
+            <Plus className="size-3.5" />
+            Invite member
+          </button>
+        )}
       </div>
 
       {/* Split pane — stacks on mobile, side-by-side on md+ */}

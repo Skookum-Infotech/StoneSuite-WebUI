@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { crmService } from '@/services/crmService';
 import { resolveStatusColor } from '@/components/crm/formUtils';
-import type { StatusInfo, FilterRequest, FilterClause } from '@/types/tenant';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { recordApprovalState, type StatusInfo, type FilterRequest, type FilterClause } from '@/types/tenant';
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
@@ -70,6 +71,11 @@ type Props = { config: CrmTableConfig };
 export function CrmRecordTable({ config }: Props) {
   const navigate   = useNavigate();
   const topRef     = useRef<HTMLDivElement>(null);
+
+  // Show the Edit action while permissions are still loading (avoids a flash
+  // of a hidden button), then hide it once we know the user lacks update rights.
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canEdit = permissionsLoading || hasPermission(config.workflowKey, 'update');
 
   // ── filter / sort state ────────────────────────────────────────────────────
   const [nameFilter,    setNameFilter]    = useState('');
@@ -267,7 +273,9 @@ export function CrmRecordTable({ config }: Props) {
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
                 )}
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Created</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                {canEdit && (
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -283,7 +291,7 @@ export function CrmRecordTable({ config }: Props) {
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
                     {config.showEmail && <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-32" /></td>}
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3" />
+                    {canEdit && <td className="px-4 py-3" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
@@ -337,6 +345,15 @@ export function CrmRecordTable({ config }: Props) {
                         })() : (
                           <span className="text-xs text-stone-400">—</span>
                         )}
+                        {recordApprovalState(record) === 'pending' && (
+                          <span
+                            className="ml-1.5 inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-700 whitespace-nowrap"
+                            title="Awaiting approver sign-off"
+                          >
+                            <ShieldAlert className="size-2.5" aria-hidden="true" />
+                            Needs Approval
+                          </span>
+                        )}
                       </td>
                       {config.showEmail && (
                         <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">{email}</td>
@@ -346,22 +363,24 @@ export function CrmRecordTable({ config }: Props) {
                           year: '2-digit', month: 'short', day: 'numeric',
                         })}
                       </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => navigate(config.editPath(record.id))}
-                          aria-label={`Edit ${label}`}
-                          className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
-                        >
-                          <Pencil className="size-4" />
-                        </button>
-                      </td>
+                      {canEdit && (
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => navigate(config.editPath(record.id))}
+                            aria-label={`Edit ${label}`}
+                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                          >
+                            <Pencil className="size-4" />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={4 + (config.showEmail ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={3 + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">

@@ -11,6 +11,19 @@ export const CRM_WORKFLOW_KEYS = {
 
 export type CRMWorkflowKey = typeof CRM_WORKFLOW_KEYS[keyof typeof CRM_WORKFLOW_KEYS];
 
+// crm_workflow_approver.record_type_id resolves through lkp_record_type by
+// this code, not the workflow key — needed whenever the frontend talks to
+// the /tenant/config/approvers admin endpoints directly.
+export const CRM_RECORD_TYPE_CODES: Record<CRMWorkflowKey, string> = {
+  lead: 'LEAD',
+  prospect: 'PROS',
+  customer: 'CUST',
+};
+
+export function isCrmWorkflowKey(key: string): key is CRMWorkflowKey {
+  return (Object.values(CRM_WORKFLOW_KEYS) as string[]).includes(key);
+}
+
 export const crmService = {
   getAllStatuses: (): Promise<StatusInfo[]> =>
     tenantClient
@@ -60,8 +73,8 @@ export const crmService = {
   // workflow key when available; fall back to '_' as a dummy segment.
   getRecord: (id: string, workflowKey = '_'): Promise<WorkflowRecord> =>
     tenantClient
-      .get<{ success: boolean; record: WorkflowRecord }>(`/tenant/crm/${workflowKey}/records/${id}`)
-      .then((r) => r.data.record),
+      .get<{ success: boolean; record: WorkflowRecord; canApprove?: boolean }>(`/tenant/crm/${workflowKey}/records/${id}`)
+      .then((r) => ({ ...r.data.record, canApprove: r.data.canApprove })),
 
   updateRecord: (
     id: string,
