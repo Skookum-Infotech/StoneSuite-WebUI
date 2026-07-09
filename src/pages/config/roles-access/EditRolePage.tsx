@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner, ErrorNote } from "@/components/tenant/ui";
 import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
+import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import type { Grant, Role, Scope } from "@/types/tenant";
 
 // ---------------------------------------------------------------------------
@@ -137,6 +138,15 @@ export default function EditRolePage(): React.JSX.Element | null {
       navigate("/config/roles", { replace: true });
     }
   }, [rolesQ.isSuccess, role, navigate]);
+
+  const setLabel = useBreadcrumbStore((s) => s.setLabel);
+  const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
+  useEffect(() => {
+    if (id && role?.name) {
+      setLabel(id, role.name);
+      return () => clearLabel(id);
+    }
+  }, [id, role?.name, setLabel, clearLabel]);
 
   if (rolesQ.isLoading || catalogQ.isLoading) {
     return (

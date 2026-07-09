@@ -5,6 +5,7 @@ import { userService, rbacService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { WorkspaceUser } from "@/types/tenant";
 
 export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
@@ -12,6 +13,10 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const [selectedRoleId, setSelectedRoleId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
+  // Assigning/removing a role is enforced server-side as role:update (see
+  // RBACOps.UserRoles in the backend) — not a user-resource permission.
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canManageRoles = permissionsLoading || hasPermission("role", "update");
 
   const rolesQ = useQuery({ queryKey: ["roles"], queryFn: rbacService.listRoles });
 
@@ -58,19 +63,21 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
             >
               <ShieldCheck className="size-3 text-stone-400" />
               {r.name}
-              <button
-                type="button"
-                aria-label={`Remove ${r.name} role`}
-                onClick={() => setPendingRemove({ id: r.id, name: r.name })}
-                disabled={removeMut.isPending}
-                className="ml-0.5 rounded p-0.5 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50"
-              >
-                {removeMut.isPending && pendingRemove?.id === r.id ? (
-                  <Loader2 className="size-3 animate-spin" />
-                ) : (
-                  <X className="size-3" />
-                )}
-              </button>
+              {canManageRoles && (
+                <button
+                  type="button"
+                  aria-label={`Remove ${r.name} role`}
+                  onClick={() => setPendingRemove({ id: r.id, name: r.name })}
+                  disabled={removeMut.isPending}
+                  className="ml-0.5 rounded p-0.5 text-stone-400 transition hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50"
+                >
+                  {removeMut.isPending && pendingRemove?.id === r.id ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : (
+                    <X className="size-3" />
+                  )}
+                </button>
+              )}
             </span>
           ))}
         </div>
@@ -111,7 +118,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
         </div>
       )}
 
-      {availableRoles.length > 0 && (
+      {canManageRoles && availableRoles.length > 0 && (
         <div className="flex items-center gap-2">
           <select
             aria-label="Select a role to add"
