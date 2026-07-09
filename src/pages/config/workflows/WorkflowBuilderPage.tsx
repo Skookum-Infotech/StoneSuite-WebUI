@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
-  Lock,
   Plus,
   Trash2,
   Check,
@@ -16,14 +15,17 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { workflowService, userService } from '@/services/tenantServices';
+import { isCrmWorkflowKey } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
+import { Spinner, ErrorNote, EmptyState, Badge } from '@/components/tenant/ui';
 import { ApproverPicker, MAX_APPROVERS } from '@/components/tenant/ApproverPicker';
+import { StatesReference } from './StatesReference';
+import { CrmStatusApprovers } from './CrmStatusApprovers';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { cn } from '@/lib/utils';
-import type { FieldType, WorkflowState, WorkflowTransition, FieldDefinition } from '@/types/tenant';
+import type { FieldType, FieldDefinition } from '@/types/tenant';
 
 const FIELD_CAP = 15;
 
@@ -78,6 +80,7 @@ export default function WorkflowBuilderPage() {
 
   const enabled = def.workflow.enabled;
   const EntityIcon = ENTITY_ICON[def.workflow.key.toLowerCase()] ?? WorkflowIcon;
+  const crmKey = isCrmWorkflowKey(def.workflow.key) ? def.workflow.key : null;
 
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-background">
@@ -138,11 +141,20 @@ export default function WorkflowBuilderPage() {
           narrow column. */}
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="space-y-6 px-4 py-8 sm:px-8">
-          <StatesReference workflowKey={def.workflow.key} states={def.states} transitions={def.transitions} />
-
-          <Section title="Approval chain">
+          <Section title="Approval chain" action={<Badge size="sm">Every status</Badge>}>
             <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
           </Section>
+
+          {crmKey ? (
+            <CrmStatusApprovers workflowKey={crmKey} />
+          ) : (
+            <StatesReference
+              workflowId={id}
+              workflowKey={def.workflow.key}
+              states={def.states}
+              transitions={def.transitions}
+            />
+          )}
 
           <Section
             title="Custom fields"
@@ -199,73 +211,6 @@ function FieldsCounter({ count }: { count: number }) {
   );
 }
 
-// ── States & transitions reference ─────────────────────────────────────────
-// This is fixed configuration for the workflow type, not something an admin
-// edits here — so it's deliberately quiet (muted text, no hover/buttons).
-// Transitions are grouped under the state they originate from (via
-// fromStateId), rather than shown as a separate flat table, so the
-// relationship between a state and where it can go is visible at a glance —
-// all straight from the WorkflowState/WorkflowTransition API shapes, no
-// extra fields invented.
-function stripWorkflowPrefix(name: string, workflowKey: string): string {
-  const prefix = `${workflowKey}-`;
-  return name.toLowerCase().startsWith(prefix.toLowerCase()) ? name.slice(prefix.length) : name;
-}
-
-function StatesReference({
-  workflowKey,
-  states,
-  transitions,
-}: {
-  workflowKey: string;
-  states: WorkflowState[];
-  transitions: WorkflowTransition[];
-}) {
-  const ordered = [...states].sort((a, b) => a.sortOrder - b.sortOrder);
-  const stateById = new Map(states.map((s) => [s.id, s]));
-  const nameFor = (s?: WorkflowState) => (s ? stripWorkflowPrefix(s.name, workflowKey) : '—');
-
-  return (
-    <section className="rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
-      <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
-        <h2 className="text-sm font-semibold text-stone-950 dark:text-white">States &amp; transitions</h2>
-        <span className="flex items-center gap-1 text-xs text-stone-400">
-          <Lock className="size-3" /> Read only
-        </span>
-      </div>
-
-      {ordered.length === 0 ? (
-        <p className="text-xs text-stone-400">No states configured.</p>
-      ) : (
-        <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ordered.map((s) => {
-            const outgoing = transitions.filter((t) => t.fromStateId === s.id);
-            return (
-              <div key={s.id}>
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block size-1.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} aria-hidden="true" />
-                  <span className="truncate text-xs font-semibold text-stone-900 dark:text-stone-100">{nameFor(s)}</span>
-                  {s.isInitial && <span className="shrink-0 text-2xs text-stone-400">start</span>}
-                  {s.isTerminal && <span className="shrink-0 text-2xs text-stone-400">end</span>}
-                </div>
-                {outgoing.length > 0 && (
-                  <ul className="mt-1.5 space-y-1 border-l border-stone-100 pl-3 dark:border-stone-800">
-                    {outgoing.map((t) => (
-                      <li key={t.id} className="truncate text-xs text-stone-400">
-                        <span className="text-stone-500 dark:text-stone-400">{t.name}</span> → {nameFor(stateById.get(t.toStateId))}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
 function ApproversSection({ workflowId, approverUserIds }: { workflowId: string; approverUserIds: string[] }) {
   const qc = useQueryClient();
   const usersQ = useQuery({ queryKey: ['users'], queryFn: userService.listUsers, staleTime: 5 * 60 * 1000 });
@@ -291,7 +236,8 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
   return (
     <div>
       <p className="mb-3 max-w-xl text-xs text-stone-500">
-        Up to {MAX_APPROVERS} active users required to sign off records created under this form. Leave empty to skip approval.
+        Up to {MAX_APPROVERS} active users required to sign off before a record can leave <em>any</em> status in this
+        workflow. Leave empty to skip. For approvers scoped to a single status, configure them individually below.
       </p>
       {usersQ.isLoading ? (
         <Spinner label="Loading users…" />

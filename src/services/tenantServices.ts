@@ -166,6 +166,23 @@ export const workflowService = {
         approverUserIds,
       })
       .then((r) => r.data.approverUserIds),
+  // Per-state approver config (generic workflow engine). Read uses
+  // workflow_config:read, write uses workflow_config:configure. The UI caps
+  // the selection at MAX_APPROVERS (see ApproverPicker); the backend accepts
+  // any number.
+  getStateApprovers: (workflowId: string, stateId: string) =>
+    tenantClient
+      .get<{ success: boolean; approverUserIds: string[] }>(
+        `/tenant/workflows/${workflowId}/states/${stateId}/approvers`,
+      )
+      .then((r) => r.data.approverUserIds ?? []),
+  setStateApprovers: (workflowId: string, stateId: string, approverUserIds: string[]) =>
+    tenantClient
+      .put<{ success: boolean; approverUserIds: string[] }>(
+        `/tenant/workflows/${workflowId}/states/${stateId}/approvers`,
+        { approverUserIds },
+      )
+      .then((r) => r.data.approverUserIds ?? []),
   createField: (
     workflowId: string,
     field: {
