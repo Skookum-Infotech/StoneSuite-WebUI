@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil } from 'lucide-react';
@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { SO_STATUS_COLORS } from '@/lib/salesOrderForm';
@@ -49,6 +50,15 @@ export default function SalesOrderDetailPage() {
     queryFn: () => salesOrderService.getOrder(id),
     enabled: Boolean(id),
   });
+
+  const setLabel = useBreadcrumbStore((s) => s.setLabel);
+  const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
+  useEffect(() => {
+    if (order?.salesOrderNumber) {
+      setLabel(id, order.salesOrderNumber);
+      return () => clearLabel(id);
+    }
+  }, [id, order?.salesOrderNumber, setLabel, clearLabel]);
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
   if (error || !order)

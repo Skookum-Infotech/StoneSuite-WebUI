@@ -84,6 +84,11 @@ export default function MainLayout(): React.JSX.Element {
   // Segments that are namespace prefixes with no real index page — non-navigable in breadcrumb.
   const nonNavigableSegments = new Set(['crm', 'sales', 'purchases', 'customer', 'onboarding']);
 
+  // Raw record IDs (UUIDs) must never render in the breadcrumb — pages set a
+  // human label via useBreadcrumbStore once the record loads; until then, show
+  // a neutral placeholder instead of flashing the ID.
+  const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
 
@@ -353,7 +358,13 @@ export default function MainLayout(): React.JSX.Element {
                             : 'text-stone-400',
                       )}
                     >
-                      {breadcrumbLabels[segment] ?? (segment === 'crm' ? 'CRM' : segment.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase()))}
+                      {breadcrumbLabels[segment] ?? (
+                        segment === 'crm'
+                          ? 'CRM'
+                          : UUID_PATTERN.test(segment)
+                            ? 'Details'
+                            : segment.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())
+                      )}
                     </span>
                   </React.Fragment>
                 );

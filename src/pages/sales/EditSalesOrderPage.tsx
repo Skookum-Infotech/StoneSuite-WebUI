@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ShoppingCart, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -8,6 +8,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
@@ -44,6 +45,15 @@ export default function EditSalesOrderPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  const setLabel = useBreadcrumbStore((s) => s.setLabel);
+  const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
+  useEffect(() => {
+    if (order?.salesOrderNumber) {
+      setLabel(id, order.salesOrderNumber);
+      return () => clearLabel(id);
+    }
+  }, [id, order?.salesOrderNumber, setLabel, clearLabel]);
 
   const mapped = useMemo(() => (order ? fromOrder(order) : null), [order]);
   const data = localData ?? mapped?.data ?? {};
