@@ -95,6 +95,12 @@ const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
 const AddSalesOrderPage = lazyWithRetry(() => import("@/pages/sales/AddSalesOrderPage"));
+const SalesOrderDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/SalesOrderDetailPage"),
+);
+const EditSalesOrderPage = lazyWithRetry(
+  () => import("@/pages/sales/EditSalesOrderPage"),
+);
 const InvoiceListPage = lazyWithRetry(
   () => import("@/pages/sales/InvoiceListPage"),
 );
@@ -243,11 +249,35 @@ export const router = createBrowserRouter([
       // Sales Orders (specific routes must come before the catch-all)
       {
         path: "sales/sales_order",
-        element: lazy_(<SalesOrderListPage />),
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="read">
+            <SalesOrderListPage />
+          </PermissionGuard>,
+        ),
       },
       {
         path: "sales/sales_order/new",
-        element: lazy_(<AddSalesOrderPage />),
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="create">
+            <AddSalesOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/sales_order/:id",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="read">
+            <SalesOrderDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/sales_order/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="update">
+            <EditSalesOrderPage />
+          </PermissionGuard>,
+        ),
       },
 
       // Invoices (specific routes must come before the catch-all)

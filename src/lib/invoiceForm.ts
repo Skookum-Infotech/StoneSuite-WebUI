@@ -2,7 +2,34 @@
 // Only fields NOT marked "Don't Display in UI" are included here
 // (excluded: Tenant ID, Stone Suite Customer ID, Record Type, Invoice ID).
 
-import { US_STATES, COUNTRIES, PAYMENT_TERMS_OPTIONS, PRICE_LEVEL_OPTIONS } from '@/lib/salesOrderForm';
+// ── Lookup option lists ───────────────────────────────────────────────────────
+// Invoice fields use static option lists (unlike SalesOrder's lookupKey-based
+// selects) since there is no InvoiceFormField.lookupKey to source them from CrmLookups.
+
+export const US_STATES = [
+  '', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+  'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+  'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
+  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+  'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma',
+  'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
+  'West Virginia', 'Wisconsin', 'Wyoming',
+];
+
+export const COUNTRIES = [
+  '', 'United States', 'Canada', 'United Kingdom', 'Australia', 'Germany',
+  'France', 'Japan', 'India', 'Brazil', 'Mexico', 'China', 'Singapore', 'Other',
+];
+
+export const PAYMENT_TERMS_OPTIONS = [
+  '', 'Due on Receipt', 'Net 15', 'Net 30', 'Net 45', 'Net 60', 'Net 90', 'COD',
+];
+
+export const PRICE_LEVEL_OPTIONS = [
+  '', 'Standard', 'Online Price', 'Partner Price', 'Wholesale', 'Retail', 'Custom',
+];
 
 export interface InvoiceFormField {
   key: string;
@@ -20,8 +47,6 @@ export interface InvoiceFormField {
   /** Textarea row count (only used when type === 'textarea') */
   rows?: number;
 }
-
-export { US_STATES, COUNTRIES, PAYMENT_TERMS_OPTIONS, PRICE_LEVEL_OPTIONS };
 
 export const INVOICE_STATUSES = [
   '', 'Draft', 'Sent', 'Partially Paid', 'Paid', 'Overdue', 'Void', 'Cancelled',

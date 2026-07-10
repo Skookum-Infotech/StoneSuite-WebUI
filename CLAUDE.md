@@ -13,34 +13,31 @@ multi-user workspaces, and central authentication (email/password + JWT + OAuth 
 
 ## Repo Structure
 ```
-StoneSuite-WebUI/
-├── .env.example                  # VITE_API_BASE_URL template
-├── src/
-│   ├── api/                      # Axios client (client.ts)
-│   ├── components/
-│   │   ├── ui/                   # shadcn/ui primitives
-│   │   ├── customer/             # Customer onboarding modal & forms
-│   │   ├── prospect/             # Prospect forms & details
-│   │   └── crm/                  # CRM-specific components
-│   ├── hooks/                    # useAuth, useUserPermissions, etc.
-│   ├── layouts/                  # AuthLayout, MainLayout
-│   ├── pages/
-│   │   ├── crm/                  # Lead, Prospect, Customer pages
-│   │   ├── config/                # Workflows, Roles, Access control
-│   │   ├── customer/              # Customer onboarding pages
-│   │   └── onboarding/            # Public apply & set-password pages
-│   ├── router/                   # React Router v7 config
-│   ├── services/                 # API wrappers (tenantServices, leadService, etc.)
-│   ├── store/                    # Zustand stores (useAuthStore)
-│   ├── types/                    # Shared TypeScript types (Tenant, Lead, Prospect, etc.)
-│   └── config/                   # sidebarNav.ts (navigation groups)
-├── public/
-└── docs/                          # Frontend-relevant design/product notes
+src/
+├── api/            # client.ts (Axios base), tenantClient.ts (tenant-scoped calls + apiErrorMessage)
+├── components/
+│   ├── ui/         # shadcn/ui primitives
+│   ├── tenant/     # DynamicFieldInput, RecordsPanel, ApproverPicker — shared record UI
+│   ├── crm/        # CRM-specific building blocks (forms, tabs, dialogs)
+│   ├── customer/, prospect/, ai/
+├── hooks/          # useSessionTimer, useUserPermissions
+├── layouts/        # AuthLayout, MainLayout (header, sidebar, breadcrumb)
+├── pages/
+│   ├── crm/{lead,prospect,customer}/   # workflow-driven CRM record pages
+│   ├── sales/                          # Sales Order list/add/edit/detail + components/
+│   ├── config/{workflows,roles-access,users,record-numbering}/
+│   ├── customer/, onboarding/          # customer portal & public apply/set-password
+│   ├── account/, auth/, dashboard/, transactions/, common/
+├── router/         # index.tsx — React Router v7 config
+├── services/       # one *Service.ts per API surface, all calls go through here
+├── store/          # useAuthStore, useBreadcrumbStore (Zustand)
+├── lib/            # pure helpers + form mappers (salesOrderForm, crmValidation, customFields, utils)
+├── types/          # shared TS types (Tenant, Lead, Prospect, SalesOrder, etc.)
+└── config/         # sidebarNav.ts (navigation groups)
 ```
 
-**Entry point:** `src/main.tsx`
-**Deployment:** Cloudflare Pages, built from this repo's `develop`/`master` branches.
-**Backend:** separate `StoneSuite` repo → Fly.io (`stonesuite-backend.fly.dev`) + Neon Postgres.
+**Entry point:** `src/main.tsx` · **Backend:** separate `StoneSuite` repo → Fly.io
+(`stonesuite-backend.fly.dev`) + Neon Postgres.
 
 ## Common Commands
 ```bash
@@ -54,31 +51,12 @@ npm run ci           # lint + test + build (what CI runs)
 ```
 
 ## Deployment (Cloudflare Pages)
-
-**1. Connect GitHub Repository**
-- Cloudflare Pages dashboard → "Create a project" → "Connect to Git"
-- Select the `StoneSuite-WebUI` repository
-
-**2. Configure Build**
-- Framework: `Vite`
-- Build command: `npm run build`
-- Build output directory: `dist`
-- Environment variable (Pages settings):
-  ```
-  VITE_API_BASE_URL=https://stonesuite-backend.fly.dev/api
-  ```
-
-**3. Deploy**
-- Every push to the tracked branch auto-builds and deploys.
-
-**4. Custom Domain**
-- Cloudflare Pages → Custom domain → point to the Pages project.
-
-### Environment Variables Reference
+Built from `develop`/`master`. Framework `Vite`, build command `npm run build`, output
+dir `dist`. Every push to a tracked branch auto-builds and deploys. Pages env var:
 ```
 VITE_API_BASE_URL=https://stonesuite-backend.fly.dev/api
 ```
-(See `.env.example` for Entra ID / Cognito OAuth variables — not yet production-deployed.)
+(See `.env.example` for Entra ID / Cognito OAuth vars — not yet production-deployed.)
 
 ## Talking to the Backend API (what the frontend must respect)
 The backend enforces multi-tenancy and RBAC server-side; the frontend must not assume it
@@ -104,23 +82,28 @@ can bypass or duplicate that logic client-side:
 ## React Rules (always enforce)
 - Component files: PascalCase — `UserProfile.tsx`. One component per file.
 - Async data fetching: TanStack React Query only — no bare `useEffect` for fetches.
-- Custom hooks: live in `hooks/`, prefixed `use` (e.g., `useAuth.ts`).
-- Global state: Zustand only. No prop drilling beyond 2 levels.
-- Forms: React Hook Form + Zod.
+- Custom hooks: live in `hooks/`, prefixed `use` (e.g., `useUserPermissions.ts`).
+- Global state: Zustand only (`useAuthStore`, `useBreadcrumbStore`) — not for form state,
+  which is React Hook Form + local state. No prop drilling beyond 2 levels.
+- Forms: React Hook Form + Zod for standalone forms (auth, account, invites, onboarding).
+  CRM workflow record forms (Lead/Prospect/Customer/Sales Order add-edit pages) instead use
+  local state + validators in `lib/crmValidation.ts` / `lib/salesOrderForm.ts` — match the
+  surrounding file's existing pattern rather than mixing the two in one form.
 - Never mutate state directly — always return new objects/arrays.
-- Styling: Tailwind classes only. No inline `style={}`, no CSS Modules.
-- Exports: named exports everywhere except page-level route components (default export).
+- Styling: Tailwind `className=` only. No inline `style={}`, no CSS Modules.
+- Exports: named everywhere except page-level route components (default export).
 - `useEffect` with side effects must return a cleanup function.
 - Accessibility: all interactive elements need `aria-label` and keyboard navigation.
 - `@typescript-eslint/no-explicit-any` is an error — type everything properly.
 - No component receives more than 5 props. If cramped, pass `{...obj}` or use context.
-- Custom fields render via `DynamicFieldInput` component. Don't hardcode Lead fields in
-  AddLeadPage; fetch `workflow.field_definitions` at runtime.
-- All API calls go through `services/*Service.ts`. Never direct `fetch()` or
-  `axios.post()` in pages.
-- Zustand store is not for form state. Use React Hook Form + local state; Zustand is for
-  global auth/user context.
-- No inline styles. All styling via Tailwind `className=`.
+- Custom fields render via `DynamicFieldInput`. Don't hardcode a workflow's fields in a
+  page — fetch `workflow.field_definitions` at runtime.
+- All API calls go through `services/*Service.ts`. Never direct `fetch()`/`axios.*()` in pages.
+- **Never show a raw record UUID in the UI breadcrumb.** Detail/edit pages keyed by `:id`
+  must call `useBreadcrumbStore().setLabel(id, humanLabel)` in a `useEffect` once the
+  record loads (and `clearLabel(id)` on cleanup) — see `LeadDetailPage`/`EditRolePage` for
+  the pattern. Use the record's human identifier, never the raw ID; `MainLayout`'s
+  fallback also hides any UUID-shaped segment, but that's a safety net, not a substitute.
 
 ## Code Quality
 1. No magic strings or numbers. All values > 1 are constants.

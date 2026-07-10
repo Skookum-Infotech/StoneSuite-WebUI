@@ -5,7 +5,9 @@ import { Building2 } from "lucide-react";
 import { crmService, CRM_RECORD_TYPE_CODES } from "@/services/crmService";
 import { crmAdminService } from "@/services/crmAdminService";
 import { userService } from "@/services/tenantServices";
+import { lookupService } from "@/services/lookupService";
 import { apiErrorMessage } from "@/api/tenantClient";
+import { exportCrmRecordToPdf } from "@/lib/crmPdfExport";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
@@ -69,10 +71,19 @@ export default function CustomerDetailPage() {
     staleTime: 60 * 1000,
   });
 
+  const { data: lookups } = useQuery({
+    queryKey: ["crm-lookups"],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
   const approve = useMutation({
     mutationFn: () => crmService.approveRecord(id, "customer"),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
   });
+
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const statusMap = new Map<string, StatusInfo>(
     (statusData?.statuses ?? []).map((s) => [s.stateId, s]),
@@ -102,6 +113,7 @@ export default function CustomerDetailPage() {
       </div>
     );
 
+  const currentRecord = record;
   const statusInfo = statusMap.get(record.currentStateId);
   const cf = record.coreFields;
   const company = String(cf.customer_name ?? "(unnamed)");
@@ -119,6 +131,30 @@ export default function CustomerDetailPage() {
     .filter((a) => a.recordTypeCode === CRM_RECORD_TYPE_CODES.customer && a.crmStatusCode !== "" && a.crmStatusCode === statusInfo?.stateKey)
     .map((a) => a.approverName);
   const approverNames = [...wildcardNames, ...statusApproverNames];
+
+  async function handleExportPdf() {
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      await exportCrmRecordToPdf({
+        recordType: "customer",
+        title: company,
+        recordNumber: currentRecord.recordNumber,
+        statusLabel: statusInfo?.statusLabel,
+        ownerName: users.find((u) => u.id === currentRecord.ownerUserId)?.fullName,
+        createdAt: currentRecord.createdAt,
+        updatedAt: currentRecord.updatedAt,
+        coreFields: cf,
+        customFields: currentRecord.customFields,
+        lookups,
+        showCustomerBalances: true,
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, "Failed to export PDF."));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -212,6 +248,9 @@ export default function CustomerDetailPage() {
             updatedAt={record.updatedAt}
             onEdit={canEdit ? () => navigate(`/crm/customer/${id}/edit`) : undefined}
             onUploadFile={() => navigate(`/crm/customer/${id}/edit`, { state: { initialTab: "files" } })}
+            onExportPdf={handleExportPdf}
+            exportingPdf={exportingPdf}
+            exportPdfError={exportPdfError}
             approvalSlot={(
               <>
                 <ApprovalCard approverNames={approverNames} status={approvalStatus} />

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { Upload, Plus, Pencil, X, LayoutList } from "lucide-react";
-import { Badge } from "@/components/tenant/ui";
+import { Upload, Plus, Pencil, X, LayoutList, FileDown, Loader2 } from "lucide-react";
+import { Badge, ErrorNote } from "@/components/tenant/ui";
 import { resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
 import type { StatusInfo, WorkspaceUser } from "@/types/tenant";
@@ -13,6 +13,9 @@ type Props = {
   updatedAt: string;
   onUploadFile?: () => void;
   onEdit?: () => void;
+  onExportPdf?: () => void;
+  exportingPdf?: boolean;
+  exportPdfError?: string;
   approvalSlot?: ReactNode;
   deleteSlot?: ReactNode;
 };
@@ -44,6 +47,9 @@ export function CrmDetailSidebar({
   updatedAt,
   onUploadFile,
   onEdit,
+  onExportPdf,
+  exportingPdf,
+  exportPdfError,
   approvalSlot,
   deleteSlot,
 }: Props) {
@@ -83,7 +89,28 @@ export function CrmDetailSidebar({
             <Plus className="size-4 text-stone-400 shrink-0" />
             Add note
           </button>
+          {onExportPdf && (
+            <button
+              type="button"
+              onClick={onExportPdf}
+              disabled={exportingPdf}
+              className={cn(actionRowCls, exportingPdf && "opacity-60 cursor-not-allowed")}
+              aria-label="Export as PDF"
+            >
+              {exportingPdf ? (
+                <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" />
+              ) : (
+                <FileDown className="size-4 text-stone-400 shrink-0" />
+              )}
+              {exportingPdf ? "Exporting…" : "Export PDF"}
+            </button>
+          )}
         </div>
+        {exportPdfError && (
+          <div className="pt-1">
+            <ErrorNote>{exportPdfError}</ErrorNote>
+          </div>
+        )}
       </div>
 
       {approvalSlot}
