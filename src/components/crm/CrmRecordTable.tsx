@@ -3,13 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, ShieldAlert,
+  ChevronLeft, ChevronRight, ShieldAlert, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { crmService } from '@/services/crmService';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { resolveStatusColor } from '@/components/crm/formUtils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { recordApprovalState, type StatusInfo, type FilterRequest, type FilterClause } from '@/types/tenant';
+import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
+import {
+  recordApprovalState,
+  type StatusInfo, type FilterRequest, type FilterClause, type WorkflowRecord,
+} from '@/types/tenant';
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
@@ -53,6 +58,9 @@ type SortField = 'createdAt' | 'updatedAt';
 type SortDir   = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
+// Larger page size for CSV export — fewer round trips while paging through every
+// matching record (vs. the 25-row page size used for on-screen browsing).
+const EXPORT_PAGE_SIZE = 200;
 
 const SORT_LABELS: Record<SortField, string> = {
   createdAt: 'Date Created',
@@ -183,6 +191,42 @@ export function CrmRecordTable({ config }: Props) {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  // ── CSV export ─────────────────────────────────────────────────────────────
+  // Pages through every record matching the currently applied filters (the same
+  // filters/sort as the on-screen query) rather than just the visible page, so
+  // an unfiltered download exports the whole table and a filtered one exports
+  // only the matching rows.
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      const allRecords: WorkflowRecord[] = [];
+      let exportCursor: string | undefined;
+      do {
+        const page = await crmService.searchRecords(config.workflowKey, {
+          filters: filterRequest.filters,
+          sort:    filterRequest.sort,
+          limit:   EXPORT_PAGE_SIZE,
+          cursor:  exportCursor,
+        });
+        allRecords.push(...page.records);
+        exportCursor = page.hasMore ? page.nextCursor : undefined;
+      } while (exportCursor);
+
+      downloadCsv(
+        buildCrmCsvFilename(config.label),
+        buildCrmRecordsCsv(allRecords, statusMap, Boolean(config.showEmail)),
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   const lowerLabel = config.label.toLowerCase();
 
   return (
@@ -255,10 +299,31 @@ export function CrmRecordTable({ config }: Props) {
             Clear
           </button>
         )}
+
+        {/* Download CSV */}
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? `Download filtered ${lowerLabel}s as CSV` : `Download all ${lowerLabel}s as CSV`}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Download className="size-3.5" />
+            )}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">Failed to load {lowerLabel}s. Please try again.</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* ── Table ── */}
