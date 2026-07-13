@@ -109,6 +109,12 @@ const PaymentListPage = lazyWithRetry(
   () => import("@/pages/sales/PaymentListPage"),
 );
 const AddPaymentPage = lazyWithRetry(() => import("@/pages/sales/AddPaymentPage"));
+const VendorListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/VendorListPage"),
+);
+const AddVendorPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/AddVendorPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -298,6 +304,24 @@ export const router = createBrowserRouter([
       {
         path: "sales/payment/new",
         element: lazy_(<AddPaymentPage />),
+      },
+
+      // Vendors (specific routes must come before the purchases catch-all)
+      {
+        path: "purchases/vendor",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="read">
+            <VendorListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="create">
+            <AddVendorPage />
+          </PermissionGuard>,
+        ),
       },
 
       // Sales & Purchases modules (placeholder pages — full functionality coming soon)

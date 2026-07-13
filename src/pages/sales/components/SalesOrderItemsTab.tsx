@@ -179,7 +179,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
           className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-colors"
         >
           <Plus className="size-3" />
-          {isAdding || editId ? 'Save Line' : '+ Add Line'}
+          {isAdding || editId ? 'Save Line' : 'Add Line'}
         </button>
         {activeDraft && (
           <button type="button" onClick={() => { setIsAdding(false); setEditId(null); setDraft(EMPTY_LINE_ITEM); }}
