@@ -115,6 +115,12 @@ const VendorListPage = lazyWithRetry(
 const AddVendorPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/AddVendorPage"),
 );
+const VendorDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/VendorDetailPage"),
+);
+const EditVendorPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/EditVendorPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -320,6 +326,22 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="vendor" action="create">
             <AddVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="read">
+            <VendorDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="update">
+            <EditVendorPage />
           </PermissionGuard>,
         ),
       },

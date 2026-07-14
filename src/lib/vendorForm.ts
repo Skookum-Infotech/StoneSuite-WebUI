@@ -5,7 +5,7 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type {
-  AcceptedPaymentMethod, VendorCreatePayload, VendorType,
+  AcceptedPaymentMethod, Vendor, VendorCreatePayload, VendorType,
 } from '@/types/vendor';
 
 export interface VendorFormField {
@@ -210,4 +210,57 @@ export function toCreatePayload(data: Record<string, unknown>): VendorCreatePayl
   }
 
   return payload;
+}
+
+// ── Inverse mapping (loaded Vendor -> UI form state) ──────────────────────────
+// Mirrors fromOrder() in salesOrderForm.ts — seeds EditVendorPage's local form
+// state from the record returned by vendorService.getVendor.
+
+export function fromVendor(vendor: Vendor): Record<string, unknown> {
+  const data: Record<string, unknown> = {
+    vendor_type: vendor.vendorType,
+    email: vendor.email ?? '',
+    physical_address: vendor.physicalAddress ?? '',
+    fax_number: vendor.faxNumber ?? '',
+    global_location_number: vendor.globalLocationNumber ?? '',
+    isic_v4_code: vendor.isicV4Code ?? '',
+    associated_brands: vendor.associatedBrands ?? [],
+    awards_won: vendor.awardsWon ?? '',
+    contact_point_type: vendor.contactPoint?.contactType ?? '',
+    contact_point_telephone: vendor.contactPoint?.telephone ?? '',
+    contact_point_email: vendor.contactPoint?.email ?? '',
+    funder: vendor.funder ?? '',
+    has_offer_catalog_url: vendor.hasOfferCatalogUrl ?? '',
+    point_of_sale_locations: vendor.pointOfSaleLocations ?? '',
+    accepted_payment_methods: vendor.acceptedPaymentMethods ?? [],
+  };
+
+  if (vendor.vendorType === 'Person') {
+    data.honorific_prefix = vendor.honorificPrefix ?? '';
+    data.given_name = vendor.givenName ?? '';
+    data.additional_name = vendor.additionalName ?? '';
+    data.family_name = vendor.familyName ?? '';
+    data.honorific_suffix = vendor.honorificSuffix ?? '';
+    data.job_title = vendor.jobTitle ?? '';
+    data.gender = vendor.gender ?? '';
+    data.nationality_country_id = vendor.nationalityCountryId !== null && vendor.nationalityCountryId !== undefined
+      ? String(vendor.nationalityCountryId)
+      : '';
+    data.height = vendor.height ?? '';
+    data.net_worth = vendor.netWorth ?? '';
+  } else {
+    data.legal_name = vendor.legalName ?? '';
+    data.registration_info = vendor.registrationInfo ?? '';
+    data.duns_number = vendor.dunsNumber ?? '';
+    data.founding_date = vendor.foundingDate ?? '';
+    data.founding_location = vendor.foundingLocation ?? '';
+    data.dissolution_date = vendor.dissolutionDate ?? '';
+    data.department = vendor.department ?? '';
+    data.ethics_policy_url = vendor.compliancePolicies?.ethicsPolicyUrl ?? '';
+    data.diversity_policy_url = vendor.compliancePolicies?.diversityPolicyUrl ?? '';
+    data.corrections_policy_url = vendor.compliancePolicies?.correctionsPolicyUrl ?? '';
+    data.actionable_feedback_policy_url = vendor.compliancePolicies?.actionableFeedbackPolicyUrl ?? '';
+  }
+
+  return data;
 }
