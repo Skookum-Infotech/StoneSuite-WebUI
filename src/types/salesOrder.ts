@@ -29,18 +29,23 @@ export interface SalesOrderAddressInput {
 }
 
 /** One ordered line. `inventoryItemUuid` selects a catalog item (server
- *  snapshots its sku/name/description/unit/price/tax); omit it for a free-text
- *  line, in which case `description` is required. Per-line tax comes from
- *  `taxRateId` (or the header `salesTaxPercent` default) — the contract has no
- *  arbitrary per-line tax percent. */
+ *  snapshots its sku/name/description/unit/price/tax, ignoring sku/itemName/
+ *  unitCode/taxPercent below); omit it for a free-text line, in which case
+ *  `description` is required and sku/itemName/unitCode/taxPercent (when set)
+ *  are taken as typed. Per-line tax otherwise comes from `taxRateId` (or the
+ *  header `salesTaxPercent` default). */
 export interface SalesOrderLineInput {
   lineNumber: number;
   inventoryItemUuid?: string;
   description?: string;
+  sku?: string;
+  itemName?: string;
+  unitCode?: string;
   quantity: number;
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  taxPercent?: number;
   warehouseId?: number | null;
 }
 
@@ -50,6 +55,9 @@ export interface SalesOrderCreatePayload {
   referenceNumber?: string;
   orderDate?: string;          // ISO date "yyyy-mm-dd"
   expectedDelivery?: string;   // ISO date "yyyy-mm-dd"
+  /** ISO date "yyyy-mm-dd". Optional — if omitted and paymentTermsId is set,
+   *  the server derives it as orderDate + the term's net-days (AD-8). */
+  paymentDueDate?: string;
   paymentTermsId?: number | null;
   priceLevelId?: number | null;
   currencyId?: number | null;
@@ -95,6 +103,11 @@ export interface SalesOrderLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** Stored rollup of this line's fulfilled allocations (AD-9). */
+  fulfilledQuantity: number;
+  /** Derived server-side from fulfilledQuantity vs quantity — never stored,
+   *  always "open" until the fulfillment flow ships. */
+  status: 'open' | 'partial' | 'filled';
 }
 
 // Full detail response (GET/Create/Update). Every field the create/update
@@ -110,6 +123,7 @@ export interface SalesOrder {
   customer: SalesOrderCustomerRef;
   orderDate: string;
   expectedDelivery?: string;
+  paymentDueDate?: string;
   poNumber?: string;
   referenceNumber?: string;
   memo?: string;

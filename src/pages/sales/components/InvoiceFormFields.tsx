@@ -3,11 +3,12 @@ import {
   fieldCls, textareaCls, readonlyCls, checkboxLabelCls,
 } from '@/components/crm/formUtils';
 import type { CrmLookups } from '@/services/lookupService';
-import type { SOFormField } from '@/lib/salesOrderForm';
+import type { InvoiceFormField } from '@/lib/invoiceForm';
 
-// Renders one SOFormField — shared by the Add and Edit Sales Order forms.
-export function SOField({ field, value, set, lookups, dependsOnValue }: {
-  field: SOFormField;
+// Renders one InvoiceFormField — shared by the Add and Edit Invoice forms.
+// Mirrors SalesOrderFormFields' SOField/SOSectionGrid.
+export function InvoiceField({ field, value, set, lookups, dependsOnValue }: {
+  field: InvoiceFormField;
   value: unknown;
   set: (k: string, v: unknown) => void;
   lookups?: CrmLookups;
@@ -123,8 +124,8 @@ export function SOField({ field, value, set, lookups, dependsOnValue }: {
   );
 }
 
-export function SOSectionGrid({ fields, data, set, lookups, maxCols = 3 }: {
-  fields: SOFormField[];
+export function InvoiceSectionGrid({ fields, data, set, lookups, maxCols = 3 }: {
+  fields: InvoiceFormField[];
   data: Record<string, unknown>;
   set: (k: string, v: unknown) => void;
   lookups?: CrmLookups;
@@ -136,7 +137,7 @@ export function SOSectionGrid({ fields, data, set, lookups, maxCols = 3 }: {
   return (
     <div className={`grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 ${maxCols === 3 ? 'lg:grid-cols-3' : ''}`}>
       {visible.map((f) => (
-        <SOField
+        <InvoiceField
           key={f.key}
           field={f}
           value={data[f.key]}

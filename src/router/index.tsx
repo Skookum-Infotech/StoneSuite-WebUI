@@ -105,10 +105,28 @@ const InvoiceListPage = lazyWithRetry(
   () => import("@/pages/sales/InvoiceListPage"),
 );
 const AddInvoicePage = lazyWithRetry(() => import("@/pages/sales/AddInvoicePage"));
+const InvoiceDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/InvoiceDetailPage"),
+);
+const EditInvoicePage = lazyWithRetry(
+  () => import("@/pages/sales/EditInvoicePage"),
+);
 const PaymentListPage = lazyWithRetry(
   () => import("@/pages/sales/PaymentListPage"),
 );
 const AddPaymentPage = lazyWithRetry(() => import("@/pages/sales/AddPaymentPage"));
+const VendorListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/VendorListPage"),
+);
+const AddVendorPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/AddVendorPage"),
+);
+const VendorDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/VendorDetailPage"),
+);
+const EditVendorPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor/EditVendorPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -283,11 +301,35 @@ export const router = createBrowserRouter([
       // Invoices (specific routes must come before the catch-all)
       {
         path: "sales/invoice",
-        element: lazy_(<InvoiceListPage />),
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="read">
+            <InvoiceListPage />
+          </PermissionGuard>,
+        ),
       },
       {
         path: "sales/invoice/new",
-        element: lazy_(<AddInvoicePage />),
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="create">
+            <AddInvoicePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/invoice/:id",
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="read">
+            <InvoiceDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/invoice/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="update">
+            <EditInvoicePage />
+          </PermissionGuard>,
+        ),
       },
 
       // Payments (specific routes must come before the catch-all)
@@ -298,6 +340,40 @@ export const router = createBrowserRouter([
       {
         path: "sales/payment/new",
         element: lazy_(<AddPaymentPage />),
+      },
+
+      // Vendors (specific routes must come before the purchases catch-all)
+      {
+        path: "purchases/vendor",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="read">
+            <VendorListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="create">
+            <AddVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="read">
+            <VendorDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor" action="update">
+            <EditVendorPage />
+          </PermissionGuard>,
+        ),
       },
 
       // Sales & Purchases modules (placeholder pages — full functionality coming soon)

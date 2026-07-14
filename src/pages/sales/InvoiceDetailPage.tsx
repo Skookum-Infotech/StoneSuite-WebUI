@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil } from 'lucide-react';
-import { salesOrderService } from '@/services/salesOrderService';
+import { Receipt, Upload, Pencil } from 'lucide-react';
+import { invoiceService } from '@/services/invoiceService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -12,15 +12,14 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS } from '@/lib/salesOrderForm';
-import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
-import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
-import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
+import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
+import { InvoiceAuditTab } from './components/InvoiceAuditTab';
+import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
+import { RecordPaymentDialog } from './components/RecordPaymentDialog';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
-  { key: 'inventory', label: 'Inventory' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -35,47 +34,47 @@ function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
-export default function SalesOrderDetailPage() {
+export default function InvoiceDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission('sales_order', 'update');
-  const canDelete = permissionsLoading || hasPermission('sales_order', 'delete');
+  const canEdit = permissionsLoading || hasPermission('invoice', 'update');
+  const canDelete = permissionsLoading || hasPermission('invoice', 'delete');
 
-  const { data: order, isLoading, error } = useQuery({
-    queryKey: ['sales-order', id],
-    queryFn: () => salesOrderService.getOrder(id),
+  const { data: invoice, isLoading, error } = useQuery({
+    queryKey: ['invoice', id],
+    queryFn: () => invoiceService.getInvoice(id),
     enabled: Boolean(id),
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
-    if (order?.salesOrderNumber) {
-      setLabel(id, order.salesOrderNumber);
+    if (invoice?.invoiceNumber) {
+      setLabel(id, invoice.invoiceNumber);
       return () => clearLabel(id);
     }
-  }, [id, order?.salesOrderNumber, setLabel, clearLabel]);
+  }, [id, invoice?.invoiceNumber, setLabel, clearLabel]);
 
-  if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
-  if (error || !order)
-    return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
+  if (isLoading) return <div className="p-6"><Spinner label="Loading invoice…" /></div>;
+  if (error || !invoice)
+    return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load invoice.')}</ErrorNote></div>;
 
-  const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';
+  const color = INVOICE_STATUS_COLORS[invoice.status] ?? '#a8a29e';
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <CrmPageHeader
-        backLabel="Sales Orders"
-        onBack={() => navigate('/sales/sales_order')}
-        icon={ShoppingCart}
-        title={order.salesOrderNumber || 'Sales Order'}
-        subtitle={order.customer.name}
-        recordNumber={order.salesOrderNumber}
-        statusBadge={<Badge color={color}>{order.status}</Badge>}
+        backLabel="Invoices"
+        onBack={() => navigate('/sales/invoice')}
+        icon={Receipt}
+        title={invoice.invoiceNumber || 'Invoice'}
+        subtitle={invoice.customer.name}
+        recordNumber={invoice.invoiceNumber}
+        statusBadge={<Badge color={color}>{invoice.status}</Badge>}
       />
 
       {/* Tab bar */}
@@ -104,29 +103,32 @@ export default function SalesOrderDetailPage() {
             <>
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <ReadonlyField label="Order Date" value={fmtDate(order.orderDate)} />
-                  <ReadonlyField label="PO Number" value={order.poNumber} />
-                  <ReadonlyField label="Payment Due Date" value={order.paymentDueDate ? fmtDate(order.paymentDueDate) : undefined} />
-                  <ReadonlyField label="Sales Tax %" value={`${order.salesTaxPercent}%`} />
-                  {order.memo && <ReadonlyField label="Memo" value={order.memo} full />}
+                  <ReadonlyField label="Invoice Date" value={fmtDate(invoice.invoiceDate)} />
+                  <ReadonlyField label="Due Date" value={invoice.dueDate ? fmtDate(invoice.dueDate) : undefined} />
+                  <ReadonlyField label="PO Number" value={invoice.poNumber} />
+                  <ReadonlyField label="Reference #" value={invoice.referenceNumber} />
+                  <ReadonlyField label="Sales Tax %" value={`${invoice.salesTaxPercent}%`} />
+                  {invoice.memo && <ReadonlyField label="Memo" value={invoice.memo} full />}
                 </div>
               </ModernSection>
               <ModernSection title="Bill To" index={1}>
-                <AddressBlock addr={order.billing} />
+                <AddressBlock addr={invoice.billing} />
               </ModernSection>
               <ModernSection title="Ship To" index={2}>
-                {order.shipSameAsBilling ? (
+                {invoice.shipSameAsBilling ? (
                   <p className="text-xs text-stone-400 italic">Same as billing customer.</p>
                 ) : (
-                  <AddressBlock addr={order.shipping} />
+                  <AddressBlock addr={invoice.shipping} />
                 )}
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Total label="Subtotal" value={order.subtotal} />
-                  <Total label="Discount" value={order.discountTotal} />
-                  <Total label="Tax" value={order.taxTotal} />
-                  <Total label="Grand Total" value={order.grandTotal} bold />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                  <Total label="Subtotal" value={invoice.subtotal} />
+                  <Total label="Discount" value={invoice.discountTotal} />
+                  <Total label="Tax" value={invoice.taxTotal} />
+                  <Total label="Grand Total" value={invoice.grandTotal} bold />
+                  <Total label="Amount Paid" value={invoice.amountPaid} />
+                  <Total label="Balance Due" value={invoice.balanceDue} bold />
                 </div>
               </div>
             </>
@@ -146,14 +148,13 @@ export default function SalesOrderDetailPage() {
                       { label: 'Disc %', right: true },
                       { label: 'Tax %', right: true },
                       { label: 'Total', right: true },
-                      { label: 'Fulfillment' },
                     ].map((h) => (
                       <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {order.items.map((line) => (
+                  {invoice.items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
@@ -165,23 +166,17 @@ export default function SalesOrderDetailPage() {
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
-                      <td className="px-3 py-2.5">
-                        <Badge color={FULFILLMENT_STATUS_COLORS[line.status]} size="sm">
-                          {FULFILLMENT_STATUS_LABELS[line.status]}
-                        </Badge>
-                      </td>
                     </tr>
                   ))}
-                  {order.items.length === 0 && (
-                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                  {invoice.items.length === 0 && (
+                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           )}
 
-          {activeTab === 'inventory' && <SalesOrderInventoryTab orderId={id} />}
-          {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
+          {activeTab === 'audit' && <InvoiceAuditTab invoiceId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
           <div className="h-6" />
@@ -194,7 +189,7 @@ export default function SalesOrderDetailPage() {
             <div className="space-y-0.5">
               <button
                 type="button"
-                onClick={() => navigate(`/sales/sales_order/${id}/edit`, { state: { initialTab: 'files' } })}
+                onClick={() => navigate(`/sales/invoice/${id}/edit`, { state: { initialTab: 'files' } })}
                 className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
               >
                 <Upload className="size-4 text-stone-400 shrink-0" />
@@ -203,12 +198,20 @@ export default function SalesOrderDetailPage() {
               {canEdit && (
                 <button
                   type="button"
-                  onClick={() => navigate(`/sales/sales_order/${id}/edit`)}
+                  onClick={() => navigate(`/sales/invoice/${id}/edit`)}
                   className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
                 >
                   <Pencil className="size-4 text-stone-400 shrink-0" />
-                  Edit sales order
+                  Edit invoice
                 </button>
+              )}
+              {canEdit && (
+                <RecordPaymentDialog
+                  invoiceId={id}
+                  statusCode={invoice.statusCode}
+                  balanceDue={invoice.balanceDue}
+                  onRecorded={() => queryClient.invalidateQueries({ queryKey: ['invoice', id] })}
+                />
               )}
             </div>
           </div>
@@ -217,31 +220,31 @@ export default function SalesOrderDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{order.status}</Badge>
+              <Badge color={color}>{invoice.status}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{order.customer.name}</span>
+              <span className="text-stone-700 truncate max-w-[140px]">{invoice.customer.name}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(order.createdAt)}</span>
+              <span className="text-stone-700">{fmtDate(invoice.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
               <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(order.updatedAt)}</span>
+              <span className="text-stone-700">{fmtDate(invoice.updatedAt)}</span>
             </div>
           </div>
 
           {canDelete && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-              <DeleteSalesOrderDialog
-                orderId={id}
-                label={`Sales Order ${order.salesOrderNumber}`}
+              <DeleteInvoiceDialog
+                invoiceId={id}
+                label={`Invoice ${invoice.invoiceNumber}`}
                 onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
-                  navigate('/sales/sales_order');
+                  queryClient.invalidateQueries({ queryKey: ['invoices'] });
+                  navigate('/sales/invoice');
                 }}
               />
             </div>

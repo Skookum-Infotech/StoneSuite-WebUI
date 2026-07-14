@@ -3,51 +3,48 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, User, Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { invoiceService } from '@/services/invoiceService';
+import { vendorService } from '@/services/vendorService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
-import type { InvoiceSearchRequest } from '@/types/invoice';
+import { VENDOR_STATUS_COLORS } from '@/types/vendor';
+import type { VendorSearchRequest } from '@/types/vendor';
 
-// Invoices are a dedicated relational module, not a generic CRM/JSONB workflow
-// record, so — unlike Lead/Prospect/Customer — this table talks to
-// invoiceService (/api/tenant/invoices*) directly rather than reusing
-// CrmRecordTable/crmService. Mirrors SalesOrderTable's search/sort/
-// cursor-pagination UX for visual consistency.
+// Vendors are a dedicated relational module (mirrors salesorder), not a
+// generic CRM/JSONB workflow record, so this table talks to vendorService
+// (/api/tenant/vendors*) directly. Mirrors SalesOrderTable's
+// search/sort/cursor-pagination UX for visual consistency.
 
-type SortField = 'invoiceDate' | 'grandTotal' | 'balanceDue';
+type SortField = 'createdAt' | 'updatedAt' | 'vendorNumber';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
 const SORT_LABELS: Record<SortField, string> = {
-  invoiceDate: 'Invoice Date',
-  grandTotal: 'Amount',
-  balanceDue: 'Balance Due',
+  createdAt: 'Date Created',
+  updatedAt: 'Last Updated',
+  vendorNumber: 'Vendor #',
 };
 
+// Only fields vendors.resolver.go whitelists for ORDER BY (record_number is
+// the built-in alias for vendor_number).
 const SORT_KEY: Record<SortField, string> = {
-  invoiceDate: 'invoice_date',
-  grandTotal: 'grand_total',
-  balanceDue: 'balance_due',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  vendorNumber: 'record_number',
 };
 
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
-
-export function InvoiceTable() {
+export function VendorTable() {
   const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement>(null);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission('invoice', 'update');
+  const canEdit = permissionsLoading || hasPermission('vendor', 'update');
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('invoiceDate');
+  const [sortBy, setSortBy] = useState<SortField>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');
@@ -62,7 +59,7 @@ export function InvoiceTable() {
     return () => clearTimeout(t);
   }, [term]);
 
-  const req: InvoiceSearchRequest = {
+  const req: VendorSearchRequest = {
     search: debounced || undefined,
     sort: [{ field: SORT_KEY[sortBy], dir: sortDir }],
     limit: PAGE_SIZE,
@@ -70,8 +67,8 @@ export function InvoiceTable() {
   };
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['invoices', req],
-    queryFn: () => invoiceService.searchInvoices(req),
+    queryKey: ['vendors', req],
+    queryFn: () => vendorService.searchVendors(req),
     placeholderData: (prev) => prev,
   });
 
@@ -130,7 +127,7 @@ export function InvoiceTable() {
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input
             type="text"
-            placeholder="Search invoice #, customer, PO…"
+            placeholder="Search vendor #, name, email…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
@@ -170,21 +167,20 @@ export function InvoiceTable() {
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">Failed to load invoices. Please try again.</p>
+        <p className="text-xs text-red-500">Failed to load vendors. Please try again.</p>
       )}
 
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[680px] text-left text-xs">
+          <table className="w-full min-w-[640px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Invoice #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor #</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Type</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Invoice Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Balance Due</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
                 {canEdit && (
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
                 )}
@@ -194,58 +190,56 @@ export function InvoiceTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-32" /></td>
                     {canEdit && <td className="px-4 py-3" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
-                records.map((inv) => {
-                  const color = INVOICE_STATUS_COLORS[inv.status] ?? '#a8a29e';
+                records.map((vendor) => {
+                  const TypeIcon = vendor.vendorType === 'Person' ? User : Building2;
+                  const statusColor = VENDOR_STATUS_COLORS[vendor.status] ?? '#a8a29e';
                   return (
-                    <tr key={inv.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                    <tr key={vendor.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
                         <button
                           type="button"
-                          onClick={() => navigate(`/sales/invoice/${inv.id}`)}
+                          onClick={() => navigate(`/purchases/vendor/${vendor.id}`)}
                           className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
-                          {inv.invoiceNumber || '—'}
+                          {vendor.vendorNumber || '—'}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {inv.customer?.name ?? '—'}
+                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[240px]">
+                        {vendor.displayName}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600 whitespace-nowrap">
+                          <TypeIcon className="size-3" />
+                          {vendor.vendorType}
+                        </span>
                       </td>
                       <td className="px-4 py-3.5">
                         <span
                           className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
+                          style={{ backgroundColor: `${statusColor}18` }}
                         >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {inv.status}
+                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} aria-hidden="true" />
+                          {vendor.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
-                        {inv.invoiceDate
-                          ? new Date(inv.invoiceDate).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(inv.grandTotal)}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
-                        {currency(inv.balanceDue)}
+                      <td className="px-4 py-3.5 text-xs text-stone-400 whitespace-nowrap">
+                        {vendor.email || '—'}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">
                           <button
                             type="button"
-                            onClick={() => navigate(`/sales/invoice/${inv.id}/edit`)}
-                            aria-label={`Edit invoice ${inv.invoiceNumber}`}
+                            onClick={() => navigate(`/purchases/vendor/${vendor.id}/edit`)}
+                            aria-label={`Edit vendor ${vendor.displayName}`}
                             className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
                             <Pencil className="size-4" />
@@ -257,21 +251,21 @@ export function InvoiceTable() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6 + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={5 + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No invoices added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first invoice to get started.</p>
+                        <p className="text-sm font-semibold text-stone-700">No vendors added yet.</p>
+                        <p className="text-xs text-stone-400">Create your first vendor to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No invoices match the current search.</p>
+                        <p className="text-sm font-semibold text-stone-700">No vendors match the current search.</p>
                         <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
                       </div>
                     )}
