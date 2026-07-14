@@ -64,7 +64,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
       {expanded && hasChanges && (
         <tr className="bg-stone-50">
           <td colSpan={5} className="px-3 pb-3 pt-1">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {entry.oldValue && <ChangesBlock label="Before" data={entry.oldValue} />}
               {entry.newValue && <ChangesBlock label="After" data={entry.newValue} />}
             </div>

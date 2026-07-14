@@ -3,7 +3,11 @@ import { Plus, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InventoryItemPicker } from './InventoryItemPicker';
 import type { InventoryItem } from '@/services/inventoryService';
-import { EMPTY_LINE_ITEM, calcLineItem, type SOLineItem } from '@/lib/salesOrderForm';
+import { Badge } from '@/components/tenant/ui';
+import {
+  EMPTY_LINE_ITEM, calcLineItem, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
+  type SOLineItem,
+} from '@/lib/salesOrderForm';
 
 const inlineCls =
   'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
@@ -11,18 +15,22 @@ const inlineCls =
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `li-${rowCounter}`; }
 
+// `right: true` marks columns whose body cells render right-aligned
+// (tabular-nums quantities/currency) — the header must match or the
+// label reads misaligned against the numbers underneath it.
 const ITEM_COLS = [
   { label: '#', w: 'w-8' },
   { label: 'Item Name *', w: 'min-w-[130px]' },
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[100px]' },
-  { label: 'Qty', w: 'w-16' },
+  { label: 'Qty', w: 'w-16', right: true },
   { label: 'Units', w: 'w-16' },
-  { label: 'Unit Price', w: 'w-20' },
-  { label: 'Disc %', w: 'w-16' },
-  { label: 'Amount', w: 'w-20' },
-  { label: 'Tax %', w: 'w-16' },
-  { label: 'Total', w: 'w-20' },
+  { label: 'Unit Price', w: 'w-20', right: true },
+  { label: 'Disc %', w: 'w-16', right: true },
+  { label: 'Amount', w: 'w-20', right: true },
+  { label: 'Tax %', w: 'w-16', right: true },
+  { label: 'Total', w: 'w-20', right: true },
+  { label: 'Fulfillment', w: 'w-24' },
   { label: '', w: 'w-8' },
 ];
 
@@ -110,9 +118,9 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
       <div className="overflow-x-auto modal-scrollbar">
         <table className="w-full text-left text-xs">
           <thead className="bg-stone-50 border-b border-stone-200">
-            <tr>
+            <tr className="divide-x divide-stone-200">
               {ITEM_COLS.map((c) => (
-                <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w)}>
+                <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w, c.right && 'text-right')}>
                   {c.label}
                 </th>
               ))}
@@ -121,8 +129,11 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
           <tbody className="divide-y divide-stone-100">
             {items.map((row) =>
               editId === row.id ? (
-                <tr key={row.id} className="bg-brand/5">
+                <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                  <td className="px-2 py-1.5">
+                    <FulfillmentBadge status={row.status} />
+                  </td>
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
@@ -130,7 +141,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                   </td>
                 </tr>
               ) : (
-                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors cursor-pointer group" onClick={() => startEdit(row)}>
+                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors cursor-pointer group divide-x divide-stone-100" onClick={() => startEdit(row)}>
                   <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription}</td>
@@ -142,6 +153,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-700 font-medium">{row.amount ? `$${row.amount}` : '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{row.tax ? `${row.tax}%` : '0%'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.total ? `$${row.total}` : '—'}</td>
+                  <td className="px-2.5 py-2.5"><FulfillmentBadge status={row.status} /></td>
                   <td className="px-2 py-2.5 opacity-0 group-hover:opacity-100">
                     <button type="button" onClick={(e) => { e.stopPropagation(); remove(row.id); }} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
@@ -151,8 +163,9 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
               ),
             )}
             {isAdding && (
-              <tr className="bg-brand/5">
+              <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                <td className="px-2 py-1.5"><FulfillmentBadge status={draft.status} /></td>
                 <td className="px-2 py-1.5" />
               </tr>
             )}
@@ -198,6 +211,16 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
         </button>
       </div>
     </div>
+  );
+}
+
+// A freshly-added, unsaved line has no status yet — it's implicitly "open"
+// (nothing can have been fulfilled before the order is even saved).
+function FulfillmentBadge({ status = 'open' }: { status?: 'open' | 'partial' | 'filled' }) {
+  return (
+    <Badge color={FULFILLMENT_STATUS_COLORS[status]} size="sm">
+      {FULFILLMENT_STATUS_LABELS[status]}
+    </Badge>
   );
 }
 

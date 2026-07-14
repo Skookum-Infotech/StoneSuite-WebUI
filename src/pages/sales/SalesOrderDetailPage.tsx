@@ -12,7 +12,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { SO_STATUS_COLORS } from '@/lib/salesOrderForm';
+import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS } from '@/lib/salesOrderForm';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
@@ -79,14 +79,14 @@ export default function SalesOrderDetailPage() {
       />
 
       {/* Tab bar */}
-      <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150',
+              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
               activeTab === tab.key
                 ? 'border-brand text-stone-950'
                 : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
@@ -106,6 +106,7 @@ export default function SalesOrderDetailPage() {
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Order Date" value={fmtDate(order.orderDate)} />
                   <ReadonlyField label="PO Number" value={order.poNumber} />
+                  <ReadonlyField label="Payment Due Date" value={order.paymentDueDate ? fmtDate(order.paymentDueDate) : undefined} />
                   <ReadonlyField label="Sales Tax %" value={`${order.salesTaxPercent}%`} />
                   {order.memo && <ReadonlyField label="Memo" value={order.memo} full />}
                 </div>
@@ -135,15 +136,25 @@ export default function SalesOrderDetailPage() {
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
               <table className="w-full text-left text-xs">
                 <thead className="bg-stone-50 border-b border-stone-200">
-                  <tr>
-                    {['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'].map((h) => (
-                      <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                  <tr className="divide-x divide-stone-200">
+                    {[
+                      { label: '#' },
+                      { label: 'Item' },
+                      { label: 'SKU' },
+                      { label: 'Qty', right: true },
+                      { label: 'Unit Price', right: true },
+                      { label: 'Disc %', right: true },
+                      { label: 'Tax %', right: true },
+                      { label: 'Total', right: true },
+                      { label: 'Fulfillment' },
+                    ].map((h) => (
+                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {order.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50">
+                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
@@ -154,10 +165,15 @@ export default function SalesOrderDetailPage() {
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
+                      <td className="px-3 py-2.5">
+                        <Badge color={FULFILLMENT_STATUS_COLORS[line.status]} size="sm">
+                          {FULFILLMENT_STATUS_LABELS[line.status]}
+                        </Badge>
+                      </td>
                     </tr>
                   ))}
                   {order.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

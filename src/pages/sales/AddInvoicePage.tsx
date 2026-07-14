@@ -280,7 +280,7 @@ function ItemsSubTab({ items, onUpdate }: { items: InvoiceLineItem[]; onUpdate: 
       <div className="overflow-x-auto modal-scrollbar">
         <table className="w-full text-left text-xs">
           <thead className="bg-stone-50 border-b border-stone-200">
-            <tr>
+            <tr className="divide-x divide-stone-200">
               {ITEM_COLS.map((c) => (
                 <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w)}>
                   {c.label}
@@ -291,7 +291,7 @@ function ItemsSubTab({ items, onUpdate }: { items: InvoiceLineItem[]; onUpdate: 
           <tbody className="divide-y divide-stone-100">
             {items.map((row) =>
               editId === row.id ? (
-                <tr key={row.id} className="bg-brand/5">
+                <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} />
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
@@ -300,7 +300,7 @@ function ItemsSubTab({ items, onUpdate }: { items: InvoiceLineItem[]; onUpdate: 
                   </td>
                 </tr>
               ) : (
-                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors cursor-pointer group" onClick={() => startEdit(row)}>
+                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors cursor-pointer group divide-x divide-stone-100" onClick={() => startEdit(row)}>
                   <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription}</td>
@@ -321,7 +321,7 @@ function ItemsSubTab({ items, onUpdate }: { items: InvoiceLineItem[]; onUpdate: 
               ),
             )}
             {isAdding && (
-              <tr className="bg-brand/5">
+              <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} />
                 <td className="px-2 py-1.5" />
               </tr>
