@@ -105,6 +105,12 @@ const InvoiceListPage = lazyWithRetry(
   () => import("@/pages/sales/InvoiceListPage"),
 );
 const AddInvoicePage = lazyWithRetry(() => import("@/pages/sales/AddInvoicePage"));
+const InvoiceDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/InvoiceDetailPage"),
+);
+const EditInvoicePage = lazyWithRetry(
+  () => import("@/pages/sales/EditInvoicePage"),
+);
 const PaymentListPage = lazyWithRetry(
   () => import("@/pages/sales/PaymentListPage"),
 );
@@ -295,11 +301,35 @@ export const router = createBrowserRouter([
       // Invoices (specific routes must come before the catch-all)
       {
         path: "sales/invoice",
-        element: lazy_(<InvoiceListPage />),
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="read">
+            <InvoiceListPage />
+          </PermissionGuard>,
+        ),
       },
       {
         path: "sales/invoice/new",
-        element: lazy_(<AddInvoicePage />),
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="create">
+            <AddInvoicePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/invoice/:id",
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="read">
+            <InvoiceDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/invoice/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="invoice" action="update">
+            <EditInvoicePage />
+          </PermissionGuard>,
+        ),
       },
 
       // Payments (specific routes must come before the catch-all)
