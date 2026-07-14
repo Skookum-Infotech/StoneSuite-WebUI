@@ -38,6 +38,12 @@ export interface SOFormField {
   showIfFieldFalse?: string;
   /** Textarea row count (only used when type === 'textarea') */
   rows?: number;
+  /** Small helper line rendered under the field (e.g. to explain a derived
+   *  default) */
+  hint?: string;
+  /** Native min/max for type: 'number' fields (e.g. a 0–100 percent field). */
+  min?: number;
+  max?: number;
 }
 
 // ── Form section field definitions ───────────────────────────────────────────
@@ -72,6 +78,8 @@ export const PRIMARY_INFO_FIELDS: SOFormField[] = [
     label: 'Sales Tax %',
     type: 'number',
     placeholder: '0.00',
+    min: 0,
+    max: 100,
   },
   {
     key: 'currency_id',
@@ -152,6 +160,12 @@ export const BILL_TO_FIELDS: SOFormField[] = [
     label: 'Payment Terms',
     type: 'select',
     lookupKey: 'paymentTerms',
+  },
+  {
+    key: 'payment_due_date',
+    label: 'Payment Due Date',
+    type: 'date',
+    hint: 'Leave blank to auto-calculate from payment terms.',
   },
   {
     key: 'price_level',
@@ -299,6 +313,11 @@ export interface SOLineItem {
   /** Selected `lkp_tax_rate` id, when a line uses a named tax rate rather than
    *  the header default. */
   taxRateId?: number | null;
+  /** Fulfillment (AD-9) — response-only, set when this row was loaded from an
+   *  existing order via `fromOrder`. Absent on a freshly-added, unsaved line
+   *  (which is implicitly "open" — nothing has been fulfilled yet). */
+  fulfilledQuantity?: number;
+  status?: 'open' | 'partial' | 'filled';
 }
 
 export const EMPTY_LINE_ITEM: Omit<SOLineItem, 'id' | 'lineNo'> = {
@@ -313,6 +332,18 @@ export const EMPTY_LINE_ITEM: Omit<SOLineItem, 'id' | 'lineNo'> = {
   tax: '0',
   total: '',
 };
+
+/** Clamps a percent field (discount/tax) to [0, 100] as the user types,
+ *  mirroring the backend's range check. Needed because rows in the items
+ *  table commit via a button click, not a native form submit, so an
+ *  `<input min max>` alone never blocks an out-of-range value. */
+export function clampPercent(raw: string): string {
+  if (raw === '') return raw;
+  const n = parseFloat(raw);
+  if (Number.isNaN(n)) return raw;
+  const clamped = Math.min(100, Math.max(0, n));
+  return clamped === n ? raw : String(clamped);
+}
 
 export function calcLineItem(item: Omit<SOLineItem, 'id' | 'lineNo' | 'amount' | 'total'>): { amount: string; total: string } {
   const qty = parseFloat(item.quantity) || 0;
@@ -415,6 +446,23 @@ export const SO_STATUS_COLORS: Record<string, string> = {
   Cancelled: '#ef4444',
 };
 
+// ── Per-line fulfillment status (AD-9 — schema.org orderItemStatus) ──────────
+
+/** Derived server-side from fulfilledQuantity vs quantity; always "open"
+ *  until the fulfillment flow ships (nothing can be allocated yet), but the
+ *  UI renders whatever the backend returns so it's ready when that lands. */
+export const FULFILLMENT_STATUS_LABELS: Record<'open' | 'partial' | 'filled', string> = {
+  open: 'Open',
+  partial: 'Partially Filled',
+  filled: 'Filled',
+};
+
+export const FULFILLMENT_STATUS_COLORS: Record<'open' | 'partial' | 'filled', string> = {
+  open: '#a8a29e',
+  partial: '#f59e0b',
+  filled: '#10b981',
+};
+
 // ── Form defaults ─────────────────────────────────────────────────────────────
 
 export function soDefaults(): Record<string, unknown> {
@@ -447,17 +495,22 @@ function toStr(v: unknown): string {
 
 /** Maps one editable line row to the create/update contract's line shape.
  *  A row with `inventoryItemUuid` set is a catalog line (server snapshots its
- *  sku/name/description/unit/price/tax); otherwise it's free-text and needs
- *  `itemDescription`. */
+ *  sku/name/description/unit/price/tax, ignoring sku/itemName/unitCode/
+ *  taxPercent below); otherwise it's free-text and needs `itemDescription`,
+ *  with sku/itemName/unitCode/taxPercent taken as typed. */
 function toLineInput(item: SOLineItem): SalesOrderLineInput {
   return {
     lineNumber: item.lineNo,
     inventoryItemUuid: item.inventoryItemUuid || undefined,
     description: item.itemDescription || item.itemName || undefined,
+    sku: item.itemSku || undefined,
+    itemName: item.itemName || undefined,
+    unitCode: item.units || undefined,
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
     taxRateId: item.taxRateId ?? undefined,
+    taxPercent: item.taxRateId ? undefined : toNum(item.tax),
   };
 }
 
@@ -477,6 +530,7 @@ export function toCreatePayload(
     customerUuid: toStr(data.customer_uuid),
     poNumber: toStr(data.purchase_doc_num),
     orderDate: toStr(data.date_created),
+    paymentDueDate: toStr(data.payment_due_date) || undefined,
     paymentTermsId: toIntOrNull(data.payment_terms),
     priceLevelId: toIntOrNull(data.price_level),
     currencyId: toIntOrNull(data.currency_id),
@@ -536,6 +590,7 @@ export function fromOrder(order: SalesOrder): {
     sales_doc_num: order.salesOrderNumber,
     purchase_doc_num: order.poNumber ?? '',
     date_created: order.orderDate,
+    payment_due_date: order.paymentDueDate ?? '',
     sales_tax_pct: String(order.salesTaxPercent ?? 0),
     currency_id: idOrEmpty(order.currencyId),
     memo: order.memo ?? '',
@@ -583,6 +638,8 @@ export function fromOrder(order: SalesOrder): {
     tax: String(line.taxPercent),
     total: line.lineTotal.toFixed(2),
     inventoryItemUuid: line.inventoryItemId ?? undefined,
+    fulfilledQuantity: line.fulfilledQuantity,
+    status: line.status,
   }));
 
   return { data, lineItems, customer: { id: order.customer.id, name: order.customer.name } };

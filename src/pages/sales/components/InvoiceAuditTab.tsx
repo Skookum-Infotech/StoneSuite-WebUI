@@ -2,21 +2,21 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/tenant/ui';
-import { salesOrderService } from '@/services/salesOrderService';
+import { invoiceService } from '@/services/invoiceService';
 import type { AuditEntry } from '@/services/crmService';
 
-// Mirrors CrmSubTabsPanel's AuditContent, but reads from
-// salesOrderService.getAudit (/api/tenant/sales-orders/{uuid}/audit) rather
-// than the generic CRM audit endpoint.
-export function SalesOrderAuditTab({ orderId }: { orderId?: string }) {
+// Mirrors SalesOrderAuditTab, but reads from invoiceService.getAudit
+// (/api/tenant/invoices/{uuid}/audit) rather than the generic CRM audit
+// endpoint or the Sales Order one.
+export function InvoiceAuditTab({ invoiceId }: { invoiceId?: string }) {
   const { data: entries = [], isLoading, error } = useQuery({
-    queryKey: ['sales-order-audit', orderId],
-    queryFn: () => salesOrderService.getAudit(orderId!),
-    enabled: Boolean(orderId),
+    queryKey: ['invoice-audit', invoiceId],
+    queryFn: () => invoiceService.getAudit(invoiceId!),
+    enabled: Boolean(invoiceId),
   });
 
-  if (!orderId) {
-    return <p className="py-12 text-center text-sm text-stone-400">Audit trail will be available after saving the order.</p>;
+  if (!invoiceId) {
+    return <p className="py-12 text-center text-sm text-stone-400">Audit trail will be available after saving the invoice.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error) return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
