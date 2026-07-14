@@ -41,6 +41,9 @@ export interface SOFormField {
   /** Small helper line rendered under the field (e.g. to explain a derived
    *  default) */
   hint?: string;
+  /** Native min/max for type: 'number' fields (e.g. a 0–100 percent field). */
+  min?: number;
+  max?: number;
 }
 
 // ── Form section field definitions ───────────────────────────────────────────
@@ -75,6 +78,8 @@ export const PRIMARY_INFO_FIELDS: SOFormField[] = [
     label: 'Sales Tax %',
     type: 'number',
     placeholder: '0.00',
+    min: 0,
+    max: 100,
   },
   {
     key: 'currency_id',
@@ -327,6 +332,18 @@ export const EMPTY_LINE_ITEM: Omit<SOLineItem, 'id' | 'lineNo'> = {
   tax: '0',
   total: '',
 };
+
+/** Clamps a percent field (discount/tax) to [0, 100] as the user types,
+ *  mirroring the backend's range check. Needed because rows in the items
+ *  table commit via a button click, not a native form submit, so an
+ *  `<input min max>` alone never blocks an out-of-range value. */
+export function clampPercent(raw: string): string {
+  if (raw === '') return raw;
+  const n = parseFloat(raw);
+  if (Number.isNaN(n)) return raw;
+  const clamped = Math.min(100, Math.max(0, n));
+  return clamped === n ? raw : String(clamped);
+}
 
 export function calcLineItem(item: Omit<SOLineItem, 'id' | 'lineNo' | 'amount' | 'total'>): { amount: string; total: string } {
   const qty = parseFloat(item.quantity) || 0;

@@ -15,7 +15,7 @@ export function SOField({ field, value, set, lookups, dependsOnValue }: {
    *  the country id a state select filters by). */
   dependsOnValue?: unknown;
 }) {
-  const str = typeof value === 'string' ? value : value === null ? '' : String(value);
+  const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
   const checked = value === true;
 
   if (field.type === 'checkbox') {
@@ -113,6 +113,8 @@ export function SOField({ field, value, set, lookups, dependsOnValue }: {
           onChange={(e) => set(field.key, e.target.value)}
           className={fieldCls}
           placeholder={field.placeholder}
+          min={field.min}
+          max={field.max}
           aria-label={field.label}
         />
         {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}

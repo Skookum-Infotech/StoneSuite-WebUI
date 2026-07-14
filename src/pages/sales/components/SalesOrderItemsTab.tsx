@@ -5,7 +5,7 @@ import { InventoryItemPicker } from './InventoryItemPicker';
 import type { InventoryItem } from '@/services/inventoryService';
 import { Badge } from '@/components/tenant/ui';
 import {
-  EMPTY_LINE_ITEM, calcLineItem, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
+  EMPTY_LINE_ITEM, calcLineItem, clampPercent, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
   type SOLineItem,
 } from '@/lib/salesOrderForm';
 
@@ -40,8 +40,9 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
   const [isAdding, setIsAdding] = useState(false);
 
   const updateDraft = (key: keyof typeof draft, val: string) => {
+    const nextVal = key === 'discount' || key === 'tax' ? clampPercent(val) : val;
     setDraft((prev) => {
-      const next = { ...prev, [key]: val };
+      const next = { ...prev, [key]: nextVal };
       const { amount, total } = calcLineItem(next);
       return { ...next, amount, total };
     });
