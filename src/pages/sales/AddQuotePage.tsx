@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileText, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -24,12 +24,6 @@ export default function AddQuotePage() {
   const fromEstimateId = searchParams.get('fromEstimate') ?? '';
 
   const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(quoteDefaults);
-  const [lineItems, setLineItems] = useState<QuoteLineItem[]>([]);
-  const [customer, setCustomer] = useState<CustomerRef | null>(null);
-  const [prefilled, setPrefilled] = useState(false);
-
-  const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
 
   const { data: sourceEstimate } = useQuery({
     queryKey: ['estimate', fromEstimateId],
@@ -37,19 +31,29 @@ export default function AddQuotePage() {
     enabled: Boolean(fromEstimateId),
   });
 
-  // Prefill exactly once when the source estimate finishes loading — a plain
-  // effect (not derived state) because customer/line items must stay
-  // independently editable afterward, and re-running on every render would
-  // clobber in-progress edits.
-  useEffect(() => {
-    if (sourceEstimate && !prefilled) {
-      const mapped = fromSourceEstimate(sourceEstimate);
-      setData((d) => ({ ...d, ...mapped.data }));
-      setLineItems(mapped.lineItems);
-      setCustomer(mapped.customer);
-      setPrefilled(true);
-    }
-  }, [sourceEstimate, prefilled]);
+  // Prefill is derived, not copied via an effect: once sourceEstimate loads,
+  // `baseData`/`baseLineItems`/`baseCustomer` recompute automatically, and
+  // `local*` (still null/unset) falls through to them. Once the user edits a
+  // field, `local*` takes over and the prefill is no longer consulted — this
+  // mirrors EditQuotePage's localData-shadows-server-state pattern instead of
+  // pushing setState calls into a useEffect body.
+  const prefill = useMemo(
+    () => (sourceEstimate ? fromSourceEstimate(sourceEstimate) : null),
+    [sourceEstimate],
+  );
+  const baseData = useMemo(() => ({ ...quoteDefaults(), ...(prefill?.data ?? {}) }), [prefill]);
+
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
+  const [localLineItems, setLocalLineItems] = useState<QuoteLineItem[] | null>(null);
+  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
+  const [customerTouched, setCustomerTouched] = useState(false);
+
+  const data = localData ?? baseData;
+  const lineItems = useMemo(() => localLineItems ?? prefill?.lineItems ?? [], [localLineItems, prefill]);
+  const customer = customerTouched ? localCustomer : (prefill?.customer ?? null);
+
+  const set = useCallback((key: string, value: unknown) => setLocalData((d) => ({ ...(d ?? baseData), [key]: value })), [baseData]);
+  const setCustomer = useCallback((c: CustomerRef | null) => { setLocalCustomer(c); setCustomerTouched(true); }, []);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -120,7 +124,7 @@ export default function AddQuotePage() {
           data={data}
           set={set}
           lineItems={lineItems}
-          setLineItems={setLineItems}
+          setLineItems={setLocalLineItems}
           customer={customer}
           setCustomer={setCustomer}
           lookups={lookups}
