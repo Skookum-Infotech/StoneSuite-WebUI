@@ -112,6 +112,15 @@ describe('toCreatePayload', () => {
       { lineNumber: 1, inventoryItemUuid: 'inv-1', quantity: 25.5, unitPrice: 42, discountPercent: 5 },
     ])
   })
+
+  it('maps a free-text line item, sending description instead of inventoryItemUuid', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'b', lineNo: 1, itemName: 'Custom labor', quantity: '5', unitPrice: '50', discount: '0', amount: '250.00', total: '270.63' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, description: 'Custom labor', quantity: 5, unitPrice: 50, discountPercent: 0 },
+    ])
+  })
 })
 
 describe('fromQuote', () => {
@@ -230,10 +239,11 @@ describe('fromSourceEstimate', () => {
     expect(customer).toEqual({ id: 'cust-1', name: 'Acme Corp' })
   })
 
-  it('drops free-text estimate lines that have no catalog reference', () => {
+  it('carries free-text estimate lines over as free-text quote lines', () => {
     const { lineItems } = fromSourceEstimate(estimate)
-    expect(lineItems).toHaveLength(1)
-    expect(lineItems[0].inventoryItemUuid).toBe('inv-1')
+    expect(lineItems).toHaveLength(2)
+    expect(lineItems[0]).toMatchObject({ itemName: 'Widget', inventoryItemUuid: 'inv-1' })
+    expect(lineItems[1]).toMatchObject({ itemName: 'Custom labor', inventoryItemUuid: undefined })
   })
 })
 

@@ -4,8 +4,8 @@
 // (types/estimate.ts) — served from `/api/tenant/quotes*`, distinct from the
 // generic WorkflowRecord JSONB CRM router. Unlike Estimate, a Quote's
 // billing/shipping address is a flat string shape (no lkp_state/lkp_country
-// numeric ids) and a line item always references a catalog item (no
-// free-text description line) — see the plan's "Decisions" section for why.
+// numeric ids). A line item is either a catalog pick or free-text, same as
+// Estimate — see QuoteLineInput below.
 import type { FilterClause, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -22,12 +22,16 @@ export interface QuoteAddressInput {
   country?: string;
 }
 
-/** One quoted line. Always references a catalog item — the server snapshots
- *  its sku/name/unit/price. Per-line tax comes from `taxRateId` (a named
- *  `lkp_tax_rate`) or defaults to the header `salesTaxPercent`. */
+/** One quoted line. `inventoryItemUuid` selects a catalog item (server
+ *  snapshots its sku/name/unit/price, ignoring `description` unless the
+ *  catalog item has none); omit it for a free-text line, in which case
+ *  `description` is required and becomes both the line's item name and
+ *  description. Per-line tax comes from `taxRateId` (a named `lkp_tax_rate`)
+ *  or defaults to the header `salesTaxPercent`. */
 export interface QuoteLineInput {
   lineNumber: number;
-  inventoryItemUuid: string;
+  inventoryItemUuid?: string;
+  description?: string;
   quantity: number;
   unitPrice: number;
   discountPercent?: number;

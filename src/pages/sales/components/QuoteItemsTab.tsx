@@ -30,11 +30,10 @@ const ITEM_COLS = [
   { label: '', w: 'w-8' },
 ];
 
-// Mirrors EstimateItemsTab, with one behavioral difference: a Quote line
-// always requires a catalog reference (QuoteLineInput has no free-text
-// `description` field — see quoteForm.ts's QuoteLineItem doc), so Save Line
-// is disabled until the user picks a catalog suggestion, not just types a
-// name.
+// Mirrors EstimateItemsTab — a quote line has no free-text sku/units/tax%
+// input; sku/units are display-only (populated when a catalog item is
+// picked) and tax% always mirrors the header's Sales Tax % (quoteForm.ts's
+// calcLineItem), since the backend has no per-line tax override UI yet.
 export function QuoteItemsTab({ items, onUpdate, headerTaxPercent }: {
   items: QuoteLineItem[];
   onUpdate: (v: QuoteLineItem[]) => void;
@@ -72,17 +71,15 @@ export function QuoteItemsTab({ items, onUpdate, headerTaxPercent }: {
     }));
   };
 
-  const canCommit = Boolean(draft.itemName) && Boolean(draft.inventoryItemUuid);
-
   const commitAdd = () => {
-    if (!canCommit) return;
+    if (!draft.itemName) return;
     onUpdate([...items, { ...draft, id: genId(), lineNo: items.length + 1 }]);
     setDraft(EMPTY_LINE_ITEM);
     setIsAdding(false);
   };
 
   const commitEdit = () => {
-    if (!editId || !canCommit) return;
+    if (!editId) return;
     onUpdate(items.map((r) => r.id === editId ? { ...draft, id: editId, lineNo: r.lineNo } : r));
     setEditId(null);
     setDraft(EMPTY_LINE_ITEM);
@@ -112,7 +109,6 @@ export function QuoteItemsTab({ items, onUpdate, headerTaxPercent }: {
   };
 
   const activeDraft = isAdding || editId !== null;
-  const needsCatalogPick = activeDraft && Boolean(draft.itemName) && !draft.inventoryItemUuid;
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
@@ -175,17 +171,10 @@ export function QuoteItemsTab({ items, onUpdate, headerTaxPercent }: {
         </div>
       )}
 
-      {needsCatalogPick && (
-        <p className="px-4 pt-2 text-2xs text-amber-600">
-          Select a catalog item from the suggestions to add this line — quotes don't support free-text lines.
-        </p>
-      )}
-
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 bg-stone-50/50 px-4 py-3">
         <button
           type="button"
-          disabled={activeDraft && !canCommit}
           onClick={() => {
             if (isAdding) commitAdd();
             else if (editId) commitEdit();

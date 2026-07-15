@@ -234,13 +234,12 @@ export const SALES_INFO_FIELDS: QuoteFormField[] = [
 
 // ── Items sub-tab ─────────────────────────────────────────────────────────────
 
-// Unlike Estimate, a Quote line always references a catalog item — there is
-// no free-text `description` field on QuoteLineInput (see the plan's
-// "Decisions" section, #3). `itemName`/`itemSku`/`units` below are populated
-// only by picking a catalog item; typing without picking leaves the line
-// incomplete and un-savable (enforced in QuoteItemsTab, not here). Per-line
-// tax always follows the header's Sales Tax % (there's no tax-rate picker UI
-// yet), so `total` is computed from the header rate, not a per-line one.
+// A Quote line is either a catalog pick (inventoryItemUuid; server snapshots
+// sku/name/unit) or free text, where `itemName` doubles as the `description`
+// sent to the server — same rule as Estimate (see estimateForm.ts's
+// EstimateLineItem doc). Per-line tax always follows the header's Sales
+// Tax % (there's no tax-rate picker UI yet), so `total` is computed from the
+// header rate, not a per-line one.
 export interface QuoteLineItem {
   id: string;
   lineNo: number;
@@ -250,8 +249,9 @@ export interface QuoteLineItem {
   discount: string;
   amount: string;   // calculated
   total: string;    // calculated, using the header's Sales Tax %
-  /** Catalog reference — required for a line to be committable (see doc
-   *  above). Maps to the create payload's `inventoryItemUuid`. */
+  /** Catalog reference — set when the line was picked from the inventory
+   *  catalog (maps to the create payload's `inventoryItemUuid`). Absent for
+   *  free-text lines. Display-only sku/units below come from the pick. */
   inventoryItemUuid?: string;
   itemSku?: string;
   units?: string;
@@ -365,12 +365,15 @@ function toStr(v: unknown): string {
 }
 
 /** Maps one editable line row to the create/update contract's line shape. A
- *  Quote line always carries `inventoryItemUuid` (QuoteItemsTab won't let a
- *  row commit without one — see QuoteLineItem doc). */
+ *  row with `inventoryItemUuid` set is a catalog line (server snapshots its
+ *  sku/name/unit/price, ignoring `itemName` below unless the catalog item has
+ *  no description); otherwise it's free-text and `itemName` is sent as the
+ *  line's `description` (see QuoteLineItem doc). */
 function toLineInput(item: QuoteLineItem, lineNo: number): QuoteLineInput {
   return {
     lineNumber: lineNo,
-    inventoryItemUuid: item.inventoryItemUuid ?? '',
+    inventoryItemUuid: item.inventoryItemUuid || undefined,
+    description: item.inventoryItemUuid ? undefined : (item.itemName || undefined),
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
@@ -494,10 +497,9 @@ export function fromQuote(quote: Quote): {
  *  — see plan Decision #6). Only header fields with a direct, unambiguous
  *  mapping are carried over (PO number, sales tax %, memo); billing/shipping
  *  is intentionally left blank since Estimate's numeric stateId/countryId
- *  have no direct mapping to Quote's plain-text stateProvince/country. Only
- *  catalog-referenced estimate lines carry over — a Quote line requires
- *  inventoryItemUuid (see QuoteLineItem doc), so a free-text estimate line
- *  is dropped rather than silently saved as an incomplete line. */
+ *  have no direct mapping to Quote's plain-text stateProvince/country. Every
+ *  estimate line carries over, catalog-referenced or free-text — a Quote
+ *  line supports both, same as Estimate (see QuoteLineItem doc). */
 export function fromSourceEstimate(estimate: Estimate): {
   data: Record<string, unknown>;
   lineItems: QuoteLineItem[];
@@ -510,7 +512,6 @@ export function fromSourceEstimate(estimate: Estimate): {
   };
 
   const lineItems: QuoteLineItem[] = estimate.items
-    .filter((line) => Boolean(line.inventoryItemId))
     .map((line, i) => ({
       id: `from-estimate-${i}`,
       lineNo: i + 1,
