@@ -115,6 +115,12 @@ const PaymentListPage = lazyWithRetry(
   () => import("@/pages/sales/PaymentListPage"),
 );
 const AddPaymentPage = lazyWithRetry(() => import("@/pages/sales/AddPaymentPage"));
+const PaymentDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/PaymentDetailPage"),
+);
+const EditPaymentPage = lazyWithRetry(
+  () => import("@/pages/sales/EditPaymentPage"),
+);
 const VendorListPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/VendorListPage"),
 );
@@ -335,11 +341,35 @@ export const router = createBrowserRouter([
       // Payments (specific routes must come before the catch-all)
       {
         path: "sales/payment",
-        element: lazy_(<PaymentListPage />),
+        element: lazy_(
+          <PermissionGuard resource="payment" action="read">
+            <PaymentListPage />
+          </PermissionGuard>,
+        ),
       },
       {
         path: "sales/payment/new",
-        element: lazy_(<AddPaymentPage />),
+        element: lazy_(
+          <PermissionGuard resource="payment" action="create">
+            <AddPaymentPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/payment/:id",
+        element: lazy_(
+          <PermissionGuard resource="payment" action="read">
+            <PaymentDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/payment/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="payment" action="update">
+            <EditPaymentPage />
+          </PermissionGuard>,
+        ),
       },
 
       // Vendors (specific routes must come before the purchases catch-all)
