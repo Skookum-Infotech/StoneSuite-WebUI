@@ -91,6 +91,16 @@ const AccountSettingsPage = lazyWithRetry(
 const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
+const EstimateListPage = lazyWithRetry(
+  () => import("@/pages/sales/EstimateListPage"),
+);
+const AddEstimatePage = lazyWithRetry(() => import("@/pages/sales/AddEstimatePage"));
+const EstimateDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/EstimateDetailPage"),
+);
+const EditEstimatePage = lazyWithRetry(
+  () => import("@/pages/sales/EditEstimatePage"),
+);
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
@@ -266,6 +276,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="customer" action="update">
             <EditCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Estimates (specific routes must come before the catch-all)
+      {
+        path: "sales/estimate",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="read">
+            <EstimateListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/estimate/new",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="create">
+            <AddEstimatePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/estimate/:id",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="read">
+            <EstimateDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/estimate/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="update">
+            <EditEstimatePage />
           </PermissionGuard>,
         ),
       },
