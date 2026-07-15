@@ -101,6 +101,16 @@ const EstimateDetailPage = lazyWithRetry(
 const EditEstimatePage = lazyWithRetry(
   () => import("@/pages/sales/EditEstimatePage"),
 );
+const QuoteListPage = lazyWithRetry(
+  () => import("@/pages/sales/QuoteListPage"),
+);
+const AddQuotePage = lazyWithRetry(() => import("@/pages/sales/AddQuotePage"));
+const QuoteDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/QuoteDetailPage"),
+);
+const EditQuotePage = lazyWithRetry(
+  () => import("@/pages/sales/EditQuotePage"),
+);
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
@@ -310,6 +320,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="estimate" action="update">
             <EditEstimatePage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Quotes (specific routes must come before the catch-all)
+      {
+        path: "sales/quote",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="read">
+            <QuoteListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/quote/new",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="create">
+            <AddQuotePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/quote/:id",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="read">
+            <QuoteDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/quote/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="update">
+            <EditQuotePage />
           </PermissionGuard>,
         ),
       },
