@@ -1,118 +1,28 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, AlertCircle, Loader2, Save } from 'lucide-react';
-import { crmService } from '@/services/crmService';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreditCard, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
+import { paymentService } from '@/services/paymentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { cn } from '@/lib/utils';
-import { ModernSection, ModernFieldShell, FormActionBar } from '@/components/crm/FormPrimitives';
-import {
-  fieldCls, textareaCls, readonlyCls,
-} from '@/components/crm/formUtils';
+import { fieldCls } from '@/components/crm/formUtils';
+import { ModernSection, FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { CustomerPicker } from './components/CustomerPicker';
+import type { CustomerRef } from './components/CustomerPicker';
+import { InvoicePicker } from './components/InvoicePicker';
+import type { InvoiceRef } from './components/InvoicePicker';
+import { PaymentSectionGrid } from './components/PaymentFormFields';
 import {
-  PRIMARY_INFO_FIELDS, CUSTOMER_FIELDS, paymentDefaults, type PaymentFormField,
+  PRIMARY_INFO_FIELDS, paymentDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/paymentForm';
+import type { ApplicationInput } from '@/types/payment';
 
-// ── Page-level tabs ───────────────────────────────────────────────────────────
-
-const PAGE_TABS = [
-  { key: 'details', label: 'Details' },
-  { key: 'audit',   label: 'Audit' },
-  { key: 'files',   label: 'Files' },
-] as const;
-type PageTab = (typeof PAGE_TABS)[number]['key'];
-
-// ── Field renderer ────────────────────────────────────────────────────────────
-
-function PaymentField({ field, value, set }: {
-  field: PaymentFormField;
-  value: unknown;
-  set: (k: string, v: unknown) => void;
-}) {
-  const str = typeof value === 'string' ? value : value === null ? '' : String(value);
-
-  if (field.type === 'readonly') {
-    return (
-      <ModernFieldShell label={field.label}>
-        <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
-        </div>
-      </ModernFieldShell>
-    );
-  }
-
-  if (field.type === 'textarea') {
-    return (
-      <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
-        <ModernFieldShell label={field.label} required={field.required}>
-          <textarea
-            rows={field.rows ?? 3}
-            required={field.required}
-            value={str}
-            onChange={(e) => set(field.key, e.target.value)}
-            className={textareaCls}
-            placeholder={field.placeholder}
-            aria-label={field.label}
-          />
-        </ModernFieldShell>
-      </div>
-    );
-  }
-
-  if (field.type === 'select') {
-    return (
-      <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
-        <ModernFieldShell label={field.label} required={field.required}>
-          <select
-            required={field.required}
-            value={str}
-            onChange={(e) => set(field.key, e.target.value)}
-            className={fieldCls}
-            aria-label={field.label}
-          >
-            {field.options?.map((opt) => (
-              <option key={opt} value={opt}>{opt || '— Select —'}</option>
-            ))}
-          </select>
-        </ModernFieldShell>
-      </div>
-    );
-  }
-
-  return (
-    <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
-      <ModernFieldShell label={field.label} required={field.required}>
-        <input
-          type={field.type ?? 'text'}
-          required={field.required}
-          value={str}
-          onChange={(e) => set(field.key, e.target.value)}
-          className={fieldCls}
-          placeholder={field.placeholder}
-          aria-label={field.label}
-        />
-      </ModernFieldShell>
-    </div>
-  );
+function currency(n: number): string {
+  return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
-
-function PaymentSectionGrid({ fields, data, set }: {
-  fields: PaymentFormField[];
-  data: Record<string, unknown>;
-  set: (k: string, v: unknown) => void;
-}) {
-  return (
-    <div className={cn('grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3')}>
-      {fields.map((f) => (
-        <PaymentField key={f.key} field={f} value={data[f.key]} set={set} />
-      ))}
-    </div>
-  );
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AddPaymentPage() {
   const navigate    = useNavigate();
@@ -121,19 +31,50 @@ export default function AddPaymentPage() {
 
   const [activeTab, setActiveTab] = useState<PageTab>('details');
   const [data, setData]           = useState<Record<string, unknown>>(paymentDefaults);
+  const [customer, setCustomer]   = useState<CustomerRef | null>(null);
+
+  const [applications, setApplications] = useState<ApplicationInput[]>([]);
+  const [appliedInvoiceNumbers, setAppliedInvoiceNumbers] = useState<Record<string, string>>({});
+  const [pendingInvoice, setPendingInvoice] = useState<InvoiceRef | null>(null);
+  const [pendingAmount, setPendingAmount] = useState('');
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
 
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  function addApplication() {
+    if (!pendingInvoice) return;
+    const amount = parseFloat(pendingAmount);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    setApplications((a) => [...a, { invoiceUuid: pendingInvoice.id, amount }]);
+    setAppliedInvoiceNumbers((m) => ({ ...m, [pendingInvoice.id]: pendingInvoice.number }));
+    setPendingInvoice(null);
+    setPendingAmount('');
+  }
+
+  function removeApplication(invoiceUuid: string) {
+    setApplications((a) => a.filter((row) => row.invoiceUuid !== invoiceUuid));
+    setAppliedInvoiceNumbers((m) => {
+      const next = { ...m };
+      delete next[invoiceUuid];
+      return next;
+    });
+  }
+
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () =>
-      crmService.createRecord('payment', {
-        coreFields: data,
-        customFields: {},
-      }),
-    onSuccess: async (record) => {
-      queryClient.invalidateQueries({ queryKey: ['crm-records', 'payment'] });
+    mutationFn: () => {
+      if (!customer) throw new Error('A customer is required.');
+      const payload = { ...toCreatePayload(data, customer.id), applications };
+      return paymentService.createPayment(payload);
+    },
+    onSuccess: async (payment) => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
       if (panelRef.current?.hasStagedFiles()) {
-        try { await panelRef.current.uploadStagedTo(record.id); } catch { /* non-fatal */ }
+        try { await panelRef.current.uploadStagedTo(payment.id); } catch { /* non-fatal */ }
       }
       navigate('/sales/payment');
     },
@@ -195,11 +136,70 @@ export default function AddPaymentPage() {
 
             {activeTab === 'details' && (
               <>
-                <ModernSection title="Payment Details" index={0}>
-                  <PaymentSectionGrid fields={PRIMARY_INFO_FIELDS} data={data} set={set} />
+                <ModernSection title="Customer" index={0}>
+                  <CustomerPicker value={customer} onChange={setCustomer} required />
                 </ModernSection>
-                <ModernSection title="Customer" index={1}>
-                  <PaymentSectionGrid fields={CUSTOMER_FIELDS} data={data} set={set} />
+
+                <ModernSection title="Payment Details" index={1}>
+                  <PaymentSectionGrid fields={PRIMARY_INFO_FIELDS} data={data} set={set} lookups={lookups} />
+                </ModernSection>
+
+                <ModernSection title="Apply to Invoices (optional)" index={2}>
+                  <div className="space-y-3">
+                    {applications.length > 0 && (
+                      <div className="space-y-1.5">
+                        {applications.map((app) => (
+                          <div key={app.invoiceUuid} className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs">
+                            <span className="font-medium text-stone-700">{appliedInvoiceNumbers[app.invoiceUuid]}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="tabular-nums text-stone-600">{currency(app.amount)}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeApplication(app.invoiceUuid)}
+                                aria-label={`Remove application to ${appliedInvoiceNumbers[app.invoiceUuid]}`}
+                                className="rounded p-0.5 text-stone-400 hover:bg-stone-200 hover:text-stone-600 transition-colors"
+                              >
+                                <X className="size-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <div className="flex-1">
+                        <InvoicePicker
+                          customer={customer}
+                          value={pendingInvoice}
+                          onChange={setPendingInvoice}
+                          excludeIds={applications.map((a) => a.invoiceUuid)}
+                        />
+                      </div>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={pendingAmount}
+                        onChange={(e) => setPendingAmount(e.target.value)}
+                        placeholder="Amount"
+                        aria-label="Application amount"
+                        className={`${fieldCls} sm:w-32`}
+                      />
+                      <button
+                        type="button"
+                        onClick={addApplication}
+                        disabled={!pendingInvoice || !(parseFloat(pendingAmount) > 0)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                      >
+                        <Plus className="size-3.5" />
+                        Add
+                      </button>
+                    </div>
+                    {!customer && (
+                      <p className="text-2xs text-stone-400">Select a customer above to apply this payment to their invoices.</p>
+                    )}
+                  </div>
                 </ModernSection>
               </>
             )}
