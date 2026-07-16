@@ -141,6 +141,16 @@ const PaymentDetailPage = lazyWithRetry(
 const EditPaymentPage = lazyWithRetry(
   () => import("@/pages/sales/EditPaymentPage"),
 );
+const CreditMemoListPage = lazyWithRetry(
+  () => import("@/pages/sales/CreditMemoListPage"),
+);
+const AddCreditMemoPage = lazyWithRetry(() => import("@/pages/sales/AddCreditMemoPage"));
+const CreditMemoDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/CreditMemoDetailPage"),
+);
+const EditCreditMemoPage = lazyWithRetry(
+  () => import("@/pages/sales/EditCreditMemoPage"),
+);
 const VendorListPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/VendorListPage"),
 );
@@ -456,6 +466,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="payment" action="update">
             <EditPaymentPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Credit Memos (specific routes must come before the catch-all)
+      {
+        path: "sales/credit_memo",
+        element: lazy_(
+          <PermissionGuard resource="credit_memo" action="read">
+            <CreditMemoListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/credit_memo/new",
+        element: lazy_(
+          <PermissionGuard resource="credit_memo" action="create">
+            <AddCreditMemoPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/credit_memo/:id",
+        element: lazy_(
+          <PermissionGuard resource="credit_memo" action="read">
+            <CreditMemoDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/credit_memo/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="credit_memo" action="update">
+            <EditCreditMemoPage />
           </PermissionGuard>,
         ),
       },
