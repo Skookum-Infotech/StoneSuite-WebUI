@@ -301,6 +301,19 @@ export const sidebarNav: SidebarNavConfig = {
       ],
     },
     {
+      id: 'subscription',
+      label: 'Subscription',
+      entries: [
+        {
+          type: 'link',
+          id: 'subscription',
+          label: 'Plan & Billing',
+          path: '/subscription',
+          icon: CreditCard,
+        },
+      ],
+    },
+    {
       id: 'platform',
       label: 'Platform',
       platformAdminOnly: true,
