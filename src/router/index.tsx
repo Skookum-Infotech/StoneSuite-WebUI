@@ -91,6 +91,9 @@ const AccountSettingsPage = lazyWithRetry(
 const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
+const SubscriptionPage = lazyWithRetry(
+  () => import("@/pages/subscription/SubscriptionPage"),
+);
 const EstimateListPage = lazyWithRetry(
   () => import("@/pages/sales/EstimateListPage"),
 );
@@ -187,6 +190,7 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: lazy_(<DashboardPage />) },
       { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
       { path: "transactions", element: lazy_(<TransactionsPage />) },
+      { path: "subscription", element: lazy_(<SubscriptionPage />) },
 
       // CRM: Prospects
       {
