@@ -91,6 +91,26 @@ const AccountSettingsPage = lazyWithRetry(
 const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
+const EstimateListPage = lazyWithRetry(
+  () => import("@/pages/sales/EstimateListPage"),
+);
+const AddEstimatePage = lazyWithRetry(() => import("@/pages/sales/AddEstimatePage"));
+const EstimateDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/EstimateDetailPage"),
+);
+const EditEstimatePage = lazyWithRetry(
+  () => import("@/pages/sales/EditEstimatePage"),
+);
+const QuoteListPage = lazyWithRetry(
+  () => import("@/pages/sales/QuoteListPage"),
+);
+const AddQuotePage = lazyWithRetry(() => import("@/pages/sales/AddQuotePage"));
+const QuoteDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/QuoteDetailPage"),
+);
+const EditQuotePage = lazyWithRetry(
+  () => import("@/pages/sales/EditQuotePage"),
+);
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
@@ -115,6 +135,12 @@ const PaymentListPage = lazyWithRetry(
   () => import("@/pages/sales/PaymentListPage"),
 );
 const AddPaymentPage = lazyWithRetry(() => import("@/pages/sales/AddPaymentPage"));
+const PaymentDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/PaymentDetailPage"),
+);
+const EditPaymentPage = lazyWithRetry(
+  () => import("@/pages/sales/EditPaymentPage"),
+);
 const VendorListPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/VendorListPage"),
 );
@@ -264,6 +290,74 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Estimates (specific routes must come before the catch-all)
+      {
+        path: "sales/estimate",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="read">
+            <EstimateListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/estimate/new",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="create">
+            <AddEstimatePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/estimate/:id",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="read">
+            <EstimateDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/estimate/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="estimate" action="update">
+            <EditEstimatePage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Quotes (specific routes must come before the catch-all)
+      {
+        path: "sales/quote",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="read">
+            <QuoteListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/quote/new",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="create">
+            <AddQuotePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/quote/:id",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="read">
+            <QuoteDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/quote/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="quote" action="update">
+            <EditQuotePage />
+          </PermissionGuard>,
+        ),
+      },
+
       // Sales Orders (specific routes must come before the catch-all)
       {
         path: "sales/sales_order",
@@ -335,11 +429,35 @@ export const router = createBrowserRouter([
       // Payments (specific routes must come before the catch-all)
       {
         path: "sales/payment",
-        element: lazy_(<PaymentListPage />),
+        element: lazy_(
+          <PermissionGuard resource="payment" action="read">
+            <PaymentListPage />
+          </PermissionGuard>,
+        ),
       },
       {
         path: "sales/payment/new",
-        element: lazy_(<AddPaymentPage />),
+        element: lazy_(
+          <PermissionGuard resource="payment" action="create">
+            <AddPaymentPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/payment/:id",
+        element: lazy_(
+          <PermissionGuard resource="payment" action="read">
+            <PaymentDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/payment/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="payment" action="update">
+            <EditPaymentPage />
+          </PermissionGuard>,
+        ),
       },
 
       // Vendors (specific routes must come before the purchases catch-all)

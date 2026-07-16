@@ -6,41 +6,51 @@ import {
   ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { paymentService } from '@/services/paymentService';
+import { quoteService } from '@/services/quoteService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { PAYMENT_STATUS_COLORS } from '@/lib/paymentForm';
-import type { PaymentSearchRequest } from '@/types/payment';
+import { QUOTE_STATUS_COLORS } from '@/lib/quoteForm';
+import type { QuoteSearchRequest } from '@/types/quote';
 
-// Payments are a dedicated relational module, not a generic CRM/JSONB
-// workflow record, so — like Invoice — this table talks to paymentService
-// (/api/tenant/payments*) directly rather than reusing CrmRecordTable/
-// crmService. Mirrors InvoiceTable's search/sort/cursor-pagination UX.
+// Quotes are a dedicated relational module, not a generic CRM/JSONB workflow
+// record, so — unlike Lead/Prospect/Customer — this table talks to
+// quoteService (/api/tenant/quotes*) directly rather than reusing
+// CrmRecordTable/crmService. Mirrors EstimateTable's search/sort/
+// cursor-pagination UX for visual consistency.
 
-type SortField = 'payment_date' | 'amount' | 'unapplied_amount';
+type SortField = 'quoteDate' | 'grandTotal';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
 const SORT_LABELS: Record<SortField, string> = {
-  payment_date: 'Payment Date',
-  amount: 'Amount',
-  unapplied_amount: 'Unapplied',
+  quoteDate: 'Quote Date',
+  grandTotal: 'Amount',
+};
+
+const SORT_KEY: Record<SortField, string> = {
+  quoteDate: 'quote_date',
+  grandTotal: 'grand_total',
 };
 
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
-export function PaymentTable() {
+function fmtDate(iso?: string): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+}
+
+export function QuoteTable() {
   const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement>(null);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission('payment', 'update');
+  const canEdit = permissionsLoading || hasPermission('quote', 'update');
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('payment_date');
+  const [sortBy, setSortBy] = useState<SortField>('quoteDate');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');
@@ -55,16 +65,16 @@ export function PaymentTable() {
     return () => clearTimeout(t);
   }, [term]);
 
-  const req: PaymentSearchRequest = {
+  const req: QuoteSearchRequest = {
     search: debounced || undefined,
-    sort: [{ field: sortBy, dir: sortDir }],
+    sort: [{ field: SORT_KEY[sortBy], dir: sortDir }],
     limit: PAGE_SIZE,
     cursor: cursor || undefined,
   };
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['payments', req],
-    queryFn: () => paymentService.searchPayments(req),
+    queryKey: ['quotes', req],
+    queryFn: () => quoteService.searchQuotes(req),
     placeholderData: (prev) => prev,
   });
 
@@ -123,7 +133,7 @@ export function PaymentTable() {
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input
             type="text"
-            placeholder="Search payment #, customer, reference…"
+            placeholder="Search quote #, customer, PO…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
@@ -163,7 +173,7 @@ export function PaymentTable() {
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">Failed to load payments. Please try again.</p>
+        <p className="text-xs text-red-500">Failed to load quotes. Please try again.</p>
       )}
 
       {/* Table */}
@@ -172,12 +182,12 @@ export function PaymentTable() {
           <table className="w-full min-w-[680px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment #</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Quote #</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment Date</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Quote Date</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Valid Until</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied</th>
                 {canEdit && (
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
                 )}
@@ -191,27 +201,27 @@ export function PaymentTable() {
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
                     {canEdit && <td className="px-4 py-3" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
-                records.map((p) => {
-                  const color = PAYMENT_STATUS_COLORS[p.status] ?? '#a8a29e';
+                records.map((q) => {
+                  const color = QUOTE_STATUS_COLORS[q.status] ?? '#a8a29e';
                   return (
-                    <tr key={p.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                    <tr key={q.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
                         <button
                           type="button"
-                          onClick={() => navigate(`/sales/payment/${p.id}`)}
+                          onClick={() => navigate(`/sales/quote/${q.id}`)}
                           className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
-                          {p.paymentNumber || '—'}
+                          {q.quoteNumber || '—'}
                         </button>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {p.customer?.name ?? '—'}
+                        {q.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
                         <span
@@ -219,26 +229,24 @@ export function PaymentTable() {
                           style={{ backgroundColor: `${color}18` }}
                         >
                           <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {p.status}
+                          {q.status}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
-                        {p.paymentDate
-                          ? new Date(p.paymentDate).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
-                          : '—'}
+                        {fmtDate(q.quoteDate)}
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                        {fmtDate(q.validUntil)}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(p.amount)}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
-                        {currency(p.unappliedAmount)}
+                        {currency(q.grandTotal)}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">
                           <button
                             type="button"
-                            onClick={() => navigate(`/sales/payment/${p.id}/edit`)}
-                            aria-label={`Edit payment ${p.paymentNumber}`}
+                            onClick={() => navigate(`/sales/quote/${q.id}/edit`)}
+                            aria-label={`Edit quote ${q.quoteNumber}`}
                             className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
                             <Pencil className="size-4" />
@@ -256,15 +264,15 @@ export function PaymentTable() {
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No payments recorded yet.</p>
-                        <p className="text-xs text-stone-400">Record your first payment to get started.</p>
+                        <p className="text-sm font-semibold text-stone-700">No quotes added yet.</p>
+                        <p className="text-xs text-stone-400">Create your first quote to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No payments match the current search.</p>
+                        <p className="text-sm font-semibold text-stone-700">No quotes match the current search.</p>
                         <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
                       </div>
                     )}
