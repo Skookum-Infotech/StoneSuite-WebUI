@@ -154,6 +154,16 @@ const CreditMemoDetailPage = lazyWithRetry(
 const EditCreditMemoPage = lazyWithRetry(
   () => import("@/pages/sales/EditCreditMemoPage"),
 );
+const RefundListPage = lazyWithRetry(
+  () => import("@/pages/sales/RefundListPage"),
+);
+const AddRefundPage = lazyWithRetry(() => import("@/pages/sales/AddRefundPage"));
+const RefundDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/RefundDetailPage"),
+);
+const EditRefundPage = lazyWithRetry(
+  () => import("@/pages/sales/EditRefundPage"),
+);
 const VendorListPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/VendorListPage"),
 );
@@ -504,6 +514,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="credit_memo" action="update">
             <EditCreditMemoPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Refunds (specific routes must come before the catch-all)
+      {
+        path: "sales/refund",
+        element: lazy_(
+          <PermissionGuard resource="refund" action="read">
+            <RefundListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/refund/new",
+        element: lazy_(
+          <PermissionGuard resource="refund" action="create">
+            <AddRefundPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/refund/:id",
+        element: lazy_(
+          <PermissionGuard resource="refund" action="read">
+            <RefundDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/refund/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="refund" action="update">
+            <EditRefundPage />
           </PermissionGuard>,
         ),
       },
