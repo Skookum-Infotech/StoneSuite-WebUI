@@ -16,5 +16,14 @@ export default defineConfig({
     // Falls back to 5173 for local/Docker use; honors PORT so tooling that
     // assigns an alternate port (e.g. when 5173 is already taken) still works.
     port: Number(process.env.PORT) || 5173,
+    // Mirrors the Cloudflare Pages Function at functions/api/[[path]].ts so the
+    // API is same-origin in dev too. Without it the auth_token cookie is
+    // cross-site, the browser drops it, and every refresh logs you out.
+    proxy: {
+      '/api': {
+        target: process.env.VITE_DEV_API_ORIGIN || 'https://stonesuite-backend.fly.dev',
+        changeOrigin: true,
+      },
+    },
   },
 })

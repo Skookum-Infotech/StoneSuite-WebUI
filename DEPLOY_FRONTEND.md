@@ -41,10 +41,25 @@ ls -la dist/
 Edit or create `frontend/.env.production`:
 
 ```
-VITE_API_BASE_URL=https://stonesuite-backend.fly.dev/api
+VITE_API_BASE_URL=/api
 ```
 
-**Important:** Replace `stonesuite-backend.fly.dev` with your actual deployed backend URL.
+**This must stay a relative path — do not point it at the backend URL directly.**
+
+`/api/*` is proxied to the backend by the Pages Function in `functions/api/[[path]].ts`, which keeps
+the API *same-origin* with the app. That is load-bearing for authentication, not a nicety: the
+backend issues `auth_token` as a `SameSite=Lax` cookie, and browsers drop a Lax cookie that arrives
+from a different site. Pointing `VITE_API_BASE_URL` straight at `https://stonesuite-backend.fly.dev`
+makes every API call cross-site, so the session cookie is silently discarded, the JWT survives only
+in memory, and **users get logged out on every page refresh**.
+
+Set the backend origin on the Pages project instead (Settings → Environment variables):
+
+```
+API_ORIGIN=https://stonesuite-backend.fly.dev
+```
+
+It defaults to that URL if unset, so it only needs changing when the backend moves.
 
 ---
 

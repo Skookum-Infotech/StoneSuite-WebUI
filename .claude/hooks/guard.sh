@@ -35,6 +35,17 @@ new_text="$(printf '%s' "$extracted" | sed -n '2,$p')"
 block() { echo "BLOCKED by StoneSuite guard: $1" >&2; exit 2; }
 
 base="$(basename "$file_path")"
+base_lc="$(printf '%s' "$base" | tr '[:upper:]' '[:lower:]')"
+
+# ---- Secrets: never write/edit real env/key/credentials files -------------
+# CLAUDE.md: "Never commit .env, *.key, credentials.json, or secrets." Templates
+# with no real values (committed on purpose) are exempt.
+case "$base_lc" in
+  .env.example|.env.sample|.env.template) : ;;
+  .env|.env.*) block "won't write to '$base' — real env files hold secrets and must never be edited by Claude. Edit it yourself, or use .env.example as the template." ;;
+  *.key) block "won't write to '$base' — key files hold secrets and must never be edited by Claude." ;;
+  *credentials*.json) block "won't write to '$base' — credentials files hold secrets and must never be edited by Claude." ;;
+esac
 
 # ---- Frontend: no 'any', no inline style={{ }} -----------------------------
 if [[ "$base" == *.ts || "$base" == *.tsx ]]; then
