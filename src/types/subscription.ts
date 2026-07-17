@@ -26,9 +26,11 @@ export interface Invoice {
 export type CardBrand = 'Visa' | 'Mastercard' | 'Amex';
 
 export interface PaymentMethod {
+  id: string;
   brand: CardBrand;
   last4: string;
   expiry: string;
+  isDefault: boolean;
 }
 
 export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
@@ -37,4 +39,17 @@ export interface CurrentPlan {
   tier: PlanTier;
   renewalDate: string;
   status: SubscriptionStatus;
+}
+
+export type CancelReason = 'too_expensive' | 'missing_features' | 'switching_tools' | 'other';
+
+export interface BillingContact {
+  name: string;
+  email: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
 }
