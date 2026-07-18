@@ -434,6 +434,20 @@ export const SO_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'CANC', label: 'Cancelled' },
 ];
 
+/** Legal next-moves per status — mirrors the backend salesorder/transitions.go
+ *  `allowedTransitions` (spec §8). Terminal statuses (FILL, CANC) map to an
+ *  empty list. The backend (ValidateTransition) stays authoritative; an illegal
+ *  pick is rejected with 409, so this only keeps the UI from offering one. */
+export const SO_ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  DRFT: ['PAPV', 'CANC'],
+  PAPV: ['APPV', 'DRFT', 'CANC'],
+  APPV: ['OPEN', 'CANC'],
+  OPEN: ['PART', 'FILL', 'CANC'],
+  PART: ['FILL', 'CANC'],
+  FILL: [],
+  CANC: [],
+};
+
 /** Status badge color, keyed by the human label (matches SO_STATUS_CODES'
  *  labels) — shared by the list table and the detail page. */
 export const SO_STATUS_COLORS: Record<string, string> = {

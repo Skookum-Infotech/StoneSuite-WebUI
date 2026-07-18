@@ -313,6 +313,21 @@ export const QUOTE_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'CANC', label: 'Cancelled' },
 ];
 
+/** Legal next-moves per status — mirrors the backend quote/transitions.go
+ *  `allowedTransitions` (spec §7). Terminal statuses (RJCT, EXPR, CANC) map to
+ *  an empty list. The backend (ValidateTransition) stays authoritative; an
+ *  illegal pick is rejected with 409, so this only keeps the UI from offering
+ *  one. */
+export const QUOTE_ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  DRFT: ['PAPV', 'CANC'],
+  PAPV: ['APPV', 'DRFT', 'CANC'],
+  APPV: ['SENT', 'CANC'],
+  SENT: ['RJCT', 'EXPR', 'CANC'],
+  RJCT: [],
+  EXPR: [],
+  CANC: [],
+};
+
 /** Status badge color, keyed by the human label (matches
  *  QUOTE_STATUS_CODES' labels) — shared by the list table, detail page,
  *  and status control. */

@@ -7,7 +7,6 @@ import { crmAdminService } from "@/services/crmAdminService";
 import { userService } from "@/services/tenantServices";
 import { lookupService } from "@/services/lookupService";
 import { apiErrorMessage } from "@/api/tenantClient";
-import { exportCrmRecordToPdf } from "@/lib/crmPdfExport";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
@@ -136,6 +135,7 @@ export default function CustomerDetailPage() {
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
+      const { exportCrmRecordToPdf } = await import("@/lib/crmPdfExport");
       await exportCrmRecordToPdf({
         recordType: "customer",
         title: company,
