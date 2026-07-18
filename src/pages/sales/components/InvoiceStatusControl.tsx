@@ -1,63 +1,31 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { fieldCls } from '@/components/crm/formUtils';
-import { INVOICE_STATUS_CODES } from '@/lib/invoiceForm';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { INVOICE_STATUS_CODES, INVOICE_ALLOWED_TRANSITIONS } from '@/lib/invoiceForm';
+import { StatusSelect } from './StatusSelect';
 
-// Status select for the Invoice Edit page, mirroring SalesOrderStatusControl.
-// Invoice has a small, fixed state machine (spec §7) with no admin-configurable
-// states, so this is a static list rather than a fetched one. The backend
-// (ValidateTransition) is the source of truth for which moves are legal from
-// the current status — an illegal pick is rejected with 409, surfaced as a
-// normal save error.
+// Status select for the Invoice Edit page. Legal moves mirror the backend
+// invoice/transitions.go (spec §7); every move needs the single
+// invoice:transition permission — Invoice has no separate approve action in
+// authz/catalog.go. The backend (ValidateTransition + RBAC) stays the source of
+// truth; this control just shouldn't offer a move it knows would 409 or 403.
 export function InvoiceStatusControl({ value, onChange, disabled }: {
   value: string; // current status code, e.g. "DRFT"
   onChange: (code: string) => void;
   disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  const selected = INVOICE_STATUS_CODES.find((s) => s.code === value);
+  const { hasPermission, isLoading } = useUserPermissions();
+  const guard = () => ({
+    permitted: isLoading || hasPermission('invoice', 'transition'),
+    reason: 'You do not have permission to change status',
+  });
 
   return (
-    <div ref={containerRef} className="relative w-full">
-      <button
-        type="button"
-        aria-label="Select status"
-        aria-expanded={open}
-        onClick={() => !disabled && setOpen((v) => !v)}
-        disabled={disabled}
-        className={`${fieldCls} flex items-center gap-2`}
-      >
-        <span className="flex-1 text-left">{selected?.label ?? value}</span>
-        <ChevronDown className="size-3 shrink-0 text-stone-400" />
-      </button>
-
-      {open && !disabled && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md">
-          {INVOICE_STATUS_CODES.map((s) => (
-            <button
-              key={s.code}
-              type="button"
-              onClick={() => { onChange(s.code); setOpen(false); }}
-              className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-sm transition ${
-                s.code === value ? 'bg-brand/10 font-semibold text-stone-900' : 'text-stone-700 hover:bg-stone-50'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <StatusSelect
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      statuses={INVOICE_STATUS_CODES}
+      allowedTransitions={INVOICE_ALLOWED_TRANSITIONS}
+      guard={guard}
+    />
   );
 }

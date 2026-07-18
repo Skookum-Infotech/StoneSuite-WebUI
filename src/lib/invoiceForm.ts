@@ -378,6 +378,21 @@ export const INVOICE_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'VOID', label: 'Void' },
 ];
 
+/** Legal next-moves per status — mirrors the backend invoice/transitions.go
+ *  `allowedTransitions` (spec §7). Terminal statuses (PAID, VOID) map to an
+ *  empty list. The backend (ValidateTransition) stays authoritative; an illegal
+ *  pick is rejected with 409, so this only keeps the UI from offering one. */
+export const INVOICE_ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  DRFT: ['PAPV', 'VOID'],
+  PAPV: ['APPV', 'DRFT', 'VOID'],
+  APPV: ['SENT', 'VOID'],
+  SENT: ['PART', 'PAID', 'ODUE', 'VOID'],
+  PART: ['PAID', 'ODUE', 'VOID'],
+  ODUE: ['PART', 'PAID', 'VOID'],
+  PAID: [],
+  VOID: [],
+};
+
 /** Status badge color, keyed by the human label (matches INVOICE_STATUS_CODES'
  *  labels) — shared by the list table, detail page, and status control. */
 export const INVOICE_STATUS_COLORS: Record<string, string> = {
