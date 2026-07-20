@@ -19,6 +19,7 @@ function genId() { rowCounter += 1; return `li-${rowCounter}`; }
 const ITEM_COLS = [
   { label: '#', w: 'w-8' },
   { label: 'Item Name *', w: 'min-w-[160px]' },
+  { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
   { label: 'Units', w: 'w-16' },
   { label: 'Qty', w: 'w-16', right: true },
@@ -34,6 +35,8 @@ const ITEM_COLS = [
 // input; sku/units are display-only (populated when a catalog item is
 // picked) and tax% always mirrors the header's Sales Tax % (estimateForm.ts's
 // calcLineItem), since the backend has no per-line tax override UI yet.
+// Description is the exception: it's a real, independently editable field
+// (see EstimateLineItem doc in estimateForm.ts).
 export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
   items: EstimateLineItem[];
   onUpdate: (v: EstimateLineItem[]) => void;
@@ -48,13 +51,14 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
     return { ...next, amount, total };
   };
 
-  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount', val: string) => {
+  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => {
     const nextVal = key === 'discount' ? clampPercent(val) : val;
     setDraft((prev) => recalc({ ...prev, [key]: nextVal }));
   };
 
   // Typing the item name manually detaches the line from any previously
-  // picked catalog item — it becomes (or stays) a free-text line.
+  // picked catalog item — it becomes (or stays) a free-text line. The
+  // description is left untouched — it's independent of the item name.
   const onItemNameText = (text: string) => {
     setDraft((prev) => recalc({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' }));
   };
@@ -65,6 +69,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
     setDraft((prev) => recalc({
       ...prev,
       itemName: item.name,
+      itemDescription: item.description,
       itemSku: item.sku,
       unitPrice: String(item.unitPrice),
       inventoryItemUuid: item.id,
@@ -138,6 +143,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
                 <tr key={row.id} className="hover:bg-stone-50/70 transition-colors cursor-pointer group divide-x divide-stone-100" onClick={() => startEdit(row)}>
                   <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
+                  <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
@@ -208,7 +214,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
 function InlineItemRow({ lineNo, draft, onChange, onItemNameText, onPickItem }: {
   lineNo: number;
   draft: Omit<EstimateLineItem, 'id' | 'lineNo'>;
-  onChange: (key: 'quantity' | 'unitPrice' | 'discount', val: string) => void;
+  onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => void;
   onItemNameText: (text: string) => void;
   onPickItem: (item: InventoryItem) => void;
 }) {
@@ -217,6 +223,9 @@ function InlineItemRow({ lineNo, draft, onChange, onItemNameText, onPickItem }: 
       <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
         <InventoryItemPicker value={draft.itemName} onTextChange={onItemNameText} onPick={onPickItem} className="min-w-[150px]" />
+      </td>
+      <td className="px-2 py-1.5">
+        <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
       <td className="px-2 py-1.5 text-stone-400 font-mono text-2xs">{draft.itemSku || '—'}</td>
       <td className="px-2 py-1.5 text-stone-400 text-2xs">{draft.units || '—'}</td>

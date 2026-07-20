@@ -149,6 +149,7 @@ export default function EstimateDetailPage() {
                     {[
                       { label: '#' },
                       { label: 'Item' },
+                      { label: 'Description' },
                       { label: 'SKU' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -167,6 +168,7 @@ export default function EstimateDetailPage() {
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
+                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -176,7 +178,7 @@ export default function EstimateDetailPage() {
                     </tr>
                   ))}
                   {estimate.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

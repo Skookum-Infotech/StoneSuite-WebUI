@@ -298,16 +298,20 @@ export const SALES_INFO_FIELDS: InvoiceFormField[] = [
 
 // Unlike Sales Order, the Invoice backend has no per-line free-text sku/
 // itemName/unitCode/taxPercent override — a line is either a catalog pick
-// (inventoryItemUuid; server snapshots sku/name/unit) or free text, where
-// `itemName` doubles as the `description` sent to the server (invoice/
-// store_line_resolve.go: "Free-text lines snapshot the caller's description
-// as both the item name and the description"). Per-line tax always follows
-// the header's Sales Tax % (there's no tax-rate picker UI yet), so `total`
-// is computed from the header rate, not a per-line one.
+// (inventoryItemUuid; server snapshots sku/name/unit) or free text. The
+// backend's `description` field is independent of `itemName`: an explicit
+// `itemDescription` is always sent when set (letting a catalog pick's
+// description be overridden, or a free-text line carry detail beyond its
+// name); if left blank on a free-text line, `itemName` is sent as the
+// description instead, since the backend requires one there (see
+// toLineInput). Per-line tax always follows the header's Sales Tax % (no
+// tax-rate picker UI yet), so `total` is computed from the header rate, not
+// a per-line one.
 export interface InvoiceLineItem {
   id: string;
   lineNo: number;
   itemName: string;
+  itemDescription: string;
   quantity: string;
   unitPrice: string;
   discount: string;
@@ -323,6 +327,7 @@ export interface InvoiceLineItem {
 
 export const EMPTY_LINE_ITEM: Omit<InvoiceLineItem, 'id' | 'lineNo'> = {
   itemName: '',
+  itemDescription: '',
   quantity: '',
   unitPrice: '',
   discount: '0',
@@ -444,16 +449,19 @@ function toStr(v: unknown): string {
   return v === null || v === undefined ? '' : String(v);
 }
 
-/** Maps one editable line row to the create/update contract's line shape. A
- *  row with `inventoryItemUuid` set is a catalog line (server snapshots its
- *  sku/name/unit/price, ignoring `itemName` below unless the catalog item has
- *  no description); otherwise it's free-text and `itemName` is sent as the
- *  line's `description` (see InvoiceLineItem doc). */
+/** Maps one editable line row to the create/update contract's line shape. An
+ *  explicit `itemDescription` always wins (overrides a catalog item's own
+ *  description, or supplies detail for a free-text line); otherwise a
+ *  catalog line (`inventoryItemUuid` set) sends no description — the server
+ *  snapshots the catalog item's own — while a free-text line falls back to
+ *  `itemName`, since the backend requires a description there (see
+ *  InvoiceLineItem doc). */
 function toLineInput(item: InvoiceLineItem, lineNo: number): InvoiceLineInput {
   return {
     lineNumber: lineNo,
     inventoryItemUuid: item.inventoryItemUuid || undefined,
-    description: item.inventoryItemUuid ? undefined : (item.itemName || undefined),
+    description: (item.itemDescription || '').trim()
+      || (item.inventoryItemUuid ? undefined : (item.itemName || undefined)),
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
@@ -575,7 +583,14 @@ export function fromInvoice(invoice: Invoice): {
   const lineItems: InvoiceLineItem[] = invoice.items.map((line, i) => ({
     id: `existing-${i}`,
     lineNo: line.lineNumber,
-    itemName: line.itemName,
+    // A line converted from a Quote/Sales Order can carry an empty itemName
+    // (quote/store_create.go's free-text branch doesn't snapshot description
+    // into item_name the way estimate/invoice's own create path does, and
+    // the gap rides the convert chain forward) — fall back to description so
+    // the Edit page doesn't reject the line as having neither a catalog item
+    // nor a name.
+    itemName: line.itemName || line.description,
+    itemDescription: line.description ?? '',
     itemSku: line.sku,
     units: line.unitCode,
     quantity: String(line.quantity),

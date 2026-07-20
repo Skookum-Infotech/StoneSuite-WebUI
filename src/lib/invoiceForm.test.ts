@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { clampPercent, calcLineItem, toCreatePayload, type InvoiceLineItem } from './invoiceForm'
+import { clampPercent, calcLineItem, toCreatePayload, fromInvoice, type InvoiceLineItem } from './invoiceForm'
+import type { Invoice } from '@/types/invoice'
 
 // clampPercent guards the discount % input on the Invoice items table — see
 // InvoiceItemsTab's updateDraft, which applies it on every keystroke since
@@ -60,13 +61,13 @@ describe('toCreatePayload', () => {
   }
 
   const catalogLine: InvoiceLineItem = {
-    id: 'a', lineNo: 1, itemName: 'Widget', itemSku: 'W-1', units: 'ea',
+    id: 'a', lineNo: 1, itemName: 'Widget', itemDescription: '', itemSku: 'W-1', units: 'ea',
     quantity: '2', unitPrice: '10', discount: '0', amount: '20.00', total: '21.60',
     inventoryItemUuid: 'inv-uuid-1',
   }
 
   const freeTextLine: InvoiceLineItem = {
-    id: 'b', lineNo: 2, itemName: 'Custom fabrication',
+    id: 'b', lineNo: 2, itemName: 'Custom fabrication', itemDescription: '',
     quantity: '1', unitPrice: '50', discount: '10', amount: '45.00', total: '48.60',
   }
 
@@ -113,5 +114,128 @@ describe('toCreatePayload', () => {
     expect(payload.invoiceDate).toBe('2026-01-01')
     expect(payload.dueDate).toBe('2026-01-31')
     expect(payload.salesTaxPercent).toBe(8)
+  })
+})
+
+describe('toCreatePayload line item description mapping', () => {
+  const baseData: Record<string, unknown> = { customer_uuid: 'cust-1', ship_same_as_bill: true }
+
+  it('sends no description for a catalog-picked line with no override', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'a', lineNo: 1, itemName: 'Widget', itemDescription: '', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00', inventoryItemUuid: 'inv-1' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, inventoryItemUuid: 'inv-1', quantity: 1, unitPrice: 10, discountPercent: 0 },
+    ])
+  })
+
+  it('sends an explicit itemDescription for a catalog-picked line, overriding the catalog item', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'b', lineNo: 1, itemName: 'Widget', itemDescription: 'Blue widget, medium', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00', inventoryItemUuid: 'inv-1' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, inventoryItemUuid: 'inv-1', description: 'Blue widget, medium', quantity: 1, unitPrice: 10, discountPercent: 0 },
+    ])
+  })
+
+  it('falls back to itemName as the description on a free-text line with no explicit description', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'c', lineNo: 1, itemName: 'Custom labor', itemDescription: '', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, description: 'Custom labor', quantity: 1, unitPrice: 10, discountPercent: 0 },
+    ])
+  })
+
+  it('prefers an explicit itemDescription over itemName for a free-text line', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'd', lineNo: 1, itemName: 'Custom labor', itemDescription: 'Installation and setup', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, description: 'Installation and setup', quantity: 1, unitPrice: 10, discountPercent: 0 },
+    ])
+  })
+
+  it('falls back to itemName when itemDescription is blank/whitespace-only on a free-text line', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'e', lineNo: 1, itemName: 'Custom labor', itemDescription: '   ', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, description: 'Custom labor', quantity: 1, unitPrice: 10, discountPercent: 0 },
+    ])
+  })
+})
+
+// Regression coverage for a converted line whose item_name was never
+// snapshotted (quote/store_create.go's free-text branch drops it, and the
+// gap rides the convert chain to sales order and invoice): fromInvoice must
+// fall back to description for itemName and capture it into itemDescription,
+// or a re-save/status transition sends neither field and the backend rejects
+// it ("each line needs an inventoryItemUuid or a description").
+describe('fromInvoice', () => {
+  const baseInvoice: Invoice = {
+    id: 'inv-1',
+    invoiceNumber: 'INVC-000001',
+    status: 'Draft',
+    statusCode: 'DRFT',
+    customer: { id: 'cust-1', name: 'Acme Corp' },
+    invoiceDate: '2026-07-18',
+    paymentTermsId: null,
+    priceLevelId: null,
+    currencyId: null,
+    exchangeRate: 1,
+    salesTaxPercent: 0,
+    subtotal: 20,
+    discountTotal: 0,
+    taxTotal: 0,
+    shippingCharge: 0,
+    adjustment: 0,
+    grandTotal: 20,
+    amountPaid: 0,
+    balanceDue: 20,
+    shipSameAsBilling: true,
+    billing: {},
+    shipping: {},
+    items: [],
+  }
+
+  it('falls back to description for itemName on a converted line with a blank item_name, and captures the description independently', () => {
+    const invoice: Invoice = {
+      ...baseInvoice,
+      items: [
+        {
+          id: 'line-1', lineNumber: 1, salesOrderItemId: 'so-item-1', sku: '', itemName: '',
+          description: 'FOOTBALL in item section', unitCode: '', quantity: 10, unitPrice: 2,
+          discountPercent: 0, taxPercent: 0, lineSubtotal: 20, lineDiscount: 0, lineTax: 0, lineTotal: 20,
+        },
+      ],
+    }
+    const { lineItems } = fromInvoice(invoice)
+    expect(lineItems).toHaveLength(1)
+    expect(lineItems[0]).toMatchObject({
+      lineNo: 1,
+      itemName: 'FOOTBALL in item section',
+      itemDescription: 'FOOTBALL in item section',
+      inventoryItemUuid: undefined,
+    })
+  })
+
+  it('keeps itemName and itemDescription independent when both are already populated', () => {
+    const invoice: Invoice = {
+      ...baseInvoice,
+      items: [
+        {
+          id: 'line-1', lineNumber: 1, inventoryItemId: 'inv-item-1', sku: 'SKU-1', itemName: 'Widget',
+          description: 'Blue widget, medium', unitCode: 'EA', quantity: 1, unitPrice: 20,
+          discountPercent: 0, taxPercent: 0, lineSubtotal: 20, lineDiscount: 0, lineTax: 0, lineTotal: 20,
+        },
+      ],
+    }
+    const { lineItems } = fromInvoice(invoice)
+    expect(lineItems[0]).toMatchObject({
+      itemName: 'Widget',
+      itemDescription: 'Blue widget, medium',
+      inventoryItemUuid: 'inv-item-1',
+    })
   })
 })
