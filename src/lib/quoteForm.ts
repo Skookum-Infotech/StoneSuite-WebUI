@@ -349,6 +349,12 @@ export const QUOTE_TERMINAL_STATUSES = new Set(['RJCT', 'EXPR', 'CANC']);
  *  shown only when the current status matches this (see plan Decision #4). */
 export const QUOTE_APPROVAL_PENDING_STATUS = 'PAPV';
 
+/** Statuses from which "Convert to Sales Order" is offered — a quote has to
+ *  have cleared internal approval and/or reached the customer before it can
+ *  become a sales order. Hidden on Draft/Pending Approval (not ready) and the
+ *  terminal statuses (dead ends). */
+export const QUOTE_CONVERTIBLE_STATUSES = new Set(['APPV', 'SENT']);
+
 // ── Form defaults ─────────────────────────────────────────────────────────────
 
 export function quoteDefaults(): Record<string, unknown> {

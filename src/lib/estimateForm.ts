@@ -405,6 +405,12 @@ export const ESTIMATE_STATUS_COLORS: Record<string, string> = {
   Cancelled: '#78716c',
 };
 
+/** Statuses from which "Convert to Quote" is offered — an estimate has to
+ *  have cleared internal approval and/or reached the customer before it can
+ *  become a quote. Hidden on Draft/Pending Approval (not ready) and the
+ *  terminal statuses (dead ends). */
+export const ESTIMATE_CONVERTIBLE_STATUSES = new Set(['APPV', 'SENT']);
+
 /** Statuses `estimateService.updateEstimate` rejects edits against
  *  (estimate/store_update.go — "A rejected, expired, or cancelled estimate
  *  cannot be edited."). */

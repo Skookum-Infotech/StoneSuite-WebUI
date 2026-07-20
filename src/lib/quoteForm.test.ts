@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   clampPercent, calcLineItem, toCreatePayload, fromQuote, fromSourceEstimate,
-  QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES,
+  QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES,
 } from './quoteForm'
 import type { Quote } from '@/types/quote'
 import type { Estimate } from '@/types/estimate'
@@ -258,5 +258,19 @@ describe('QUOTE_TERMINAL_STATUSES', () => {
   it('matches every non-terminal code in QUOTE_STATUS_CODES for reference', () => {
     const nonTerminal = QUOTE_STATUS_CODES.map((s) => s.code).filter((c) => !QUOTE_TERMINAL_STATUSES.has(c))
     expect(nonTerminal).toEqual(['DRFT', 'PAPV', 'APPV', 'SENT'])
+  })
+})
+
+describe('QUOTE_CONVERTIBLE_STATUSES', () => {
+  it.each([
+    ['DRFT', false],
+    ['PAPV', false],
+    ['APPV', true],
+    ['SENT', true],
+    ['RJCT', false],
+    ['EXPR', false],
+    ['CANC', false],
+  ])('has(%p) -> %p', (code, expected) => {
+    expect(QUOTE_CONVERTIBLE_STATUSES.has(code)).toBe(expected)
   })
 })

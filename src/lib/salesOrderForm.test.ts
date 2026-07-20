@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { clampPercent } from './salesOrderForm'
+import { clampPercent, SO_CONVERTIBLE_STATUSES } from './salesOrderForm'
 
 // clampPercent guards discount/tax % inputs on the Sales Order items table —
 // see SalesOrderItemsTab's updateDraft, which applies it on every keystroke
@@ -20,5 +20,19 @@ describe('clampPercent', () => {
 
   it('leaves a non-numeric in-progress value untouched', () => {
     expect(clampPercent('-')).toBe('-')
+  })
+})
+
+describe('SO_CONVERTIBLE_STATUSES', () => {
+  it.each([
+    ['DRFT', false],
+    ['PAPV', false],
+    ['APPV', true],
+    ['OPEN', true],
+    ['PART', true],
+    ['FILL', true],
+    ['CANC', false],
+  ])('has(%p) -> %p', (code, expected) => {
+    expect(SO_CONVERTIBLE_STATUSES.has(code)).toBe(expected)
   })
 })

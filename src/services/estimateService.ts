@@ -7,6 +7,7 @@ import type {
   EstimateSearchRequest,
   EstimatePage,
 } from '@/types/estimate';
+import type { Quote } from '@/types/quote';
 
 // Estimate API wrapper. Talks to the dedicated relational module under
 // `/api/tenant/estimates*` (NOT the generic `/api/tenant/crm/*` JSONB router).
@@ -70,4 +71,12 @@ export const estimateService = {
     tenantClient
       .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(`${BASE}/${uuid}/audit`)
       .then((r) => r.data.audit ?? []),
+
+  // Snapshot-copies this estimate into a new Quote (idempotent — replaying
+  // against an already-converted estimate returns the existing Quote with
+  // created: false rather than erroring).
+  convertToQuote: (uuid: string): Promise<{ quote: Quote; created: boolean }> =>
+    tenantClient
+      .post<{ success: boolean; quote: Quote; created: boolean }>(`${BASE}/${uuid}/convert`, {})
+      .then((r) => ({ quote: r.data.quote, created: r.data.created })),
 };
