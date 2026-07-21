@@ -85,7 +85,10 @@ export interface InviteDetails {
 
 // ----- RBAC (Phase 2) --------------------------------------------------------
 
-export type Scope = 'all' | 'team' | 'own';
+// Two-level scope model. The `team` scope was retired backend-side; a legacy
+// grant that still carries it is normalized to `own` in the service layer —
+// see lib/scope.ts.
+export type Scope = 'all' | 'own';
 
 export interface Permission {
   resource: string;

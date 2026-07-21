@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight, UsersRound } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
 
 /**
  * Configuration hub — the place to build/configure the platform, kept
  * separate from the daily workspace. Extensible: add cards here as new
- * builders (SSO, audit, teams) come online.
+ * builders come online.
  */
 const sections = [
   {
@@ -25,6 +25,12 @@ const sections = [
     icon: UsersRound,
     title: 'Users',
     description: 'Invite team members, assign roles, suspend or deactivate accounts, and manage pending invitations.',
+  },
+  {
+    to: '/config/audit',
+    icon: ScrollText,
+    title: 'Audit Log',
+    description: 'Browse who did what across the workspace — every create, update, and status change, newest first.',
   },
 ];
 

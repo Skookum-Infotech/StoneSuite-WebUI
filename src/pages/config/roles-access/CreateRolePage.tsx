@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner, ErrorNote } from "@/components/tenant/ui";
 import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
+import { SCOPES, SCOPE_LABELS, normalizeScope } from "@/lib/scope";
 import type { Grant, Scope } from "@/types/tenant";
 
 // ---------------------------------------------------------------------------
@@ -138,8 +139,15 @@ export default function CreateRolePage() {
   });
   const [selected, setSelected] = useState<Record<string, RowSel>>(() => {
     try {
-      return (
-        JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")?.selected ?? {}
+      const draft: Record<string, RowSel> =
+        JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "null")?.selected ?? {};
+      // A draft saved before the `team` scope was retired would select an
+      // option that no longer exists — coerce it the same way the server does.
+      return Object.fromEntries(
+        Object.entries(draft).map(([rowId, sel]) => [
+          rowId,
+          { ...sel, scope: normalizeScope(sel.scope) },
+        ]),
       );
     } catch {
       return {};
@@ -180,7 +188,7 @@ export default function CreateRolePage() {
     return next;
   }, [actionsByResource, catalogQ.data, rowResourceById, selected]);
 
-  const scopes = catalogQ.data?.scopes ?? (["all", "team", "own"] as Scope[]);
+  const scopes = catalogQ.data?.scopes ?? SCOPES;
 
   function getAvailable(resource: string) {
     return ACTION_ORDER.filter((a) =>
@@ -714,7 +722,7 @@ export default function CreateRolePage() {
                                           >
                                             {scopes.map((s) => (
                                               <option key={s} value={s}>
-                                                {s}
+                                                {SCOPE_LABELS[s]}
                                               </option>
                                             ))}
                                           </select>
