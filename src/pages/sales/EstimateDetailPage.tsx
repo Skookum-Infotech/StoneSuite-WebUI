@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileSpreadsheet, Upload, Pencil } from 'lucide-react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { estimateService } from '@/services/estimateService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -12,7 +12,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { ESTIMATE_STATUS_COLORS } from '@/lib/estimateForm';
+import { ESTIMATE_STATUS_COLORS, ESTIMATE_CONVERTIBLE_STATUSES } from '@/lib/estimateForm';
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 
@@ -42,6 +42,9 @@ export default function EstimateDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('estimate', 'update');
   const canDelete = permissionsLoading || hasPermission('estimate', 'delete');
+  // Convert targets a new Quote, so gate on the Quote module's create
+  // permission (backend checks source estimate:read + target quote:create).
+  const canConvert = permissionsLoading || hasPermission('quote', 'create');
 
   const { data: estimate, isLoading, error } = useQuery({
     queryKey: ['estimate', id],
@@ -57,6 +60,13 @@ export default function EstimateDetailPage() {
       return () => clearLabel(id);
     }
   }, [id, estimate?.estimateNumber, setLabel, clearLabel]);
+
+  // created: false just means a Quote already exists for this estimate
+  // (idempotent replay) — either way, navigate to it.
+  const convert = useMutation({
+    mutationFn: () => estimateService.convertToQuote(id),
+    onSuccess: ({ quote }) => navigate(`/sales/quote/${quote.id}`),
+  });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading estimate…" /></div>;
   if (error || !estimate)
@@ -139,6 +149,7 @@ export default function EstimateDetailPage() {
                     {[
                       { label: '#' },
                       { label: 'Item' },
+                      { label: 'Description' },
                       { label: 'SKU' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -157,6 +168,7 @@ export default function EstimateDetailPage() {
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
+                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -166,7 +178,7 @@ export default function EstimateDetailPage() {
                     </tr>
                   ))}
                   {estimate.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -202,7 +214,21 @@ export default function EstimateDetailPage() {
                   Edit estimate
                 </button>
               )}
+              {canConvert && ESTIMATE_CONVERTIBLE_STATUSES.has(estimate.statusCode) && (
+                <button
+                  type="button"
+                  onClick={() => convert.mutate()}
+                  disabled={convert.isPending}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
+                >
+                  {convert.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />}
+                  Convert to Quote
+                </button>
+              )}
             </div>
+            {convert.isError && (
+              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert estimate.')}</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">

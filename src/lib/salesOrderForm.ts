@@ -460,6 +460,11 @@ export const SO_STATUS_COLORS: Record<string, string> = {
   Cancelled: '#ef4444',
 };
 
+/** Statuses from which "Convert to Invoice" is offered — an order has to be
+ *  approved and confirmed (or further along fulfillment) before it can be
+ *  billed. Hidden on Draft/Pending Approval (not confirmed) and Cancelled. */
+export const SO_CONVERTIBLE_STATUSES = new Set(['APPV', 'OPEN', 'PART', 'FILL']);
+
 // ── Per-line fulfillment status (AD-9 — schema.org orderItemStatus) ──────────
 
 /** Derived server-side from fulfilledQuantity vs quantity; always "open"

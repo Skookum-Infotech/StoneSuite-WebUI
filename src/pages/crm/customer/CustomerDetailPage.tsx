@@ -19,6 +19,7 @@ import {
   FilesContent,
   TransactionsContent,
 } from "@/components/crm/CrmSubTabsPanel";
+import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
@@ -31,6 +32,7 @@ const TABS = [
   { key: "transactions", label: "Transactions" },
   { key: "files", label: "Files" },
   { key: "audit", label: "Audit" },
+  { key: "activity", label: "Activity" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["key"];
@@ -233,6 +235,10 @@ export default function CustomerDetailPage() {
 
           {activeTab === "audit" && (
             <AuditContent recordId={id} workflowKey="customer" />
+          )}
+
+          {activeTab === "activity" && (
+            <ActivityLogPanel recordId={id} workflowKey="customer" />
           )}
 
           <div className="h-6" />

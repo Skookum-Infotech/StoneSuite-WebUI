@@ -298,14 +298,20 @@ export const SALES_INFO_FIELDS: EstimateFormField[] = [
 
 // Unlike Sales Order, the Estimate backend has no per-line free-text sku/
 // itemName/unitCode/taxPercent override — a line is either a catalog pick
-// (inventoryItemUuid; server snapshots sku/name/unit) or free text, where
-// `itemName` doubles as the `description` sent to the server. Per-line tax
-// always follows the header's Sales Tax % (there's no tax-rate picker UI
-// yet), so `total` is computed from the header rate, not a per-line one.
+// (inventoryItemUuid; server snapshots sku/name/unit) or free text. The
+// backend's `description` field is independent of `itemName`: an explicit
+// `itemDescription` is always sent when set (letting a catalog pick's
+// description be overridden, or a free-text line carry detail beyond its
+// name); if left blank on a free-text line, `itemName` is sent as the
+// description instead, since the backend requires one there (see
+// toLineInput). Per-line tax always follows the header's Sales Tax % (no
+// tax-rate picker UI yet), so `total` is computed from the header rate, not
+// a per-line one.
 export interface EstimateLineItem {
   id: string;
   lineNo: number;
   itemName: string;
+  itemDescription: string;
   quantity: string;
   unitPrice: string;
   discount: string;
@@ -321,6 +327,7 @@ export interface EstimateLineItem {
 
 export const EMPTY_LINE_ITEM: Omit<EstimateLineItem, 'id' | 'lineNo'> = {
   itemName: '',
+  itemDescription: '',
   quantity: '',
   unitPrice: '',
   discount: '0',
@@ -405,6 +412,12 @@ export const ESTIMATE_STATUS_COLORS: Record<string, string> = {
   Cancelled: '#78716c',
 };
 
+/** Statuses from which "Convert to Quote" is offered — an estimate has to
+ *  have cleared internal approval and/or reached the customer before it can
+ *  become a quote. Hidden on Draft/Pending Approval (not ready) and the
+ *  terminal statuses (dead ends). */
+export const ESTIMATE_CONVERTIBLE_STATUSES = new Set(['APPV', 'SENT']);
+
 /** Statuses `estimateService.updateEstimate` rejects edits against
  *  (estimate/store_update.go — "A rejected, expired, or cancelled estimate
  *  cannot be edited."). */
@@ -440,16 +453,19 @@ function toStr(v: unknown): string {
   return v === null || v === undefined ? '' : String(v);
 }
 
-/** Maps one editable line row to the create/update contract's line shape. A
- *  row with `inventoryItemUuid` set is a catalog line (server snapshots its
- *  sku/name/unit/price, ignoring `itemName` below unless the catalog item has
- *  no description); otherwise it's free-text and `itemName` is sent as the
- *  line's `description` (see EstimateLineItem doc). */
+/** Maps one editable line row to the create/update contract's line shape. An
+ *  explicit `itemDescription` always wins (overrides a catalog item's own
+ *  description, or supplies detail for a free-text line); otherwise a
+ *  catalog line (`inventoryItemUuid` set) sends no description — the server
+ *  snapshots the catalog item's own — while a free-text line falls back to
+ *  `itemName`, since the backend requires a description there (see
+ *  EstimateLineItem doc). */
 function toLineInput(item: EstimateLineItem, lineNo: number): EstimateLineInput {
   return {
     lineNumber: lineNo,
     inventoryItemUuid: item.inventoryItemUuid || undefined,
-    description: item.inventoryItemUuid ? undefined : (item.itemName || undefined),
+    description: (item.itemDescription || '').trim()
+      || (item.inventoryItemUuid ? undefined : (item.itemName || undefined)),
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
@@ -576,6 +592,7 @@ export function fromEstimate(estimate: Estimate): {
     // with an empty itemName — fall back to description so the Edit page
     // doesn't reject the line as having neither a catalog item nor a name.
     itemName: line.itemName || line.description,
+    itemDescription: line.description ?? '',
     itemSku: line.sku,
     units: line.unitCode,
     quantity: String(line.quantity),
