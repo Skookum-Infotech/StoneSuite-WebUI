@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { ChevronDown, ChevronRight, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { actorLabel, isRawActorId, formatAuditTime, formatDetails, humanizeToken } from '@/lib/auditLog';
+import { actorLabel, isRawActorId, formatAuditTime, formatDetails, resourceLabel, actionLabel } from '@/lib/auditLog';
 import type { AuditEntry } from '@/types/audit';
 
 const COLUMN_COUNT = 6;
@@ -100,9 +100,9 @@ function AuditRow({
           {formatAuditTime(entry.createdAt)}
         </td>
         <td className="px-4 py-3 text-stone-700 font-medium whitespace-nowrap">
-          {humanizeToken(entry.resource)}
+          {resourceLabel(entry.resource)}
         </td>
-        <td className="px-4 py-3 text-stone-500 whitespace-nowrap">{humanizeToken(entry.action)}</td>
+        <td className="px-4 py-3 text-stone-500 whitespace-nowrap">{actionLabel(entry.action)}</td>
         <td
           className={cn(
             'px-4 py-3 whitespace-nowrap',

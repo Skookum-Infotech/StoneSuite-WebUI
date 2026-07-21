@@ -3,32 +3,16 @@ import type { AuditEntry, AuditFilters, AuditQueryParams } from '@/types/audit';
 /** Page size requested from the server. The endpoint caps limit at 100. */
 export const AUDIT_PAGE_SIZE = 25;
 
-/**
- * Action strings the backend writes to `audit_logs`. Used to populate the
- * action filter's suggestions — the input stays free-text because modules may
- * record actions beyond this list.
- */
-export const KNOWN_AUDIT_ACTIONS = [
-  'create',
-  'update',
-  'delete',
-  'transition',
-  'approve',
-  'convert',
-  'apply',
-  'unapply',
-];
-
 /** Label shown when an entry has neither a user nor an employee to credit. */
 export const UNKNOWN_ACTOR_LABEL = 'System';
 
 /**
- * Display labels for the resource filter's suggestions. Mirrors the Resource
- * constants in the backend's authz/catalog.go — audit_logs.resource is always
- * one of these strings. Kept as suggestions (not a closed enum) so the filter
- * still works via free text if a resource is added there before it's added
- * here, and so it needs no extra API call (the permission catalog endpoint
- * requires role:read, which a caller with only audit:read may not have).
+ * Display labels for the resource filter dropdown. Mirrors the Resource
+ * constants in the backend's authz/catalog.go, plus `record_attachment` —
+ * the one audit resource that isn't an RBAC resource (attachment audit rows
+ * are written directly via workflow.LogAudit, not gated per-resource). This
+ * is the full set of values `audit_logs.resource` can hold; keep it in sync
+ * if the backend adds one.
  */
 export const AUDIT_RESOURCES: { value: string; label: string }[] = [
   { value: 'lead', label: 'Lead' },
@@ -40,6 +24,7 @@ export const AUDIT_RESOURCES: { value: string; label: string }[] = [
   { value: 'workflow', label: 'Workflow' },
   { value: 'workflow_config', label: 'Workflow Config' },
   { value: 'sso_config', label: 'SSO Configuration' },
+  { value: 'audit', label: 'Audit' },
   { value: 'estimate', label: 'Estimate' },
   { value: 'quote', label: 'Quote' },
   { value: 'sales_order', label: 'Sales Order' },
@@ -56,16 +41,48 @@ export const AUDIT_RESOURCES: { value: string; label: string }[] = [
   { value: 'vendor_payment', label: 'Vendor Payment' },
   { value: 'vendor_credit', label: 'Vendor Credit' },
   { value: 'expense', label: 'Expense' },
+  { value: 'record_attachment', label: 'Attachment' },
 ];
 
-/** Renders a snake_case resource/action token as Title Case for display. */
+/**
+ * Display labels for the action filter dropdown. Cross-referenced against
+ * every workflow.LogAudit/LogAuditFull call site in the backend (the
+ * per-module *_audit.go files, crm.go, and attachments.go) — this is the
+ * full set of values `audit_logs.action` can hold today.
+ */
+export const AUDIT_ACTIONS: { value: string; label: string }[] = [
+  { value: 'create', label: 'Create' },
+  { value: 'update', label: 'Update' },
+  { value: 'delete', label: 'Delete' },
+  { value: 'transition', label: 'Transition' },
+  { value: 'approve', label: 'Approve' },
+  { value: 'convert', label: 'Convert' },
+  { value: 'apply', label: 'Apply' },
+  { value: 'unapply', label: 'Unapply' },
+  { value: 'payment', label: 'Payment' },
+  { value: 'attachment.upload', label: 'Attachment Upload' },
+  { value: 'attachment.download', label: 'Attachment Download' },
+  { value: 'attachment.delete', label: 'Attachment Delete' },
+];
+
+/** Renders a snake_case or dot.separated resource/action token as Title Case. */
 export function humanizeToken(token: string): string {
   if (!token) return token;
   return token
-    .split('_')
+    .split(/[_.\s]+/)
     .filter(Boolean)
     .map((w) => w[0].toUpperCase() + w.slice(1))
     .join(' ');
+}
+
+/** Display label for a resource value — the curated label, or a humanized fallback. */
+export function resourceLabel(value: string): string {
+  return AUDIT_RESOURCES.find((r) => r.value === value)?.label ?? humanizeToken(value);
+}
+
+/** Display label for an action value — the curated label, or a humanized fallback. */
+export function actionLabel(value: string): string {
+  return AUDIT_ACTIONS.find((a) => a.value === value)?.label ?? humanizeToken(value);
 }
 
 /**

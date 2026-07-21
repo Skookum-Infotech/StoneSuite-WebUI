@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AUDIT_RESOURCES, KNOWN_AUDIT_ACTIONS, hasActiveFilters } from '@/lib/auditLog';
+import { AUDIT_RESOURCES, AUDIT_ACTIONS, hasActiveFilters } from '@/lib/auditLog';
 import type { AuditFilters } from '@/types/audit';
+import { FilterDropdown } from './FilterDropdown';
 
 type ActorOption = { id: string; label: string };
 
@@ -18,67 +19,36 @@ const inputClass =
 
 // All filters are server-side (resource/action/actor/from/to on GET
 // /api/tenant/audit) — there is no client-side narrowing here. Resource,
-// action and actor are free-text inputs backed by a <datalist> of
-// suggestions rather than a strict <select>, so filtering still works for a
-// value the suggestion list doesn't know about (a newer resource/action, or
-// an actor this caller can't resolve to a name — see AUDIT_RESOURCES).
+// action and actor all use FilterDropdown (a custom listbox, not a native
+// <select>) so the closed control always shows a resolved name rather than
+// a raw value, and a long option list (Resource has 26 entries) scrolls with
+// the app's own scrollbar instead of the browser's native popup chrome.
 export function AuditFiltersBar({ filters, actorOptions, onChange, onClear }: Props) {
   return (
     <div className="flex flex-wrap items-end gap-2">
-      <Field label="Resource" htmlFor="audit-filter-resource">
-        <input
-          id="audit-filter-resource"
-          list="audit-resource-options"
-          aria-label="Filter by resource"
-          value={filters.resource}
-          onChange={(e) => onChange({ resource: e.target.value })}
-          placeholder="All resources"
-          className={cn(inputClass, 'sm:w-40')}
-        />
-        <datalist id="audit-resource-options">
-          {AUDIT_RESOURCES.map((r) => (
-            <option key={r.value} value={r.value}>
-              {r.label}
-            </option>
-          ))}
-        </datalist>
-      </Field>
+      <FilterDropdown
+        label="Resource"
+        value={filters.resource}
+        onChange={(v) => onChange({ resource: v })}
+        allLabel="All resources"
+        options={AUDIT_RESOURCES}
+      />
 
-      <Field label="Action" htmlFor="audit-filter-action">
-        <input
-          id="audit-filter-action"
-          list="audit-action-options"
-          aria-label="Filter by action"
-          value={filters.action}
-          onChange={(e) => onChange({ action: e.target.value })}
-          placeholder="All actions"
-          className={cn(inputClass, 'sm:w-36')}
-        />
-        <datalist id="audit-action-options">
-          {KNOWN_AUDIT_ACTIONS.map((a) => (
-            <option key={a} value={a} />
-          ))}
-        </datalist>
-      </Field>
+      <FilterDropdown
+        label="Action"
+        value={filters.action}
+        onChange={(v) => onChange({ action: v })}
+        allLabel="All actions"
+        options={AUDIT_ACTIONS}
+      />
 
-      <Field label="Actor" htmlFor="audit-filter-actor">
-        <input
-          id="audit-filter-actor"
-          list="audit-actor-options"
-          aria-label="Filter by actor"
-          value={filters.actor}
-          onChange={(e) => onChange({ actor: e.target.value })}
-          placeholder="All actors"
-          className={cn(inputClass, 'sm:w-48')}
-        />
-        <datalist id="audit-actor-options">
-          {actorOptions.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.label}
-            </option>
-          ))}
-        </datalist>
-      </Field>
+      <FilterDropdown
+        label="Actor"
+        value={filters.actor}
+        onChange={(v) => onChange({ actor: v })}
+        allLabel="All actors"
+        options={actorOptions.map((u) => ({ value: u.id, label: u.label }))}
+      />
 
       <Field label="From" htmlFor="audit-filter-from">
         <input

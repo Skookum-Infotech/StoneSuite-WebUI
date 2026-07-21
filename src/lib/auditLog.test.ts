@@ -9,6 +9,8 @@ import {
   dayEndRfc3339,
   formatDetails,
   humanizeToken,
+  resourceLabel,
+  actionLabel,
   UNKNOWN_ACTOR_LABEL,
   AUDIT_PAGE_SIZE,
 } from './auditLog'
@@ -143,8 +145,31 @@ describe('humanizeToken', () => {
     ['sales_order', 'Sales Order'],
     ['refund', 'Refund'],
     ['credit_memo', 'Credit Memo'],
+    ['attachment.upload', 'Attachment Upload'],
     ['', ''],
   ])('humanizeToken(%p) -> %p', (input, expected) => {
     expect(humanizeToken(input)).toBe(expected)
+  })
+})
+
+describe('resourceLabel', () => {
+  it('returns the curated label for a known resource', () => {
+    expect(resourceLabel('sales_order')).toBe('Sales Order')
+    expect(resourceLabel('record_attachment')).toBe('Attachment')
+  })
+
+  it('falls back to a humanized token for an unlisted resource', () => {
+    expect(resourceLabel('new_module')).toBe('New Module')
+  })
+})
+
+describe('actionLabel', () => {
+  it('returns the curated label for a known action', () => {
+    expect(actionLabel('unapply')).toBe('Unapply')
+    expect(actionLabel('attachment.download')).toBe('Attachment Download')
+  })
+
+  it('falls back to a humanized token for an unlisted action', () => {
+    expect(actionLabel('reissue')).toBe('Reissue')
   })
 })
