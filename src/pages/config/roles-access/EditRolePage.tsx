@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner, ErrorNote } from "@/components/tenant/ui";
 import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
+import { SCOPES, SCOPE_LABELS } from "@/lib/scope";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import type { Grant, Role, Scope } from "@/types/tenant";
 
@@ -171,7 +172,7 @@ export default function EditRolePage(): React.JSX.Element | null {
           new Map(),
         ),
       )}
-      scopes={catalogQ.data?.scopes ?? (["all", "team", "own"] as Scope[])}
+      scopes={catalogQ.data?.scopes ?? SCOPES}
     />
   );
 }
@@ -669,7 +670,7 @@ function EditRoleInner({
                                         >
                                           {scopes.map((s) => (
                                             <option key={s} value={s}>
-                                              {s}
+                                              {SCOPE_LABELS[s]}
                                             </option>
                                           ))}
                                         </select>

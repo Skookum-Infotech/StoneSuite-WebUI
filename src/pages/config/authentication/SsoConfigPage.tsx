@@ -1,0 +1,247 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { KeyRound, Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { ssoConfigService } from "@/services/ssoConfigService";
+import { apiErrorMessage } from "@/api/tenantClient";
+import { Spinner, ErrorNote, EmptyState, Badge } from "@/components/tenant/ui";
+import { SSO_PROVIDERS, SSO_PROVIDER_LABELS } from "@/lib/ssoConfigForm";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
+import type { SSOConfig, SSOProvider } from "@/types/tenant";
+import { SsoConfigModal } from "./components/SsoConfigModal";
+
+export default function SsoConfigPage(): React.JSX.Element {
+  const qc = useQueryClient();
+  const { hasPermission, isLoading: permsLoading } = useUserPermissions();
+  const canConfigure = permsLoading || hasPermission("sso_config", "configure");
+
+  const configsQ = useQuery({
+    queryKey: ["sso-configs"],
+    queryFn: ssoConfigService.list,
+  });
+  const configs = configsQ.data ?? [];
+
+  const availableProviders: SSOProvider[] = SSO_PROVIDERS.filter(
+    (p) => !configs.some((c) => c.provider === p),
+  );
+
+  const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
+  const [editingConfig, setEditingConfig] = useState<SSOConfig | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SSOConfig | null>(null);
+
+  const del = useMutation({
+    mutationFn: (id: string) => ssoConfigService.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sso-configs"] });
+      setDeleteTarget(null);
+    },
+  });
+
+  function openCreate() {
+    setEditingConfig(null);
+    setModalMode("create");
+  }
+  function openEdit(cfg: SSOConfig) {
+    setEditingConfig(cfg);
+    setModalMode("edit");
+  }
+  function closeModal() {
+    setModalMode(null);
+    setEditingConfig(null);
+  }
+
+  return (
+    <div className="flex flex-1 flex-col min-h-0 bg-stone-50/60">
+      {/* Page header */}
+      <div className="bg-background border-b border-stone-200 px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
+              <KeyRound className="size-5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight text-stone-900">
+                Authentication
+              </h1>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Configure single sign-on providers. This stores connection
+                settings only — sign-in via SSO isn&apos;t available yet.
+              </p>
+            </div>
+          </div>
+          {canConfigure && availableProviders.length > 0 && (
+            <button
+              type="button"
+              onClick={openCreate}
+              aria-label="Add SSO provider"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/80"
+            >
+              <Plus className="size-3.5" />
+              Add provider
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
+        {configsQ.isLoading && (
+          <div className="flex items-center justify-center h-40">
+            <Spinner label="Loading SSO configurations…" />
+          </div>
+        )}
+        {configsQ.isError && (
+          <div className="max-w-lg">
+            <ErrorNote>{apiErrorMessage(configsQ.error)}</ErrorNote>
+          </div>
+        )}
+        {!configsQ.isLoading && !configsQ.isError && configs.length === 0 && (
+          <EmptyState>
+            No SSO providers configured yet.{" "}
+            {canConfigure ? 'Click "Add provider" to set one up.' : ""}
+          </EmptyState>
+        )}
+
+        {configs.length > 0 && (
+          <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto modal-scrollbar">
+              <div style={{ minWidth: "760px" }}>
+                <div
+                  className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 text-2xs font-bold uppercase tracking-widest text-stone-400 select-none"
+                  style={{
+                    gridTemplateColumns:
+                      "minmax(140px,1fr) minmax(160px,1.4fr) minmax(160px,1.6fr) 90px 96px",
+                  }}
+                >
+                  <span>Provider</span>
+                  <span>Client ID</span>
+                  <span>Issuer</span>
+                  <span className="text-center">Enabled</span>
+                  <span />
+                </div>
+
+                {configs.map((cfg, idx) => (
+                  <div
+                    key={cfg.id}
+                    className="grid items-center px-5 py-3 gap-3"
+                    style={{
+                      gridTemplateColumns:
+                        "minmax(140px,1fr) minmax(160px,1.4fr) minmax(160px,1.6fr) 90px 96px",
+                      borderBottom:
+                        idx === configs.length - 1 ? undefined : "1px solid rgb(245 245 244)",
+                    }}
+                  >
+                    <span className="text-xs font-semibold text-stone-800">
+                      {SSO_PROVIDER_LABELS[cfg.provider]}
+                    </span>
+                    <span className="font-mono text-2xs text-stone-500 truncate" title={cfg.clientId}>
+                      {cfg.clientId}
+                    </span>
+                    <span className="text-2xs text-stone-400 truncate" title={cfg.issuer || undefined}>
+                      {cfg.issuer || "—"}
+                    </span>
+                    <span className="flex justify-center">
+                      {cfg.enabled ? (
+                        <Badge color="#16a34a">Enabled</Badge>
+                      ) : (
+                        <Badge>Disabled</Badge>
+                      )}
+                    </span>
+                    <span className="flex items-center justify-end gap-1">
+                      {canConfigure && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(cfg)}
+                            aria-label={`Edit ${SSO_PROVIDER_LABELS[cfg.provider]} configuration`}
+                            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(cfg)}
+                            aria-label={`Delete ${SSO_PROVIDER_LABELS[cfg.provider]} configuration`}
+                            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {modalMode && (
+        <SsoConfigModal
+          mode={modalMode}
+          config={editingConfig}
+          availableProviders={availableProviders}
+          onClose={closeModal}
+        />
+      )}
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-sso-config-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteTarget(null);
+          }}
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-50">
+                <AlertTriangle className="size-4 text-red-500" />
+              </span>
+              <div>
+                <h3 id="delete-sso-config-title" className="text-sm font-bold text-stone-900">
+                  Delete SSO configuration?
+                </h3>
+                <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+                  The{" "}
+                  <span className="font-semibold text-stone-700">
+                    {SSO_PROVIDER_LABELS[deleteTarget.provider]}
+                  </span>{" "}
+                  configuration will be permanently removed. This cannot be
+                  undone.
+                </p>
+                {del.error && (
+                  <div className="mt-2">
+                    <ErrorNote>{apiErrorMessage(del.error)}</ErrorNote>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={del.isPending}
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => del.mutate(deleteTarget.id)}
+                disabled={del.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5" />
+                {del.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

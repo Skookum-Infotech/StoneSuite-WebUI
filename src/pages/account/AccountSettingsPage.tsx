@@ -164,6 +164,7 @@ const RESOURCE_GROUPS = [
       { key: 'role',            label: 'Roles'          },
       { key: 'user',            label: 'Users'          },
       { key: 'workflow_config', label: 'Record Numbers' },
+      { key: 'sso_config',      label: 'SSO Configuration' },
     ],
   },
 ]
@@ -174,7 +175,7 @@ function accessLevel(grants: Grant[], resource: string): { label: string; desc: 
   if (mine.length === 0) return null
 
   const has = (action: string) => mine.some(g => g.action === action || g.action === '*')
-  const scope = mine[0]?.scope === 'own' ? 'your own' : mine[0]?.scope === 'team' ? "your team's" : 'all'
+  const scope = mine[0]?.scope === 'all' ? 'all' : 'your own'
 
   if (has('delete') && has('create') && has('update'))
     return { label: 'Full access',  desc: `Manage ${scope} records`,   style: 'bg-brand/10 text-brand-dark border-brand/30' }

@@ -19,8 +19,9 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { Badge, ErrorNote, EmptyState } from "@/components/tenant/ui";
 import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
+import { SCOPE_LABELS } from "@/lib/scope";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
-import type { Role, WorkspaceUser } from "@/types/tenant";
+import type { Role, Scope, WorkspaceUser } from "@/types/tenant";
 import { AssignUsersModal } from "./components/AssignUsersModal";
 
 // ---------------------------------------------------------------------------
@@ -310,7 +311,7 @@ function RoleDetail({
 
   // resource → action → scope (for quick grant lookup)
   const grantedMap = useMemo(() => {
-    const map = new Map<string, Map<string, string>>();
+    const map = new Map<string, Map<string, Scope>>();
     for (const p of role.permissions) {
       if (!map.has(p.resource)) map.set(p.resource, new Map());
       const resMap = map.get(p.resource);
@@ -612,7 +613,7 @@ function RoleDetail({
                                   <td className="px-4 py-3 text-center">
                                     {scopeVal ? (
                                       <span className="inline-block rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-2xs text-stone-500">
-                                        {scopeVal}
+                                        {SCOPE_LABELS[scopeVal]}
                                       </span>
                                     ) : (
                                       <span className="text-stone-200">—</span>
