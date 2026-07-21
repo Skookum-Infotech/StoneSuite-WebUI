@@ -12,10 +12,9 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { QUOTE_STATUS_COLORS, QUOTE_APPROVAL_PENDING_STATUS } from '@/lib/quoteForm';
+import { QUOTE_STATUS_COLORS, QUOTE_CONVERTIBLE_STATUSES } from '@/lib/quoteForm';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
-import { QuoteApprovalButton } from './components/QuoteApprovalButton';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -43,7 +42,9 @@ export default function QuoteDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('quote', 'update');
   const canDelete = permissionsLoading || hasPermission('quote', 'delete');
-  const canTransition = permissionsLoading || hasPermission('quote', 'transition');
+  // Convert targets a new Sales Order, so gate on the Sales Order module's
+  // create permission (backend checks source quote:read + target sales_order:create).
+  const canConvert = permissionsLoading || hasPermission('sales_order', 'create');
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -60,12 +61,11 @@ export default function QuoteDetailPage() {
     }
   }, [id, quote?.quoteNumber, setLabel, clearLabel]);
 
-  // Placeholder — the backend conversion endpoint's response shape isn't
-  // finalized yet, so this only reports success/failure rather than
-  // navigating to a new Sales Order (plan Decision #5).
+  // created: false just means a Sales Order already exists for this quote
+  // (idempotent replay) — either way, navigate to it.
   const convert = useMutation({
     mutationFn: () => quoteService.convertToSalesOrder(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quote', id] }),
+    onSuccess: ({ salesOrder }) => navigate(`/sales/sales_order/${salesOrder.id}`),
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading quote…" /></div>;
@@ -161,6 +161,7 @@ export default function QuoteDetailPage() {
                     {[
                       { label: '#' },
                       { label: 'Item' },
+                      { label: 'Description' },
                       { label: 'SKU' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -179,6 +180,7 @@ export default function QuoteDetailPage() {
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
+                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -188,7 +190,7 @@ export default function QuoteDetailPage() {
                     </tr>
                   ))}
                   {quote.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -224,7 +226,7 @@ export default function QuoteDetailPage() {
                   Edit quote
                 </button>
               )}
-              {canTransition && (
+              {canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
                 <button
                   type="button"
                   onClick={() => convert.mutate()}
@@ -237,22 +239,9 @@ export default function QuoteDetailPage() {
               )}
             </div>
             {convert.isError && (
-              <p className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert quote.')}</p>
-            )}
-            {convert.isSuccess && (
-              <p className="text-2xs text-emerald-600">Conversion request submitted.</p>
+              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert quote.')}</p>
             )}
           </div>
-
-          {canTransition && quote.statusCode === QUOTE_APPROVAL_PENDING_STATUS && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Approval</p>
-              <QuoteApprovalButton
-                quoteId={id}
-                onApproved={() => queryClient.invalidateQueries({ queryKey: ['quote', id] })}
-              />
-            </div>
-          )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Status</p>

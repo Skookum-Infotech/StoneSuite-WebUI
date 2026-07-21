@@ -8,6 +8,7 @@ import type {
   SalesOrderPage,
   SalesOrderInventoryRow,
 } from '@/types/salesOrder';
+import type { Invoice } from '@/types/invoice';
 
 // Sales Order API wrapper. Talks to the dedicated relational module under
 // `/api/tenant/sales-orders*` (NOT the generic `/api/tenant/crm/*` JSONB
@@ -68,4 +69,12 @@ export const salesOrderService = {
     tenantClient
       .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(`${BASE}/${uuid}/audit`)
       .then((r) => r.data.audit ?? []),
+
+  // Snapshot-copies this order into a new Invoice (idempotent — replaying
+  // against an already-converted order returns the existing Invoice with
+  // created: false rather than erroring).
+  convertToInvoice: (uuid: string): Promise<{ invoice: Invoice; created: boolean }> =>
+    tenantClient
+      .post<{ success: boolean; invoice: Invoice; created: boolean }>(`${BASE}/${uuid}/convert`, {})
+      .then((r) => ({ invoice: r.data.invoice, created: r.data.created })),
 };

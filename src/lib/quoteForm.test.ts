@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   clampPercent, calcLineItem, toCreatePayload, fromQuote, fromSourceEstimate,
-  QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES,
+  QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES,
 } from './quoteForm'
 import type { Quote } from '@/types/quote'
 import type { Estimate } from '@/types/estimate'
@@ -106,7 +106,7 @@ describe('toCreatePayload', () => {
 
   it('maps line items with a 1-based lineNumber, dropping UI-only display fields', () => {
     const payload = toCreatePayload(baseData, [
-      { id: 'a', lineNo: 1, itemName: 'Widget', quantity: '25.5', unitPrice: '42', discount: '5', amount: '1017.79', total: '1101.30', inventoryItemUuid: 'inv-1' },
+      { id: 'a', lineNo: 1, itemName: 'Widget', itemDescription: '', quantity: '25.5', unitPrice: '42', discount: '5', amount: '1017.79', total: '1101.30', inventoryItemUuid: 'inv-1' },
     ])
     expect(payload.items).toEqual([
       { lineNumber: 1, inventoryItemUuid: 'inv-1', quantity: 25.5, unitPrice: 42, discountPercent: 5 },
@@ -115,10 +115,37 @@ describe('toCreatePayload', () => {
 
   it('maps a free-text line item, sending description instead of inventoryItemUuid', () => {
     const payload = toCreatePayload(baseData, [
-      { id: 'b', lineNo: 1, itemName: 'Custom labor', quantity: '5', unitPrice: '50', discount: '0', amount: '250.00', total: '270.63' },
+      { id: 'b', lineNo: 1, itemName: 'Custom labor', itemDescription: '', quantity: '5', unitPrice: '50', discount: '0', amount: '250.00', total: '270.63' },
     ])
     expect(payload.items).toEqual([
       { lineNumber: 1, description: 'Custom labor', quantity: 5, unitPrice: 50, discountPercent: 0 },
+    ])
+  })
+
+  it('sends an explicit itemDescription for a catalog-picked line, overriding the catalog item', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'c', lineNo: 1, itemName: 'Widget', itemDescription: 'Blue widget, medium', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00', inventoryItemUuid: 'inv-1' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, inventoryItemUuid: 'inv-1', description: 'Blue widget, medium', quantity: 1, unitPrice: 10, discountPercent: 0 },
+    ])
+  })
+
+  it('prefers an explicit itemDescription over itemName for a free-text line', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'd', lineNo: 1, itemName: 'Custom labor', itemDescription: 'Installation and setup', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, description: 'Installation and setup', quantity: 1, unitPrice: 10, discountPercent: 0 },
+    ])
+  })
+
+  it('falls back to itemName when itemDescription is blank/whitespace-only on a free-text line', () => {
+    const payload = toCreatePayload(baseData, [
+      { id: 'e', lineNo: 1, itemName: 'Custom labor', itemDescription: '   ', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00' },
+    ])
+    expect(payload.items).toEqual([
+      { lineNumber: 1, description: 'Custom labor', quantity: 1, unitPrice: 10, discountPercent: 0 },
     ])
   })
 })
@@ -258,5 +285,19 @@ describe('QUOTE_TERMINAL_STATUSES', () => {
   it('matches every non-terminal code in QUOTE_STATUS_CODES for reference', () => {
     const nonTerminal = QUOTE_STATUS_CODES.map((s) => s.code).filter((c) => !QUOTE_TERMINAL_STATUSES.has(c))
     expect(nonTerminal).toEqual(['DRFT', 'PAPV', 'APPV', 'SENT'])
+  })
+})
+
+describe('QUOTE_CONVERTIBLE_STATUSES', () => {
+  it.each([
+    ['DRFT', false],
+    ['PAPV', false],
+    ['APPV', true],
+    ['SENT', true],
+    ['RJCT', false],
+    ['EXPR', false],
+    ['CANC', false],
+  ])('has(%p) -> %p', (code, expected) => {
+    expect(QUOTE_CONVERTIBLE_STATUSES.has(code)).toBe(expected)
   })
 })

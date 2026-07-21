@@ -18,6 +18,7 @@ import {
   AuditContent,
   FilesContent,
 } from "@/components/crm/CrmSubTabsPanel";
+import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
@@ -29,6 +30,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "files", label: "Files" },
   { key: "audit", label: "Audit" },
+  { key: "activity", label: "Activity" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["key"];
@@ -221,6 +223,10 @@ export default function ProspectViewPage() {
 
           {activeTab === "audit" && (
             <AuditContent recordId={id} workflowKey="prospect" />
+          )}
+
+          {activeTab === "activity" && (
+            <ActivityLogPanel recordId={id} workflowKey="prospect" />
           )}
 
           <div className="h-6" />

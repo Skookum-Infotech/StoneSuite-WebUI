@@ -11,11 +11,10 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import { QuoteStatusControl } from './components/QuoteStatusControl';
-import { QuoteApprovalButton } from './components/QuoteApprovalButton';
 import type { CustomerRef } from './components/CustomerPicker';
 import {
   fromQuote, toCreatePayload, PAGE_TABS, type PageTab,
-  type QuoteLineItem, QUOTE_TERMINAL_STATUSES, QUOTE_APPROVAL_PENDING_STATUS,
+  type QuoteLineItem, QUOTE_TERMINAL_STATUSES,
 } from '@/lib/quoteForm';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
@@ -199,16 +198,6 @@ export default function EditQuotePage() {
               disabled={transition.isPending}
             />
           )}
-          approvalControl={statusCode === QUOTE_APPROVAL_PENDING_STATUS ? (
-            <QuoteApprovalButton
-              quoteId={id}
-              onApproved={(updated) => {
-                setLocalStatusCode(updated.statusCode);
-                queryClient.invalidateQueries({ queryKey: ['quote', id] });
-                queryClient.invalidateQueries({ queryKey: ['quotes'] });
-              }}
-            />
-          ) : undefined}
           sourceEstimate={quote.estimate ? { id: quote.estimate.id, number: quote.estimate.number } : null}
         />
 

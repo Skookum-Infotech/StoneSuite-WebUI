@@ -84,8 +84,8 @@ export interface InvoiceCustomerRef {
   name: string;
 }
 
-/** Nullable lineage back to the originating Sales Order — read-only in this
- *  pass; there is no frontend or backend "convert to invoice" flow yet. */
+/** Nullable lineage back to the originating Sales Order, set when this
+ *  invoice was created via SalesOrder "Convert to Invoice". */
 export interface InvoiceSalesOrderRef {
   id: string;
   number: string;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil } from 'lucide-react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { salesOrderService } from '@/services/salesOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -12,7 +12,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS } from '@/lib/salesOrderForm';
+import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES } from '@/lib/salesOrderForm';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
@@ -44,6 +44,9 @@ export default function SalesOrderDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('sales_order', 'update');
   const canDelete = permissionsLoading || hasPermission('sales_order', 'delete');
+  // Convert targets a new Invoice, so gate on the Invoice module's create
+  // permission (backend checks source sales_order:read + target invoice:create).
+  const canConvert = permissionsLoading || hasPermission('invoice', 'create');
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['sales-order', id],
@@ -59,6 +62,13 @@ export default function SalesOrderDetailPage() {
       return () => clearLabel(id);
     }
   }, [id, order?.salesOrderNumber, setLabel, clearLabel]);
+
+  // created: false just means an Invoice already exists for this order
+  // (idempotent replay) — either way, navigate to it.
+  const convert = useMutation({
+    mutationFn: () => salesOrderService.convertToInvoice(id),
+    onSuccess: ({ invoice }) => navigate(`/sales/invoice/${invoice.id}`),
+  });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
   if (error || !order)
@@ -210,7 +220,21 @@ export default function SalesOrderDetailPage() {
                   Edit sales order
                 </button>
               )}
+              {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+                <button
+                  type="button"
+                  onClick={() => convert.mutate()}
+                  disabled={convert.isPending}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
+                >
+                  {convert.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />}
+                  Convert to Invoice
+                </button>
+              )}
             </div>
+            {convert.isError && (
+              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert sales order.')}</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
