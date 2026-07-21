@@ -1,10 +1,12 @@
 import { tenantClient } from '@/api/tenantClient';
+import { normalizeScope, normalizeScopeList } from '@/lib/scope';
 import type {
   Tenant,
   TenantInvite,
   AsyncJob,
   CreateTenantResult,
   CatalogResponse,
+  Permission,
   Role,
   Grant,
   Workflow,
@@ -12,7 +14,6 @@ import type {
   WorkflowRecord,
   WorkflowNumberingConfig,
   FieldDefinition,
-  Scope,
   OnboardingApplyDetails,
   WorkspaceUser,
   UserInvite,
@@ -94,10 +95,41 @@ export const platformService = {
 
 // ----- RBAC (Phase 2) --------------------------------------------------------
 
+// Scope arrives as a bare string: a tenant provisioned before the `team` scope
+// was retired can still have `scope = 'team'` rows in role_permissions. This is
+// the single choke point that maps those onto the two-level model, so no page
+// has to know the legacy value ever existed.
+interface GrantWire {
+  resource: string;
+  action: string;
+  scope: string;
+}
+
+function toGrant(g: GrantWire): Grant {
+  return { resource: g.resource, action: g.action, scope: normalizeScope(g.scope) };
+}
+
+type RoleWire = Omit<Role, 'permissions'> & { permissions: GrantWire[] | null };
+
+function toRole(r: RoleWire): Role {
+  return { ...r, permissions: (r.permissions ?? []).map(toGrant) };
+}
+
 export const rbacService = {
-  catalog: () => tenantClient.get<CatalogResponse>('/tenant/permissions/catalog').then((r) => r.data),
+  catalog: (): Promise<CatalogResponse> =>
+    tenantClient
+      .get<{ success: boolean; permissions: Permission[] | null; scopes: string[] | null }>(
+        '/tenant/permissions/catalog',
+      )
+      .then((r) => ({
+        success: r.data.success,
+        permissions: r.data.permissions ?? [],
+        scopes: normalizeScopeList(r.data.scopes),
+      })),
   listRoles: () =>
-    tenantClient.get<{ success: boolean; roles: Role[] }>('/tenant/roles').then((r) => r.data.roles),
+    tenantClient
+      .get<{ success: boolean; roles: RoleWire[] | null }>('/tenant/roles')
+      .then((r) => (r.data.roles ?? []).map(toRole)),
   createRole: (key: string, name: string, description: string, permissions: Grant[]) =>
     tenantClient
       .post('/tenant/roles', { key, name, description, permissions })
@@ -112,8 +144,13 @@ export const rbacService = {
   // for which role, if any, the switch-role flow last narrowed to.
   myPermissions: () =>
     tenantClient
-      .get<{ success: boolean; grants: Grant[]; activeRoleId: string }>('/tenant/users/me/permissions')
-      .then((r) => ({ grants: r.data.grants ?? [], activeRoleId: r.data.activeRoleId ?? '' })),
+      .get<{ success: boolean; grants: GrantWire[] | null; activeRoleId: string }>(
+        '/tenant/users/me/permissions',
+      )
+      .then((r) => ({
+        grants: (r.data.grants ?? []).map(toGrant),
+        activeRoleId: r.data.activeRoleId ?? '',
+      })),
   // Sets (or clears, when roleId is '') which one of the caller's assigned
   // roles is enforced server-side. Returns a freshly-signed token — the
   // caller must persist it, since the old token still carries the previous
@@ -198,10 +235,14 @@ export const workflowService = {
 
   listRecords: (workflowId: string) =>
     tenantClient
-      .get<{ success: boolean; scope: Scope; records: WorkflowRecord[] }>(
+      .get<{ success: boolean; scope: string; records: WorkflowRecord[] | null }>(
         `/tenant/workflows/${workflowId}/records`,
       )
-      .then((r) => r.data),
+      .then((r) => ({
+        success: r.data.success,
+        scope: normalizeScope(r.data.scope),
+        records: r.data.records ?? [],
+      })),
   getRecord: (recordId: string) =>
     tenantClient
       .get<{ success: boolean; record: WorkflowRecord }>(`/tenant/records/${recordId}`)
