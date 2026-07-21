@@ -238,6 +238,45 @@ export interface WorkflowNumberingConfig {
   nextNumber: number;
 }
 
+// ── SSO configuration (Configuration → Authentication) ───────────────────────
+// Configuration only — no login flow yet. client_secret is write-only and
+// never appears on SSOConfig (the read model).
+
+export type SSOProvider = 'entra' | 'cognito' | 'okta';
+
+export interface SSOConfig {
+  id: string;
+  tenantId: string;
+  provider: SSOProvider;
+  clientId: string;
+  issuer: string;
+  redirectUri: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SSOConfigCreatePayload {
+  provider: SSOProvider;
+  clientId: string;
+  clientSecret: string;
+  issuer?: string;
+  redirectUri?: string;
+  enabled: boolean;
+}
+
+// Full-replace on PUT: provider/clientId are re-sent every time. clientSecret
+// omitted (or empty) keeps the stored value — the server never returns it, so
+// there is nothing to prefill and no way to tell client-side whether it's set.
+export interface SSOConfigUpdatePayload {
+  provider: SSOProvider;
+  clientId: string;
+  clientSecret?: string;
+  issuer?: string;
+  redirectUri?: string;
+  enabled: boolean;
+}
+
 export interface StatusInfo {
   stateId: string;
   stateKey: string;

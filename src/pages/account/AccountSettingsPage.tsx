@@ -164,6 +164,7 @@ const RESOURCE_GROUPS = [
       { key: 'role',            label: 'Roles'          },
       { key: 'user',            label: 'Users'          },
       { key: 'workflow_config', label: 'Record Numbers' },
+      { key: 'sso_config',      label: 'SSO Configuration' },
     ],
   },
 ]
