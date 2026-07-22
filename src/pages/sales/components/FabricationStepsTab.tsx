@@ -100,7 +100,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                       <select
                         value={draft.status}
                         onChange={(e) => setDraft(step.code, { status: e.target.value })}
-                        className={cn(fieldCls, 'h-8 w-36')}
+                        className={cn(fieldCls, 'h-8 py-1 w-36')}
                         aria-label={`Status for ${rowLabel}`}
                       >
                         {STEP_STATUS_OPTIONS.map((opt) => (
@@ -118,7 +118,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                         value={draft.notes}
                         onChange={(e) => setDraft(step.code, { notes: e.target.value })}
                         placeholder={draft.status === 'skipped' ? 'Required — why was this skipped?' : 'Optional note'}
-                        className={cn(fieldCls, 'h-8')}
+                        className={cn(fieldCls, 'h-8 py-1')}
                         aria-label={`Notes for ${rowLabel}`}
                       />
                     ) : (

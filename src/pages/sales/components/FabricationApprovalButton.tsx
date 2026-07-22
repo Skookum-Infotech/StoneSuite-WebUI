@@ -26,7 +26,7 @@ export function FabricationApprovalButton({ jobId, onApproved }: {
         type="button"
         onClick={() => approve.mutate()}
         disabled={approve.isPending}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all"
+        className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] bg-emerald-600 px-3.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all"
       >
         {approve.isPending ? <Loader2 className="size-3 animate-spin" /> : <CheckCircle2 className="size-3" />}
         {approve.isPending ? 'Approving…' : 'Approve'}

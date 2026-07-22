@@ -100,8 +100,12 @@ export function FabricationJobFormBody({
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>Order Received</div>
                     )}
                   </ModernFieldShell>
-                  <div className="flex items-end gap-2">{holdResumeControl}</div>
-                  {approvalControl && <div className="flex items-end gap-2">{approvalControl}</div>}
+                  {holdResumeControl && (
+                    <ModernFieldShell label="Hold / Resume">{holdResumeControl}</ModernFieldShell>
+                  )}
+                  {approvalControl && (
+                    <ModernFieldShell label="Approval">{approvalControl}</ModernFieldShell>
+                  )}
                 </div>
               </ModernSection>
 

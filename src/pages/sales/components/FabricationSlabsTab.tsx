@@ -64,14 +64,14 @@ export function FabricationSlabsTab({ jobId, pieces, canAllocate }: {
               value={slabUuid}
               onChange={(e) => setSlabUuid(e.target.value)}
               placeholder="Slab UUID (from the inventory slab record)"
-              className={cn(fieldCls, 'h-8 flex-1 min-w-[220px]')}
+              className={cn(fieldCls, 'h-8 py-1 flex-1 min-w-[220px]')}
               aria-label="Slab UUID"
             />
             {pieces.length > 0 && (
               <select
                 value={pieceUuid}
                 onChange={(e) => setPieceUuid(e.target.value)}
-                className={cn(fieldCls, 'h-8 w-44')}
+                className={cn(fieldCls, 'h-8 py-1 w-44')}
                 aria-label="Piece to allocate to"
               >
                 <option value="">— Whole job —</option>

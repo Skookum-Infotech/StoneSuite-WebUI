@@ -31,7 +31,7 @@ export function FabricationHoldResumeControl({ job, disabled, onChanged }: {
           type="button"
           onClick={() => resume.mutate()}
           disabled={disabled || resume.isPending}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50 transition-all"
+          className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] border border-stone-200 bg-white px-3.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50 transition-all"
         >
           {resume.isPending ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
           {resume.isPending ? 'Resuming…' : 'Resume Job'}
@@ -51,7 +51,7 @@ export function FabricationHoldResumeControl({ job, disabled, onChanged }: {
         type="button"
         onClick={() => hold.mutate()}
         disabled={disabled || hold.isPending}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50 transition-all"
+        className="inline-flex w-full h-10 items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50 transition-all"
       >
         {hold.isPending ? <Loader2 className="size-3 animate-spin" /> : <Pause className="size-3" />}
         {hold.isPending ? 'Placing on hold…' : 'Hold Job'}

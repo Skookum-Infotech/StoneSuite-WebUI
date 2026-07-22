@@ -232,7 +232,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                           <select
                             value={draft.disposition}
                             onChange={(e) => updateDraft(slab.id, { disposition: e.target.value as SlabDisposition })}
-                            className={cn(fieldCls, 'h-8 w-48')}
+                            className={cn(fieldCls, 'h-8 py-1 w-48')}
                             aria-label={`Disposition for slab ${slab.serial}`}
                           >
                             <option value="">— Select disposition —</option>
@@ -248,7 +248,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                               value={draft.recoveredArea}
                               onChange={(e) => updateDraft(slab.id, { recoveredArea: e.target.value })}
                               placeholder="Recovered area *"
-                              className={cn(fieldCls, 'h-8 w-32')}
+                              className={cn(fieldCls, 'h-8 py-1 w-32')}
                               aria-label={`Recovered area for slab ${slab.serial}`}
                             />
                           )}
