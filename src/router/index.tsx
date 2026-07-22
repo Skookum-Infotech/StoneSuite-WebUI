@@ -130,6 +130,18 @@ const SalesOrderDetailPage = lazyWithRetry(
 const EditSalesOrderPage = lazyWithRetry(
   () => import("@/pages/sales/EditSalesOrderPage"),
 );
+const FabricationJobListPage = lazyWithRetry(
+  () => import("@/pages/sales/FabricationJobListPage"),
+);
+const AddFabricationJobPage = lazyWithRetry(
+  () => import("@/pages/sales/AddFabricationJobPage"),
+);
+const FabricationJobDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/FabricationJobDetailPage"),
+);
+const EditFabricationJobPage = lazyWithRetry(
+  () => import("@/pages/sales/EditFabricationJobPage"),
+);
 const InvoiceListPage = lazyWithRetry(
   () => import("@/pages/sales/InvoiceListPage"),
 );
@@ -418,6 +430,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sales_order" action="update">
             <EditSalesOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Installation / Fabrication (specific routes must come before the catch-all)
+      {
+        path: "sales/installation",
+        element: lazy_(
+          <PermissionGuard resource="installation" action="read">
+            <FabricationJobListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/installation/new",
+        element: lazy_(
+          <PermissionGuard resource="installation" action="create">
+            <AddFabricationJobPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/installation/:id",
+        element: lazy_(
+          <PermissionGuard resource="installation" action="read">
+            <FabricationJobDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/installation/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="installation" action="update">
+            <EditFabricationJobPage />
           </PermissionGuard>,
         ),
       },

@@ -17,6 +17,7 @@ import { CreditMemoAuditTab } from './components/CreditMemoAuditTab';
 import { DeleteCreditMemoDialog } from './components/DeleteCreditMemoDialog';
 import { VoidCreditMemoDialog } from './components/VoidCreditMemoDialog';
 import { ApplyCreditMemoDialog } from './components/ApplyCreditMemoDialog';
+import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import type { CreditMemoApplication } from '@/types/creditMemo';
 
 const TABS = [
@@ -267,7 +268,7 @@ export default function CreditMemoDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
+        <SalesDetailSidebar label="Credit Memo Details">
           {!isReadOnly && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
@@ -366,7 +367,7 @@ export default function CreditMemoDetailPage() {
               />
             </div>
           )}
-        </div>
+        </SalesDetailSidebar>
       </div>
 
       {applyOpen && (
