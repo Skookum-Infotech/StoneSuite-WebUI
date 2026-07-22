@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench } from 'lucide-react';
 import { salesOrderService } from '@/services/salesOrderService';
+import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -16,6 +17,7 @@ import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
+import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -47,6 +49,9 @@ export default function SalesOrderDetailPage() {
   // Convert targets a new Invoice, so gate on the Invoice module's create
   // permission (backend checks source sales_order:read + target invoice:create).
   const canConvert = permissionsLoading || hasPermission('invoice', 'create');
+  // A fabrication job always originates from a sales order (backend spec
+  // §2.2), so gate this on installation:create.
+  const canFabricate = permissionsLoading || hasPermission('installation', 'create');
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['sales-order', id],
@@ -68,6 +73,11 @@ export default function SalesOrderDetailPage() {
   const convert = useMutation({
     mutationFn: () => salesOrderService.convertToInvoice(id),
     onSuccess: ({ invoice }) => navigate(`/sales/invoice/${invoice.id}`),
+  });
+
+  const fabricate = useMutation({
+    mutationFn: () => fabricationService.fabricateFromOrder(id),
+    onSuccess: (job) => navigate(`/sales/installation/${job.id}`),
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
@@ -198,7 +208,7 @@ export default function SalesOrderDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
+        <SalesDetailSidebar label="Order Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
@@ -231,9 +241,23 @@ export default function SalesOrderDetailPage() {
                   Convert to Invoice
                 </button>
               )}
+              {canFabricate && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+                <button
+                  type="button"
+                  onClick={() => fabricate.mutate()}
+                  disabled={fabricate.isPending}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
+                >
+                  {fabricate.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <Wrench className="size-4 text-stone-400 shrink-0" />}
+                  Create Fabrication Job
+                </button>
+              )}
             </div>
             {convert.isError && (
               <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert sales order.')}</p>
+            )}
+            {fabricate.isError && (
+              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}</p>
             )}
           </div>
 
@@ -270,7 +294,7 @@ export default function SalesOrderDetailPage() {
               />
             </div>
           )}
-        </div>
+        </SalesDetailSidebar>
       </div>
     </div>
   );

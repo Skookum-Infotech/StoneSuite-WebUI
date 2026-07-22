@@ -4,7 +4,6 @@ import {
   FileSpreadsheet,
   FileText,
   ShoppingCart,
-  Wrench,
   Receipt,
   CreditCard,
   FileMinus,
@@ -42,11 +41,6 @@ const MODULE_META: Record<string, ModuleMeta> = {
     title: 'Sales Orders',
     description: 'Track and fulfill confirmed customer orders.',
     icon: ShoppingCart,
-  },
-  installation: {
-    title: 'Installation / Fabrication',
-    description: 'Schedule and manage installation and fabrication jobs.',
-    icon: Wrench,
   },
   invoice: {
     title: 'Invoices',
