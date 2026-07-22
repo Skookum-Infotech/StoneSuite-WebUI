@@ -134,9 +134,9 @@ export function FabricationJobTable() {
           />
         </div>
 
-        <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
+        <div className="hidden h-5 w-px bg-stone-200 sm:block" aria-hidden="true" />
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
@@ -256,7 +256,7 @@ export function FabricationJobTable() {
         </div>
 
         {records.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-stone-100 bg-stone-50/40">
             <p className="text-xs text-stone-500 tabular-nums">
               Page {pageNum}{hasMore ? '' : ' · last page'}
             </p>

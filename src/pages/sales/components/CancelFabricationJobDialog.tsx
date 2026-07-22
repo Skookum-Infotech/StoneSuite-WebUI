@@ -192,7 +192,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                     {apiErrorMessage(cancelMutation.error, 'Failed to cancel fabrication job.')}
                   </p>
                 )}
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={close} disabled={cancelMutation.isPending}
                     className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">
                     Back
@@ -278,7 +278,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                   </p>
                 )}
 
-                <div className="mt-4 flex justify-end gap-2">
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={close} disabled={cancelMutation.isPending}
                     className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">
                     Close

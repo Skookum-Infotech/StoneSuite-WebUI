@@ -22,6 +22,7 @@ import { FabricationPiecesTable } from './components/FabricationPiecesTable';
 import { FabricationSlabsTab } from './components/FabricationSlabsTab';
 import { FabricationStepsTab } from './components/FabricationStepsTab';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
+import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { FabricationApprovalButton } from './components/FabricationApprovalButton';
 import { CancelFabricationJobDialog } from './components/CancelFabricationJobDialog';
 import { DeleteFabricationJobDialog } from './components/DeleteFabricationJobDialog';
@@ -181,7 +182,7 @@ export default function FabricationJobDetailPage() {
           <div className="h-6" />
         </div>
 
-        <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
+        <SalesDetailSidebar label="Job Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
@@ -260,7 +261,7 @@ export default function FabricationJobDetailPage() {
               />
             </div>
           )}
-        </div>
+        </SalesDetailSidebar>
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
+import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -207,7 +208,7 @@ export default function SalesOrderDetailPage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
+        <SalesDetailSidebar label="Order Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
@@ -293,7 +294,7 @@ export default function SalesOrderDetailPage() {
               />
             </div>
           )}
-        </div>
+        </SalesDetailSidebar>
       </div>
     </div>
   );
