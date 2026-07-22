@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Wrench, Upload, Pencil, ShoppingCart } from 'lucide-react';
 import { fabricationService } from '@/services/fabricationService';
+import { salesOrderService } from '@/services/salesOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -14,8 +15,9 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import {
   FJ_STATUS_COLORS, APPROVAL_STATUS_LABELS, APPROVAL_STATUS_COLORS,
-  needsApproval, canCancel, canDeleteJob,
+  needsApproval, canCancel, canDeleteJob, canEditPieces,
 } from '@/lib/fabricationForm';
+import { FabricationPiecesEditableTab } from './components/FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './components/FabricationPiecesTable';
 import { FabricationSlabsTab } from './components/FabricationSlabsTab';
 import { FabricationStepsTab } from './components/FabricationStepsTab';
@@ -72,6 +74,19 @@ export default function FabricationJobDetailPage() {
     queryClient.setQueryData(['fabrication-job', id], updated);
     queryClient.invalidateQueries({ queryKey: ['fabrication-jobs'] });
   }
+
+  // The originating sales order's line items, for the pieces editor's
+  // "linked line" dropdown — only fetched once the job (and its sales order
+  // id) has loaded.
+  const { data: sourceOrderDetail } = useQuery({
+    queryKey: ['sales-order', job?.salesOrderId],
+    queryFn: () => salesOrderService.getOrder(job!.salesOrderId),
+    enabled: Boolean(job?.salesOrderId),
+  });
+  const sourceOrderItems = (sourceOrderDetail?.items ?? []).map((line) => ({
+    id: line.id,
+    label: `#${line.lineNumber} ${line.itemName || line.description || ''}`.trim(),
+  }));
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading fabrication job…" /></div>;
   // A 404 here means "not found or not yours" (IDOR guard) — always rendered
@@ -150,7 +165,11 @@ export default function FabricationJobDetailPage() {
             </>
           )}
 
-          {activeTab === 'pieces' && <FabricationPiecesTable pieces={job.pieces ?? []} />}
+          {activeTab === 'pieces' && (
+            canEdit && canEditPieces(job.statusCode)
+              ? <FabricationPiecesEditableTab jobId={id} pieces={job.pieces ?? []} sourceOrderItems={sourceOrderItems} />
+              : <FabricationPiecesTable pieces={job.pieces ?? []} />
+          )}
           {activeTab === 'slabs' && canReadSlabs && (
             <FabricationSlabsTab jobId={id} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
           )}

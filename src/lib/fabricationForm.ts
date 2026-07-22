@@ -3,7 +3,7 @@
 // steps.go, and fabrication/approval.go (design spec, 2026-07-22).
 
 import type { CrmLookups } from '@/services/lookupService';
-import type { FabricationJob, FabricationJobFields } from '@/types/fabrication';
+import type { FabricationJob, FabricationJobFields, FabricationJobPiece } from '@/types/fabrication';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -60,7 +60,12 @@ export const NOTES_FIELDS: FJFormField[] = [
   { key: 'notes', label: 'Notes', type: 'textarea', rows: 3, colSpanFull: true, placeholder: 'Notes related to this fabrication job…' },
 ];
 
-// ── Piece editor (create-only — the backend has no post-create piece edit) ──
+// ── Piece editor ──────────────────────────────────────────────────────────
+// Pieces can be added, edited, or removed both at create time and afterward
+// via POST/PATCH/DELETE .../fabrication-jobs/{uuid}/pieces[/{pieceUuid}] —
+// but only while canEditPieces(statusCode) is true (see below). The create
+// page always allows editing (a brand-new job always starts at ORCV); the
+// Edit/Detail pages gate the editable piece controls on that same check.
 
 export interface FJPieceRow {
   id: string;
@@ -163,6 +168,16 @@ export function canCancel(code: string): boolean {
  *  slab reservations must be cancelled first to release them. */
 export function canDeleteJob(code: string): boolean {
   return code === 'DRFT' || code === 'CANC';
+}
+
+/** Statuses at which pieces may still be added, edited, or removed — mirrors
+ *  the backend's `canEditPieces` exactly (fabrication/transitions.go):
+ *  everything before slabs get cut, minus HOLD (a held job's target status
+ *  is opaque here) and the two terminal statuses. */
+const PIECE_EDITABLE_STATUSES = new Set(['DRFT', 'ORCV', 'MALC', 'TMPL', 'TAPV', 'FRDY']);
+
+export function canEditPieces(code: string): boolean {
+  return PIECE_EDITABLE_STATUSES.has(code);
 }
 
 /** Status badge color, keyed by the human label (matches FJ_STATUS_CODES'
@@ -321,6 +336,26 @@ export function toPieceInput(row: FJPieceRow) {
     cooktopCutoutCount: parseInt(row.cooktopCutoutCount, 10) || 0,
     seamCount: parseInt(row.seamCount, 10) || 0,
     salesOrderItemUuid: row.salesOrderItemUuid || undefined,
+  };
+}
+
+/** Maps a loaded FabricationJobPiece (GET response) to an editable row — the
+ *  inverse of toPieceInput, used when editing an existing piece post-create.
+ *  Carries `salesOrderItemUuid` through unchanged so re-saving a piece the
+ *  user didn't touch that field on doesn't silently clear the link. */
+export function pieceToRow(piece: FabricationJobPiece): FJPieceRow {
+  return {
+    id: piece.id,
+    pieceNumber: piece.pieceNumber,
+    pieceName: piece.pieceName,
+    pieceType: piece.pieceType,
+    lengthMm: String(piece.lengthMm),
+    widthMm: String(piece.widthMm),
+    thicknessMm: String(piece.thicknessMm),
+    sinkCutoutCount: String(piece.sinkCutoutCount),
+    cooktopCutoutCount: String(piece.cooktopCutoutCount),
+    seamCount: String(piece.seamCount),
+    salesOrderItemUuid: piece.salesOrderItemUuid,
   };
 }
 

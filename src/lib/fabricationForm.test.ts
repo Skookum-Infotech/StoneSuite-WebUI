@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
-  isTerminalStatus, canHold, canCancel, canDeleteJob, needsApproval,
-  toJobFields, toPieceInput, fromJob, FJ_STATUS_CODES, FJ_LINEAR_TRANSITIONS,
+  isTerminalStatus, canHold, canCancel, canDeleteJob, canEditPieces, needsApproval,
+  toJobFields, toPieceInput, pieceToRow, fromJob, FJ_STATUS_CODES, FJ_LINEAR_TRANSITIONS,
 } from './fabricationForm'
-import type { FabricationJob } from '@/types/fabrication'
+import type { FabricationJob, FabricationJobPiece } from '@/types/fabrication'
 
 describe('isTerminalStatus', () => {
   it.each([
@@ -51,6 +51,34 @@ describe('canDeleteJob', () => {
     ['HOLD', false],
   ])('canDeleteJob(%p) -> %p', (code, expected) => {
     expect(canDeleteJob(code)).toBe(expected)
+  })
+})
+
+describe('canEditPieces', () => {
+  it.each([
+    ['DRFT', true],
+    ['ORCV', true],
+    ['MALC', true],
+    ['TMPL', true],
+    ['TAPV', true],
+    ['FRDY', true],
+    ['CUTG', false],
+    ['EDGP', false],
+    ['QCPD', false],
+    ['QCPS', false],
+    ['RSHP', false],
+    ['TRAN', false],
+    ['INST', false],
+    ['COMP', false],
+    ['HOLD', false],
+    ['CANC', false],
+  ])('canEditPieces(%p) -> %p', (code, expected) => {
+    expect(canEditPieces(code)).toBe(expected)
+  })
+
+  it('mirrors every status code in FJ_STATUS_CODES exactly once', () => {
+    const codes = FJ_STATUS_CODES.map((s) => s.code)
+    expect(codes).toHaveLength(16)
   })
 })
 
@@ -144,6 +172,33 @@ describe('toPieceInput', () => {
       salesOrderItemUuid: 'soi-uuid-1',
     })
     expect(input.salesOrderItemUuid).toBe('soi-uuid-1')
+  })
+})
+
+describe('pieceToRow', () => {
+  it('maps a loaded piece back to an editable row, stringifying numeric fields', () => {
+    const piece: FabricationJobPiece = {
+      id: 'piece-uuid-1', pieceNumber: 2, pieceName: 'Backsplash', pieceType: 'backsplash',
+      lengthMm: 1200, widthMm: 600, thicknessMm: 20,
+      sinkCutoutCount: 0, cooktopCutoutCount: 0, seamCount: 1,
+      status: 'pending', salesOrderItemUuid: 'soi-uuid-1',
+    }
+    expect(pieceToRow(piece)).toEqual({
+      id: 'piece-uuid-1', pieceNumber: 2, pieceName: 'Backsplash', pieceType: 'backsplash',
+      lengthMm: '1200', widthMm: '600', thicknessMm: '20',
+      sinkCutoutCount: '0', cooktopCutoutCount: '0', seamCount: '1',
+      salesOrderItemUuid: 'soi-uuid-1',
+    })
+  })
+
+  it('round-trips a piece with no sales-order-line link (undefined, not the string "undefined")', () => {
+    const piece: FabricationJobPiece = {
+      id: 'piece-uuid-2', pieceNumber: 1, pieceName: 'Island Top', pieceType: 'countertop',
+      lengthMm: 2400, widthMm: 900, thicknessMm: 30,
+      sinkCutoutCount: 1, cooktopCutoutCount: 0, seamCount: 0,
+      status: 'pending',
+    }
+    expect(pieceToRow(piece).salesOrderItemUuid).toBeUndefined()
   })
 })
 

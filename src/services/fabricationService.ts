@@ -5,6 +5,8 @@ import type {
   FabricationJobUpdatePayload,
   FabricationJobSearchRequest,
   FabricationJobPage,
+  FabricationJobPiece,
+  FabricationJobPieceInput,
   FabricationJobStep,
   FabricationSlab,
   CreateSlabInput,
@@ -73,6 +75,24 @@ export const fabricationService = {
   // cancelled first (409 otherwise), surfaced as a normal delete error.
   deleteJob: (uuid: string): Promise<void> =>
     tenantClient.delete(`${BASE}/${uuid}`).then(() => undefined),
+
+  // Pieces can be added/edited/removed both at create time and afterward —
+  // legal only while canEditPieces(job.statusCode) is true (fabricationForm.ts);
+  // a late attempt 409s (ErrPiecesLocked), surfaced as a normal save error.
+  addPiece: (uuid: string, piece: FabricationJobPieceInput): Promise<FabricationJobPiece> =>
+    tenantClient
+      .post<{ success: boolean; piece: FabricationJobPiece }>(`${BASE}/${uuid}/pieces`, piece)
+      .then((r) => r.data.piece),
+
+  updatePiece: (uuid: string, pieceUuid: string, piece: FabricationJobPieceInput): Promise<FabricationJobPiece> =>
+    tenantClient
+      .patch<{ success: boolean; piece: FabricationJobPiece }>(`${BASE}/${uuid}/pieces/${pieceUuid}`, piece)
+      .then((r) => r.data.piece),
+
+  // Blocked (409, ErrPieceHasSlabs) while the piece still has a live slab
+  // allocation — release it, or resolve its cancel disposition, first.
+  removePiece: (uuid: string, pieceUuid: string): Promise<void> =>
+    tenantClient.delete(`${BASE}/${uuid}/pieces/${pieceUuid}`).then(() => undefined),
 
   // Status change validated against the server-side transition map; a denied
   // move returns 409 (surface as a blocked-transition message). Cancelling

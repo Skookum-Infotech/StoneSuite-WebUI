@@ -36,6 +36,9 @@ export interface FabricationJobPiece {
   cooktopCutoutCount: number;
   seamCount: number;
   status: string;
+  /** The linked sales-order line, when this piece has one. Round-tripped so
+   *  editing a piece without touching this field doesn't silently clear it. */
+  salesOrderItemUuid?: string;
 }
 
 /** One row of the 16-step checklist. Piece-grain steps (templating, cutting,

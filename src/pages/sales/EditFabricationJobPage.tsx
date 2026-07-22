@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wrench, AlertCircle, Loader2, Save } from 'lucide-react';
 import { fabricationService } from '@/services/fabricationService';
+import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -14,7 +15,7 @@ import { FabricationJobFormBody } from './components/FabricationJobFormBody';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
 import { FabricationApprovalButton } from './components/FabricationApprovalButton';
-import { fromJob, toJobFields, needsApproval, PAGE_TABS, type PageTab } from '@/lib/fabricationForm';
+import { fromJob, toJobFields, needsApproval, canEditPieces, PAGE_TABS, type PageTab } from '@/lib/fabricationForm';
 import type { FabricationJob } from '@/types/fabrication';
 
 export default function EditFabricationJobPage() {
@@ -37,6 +38,18 @@ export default function EditFabricationJobPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  // The originating sales order's line items, for the pieces editor's
+  // "linked line" dropdown — same source the Add page reads from.
+  const { data: sourceOrderDetail } = useQuery({
+    queryKey: ['sales-order', job?.salesOrderId],
+    queryFn: () => salesOrderService.getOrder(job!.salesOrderId),
+    enabled: Boolean(job?.salesOrderId),
+  });
+  const sourceOrderItems = (sourceOrderDetail?.items ?? []).map((line) => ({
+    id: line.id,
+    label: `#${line.lineNumber} ${line.itemName || line.description || ''}`.trim(),
+  }));
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -81,6 +94,7 @@ export default function EditFabricationJobPage() {
   const canUpdate = hasPermission('installation', 'update');
   const canAllocateSlabs = canUpdate && hasPermission('inventory_item', 'update');
   const canReadSlabs = hasPermission('installation', 'read') && hasPermission('inventory_item', 'read');
+  const piecesEditableNow = canUpdate && canEditPieces(job.statusCode);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -124,9 +138,11 @@ export default function EditFabricationJobPage() {
           set={set}
           sourceOrder={null}
           pieces={[]}
+          sourceOrderItems={sourceOrderItems}
           lookups={lookups}
           canAllocateSlabs={canReadSlabs && canAllocateSlabs}
           canEditSteps={canUpdate}
+          piecesEditableNow={piecesEditableNow}
           statusControl={canUpdate ? (
             <FabricationStatusControl
               job={job}

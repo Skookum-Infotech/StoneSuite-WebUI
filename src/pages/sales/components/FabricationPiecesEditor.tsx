@@ -109,11 +109,11 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
                     {sourceOrderItems.find((i) => i.id === row.salesOrderItemUuid)?.label ?? '—'}
                   </td>
                   <td className="px-2 py-2.5">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
-                      <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit piece ${row.pieceName || row.pieceNumber}`}>
+                    <div className="flex items-center gap-1.5">
+                      <button type="button" onClick={() => startEdit(row)} className="text-stone-500 hover:text-stone-700 transition-colors" aria-label={`Edit piece ${row.pieceName || row.pieceNumber}`}>
                         <Pencil className="size-3.5" />
                       </button>
-                      <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove piece ${row.pieceName || row.pieceNumber}`}>
+                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove piece ${row.pieceName || row.pieceNumber}`}>
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>

@@ -8,6 +8,7 @@ import { readonlyCls } from '@/components/crm/formUtils';
 import { FJSectionGrid } from './FabricationJobFormFields';
 import { FabricationSourceOrderPicker, type FabricationSourceOrder } from './FabricationSourceOrderPicker';
 import { FabricationPiecesEditor } from './FabricationPiecesEditor';
+import { FabricationPiecesEditableTab } from './FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './FabricationPiecesTable';
 import { FabricationSlabsTab } from './FabricationSlabsTab';
 import { FabricationStepsTab } from './FabricationStepsTab';
@@ -29,7 +30,7 @@ export function FabricationJobFormBody({
   sourceOrder, setSourceOrder,
   pieces, setPieces, sourceOrderItems = [],
   lookups, statusControl, holdResumeControl, approvalControl,
-  canAllocateSlabs = false, canEditSteps = false,
+  canAllocateSlabs = false, canEditSteps = false, piecesEditableNow = false,
   filesPanelRef,
 }: {
   activeTab: PageTab;
@@ -45,8 +46,9 @@ export function FabricationJobFormBody({
    *  link) in edit mode since a job's sales order is fixed after creation. */
   sourceOrder: FabricationSourceOrder | null;
   setSourceOrder?: (o: FabricationSourceOrder | null) => void;
-  /** Editable piece rows — create mode only; edit mode ignores this and
-   *  renders job.pieces read-only instead (pieces have no update endpoint). */
+  /** Editable piece rows — create mode's local, unsaved draft list (edit mode
+   *  ignores this; it edits job.pieces directly via the pieces API instead,
+   *  gated by piecesEditableNow). */
   pieces: FJPieceRow[];
   setPieces?: (v: FJPieceRow[]) => void;
   sourceOrderItems?: { id: string; label: string }[];
@@ -58,6 +60,10 @@ export function FabricationJobFormBody({
   approvalControl?: ReactNode;
   canAllocateSlabs?: boolean;
   canEditSteps?: boolean;
+  /** Edit mode only — true when both canEditPieces(job.statusCode) and
+   *  installation:update hold, so the Pieces tab renders the server-backed
+   *  editor instead of the read-only table. */
+  piecesEditableNow?: boolean;
   filesPanelRef?: Ref<EditableFilesPanelHandle>;
 }) {
   const isEdit = Boolean(jobId && job);
@@ -132,7 +138,9 @@ export function FabricationJobFormBody({
 
           {activeTab === 'pieces' && (
             isEdit && job
-              ? <FabricationPiecesTable pieces={job.pieces ?? []} />
+              ? piecesEditableNow
+                ? <FabricationPiecesEditableTab jobId={jobId!} pieces={job.pieces ?? []} sourceOrderItems={sourceOrderItems} />
+                : <FabricationPiecesTable pieces={job.pieces ?? []} />
               : <FabricationPiecesEditor pieces={pieces} onUpdate={(v) => setPieces?.(v)} sourceOrderItems={sourceOrderItems} />
           )}
 
