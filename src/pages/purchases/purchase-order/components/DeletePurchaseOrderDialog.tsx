@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 
-// Mirrors DeleteEstimateDialog — calls purchaseOrderService.deletePurchaseOrder
-// directly (no reason field). The backend only accepts this at DRFT/CANC;
+// Mirrors DeleteFabricationJobDialog's focus management (moves focus into the
+// panel on open, restores it to the trigger on close, closes on Escape) — a
+// createPortal overlay isn't natively part of the DOM's focus order, so none
+// of that happens for free. The backend only accepts delete at DRFT/CANC;
 // callers gate the trigger on PO_DELETABLE_STATUSES so a 400 here should
 // never actually happen, but the error still surfaces if it does.
 export function DeletePurchaseOrderDialog({ purchaseOrderId, label, onDeleted }: {
@@ -15,6 +17,8 @@ export function DeletePurchaseOrderDialog({ purchaseOrderId, label, onDeleted }:
   onDeleted: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const del = useMutation({
     mutationFn: () => purchaseOrderService.deletePurchaseOrder(purchaseOrderId),
@@ -24,9 +28,31 @@ export function DeletePurchaseOrderDialog({ purchaseOrderId, label, onDeleted }:
     },
   });
 
+  function close() {
+    setOpen(false);
+  }
+
+  useEffect(() => {
+    if (open) {
+      panelRef.current?.focus();
+    } else {
+      triggerRef.current?.focus();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !del.isPending) close();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [open, del.isPending]);
+
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Delete ${label}`}
@@ -42,9 +68,9 @@ export function DeletePurchaseOrderDialog({ purchaseOrderId, label, onDeleted }:
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-po-dialog-title"
-          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+          onClick={(e) => e.target === e.currentTarget && !del.isPending && close()}
         >
-          <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+          <div ref={panelRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
                 <AlertTriangle className="size-4 text-destructive" />
@@ -70,7 +96,7 @@ export function DeletePurchaseOrderDialog({ purchaseOrderId, label, onDeleted }:
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={close}
                 disabled={del.isPending}
                 className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
               >

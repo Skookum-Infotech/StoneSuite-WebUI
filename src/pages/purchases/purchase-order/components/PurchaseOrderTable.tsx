@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -99,7 +100,7 @@ export function PurchaseOrderTable() {
     cursor: cursor || undefined,
   };
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['purchase-orders', req],
     queryFn: () => purchaseOrderService.searchPurchaseOrders(req),
     placeholderData: (prev) => prev,
@@ -221,7 +222,7 @@ export function PurchaseOrderTable() {
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">Failed to load purchase orders. Please try again.</p>
+        <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load purchase orders. Please try again.')}</p>
       )}
 
       {/* Table */}

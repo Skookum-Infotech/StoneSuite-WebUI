@@ -395,6 +395,13 @@ export function poTransitionLabel(from: string, to: string): string {
   return PO_TRANSITION_LABELS[`${from}:${to}`] ?? to;
 }
 
+/** Human label for a status code (e.g. "PAPV" -> "Pending Approval") — used
+ *  by the transition confirmation dialog. Falls back to the raw code for an
+ *  unrecognized one rather than throwing. */
+export function poStatusLabel(code: string): string {
+  return PO_STATUS_CODES.find((s) => s.code === code)?.label ?? code;
+}
+
 /** AD-6 approval gate (purchaseorder/store_transition.go): once a status
  *  requires approval, every move away from it is blocked except the recall
  *  back to DRFT — until `approvalStatus` reaches "approved". Recalling to

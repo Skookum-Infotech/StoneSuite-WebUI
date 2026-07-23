@@ -121,11 +121,8 @@ export function PurchaseOrderFormBody({
               <ModernSection title="Ship To" index={1}>
                 <PurchaseOrderSectionGrid fields={SHIP_TO_FIELDS} data={data} set={set} lookups={lookups} />
               </ModernSection>
-              <ModernSection title="Items" index={2}>
-                <PurchaseOrderItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} />
-              </ModernSection>
               {customFieldDefs.length > 0 && (
-                <ModernSection title="Custom Fields" index={3}>
+                <ModernSection title="Custom Fields" index={2}>
                   <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                     {customFieldDefs.map((def) => (
                       <DynamicFieldInput
@@ -138,6 +135,9 @@ export function PurchaseOrderFormBody({
                   </div>
                 </ModernSection>
               )}
+              <ModernSection title="Items" index={3}>
+                <PurchaseOrderItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} />
+              </ModernSection>
             </>
           )}
 

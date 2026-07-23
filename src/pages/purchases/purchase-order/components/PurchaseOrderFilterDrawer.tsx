@@ -5,6 +5,7 @@ import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { useModalDialog } from '@/hooks/useModalDialog';
 import { EMPTY_FILTER_STATE, type PurchaseOrderFilterState } from '@/lib/purchaseOrderFilters';
 
 // Filter drawer for the Purchase Order list — covers the server-whitelisted
@@ -25,6 +26,7 @@ export function PurchaseOrderFilterDrawer({ onClose, value, onApply }: {
   onApply: (next: PurchaseOrderFilterState) => void;
 }) {
   const [draft, setDraft] = useState<PurchaseOrderFilterState>(value);
+  const contentRef = useModalDialog(onClose);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -52,7 +54,7 @@ export function PurchaseOrderFilterDrawer({ onClose, value, onApply }: {
       aria-labelledby="po-filter-drawer-title"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="flex h-full w-full max-w-sm flex-col bg-white shadow-2xl">
+      <div ref={contentRef} tabIndex={-1} className="flex h-full w-full max-w-sm flex-col bg-white shadow-2xl outline-none">
         <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3.5 shrink-0">
           <div className="flex items-center gap-2">
             <Filter className="size-4 text-stone-500" aria-hidden="true" />

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  PO_ALLOWED_TRANSITIONS, isPoTransitionBlocked, poTransitionLabel,
+  PO_ALLOWED_TRANSITIONS, isPoTransitionBlocked, poTransitionLabel, poStatusLabel,
   calcLineItem, calcHeaderTotals, toCreatePayload, validatePurchaseOrderCustomFields,
 } from './purchaseOrderForm'
 import type { FieldDefinition } from '@/types/tenant'
@@ -41,6 +41,19 @@ describe('poTransitionLabel', () => {
   })
   it('falls back to the raw code for an unmapped pair', () => {
     expect(poTransitionLabel('DRFT', 'ZZZZ')).toBe('ZZZZ')
+  })
+})
+
+describe('poStatusLabel', () => {
+  it.each([
+    ['DRFT', 'Draft'],
+    ['PAPV', 'Pending Approval'],
+    ['CANC', 'Cancelled'],
+  ])('label(%p) -> %p', (code, expected) => {
+    expect(poStatusLabel(code)).toBe(expected)
+  })
+  it('falls back to the raw code for an unrecognized status', () => {
+    expect(poStatusLabel('ZZZZ')).toBe('ZZZZ')
   })
 })
 
