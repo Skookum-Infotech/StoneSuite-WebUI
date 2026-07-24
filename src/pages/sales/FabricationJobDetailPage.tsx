@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Wrench, Upload, Pencil, ShoppingCart } from 'lucide-react';
+import { Wrench, Upload, Pencil, ShoppingCart, FileDown, Loader2 } from 'lucide-react';
 import { fabricationService } from '@/services/fabricationService';
 import { salesOrderService } from '@/services/salesOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -55,6 +55,8 @@ export default function FabricationJobDetailPage() {
   type Tab = (typeof TABS)[number]['key'];
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { data: job, isLoading, error } = useQuery({
     queryKey: ['fabrication-job', id],
@@ -97,6 +99,72 @@ export default function FabricationJobDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Fabrication job not found.')}</ErrorNote></div>;
 
   const color = FJ_STATUS_COLORS[job.status] ?? '#a8a29e';
+
+  async function handleExportPdf() {
+    if (!job) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
+      await exportSalesDocToPdf({
+        docType: 'fabrication_job',
+        title: job.jobNumber || 'Fabrication Job',
+        recordNumber: job.jobNumber,
+        statusLabel: job.status,
+        customerName: job.customer.name,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+        sections: [
+          {
+            title: 'Sales Order',
+            rows: [['Sales Order #', sourceOrderDetail?.salesOrderNumber || '']],
+          },
+          {
+            title: 'Job Site',
+            rows: [
+              ['Site Contact', job.site.customerName || ''],
+              ['Address', [job.site.addrLine1, job.site.addrLine2].filter(Boolean).join(', ')],
+              ['City', job.site.city || ''],
+              ['Zip', job.site.zip || ''],
+              ['Phone', job.site.phone || ''],
+            ],
+          },
+          {
+            title: 'Schedule',
+            rows: [
+              ['Template Date', job.templateDate ? fmtDate(job.templateDate) : ''],
+              ['Fabrication Start', job.fabricationStart ? fmtDate(job.fabricationStart) : ''],
+              ['Promised Install Date', job.promisedInstallDate ? fmtDate(job.promisedInstallDate) : ''],
+              ['Actual Install Date', job.actualInstallDate ? fmtDate(job.actualInstallDate) : ''],
+              ['Approval Status', job.approvalStatus !== 'none' ? APPROVAL_STATUS_LABELS[job.approvalStatus] : ''],
+            ],
+          },
+          { title: 'Notes', rows: [['Notes', job.notes || '']] },
+        ],
+        itemsTable: {
+          title: 'Pieces',
+          head: ['#', 'Piece Name', 'Type', 'L (mm)', 'W (mm)', 'Thickness (mm)', 'Sinks', 'Cooktops', 'Seams', 'Status'],
+          rows: (job.pieces ?? []).map((piece) => [
+            String(piece.pieceNumber),
+            piece.pieceName || '—',
+            piece.pieceType || '—',
+            String(piece.lengthMm),
+            String(piece.widthMm),
+            String(piece.thicknessMm),
+            String(piece.sinkCutoutCount),
+            String(piece.cooktopCutoutCount),
+            String(piece.seamCount),
+            piece.status,
+          ]),
+          numericFrom: 3,
+        },
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -204,7 +272,20 @@ export default function FabricationJobDetailPage() {
                   Edit fabrication job
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
           </div>
 
           {canEdit && (

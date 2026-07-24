@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invoiceService } from '@/services/invoiceService';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
+import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { InvoiceSearchRequest } from '@/types/invoice';
+
+const EXPORT_PAGE_SIZE = 200;
 
 // Invoices are a dedicated relational module, not a generic CRM/JSONB workflow
 // record, so — unlike Lead/Prospect/Customer — this table talks to
@@ -52,6 +56,9 @@ export function InvoiceTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -122,6 +129,30 @@ export function InvoiceTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => invoiceService.searchInvoices({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Invoice #', 'Customer', 'Status', 'Invoice Date', 'Amount', 'Balance Due'],
+        (inv) => [
+          inv.invoiceNumber ?? '',
+          inv.customer?.name ?? '',
+          inv.status ?? '',
+          fmtCsvDate(inv.invoiceDate),
+          String(inv.grandTotal ?? 0),
+          String(inv.balanceDue ?? 0),
+        ],
+        'Invoice',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       {/* Toolbar */}
@@ -167,10 +198,26 @@ export function InvoiceTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered invoices as CSV' : 'Download all invoices as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">Failed to load invoices. Please try again.</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}

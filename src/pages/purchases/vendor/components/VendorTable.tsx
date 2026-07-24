@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, User, Building2,
+  ChevronLeft, ChevronRight, User, Building2, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { vendorService } from '@/services/vendorService';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { VENDOR_STATUS_COLORS } from '@/types/vendor';
+import { exportPagedCsv } from '@/lib/csvExport';
 import type { VendorSearchRequest } from '@/types/vendor';
+
+const EXPORT_PAGE_SIZE = 200;
 
 // Vendors are a dedicated relational module (mirrors salesorder), not a
 // generic CRM/JSONB workflow record, so this table talks to vendorService
@@ -49,6 +53,9 @@ export function VendorTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -119,6 +126,29 @@ export function VendorTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => vendorService.searchVendors({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Vendor #', 'Name', 'Type', 'Status', 'Email'],
+        (vendor) => [
+          vendor.vendorNumber ?? '',
+          vendor.displayName ?? '',
+          vendor.vendorType ?? '',
+          vendor.status ?? '',
+          vendor.email ?? '',
+        ],
+        'Vendor',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       {/* Toolbar */}
@@ -164,10 +194,26 @@ export function VendorTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered vendors as CSV' : 'Download all vendors as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">Failed to load vendors. Please try again.</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}

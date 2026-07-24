@@ -194,6 +194,30 @@ const VendorDetailPage = lazyWithRetry(
 const EditVendorPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/EditVendorPage"),
 );
+const PurchaseOrderListPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/PurchaseOrderListPage"),
+);
+const AddPurchaseOrderPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/AddPurchaseOrderPage"),
+);
+const PurchaseOrderDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/PurchaseOrderDetailPage"),
+);
+const EditPurchaseOrderPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/EditPurchaseOrderPage"),
+);
+const ItemReceiptListPage = lazyWithRetry(
+  () => import("@/pages/purchases/item-receipt/ItemReceiptListPage"),
+);
+const ReceiveItemsPage = lazyWithRetry(
+  () => import("@/pages/purchases/item-receipt/ReceiveItemsPage"),
+);
+const ItemReceiptDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/item-receipt/ItemReceiptDetailPage"),
+);
+const EditItemReceiptPage = lazyWithRetry(
+  () => import("@/pages/purchases/item-receipt/EditItemReceiptPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -634,6 +658,74 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="vendor" action="update">
             <EditVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Purchase Orders (specific routes must come before the catch-all)
+      {
+        path: "purchases/purchase_order",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="read">
+            <PurchaseOrderListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/purchase_order/new",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="create">
+            <AddPurchaseOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/purchase_order/:id",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="read">
+            <PurchaseOrderDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/purchase_order/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="update">
+            <EditPurchaseOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Item Receipts (specific routes must come before the catch-all)
+      {
+        path: "purchases/item_receipt",
+        element: lazy_(
+          <PermissionGuard resource="item_receipt" action="read">
+            <ItemReceiptListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/item_receipt/new",
+        element: lazy_(
+          <PermissionGuard resource="item_receipt" action="create">
+            <ReceiveItemsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/item_receipt/:id",
+        element: lazy_(
+          <PermissionGuard resource="item_receipt" action="read">
+            <ItemReceiptDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/item_receipt/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="item_receipt" action="update">
+            <EditItemReceiptPage />
           </PermissionGuard>,
         ),
       },

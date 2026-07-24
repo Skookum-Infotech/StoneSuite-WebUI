@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Undo2, Upload, Pencil } from 'lucide-react';
+import { Undo2, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -40,6 +40,8 @@ export default function RefundDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('refund', 'update');
@@ -65,6 +67,53 @@ export default function RefundDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load refund.')}</ErrorNote></div>;
 
   const color = REFUND_STATUS_COLORS[refund.status] ?? '#a8a29e';
+
+  async function handleExportPdf() {
+    if (!refund) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
+      await exportSalesDocToPdf({
+        docType: 'refund',
+        title: refund.refundNumber || 'Refund',
+        recordNumber: refund.refundNumber,
+        statusLabel: refund.status,
+        customerName: refund.customer.name,
+        createdAt: refund.createdAt,
+        updatedAt: refund.updatedAt,
+        sections: [
+          {
+            title: 'Primary Information',
+            rows: [
+              ['Refund Method', refund.method || ''],
+              ['Reference #', refund.referenceNumber || ''],
+              ['Refund Date', fmtDate(refund.refundDate)],
+              ['Reason', refund.reason || ''],
+              ['Memo', refund.memo || ''],
+              ['Internal Notes', refund.internalNotes || ''],
+            ],
+          },
+          {
+            title: 'Applications',
+            rows: refund.applications.map((app) => [
+              app.paymentNumber ? `Payment ${app.paymentNumber}` : `Credit Memo ${app.creditMemoNumber || '—'}`,
+              currency(app.amount),
+            ]),
+          },
+        ],
+        totals: [
+          { label: 'Amount', value: currency(refund.amount), bold: true },
+          { label: 'Applied', value: currency(refund.appliedTotal) },
+          { label: 'Unapplied', value: currency(refund.unappliedAmount), bold: true },
+        ],
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -154,7 +203,20 @@ export default function RefundDetailPage() {
                   Edit refund
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" aria-hidden="true" /> : <FileDown className="size-4 text-stone-400 shrink-0" aria-hidden="true" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">

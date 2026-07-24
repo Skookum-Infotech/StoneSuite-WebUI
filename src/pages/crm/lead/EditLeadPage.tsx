@@ -10,6 +10,8 @@ import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
@@ -48,6 +50,10 @@ export default function EditLeadPage() {
   const customFieldValues = localCustomFields ?? record?.customFields ?? {};
   const currentStateId = localStateId ?? record?.currentStateId ?? '';
 
+  // Status is excluded: a transition is persisted the moment it is picked, so it
+  // is never an unsaved edit.
+  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues }, Boolean(record));
+
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const leadWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'lead');
   const { data: leadDef } = useQuery({
@@ -71,6 +77,7 @@ export default function EditLeadPage() {
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== 'lead' && routeMap[newType]) {
+        guard.markClean();
         navigate(`${routeMap[newType]}/${updated.id}`);
       }
     },
@@ -94,6 +101,7 @@ export default function EditLeadPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
+      guard.markClean();
       navigate('/crm/lead');
     },
   });
@@ -122,6 +130,7 @@ export default function EditLeadPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => {
           e.preventDefault();

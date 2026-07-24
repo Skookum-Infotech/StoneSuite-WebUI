@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Upload, Pencil, DollarSign, Unlink } from 'lucide-react';
+import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, Loader2 } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -44,6 +44,8 @@ export default function PaymentDetailPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [applyOpen, setApplyOpen] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('payment', 'update');
@@ -75,6 +77,49 @@ export default function PaymentDetailPage() {
 
   const color = PAYMENT_STATUS_COLORS[payment.status] ?? '#a8a29e';
   const applyBlocked = PAYMENT_BLOCKS_APPLY.has(payment.statusCode);
+
+  async function handleExportPdf() {
+    if (!payment) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
+      await exportSalesDocToPdf({
+        docType: 'payment',
+        title: payment.paymentNumber || 'Payment',
+        recordNumber: payment.paymentNumber,
+        statusLabel: payment.status,
+        customerName: payment.customer.name,
+        createdAt: payment.createdAt,
+        updatedAt: payment.updatedAt,
+        sections: [
+          {
+            title: 'Primary Information',
+            rows: [
+              ['Payment Method', payment.method || ''],
+              ['Reference #', payment.referenceNumber || ''],
+              ['Payment Date', fmtDate(payment.paymentDate)],
+              ['Memo', payment.memo || ''],
+              ['Internal Notes', payment.internalNotes || ''],
+            ],
+          },
+          {
+            title: 'Applications',
+            rows: payment.applications.map((app) => [`Invoice ${app.invoiceNumber || '—'}`, currency(app.amount)]),
+          },
+        ],
+        totals: [
+          { label: 'Amount', value: currency(payment.amount), bold: true },
+          { label: 'Applied', value: currency(payment.appliedTotal) },
+          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
+        ],
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -224,7 +269,20 @@ export default function PaymentDetailPage() {
                   Edit payment
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">

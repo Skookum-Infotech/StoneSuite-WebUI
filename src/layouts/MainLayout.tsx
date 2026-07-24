@@ -1,13 +1,15 @@
 import * as React from 'react';
-import { useState, useEffect, startTransition } from 'react';
+import { useState, useEffect, useCallback, startTransition } from 'react';
 import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useExitConfirmation } from '@/hooks/useExitConfirmation';
 import { formatBreadcrumbSegment } from '@/lib/breadcrumb';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
+import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
 import { rbacService } from '@/services/tenantServices';
 import Sidebar from '@/components/Sidebar';
@@ -68,17 +70,24 @@ export default function MainLayout(): React.JSX.Element {
     });
   }, [location.pathname]);
 
-  if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />;
-  }
-
-  const handleLogout = (): void => {
+  const handleLogout = useCallback((): void => {
     // Clear the httpOnly cookie server-side before wiping local state.
     // Fire-and-forget — navigate regardless of whether the call succeeds.
     apiClient.post('/auth/logout').catch(() => undefined);
     logout();
-    navigate('/auth/login');
-  };
+    // replace: true so Back after signing out does not re-enter the app shell.
+    navigate('/auth/login', { replace: true });
+  }, [logout, navigate]);
+
+  // Backing out of the bottom of the history stack drops the user out of the app
+  // entirely, and that exit cannot be cancelled once it happens. The guard parks
+  // an entry there, catches the press, and offers a real choice instead. It is
+  // not tied to a route — the hook anchors on the stack position itself.
+  const exitConfirmation = useExitConfirmation(isAuthenticated);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />;
+  }
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
@@ -87,6 +96,14 @@ export default function MainLayout(): React.JSX.Element {
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
+
+      {exitConfirmation.isPrompting && (
+        <ConfirmLeaveDialog
+          variant="exit-app"
+          onConfirm={() => { exitConfirmation.dismiss(); handleLogout(); }}
+          onCancel={exitConfirmation.dismiss}
+        />
+      )}
 
       {showWarning && (
         <SessionExpiryModal

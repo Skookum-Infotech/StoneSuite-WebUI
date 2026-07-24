@@ -77,7 +77,9 @@ export default function LoginPage() {
           console.warn('Failed to fetch user roles:', err)
         }
 
-        navigate('/dashboard')
+        // replace: true drops /auth/login from the history stack so the browser
+        // Back button cannot land a signed-in user back on the sign-in screen.
+        navigate('/dashboard', { replace: true })
       } else {
         setError('root', { message: response.message ?? 'Login failed' })
       }

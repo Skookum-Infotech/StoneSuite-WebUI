@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building, Upload, Pencil } from 'lucide-react';
+import { Building, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -11,7 +11,8 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VENDOR_STATUS_COLORS } from '@/types/vendor';
+import { VENDOR_STATUS_COLORS, type Vendor } from '@/types/vendor';
+import type { PurchasesPdfSection } from '@/lib/purchasesPdfExport';
 import { VendorOverviewTab } from './components/VendorOverviewTab';
 import { VendorAuditTab } from './components/VendorAuditTab';
 import { DeleteVendorDialog } from './components/DeleteVendorDialog';
@@ -33,6 +34,8 @@ export default function VendorDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor', 'update');
@@ -67,6 +70,85 @@ export default function VendorDetailPage() {
   const countryName = vendor.nationalityCountryId !== null && vendor.nationalityCountryId !== undefined
     ? lookups?.countries.find((c) => c.id === vendor.nationalityCountryId)?.name
     : undefined;
+
+  async function handleExportPdf() {
+    if (!vendor) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
+      const isPerson = vendor.vendorType === 'Person';
+      await exportPurchasesRecordToPdf({
+        recordType: 'vendor',
+        title: vendor.displayName || 'Vendor',
+        recordNumber: vendor.vendorNumber,
+        statusLabel: vendor.status,
+        counterpartyLabel: 'Vendor Type',
+        counterpartyName: vendor.vendorType,
+        createdAt: vendor.createdAt,
+        updatedAt: vendor.updatedAt,
+        sections: isPerson ? [
+          {
+            title: 'Personal Identity',
+            rows: [
+              ['Honorific Prefix', vendor.honorificPrefix || ''],
+              ['First Name', vendor.givenName || ''],
+              ['Middle Name', vendor.additionalName || ''],
+              ['Last Name', vendor.familyName || ''],
+              ['Honorific Suffix', vendor.honorificSuffix || ''],
+              ['Job Title', vendor.jobTitle || ''],
+            ],
+          },
+          {
+            title: 'Personal Details',
+            rows: [
+              ['Gender', vendor.gender || ''],
+              ['Nationality', countryName || ''],
+              ['Personal Height', vendor.height || ''],
+              ['Net Worth', vendor.netWorth || ''],
+            ],
+          },
+          ...vendorSharedSections(vendor),
+        ] : [
+          {
+            title: 'Company Details',
+            rows: [
+              ['Legal Business Name', vendor.legalName || ''],
+              ['Company Registration Info / Certification', vendor.registrationInfo || ''],
+              ['DUNS Number', vendor.dunsNumber || ''],
+              ['Department / Sub-organization', vendor.department || ''],
+            ],
+          },
+          {
+            title: 'Company Lifecycle',
+            rows: [
+              ['Founding Date', vendor.foundingDate ? fmtDate(vendor.foundingDate) : ''],
+              ['Founding Location', vendor.foundingLocation || ''],
+              ['Dissolution Date', vendor.dissolutionDate ? fmtDate(vendor.dissolutionDate) : ''],
+            ],
+          },
+          ...vendorSharedSections(vendor),
+          {
+            title: 'Accepted Payment Methods',
+            rows: [['Methods', (vendor.acceptedPaymentMethods ?? []).join(', ')]],
+          },
+          {
+            title: 'Compliance Policies',
+            rows: [
+              ['Ethics Policy', vendor.compliancePolicies?.ethicsPolicyUrl || ''],
+              ['Diversity Policy', vendor.compliancePolicies?.diversityPolicyUrl || ''],
+              ['Corrections Policy', vendor.compliancePolicies?.correctionsPolicyUrl || ''],
+              ['Actionable Feedback Policy', vendor.compliancePolicies?.actionableFeedbackPolicyUrl || ''],
+            ],
+          },
+        ],
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -132,7 +214,20 @@ export default function VendorDetailPage() {
                   Edit vendor
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
@@ -172,4 +267,46 @@ export default function VendorDetailPage() {
       </div>
     </div>
   );
+}
+
+/** Sections shared by both vendorType branches of the PDF export — mirrors
+ *  VendorOverviewTab's "Contact & Location" / "Business Identifiers" /
+ *  "Brand & Recognition" sections, which render regardless of Person vs.
+ *  Organization. */
+function vendorSharedSections(vendor: Vendor): PurchasesPdfSection[] {
+  return [
+    {
+      title: 'Contact & Location',
+      rows: [
+        ['Email Address', vendor.email || ''],
+        ['Fax Number', vendor.faxNumber || ''],
+        ['Physical Address', vendor.physicalAddress || ''],
+        ['Contact Type', vendor.contactPoint?.contactType || ''],
+        ['Contact Telephone', vendor.contactPoint?.telephone || ''],
+        ['Contact Email', vendor.contactPoint?.email || ''],
+      ],
+    },
+    {
+      title: 'Business Identifiers',
+      rows: [
+        ['Global Location Number (GLN)', vendor.globalLocationNumber || ''],
+        ['ISIC V4 Code', vendor.isicV4Code || ''],
+      ],
+    },
+    {
+      title: 'Brand & Recognition',
+      rows: [
+        ['Associated Brands', (vendor.associatedBrands ?? []).join(', ')],
+        ['Awards Won', vendor.awardsWon || ''],
+      ],
+    },
+    {
+      title: 'Commerce & Funding',
+      rows: [
+        ['Funding / Funder Information', vendor.funder || ''],
+        ['Offer Catalog Link', vendor.hasOfferCatalogUrl || ''],
+        ['Point of Sale (POS) Locations', vendor.pointOfSaleLocations || ''],
+      ],
+    },
+  ];
 }
