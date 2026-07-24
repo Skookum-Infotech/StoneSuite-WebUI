@@ -8,6 +8,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
@@ -66,6 +68,10 @@ export default function EditSalesOrderPage() {
     [mapped],
   );
 
+  // Status changes are saved by their own transition mutation the moment they are
+  // picked, so they are excluded from the snapshot — only unsaved form edits count.
+  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer }, Boolean(mapped));
+
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
     const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
     const discountAmt = lineItems.reduce((s, r) => {
@@ -102,6 +108,7 @@ export default function EditSalesOrderPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      guard.markClean();
       navigate('/sales/sales_order');
     },
   });
@@ -114,6 +121,7 @@ export default function EditSalesOrderPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="flex flex-col flex-1 min-h-0"

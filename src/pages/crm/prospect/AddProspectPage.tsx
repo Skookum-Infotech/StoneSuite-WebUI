@@ -9,6 +9,8 @@ import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { crmCoreDefaults } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -51,6 +53,8 @@ export default function AddProspectPage() {
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
 
+  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId, crmStatusId });
+
   const { mutate: createProspect, isPending, error: createError } = useMutation({
     mutationFn: () =>
       crmService.createRecord('prospect', {
@@ -65,12 +69,14 @@ export default function AddProspectPage() {
         setIsUploadingFiles(true);
         try { await panelRef.current.uploadStagedTo(record.id); } finally { setIsUploadingFiles(false); }
       }
+      guard.markClean();
       navigate(`/crm/prospect/${record.id}`);
     },
   });
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => {
           e.preventDefault();

@@ -9,6 +9,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
 import {
@@ -81,6 +83,13 @@ export default function EditItemReceiptPage() {
   const validationErrors = validateReceiptLines(lines);
   const lineErrors = useMemo(() => validateReceiptLineErrors(lines), [lines]);
 
+  // Both the receipt and its source PO feed the baseline — lines are merged from
+  // the two, so waiting on `po` avoids flagging the merge itself as an edit.
+  const guard = useUnsavedChangesGuard(
+    { data, lines, customFieldValues },
+    Boolean(mapped) && Boolean(po) && !isLocked,
+  );
+
   const save = useMutation({
     mutationFn: () => {
       if (validationErrors.length > 0) throw new Error(validationErrors[0]);
@@ -89,6 +98,7 @@ export default function EditItemReceiptPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['item-receipt', id] });
       queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
+      guard.markClean();
       navigate(`/purchases/item_receipt/${id}`);
     },
   });
@@ -133,6 +143,7 @@ export default function EditItemReceiptPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="flex flex-col flex-1 min-h-0"

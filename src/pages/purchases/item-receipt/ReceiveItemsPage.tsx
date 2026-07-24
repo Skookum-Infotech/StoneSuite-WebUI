@@ -9,6 +9,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
 import {
@@ -50,6 +52,10 @@ export default function ReceiveItemsPage() {
   const validationErrors = validateReceiptLines(activeLines);
   const lineErrors = useMemo(() => validateReceiptLineErrors(activeLines), [activeLines]);
 
+  // Baseline once the PO has loaded — the received-quantity lines are seeded from
+  // it, so an earlier baseline would flag those defaults as user edits.
+  const guard = useUnsavedChangesGuard({ data, activeLines, customFieldValues }, Boolean(po));
+
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (validationErrors.length > 0) throw new Error(validationErrors[0]);
@@ -63,6 +69,7 @@ export default function ReceiveItemsPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(ir.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate(`/purchases/item_receipt/${ir.id}`);
     },
   });
@@ -117,6 +124,7 @@ export default function ReceiveItemsPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Item Receipts"
