@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, FileDown } from 'lucide-react';
 import { quoteService } from '@/services/quoteService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -39,6 +39,8 @@ export default function QuoteDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('quote', 'update');
@@ -74,6 +76,65 @@ export default function QuoteDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load quote.')}</ErrorNote></div>;
 
   const color = QUOTE_STATUS_COLORS[quote.status] ?? '#a8a29e';
+
+  async function handleExportPdf() {
+    if (!quote) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
+      await exportSalesDocToPdf({
+        docType: 'quote',
+        title: quote.quoteNumber || 'Quote',
+        recordNumber: quote.quoteNumber,
+        statusLabel: quote.status,
+        customerName: quote.customer.name,
+        createdAt: quote.createdAt,
+        updatedAt: quote.updatedAt,
+        sections: [
+          {
+            title: 'Primary Information',
+            rows: [
+              ['Quote Date', fmtDate(quote.quoteDate)],
+              ['Valid Until', quote.validUntil ? fmtDate(quote.validUntil) : ''],
+              ['PO Number', quote.poNumber || ''],
+              ['Reference #', quote.referenceNumber || ''],
+              ['Sales Tax %', `${quote.salesTaxPercent}%`],
+              ['Source Estimate', quote.estimate?.number || ''],
+              ['Memo', quote.memo || ''],
+            ],
+          },
+          { title: 'Bill To', rows: addressRows(quote.billing) },
+          { title: 'Ship To', rows: quote.shipSameAsBilling ? [] : addressRows(quote.shipping) },
+        ],
+        itemsTable: {
+          head: ['#', 'Item', 'Description', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          rows: quote.items.map((line) => [
+            String(line.lineNumber),
+            line.itemName || line.description || '—',
+            line.description || '—',
+            line.sku || '—',
+            String(line.quantity),
+            currency(line.unitPrice),
+            `${line.discountPercent}%`,
+            `${line.taxPercent}%`,
+            currency(line.lineTotal),
+          ]),
+          numericFrom: 4,
+        },
+        totals: [
+          { label: 'Subtotal', value: currency(quote.subtotal) },
+          { label: 'Discount', value: currency(quote.discountTotal) },
+          { label: 'Tax', value: currency(quote.taxTotal) },
+          { label: 'Grand Total', value: currency(quote.grandTotal), bold: true },
+        ],
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -238,9 +299,22 @@ export default function QuoteDetailPage() {
                   Convert to Sales Order
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
             {convert.isError && (
               <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert quote.')}</p>
+            )}
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
           </div>
 
@@ -290,6 +364,15 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
+}
+
+function addressRows(addr: { customerName?: string; addrLine1?: string; addrLine2?: string; city?: string; stateProvince?: string; postalCode?: string; country?: string }): Array<[string, string]> {
+  return [
+    ['Name', addr.customerName || ''],
+    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
+    ['City/State/Zip', [addr.city, addr.stateProvince, addr.postalCode].filter(Boolean).join(', ')],
+    ['Country', addr.country || ''],
+  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; addrLine1?: string; addrLine2?: string; city?: string; stateProvince?: string; postalCode?: string; country?: string } }) {

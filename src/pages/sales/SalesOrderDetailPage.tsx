@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown } from 'lucide-react';
 import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -42,6 +42,8 @@ export default function SalesOrderDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('sales_order', 'update');
@@ -85,6 +87,62 @@ export default function SalesOrderDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';
+
+  async function handleExportPdf() {
+    if (!order) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
+      await exportSalesDocToPdf({
+        docType: 'sales_order',
+        title: order.salesOrderNumber || 'Sales Order',
+        recordNumber: order.salesOrderNumber,
+        statusLabel: order.status,
+        customerName: order.customer.name,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        sections: [
+          {
+            title: 'Primary Information',
+            rows: [
+              ['Order Date', fmtDate(order.orderDate)],
+              ['PO Number', order.poNumber || ''],
+              ['Payment Due Date', order.paymentDueDate ? fmtDate(order.paymentDueDate) : ''],
+              ['Sales Tax %', `${order.salesTaxPercent}%`],
+              ['Memo', order.memo || ''],
+            ],
+          },
+          { title: 'Bill To', rows: addressRows(order.billing) },
+          { title: 'Ship To', rows: order.shipSameAsBilling ? [] : addressRows(order.shipping) },
+        ],
+        itemsTable: {
+          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          rows: order.items.map((line) => [
+            String(line.lineNumber),
+            line.itemName || line.description || '—',
+            line.sku || '—',
+            String(line.quantity),
+            currency(line.unitPrice),
+            `${line.discountPercent}%`,
+            `${line.taxPercent}%`,
+            currency(line.lineTotal),
+          ]),
+          numericFrom: 3,
+        },
+        totals: [
+          { label: 'Subtotal', value: currency(order.subtotal) },
+          { label: 'Discount', value: currency(order.discountTotal) },
+          { label: 'Tax', value: currency(order.taxTotal) },
+          { label: 'Grand Total', value: currency(order.grandTotal), bold: true },
+        ],
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -252,12 +310,25 @@ export default function SalesOrderDetailPage() {
                   Create Fabrication Job
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
             {convert.isError && (
               <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert sales order.')}</p>
             )}
             {fabricate.isError && (
               <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}</p>
+            )}
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
           </div>
 
@@ -307,6 +378,17 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
+}
+
+function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
+  return [
+    ['Name', addr.customerName || ''],
+    ['Attention', addr.attention || ''],
+    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
+    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
+    ['Phone', addr.phone || ''],
+    ['Email', addr.email || ''],
+  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
