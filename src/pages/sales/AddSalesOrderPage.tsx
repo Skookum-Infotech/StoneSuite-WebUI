@@ -7,6 +7,8 @@ import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
@@ -34,6 +36,8 @@ export default function AddSalesOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer });
+
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
     const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
     const discountAmt = lineItems.reduce((s, r) => {
@@ -55,12 +59,14 @@ export default function AddSalesOrderPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(order.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/sales_order');
     },
   });
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Sales Orders"

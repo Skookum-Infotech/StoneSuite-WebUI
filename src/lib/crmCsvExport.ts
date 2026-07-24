@@ -1,19 +1,7 @@
 import type { StatusInfo, WorkflowRecord } from "@/types/tenant";
+import { buildCsvText, buildCsvFilename, fmtCsvDate } from "@/lib/csvExport";
 
-const CSV_ESCAPE_PATTERN = /[",\r\n]/;
-
-/** Escapes a single value for CSV — quotes it (doubling embedded quotes) only when needed. */
-export function csvEscapeValue(value: unknown): string {
-  const str = value === null || value === undefined ? "" : String(value);
-  return CSV_ESCAPE_PATTERN.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-}
-
-/** Formats an ISO timestamp as a plain date for spreadsheet columns. */
-export function fmtCsvDate(iso: string): string {
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
+export { csvEscapeValue, downloadCsv, fmtCsvDate } from "@/lib/csvExport";
 
 /** Builds CSV text (with header row) for a page of CRM lead/prospect/customer records. */
 export function buildCrmRecordsCsv(
@@ -32,7 +20,7 @@ export function buildCrmRecordsCsv(
 
   const rows = records.map((record) => {
     const statusInfo = statusMap.get(record.currentStateId);
-    const cells = [
+    return [
       record.recordNumber ?? "",
       String(record.coreFields.customer_name ?? ""),
       statusInfo?.statusLabel ?? "",
@@ -40,28 +28,12 @@ export function buildCrmRecordsCsv(
       fmtCsvDate(record.createdAt),
       fmtCsvDate(record.updatedAt),
     ];
-    return cells.map(csvEscapeValue).join(",");
   });
 
-  return [headers.map(csvEscapeValue).join(","), ...rows].join("\r\n");
+  return buildCsvText(headers, rows);
 }
 
 /** Builds a date-stamped filename for a CRM CSV export, e.g. "leads-2026-07-10.csv". */
 export function buildCrmCsvFilename(label: string): string {
-  const safeLabel = label.toLowerCase().replace(/[^a-z0-9-_]+/gi, "-");
-  const date = new Date().toISOString().slice(0, 10);
-  return `${safeLabel}s-${date}.csv`;
-}
-
-/** Triggers a browser download of the given CSV text under the given filename. */
-export function downloadCsv(filename: string, csvContent: string): void {
-  const blob = new Blob(["﻿", csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  return buildCsvFilename(label);
 }

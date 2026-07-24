@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
-  ChevronLeft, ChevronRight, ShieldCheck,
+  ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -11,11 +11,14 @@ import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
+import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type PurchaseOrderFilterState,
 } from '@/lib/purchaseOrderFilters';
 import { PurchaseOrderFilterDrawer } from './PurchaseOrderFilterDrawer';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
+
+const EXPORT_PAGE_SIZE = 200;
 
 // Purchase Orders are a dedicated relational module, not a generic CRM/JSONB
 // workflow record, so — like Estimate/Quote/Invoice — this table talks to
@@ -75,6 +78,9 @@ export function PurchaseOrderTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -161,6 +167,32 @@ export function PurchaseOrderTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => purchaseOrderService.searchPurchaseOrders({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['PO #', 'Vendor', 'Status', 'Approval', 'Order Date', 'Expected Date', 'Owner', 'Grand Total'],
+        (po) => [
+          po.purchaseOrderNumber ?? '',
+          po.vendor?.name ?? '',
+          po.status ?? '',
+          APPROVAL_LABELS[po.approvalStatus] ?? '',
+          fmtCsvDate(po.orderDate),
+          fmtCsvDate(po.expectedDate),
+          (po.ownerEmployeeId ? employeeNames.get(String(po.ownerEmployeeId)) : undefined) ?? '',
+          String(po.grandTotal ?? 0),
+        ],
+        'Purchase Order',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       {/* Toolbar */}
@@ -219,10 +251,26 @@ export function PurchaseOrderTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered purchase orders as CSV' : 'Download all purchase orders as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load purchase orders. Please try again.')}</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}

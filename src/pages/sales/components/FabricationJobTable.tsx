@@ -3,12 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fabricationService } from '@/services/fabricationService';
+import { apiErrorMessage } from '@/api/tenantClient';
+import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import { FJ_STATUS_COLORS } from '@/lib/fabricationForm';
 import type { FabricationJobSearchRequest } from '@/types/fabrication';
+
+const EXPORT_PAGE_SIZE = 200;
 
 // Fabrication Jobs are a dedicated relational module, not a generic CRM/JSONB
 // workflow record, so — mirroring SalesOrderTable — this talks to
@@ -50,6 +54,9 @@ export function FabricationJobTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -120,6 +127,29 @@ export function FabricationJobTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => fabricationService.searchJobs({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Job #', 'Customer', 'Status', 'Promised Install', 'Created'],
+        (job) => [
+          job.jobNumber ?? '',
+          job.customer?.name ?? '',
+          job.status ?? '',
+          fmtCsvDate(job.promisedInstallDate),
+          fmtCsvDate(job.createdAt),
+        ],
+        'Fabrication Job',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -164,10 +194,26 @@ export function FabricationJobTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered fabrication jobs as CSV' : 'Download all fabrication jobs as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">Failed to load fabrication jobs. Please try again.</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">

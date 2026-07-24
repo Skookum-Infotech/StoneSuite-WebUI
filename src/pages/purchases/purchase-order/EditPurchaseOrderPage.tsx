@@ -8,6 +8,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import type { VendorRef } from './components/VendorPicker';
@@ -65,6 +67,13 @@ export default function EditPurchaseOrderPage() {
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? EMPTY_CUSTOM;
   const isLocked = po ? PO_NON_DRAFT_LOCKED(po.statusCode) : false;
 
+  // Baseline against the loaded record, not the empty defaults, so simply opening
+  // the page never counts as an edit. A locked PO is read-only — nothing to lose.
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, vendor, customFieldValues },
+    Boolean(mapped) && !isLocked,
+  );
+
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
     [mapped],
@@ -88,6 +97,7 @@ export default function EditPurchaseOrderPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-order', id] });
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      guard.markClean();
       navigate(`/purchases/purchase_order/${id}`);
     },
   });
@@ -126,6 +136,7 @@ export default function EditPurchaseOrderPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="flex flex-col flex-1 min-h-0"

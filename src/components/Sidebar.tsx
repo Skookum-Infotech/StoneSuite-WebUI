@@ -14,7 +14,7 @@ interface SidebarProps {
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+    'group flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground font-bold'
       : 'text-stone-700 hover:bg-accent/60 hover:text-stone-900',
@@ -22,7 +22,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 const childLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium tracking-wide transition-all duration-200',
+    'group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium tracking-wide transition-all duration-200',
     isActive
       ? 'bg-accent text-accent-foreground font-semibold'
       : 'text-stone-700 hover:bg-accent/50 hover:text-stone-900',
@@ -96,7 +96,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         onClick={onClose}
         className={isChild ? childLinkClass : linkClass}
       >
-        <Icon className={isChild ? 'size-3 xl:size-3.5' : 'size-3.5 xl:size-4'} />
+        <Icon
+          className={cn(
+            'shrink-0 transition-transform duration-200 group-hover:scale-110',
+            isChild ? 'size-3 xl:size-3.5' : 'size-3.5 xl:size-4',
+            item.iconColor,
+          )}
+        />
         <span>{item.label}</span>
       </NavLink>
     );
@@ -117,14 +123,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onClick={() => toggleGroup(group.id)}
           aria-label={`Toggle ${group.label} menu`}
           className={cn(
-            'flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+            'group flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
             active
               ? 'bg-accent/60 text-accent-foreground'
               : 'text-stone-700 hover:bg-accent/40 hover:text-stone-900',
           )}
         >
           <div className="flex items-center gap-2.5">
-            <Icon className="size-3.5" />
+            <Icon
+              className={cn(
+                'size-3.5 shrink-0 transition-transform duration-200 group-hover:scale-110',
+                group.iconColor,
+              )}
+            />
             <span>{group.label}</span>
           </div>
           <ChevronDown

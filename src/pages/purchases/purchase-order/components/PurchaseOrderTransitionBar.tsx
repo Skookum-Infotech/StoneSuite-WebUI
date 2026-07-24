@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Loader2, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Loader2, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useModalDialog } from '@/hooks/useModalDialog';
@@ -37,12 +37,13 @@ export function PurchaseOrderTransitionBar({
   if (targets.length === 0 || !canTransition) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-0.5">
       {targets.map((toCode) => {
         const label = poTransitionLabel(statusCode, toCode);
         const blocked = isPoTransitionBlocked(toCode, approvalStatus);
         const isCancel = toCode === 'CANC';
         const isRework = toCode === 'DRFT';
+        const Icon = isCancel ? XCircle : isRework ? RotateCcw : ArrowRight;
         return (
           <button
             key={toCode}
@@ -51,15 +52,21 @@ export function PurchaseOrderTransitionBar({
             disabled={isPending || blocked}
             title={blocked ? 'Awaiting approval sign-off' : undefined}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+              'flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs w-full text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
               isCancel
-                ? 'border border-destructive/30 text-destructive hover:bg-destructive/5'
+                ? 'text-destructive hover:bg-destructive/5'
                 : isRework
-                  ? 'border border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
-                  : 'bg-brand text-stone-950 hover:bg-brand-hover shadow-sm',
+                  ? 'text-stone-600 hover:bg-stone-50'
+                  : 'text-emerald-600 hover:bg-emerald-600/5',
             )}
           >
-            {isPending ? <Loader2 className="size-3 animate-spin" /> : blocked && <ShieldCheck className="size-3" />}
+            {isPending ? (
+              <Loader2 className="size-4 shrink-0 animate-spin" />
+            ) : blocked ? (
+              <ShieldCheck className="size-4 shrink-0" />
+            ) : (
+              <Icon className="size-4 shrink-0" />
+            )}
             {label}
           </button>
         );

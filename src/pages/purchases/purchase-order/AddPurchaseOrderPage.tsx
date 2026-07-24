@@ -7,6 +7,8 @@ import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from './components/VendorPicker';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
@@ -38,6 +40,8 @@ export default function AddPurchaseOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
+
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const shippingCharge = parseFloat(String(data.shipping_charge ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
@@ -58,12 +62,14 @@ export default function AddPurchaseOrderPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(po.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/purchases/purchase_order');
     },
   });
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Purchase Orders"
