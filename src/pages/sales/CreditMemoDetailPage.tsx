@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileMinus, Upload, Pencil, CheckCircle2, DollarSign, Unlink, Loader2 } from 'lucide-react';
+import { FileMinus, Upload, Pencil, CheckCircle2, DollarSign, Unlink, Loader2, FileDown } from 'lucide-react';
 import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -44,6 +44,8 @@ export default function CreditMemoDetailPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [applyOpen, setApplyOpen] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canUpdate = permissionsLoading || hasPermission('credit_memo', 'update');
@@ -88,6 +90,68 @@ export default function CreditMemoDetailPage() {
   const isReadOnly = CREDIT_MEMO_READONLY_STATUSES.has(creditMemo.statusCode);
   const canVoid = canTransition && (isDraft || creditMemo.statusCode === 'APPV');
   const canApply = canUpdate && creditMemo.statusCode === 'APPV';
+
+  async function handleExportPdf() {
+    if (!creditMemo) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
+      await exportSalesDocToPdf({
+        docType: 'credit_memo',
+        title: creditMemo.creditMemoNumber || 'Credit Memo',
+        recordNumber: creditMemo.creditMemoNumber,
+        statusLabel: creditMemo.status,
+        customerName: creditMemo.customer.name,
+        createdAt: creditMemo.createdAt,
+        updatedAt: creditMemo.updatedAt,
+        sections: [
+          {
+            title: 'Primary Information',
+            rows: [
+              ['Credit Memo Date', fmtDate(creditMemo.creditMemoDate)],
+              ['Reference #', creditMemo.referenceNumber || ''],
+              ['Reason', creditMemo.reason || ''],
+              ['Invoice', creditMemo.invoice?.number || ''],
+              ['Sales Order', creditMemo.salesOrder?.number || ''],
+              ['Sales Tax %', `${creditMemo.salesTaxPercent}%`],
+              ['Memo', creditMemo.memo || ''],
+              ['Notes', creditMemo.notes || ''],
+              ['Internal Notes', creditMemo.internalNotes || ''],
+            ],
+          },
+          { title: 'Billing Address', rows: addressRows(creditMemo.billing ?? {}) },
+        ],
+        itemsTable: {
+          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          rows: creditMemo.lines.map((line) => [
+            String(line.lineNumber),
+            line.itemName || line.description || '—',
+            line.sku || '—',
+            String(line.quantity),
+            currency(line.unitPrice),
+            `${line.discountPercent}%`,
+            `${line.taxPercent}%`,
+            currency(line.lineTotal),
+          ]),
+          numericFrom: 3,
+        },
+        totals: [
+          { label: 'Subtotal', value: currency(creditMemo.subtotal) },
+          { label: 'Discount', value: currency(creditMemo.discountTotal) },
+          { label: 'Tax', value: currency(creditMemo.taxTotal) },
+          { label: 'Adjustment', value: currency(creditMemo.adjustment) },
+          { label: 'Grand Total', value: currency(creditMemo.grandTotal), bold: true },
+          { label: 'Applied Total', value: currency(creditMemo.appliedTotal) },
+          { label: 'Unapplied Amount', value: currency(creditMemo.unappliedAmount), bold: true },
+        ],
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -310,7 +374,20 @@ export default function CreditMemoDetailPage() {
                     onVoided={() => queryClient.invalidateQueries({ queryKey: ['creditMemo', id] })}
                   />
                 )}
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  disabled={exportingPdf}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                  aria-label="Export as PDF"
+                >
+                  {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                  {exportingPdf ? 'Exporting…' : 'Export PDF'}
+                </button>
               </div>
+              {exportPdfError && (
+                <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              )}
             </div>
           )}
 
@@ -394,6 +471,17 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
+}
+
+function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
+  return [
+    ['Name', addr.customerName || ''],
+    ['Attention', addr.attention || ''],
+    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
+    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
+    ['Phone', addr.phone || ''],
+    ['Email', addr.email || ''],
+  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

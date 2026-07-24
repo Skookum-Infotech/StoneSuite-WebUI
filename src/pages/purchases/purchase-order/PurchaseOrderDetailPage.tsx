@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Receipt, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
-import { invoiceService } from '@/services/invoiceService';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { Package, Upload, Pencil } from 'lucide-react';
+import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -12,11 +12,12 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
-import { InvoiceAuditTab } from './components/InvoiceAuditTab';
-import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
-import { RecordPaymentDialog } from './components/RecordPaymentDialog';
-import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { PO_STATUS_COLORS, PO_DELETABLE_STATUSES } from '@/lib/purchaseOrderForm';
+import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
+import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
+import { PurchaseOrderTransitionBar } from './components/PurchaseOrderTransitionBar';
+import { PurchaseOrderApprovalButton } from './components/PurchaseOrderApprovalButton';
+import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -35,108 +36,56 @@ function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
-export default function InvoiceDetailPage() {
+export default function PurchaseOrderDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [exportingPdf, setExportingPdf] = useState(false);
-  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission('invoice', 'update');
-  const canDelete = permissionsLoading || hasPermission('invoice', 'delete');
+  const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
+  const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
 
-  const { data: invoice, isLoading, error } = useQuery({
-    queryKey: ['invoice', id],
-    queryFn: () => invoiceService.getInvoice(id),
+  const { data: po, isLoading, error } = useQuery({
+    queryKey: ['purchase-order', id],
+    queryFn: () => purchaseOrderService.getPurchaseOrder(id),
     enabled: Boolean(id),
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
-    if (invoice?.invoiceNumber) {
-      setLabel(id, invoice.invoiceNumber);
+    if (po?.purchaseOrderNumber) {
+      setLabel(id, po.purchaseOrderNumber);
       return () => clearLabel(id);
     }
-  }, [id, invoice?.invoiceNumber, setLabel, clearLabel]);
+  }, [id, po?.purchaseOrderNumber, setLabel, clearLabel]);
 
-  if (isLoading) return <div className="p-6"><Spinner label="Loading invoice…" /></div>;
-  if (error || !invoice)
-    return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load invoice.')}</ErrorNote></div>;
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => purchaseOrderService.transition(id, toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['purchase-order', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    },
+  });
 
-  const color = INVOICE_STATUS_COLORS[invoice.status] ?? '#a8a29e';
+  if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
+  if (error || !po)
+    return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load purchase order.')}</ErrorNote></div>;
 
-  async function handleExportPdf() {
-    if (!invoice) return;
-    setExportPdfError(undefined);
-    setExportingPdf(true);
-    try {
-      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
-      await exportSalesDocToPdf({
-        docType: 'invoice',
-        title: invoice.invoiceNumber || 'Invoice',
-        recordNumber: invoice.invoiceNumber,
-        statusLabel: invoice.status,
-        customerName: invoice.customer.name,
-        createdAt: invoice.createdAt,
-        updatedAt: invoice.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Invoice Date', fmtDate(invoice.invoiceDate)],
-              ['Due Date', invoice.dueDate ? fmtDate(invoice.dueDate) : ''],
-              ['PO Number', invoice.poNumber || ''],
-              ['Reference #', invoice.referenceNumber || ''],
-              ['Sales Tax %', `${invoice.salesTaxPercent}%`],
-              ['Memo', invoice.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(invoice.billing) },
-          { title: 'Ship To', rows: invoice.shipSameAsBilling ? [] : addressRows(invoice.shipping) },
-        ],
-        itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: invoice.items.map((line) => [
-            String(line.lineNumber),
-            line.itemName || line.description || '—',
-            line.sku || '—',
-            String(line.quantity),
-            currency(line.unitPrice),
-            `${line.discountPercent}%`,
-            `${line.taxPercent}%`,
-            currency(line.lineTotal),
-          ]),
-          numericFrom: 3,
-        },
-        totals: [
-          { label: 'Subtotal', value: currency(invoice.subtotal) },
-          { label: 'Discount', value: currency(invoice.discountTotal) },
-          { label: 'Tax', value: currency(invoice.taxTotal) },
-          { label: 'Grand Total', value: currency(invoice.grandTotal), bold: true },
-          { label: 'Amount Paid', value: currency(invoice.amountPaid) },
-          { label: 'Balance Due', value: currency(invoice.balanceDue), bold: true },
-        ],
-      });
-    } catch (err) {
-      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
-    } finally {
-      setExportingPdf(false);
-    }
-  }
+  const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
+  const canDeleteHere = canDelete && PO_DELETABLE_STATUSES.has(po.statusCode);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <CrmPageHeader
-        backLabel="Invoices"
-        onBack={() => navigate('/sales/invoice')}
-        icon={Receipt}
-        title={invoice.invoiceNumber || 'Invoice'}
-        subtitle={invoice.customer.name}
-        recordNumber={invoice.invoiceNumber}
-        statusBadge={<Badge color={color}>{invoice.status}</Badge>}
+        backLabel="Purchase Orders"
+        onBack={() => navigate('/purchases/purchase_order')}
+        icon={Package}
+        title={po.purchaseOrderNumber || 'Purchase Order'}
+        subtitle={po.vendor.name}
+        recordNumber={po.purchaseOrderNumber}
+        statusBadge={<Badge color={color}>{po.status}</Badge>}
       />
 
       {/* Tab bar */}
@@ -165,32 +114,27 @@ export default function InvoiceDetailPage() {
             <>
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <ReadonlyField label="Invoice Date" value={fmtDate(invoice.invoiceDate)} />
-                  <ReadonlyField label="Due Date" value={invoice.dueDate ? fmtDate(invoice.dueDate) : undefined} />
-                  <ReadonlyField label="PO Number" value={invoice.poNumber} />
-                  <ReadonlyField label="Reference #" value={invoice.referenceNumber} />
-                  <ReadonlyField label="Sales Tax %" value={`${invoice.salesTaxPercent}%`} />
-                  {invoice.memo && <ReadonlyField label="Memo" value={invoice.memo} full />}
+                  <ReadonlyField label="Order Date" value={fmtDate(po.orderDate)} />
+                  <ReadonlyField label="Expected Date" value={po.expectedDate ? fmtDate(po.expectedDate) : undefined} />
+                  <ReadonlyField label="Reference #" value={po.referenceNumber} />
+                  <ReadonlyField label="Sales Tax %" value={`${po.salesTaxPercent}%`} />
+                  {po.memo && <ReadonlyField label="Memo" value={po.memo} full />}
+                  {po.notes && <ReadonlyField label="Notes" value={po.notes} full />}
+                  {po.internalNotes && <ReadonlyField label="Internal Notes" value={po.internalNotes} full />}
+                  {po.termsConditions && <ReadonlyField label="Terms & Conditions" value={po.termsConditions} full />}
                 </div>
               </ModernSection>
-              <ModernSection title="Bill To" index={1}>
-                <AddressBlock addr={invoice.billing} />
-              </ModernSection>
-              <ModernSection title="Ship To" index={2}>
-                {invoice.shipSameAsBilling ? (
-                  <p className="text-xs text-stone-400 italic">Same as billing customer.</p>
-                ) : (
-                  <AddressBlock addr={invoice.shipping} />
-                )}
+              <ModernSection title="Ship To" index={1}>
+                <AddressBlock addr={po.shipTo} />
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <Total label="Subtotal" value={invoice.subtotal} />
-                  <Total label="Discount" value={invoice.discountTotal} />
-                  <Total label="Tax" value={invoice.taxTotal} />
-                  <Total label="Grand Total" value={invoice.grandTotal} bold />
-                  <Total label="Amount Paid" value={invoice.amountPaid} />
-                  <Total label="Balance Due" value={invoice.balanceDue} bold />
+                  <Total label="Subtotal" value={po.subtotal} />
+                  <Total label="Discount" value={po.discountTotal} />
+                  <Total label="Tax" value={po.taxTotal} />
+                  <Total label="Shipping" value={po.shippingCharge} />
+                  <Total label="Adjustment" value={po.adjustment} />
+                  <Total label="Grand Total" value={po.grandTotal} bold />
                 </div>
               </div>
             </>
@@ -204,8 +148,10 @@ export default function InvoiceDetailPage() {
                     {[
                       { label: '#' },
                       { label: 'Item' },
+                      { label: 'Description' },
                       { label: 'SKU' },
                       { label: 'Qty', right: true },
+                      { label: 'Received' },
                       { label: 'Unit Price', right: true },
                       { label: 'Disc %', right: true },
                       { label: 'Tax %', right: true },
@@ -216,78 +162,83 @@ export default function InvoiceDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {invoice.items.map((line) => (
+                  {po.items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
+                      <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
+                      <td className="px-3 py-2.5">
+                        <ReceiptProgress received={line.qtyReceived} ordered={line.quantity} />
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
                   ))}
-                  {invoice.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                  {po.items.length === 0 && (
+                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           )}
 
-          {activeTab === 'audit' && <InvoiceAuditTab invoiceId={id} />}
+          {activeTab === 'audit' && <PurchaseOrderAuditTab purchaseOrderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
           <div className="h-6" />
         </div>
 
         {/* Right sidebar */}
-        <SalesDetailSidebar label="Invoice Details">
+        <SalesDetailSidebar label="Purchase Order Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
-                onClick={() => navigate(`/sales/invoice/${id}/edit`, { state: { initialTab: 'files' } })}
+                onClick={() => navigate(`/purchases/purchase_order/${id}/edit`, { state: { initialTab: 'files' } })}
                 className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
               >
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {canEdit && (
+              {canEdit && po.statusCode === 'DRFT' && (
                 <button
                   type="button"
-                  onClick={() => navigate(`/sales/invoice/${id}/edit`)}
+                  onClick={() => navigate(`/purchases/purchase_order/${id}/edit`)}
                   className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
                 >
                   <Pencil className="size-4 text-stone-400 shrink-0" />
-                  Edit invoice
+                  Edit purchase order
                 </button>
               )}
-              {canEdit && (
-                <RecordPaymentDialog
-                  invoiceId={id}
-                  statusCode={invoice.statusCode}
-                  balanceDue={invoice.balanceDue}
-                  onRecorded={() => queryClient.invalidateQueries({ queryKey: ['invoice', id] })}
-                />
-              )}
-              <button
-                type="button"
-                onClick={handleExportPdf}
-                disabled={exportingPdf}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
-                aria-label="Export as PDF"
-              >
-                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
-                {exportingPdf ? 'Exporting…' : 'Export PDF'}
-              </button>
             </div>
-            {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
+            <p className="text-xs font-semibold text-stone-400">Actions</p>
+            <PurchaseOrderTransitionBar
+              statusCode={po.statusCode}
+              approvalStatus={po.approvalStatus}
+              onTransition={(toCode) => transition.mutate(toCode)}
+              isPending={transition.isPending}
+            />
+            {po.approvalStatus === 'pending' && (
+              <PurchaseOrderApprovalButton
+                purchaseOrderId={id}
+                onApproved={(updated) => {
+                  queryClient.setQueryData(['purchase-order', id], updated);
+                  queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+                }}
+              />
+            )}
+            {transition.error && (
+              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
             )}
           </div>
 
@@ -295,37 +246,59 @@ export default function InvoiceDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{invoice.status}</Badge>
+              <Badge color={color}>{po.status}</Badge>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
-              <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{invoice.customer.name}</span>
+              <span className="text-stone-500">Vendor</span>
+              <button
+                type="button"
+                onClick={() => navigate(`/purchases/vendor/${po.vendor.id}`)}
+                className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+              >
+                {po.vendor.name}
+              </button>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(invoice.createdAt)}</span>
+              <span className="text-stone-700">{fmtDate(po.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
               <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(invoice.updatedAt)}</span>
+              <span className="text-stone-700">{fmtDate(po.updatedAt)}</span>
             </div>
           </div>
 
-          {canDelete && (
+          {canDeleteHere && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-              <DeleteInvoiceDialog
-                invoiceId={id}
-                label={`Invoice ${invoice.invoiceNumber}`}
+              <DeletePurchaseOrderDialog
+                purchaseOrderId={id}
+                label={`Purchase Order ${po.purchaseOrderNumber}`}
                 onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['invoices'] });
-                  navigate('/sales/invoice');
+                  queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+                  navigate('/purchases/purchase_order');
                 }}
               />
             </div>
           )}
         </SalesDetailSidebar>
       </div>
+    </div>
+  );
+}
+
+function ReceiptProgress({ received, ordered }: { received: number; ordered: number }) {
+  const pct = ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
+  const complete = ordered > 0 && received >= ordered;
+  return (
+    <div className="flex items-center gap-2 min-w-[100px]">
+      <div className="h-1.5 flex-1 rounded-full bg-stone-100 overflow-hidden">
+        <div
+          className={cn('h-full rounded-full transition-all', complete ? 'bg-emerald-500' : received > 0 ? 'bg-amber-400' : 'bg-stone-200')}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="shrink-0 text-2xs tabular-nums text-stone-500">{received}/{ordered}</span>
     </div>
   );
 }
@@ -339,18 +312,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   );
 }
 
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
-}
-
-function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -364,7 +326,7 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
-      {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
+      {addr.name && <p className="font-semibold text-stone-900">{addr.name}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
     </div>
   );

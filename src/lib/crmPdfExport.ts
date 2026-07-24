@@ -6,6 +6,24 @@ import {
   type CrmCoreField,
 } from "@/lib/crmFields";
 import type { CrmLookups, LookupItem } from "@/services/lookupService";
+import {
+  MARGIN_X,
+  PAGE_BOTTOM_SAFE,
+  BRAND_LIME,
+  BRAND_DARK_ACCENT,
+  INK,
+  STONE_200,
+  STONE_400,
+  STONE_600,
+  HEADER_BAND_HEIGHT,
+  HEADER_ACCENT_HEIGHT,
+  drawMasthead,
+  drawFooterOnAllPages,
+  fmtDate,
+  type DocWithAutoTable,
+} from "@/lib/pdfBranding";
+
+export { fmtDate } from "@/lib/pdfBranding";
 
 export type CrmExportRecordType = "lead" | "prospect" | "customer";
 
@@ -23,33 +41,11 @@ export interface CrmExportParams {
   showCustomerBalances?: boolean;
 }
 
-interface DocWithAutoTable extends jsPDF {
-  lastAutoTable: { finalY: number };
-}
-
 const RECORD_TYPE_LABEL: Record<CrmExportRecordType, string> = {
   lead: "Lead",
   prospect: "Prospect",
   customer: "Customer",
 };
-
-const MARGIN_X = 40;
-const PAGE_BOTTOM_SAFE = 80;
-const BRAND_LIME: [number, number, number] = [194, 245, 137];
-const BRAND_DARK_ACCENT: [number, number, number] = [113, 156, 59];
-const INK: [number, number, number] = [28, 25, 23];
-const STONE_200: [number, number, number] = [231, 229, 228];
-const STONE_400: [number, number, number] = [168, 162, 158];
-const STONE_600: [number, number, number] = [87, 83, 78];
-
-const HEADER_BAND_HEIGHT = 78;
-const HEADER_ACCENT_HEIGHT = 3;
-
-// Fixed crop window (in the source SVG's native 3000x3000 canvas) isolating the
-// Elevation Stone wordmark — the rest of the canvas is empty padding.
-const ELEVATION_STONE_LOGO_CROP = { x: 299.69, y: 1229.63, width: 2399.84, height: 536.51 };
-
-type LoadedLogo = { dataUrl: string; width: number; height: number };
 
 export function resolveLookupLabel(
   lookups: CrmLookups | undefined,
@@ -80,13 +76,6 @@ export function fieldDisplayValue(
   return raw !== null && raw !== undefined && raw !== "" ? String(raw) : "—";
 }
 
-export function fmtDate(iso: string): string {
-  if (!iso) return "—";
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return parsed.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-}
-
 export function buildExportFilename(
   recordType: CrmExportRecordType,
   recordNumber: string | undefined,
@@ -94,70 +83,6 @@ export function buildExportFilename(
 ): string {
   const safeName = (recordNumber || title || recordType).replace(/[^a-z0-9-_]+/gi, "-");
   return `${recordType}-${safeName}.pdf`;
-}
-
-async function loadPngDataUrl(url: string): Promise<LoadedLogo | null> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(blob);
-    });
-    const dims = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      img.onerror = () => reject(new Error("Failed to read logo dimensions"));
-      img.src = dataUrl;
-    });
-    return { dataUrl, ...dims };
-  } catch {
-    return null;
-  }
-}
-
-/** Fetches an SVG, crops it to a fixed region, and rasterizes it to a PNG data URL —
- *  jsPDF's addImage() only accepts raster formats, not SVG markup. */
-async function rasterizeSvgToDataUrl(
-  url: string,
-  crop: { x: number; y: number; width: number; height: number },
-  targetHeightPx = 480,
-): Promise<LoadedLogo | null> {
-  let objectUrl: string | undefined;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const rawSvg = await res.text();
-    const croppedSvg = rawSvg.replace(
-      /<svg[^>]*>/,
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${crop.x} ${crop.y} ${crop.width} ${crop.height}">`,
-    );
-
-    objectUrl = URL.createObjectURL(new Blob([croppedSvg], { type: "image/svg+xml" }));
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("Failed to rasterize SVG logo"));
-      el.src = objectUrl as string;
-    });
-
-    const height = targetHeightPx;
-    const width = Math.round(height * (crop.width / crop.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(img, 0, 0, width, height);
-    return { dataUrl: canvas.toDataURL("image/png"), width, height };
-  } catch {
-    return null;
-  } finally {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-  }
 }
 
 /** Builds a branded PDF summary of a CRM Lead/Prospect/Customer record. */
@@ -180,56 +105,7 @@ export async function buildCrmRecordPdf(params: CrmExportParams): Promise<DocWit
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  const [stoneSuiteLogo, clientLogo] = await Promise.all([
-    loadPngDataUrl("/logo-white.png"),
-    rasterizeSvgToDataUrl("/elevation-stone-logo.svg", ELEVATION_STONE_LOGO_CROP),
-  ]);
-
-  // ── Masthead: dark band with the StoneSuite mark (bigger, high-contrast) on
-  // the left and the client's logo on a white plate on the right ──
-  doc.setFillColor(...INK);
-  doc.rect(0, 0, pageWidth, HEADER_BAND_HEIGHT, "F");
-  doc.setFillColor(...BRAND_LIME);
-  doc.rect(0, HEADER_BAND_HEIGHT, pageWidth, HEADER_ACCENT_HEIGHT, "F");
-
-  if (stoneSuiteLogo) {
-    const logoH = 36;
-    const logoW = (stoneSuiteLogo.width / stoneSuiteLogo.height) * logoH;
-    doc.addImage(
-      stoneSuiteLogo.dataUrl,
-      "PNG",
-      MARGIN_X,
-      (HEADER_BAND_HEIGHT - logoH) / 2,
-      logoW,
-      logoH,
-    );
-  }
-
-  if (clientLogo) {
-    const plateH = 46;
-    const plateY = (HEADER_BAND_HEIGHT - plateH) / 2;
-    const logoH = 24;
-    const logoW = (clientLogo.width / clientLogo.height) * logoH;
-    const platePadX = 14;
-    const plateW = logoW + platePadX * 2;
-    const plateX = pageWidth - MARGIN_X - plateW;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.setTextColor(...BRAND_LIME);
-    doc.text("PREPARED FOR", plateX + plateW, plateY - 5, { align: "right", charSpace: 1.2 });
-
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(plateX, plateY, plateW, plateH, 5, 5, "F");
-    doc.addImage(
-      clientLogo.dataUrl,
-      "PNG",
-      plateX + platePadX,
-      plateY + (plateH - logoH) / 2,
-      logoW,
-      logoH,
-    );
-  }
+  await drawMasthead(doc, pageWidth);
 
   let cursorY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 34;
 
@@ -343,15 +219,7 @@ export async function buildCrmRecordPdf(params: CrmExportParams): Promise<DocWit
     });
   }
 
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...STONE_400);
-    doc.text(`StoneSuite CRM — ${RECORD_TYPE_LABEL[recordType]} Record`, MARGIN_X, pageHeight - 20);
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - MARGIN_X, pageHeight - 20, { align: "right" });
-  }
+  drawFooterOnAllPages(doc, pageHeight, `StoneSuite CRM — ${RECORD_TYPE_LABEL[recordType]} Record`);
 
   return doc;
 }

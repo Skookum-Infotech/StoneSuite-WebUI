@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown } from 'lucide-react';
 import { estimateService } from '@/services/estimateService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -39,6 +39,8 @@ export default function EstimateDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('estimate', 'update');
@@ -74,6 +76,64 @@ export default function EstimateDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load estimate.')}</ErrorNote></div>;
 
   const color = ESTIMATE_STATUS_COLORS[estimate.status] ?? '#a8a29e';
+
+  async function handleExportPdf() {
+    if (!estimate) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
+      await exportSalesDocToPdf({
+        docType: 'estimate',
+        title: estimate.estimateNumber || 'Estimate',
+        recordNumber: estimate.estimateNumber,
+        statusLabel: estimate.status,
+        customerName: estimate.customer.name,
+        createdAt: estimate.createdAt,
+        updatedAt: estimate.updatedAt,
+        sections: [
+          {
+            title: 'Primary Information',
+            rows: [
+              ['Estimate Date', fmtDate(estimate.estimateDate)],
+              ['Valid Until', estimate.validUntil ? fmtDate(estimate.validUntil) : ''],
+              ['PO Number', estimate.poNumber || ''],
+              ['Reference #', estimate.referenceNumber || ''],
+              ['Sales Tax %', `${estimate.salesTaxPercent}%`],
+              ['Memo', estimate.memo || ''],
+            ],
+          },
+          { title: 'Bill To', rows: addressRows(estimate.billing) },
+          { title: 'Ship To', rows: estimate.shipSameAsBilling ? [] : addressRows(estimate.shipping) },
+        ],
+        itemsTable: {
+          head: ['#', 'Item', 'Description', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          rows: estimate.items.map((line) => [
+            String(line.lineNumber),
+            line.itemName || line.description || '—',
+            line.description || '—',
+            line.sku || '—',
+            String(line.quantity),
+            currency(line.unitPrice),
+            `${line.discountPercent}%`,
+            `${line.taxPercent}%`,
+            currency(line.lineTotal),
+          ]),
+          numericFrom: 4,
+        },
+        totals: [
+          { label: 'Subtotal', value: currency(estimate.subtotal) },
+          { label: 'Discount', value: currency(estimate.discountTotal) },
+          { label: 'Tax', value: currency(estimate.taxTotal) },
+          { label: 'Grand Total', value: currency(estimate.grandTotal), bold: true },
+        ],
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -226,9 +286,22 @@ export default function EstimateDetailPage() {
                   Convert to Quote
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
             {convert.isError && (
               <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert estimate.')}</p>
+            )}
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
           </div>
 
@@ -278,6 +351,17 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
+}
+
+function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
+  return [
+    ['Name', addr.customerName || ''],
+    ['Attention', addr.attention || ''],
+    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
+    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
+    ['Phone', addr.phone || ''],
+    ['Email', addr.email || ''],
+  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

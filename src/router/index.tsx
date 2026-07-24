@@ -194,6 +194,18 @@ const VendorDetailPage = lazyWithRetry(
 const EditVendorPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/EditVendorPage"),
 );
+const PurchaseOrderListPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/PurchaseOrderListPage"),
+);
+const AddPurchaseOrderPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/AddPurchaseOrderPage"),
+);
+const PurchaseOrderDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/PurchaseOrderDetailPage"),
+);
+const EditPurchaseOrderPage = lazyWithRetry(
+  () => import("@/pages/purchases/purchase-order/EditPurchaseOrderPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -634,6 +646,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="vendor" action="update">
             <EditVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Purchase Orders (specific routes must come before the catch-all)
+      {
+        path: "purchases/purchase_order",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="read">
+            <PurchaseOrderListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/purchase_order/new",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="create">
+            <AddPurchaseOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/purchase_order/:id",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="read">
+            <PurchaseOrderDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/purchase_order/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="purchase_order" action="update">
+            <EditPurchaseOrderPage />
           </PermissionGuard>,
         ),
       },
