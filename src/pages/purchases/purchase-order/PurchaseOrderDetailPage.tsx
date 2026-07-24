@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Package, Upload, Pencil } from 'lucide-react';
+import { Package, Upload, Pencil, PackagePlus } from 'lucide-react';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -13,7 +13,9 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { PO_STATUS_COLORS, PO_DELETABLE_STATUSES } from '@/lib/purchaseOrderForm';
+import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
+import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { PurchaseOrderTransitionBar } from './components/PurchaseOrderTransitionBar';
 import { PurchaseOrderApprovalButton } from './components/PurchaseOrderApprovalButton';
@@ -22,6 +24,7 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
+  { key: 'receipts', label: 'Receipts' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -45,6 +48,7 @@ export default function PurchaseOrderDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
+  const canReceive = permissionsLoading || hasPermission('item_receipt', 'create');
 
   const { data: po, isLoading, error } = useQuery({
     queryKey: ['purchase-order', id],
@@ -188,6 +192,7 @@ export default function PurchaseOrderDetailPage() {
             </div>
           )}
 
+          {activeTab === 'receipts' && <PurchaseOrderReceiptsTab purchaseOrderId={id} />}
           {activeTab === 'audit' && <PurchaseOrderAuditTab purchaseOrderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
@@ -207,6 +212,16 @@ export default function PurchaseOrderDetailPage() {
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
+              {canReceive && isPurchaseOrderReceivable(po) && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/purchases/item_receipt/new?po=${id}`)}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <PackagePlus className="size-4 text-stone-400 shrink-0" />
+                  Receive items
+                </button>
+              )}
               {canEdit && po.statusCode === 'DRFT' && (
                 <button
                   type="button"

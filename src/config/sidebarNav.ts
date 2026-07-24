@@ -222,6 +222,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Item Receipts",
               path: "/purchases/item_receipt",
               icon: Inbox,
+              permission: { resource: "item_receipt", action: "read" },
             },
             {
               type: "link",
