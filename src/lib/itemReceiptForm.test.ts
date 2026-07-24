@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  mergeReceiptLines, includedReceiptLines, validateReceiptLines,
+  mergeReceiptLines, includedReceiptLines, validateReceiptLines, validateReceiptLineErrors,
   toCreatePayload, toUpdatePayload, fromItemReceipt, irStatusLabel,
   isPurchaseOrderReceivable, IR_STATUS_COLORS,
   type ItemReceiptDraftLine,
@@ -96,6 +96,29 @@ describe('includedReceiptLines / validateReceiptLines', () => {
   it('passes for a valid included line', () => {
     const lines = [{ ...base, qtyReceived: '10', qtyRejected: '2' }]
     expect(validateReceiptLines(lines)).toEqual([])
+  })
+})
+
+describe('validateReceiptLineErrors', () => {
+  const base: ItemReceiptDraftLine = {
+    purchaseOrderItemId: 'poi-1', lineNumber: 3, itemName: 'Widget', sku: 'SKU-1',
+    description: '', unitCode: 'EA', qtyOrdered: 100, qtyAlreadyReceived: 0,
+    qtyReceived: '', qtyRejected: '0', lineNotes: '',
+  }
+
+  it('keys each error back to the offending line\'s purchaseOrderItemId, not just its number', () => {
+    const lines = [{ ...base, qtyReceived: '10', qtyRejected: '11' }]
+    expect(validateReceiptLineErrors(lines)).toEqual([
+      { purchaseOrderItemId: 'poi-1', lineNumber: 3, message: 'rejected quantity cannot exceed the received quantity.' },
+    ])
+  })
+
+  it('has no "at least one line" entry — that check has no single row to attach to', () => {
+    expect(validateReceiptLineErrors([base])).toEqual([])
+  })
+
+  it('is empty for a valid included line', () => {
+    expect(validateReceiptLineErrors([{ ...base, qtyReceived: '10', qtyRejected: '2' }])).toEqual([])
   })
 })
 

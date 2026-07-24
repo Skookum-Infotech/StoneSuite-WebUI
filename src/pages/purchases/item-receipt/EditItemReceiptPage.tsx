@@ -12,7 +12,7 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
 import {
-  fromItemReceipt, toUpdatePayload, validateReceiptLines, mergeReceiptLines,
+  fromItemReceipt, toUpdatePayload, validateReceiptLines, validateReceiptLineErrors, mergeReceiptLines,
   IR_EDITABLE_STATUSES, irStatusLabel, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
@@ -79,6 +79,7 @@ export default function EditItemReceiptPage() {
   );
 
   const validationErrors = validateReceiptLines(lines);
+  const lineErrors = useMemo(() => validateReceiptLineErrors(lines), [lines]);
 
   const save = useMutation({
     mutationFn: () => {
@@ -171,6 +172,7 @@ export default function EditItemReceiptPage() {
           set={set}
           lines={lines}
           setLines={setLocalLines}
+          lineErrors={lineErrors}
           sourcePurchaseOrder={{ id: po.id, number: po.purchaseOrderNumber, vendorName: po.vendor.name }}
           customFieldValues={customFieldValues}
           setCustomField={setCustomField}

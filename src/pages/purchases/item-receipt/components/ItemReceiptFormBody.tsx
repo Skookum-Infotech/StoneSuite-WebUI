@@ -12,7 +12,7 @@ import { ReceiptLinesTable } from './ReceiptLinesTable';
 import { ItemReceiptAuditTab } from './ItemReceiptAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
 import {
-  RECEIPT_HEADER_FIELDS, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
+  RECEIPT_HEADER_FIELDS, PAGE_TABS, type PageTab, type ItemReceiptDraftLine, type ReceiptLineError,
 } from '@/lib/itemReceiptForm';
 
 // Shared tab bar + tab content for both the Receive and Edit Item Receipt
@@ -20,7 +20,7 @@ import {
 // `item_receipt` workflow's field definitions (DynamicFieldInput).
 export function ItemReceiptFormBody({
   activeTab, setActiveTab, itemReceiptId,
-  data, set, lines, setLines,
+  data, set, lines, setLines, lineErrors,
   sourcePurchaseOrder,
   customFieldValues, setCustomField,
   lookups, filesPanelRef,
@@ -34,6 +34,7 @@ export function ItemReceiptFormBody({
   set: (k: string, v: unknown) => void;
   lines: ItemReceiptDraftLine[];
   setLines: (v: ItemReceiptDraftLine[]) => void;
+  lineErrors: ReceiptLineError[];
   sourcePurchaseOrder: { id: string; number?: string; vendorName: string };
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
@@ -117,7 +118,7 @@ export function ItemReceiptFormBody({
               )}
 
               <ModernSection title="Lines" index={3}>
-                <ReceiptLinesTable lines={lines} onChange={setLines} />
+                <ReceiptLinesTable lines={lines} onChange={setLines} lineErrors={lineErrors} />
               </ModernSection>
             </>
           )}

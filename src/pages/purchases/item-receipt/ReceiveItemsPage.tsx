@@ -12,7 +12,7 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
 import {
-  itemReceiptDefaults, toCreatePayload, validateReceiptLines, mergeReceiptLines,
+  itemReceiptDefaults, toCreatePayload, validateReceiptLines, validateReceiptLineErrors, mergeReceiptLines,
   isPurchaseOrderReceivable, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
@@ -48,6 +48,7 @@ export default function ReceiveItemsPage() {
 
   const activeLines = useMemo(() => lines ?? (po ? mergeReceiptLines(po.items) : []), [lines, po]);
   const validationErrors = validateReceiptLines(activeLines);
+  const lineErrors = useMemo(() => validateReceiptLineErrors(activeLines), [activeLines]);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -151,6 +152,7 @@ export default function ReceiveItemsPage() {
           set={set}
           lines={activeLines}
           setLines={setLines}
+          lineErrors={lineErrors}
           sourcePurchaseOrder={{ id: po.id, number: po.purchaseOrderNumber, vendorName: po.vendor.name }}
           customFieldValues={customFieldValues}
           setCustomField={setCustomField}
