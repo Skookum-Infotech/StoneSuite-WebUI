@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Inbox, Upload, Pencil, Package } from 'lucide-react';
+import { Inbox, Upload, Pencil, Package, FileDown, Loader2 } from 'lucide-react';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -42,6 +42,8 @@ export default function ItemReceiptDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('item_receipt', 'update');
@@ -80,6 +82,62 @@ export default function ItemReceiptDetailPage() {
   const canVoidHere = canTransition && IR_VOIDABLE_STATUSES.has(ir.statusCode);
   const canDeleteHere = canDelete && IR_DELETABLE_STATUSES.has(ir.statusCode);
   const items = ir.items ?? [];
+
+  async function handleExportPdf() {
+    if (!ir) return;
+    setExportPdfError(undefined);
+    setExportingPdf(true);
+    try {
+      const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
+      await exportPurchasesRecordToPdf({
+        recordType: 'item_receipt',
+        title: ir.itemReceiptNumber || 'Item Receipt',
+        recordNumber: ir.itemReceiptNumber,
+        statusLabel: ir.status,
+        counterpartyName: ir.vendor.name,
+        createdAt: ir.createdAt,
+        updatedAt: ir.updatedAt,
+        sections: [
+          {
+            title: 'Source Purchase Order',
+            rows: [['Purchase Order #', ir.purchaseOrder.number || '']],
+          },
+          {
+            title: 'Receipt Information',
+            rows: [
+              ['Receipt Date', fmtDate(ir.receiptDate)],
+              ['Warehouse', ir.warehouseName || ''],
+              ['Packing Slip #', ir.packingSlip || ''],
+              ['Carrier', ir.carrier || ''],
+              ['Tracking #', ir.trackingNumber || ''],
+              ['Bill of Lading #', ir.billOfLading || ''],
+              ['Notes', ir.notes || ''],
+              ['Internal Notes', ir.internalNotes || ''],
+              ['Over-Receipt Reason', ir.overReceiptReason || ''],
+              ['Void Reason', ir.voidReason || ''],
+            ],
+          },
+        ],
+        itemsTable: {
+          head: ['#', 'Item', 'SKU', 'Ordered', 'Received', 'Rejected', 'Notes'],
+          rows: items.map((line) => [
+            String(line.lineNumber),
+            line.itemName || line.description || '—',
+            line.sku || '—',
+            String(line.qtyOrdered),
+            String(line.qtyReceived),
+            String(line.qtyRejected),
+            line.lineNotes || '—',
+          ]),
+          numericFrom: 3,
+        },
+      });
+    } catch (err) {
+      setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -222,7 +280,20 @@ export default function ItemReceiptDetailPage() {
                   Edit item receipt
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Export as PDF"
+              >
+                {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
+                {exportingPdf ? 'Exporting…' : 'Export PDF'}
+              </button>
             </div>
+            {exportPdfError && (
+              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
           </div>
 
           {canPostHere && (

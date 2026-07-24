@@ -105,6 +105,12 @@ can bypass or duplicate that logic client-side:
   the pattern. Use the record's human identifier, never the raw ID; `MainLayout`'s
   fallback also hides any UUID-shaped segment, but that's a safety net, not a substitute.
 
+## PDF Export Convention
+Detail-page "Export PDF" button (Quick Actions card, lazy-imported exporter) — one
+`lib/*PdfExport.ts` per domain (`salesPdfExport`, `crmPdfExport`, `purchasesPdfExport`),
+all built on shared `lib/pdfBranding.ts`. New domain → new sibling file, don't add a
+list-page bulk export.
+
 ## Code Quality
 1. No magic strings or numbers. All values > 1 are constants.
 2. Errors are wrapped with context, never swallowed.
