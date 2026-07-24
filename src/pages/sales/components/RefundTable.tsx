@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { REFUND_STATUS_COLORS } from '@/lib/refundForm';
+import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { RefundSearchRequest } from '@/types/refund';
+
+const EXPORT_PAGE_SIZE = 200;
 
 // Refunds are a dedicated relational module, not a generic CRM/JSONB workflow
 // record, so — like Payment — this table talks to refundService
@@ -48,6 +51,9 @@ export function RefundTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -118,6 +124,30 @@ export function RefundTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => refundService.searchRefunds({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Refund #', 'Customer', 'Status', 'Refund Date', 'Amount', 'Unapplied'],
+        (r) => [
+          r.refundNumber ?? '',
+          r.customer?.name ?? '',
+          r.status ?? '',
+          fmtCsvDate(r.refundDate),
+          String(r.amount ?? 0),
+          String(r.unappliedAmount ?? 0),
+        ],
+        'Refund',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   const columnCount = 6 + (canEdit ? 1 : 0);
 
   return (
@@ -168,6 +198,19 @@ export function RefundTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered refunds as CSV' : 'Download all refunds as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Download className="size-3.5" aria-hidden="true" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {/* A 400 here means an invalid filter/sort key (refund/resolver.go's
@@ -178,6 +221,9 @@ export function RefundTable() {
         <p role="alert" className="text-xs text-red-500">
           {apiErrorMessage(error, 'Failed to load refunds. Please try again.')}
         </p>
+      )}
+      {exportError && (
+        <p role="alert" className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}

@@ -3,13 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { salesOrderService } from '@/services/salesOrderService';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { SO_STATUS_COLORS } from '@/lib/salesOrderForm';
+import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { SalesOrderSearchRequest } from '@/types/salesOrder';
+
+// Larger page size for CSV export — fewer round trips while paging through
+// every matching record (vs. the 25-row page size used for on-screen browsing).
+const EXPORT_PAGE_SIZE = 200;
 
 // Sales Orders are a dedicated relational module (spec AD-1), not a generic
 // CRM/JSONB workflow record, so — unlike Lead/Prospect/Customer — this table
@@ -52,6 +58,9 @@ export function SalesOrderTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -122,6 +131,29 @@ export function SalesOrderTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => salesOrderService.searchOrders({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Order #', 'Customer', 'Status', 'Order Date', 'Amount'],
+        (order) => [
+          order.salesOrderNumber ?? '',
+          order.customer?.name ?? '',
+          order.status ?? '',
+          fmtCsvDate(order.orderDate),
+          String(order.grandTotal ?? 0),
+        ],
+        'Sales Order',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       {/* Toolbar */}
@@ -167,10 +199,26 @@ export function SalesOrderTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered sales orders as CSV' : 'Download all sales orders as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">Failed to load sales orders. Please try again.</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}

@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { creditMemoService } from '@/services/creditMemoService';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CREDIT_MEMO_STATUS_COLORS } from '@/lib/creditMemoForm';
+import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { CreditMemoSearchRequest } from '@/types/creditMemo';
+
+const EXPORT_PAGE_SIZE = 200;
 
 // Credit Memos are a dedicated relational module, not a generic CRM/JSONB
 // workflow record, so this table talks to creditMemoService
@@ -52,6 +56,9 @@ export function CreditMemoTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -122,6 +129,32 @@ export function CreditMemoTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => creditMemoService.searchCreditMemos({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Credit Memo #', 'Date', 'Customer', 'Status', 'Reason', 'Grand Total', 'Applied Total', 'Unapplied Amount'],
+        (cm) => [
+          cm.creditMemoNumber ?? '',
+          fmtCsvDate(cm.creditMemoDate),
+          cm.customer?.name ?? '',
+          cm.status ?? '',
+          cm.reason ?? '',
+          String(cm.grandTotal ?? 0),
+          String(cm.appliedTotal ?? 0),
+          String(cm.unappliedAmount ?? 0),
+        ],
+        'Credit Memo',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       {/* Toolbar */}
@@ -167,10 +200,26 @@ export function CreditMemoTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered credit memos as CSV' : 'Download all credit memos as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">Failed to load credit memos. Please try again.</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}

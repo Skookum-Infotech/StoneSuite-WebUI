@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -11,11 +11,14 @@ import { itemReceiptService } from '@/services/itemReceiptService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { IR_STATUS_COLORS, IR_EDITABLE_STATUSES } from '@/lib/itemReceiptForm';
+import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type ItemReceiptFilterState,
 } from '@/lib/itemReceiptFilters';
 import { ItemReceiptFilterDrawer } from './ItemReceiptFilterDrawer';
 import type { ItemReceiptSearchRequest } from '@/types/itemReceipt';
+
+const EXPORT_PAGE_SIZE = 200;
 
 // Item Receipts are a dedicated relational module, not a generic CRM/JSONB
 // workflow record — mirrors PurchaseOrderTable's search/sort/cursor-
@@ -60,6 +63,9 @@ export function ItemReceiptTable() {
 
   const [cursor, setCursor] = useState('');
   const [prevCursors, setPrevCursors] = useState<string[]>([]);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -146,6 +152,31 @@ export function ItemReceiptTable() {
     return sortDir === 'asc' ? <ArrowUp className="size-2.5" /> : <ArrowDown className="size-2.5" />;
   }
 
+  async function handleDownloadCsv() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await exportPagedCsv(
+        (exportCursor) => itemReceiptService.searchItemReceipts({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Receipt #', 'PO #', 'Vendor', 'Status', 'Receipt Date', 'Warehouse', 'Owner'],
+        (ir) => [
+          ir.itemReceiptNumber ?? '',
+          ir.purchaseOrder?.number ?? '',
+          ir.vendor?.name ?? '',
+          ir.status ?? '',
+          fmtCsvDate(ir.receiptDate),
+          ir.warehouseName ?? '',
+          (ir.ownerEmployeeId ? employeeNames.get(String(ir.ownerEmployeeId)) : undefined) ?? '',
+        ],
+        'Item Receipt',
+      );
+    } catch (err) {
+      setExportError(apiErrorMessage(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div ref={topRef} className="flex flex-col gap-3 scroll-mt-4">
       {/* Toolbar */}
@@ -204,10 +235,26 @@ export function ItemReceiptTable() {
             Clear
           </button>
         )}
+
+        {records.length > 0 && (
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            disabled={isExporting}
+            aria-label={hasFilters ? 'Download filtered item receipts as CSV' : 'Download all item receipts as CSV'}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+          </button>
+        )}
       </div>
 
       {isError && (
         <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load item receipts. Please try again.')}</p>
+      )}
+      {exportError && (
+        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}
