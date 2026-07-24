@@ -12,7 +12,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PO_STATUS_COLORS, PO_DELETABLE_STATUSES } from '@/lib/purchaseOrderForm';
+import { PO_STATUS_COLORS, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
@@ -51,6 +51,7 @@ export default function PurchaseOrderDetailPage() {
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
   const canReceive = permissionsLoading || hasPermission('item_receipt', 'create');
+  const canTransition = permissionsLoading || hasPermission('purchase_order', 'transition');
 
   const { data: po, isLoading, error } = useQuery({
     queryKey: ['purchase-order', id],
@@ -81,6 +82,13 @@ export default function PurchaseOrderDetailPage() {
 
   const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
   const canDeleteHere = canDelete && PO_DELETABLE_STATUSES.has(po.statusCode);
+  // Terminal statuses (CLSD/CANC) have no legal transitions, and a user without
+  // `purchase_order:transition` sees none either — in both cases the bar renders
+  // nothing, so the card would be an empty "Actions" header. Hide it unless it
+  // has real content (a transition, an approval gate, or a failed transition).
+  const hasTransitions = canTransition && (PO_ALLOWED_TRANSITIONS[po.statusCode]?.length ?? 0) > 0;
+  const isApprovalPending = po.approvalStatus === 'pending';
+  const showActions = hasTransitions || isApprovalPending || Boolean(transition.error);
 
   async function handleExportPdf() {
     if (!po) return;
@@ -310,27 +318,29 @@ export default function PurchaseOrderDetailPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Actions</p>
-            <PurchaseOrderTransitionBar
-              statusCode={po.statusCode}
-              approvalStatus={po.approvalStatus}
-              onTransition={(toCode) => transition.mutate(toCode)}
-              isPending={transition.isPending}
-            />
-            {po.approvalStatus === 'pending' && (
-              <PurchaseOrderApprovalButton
-                purchaseOrderId={id}
-                onApproved={(updated) => {
-                  queryClient.setQueryData(['purchase-order', id], updated);
-                  queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-                }}
+          {showActions && (
+            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
+              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <PurchaseOrderTransitionBar
+                statusCode={po.statusCode}
+                approvalStatus={po.approvalStatus}
+                onTransition={(toCode) => transition.mutate(toCode)}
+                isPending={transition.isPending}
               />
-            )}
-            {transition.error && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
-            )}
-          </div>
+              {isApprovalPending && (
+                <PurchaseOrderApprovalButton
+                  purchaseOrderId={id}
+                  onApproved={(updated) => {
+                    queryClient.setQueryData(['purchase-order', id], updated);
+                    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+                  }}
+                />
+              )}
+              {transition.error && (
+                <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
+              )}
+            </div>
+          )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Status</p>
