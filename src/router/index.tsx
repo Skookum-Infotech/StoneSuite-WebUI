@@ -218,6 +218,15 @@ const ItemReceiptDetailPage = lazyWithRetry(
 const EditItemReceiptPage = lazyWithRetry(
   () => import("@/pages/purchases/item-receipt/EditItemReceiptPage"),
 );
+const ChartOfAccountsPage = lazyWithRetry(
+  () => import("@/pages/finance/chart-of-accounts/ChartOfAccountsPage"),
+);
+const AccountDetailPage = lazyWithRetry(
+  () => import("@/pages/finance/chart-of-accounts/AccountDetailPage"),
+);
+const AccountDefaultsPage = lazyWithRetry(
+  () => import("@/pages/finance/account-defaults/AccountDefaultsPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -726,6 +735,32 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="item_receipt" action="update">
             <EditItemReceiptPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Finance: Chart of Accounts (specific routes must come before any future catch-all)
+      {
+        path: "finance/chart-of-accounts",
+        element: lazy_(
+          <PermissionGuard resource="chart_of_account" action="read">
+            <ChartOfAccountsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/chart-of-accounts/:id",
+        element: lazy_(
+          <PermissionGuard resource="chart_of_account" action="read">
+            <AccountDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/account-defaults",
+        element: lazy_(
+          <PermissionGuard resource="chart_of_account" action="configure">
+            <AccountDefaultsPage />
           </PermissionGuard>,
         ),
       },

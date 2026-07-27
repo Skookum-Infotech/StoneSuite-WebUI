@@ -29,6 +29,9 @@ import {
   Banknote,
   FilePlus,
   Wallet,
+  Landmark,
+  ListTree,
+  Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -283,6 +286,34 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/expense",
               icon: Wallet,
               iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "finance",
+          label: "Finance",
+          icon: Landmark,
+          iconColor: "text-cyan-700 dark:text-cyan-400",
+          matchPaths: ["/finance"],
+          children: [
+            {
+              type: "link",
+              id: "chart-of-accounts",
+              label: "Chart of Accounts",
+              path: "/finance/chart-of-accounts",
+              icon: ListTree,
+              iconColor: "text-teal-600 dark:text-teal-400",
+              permission: { resource: "chart_of_account", action: "read" },
+            },
+            {
+              type: "link",
+              id: "account-defaults",
+              label: "Default Accounts",
+              path: "/finance/account-defaults",
+              icon: Settings2,
+              iconColor: "text-slate-500 dark:text-slate-400",
+              permission: { resource: "chart_of_account", action: "configure" },
             },
           ],
         },
