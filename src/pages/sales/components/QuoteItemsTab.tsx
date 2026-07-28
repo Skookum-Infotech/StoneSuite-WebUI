@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InventoryItemPicker } from './InventoryItemPicker';
-import type { InventoryItem } from '@/services/inventoryService';
+import type { InventoryItem } from '@/types/inventory';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type QuoteLineItem,
 } from '@/lib/quoteForm';

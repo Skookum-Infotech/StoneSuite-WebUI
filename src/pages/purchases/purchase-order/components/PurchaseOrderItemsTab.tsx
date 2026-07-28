@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 // from its current home rather than duplicated (mirrors EstimateItemsTab's
 // usage one folder over).
 import { InventoryItemPicker } from '@/pages/sales/components/InventoryItemPicker';
-import type { InventoryItem } from '@/services/inventoryService';
+import type { InventoryItem } from '@/types/inventory';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type PurchaseOrderLineItem,
 } from '@/lib/purchaseOrderForm';
