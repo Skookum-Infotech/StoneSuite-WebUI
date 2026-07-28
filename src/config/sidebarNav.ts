@@ -34,10 +34,11 @@ import {
   Settings2,
   Warehouse,
   MapPin,
-  ArrowLeftRight,
   ClipboardEdit,
   Repeat,
   ClipboardCheck,
+  Layers,
+  Boxes,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -306,6 +307,33 @@ export const sidebarNav: SidebarNavConfig = {
           children: [
             {
               type: "link",
+              id: "inventory-items",
+              label: "Items",
+              path: "/inventory/item",
+              icon: Package,
+              iconColor: "text-violet-600 dark:text-violet-400",
+              permission: { resource: "inventory_item", action: "read" },
+            },
+            {
+              type: "link",
+              id: "units-slabs",
+              label: "Units / Slabs",
+              path: "/inventory/unit",
+              icon: Layers,
+              iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+              permission: { resource: "inventory_unit", action: "read" },
+            },
+            {
+              type: "link",
+              id: "bundles",
+              label: "Bundles",
+              path: "/inventory/bundle",
+              icon: Boxes,
+              iconColor: "text-amber-600 dark:text-amber-400",
+              permission: { resource: "inventory_bundle", action: "read" },
+            },
+            {
+              type: "link",
               id: "bin-management",
               label: "Bin Management",
               path: "/inventory/bin",
@@ -315,12 +343,12 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
-              id: "bin-transfer",
-              label: "Bin Transfer",
-              path: "/inventory/bin_transfer",
-              icon: ArrowLeftRight,
-              iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
-              permission: { resource: "inventory_unit", action: "read" },
+              id: "warehouses",
+              label: "Warehouses",
+              path: "/inventory/warehouse",
+              icon: Warehouse,
+              iconColor: "text-teal-600 dark:text-teal-400",
+              permission: { resource: "warehouse", action: "read" },
             },
             {
               type: "link",
@@ -428,6 +456,15 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Hash,
               iconColor: "text-amber-500 dark:text-amber-400",
               permission: { resource: "workflow_config", action: "configure" },
+            },
+            {
+              type: "link",
+              id: "inventory-setup",
+              label: "Inventory Setup",
+              path: "/config/inventory-setup",
+              icon: Boxes,
+              iconColor: "text-purple-500 dark:text-purple-400",
+              permission: { resource: "inventory_lookup", action: "read" },
             },
             {
               type: "link",
