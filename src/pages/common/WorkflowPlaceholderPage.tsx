@@ -16,6 +16,11 @@ import {
   Banknote,
   FilePlus,
   Wallet,
+  MapPin,
+  ArrowLeftRight,
+  ClipboardEdit,
+  Repeat,
+  ClipboardCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -102,6 +107,32 @@ const MODULE_META: Record<string, ModuleMeta> = {
     title: 'Expenses',
     description: 'Submit and approve employee expense claims.',
     icon: Wallet,
+  },
+  // Inventory
+  bin: {
+    title: 'Bin Management',
+    description: 'Organize warehouse locations and bin storage.',
+    icon: MapPin,
+  },
+  bin_transfer: {
+    title: 'Bin Transfer',
+    description: 'Move stock between bins within a warehouse.',
+    icon: ArrowLeftRight,
+  },
+  adjustment: {
+    title: 'Adjust Inventory',
+    description: 'Correct on-hand stock for damage, loss, or recounts.',
+    icon: ClipboardEdit,
+  },
+  transfer: {
+    title: 'Transfer Inventory',
+    description: 'Ship and receive stock between warehouses.',
+    icon: Repeat,
+  },
+  count: {
+    title: 'Inventory Count',
+    description: 'Freeze, count, and reconcile stock by cycle count.',
+    icon: ClipboardCheck,
   },
 };
 

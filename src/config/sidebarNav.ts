@@ -32,6 +32,12 @@ import {
   Landmark,
   ListTree,
   Settings2,
+  Warehouse,
+  MapPin,
+  ArrowLeftRight,
+  ClipboardEdit,
+  Repeat,
+  ClipboardCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -86,7 +92,8 @@ export interface SidebarNavConfig {
 // `iconColor` must be a literal Tailwind class string (never composed at
 // runtime) so the Tailwind scanner keeps the utility in the build. Colors are
 // grouped by domain: CRM = blue family, Sales = green/teal family,
-// Purchases = amber/orange family, Configure = violet/slate family.
+// Purchases = amber/orange family, Inventory = purple/pink family,
+// Configure = violet/slate family.
 export const sidebarNav: SidebarNavConfig = {
   topItems: [
     {
@@ -286,6 +293,61 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/expense",
               icon: Wallet,
               iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "inventory",
+          label: "Inventory",
+          icon: Warehouse,
+          iconColor: "text-purple-600 dark:text-purple-400",
+          matchPaths: ["/inventory"],
+          children: [
+            {
+              type: "link",
+              id: "bin-management",
+              label: "Bin Management",
+              path: "/inventory/bin",
+              icon: MapPin,
+              iconColor: "text-purple-600 dark:text-purple-400",
+              permission: { resource: "inventory_bin", action: "read" },
+            },
+            {
+              type: "link",
+              id: "bin-transfer",
+              label: "Bin Transfer",
+              path: "/inventory/bin_transfer",
+              icon: ArrowLeftRight,
+              iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+              permission: { resource: "inventory_unit", action: "read" },
+            },
+            {
+              type: "link",
+              id: "adjust-inventory",
+              label: "Adjust Inventory",
+              path: "/inventory/adjustment",
+              icon: ClipboardEdit,
+              iconColor: "text-pink-500 dark:text-pink-400",
+              permission: { resource: "inventory_adjustment", action: "read" },
+            },
+            {
+              type: "link",
+              id: "transfer-inventory",
+              label: "Transfer Inventory",
+              path: "/inventory/transfer",
+              icon: Repeat,
+              iconColor: "text-rose-500 dark:text-rose-400",
+              permission: { resource: "inventory_transfer", action: "read" },
+            },
+            {
+              type: "link",
+              id: "inventory-count",
+              label: "Inventory Count",
+              path: "/inventory/count",
+              icon: ClipboardCheck,
+              iconColor: "text-indigo-500 dark:text-indigo-400",
+              permission: { resource: "inventory_count", action: "read" },
             },
           ],
         },

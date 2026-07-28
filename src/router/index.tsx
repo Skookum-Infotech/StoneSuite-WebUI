@@ -765,13 +765,17 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Sales & Purchases modules (placeholder pages — full functionality coming soon)
+      // Sales, Purchases & Inventory modules (placeholder pages — full functionality coming soon)
       {
         path: "sales/:moduleKey",
         element: lazy_(<WorkflowPlaceholderPage />),
       },
       {
         path: "purchases/:moduleKey",
+        element: lazy_(<WorkflowPlaceholderPage />),
+      },
+      {
+        path: "inventory/:moduleKey",
         element: lazy_(<WorkflowPlaceholderPage />),
       },
 
