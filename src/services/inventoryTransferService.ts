@@ -1,5 +1,6 @@
 import { tenantClient } from '@/api/tenantClient';
-import type { Transfer, TransferInput, TransferPage, DocHistoryEntry } from '@/types/inventory';
+import { withLines } from '@/lib/inventoryDocumentLines';
+import type { Transfer, TransferLine, TransferInput, TransferPage, DocHistoryEntry } from '@/types/inventory';
 import type { FilterClause, SortKey } from '@/types/tenant';
 
 export interface TransferSearchRequest {
@@ -21,27 +22,34 @@ export interface TransferWithNext {
 // GET /in-transit is how that's explained rather than hunted as missing.
 const BASE = '/tenant/inventory/transfers';
 
-function unwrap(data: { success: boolean; transfer: Transfer; nextStatuses?: string[] }): TransferWithNext {
-  return { transfer: data.transfer, nextStatuses: data.nextStatuses ?? [] };
+// `lines` is absent from the payload when the document has none — see withLines.
+type TransferWire = Omit<Transfer, 'lines'> & { lines?: TransferLine[] };
+
+function normalize(t: TransferWire): Transfer {
+  return withLines<TransferLine, TransferWire>(t);
+}
+
+function unwrap(data: { success: boolean; transfer: TransferWire; nextStatuses?: string[] }): TransferWithNext {
+  return { transfer: normalize(data.transfer), nextStatuses: data.nextStatuses ?? [] };
 }
 
 export const inventoryTransferService = {
   list: (): Promise<TransferPage> =>
     tenantClient
-      .get<{ success: boolean; records: Transfer[]; nextCursor: string; hasMore: boolean }>(BASE)
+      .get<{ success: boolean; records: TransferWire[]; nextCursor: string; hasMore: boolean }>(BASE)
       .then((r) => ({
-        records: r.data.records ?? [],
+        records: (r.data.records ?? []).map(normalize),
         nextCursor: r.data.nextCursor ?? '',
         hasMore: Boolean(r.data.hasMore),
       })),
 
   search: (req: TransferSearchRequest): Promise<TransferPage> =>
     tenantClient
-      .post<{ success: boolean; records: Transfer[]; nextCursor: string; hasMore: boolean }>(
+      .post<{ success: boolean; records: TransferWire[]; nextCursor: string; hasMore: boolean }>(
         `${BASE}/search`, req,
       )
       .then((r) => ({
-        records: r.data.records ?? [],
+        records: (r.data.records ?? []).map(normalize),
         nextCursor: r.data.nextCursor ?? '',
         hasMore: Boolean(r.data.hasMore),
       })),
@@ -50,23 +58,23 @@ export const inventoryTransferService = {
   // it reads as "on a truck", not as data loss.
   listInTransit: (): Promise<Transfer[]> =>
     tenantClient
-      .get<{ success: boolean; records: Transfer[] }>(`${BASE}/in-transit`)
-      .then((r) => r.data.records ?? []),
+      .get<{ success: boolean; records: TransferWire[] }>(`${BASE}/in-transit`)
+      .then((r) => (r.data.records ?? []).map(normalize)),
 
   get: (uuid: string): Promise<TransferWithNext> =>
     tenantClient
-      .get<{ success: boolean; transfer: Transfer; nextStatuses?: string[] }>(`${BASE}/${uuid}`)
+      .get<{ success: boolean; transfer: TransferWire; nextStatuses?: string[] }>(`${BASE}/${uuid}`)
       .then((r) => unwrap(r.data)),
 
   create: (payload: TransferInput): Promise<Transfer> =>
     tenantClient
-      .post<{ success: boolean; transfer: Transfer }>(BASE, payload)
-      .then((r) => r.data.transfer),
+      .post<{ success: boolean; transfer: TransferWire }>(BASE, payload)
+      .then((r) => normalize(r.data.transfer)),
 
   update: (uuid: string, payload: TransferInput): Promise<Transfer> =>
     tenantClient
-      .patch<{ success: boolean; transfer: Transfer }>(`${BASE}/${uuid}`, payload)
-      .then((r) => r.data.transfer),
+      .patch<{ success: boolean; transfer: TransferWire }>(`${BASE}/${uuid}`, payload)
+      .then((r) => normalize(r.data.transfer)),
 
   // A shipped transfer cannot be deleted — the server's message says to
   // receive it and transfer back; show it verbatim rather than paraphrasing.
@@ -77,18 +85,18 @@ export const inventoryTransferService = {
   // inventory_transfers.go's Transition handler.
   transition: (uuid: string, status: string, note?: string): Promise<Transfer> =>
     tenantClient
-      .post<{ success: boolean; transfer: Transfer }>(`${BASE}/${uuid}/transition`, { status, note })
-      .then((r) => r.data.transfer),
+      .post<{ success: boolean; transfer: TransferWire }>(`${BASE}/${uuid}/transition`, { status, note })
+      .then((r) => normalize(r.data.transfer)),
 
   ship: (uuid: string): Promise<Transfer> =>
     tenantClient
-      .post<{ success: boolean; transfer: Transfer }>(`${BASE}/${uuid}/ship`, {})
-      .then((r) => r.data.transfer),
+      .post<{ success: boolean; transfer: TransferWire }>(`${BASE}/${uuid}/ship`, {})
+      .then((r) => normalize(r.data.transfer)),
 
   receive: (uuid: string): Promise<Transfer> =>
     tenantClient
-      .post<{ success: boolean; transfer: Transfer }>(`${BASE}/${uuid}/receive`, {})
-      .then((r) => r.data.transfer),
+      .post<{ success: boolean; transfer: TransferWire }>(`${BASE}/${uuid}/receive`, {})
+      .then((r) => normalize(r.data.transfer)),
 
   getHistory: (uuid: string): Promise<DocHistoryEntry[]> =>
     tenantClient
