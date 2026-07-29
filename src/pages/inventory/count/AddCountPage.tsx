@@ -18,13 +18,23 @@ export default function AddCountPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
-  const { data: bins = [] } = useQuery({ queryKey: ['inventory-bins-tree-all'], queryFn: () => inventoryBinService.getTree() });
 
   const [warehouseId, setWarehouseId] = useState('');
   const [binId, setBinId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  const { data: bins = [] } = useQuery({
+    queryKey: ['inventory-bins-tree', warehouseId],
+    queryFn: () => inventoryBinService.getTree(warehouseId),
+    enabled: Boolean(warehouseId),
+  });
+
+  function handleWarehouseChange(v: string) {
+    setWarehouseId(v);
+    setBinId('');
+  }
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => inventoryCountService.create({
@@ -74,7 +84,7 @@ export default function AddCountPage() {
             <ModernSection title="Scope" index={0}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                 <ModernFieldShell label="Warehouse" required>
-                  <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={setWarehouseId} required />
+                  <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={handleWarehouseChange} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="Bin (optional)">
                   <BinPicker bins={bins} value={binId} onChange={setBinId} label="Bin" allowEmpty emptyLabel="— Whole warehouse —" />

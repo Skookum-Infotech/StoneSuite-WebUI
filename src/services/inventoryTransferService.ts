@@ -92,6 +92,6 @@ export const inventoryTransferService = {
 
   getHistory: (uuid: string): Promise<DocHistoryEntry[]> =>
     tenantClient
-      .get<{ success: boolean; history: DocHistoryEntry[] }>(`${BASE}/${uuid}/history`)
-      .then((r) => r.data.history ?? []),
+      .get<{ success: boolean; records: DocHistoryEntry[] }>(`${BASE}/${uuid}/history`)
+      .then((r) => r.data.records ?? []),
 };

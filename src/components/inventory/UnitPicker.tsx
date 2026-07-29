@@ -20,7 +20,9 @@ export function UnitPicker({
   /** Optional — when omitted, searches available units of any item (used to
    *  find an unexpected unit found in a count's scope). */
   itemId?: string;
-  warehouseId: string; // warehouse uuid — matches unitResolver's `warehouse_id`... actually numeric; see note below
+  /** Numeric lkp_warehouse id, as a string — resolve with toNumericWarehouseId
+   *  before passing in; the resolver's `warehouse_id` filter is TypeNumber. */
+  warehouseId: string;
   value: InventoryUnit | null;
   onChange: (unit: InventoryUnit | null) => void;
   required?: boolean;
@@ -50,10 +52,12 @@ export function UnitPicker({
     enabled: open,
     staleTime: 15 * 1000,
     queryFn: async (): Promise<InventoryUnit[]> => {
+      const numericWarehouseId = Number(warehouseId);
       const page = await inventoryUnitService.searchUnits({
         search: debounced || undefined,
         filters: [
           ...(itemId ? [{ field: 'item_id', op: 'eq' as const, value: itemId }] : []),
+          ...(numericWarehouseId > 0 ? [{ field: 'warehouse_id', op: 'eq' as const, value: numericWarehouseId }] : []),
           { field: 'status', op: 'eq', value: UNIT_STATUS_AVAILABLE },
         ],
         limit: RESULT_LIMIT,

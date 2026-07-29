@@ -34,11 +34,21 @@ export default function AddTransferPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
-  const { data: bins = [] } = useQuery({ queryKey: ['inventory-bins-tree-all'], queryFn: () => inventoryBinService.getTree() });
 
   const [fromWarehouseId, setFromWarehouseId] = useState('');
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [toBinId, setToBinId] = useState('');
+
+  const { data: bins = [] } = useQuery({
+    queryKey: ['inventory-bins-tree', toWarehouseId],
+    queryFn: () => inventoryBinService.getTree(toWarehouseId),
+    enabled: Boolean(toWarehouseId),
+  });
+
+  function handleToWarehouseChange(v: string) {
+    setToWarehouseId(v);
+    setToBinId('');
+  }
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [expectedDate, setExpectedDate] = useState('');
   const [carrier, setCarrier] = useState('');
@@ -107,7 +117,7 @@ export default function AddTransferPage() {
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={fromWarehouseId} onChange={setFromWarehouseId} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="To Warehouse" required>
-                  <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={toWarehouseId} onChange={setToWarehouseId} required />
+                  <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={toWarehouseId} onChange={handleToWarehouseChange} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="To Bin">
                   <BinPicker bins={bins} value={toBinId} onChange={setToBinId} label="To Bin" allowEmpty emptyLabel="— No bin —" />
@@ -133,7 +143,7 @@ export default function AddTransferPage() {
             </ModernSection>
 
             <ModernSection title="Lines" index={1}>
-              <TransferLinesEditor lines={lines} onChange={setLines} fromWarehouseId={fromWarehouseId} />
+              <TransferLinesEditor lines={lines} onChange={setLines} fromWarehouseId={String(toNumericWarehouseId(lookups?.warehouses ?? [], fromWarehouseId))} />
             </ModernSection>
           </div>
         </div>

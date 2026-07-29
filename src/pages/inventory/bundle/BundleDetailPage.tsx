@@ -11,6 +11,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { BinPicker } from '@/components/inventory/BinPicker';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { BUNDLE_OPEN, BUNDLE_SEALED } from '@/types/inventory';
@@ -40,7 +41,16 @@ export default function BundleDetailPage() {
     enabled: Boolean(id),
   });
 
-  const { data: bins = [] } = useQuery({ queryKey: ['inventory-bins-tree-all'], queryFn: () => inventoryBinService.getTree() });
+  // Bundle only exposes the numeric lkp_warehouse id (see KNOWN GAP in
+  // lib/inventoryWarehouse.ts) — bridge back to the warehouse uuid getTree()
+  // needs by matching name against lookups, same as EditTransferPage does.
+  const { lookups } = useInventoryLookups();
+  const bundleWarehouseUuid = lookups?.warehouses.find((w) => w.name === bundle?.warehouseName)?.id ?? '';
+  const { data: bins = [] } = useQuery({
+    queryKey: ['inventory-bins-tree', bundleWarehouseUuid],
+    queryFn: () => inventoryBinService.getTree(bundleWarehouseUuid),
+    enabled: Boolean(bundleWarehouseUuid),
+  });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);

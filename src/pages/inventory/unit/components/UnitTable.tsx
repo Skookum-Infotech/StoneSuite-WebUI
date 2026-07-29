@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, ArrowLeftRight, Scissors, AlertTriangle,
+  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, ArrowLeftRight, Scissors, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
@@ -135,7 +135,15 @@ export function UnitTable() {
 
       {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load units.')}</p>}
       {exportError && <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>}
-      {cutMessage && <p className="text-xs text-emerald-600">{cutMessage}</p>}
+      {cutMessage && (
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+          <p className="flex-1 text-xs text-emerald-700">{cutMessage}</p>
+          <button type="button" onClick={() => setCutMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-500 hover:bg-emerald-100">
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
@@ -223,7 +231,7 @@ export function UnitTable() {
         <CutUnitDialog
           unit={cutTarget}
           onClose={() => setCutTarget(null)}
-          onCut={(result) => setCutMessage(`Cut complete: ${result.remnants.length} offcut(s) kept, ${result.lostArea.toFixed(2)} sq lost to kerf/product.`)}
+          onCut={(result) => setCutMessage(`Cut complete for ${cutTarget.serial}: ${result.remnants.length} offcut(s) kept, ${result.lostArea.toFixed(2)} sq lost to kerf/product.`)}
         />
       )}
     </div>

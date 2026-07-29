@@ -54,8 +54,8 @@ export const inventoryUnitService = {
 
   cut: (uuid: string, payload: CutUnitInput): Promise<CutResult> =>
     tenantClient
-      .post<{ success: boolean } & CutResult>(`${BASE}/${uuid}/cut`, payload)
-      .then((r) => r.data),
+      .post<{ success: boolean; result: CutResult }>(`${BASE}/${uuid}/cut`, payload)
+      .then((r) => r.data.result),
 
   getHistory: (uuid: string): Promise<UnitHistoryEntry[]> =>
     tenantClient

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2 } from 'lucide-react';
+import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2, CheckCircle2, X } from 'lucide-react';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -130,6 +130,16 @@ export default function UnitDetailPage() {
         statusBadge={<Badge color={STATUS_COLORS[unit.status] ?? '#a8a29e'}>{unit.status.replace('_', ' ')}</Badge>}
       />
 
+      {cutMessage && (
+        <div className="shrink-0 flex items-start gap-3 border-b border-emerald-200 bg-emerald-50 px-5 py-2.5">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+          <p className="flex-1 text-xs text-emerald-700">{cutMessage}</p>
+          <button type="button" onClick={() => setCutMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-500 hover:bg-emerald-100">
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
       <div className="flex shrink-0 overflow-x-auto border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
         {(['overview', 'history'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setActiveTab(t)} className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors capitalize ${activeTab === t ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
@@ -148,7 +158,6 @@ export default function UnitDetailPage() {
                   <p className="text-xs text-indigo-700">This unit is on a truck between warehouses. Receive the transfer to bring it back into stock before moving, cutting or scrapping it.</p>
                 </div>
               )}
-              {cutMessage && <p className="text-xs text-emerald-600">{cutMessage}</p>}
               <ModernSection title="Unit Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Item" value={unit.inventoryItemName} />

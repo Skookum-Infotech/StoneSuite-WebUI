@@ -187,7 +187,7 @@ export default function EditAdjustmentPage() {
             </ModernSection>
 
             <ModernSection title="Lines" index={1}>
-              <AdjustmentLinesEditor lines={lines} onChange={setLines} warehouseId={warehouseId} />
+              <AdjustmentLinesEditor lines={lines} onChange={setLines} warehouseId={String(toNumericWarehouseId(lookups?.warehouses ?? [], warehouseId))} />
             </ModernSection>
           </div>
         </div>

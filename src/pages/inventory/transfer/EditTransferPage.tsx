@@ -82,7 +82,6 @@ export default function EditTransferPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
-  const { data: bins = [] } = useQuery({ queryKey: ['inventory-bins-tree-all'], queryFn: () => inventoryBinService.getTree() });
 
   const { data, isLoading, error: loadError } = useQuery({
     queryKey: ['inventory-transfer', id],
@@ -110,8 +109,14 @@ export default function EditTransferPage() {
   const notes = local.notes ?? mapped?.notes ?? '';
   const lines = local.lines ?? mapped?.lines ?? [];
 
+  const { data: bins = [] } = useQuery({
+    queryKey: ['inventory-bins-tree', toWarehouseId],
+    queryFn: () => inventoryBinService.getTree(toWarehouseId),
+    enabled: Boolean(toWarehouseId),
+  });
+
   const setFromWarehouseId = (v: string) => setLocal((p) => ({ ...p, fromWarehouseId: v }));
-  const setToWarehouseId = (v: string) => setLocal((p) => ({ ...p, toWarehouseId: v }));
+  const setToWarehouseId = (v: string) => setLocal((p) => ({ ...p, toWarehouseId: v, toBinId: '' }));
   const setToBinId = (v: string) => setLocal((p) => ({ ...p, toBinId: v }));
   const setDate = (v: string) => setLocal((p) => ({ ...p, date: v }));
   const setExpectedDate = (v: string) => setLocal((p) => ({ ...p, expectedDate: v }));
@@ -216,7 +221,7 @@ export default function EditTransferPage() {
             </ModernSection>
 
             <ModernSection title="Lines" index={1}>
-              <TransferLinesEditor lines={lines} onChange={setLines} fromWarehouseId={fromWarehouseId} />
+              <TransferLinesEditor lines={lines} onChange={setLines} fromWarehouseId={String(toNumericWarehouseId(lookups?.warehouses ?? [], fromWarehouseId))} />
             </ModernSection>
           </div>
         </div>

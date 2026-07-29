@@ -11,6 +11,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
 import { DocumentStatusBar } from '@/components/inventory/DocumentStatusBar';
 import { docStatusLabel, DOC_STATUS_COLORS } from '@/lib/inventoryDocumentStatus';
 import { CountLinesGrid } from './components/CountLinesGrid';
@@ -145,7 +146,7 @@ export default function CountDetailPage() {
         </SalesDetailSidebar>
       </div>
 
-      {showUnexpected && <AddUnexpectedDialog countId={id} warehouseId={warehouseUuid} onClose={() => setShowUnexpected(false)} onAdded={invalidate} />}
+      {showUnexpected && <AddUnexpectedDialog countId={id} warehouseId={String(toNumericWarehouseId(lookups?.warehouses ?? [], warehouseUuid))} onClose={() => setShowUnexpected(false)} onAdded={invalidate} />}
     </div>
   );
 }

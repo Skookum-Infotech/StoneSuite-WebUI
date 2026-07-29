@@ -44,9 +44,15 @@ export default function AddUnitPage() {
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const { data: bins = [] } = useQuery({
-    queryKey: ['inventory-bins-tree-all'],
-    queryFn: () => inventoryBinService.getTree(),
+    queryKey: ['inventory-bins-tree', warehouseId],
+    queryFn: () => inventoryBinService.getTree(warehouseId),
+    enabled: Boolean(warehouseId),
   });
+
+  function handleWarehouseChange(v: string) {
+    setWarehouseId(v);
+    setBinId('');
+  }
 
   const selectedUnit = findUnit(lookups?.units ?? [], item?.unitId);
   const itemUsable = !item || (item.tracking === TRACKING_SERIALIZED && isAreaUnit(selectedUnit));
@@ -133,7 +139,7 @@ export default function AddUnitPage() {
                   <input type="text" value={barcode} onChange={(e) => setBarcode(e.target.value)} className={fieldCls} aria-label="Barcode" />
                 </ModernFieldShell>
                 <ModernFieldShell label="Warehouse" required>
-                  <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={setWarehouseId} required />
+                  <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={handleWarehouseChange} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="Bin">
                   <BinPicker bins={bins} value={binId} onChange={setBinId} label="Bin" allowEmpty emptyLabel="— No bin —" />
