@@ -9,11 +9,14 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { itemDefaults, toItemPayload, validateItem } from '@/lib/inventoryItemForm';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { ItemFormBody } from './components/ItemFormBody';
 
 export default function AddItemPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { lookups } = useInventoryLookups();
+  const warehouses = lookups?.warehouses ?? [];
 
   const [data, setData] = useState<Record<string, unknown>>(itemDefaults);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
@@ -22,7 +25,7 @@ export default function AddItemPage() {
   const guard = useUnsavedChangesGuard(data);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => inventoryService.createItem(toItemPayload(data)),
+    mutationFn: () => inventoryService.createItem(toItemPayload(data, warehouses)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       guard.markClean();

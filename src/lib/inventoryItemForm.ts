@@ -7,8 +7,9 @@
 // field. toItemPayload always builds the whole object — never a partial —
 // so an edit save can never silently clear an attribute the form didn't
 // touch.
-import type { InventoryItem, InventoryItemInput, TrackingMode } from '@/types/inventory';
+import type { InventoryItem, InventoryItemInput, TrackingMode, Warehouse } from '@/types/inventory';
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
+import { toNumericWarehouseId } from './inventoryWarehouse';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -41,6 +42,29 @@ function idOrEmpty(id: number | null | undefined): string {
   return id === null || id === undefined ? '' : String(id);
 }
 
+// default_warehouse_id holds the warehouse *uuid* (WarehouseSelect's only
+// available id, see components/inventory/WarehouseSelect.tsx) — never a raw
+// numeric string. Routing it through toIntOrNull used to parseInt the uuid
+// itself, silently truncating to its leading digit run instead of failing.
+// toNumericWarehouseId resolves it properly and reports the KNOWN GAP (no
+// numeric id back from the server yet) as 0/unresolved instead.
+function warehouseIdOrNull(warehouses: Warehouse[], v: unknown): number | null {
+  const uuid = toStr(v).trim();
+  if (!uuid) return null;
+  const id = toNumericWarehouseId(warehouses, uuid);
+  return id > 0 ? id : null;
+}
+
+// Reverse of the above for fromItem: resolves the numeric id an item was
+// loaded with back to the uuid WarehouseSelect's <option> values are keyed
+// on. Same KNOWN GAP — falls back to unselected until warehouses carry a
+// numeric id.
+function warehouseUuidOrEmpty(warehouses: Warehouse[], id: number | null | undefined): string {
+  if (!id) return '';
+  const w = warehouses.find((x) => (x as Warehouse & { warehouseId?: number }).warehouseId === id);
+  return w?.id ?? '';
+}
+
 export function itemDefaults(): Record<string, unknown> {
   return {
     sku: '',
@@ -63,7 +87,7 @@ export function itemDefaults(): Record<string, unknown> {
 }
 
 /** Maps the item form state to the whole-object write contract. */
-export function toItemPayload(data: Record<string, unknown>): InventoryItemInput {
+export function toItemPayload(data: Record<string, unknown>, warehouses: Warehouse[] = []): InventoryItemInput {
   return {
     sku: toStr(data.sku).trim(),
     name: toStr(data.name).trim(),
@@ -80,12 +104,12 @@ export function toItemPayload(data: Record<string, unknown>): InventoryItemInput
     thicknessMm: toNum(data.thickness_mm),
     originCountryId: toIntOrNull(data.origin_country_id),
     barcode: toStr(data.barcode).trim(),
-    defaultWarehouseId: toIntOrNull(data.default_warehouse_id),
+    defaultWarehouseId: warehouseIdOrNull(warehouses, data.default_warehouse_id),
   };
 }
 
 /** Maps a loaded InventoryItem (GET response) back to the Edit form's state. */
-export function fromItem(item: InventoryItem): Record<string, unknown> {
+export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Record<string, unknown> {
   return {
     sku: item.sku ?? '',
     name: item.name ?? '',
@@ -101,7 +125,7 @@ export function fromItem(item: InventoryItem): Record<string, unknown> {
     finish_id: idOrEmpty(item.finishId),
     thickness_mm: String(item.thicknessMm ?? 0),
     origin_country_id: idOrEmpty(item.originCountryId),
-    default_warehouse_id: idOrEmpty(item.defaultWarehouseId),
+    default_warehouse_id: warehouseUuidOrEmpty(warehouses, item.defaultWarehouseId),
     barcode: item.barcode ?? '',
   };
 }

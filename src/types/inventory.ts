@@ -213,7 +213,7 @@ export interface InventoryUnit {
 // computed server-side from the mm dimensions into the item's own unit.
 export interface CreateUnitInput {
   serial: string;
-  vendorId?: number | null;
+  vendorId?: string | null;
   supplierCode?: string;
   barcode?: string;
   inventoryItemId: string;
@@ -252,6 +252,19 @@ export interface MoveUnitInput {
 export interface ScrapUnitInput {
   reasonId: number;
   note?: string;
+}
+
+export interface UnitHistoryEntry {
+  action: string;
+  field: string;
+  oldValue: string;
+  newValue: string;
+  fromBin?: string;
+  toBin?: string;
+  reason?: string;
+  note?: string;
+  at: string;
+  byName: string;
 }
 
 // ── Cutting ───────────────────────────────────────────────────────────────

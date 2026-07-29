@@ -13,6 +13,7 @@ import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
 import { BinPicker } from '@/components/inventory/BinPicker';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { inventoryBinService } from '@/services/inventoryBinService';
+import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
 import { isAreaUnit, findUnit } from '@/lib/inventoryUnits';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import type { InventoryItem } from '@/types/inventory';
@@ -36,7 +37,7 @@ export default function AddUnitPage() {
   const [thicknessMm, setThicknessMm] = useState('');
   const [grade, setGrade] = useState('');
   const [finishId, setFinishId] = useState('');
-  const [vendorId, setVendorId] = useState('');
+  const [vendor, setVendor] = useState<VendorRef | null>(null);
   const [supplierCode, setSupplierCode] = useState('');
   const [blockId, setBlockId] = useState('');
   const [lot, setLot] = useState('');
@@ -64,7 +65,7 @@ export default function AddUnitPage() {
       thicknessMm: Number(thicknessMm) || 0,
       grade: grade || undefined,
       finishId: finishId ? Number(finishId) : undefined,
-      vendorId: vendorId ? Number(vendorId) : undefined,
+      vendorId: vendor?.id || undefined,
       supplierCode: supplierCode || undefined,
     }),
     onSuccess: () => {
@@ -81,6 +82,10 @@ export default function AddUnitPage() {
     if (!warehouseId) { setFieldError('A warehouse is required.'); return; }
     if (!(Number(lengthMm) > 0) || !(Number(widthMm) > 0) || !(Number(thicknessMm) > 0)) {
       setFieldError('Length, width and thickness must all be greater than zero.');
+      return;
+    }
+    if (supplierCode.trim() && !vendor) {
+      setFieldError('A vendor is required when a supplier code is set.');
       return;
     }
     setFieldError(null);
@@ -171,8 +176,8 @@ export default function AddUnitPage() {
                 <ModernFieldShell label="Supplier Code">
                   <input type="text" value={supplierCode} onChange={(e) => setSupplierCode(e.target.value)} className={fieldCls} aria-label="Supplier code" />
                 </ModernFieldShell>
-                <ModernFieldShell label="Vendor ID">
-                  <input type="number" min={0} value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={fieldCls} aria-label="Vendor ID" />
+                <ModernFieldShell label="Vendor">
+                  <VendorPicker value={vendor} onChange={setVendor} />
                 </ModernFieldShell>
               </div>
             </ModernSection>

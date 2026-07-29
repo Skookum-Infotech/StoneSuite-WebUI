@@ -11,7 +11,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT } from '@/types/inventory';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } from '@/types/inventory';
 import { MoveUnitDialog } from './components/MoveUnitDialog';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
@@ -23,6 +23,14 @@ const STATUS_COLORS: Record<string, string> = {
 function fmtDateTime(iso?: string): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleString();
+}
+
+function describeHistoryEntry(h: UnitHistoryEntry): string {
+  if (h.fromBin || h.toBin) return `${h.fromBin || '— no bin —'} → ${h.toBin || '— no bin —'}`;
+  if (h.reason) return h.note ? `${h.reason} — ${h.note}` : h.reason;
+  if (h.note) return h.note;
+  if (h.oldValue || h.newValue) return `${h.oldValue || '—'} → ${h.newValue || '—'}`;
+  return '';
 }
 
 export default function UnitDetailPage() {
@@ -49,6 +57,11 @@ export default function UnitDetailPage() {
     queryFn: () => inventoryUnitService.getHistory(id),
     enabled: Boolean(id) && activeTab === 'history',
   });
+
+  function invalidateUnit() {
+    queryClient.invalidateQueries({ queryKey: ['inventory-unit', id] });
+    queryClient.invalidateQueries({ queryKey: ['inventory-unit-history', id] });
+  }
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -189,6 +202,7 @@ export default function UnitDetailPage() {
                       <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{h.action}</p>
+                        {describeHistoryEntry(h) && <p className="text-2xs text-stone-500">{describeHistoryEntry(h)}</p>}
                         <p className="text-2xs text-stone-400">{fmtDateTime(h.at)} · {h.byName}</p>
                       </div>
                     </li>
@@ -243,15 +257,15 @@ export default function UnitDetailPage() {
         </SalesDetailSidebar>
       </div>
 
-      {dialog === 'move' && <MoveUnitDialog unit={unit} onClose={() => setDialog(null)} onMoved={() => queryClient.invalidateQueries({ queryKey: ['inventory-unit', id] })} />}
-      {dialog === 'scrap' && <ScrapUnitDialog unit={unit} onClose={() => setDialog(null)} onScrapped={() => queryClient.invalidateQueries({ queryKey: ['inventory-unit', id] })} />}
+      {dialog === 'move' && <MoveUnitDialog unit={unit} onClose={() => setDialog(null)} onMoved={invalidateUnit} />}
+      {dialog === 'scrap' && <ScrapUnitDialog unit={unit} onClose={() => setDialog(null)} onScrapped={invalidateUnit} />}
       {dialog === 'cut' && (
         <CutUnitDialog
           unit={unit}
           onClose={() => setDialog(null)}
           onCut={(result) => {
             setCutMessage(`Cut complete: ${result.remnants.length} offcut(s) kept, ${result.lostArea.toFixed(2)} sq lost to kerf/product.`);
-            queryClient.invalidateQueries({ queryKey: ['inventory-unit', id] });
+            invalidateUnit();
           }}
         />
       )}

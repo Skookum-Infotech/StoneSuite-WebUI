@@ -11,12 +11,15 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { fromItem, toItemPayload, validateItem } from '@/lib/inventoryItemForm';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { ItemFormBody } from './components/ItemFormBody';
 
 export default function EditItemPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { lookups } = useInventoryLookups();
+  const warehouses = useMemo(() => lookups?.warehouses ?? [], [lookups]);
 
   const { data: item, isLoading, error: loadError } = useQuery({
     queryKey: ['inventory-item', id],
@@ -24,7 +27,7 @@ export default function EditItemPage() {
     enabled: Boolean(id),
   });
 
-  const mapped = useMemo(() => (item ? fromItem(item) : null), [item]);
+  const mapped = useMemo(() => (item ? fromItem(item, warehouses) : null), [item, warehouses]);
   const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const data = localData ?? mapped;
@@ -48,7 +51,7 @@ export default function EditItemPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     // PATCH has PUT semantics server-side — toItemPayload always builds the
     // whole object, so nothing an earlier form section touched gets cleared.
-    mutationFn: () => inventoryService.updateItem(id, toItemPayload(data ?? {})),
+    mutationFn: () => inventoryService.updateItem(id, toItemPayload(data ?? {}, warehouses)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-item', id] });

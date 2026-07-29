@@ -177,14 +177,14 @@ export function UnitTable() {
                       <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[160px]">{u.binPath || u.warehouseName || '—'}</td>
                       {canUpdate && (
                         <td className="px-4 py-3.5">
-                          <div className="flex items-center justify-end gap-1.5" title={disabledReason}>
-                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setMoveTarget(u)} aria-label={`Move ${u.serial}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setMoveTarget(u)} aria-label={`Move ${u.serial}`} title={disabledReason ? `Move — ${disabledReason}` : 'Move'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <ArrowLeftRight className="size-3.5" />
                             </button>
-                            <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                            <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} title={disabledReason ? `Cut — ${disabledReason}` : u.kind !== 'slab' && u.kind !== 'remnant' ? 'Cut — only available for slabs and remnants' : 'Cut'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <Scissors className="size-3.5" />
                             </button>
-                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={disabledReason ? `Scrap — ${disabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <AlertTriangle className="size-3.5" />
                             </button>
                           </div>

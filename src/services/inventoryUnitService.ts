@@ -1,7 +1,7 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
   InventoryUnit, CreateUnitInput, UnitPage, UnitSearchRequest,
-  MoveUnitInput, ScrapUnitInput, CutUnitInput, CutResult,
+  MoveUnitInput, ScrapUnitInput, CutUnitInput, CutResult, UnitHistoryEntry,
 } from '@/types/inventory';
 
 // Physical units — slabs and remnants — `inventory_unit` RBAC resource.
@@ -57,8 +57,8 @@ export const inventoryUnitService = {
       .post<{ success: boolean } & CutResult>(`${BASE}/${uuid}/cut`, payload)
       .then((r) => r.data),
 
-  getHistory: (uuid: string): Promise<{ action: string; at: string; byName: string }[]> =>
+  getHistory: (uuid: string): Promise<UnitHistoryEntry[]> =>
     tenantClient
-      .get<{ success: boolean; history: { action: string; at: string; byName: string }[] }>(`${BASE}/${uuid}/history`)
-      .then((r) => r.data.history ?? []),
+      .get<{ success: boolean; records: UnitHistoryEntry[] }>(`${BASE}/${uuid}/history`)
+      .then((r) => r.data.records ?? []),
 };
