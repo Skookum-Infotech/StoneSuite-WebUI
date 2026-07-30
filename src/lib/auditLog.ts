@@ -33,6 +33,7 @@ export const AUDIT_RESOURCES: { value: string; label: string }[] = [
   { value: 'payment', label: 'Payment' },
   { value: 'credit_memo', label: 'Credit Memo' },
   { value: 'refund', label: 'Refund' },
+  { value: 'cash_transfer', label: 'Journal Entry' },
   { value: 'vendor', label: 'Vendor' },
   { value: 'requisition', label: 'Requisition' },
   { value: 'purchase_order', label: 'Purchase Order' },

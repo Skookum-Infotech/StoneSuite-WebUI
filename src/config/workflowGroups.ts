@@ -1,4 +1,4 @@
-import { Building2, TrendingUp, Truck, Boxes } from 'lucide-react';
+import { Building2, TrendingUp, Truck, Landmark, Boxes } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 /**
@@ -85,6 +85,21 @@ export const WORKFLOW_GROUPS: WorkflowGroup[] = [
       'vendor_credit',
       'expense',
     ],
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    description: 'General ledger — Journal Entries move funds between your Bank/Cash accounts.',
+    icon: Landmark,
+    accent: {
+      chip: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300',
+      rail: 'bg-cyan-300 dark:bg-cyan-400/40',
+      count: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300',
+    },
+    // Chart of Accounts has no custom fields / workflow key (master data, not
+    // a workflow record) — cash_transfer (Journal Entry) is the only Finance
+    // module with one.
+    keys: ['cash_transfer'],
   },
 ];
 

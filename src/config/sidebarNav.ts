@@ -39,6 +39,7 @@ import {
   ClipboardCheck,
   Layers,
   Boxes,
+  ArrowLeftRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -387,6 +388,15 @@ export const sidebarNav: SidebarNavConfig = {
           iconColor: "text-cyan-700 dark:text-cyan-400",
           matchPaths: ["/finance"],
           children: [
+            {
+              type: "link",
+              id: "journal-entries",
+              label: "Journal Entries",
+              path: "/finance/journal-entries",
+              icon: ArrowLeftRight,
+              iconColor: "text-sky-600 dark:text-sky-400",
+              permission: { resource: "cash_transfer", action: "read" },
+            },
             {
               type: "link",
               id: "chart-of-accounts",
