@@ -15,7 +15,7 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { AccountPicker, type AccountRef } from '@/components/finance/AccountPicker';
 import { JournalEntrySectionGrid } from './components/JournalEntryFormFields';
 import {
-  JOURNAL_ENTRY_FIELDS, journalEntryDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  JOURNAL_ENTRY_CREATE_FIELDS, journalEntryDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/journalEntryForm';
 
 const BANK_CASH_TYPES = ['bank', 'cash'] as const;
@@ -156,7 +156,7 @@ export default function AddJournalEntryPage() {
                 </ModernSection>
 
                 <ModernSection title="Journal Entry Details" index={1}>
-                  <JournalEntrySectionGrid fields={JOURNAL_ENTRY_FIELDS} data={data} set={set} lookups={lookups} />
+                  <JournalEntrySectionGrid fields={JOURNAL_ENTRY_CREATE_FIELDS} data={data} set={set} lookups={lookups} />
                 </ModernSection>
 
                 {customFieldDefs.length > 0 && (

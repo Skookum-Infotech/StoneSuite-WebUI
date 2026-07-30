@@ -68,11 +68,11 @@ export default function JournalEntryDetailPage() {
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
-    if (je?.number) {
-      setLabel(id, je.number);
+    if (je?.transferNumber) {
+      setLabel(id, je.transferNumber);
       return () => clearLabel(id);
     }
-  }, [id, je?.number, setLabel, clearLabel]);
+  }, [id, je?.transferNumber, setLabel, clearLabel]);
 
   function refresh(updated: JournalEntry) {
     queryClient.setQueryData(['journal-entry', id], updated);
@@ -100,8 +100,8 @@ export default function JournalEntryDetailPage() {
       const { exportFinanceRecordToPdf } = await import('@/lib/financePdfExport');
       await exportFinanceRecordToPdf({
         recordType: 'journal_entry',
-        title: je.number || 'Journal Entry',
-        recordNumber: je.number,
+        title: je.transferNumber || 'Journal Entry',
+        recordNumber: je.transferNumber,
         statusLabel: je.status,
         createdAt: je.createdAt,
         updatedAt: je.updatedAt,
@@ -140,9 +140,9 @@ export default function JournalEntryDetailPage() {
         backLabel="Journal Entries"
         onBack={() => navigate('/finance/journal-entries')}
         icon={ArrowLeftRight}
-        title={je.number || 'Journal Entry'}
+        title={je.transferNumber || 'Journal Entry'}
         subtitle={`${je.fromAccount.name} → ${je.toAccount.name}`}
-        recordNumber={je.number}
+        recordNumber={je.transferNumber}
         statusBadge={<Badge color={color}>{je.status}</Badge>}
       />
 
@@ -294,7 +294,7 @@ export default function JournalEntryDetailPage() {
               {canDeleteHere && (
                 <DeleteJournalEntryDialog
                   journalEntryId={id}
-                  label={`Journal Entry ${je.number}`}
+                  label={`Journal Entry ${je.transferNumber}`}
                   onDeleted={() => {
                     queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
                     navigate('/finance/journal-entries');

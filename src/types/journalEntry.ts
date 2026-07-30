@@ -49,7 +49,7 @@ export interface JournalEntryUpdatePayload extends JournalEntryFields {
 
 export interface JournalEntry {
   id: string;
-  number: string; // e.g. "JE-000001"
+  transferNumber: string; // e.g. "JE-000001" — the backend's actual JSON key (cashtransfer.CashTransfer.Number, tagged `json:"transferNumber"`)
 
   status: string; // human label, e.g. "Draft"
   statusCode: JournalEntryStatusCode;

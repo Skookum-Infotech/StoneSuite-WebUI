@@ -41,6 +41,14 @@ export const JOURNAL_ENTRY_FIELDS: JournalEntryFormField[] = [
   { key: 'internal_notes', label: 'Internal Notes', type: 'textarea', placeholder: 'Notes visible to your team only…', colSpanFull: true },
 ];
 
+/** Create-form field set: omits the two readonly fields that mean nothing
+ *  before a record exists (status always starts at Draft; the number is
+ *  server-assigned on save) — shown on Edit via the full JOURNAL_ENTRY_FIELDS,
+ *  where they display the record's actual values. */
+export const JOURNAL_ENTRY_CREATE_FIELDS: JournalEntryFormField[] = JOURNAL_ENTRY_FIELDS.filter(
+  (f) => f.key !== 'je_status' && f.key !== 'je_doc_num',
+);
+
 // ── Status catalog ────────────────────────────────────────────────────────────
 
 export const JE_STATUS_CODES: { code: JournalEntryStatusCode; label: string }[] = [
@@ -94,6 +102,22 @@ function toIntOrNull(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// A bare <input type="date"> value like "2026-07-30" fails to decode
+// server-side: cashtransfer.CreateInput/UpdateInput.TransferDate is a Go
+// *time.Time, whose JSON unmarshaling requires full RFC3339 — a date-only
+// string is rejected outright, surfaced as a generic 400 "Invalid request
+// body." toRFC3339OrUndefined appends a UTC-midnight time component before
+// sending; fromRFC3339DateOnly strips it back off when loading a journal
+// entry into the form. Mirrors paymentForm.ts's identical helpers
+// (payment.paymentDate has the same backend type).
+export function toRFC3339OrUndefined(dateStr: string): string | undefined {
+  return dateStr ? `${dateStr}T00:00:00Z` : undefined;
+}
+
+export function fromRFC3339DateOnly(iso: string | undefined): string {
+  return iso ? iso.slice(0, 10) : '';
+}
+
 interface JournalEntryHeaderFields {
   amount: number;
   transferDate?: string;
@@ -110,7 +134,7 @@ function toHeaderFields(
 ): JournalEntryHeaderFields {
   return {
     amount: toNumber(data.amount),
-    transferDate: toStr(data.transfer_date) || undefined,
+    transferDate: toRFC3339OrUndefined(toStr(data.transfer_date)),
     reference: toStr(data.reference) || undefined,
     notes: toStr(data.notes) || undefined,
     internalNotes: toStr(data.internal_notes) || undefined,
@@ -152,9 +176,9 @@ export function fromJournalEntry(je: JournalEntry): {
   return {
     data: {
       je_status: je.status,
-      je_doc_num: je.number,
+      je_doc_num: je.transferNumber,
       amount: je.amount,
-      transfer_date: je.transferDate?.slice(0, 10) ?? '',
+      transfer_date: fromRFC3339DateOnly(je.transferDate),
       reference: je.reference ?? '',
       owner_employee: je.ownerEmployeeId === null ? '' : String(je.ownerEmployeeId),
       notes: je.notes ?? '',

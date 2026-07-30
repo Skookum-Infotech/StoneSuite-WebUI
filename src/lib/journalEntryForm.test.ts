@@ -1,10 +1,48 @@
 import { describe, it, expect } from 'vitest'
 import {
   toCreatePayload, toUpdatePayload, fromJournalEntry, journalEntryDefaults, jeStatusLabel,
+  toRFC3339OrUndefined, fromRFC3339DateOnly, JOURNAL_ENTRY_FIELDS, JOURNAL_ENTRY_CREATE_FIELDS,
   JE_EDITABLE_STATUSES, JE_APPROVABLE_STATUSES, JE_POSTABLE_STATUSES,
   JE_REVERSIBLE_STATUSES, JE_CANCELLABLE_STATUSES, JE_DELETABLE_STATUSES,
 } from './journalEntryForm'
 import type { JournalEntry } from '@/types/journalEntry'
+
+describe('JOURNAL_ENTRY_CREATE_FIELDS', () => {
+  it('omits the readonly Status and Journal Entry # fields shown on Edit', () => {
+    expect(JOURNAL_ENTRY_FIELDS.some((f) => f.key === 'je_status')).toBe(true)
+    expect(JOURNAL_ENTRY_FIELDS.some((f) => f.key === 'je_doc_num')).toBe(true)
+    expect(JOURNAL_ENTRY_CREATE_FIELDS.some((f) => f.key === 'je_status')).toBe(false)
+    expect(JOURNAL_ENTRY_CREATE_FIELDS.some((f) => f.key === 'je_doc_num')).toBe(false)
+  })
+
+  it('keeps every other field', () => {
+    expect(JOURNAL_ENTRY_CREATE_FIELDS.map((f) => f.key)).toEqual([
+      'amount', 'transfer_date', 'reference', 'owner_employee', 'notes', 'internal_notes',
+    ])
+  })
+})
+
+// A bare "yyyy-mm-dd" fails to decode server-side (cashtransfer's
+// TransferDate is a Go *time.Time; JSON unmarshaling requires full RFC3339),
+// which surfaced in practice as a 400 "Invalid request body" with no useful
+// detail. These two guard against that regression directly.
+describe('toRFC3339OrUndefined', () => {
+  it.each([
+    ['2026-07-15', '2026-07-15T00:00:00Z'],
+    ['', undefined],
+  ])('toRFC3339OrUndefined(%p) -> %p', (input, expected) => {
+    expect(toRFC3339OrUndefined(input)).toBe(expected)
+  })
+})
+
+describe('fromRFC3339DateOnly', () => {
+  it.each([
+    ['2026-07-15T00:00:00Z', '2026-07-15'],
+    [undefined, ''],
+  ])('fromRFC3339DateOnly(%p) -> %p', (input, expected) => {
+    expect(fromRFC3339DateOnly(input)).toBe(expected)
+  })
+})
 
 describe('toCreatePayload', () => {
   const baseData: Record<string, unknown> = {
@@ -16,13 +54,13 @@ describe('toCreatePayload', () => {
     internal_notes: 'internal only',
   }
 
-  it('maps form fields + accounts to the create payload', () => {
+  it('maps form fields + accounts to the create payload, converting the date to RFC3339', () => {
     const payload = toCreatePayload('from-uuid', 'to-uuid', baseData)
     expect(payload).toEqual({
       fromAccountUuid: 'from-uuid',
       toAccountUuid: 'to-uuid',
       amount: 1500.5,
-      transferDate: '2026-07-15',
+      transferDate: '2026-07-15T00:00:00Z',
       reference: 'Check #1042',
       notes: 'note',
       internalNotes: 'internal only',
@@ -57,7 +95,7 @@ describe('toUpdatePayload', () => {
       fromAccountUuid: 'from-uuid',
       toAccountUuid: 'to-uuid',
       amount: 250,
-      transferDate: '2026-08-01',
+      transferDate: '2026-08-01T00:00:00Z',
       reference: 'REF-2',
       // Blank notes fields are omitted (undefined), not sent as "" — mirrors
       // itemReceiptForm.ts's toHeaderFields convention.
@@ -78,7 +116,7 @@ describe('toUpdatePayload', () => {
 describe('fromJournalEntry', () => {
   const je: JournalEntry = {
     id: 'je-1',
-    number: 'JE-000001',
+    transferNumber: 'JE-000001',
     status: 'Draft',
     statusCode: 'DRFT',
     transferDate: '2026-07-15T00:00:00Z',

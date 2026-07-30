@@ -61,11 +61,11 @@ export default function EditJournalEntryPage() {
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
-    if (je?.number) {
-      setLabel(id, je.number);
+    if (je?.transferNumber) {
+      setLabel(id, je.transferNumber);
       return () => clearLabel(id);
     }
-  }, [id, je?.number, setLabel, clearLabel]);
+  }, [id, je?.transferNumber, setLabel, clearLabel]);
 
   const mapped = useMemo(() => (je ? fromJournalEntry(je) : null), [je]);
   const data = localData ?? mapped?.data ?? {};
@@ -111,7 +111,7 @@ export default function EditJournalEntryPage() {
           backLabel="Journal Entries"
           onBack={() => navigate(`/finance/journal-entries/${id}`)}
           icon={ArrowLeftRight}
-          title={je.number || 'Journal Entry'}
+          title={je.transferNumber || 'Journal Entry'}
           subtitle="Fields marked * are required."
           actions={(
             <button type="submit" disabled={save.isPending}

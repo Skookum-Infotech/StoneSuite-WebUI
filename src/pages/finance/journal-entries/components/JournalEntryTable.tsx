@@ -166,7 +166,7 @@ export function JournalEntryTable() {
         (exportCursor) => journalEntryService.searchJournalEntries({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
         ['Journal Entry #', 'Status', 'Date', 'From Account', 'To Account', 'Amount', 'Reference', 'Owner'],
         (je) => [
-          je.number ?? '',
+          je.transferNumber ?? '',
           je.status ?? '',
           fmtCsvDate(je.transferDate),
           je.fromAccount ? `${je.fromAccount.code} — ${je.fromAccount.name}` : '',
@@ -303,7 +303,7 @@ export function JournalEntryTable() {
                           onClick={() => navigate(`/finance/journal-entries/${je.id}`)}
                           className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
-                          {je.number || '—'}
+                          {je.transferNumber || '—'}
                         </button>
                       </td>
                       <td className="px-4 py-3.5">
@@ -336,7 +336,7 @@ export function JournalEntryTable() {
                             <button
                               type="button"
                               onClick={() => navigate(`/finance/journal-entries/${je.id}/edit`)}
-                              aria-label={`Edit journal entry ${je.number}`}
+                              aria-label={`Edit journal entry ${je.transferNumber}`}
                               className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                             >
                               <Pencil className="size-4" />
