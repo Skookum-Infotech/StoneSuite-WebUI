@@ -4,6 +4,8 @@ import { Search, X, Loader2, Landmark } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
+import { accountPickerTypeFilters } from '@/lib/accountPickerFilters';
+import type { AccountType } from '@/types/chartOfAccounts';
 
 const RESULT_LIMIT = 8;
 
@@ -13,26 +15,42 @@ export interface AccountRef {
   name: string;
 }
 
-// Shared account picker — the highest-leverage piece of this module. Every
-// screen that posts to a chart-of-accounts account (today: Default Accounts;
-// future: invoice/payment/journal entry forms) uses this rather than its own
-// query, so the one rule that matters is enforced in one place: always
-// postable=true&active=true, the exact filter that keeps header ("super")
-// accounts and inactive accounts out of every transaction dropdown. Mirrors
-// VendorPicker's debounced search-as-you-type UX.
-export function AccountPicker({
-  value,
-  onChange,
-  required,
-  placeholder = 'Click to browse, or search by code/name…',
-  ariaLabel = 'Search account',
-}: {
-  value: AccountRef | null;
-  onChange: (account: AccountRef | null) => void;
+export interface AccountPickerOptions {
   required?: boolean;
   placeholder?: string;
   ariaLabel?: string;
+  /** Restricts results to these account types (e.g. Journal Entry's From/To
+   *  accounts require ['bank', 'cash'] — cashtransfer AD-7). The plain GET
+   *  /accounts endpoint has no `type` query param, so this switches to
+   *  POST /accounts/search with a `type in [...]` filter instead of
+   *  listAccounts, still ANDed with postable=true&active=true. */
+  types?: AccountType[];
+}
+
+// Shared account picker — the highest-leverage piece of this module. Every
+// screen that posts to a chart-of-accounts account (Default Accounts,
+// Journal Entry's From/To accounts) uses this rather than its own query, so
+// the one rule that matters is enforced in one place: always
+// postable=true&active=true, the exact filter that keeps header ("super")
+// accounts and inactive accounts out of every transaction dropdown. Mirrors
+// VendorPicker's debounced search-as-you-type UX. Cosmetic/behavioral knobs
+// live under `options` (not their own top-level props) to stay within the
+// 5-prop cap.
+export function AccountPicker({
+  value,
+  onChange,
+  options,
+}: {
+  value: AccountRef | null;
+  onChange: (account: AccountRef | null) => void;
+  options?: AccountPickerOptions;
 }) {
+  const {
+    required,
+    placeholder = 'Click to browse, or search by code/name…',
+    ariaLabel = 'Search account',
+    types,
+  } = options ?? {};
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
@@ -52,17 +70,24 @@ export function AccountPicker({
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const typeFilters = accountPickerTypeFilters(types);
+
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ['account-picker', debounced],
+    queryKey: ['account-picker', debounced, types],
     enabled: open,
     staleTime: 30 * 1000,
     queryFn: async (): Promise<AccountRef[]> => {
-      const page = await chartOfAccountsService.listAccounts({
-        postable: true,
-        active: true,
-        search: debounced || undefined,
-        limit: RESULT_LIMIT,
-      });
+      const page = typeFilters
+        ? await chartOfAccountsService.searchAccounts(
+          { filters: typeFilters, search: debounced || undefined, limit: RESULT_LIMIT },
+          { postable: true, active: true },
+        )
+        : await chartOfAccountsService.listAccounts({
+          postable: true,
+          active: true,
+          search: debounced || undefined,
+          limit: RESULT_LIMIT,
+        });
       return page.records.map((a) => ({ id: a.id, code: a.code, name: a.name }));
     },
   });

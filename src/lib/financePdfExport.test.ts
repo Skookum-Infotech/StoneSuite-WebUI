@@ -33,6 +33,13 @@ describe("buildExportFilename", () => {
   it("falls back to 'account' when title and record number are both empty", () => {
     expect(buildExportFilename(undefined, "")).toBe("chart-of-accounts-account.pdf")
   })
+
+  it("uses the journal-entry prefix and fallback when recordType is journal_entry", () => {
+    expect(buildExportFilename("JE-000001", "Journal Entry", "journal_entry")).toBe(
+      "journal-entry-JE-000001.pdf",
+    )
+    expect(buildExportFilename(undefined, "", "journal_entry")).toBe("journal-entry-journal-entry.pdf")
+  })
 })
 
 describe("exportFinanceRecordToPdf", () => {
@@ -69,6 +76,29 @@ describe("exportFinanceRecordToPdf", () => {
         sections: [
           { title: "Attributes", rows: [["Location", ""]] },
           { title: "Classification", rows: [["Type", "General"]] },
+        ],
+      }),
+    ).resolves.toBeUndefined()
+  })
+
+  it("builds and saves a journal entry PDF when recordType is journal_entry", async () => {
+    await expect(
+      exportFinanceRecordToPdf({
+        recordType: "journal_entry",
+        title: "JE-000001",
+        recordNumber: "JE-000001",
+        statusLabel: "Posted",
+        createdAt: "2026-07-15T00:00:00Z",
+        updatedAt: "2026-07-16T00:00:00Z",
+        sections: [
+          {
+            title: "Transfer Details",
+            rows: [
+              ["From Account", "1010 — Operating Bank"],
+              ["To Account", "1020 — Petty Cash"],
+              ["Amount", "$500.00"],
+            ],
+          },
         ],
       }),
     ).resolves.toBeUndefined()

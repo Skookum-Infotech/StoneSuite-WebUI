@@ -84,7 +84,7 @@ function SlotRow({ slot }: { slot: DefaultSlot }) {
           <AccountPicker
             value={value}
             onChange={(account) => repoint.mutate(account?.id ?? '')}
-            ariaLabel={`Default account for ${slot.label}`}
+            options={{ ariaLabel: `Default account for ${slot.label}` }}
           />
         </div>
       </div>

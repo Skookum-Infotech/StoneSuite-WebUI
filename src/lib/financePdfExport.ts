@@ -19,9 +19,29 @@ import {
 
 // Finance-domain PDF exporter — a sibling of crmPdfExport.ts/salesPdfExport.ts/
 // purchasesPdfExport.ts (same masthead/section/table/footer shape via
-// pdfBranding.ts). A Chart of Accounts account is profile-shaped like Vendor:
-// no line items, no totals, and no counterparty — just a labeled record with
-// sectioned field/value tables.
+// pdfBranding.ts, same `recordType`-discriminated single-file-per-domain
+// pattern as purchasesPdfExport.ts). Both record types this module covers are
+// profile/header-shaped like Vendor: no line items, no totals, no
+// counterparty — just a labeled record with sectioned field/value tables.
+// `recordType` defaults to "chart_of_account" so the original (pre-Journal
+// Entry) call shape keeps working unchanged.
+
+export type FinanceRecordType = "chart_of_account" | "journal_entry";
+
+const FILE_PREFIX: Record<FinanceRecordType, string> = {
+  chart_of_account: "chart-of-accounts",
+  journal_entry: "journal-entry",
+};
+
+const FALLBACK_LABEL: Record<FinanceRecordType, string> = {
+  chart_of_account: "account",
+  journal_entry: "journal-entry",
+};
+
+const RECORD_TYPE_LABEL: Record<FinanceRecordType, string> = {
+  chart_of_account: "Chart of Accounts",
+  journal_entry: "Journal Entry",
+};
 
 export interface FinancePdfSection {
   title: string;
@@ -30,6 +50,7 @@ export interface FinancePdfSection {
 }
 
 export interface FinanceExportParams {
+  recordType?: FinanceRecordType;
   title: string;
   recordNumber?: string;
   statusLabel?: string;
@@ -38,14 +59,20 @@ export interface FinanceExportParams {
   sections: FinancePdfSection[];
 }
 
-export function buildExportFilename(recordNumber: string | undefined, title: string): string {
-  const safeName = (recordNumber || title || "account").replace(/[^a-z0-9-_]+/gi, "-");
-  return `chart-of-accounts-${safeName}.pdf`;
+export function buildExportFilename(
+  recordNumber: string | undefined,
+  title: string,
+  recordType: FinanceRecordType = "chart_of_account",
+): string {
+  const safeName = (recordNumber || title || FALLBACK_LABEL[recordType]).replace(/[^a-z0-9-_]+/gi, "-");
+  return `${FILE_PREFIX[recordType]}-${safeName}.pdf`;
 }
 
-/** Builds a branded PDF summary of a Chart of Accounts account. */
+/** Builds a branded PDF summary of a Finance record (Chart of Accounts account
+ *  or Journal Entry). */
 export async function buildFinanceRecordPdf(params: FinanceExportParams): Promise<DocWithAutoTable> {
   const { title, recordNumber, statusLabel, createdAt, updatedAt, sections } = params;
+  const recordType = params.recordType ?? "chart_of_account";
 
   const doc = new jsPDF({ unit: "pt", format: "a4" }) as DocWithAutoTable;
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -58,7 +85,7 @@ export async function buildFinanceRecordPdf(params: FinanceExportParams): Promis
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(...BRAND_DARK_ACCENT);
-  doc.text("FINANCE — CHART OF ACCOUNTS", MARGIN_X, cursorY, { charSpace: 1.4 });
+  doc.text("FINANCE DOCUMENT SUMMARY", MARGIN_X, cursorY, { charSpace: 1.4 });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
@@ -77,7 +104,7 @@ export async function buildFinanceRecordPdf(params: FinanceExportParams): Promis
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(...STONE_600);
-  doc.text(["Account", recordNumber].filter(Boolean).join("  ·  "), MARGIN_X, cursorY);
+  doc.text([RECORD_TYPE_LABEL[recordType], recordNumber].filter(Boolean).join("  ·  "), MARGIN_X, cursorY);
 
   cursorY += 16;
   doc.setDrawColor(...STONE_200);
@@ -135,13 +162,13 @@ export async function buildFinanceRecordPdf(params: FinanceExportParams): Promis
     cursorY = doc.lastAutoTable.finalY + 20;
   }
 
-  drawFooterOnAllPages(doc, pageHeight, "StoneSuite Finance — Chart of Accounts");
+  drawFooterOnAllPages(doc, pageHeight, `StoneSuite Finance — ${RECORD_TYPE_LABEL[recordType]}`);
 
   return doc;
 }
 
-/** Builds and downloads a branded PDF summary of a Chart of Accounts account. */
+/** Builds and downloads a branded PDF summary of a Finance record. */
 export async function exportFinanceRecordToPdf(params: FinanceExportParams): Promise<void> {
   const doc = await buildFinanceRecordPdf(params);
-  doc.save(buildExportFilename(params.recordNumber, params.title));
+  doc.save(buildExportFilename(params.recordNumber, params.title, params.recordType ?? "chart_of_account"));
 }

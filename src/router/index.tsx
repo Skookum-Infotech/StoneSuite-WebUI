@@ -243,6 +243,18 @@ const AddCountPage = lazyWithRetry(() => import("@/pages/inventory/count/AddCoun
 const CountDetailPage = lazyWithRetry(() => import("@/pages/inventory/count/CountDetailPage"));
 const InventorySetupPage = lazyWithRetry(() => import("@/pages/config/inventory-setup/InventorySetupPage"));
 
+const JournalEntryListPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/JournalEntryListPage"),
+);
+const AddJournalEntryPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/AddJournalEntryPage"),
+);
+const JournalEntryDetailPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/JournalEntryDetailPage"),
+);
+const EditJournalEntryPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/EditJournalEntryPage"),
+);
 const ChartOfAccountsPage = lazyWithRetry(
   () => import("@/pages/finance/chart-of-accounts/ChartOfAccountsPage"),
 );
@@ -760,6 +772,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="item_receipt" action="update">
             <EditItemReceiptPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Finance: Journal Entries (specific routes must come before any future catch-all)
+      {
+        path: "finance/journal-entries",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="read">
+            <JournalEntryListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/journal-entries/new",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="create">
+            <AddJournalEntryPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/journal-entries/:id",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="read">
+            <JournalEntryDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/journal-entries/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="update">
+            <EditJournalEntryPage />
           </PermissionGuard>,
         ),
       },
