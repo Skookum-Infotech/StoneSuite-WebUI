@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InventoryItemPicker } from './InventoryItemPicker';
-import type { InventoryItem } from '@/services/inventoryService';
+import type { InventoryItem } from '@/types/inventory';
 import { Badge } from '@/components/tenant/ui';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,

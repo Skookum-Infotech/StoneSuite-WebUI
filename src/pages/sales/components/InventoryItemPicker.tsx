@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Package } from 'lucide-react';
-import { inventoryService, type InventoryItem } from '@/services/inventoryService';
+import { inventoryService } from '@/services/inventoryService';
+import type { InventoryItem } from '@/types/inventory';
 import { cn } from '@/lib/utils';
 
 const MIN_CHARS = 2;
