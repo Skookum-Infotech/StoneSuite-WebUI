@@ -51,10 +51,13 @@ export interface PeriodFilters {
 }
 
 /** fiscalYearStartMonth is 1-12; basePeriodStart is normalized to the first
- *  of its month server-side, so any date within the intended month works. */
+ *  of its month server-side, so any date within the intended month works.
+ *  Must be a full RFC3339 instant (e.g. "2026-03-01T00:00:00.000Z") — the
+ *  Go field behind it is `*time.Time`, which rejects a bare "2026-03-01"
+ *  outright. Build it with `monthYearToRfc3339` (lib/monthYearValue.ts). */
 export interface CalendarSetupPayload {
   fiscalYearStartMonth: number;
-  basePeriodStart: string; // ISO date
+  basePeriodStart: string;
 }
 
 /** StartYear is a confirmation, not a choice — omit it to generate whatever

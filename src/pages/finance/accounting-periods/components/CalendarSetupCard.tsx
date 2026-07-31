@@ -4,7 +4,9 @@ import { CalendarClock, Loader2, AlertCircle } from 'lucide-react';
 import { accountingPeriodService } from '@/services/accountingPeriodService';
 import { parseAccountingPeriodError } from '@/lib/accountingPeriodErrors';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
-import { fieldCls, fieldErrorCls } from '@/components/crm/formUtils';
+import { fieldCls } from '@/components/crm/formUtils';
+import { MonthYearPicker } from '@/components/finance/MonthYearPicker';
+import { monthYearToRfc3339 } from '@/lib/monthYearValue';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -19,14 +21,14 @@ const MONTH_NAMES = [
 export function CalendarSetupCard() {
   const queryClient = useQueryClient();
   const [startMonth, setStartMonth] = useState(1);
-  const [baseMonth, setBaseMonth] = useState(''); // yyyy-mm from <input type="month">
+  const [baseMonth, setBaseMonth] = useState(''); // yyyy-mm
   const [showErrors, setShowErrors] = useState(false);
 
   const setup = useMutation({
     mutationFn: () =>
       accountingPeriodService.setupCalendar({
         fiscalYearStartMonth: startMonth,
-        basePeriodStart: `${baseMonth}-01`,
+        basePeriodStart: monthYearToRfc3339(baseMonth),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ap-calendar'] });
@@ -86,15 +88,12 @@ export function CalendarSetupCard() {
         </ModernFieldShell>
 
         <ModernFieldShell label="Base period (go-live month)" required>
-          <input
-            type="month"
+          <MonthYearPicker
             value={baseMonth}
-            onChange={(e) => setBaseMonth(e.target.value)}
-            className={showErrors && missingBase ? fieldErrorCls : fieldCls}
-            aria-label="Base period go-live month"
-            aria-required="true"
-            aria-invalid={(showErrors && missingBase) || undefined}
-            aria-describedby={showErrors && missingBase ? 'base-period-error' : undefined}
+            onChange={setBaseMonth}
+            invalid={showErrors && missingBase}
+            ariaLabel="Base period go-live month"
+            ariaDescribedBy={showErrors && missingBase ? 'base-period-error' : undefined}
           />
           <p className="mt-1 text-2xs text-stone-400">
             The first month you&apos;ll post transactions into. Earlier months are generated closed.
