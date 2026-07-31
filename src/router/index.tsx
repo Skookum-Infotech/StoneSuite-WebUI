@@ -264,6 +264,9 @@ const AccountDetailPage = lazyWithRetry(
 const AccountDefaultsPage = lazyWithRetry(
   () => import("@/pages/finance/account-defaults/AccountDefaultsPage"),
 );
+const AccountingPeriodsPage = lazyWithRetry(
+  () => import("@/pages/finance/accounting-periods/AccountingPeriodsPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -832,6 +835,16 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="chart_of_account" action="configure">
             <AccountDefaultsPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Finance: Accounting Periods
+      {
+        path: "finance/accounting-periods",
+        element: lazy_(
+          <PermissionGuard resource="accounting_period" action="read">
+            <AccountingPeriodsPage />
           </PermissionGuard>,
         ),
       },

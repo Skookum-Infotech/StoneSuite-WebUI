@@ -40,6 +40,7 @@ import {
   Layers,
   Boxes,
   ArrowLeftRight,
+  CalendarClock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -405,6 +406,15 @@ export const sidebarNav: SidebarNavConfig = {
               icon: ListTree,
               iconColor: "text-teal-600 dark:text-teal-400",
               permission: { resource: "chart_of_account", action: "read" },
+            },
+            {
+              type: "link",
+              id: "accounting-periods",
+              label: "Accounting Periods",
+              path: "/finance/accounting-periods",
+              icon: CalendarClock,
+              iconColor: "text-cyan-600 dark:text-cyan-400",
+              permission: { resource: "accounting_period", action: "read" },
             },
             {
               type: "link",
