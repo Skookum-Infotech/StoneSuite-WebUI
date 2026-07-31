@@ -34,12 +34,14 @@ export const accountingPeriodService = {
       .get<{ success: boolean; fiscalYears: FiscalYear[] | null }>(`${BASE}/fiscal-years`)
       .then((r) => r.data.fiscalYears ?? []),
 
-  // POST /fiscal-years — generates the next contiguous year's twelve periods,
-  // gated on accounting_period:create (separate from :update's close/reopen).
-  generateFiscalYear: (payload: GenerateFiscalYearPayload = {}): Promise<FiscalYear> =>
+  // POST /fiscal-years — generates one or more contiguous years' twelve
+  // periods each in one atomic request, gated on accounting_period:create
+  // (separate from :update's close/reopen). Always returns an array, even
+  // for the single-year case.
+  generateFiscalYear: (payload: GenerateFiscalYearPayload = {}): Promise<FiscalYear[]> =>
     tenantClient
-      .post<{ success: boolean; fiscalYear: FiscalYear }>(`${BASE}/fiscal-years`, payload)
-      .then((r) => r.data.fiscalYear),
+      .post<{ success: boolean; fiscalYears: FiscalYear[] }>(`${BASE}/fiscal-years`, payload)
+      .then((r) => r.data.fiscalYears),
 
   // GET /accounting-periods?fiscalYear=&status= — chronological, oldest first.
   listPeriods: (filters: PeriodFilters = {}): Promise<Period[]> =>

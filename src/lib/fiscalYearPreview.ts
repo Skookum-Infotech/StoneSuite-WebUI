@@ -51,3 +51,19 @@ export function predictNextFiscalYear(lastFiscalYearEnd: string | undefined): Fi
   const end = lastOfMonthUTC(addUTCMonths(nextStart, 11));
   return { name: fiscalYearLabel(nextStart), start: nextStart.toISOString(), end: end.toISOString() };
 }
+
+/** Predicts `count` contiguous fiscal years, chaining each predicted year's
+ *  end into the next — mirrors what a multi-year GenerateFiscalYear request
+ *  will actually create. Returns [] when there is no fiscal year yet, same
+ *  defensive case predictNextFiscalYear guards against. */
+export function predictNextFiscalYears(lastFiscalYearEnd: string | undefined, count: number): FiscalYearPreview[] {
+  const previews: FiscalYearPreview[] = [];
+  let cursor = lastFiscalYearEnd;
+  for (let i = 0; i < count; i++) {
+    const next = predictNextFiscalYear(cursor);
+    if (!next) return previews;
+    previews.push(next);
+    cursor = next.end;
+  }
+  return previews;
+}

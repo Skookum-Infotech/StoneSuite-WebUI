@@ -60,10 +60,17 @@ export interface CalendarSetupPayload {
   basePeriodStart: string;
 }
 
+/** MaxGenerateYears mirrors StoneSuite-Backend's accountingperiod.MaxGenerateYears
+ *  — the most contiguous fiscal years one request may generate. */
+export const MAX_GENERATE_YEARS = 10;
+
 /** StartYear is a confirmation, not a choice — omit it to generate whatever
- *  year contiguously follows the latest one on record. */
+ *  year contiguously follows the latest one on record. Years is the real
+ *  choice: how many contiguous years to generate in one atomic request
+ *  (1-MAX_GENERATE_YEARS, omit or 0 for a single year). */
 export interface GenerateFiscalYearPayload {
   startYear?: number;
+  years?: number;
 }
 
 /** A one-element periodIds is the single-period close/reopen case — there is

@@ -90,8 +90,8 @@ export default function AccountingPeriodsPage() {
         </div>
       </div>
 
-      {generateOpen && (
-        <GenerateFiscalYearDialog onClose={() => setGenerateOpen(false)} fiscalYears={fiscalYears} />
+      {generateOpen && calendar && (
+        <GenerateFiscalYearDialog onClose={() => setGenerateOpen(false)} fiscalYears={fiscalYears} calendar={calendar} />
       )}
     </div>
   );

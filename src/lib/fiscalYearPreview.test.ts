@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { predictNextFiscalYear } from './fiscalYearPreview';
+import { predictNextFiscalYear, predictNextFiscalYears } from './fiscalYearPreview';
 
 describe('predictNextFiscalYear', () => {
   it('returns null when no fiscal year exists yet', () => {
@@ -34,5 +34,28 @@ describe('predictNextFiscalYear', () => {
     // FY ending 2028-02-29 (leap year) -> next starts 2028-03-01.
     const result = predictNextFiscalYear('2028-02-29');
     expect(result?.start).toBe('2028-03-01T00:00:00.000Z');
+  });
+});
+
+describe('predictNextFiscalYears', () => {
+  it('returns [] when no fiscal year exists yet', () => {
+    expect(predictNextFiscalYears(undefined, 3)).toEqual([]);
+  });
+
+  it('returns [] for a zero count', () => {
+    expect(predictNextFiscalYears('2026-12-31', 0)).toEqual([]);
+  });
+
+  it('chains contiguous years, each starting the day after the previous ends', () => {
+    const years = predictNextFiscalYears('2026-12-31', 3);
+    expect(years.map((y) => y.name)).toEqual(['FY2027', 'FY2028', 'FY2029']);
+    expect(years[0].start).toBe('2027-01-01T00:00:00.000Z');
+    expect(years[0].end).toBe('2027-12-31T00:00:00.000Z');
+    expect(years[1].start).toBe('2028-01-01T00:00:00.000Z');
+    expect(years[2].end).toBe('2029-12-31T00:00:00.000Z');
+  });
+
+  it('matches predictNextFiscalYear for a count of 1', () => {
+    expect(predictNextFiscalYears('2026-12-31', 1)).toEqual([predictNextFiscalYear('2026-12-31')]);
   });
 });
