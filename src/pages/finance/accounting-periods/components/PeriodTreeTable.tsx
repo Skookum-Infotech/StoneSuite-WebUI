@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronsDown, ChevronsUp, Download } from 'lucide-react';
+import { ChevronsDown, ChevronsUp, Download, X } from 'lucide-react';
 import { accountingPeriodService } from '@/services/accountingPeriodService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { buildCsvText, buildCsvFilename, downloadCsv } from '@/lib/csvExport';
 import { buildFiscalYearTree, flattenTree, allGroupKeys, formatDateRange } from '@/lib/accountingPeriodTree';
-import type { AccountingCalendar, Period } from '@/types/accountingPeriod';
+import type { AccountingCalendar, Period, PeriodStatus } from '@/types/accountingPeriod';
 import { PeriodTreeRow } from './PeriodTreeRow';
 import { PeriodBulkActionBar } from './PeriodBulkActionBar';
 import { PeriodStatusDialog } from './PeriodStatusDialog';
 import { PeriodHistoryDrawer } from './PeriodHistoryDrawer';
+
+const filterSelectCls =
+  'h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
 
 const COLUMN_HEADERS = [
   'Date Range', 'Period Name', 'Period Close',
@@ -30,6 +33,8 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [statusTarget, setStatusTarget] = useState<Period | null>(null);
   const [historyTarget, setHistoryTarget] = useState<Period | null>(null);
+  const [fiscalYearFilter, setFiscalYearFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'' | PeriodStatus>('');
 
   const {
     data: fiscalYears = [], isLoading: fyLoading, isError: fyIsError, error: fyError,
@@ -37,10 +42,44 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
 
   const {
     data: periods = [], isLoading: periodsLoading, isError: periodsIsError, error: periodsError,
-  } = useQuery({ queryKey: ['ap-periods'], queryFn: () => accountingPeriodService.listPeriods() });
+  } = useQuery({
+    queryKey: ['ap-periods', fiscalYearFilter, statusFilter],
+    queryFn: () => accountingPeriodService.listPeriods({
+      fiscalYear: fiscalYearFilter || undefined,
+      status: statusFilter || undefined,
+    }),
+  });
 
-  const tree = useMemo(() => buildFiscalYearTree(fiscalYears, periods), [fiscalYears, periods]);
+  // Drop a fiscal year from the tree once its periods are filtered away —
+  // otherwise a "Status: closed" filter would still show every year as an
+  // empty row instead of just the ones that actually have a closed period.
+  const yearsWithVisiblePeriods = useMemo(() => {
+    const ids = new Set(periods.map((p) => p.fiscalYearId));
+    return fiscalYears.filter((fy) => ids.has(fy.id));
+  }, [fiscalYears, periods]);
+
+  const tree = useMemo(() => buildFiscalYearTree(yearsWithVisiblePeriods, periods), [yearsWithVisiblePeriods, periods]);
   const rows = useMemo(() => flattenTree(tree, collapsed), [tree, collapsed]);
+  const filtersActive = Boolean(fiscalYearFilter || statusFilter);
+
+  function clearFilters() {
+    setFiscalYearFilter('');
+    setStatusFilter('');
+    setSelectedIds(new Set());
+  }
+
+  // A filter change can scroll previously-selected rows out of the result
+  // set entirely, so the selection is cleared alongside it rather than left
+  // pointing at periods the bulk bar can no longer show.
+  function handleFiscalYearFilterChange(value: string) {
+    setFiscalYearFilter(value);
+    setSelectedIds(new Set());
+  }
+
+  function handleStatusFilterChange(value: '' | PeriodStatus) {
+    setStatusFilter(value);
+    setSelectedIds(new Set());
+  }
 
   function toggleGroup(key: string) {
     setCollapsed((prev) => {
@@ -73,7 +112,13 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
   if (isError) {
     return <ErrorNote>{apiErrorMessage(fyError ?? periodsError, 'Failed to load accounting periods.')}</ErrorNote>;
   }
-  if (tree.length === 0) return <EmptyState>No fiscal years have been generated yet.</EmptyState>;
+  if (tree.length === 0) {
+    return (
+      <EmptyState>
+        {fiscalYears.length === 0 ? 'No fiscal years have been generated yet.' : 'No periods match the current filters.'}
+      </EmptyState>
+    );
+  }
 
   const selectedPeriods = periods.filter((p) => selectedIds.has(p.id));
 
@@ -97,6 +142,43 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
         >
           <ChevronsUp className="size-3.5" /> Collapse All
         </button>
+
+        <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
+
+        <select
+          value={fiscalYearFilter}
+          onChange={(e) => handleFiscalYearFilterChange(e.target.value)}
+          aria-label="Filter by fiscal year"
+          className={filterSelectCls}
+        >
+          <option value="">All fiscal years</option>
+          {fiscalYears.map((fy) => (
+            <option key={fy.id} value={fy.name}>{fy.name}</option>
+          ))}
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => handleStatusFilterChange(e.target.value as '' | PeriodStatus)}
+          aria-label="Filter by status"
+          className={filterSelectCls}
+        >
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+        </select>
+
+        {filtersActive && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            aria-label="Clear filters"
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-500 transition-colors hover:bg-stone-50"
+          >
+            <X className="size-3" />
+            Clear
+          </button>
+        )}
 
         <button
           type="button"

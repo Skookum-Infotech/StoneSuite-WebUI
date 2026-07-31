@@ -4,12 +4,20 @@ import { CalendarPlus, Loader2 } from 'lucide-react';
 import { accountingPeriodService } from '@/services/accountingPeriodService';
 import { parseAccountingPeriodError } from '@/lib/accountingPeriodErrors';
 import { useModalDialog } from '@/hooks/useModalDialog';
+import { predictNextFiscalYear } from '@/lib/fiscalYearPreview';
+import { formatDateRange } from '@/lib/accountingPeriodTree';
+import type { FiscalYear } from '@/types/accountingPeriod';
 
 // Confirms and generates the next contiguous fiscal year. No year picker —
 // StartYear is a confirmation the server checks, not a choice the UI offers;
 // the tenant always gets whatever year contiguously follows the latest one
-// on record, so there is nothing to pick.
-export function GenerateFiscalYearDialog({ onClose }: { onClose: () => void }) {
+// on record. What we CAN do is predict it (predictNextFiscalYear mirrors the
+// backend's own rule) and show the name + date range up front, so the
+// confirmation is concrete rather than a blind "Generate?".
+export function GenerateFiscalYearDialog({ onClose, fiscalYears }: {
+  onClose: () => void;
+  fiscalYears: FiscalYear[];
+}) {
   const contentRef = useModalDialog(onClose);
   const queryClient = useQueryClient();
 
@@ -24,6 +32,7 @@ export function GenerateFiscalYearDialog({ onClose }: { onClose: () => void }) {
   const errorInfo = generate.error
     ? parseAccountingPeriodError(generate.error, 'Failed to generate the fiscal year.')
     : null;
+  const preview = predictNextFiscalYear(fiscalYears[fiscalYears.length - 1]?.end);
 
   return createPortal(
     <div
@@ -40,12 +49,16 @@ export function GenerateFiscalYearDialog({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <h3 id="generate-fy-dialog-title" className="text-sm font-bold text-stone-900">
-              {generate.isSuccess ? 'Fiscal year generated' : 'Generate the next fiscal year?'}
+              {generate.isSuccess
+                ? 'Fiscal year generated'
+                : preview ? `Generate ${preview.name}?` : 'Generate the next fiscal year?'}
             </h3>
             <p className="mt-0.5 text-xs text-stone-400">
               {generate.isSuccess
                 ? `${generate.data?.name} is ready with twelve open periods.`
-                : 'Creates the next twelve monthly periods, all open.'}
+                : preview
+                  ? `${formatDateRange(preview.start, preview.end)} — twelve monthly periods, all open.`
+                  : 'Creates the next twelve monthly periods, all open.'}
             </p>
           </div>
         </div>

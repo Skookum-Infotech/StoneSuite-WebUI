@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, ChevronDown, Plus, X } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, ChevronsDown, ChevronsUp, Plus, X } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Switch } from '@/components/ui/switch';
 import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { cn } from '@/lib/utils';
-import type { Account } from '@/types/chartOfAccounts';
+import type { Account, TreeSection } from '@/types/chartOfAccounts';
 import { AccountTreeRow } from './AccountTreeRow';
 import { BulkActionBar } from './BulkActionBar';
 import { AccountFormDrawer, type AccountParentRef } from './AccountFormDrawer';
@@ -25,6 +24,22 @@ function toParentRef(a: Account): AccountParentRef {
     id: a.id, code: a.code, name: a.name,
     subCategoryId: a.subCategoryId, subCategoryCode: a.subCategoryCode, subCategoryName: a.subCategoryName,
   };
+}
+
+// Every section/category/sub-category group key — the full expand/collapse
+// surface, used by "Collapse All" (mirrors accountingPeriodTree's allGroupKeys).
+function allGroupKeys(sections: TreeSection[]): string[] {
+  const keys: string[] = [];
+  for (const section of sections) {
+    keys.push(`sec-${section.bsPnl}`);
+    for (const cat of section.categories) {
+      keys.push(`cat-${cat.id}-${section.bsPnl}`);
+      for (const sub of cat.subCategories) {
+        keys.push(`sub-${sub.id}-${section.bsPnl}`);
+      }
+    }
+  }
+  return keys;
 }
 
 // The primary Chart of Accounts screen: the grouped report exactly as
@@ -122,6 +137,28 @@ export function AccountTreeView() {
           Include hidden
         </label>
 
+        {!debounced && sections.length > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setCollapsed(new Set())}
+              aria-label="Expand all sections and categories"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+            >
+              <ChevronsDown className="size-3.5" /> Expand All
+            </button>
+            <span className="text-stone-300" aria-hidden="true">|</span>
+            <button
+              type="button"
+              onClick={() => setCollapsed(new Set(allGroupKeys(sections)))}
+              aria-label="Collapse all sections and categories"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+            >
+              <ChevronsUp className="size-3.5" /> Collapse All
+            </button>
+          </>
+        )}
+
         {canCreate && (
           <button
             type="button"
@@ -176,15 +213,15 @@ export function AccountTreeView() {
           const secKey = `sec-${section.bsPnl}`;
           const secCollapsed = collapsed.has(secKey);
           return (
-            <div key={section.bsPnl} className="rounded-xl border border-stone-200 bg-white shadow-sm">
+            <div key={section.bsPnl} className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
               <button
                 type="button"
                 onClick={() => toggleCollapse(secKey)}
                 aria-expanded={!secCollapsed}
-                className="flex w-full items-center justify-between px-4 py-3 border-b border-stone-100"
+                className="flex w-full items-center gap-1.5 rounded-t-xl bg-stone-50/60 px-4 py-3 border-b border-stone-100 hover:bg-stone-50"
               >
+                {secCollapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
                 <span className="text-sm font-bold text-stone-900">{section.label}</span>
-                <ChevronDown className={cn('size-4 text-stone-400 transition-transform', secCollapsed && '-rotate-90')} />
               </button>
 
               {!secCollapsed && (
@@ -200,7 +237,7 @@ export function AccountTreeView() {
                           aria-expanded={!catCollapsed}
                           className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-stone-50"
                         >
-                          <ChevronDown className={cn('size-3.5 text-stone-400 transition-transform', catCollapsed && '-rotate-90')} />
+                          {catCollapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
                           <span className="text-xs font-semibold text-stone-700">{cat.code} · {cat.name}</span>
                         </button>
 
@@ -217,7 +254,7 @@ export function AccountTreeView() {
                                     aria-expanded={!subCollapsed}
                                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left hover:bg-stone-50"
                                   >
-                                    <ChevronDown className={cn('size-3 text-stone-300 transition-transform', subCollapsed && '-rotate-90')} />
+                                    {subCollapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
                                     <span className="text-2xs font-semibold uppercase tracking-wide text-stone-400">
                                       {sub.code} — {sub.name}
                                     </span>

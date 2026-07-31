@@ -30,6 +30,16 @@ export default function AccountingPeriodsPage() {
     enabled: Boolean(calendar?.configured),
   });
 
+  // Shares the ['ap-fiscal-years'] cache entry with PeriodTreeTable — React
+  // Query dedupes the concurrent identical query, so this is not a second
+  // network call. Fetched here too so the Generate dialog can preview the
+  // next fiscal year without threading state up from a sibling.
+  const { data: fiscalYears = [] } = useQuery({
+    queryKey: ['ap-fiscal-years'],
+    queryFn: accountingPeriodService.listFiscalYears,
+    enabled: Boolean(calendar?.configured),
+  });
+
   return (
     <div className="flex flex-1 flex-col min-h-0">
       <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6 3xl:p-10 4xl:p-14 overflow-y-auto modal-scrollbar">
@@ -80,7 +90,9 @@ export default function AccountingPeriodsPage() {
         </div>
       </div>
 
-      {generateOpen && <GenerateFiscalYearDialog onClose={() => setGenerateOpen(false)} />}
+      {generateOpen && (
+        <GenerateFiscalYearDialog onClose={() => setGenerateOpen(false)} fiscalYears={fiscalYears} />
+      )}
     </div>
   );
 }
