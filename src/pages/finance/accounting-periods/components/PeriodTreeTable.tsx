@@ -17,7 +17,7 @@ const filterSelectCls =
   'h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
 
 const COLUMN_HEADERS = [
-  'Date Range', 'Period Name', 'Period Close',
+  'Period Name', 'Period Close',
   'A/P Transactions', 'A/R Transactions', 'All G/L Transactions', 'Allow Non-G/L Changes',
 ] as const;
 
@@ -194,7 +194,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
       {canUpdate && <PeriodBulkActionBar selectedPeriods={selectedPeriods} onClear={() => setSelectedIds(new Set())} />}
 
       <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-stone-200 bg-white shadow-sm modal-scrollbar">
-        <table className="w-full min-w-[860px] text-left text-xs">
+        <table className="w-full min-w-[760px] text-left text-xs">
           <thead className="sticky top-0 z-10 border-b border-stone-200 bg-table-header">
             <tr>
               {canUpdate && <th className="w-8 px-3 py-3" />}

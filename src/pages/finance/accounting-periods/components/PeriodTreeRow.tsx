@@ -1,6 +1,6 @@
 import { ChevronRight, ChevronDown, CheckCircle2, Circle, Lock, Unlock, Pencil, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDateRange, fiscalYearDisplayLabel, type PeriodTreeRow as RowT } from '@/lib/accountingPeriodTree';
+import { fiscalYearDisplayLabel, type PeriodTreeRow as RowT } from '@/lib/accountingPeriodTree';
 import type { Period, PeriodStatus } from '@/types/accountingPeriod';
 
 function StatusIcon({ status }: { status: PeriodStatus }) {
@@ -36,8 +36,8 @@ interface PeriodTreeRowProps {
 // One row of the FY -> quarter -> month tree. Year/quarter rows show a
 // rollup status (closed only when every period beneath them is closed) and
 // are not independently actionable — only a generated month is a closable
-// unit. Column grid mirrors the reference tree: date range, period name
-// (with the expand toggle and tree indent), then the five status columns.
+// unit. Column grid mirrors the reference tree: period name (with the
+// expand toggle and tree indent), then the five status columns.
 export function PeriodTreeRow({
   row, basePeriodStart, canUpdate, selectedIds, onToggleGroup, onToggleSelect, onOpenStatusDialog, onOpenHistory,
 }: PeriodTreeRowProps) {
@@ -46,9 +46,6 @@ export function PeriodTreeRow({
     return (
       <tr className="bg-stone-50/60 transition-colors hover:bg-stone-50">
         {canUpdate && <td className="px-3 py-2.5" />}
-        <td className="whitespace-nowrap px-4 py-2.5 text-2xs text-stone-400">
-          {formatDateRange(fiscalYear.start, fiscalYear.end)}
-        </td>
         <td className="px-4 py-2.5">
           <button
             type="button"
@@ -76,7 +73,6 @@ export function PeriodTreeRow({
     return (
       <tr className="transition-colors hover:bg-stone-50">
         {canUpdate && <td className="px-3 py-2" />}
-        <td className="whitespace-nowrap px-4 py-2 text-2xs text-stone-400">{formatDateRange(q.start, q.end)}</td>
         <td className="px-4 py-2 pl-8">
           <button
             type="button"
@@ -117,7 +113,6 @@ export function PeriodTreeRow({
           />
         </td>
       )}
-      <td className="whitespace-nowrap px-4 py-2 text-2xs text-stone-400">{formatDateRange(period.start, period.end)}</td>
       <td className="px-4 py-2 pl-14 text-stone-700">
         {period.name}
         {period.isBasePeriod && (
