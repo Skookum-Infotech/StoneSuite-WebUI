@@ -7,7 +7,7 @@ import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { buildCsvText, buildCsvFilename, downloadCsv } from '@/lib/csvExport';
 import { buildFiscalYearTree, flattenTree, allGroupKeys, formatDateRange } from '@/lib/accountingPeriodTree';
-import type { AccountingCalendar, Period, PeriodStatus } from '@/types/accountingPeriod';
+import type { AccountingCalendar, LockTarget, Period, PeriodStatus } from '@/types/accountingPeriod';
 import { PeriodTreeRow } from './PeriodTreeRow';
 import { PeriodBulkActionBar } from './PeriodBulkActionBar';
 import { PeriodStatusDialog } from './PeriodStatusDialog';
@@ -31,7 +31,9 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
 
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [statusTarget, setStatusTarget] = useState<Period | null>(null);
+  // Which period, and which of its four lockable dimensions, the confirm
+  // dialog is open for — the three sub-ledger locks each act independently.
+  const [statusTarget, setStatusTarget] = useState<{ period: Period; target: LockTarget } | null>(null);
   const [historyTarget, setHistoryTarget] = useState<Period | null>(null);
   const [fiscalYearFilter, setFiscalYearFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | PeriodStatus>('');
@@ -97,10 +99,16 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
     });
   }
 
+  // Quarter is blank for periods generated before fiscal_quarter existed —
+  // they are deliberately not backfilled, so the export reports the absence
+  // rather than substituting the client-derived tree label.
   function handleDownloadCsv() {
     const text = buildCsvText(
-      ['Fiscal Year', 'Period', 'Date Range', 'Status'],
-      periods.map((p) => [p.fiscalYearName, p.name, formatDateRange(p.start, p.end), p.status]),
+      ['Fiscal Year', 'Quarter', 'Period', 'Date Range', 'Status', 'A/P Lock', 'A/R Lock', 'G/L Lock'],
+      periods.map((p) => [
+        p.fiscalYearName, p.quarterName ?? '', p.name, formatDateRange(p.start, p.end),
+        p.status, p.apLockStatus, p.arLockStatus, p.glLockStatus,
+      ]),
     );
     downloadCsv(buildCsvFilename('accounting-period'), text);
   }
@@ -216,7 +224,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
                 selectedIds={selectedIds}
                 onToggleGroup={toggleGroup}
                 onToggleSelect={toggleSelect}
-                onOpenStatusDialog={setStatusTarget}
+                onOpenStatusDialog={(period, target) => setStatusTarget({ period, target })}
                 onOpenHistory={setHistoryTarget}
               />
             ))}
@@ -224,7 +232,13 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
         </table>
       </div>
 
-      {statusTarget && <PeriodStatusDialog period={statusTarget} onClose={() => setStatusTarget(null)} />}
+      {statusTarget && (
+        <PeriodStatusDialog
+          period={statusTarget.period}
+          target={statusTarget.target}
+          onClose={() => setStatusTarget(null)}
+        />
+      )}
       {historyTarget && <PeriodHistoryDrawer period={historyTarget} onClose={() => setHistoryTarget(null)} />}
     </div>
   );

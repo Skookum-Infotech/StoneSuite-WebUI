@@ -7,20 +7,35 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { Spinner } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { cn } from '@/lib/utils';
-import type { Period } from '@/types/accountingPeriod';
+import type { Period, PeriodHistoryAction } from '@/types/accountingPeriod';
 
-const ACTION_LABELS: Record<string, string> = {
+// One row per period per call, for the whole-period close/reopen pair and
+// for each of the six granular sub-ledger lock endpoints. Locking is amber
+// and unlocking emerald throughout, matching the tree's lock icons.
+const ACTION_LABELS: Record<PeriodHistoryAction, string> = {
   generate: 'Generated',
   close: 'Closed',
   reopen: 'Reopened',
   base_setup: 'Calendar setup',
+  ap_lock: 'A/P locked',
+  ap_unlock: 'A/P unlocked',
+  ar_lock: 'A/R locked',
+  ar_unlock: 'A/R unlocked',
+  gl_lock: 'G/L locked',
+  gl_unlock: 'G/L unlocked',
 };
 
-const ACTION_COLORS: Record<string, string> = {
+const ACTION_COLORS: Record<PeriodHistoryAction, string> = {
   generate: 'bg-sky-100 text-sky-700',
   close: 'bg-amber-100 text-amber-700',
   reopen: 'bg-emerald-100 text-emerald-700',
   base_setup: 'bg-violet-100 text-violet-700',
+  ap_lock: 'bg-amber-50 text-amber-700',
+  ap_unlock: 'bg-emerald-50 text-emerald-700',
+  ar_lock: 'bg-amber-50 text-amber-700',
+  ar_unlock: 'bg-emerald-50 text-emerald-700',
+  gl_lock: 'bg-amber-50 text-amber-700',
+  gl_unlock: 'bg-emerald-50 text-emerald-700',
 };
 
 // One period's audit trail, newest first. `by` is an employee id, not a

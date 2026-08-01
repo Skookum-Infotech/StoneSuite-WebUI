@@ -1,6 +1,6 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
-  AccountingCalendar, FiscalYear, Period, PeriodFilters, PeriodHistoryEntry,
+  AccountingCalendar, FiscalYear, LockDimension, Period, PeriodFilters, PeriodHistoryEntry,
   CalendarSetupPayload, GenerateFiscalYearPayload, StatusChangePayload, StatusChangeResult,
 } from '@/types/accountingPeriod';
 
@@ -85,6 +85,27 @@ export const accountingPeriodService = {
     tenantClient
       .post<{ success: boolean; periods: Period[] | null; booksClosedThrough: string | null }>(
         `${BASE}/accounting-periods/reopen`,
+        payload,
+      )
+      .then((r) => toResult(r.data)),
+
+  // POST /accounting-periods/{lock|unlock}-{ap|ar|gl} — the six granular
+  // sub-ledger lock endpoints, all sharing close/reopen's payload and result
+  // shape and its `accounting_period:update` permission. Each is sequenced
+  // chronologically against its OWN lock history, not the derived overall
+  // status, so AP may legitimately lag GL by a period; a violation 409s the
+  // whole batch with a dimension-prefixed message ("AP for Mar 2026 …").
+  //
+  // The returned periods carry the recomputed overall `status` alongside the
+  // three lock fields — never re-derive it client-side from the response.
+  changePeriodLock: (
+    dimension: LockDimension,
+    locking: boolean,
+    payload: StatusChangePayload,
+  ): Promise<StatusChangeResult> =>
+    tenantClient
+      .post<{ success: boolean; periods: Period[] | null; booksClosedThrough: string | null }>(
+        `${BASE}/accounting-periods/${locking ? 'lock' : 'unlock'}-${dimension}`,
         payload,
       )
       .then((r) => toResult(r.data)),

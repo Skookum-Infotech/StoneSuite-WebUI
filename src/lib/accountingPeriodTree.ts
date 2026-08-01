@@ -2,7 +2,15 @@
 // No React, no network — the FY -> quarter -> month tree, expand/collapse
 // flattening, and date-range formatting all live here so they're unit
 // testable without mounting the table.
-import type { FiscalYear, Period, PeriodStatus } from '@/types/accountingPeriod';
+import { LOCK_STATUS_FIELDS, type FiscalYear, type LockDimension, type Period, type PeriodStatus }
+  from '@/types/accountingPeriod';
+
+/** A group row's three sub-ledger columns. The backend derives a status for a
+ *  fiscal year and a quarter, but no per-lock rollup for either, so these are
+ *  computed here over the periods the group actually contains — which under an
+ *  active filter is the visible subset, the same scope the quarter status has
+ *  always been derived over. */
+export type LockRollup = Record<LockDimension, PeriodStatus>;
 
 export interface QuarterNode {
   key: string;
@@ -11,12 +19,14 @@ export interface QuarterNode {
   start: string;
   end: string;
   status: PeriodStatus;
+  locks: LockRollup;
   periods: Period[];
 }
 
 export interface FiscalYearNode {
   key: string;
   fiscalYear: FiscalYear;
+  locks: LockRollup;
   quarters: QuarterNode[];
 }
 
@@ -55,6 +65,18 @@ export function deriveRollupStatus(periods: { status: PeriodStatus }[]): PeriodS
   return periods.every((p) => p.status === 'closed') ? 'closed' : 'open';
 }
 
+/** The same all-or-nothing rollup as deriveRollupStatus, applied to each of
+ *  the three sub-ledger locks independently — a group can be closed on GL and
+ *  open on AP, which is the whole point of the locks being separate. */
+export function deriveLockRollup(periods: Period[]): LockRollup {
+  const rollupFor = (dimension: LockDimension): PeriodStatus => {
+    if (periods.length === 0) return 'open';
+    const field = LOCK_STATUS_FIELDS[dimension];
+    return periods.every((p) => p[field] === 'closed') ? 'closed' : 'open';
+  };
+  return { ap: rollupFor('ap'), ar: rollupFor('ar'), gl: rollupFor('gl') };
+}
+
 function fmtDay(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
@@ -70,7 +92,15 @@ export function formatDateRange(startIso: string, endIso: string): string {
  *  months each, preserving the order the backend already returns (period
  *  rows sorted by period_start ascending). A period whose fiscalYearId
  *  matches no listed fiscal year is dropped rather than guessed into a
- *  synthetic year. */
+ *  synthetic year.
+ *
+ *  Grouping stays keyed on periodNumber rather than the server's quarterId:
+ *  the two agree by construction (the backend assigns periods 1-3 to Q1 and
+ *  so on), and periodNumber is the only one present on periods generated
+ *  before fiscal_quarter existed — those carry a null quarterId and are
+ *  deliberately never backfilled. The server's quarterName is preferred for
+ *  the label whenever it is there, so a tenant sees the name their own rows
+ *  actually carry. */
 export function buildFiscalYearTree(fiscalYears: FiscalYear[], periods: Period[]): FiscalYearNode[] {
   return fiscalYears.map((fy) => {
     const fyPeriods = periods
@@ -84,14 +114,15 @@ export function buildFiscalYearTree(fiscalYears: FiscalYear[], periods: Period[]
       quarters.push({
         key: `${fy.id}-q${q}`,
         quarterNumber: q as 1 | 2 | 3 | 4,
-        label: quarterLabel(fy.name, q),
+        label: qPeriods.find((p) => p.quarterName)?.quarterName ?? quarterLabel(fy.name, q),
         start: qPeriods[0].start,
         end: qPeriods[qPeriods.length - 1].end,
         status: deriveRollupStatus(qPeriods),
+        locks: deriveLockRollup(qPeriods),
         periods: qPeriods,
       });
     }
-    return { key: fy.id, fiscalYear: fy, quarters };
+    return { key: fy.id, fiscalYear: fy, locks: deriveLockRollup(fyPeriods), quarters };
   });
 }
 

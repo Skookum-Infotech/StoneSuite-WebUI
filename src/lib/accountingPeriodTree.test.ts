@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { FiscalYear, Period, PeriodStatus } from '@/types/accountingPeriod';
 import {
   quarterNumber, fiscalYearNumeral, fiscalYearDisplayLabel, quarterLabel,
-  deriveRollupStatus, formatDateRange, buildFiscalYearTree, flattenTree, allGroupKeys,
+  deriveRollupStatus, deriveLockRollup, formatDateRange, buildFiscalYearTree, flattenTree, allGroupKeys,
 } from './accountingPeriodTree';
 
 function makeFiscalYear(overrides: Partial<FiscalYear> = {}): FiscalYear {
@@ -17,7 +17,8 @@ function makePeriod(overrides: Partial<Period> = {}): Period {
   return {
     id: 'p-1', fiscalYearId: 'fy-1', fiscalYearName: 'FY2026', name: 'Jan 2026',
     periodNumber: 1, start: '2026-01-01', end: '2026-01-31', status: 'open',
-    isBasePeriod: false, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+    isBasePeriod: false, apLockStatus: 'open', arLockStatus: 'open', glLockStatus: 'open',
+    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
     ...overrides,
   };
 }
@@ -64,6 +65,29 @@ describe('deriveRollupStatus', () => {
   });
 });
 
+describe('deriveLockRollup', () => {
+  it('is open on every dimension for an empty group', () => {
+    expect(deriveLockRollup([])).toEqual({ ap: 'open', ar: 'open', gl: 'open' });
+  });
+
+  it('rolls each lock up independently of the other two', () => {
+    const periods = [
+      makePeriod({ id: 'p-1', apLockStatus: 'closed', arLockStatus: 'closed', glLockStatus: 'closed' }),
+      makePeriod({ id: 'p-2', apLockStatus: 'open', arLockStatus: 'closed', glLockStatus: 'closed' }),
+    ];
+
+    // A/P lags — exactly the real close cycle the separate locks exist for.
+    expect(deriveLockRollup(periods)).toEqual({ ap: 'open', ar: 'closed', gl: 'closed' });
+  });
+
+  it('does not read the derived overall status', () => {
+    // status says open (it is derived from all three), but G/L alone is closed.
+    const periods = [makePeriod({ status: 'open', glLockStatus: 'closed' })];
+
+    expect(deriveLockRollup(periods).gl).toBe('closed');
+  });
+});
+
 describe('formatDateRange', () => {
   it('renders full dates on both ends, even within the same year', () => {
     expect(formatDateRange('2026-02-01', '2026-02-28')).toBe('1 Feb 2026 – 28 Feb 2026');
@@ -101,6 +125,40 @@ describe('buildFiscalYearTree', () => {
 
     expect(tree[0].quarters[0].status).toBe('closed');
     expect(tree[0].quarters[1].status).toBe('open');
+  });
+
+  it('prefers the quarter name the server put on the period', () => {
+    const fy = makeFiscalYear();
+    const periods = [
+      makePeriod({ id: 'p-1', periodNumber: 1, quarterId: 'q-uuid-1', quarterName: 'Q1 FY2026' }),
+      makePeriod({ id: 'p-2', periodNumber: 2, quarterId: 'q-uuid-1', quarterName: 'Q1 FY2026' }),
+    ];
+
+    expect(buildFiscalYearTree([fy], periods)[0].quarters[0].label).toBe('Q1 FY2026');
+  });
+
+  it('falls back to the derived label for periods generated before quarters existed', () => {
+    const fy = makeFiscalYear();
+    const periods = [makePeriod({ id: 'p-1', periodNumber: 1 })];
+
+    expect(buildFiscalYearTree([fy], periods)[0].quarters[0].label).toBe('Q1 2026');
+  });
+
+  it('rolls the three sub-ledger locks up onto the quarter and the year', () => {
+    const fy = makeFiscalYear();
+    const periods = [
+      makePeriod({ id: 'p-1', periodNumber: 1, apLockStatus: 'closed', glLockStatus: 'closed' }),
+      makePeriod({ id: 'p-2', periodNumber: 2, apLockStatus: 'closed', glLockStatus: 'closed' }),
+      makePeriod({ id: 'p-3', periodNumber: 3, apLockStatus: 'closed', glLockStatus: 'closed' }),
+      makePeriod({ id: 'p-4', periodNumber: 4, glLockStatus: 'closed' }),
+    ];
+
+    const tree = buildFiscalYearTree([fy], periods);
+
+    expect(tree[0].quarters[0].locks).toEqual({ ap: 'closed', ar: 'open', gl: 'closed' });
+    expect(tree[0].quarters[1].locks).toEqual({ ap: 'open', ar: 'open', gl: 'closed' });
+    // The year spans both quarters: G/L is closed throughout, A/P is not.
+    expect(tree[0].locks).toEqual({ ap: 'open', ar: 'open', gl: 'closed' });
   });
 
   it('drops periods whose fiscalYearId matches no listed fiscal year', () => {
