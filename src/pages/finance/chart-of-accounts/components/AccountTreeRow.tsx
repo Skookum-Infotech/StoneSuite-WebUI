@@ -81,7 +81,7 @@ export function AccountTreeRow({
       <div
         className={cn(
           'flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-stone-50 transition-colors group',
-          depth > 0 && 'ml-6 border-l border-stone-100 pl-3',
+          depth > 0 && 'pl-8',
         )}
       >
         {canUpdate && (
@@ -106,17 +106,17 @@ export function AccountTreeRow({
 
         <span className="hidden shrink-0 text-2xs text-stone-400 sm:inline">{ACCOUNT_TYPE_LABELS[account.type]}</span>
         {account.isSystem && (
-          <span className="hidden shrink-0 text-2xs font-semibold text-stone-400 md:inline" title="Seeded system account">
+          <span className="hidden shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500 md:inline" title="Seeded system account">
             SYS
           </span>
         )}
         {!account.isPostable && (
-          <span className="hidden shrink-0 text-2xs font-semibold text-violet-500 md:inline" title="Header account — not postable">
+          <span className="hidden shrink-0 rounded bg-violet-50 px-1 py-0.5 text-2xs font-semibold text-violet-600 md:inline" title="Header account — not postable">
             HEADER
           </span>
         )}
-        {!account.isActive && <span className="shrink-0 text-2xs font-semibold text-stone-400">Inactive</span>}
-        {!account.isVisible && <span className="shrink-0 text-2xs font-semibold text-stone-400">Hidden</span>}
+        {!account.isActive && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-400">Inactive</span>}
+        {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-400">Hidden</span>}
 
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           {canUpdate && actions.map((action) => {

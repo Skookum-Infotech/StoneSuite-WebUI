@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Plus } from 'lucide-react';
+import { ChevronsDown, ChevronsUp, MapPin, Plus } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
@@ -15,6 +15,18 @@ function flattenAll(bins: Bin[], out: Bin[] = []): Bin[] {
   for (const b of bins) {
     out.push(b);
     if (b.children?.length) flattenAll(b.children, out);
+  }
+  return out;
+}
+
+// Every bin id with at least one child — the full set of collapsible group
+// keys, used by "Collapse All" (mirrors accountingPeriodTree's allGroupKeys).
+function collectGroupKeys(bins: Bin[], out: string[] = []): string[] {
+  for (const b of bins) {
+    if (b.children?.length) {
+      out.push(b.id);
+      collectGroupKeys(b.children, out);
+    }
   }
   return out;
 }
@@ -35,8 +47,17 @@ export default function BinListPage() {
 
   const allBins = flattenAll(tree);
 
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [formTarget, setFormTarget] = useState<{ bin?: Bin; parentId?: string; warehouseId?: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bin | null>(null);
+
+  function toggleGroup(id: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -58,11 +79,31 @@ export default function BinListPage() {
           )}
         </div>
 
-        <div className="mt-5 flex items-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} aria-label="Filter by warehouse" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
             <option value="">All Warehouses</option>
             {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
+
+          <div className="ml-auto flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCollapsed(new Set())}
+              aria-label="Expand all bins"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+            >
+              <ChevronsDown className="size-3.5" /> Expand All
+            </button>
+            <span className="text-stone-300" aria-hidden="true">|</span>
+            <button
+              type="button"
+              onClick={() => setCollapsed(new Set(collectGroupKeys(tree)))}
+              aria-label="Collapse all bins"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-800"
+            >
+              <ChevronsUp className="size-3.5" /> Collapse All
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 flex-1 overflow-y-auto modal-scrollbar rounded-xl border border-stone-200 bg-white shadow-sm p-2">
@@ -82,6 +123,8 @@ export default function BinListPage() {
                 key={b.id}
                 bin={b}
                 depth={0}
+                collapsed={collapsed}
+                onToggleGroup={toggleGroup}
                 canEdit={canEdit}
                 onEdit={(bin) => setFormTarget({ bin })}
                 onAddChild={(parent) => setFormTarget({ parentId: parent.id, warehouseId: parent.warehouseId })}
