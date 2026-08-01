@@ -78,7 +78,10 @@ export function deriveLockRollup(periods: Period[]): LockRollup {
 }
 
 function fmtDay(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  // Locale is pinned rather than left as the runtime default: the default
+  // varies between environments (e.g. local dev vs. CI), which made this
+  // format non-deterministic across machines.
+  return new Date(iso).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 /** Always renders both full dates rather than eliding a shared year — a
