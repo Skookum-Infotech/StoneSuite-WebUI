@@ -1,22 +1,37 @@
-import { LayoutDashboard } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { DashboardHero } from './components/DashboardHero';
+import { StatCard } from './components/StatCard';
+import { PipelineFunnel } from './components/PipelineFunnel';
+import { ActivityFeed } from './components/ActivityFeed';
+import { InventoryAlerts } from './components/InventoryAlerts';
+import { QuickActions } from './components/QuickActions';
+import { dashboardStats, pipelineStages, recentActivity, inventoryAlerts } from './mockData';
 
 export default function DashboardPage() {
+  const user = useAuthStore((s) => s.user);
+  const firstName = user?.fullName?.split(' ')[0] || 'there';
+
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <div className="p-8 flex-1 flex flex-col min-h-0">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
-            <LayoutDashboard className="size-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900">Dashboard</h1>
-            <p className="text-sm text-stone-500">Welcome to your Stone Suite workspace.</p>
-          </div>
+    <div className="flex-1 p-4 sm:p-6 3xl:p-8">
+      <div className="flex flex-col gap-6">
+        <DashboardHero name={firstName} />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {dashboardStats.map((stat) => (
+            <div key={stat.id} className={stat.hero ? 'sm:col-span-2' : undefined}>
+              <StatCard stat={stat} />
+            </div>
+          ))}
         </div>
-        
-        <div className="mt-8 border-t border-stone-100 pt-6 flex-1 flex flex-col min-h-0">
-          <div className="flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50/50 min-h-64">
-            <span className="text-sm font-medium text-stone-400">dashboard page</span>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="flex flex-col gap-6 lg:col-span-2">
+            <PipelineFunnel stages={pipelineStages} />
+            <InventoryAlerts alerts={inventoryAlerts} />
+          </div>
+          <div className="flex flex-col gap-6">
+            <ActivityFeed items={recentActivity} />
+            <QuickActions />
           </div>
         </div>
       </div>
