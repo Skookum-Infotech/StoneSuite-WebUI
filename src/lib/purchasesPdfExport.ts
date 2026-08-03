@@ -19,12 +19,16 @@ import {
 
 // Purchases-domain PDF exporter — a sibling of salesPdfExport.ts/crmPdfExport.ts
 // (same masthead/section/table/footer shape via pdfBranding.ts), scoped to the
-// Purchases module: Purchase Order and Item Receipt are document-shaped
-// (header + line items, PO also carries totals); Vendor is profile-shaped (no
-// line items or totals — it reuses the same "counterparty" meta slot to show
-// Vendor Type instead of a counterparty name, since the vendor IS the party).
+// Purchases module: Requisition, Purchase Order and Item Receipt are
+// document-shaped (header + line items; Requisition and PO also carry totals);
+// Vendor is profile-shaped (no line items or totals — it reuses the same
+// "counterparty" meta slot to show Vendor Type instead of a counterparty name,
+// since the vendor IS the party).
+//
+// A Requisition's counterparty slot holds its *suggested* vendor, which may be
+// absent — unlike a purchase order's, which is mandatory.
 
-export type PurchasesRecordType = "purchase_order" | "item_receipt" | "vendor";
+export type PurchasesRecordType = "requisition" | "purchase_order" | "item_receipt" | "vendor";
 
 export interface PurchasesPdfSection {
   title: string;
@@ -64,6 +68,7 @@ export interface PurchasesExportParams {
 }
 
 const RECORD_TYPE_LABEL: Record<PurchasesRecordType, string> = {
+  requisition: "Requisition",
   purchase_order: "Purchase Order",
   item_receipt: "Item Receipt",
   vendor: "Vendor",

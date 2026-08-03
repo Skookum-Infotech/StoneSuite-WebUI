@@ -1,0 +1,144 @@
+import type { Ref } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
+import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { workflowService } from '@/services/tenantServices';
+// The vendor picker is a purchases-wide control, reused as-is from the
+// purchase-order folder rather than duplicated (mirrors how both modules
+// share the sales folder's InventoryItemPicker).
+import { VendorPicker, type VendorRef } from '../../purchase-order/components/VendorPicker';
+import { RequisitionSectionGrid } from './RequisitionFormFields';
+import { RequisitionSummaryCard } from './RequisitionSummaryCard';
+import { RequisitionLinesTable } from './RequisitionLinesTable';
+import { RequisitionAuditTab } from './RequisitionAuditTab';
+import { cn } from '@/lib/utils';
+import type { CrmLookups } from '@/services/lookupService';
+import {
+  PRIMARY_INFO_FIELDS, PAGE_TABS, type PageTab, type RequisitionLineItem,
+} from '@/lib/requisitionForm';
+
+// Shared tab bar + tab content for both the Add and Edit Requisition pages —
+// mirrors PurchaseOrderFormBody. Custom fields render from the `requisition`
+// workflow's field definitions (DynamicFieldInput), same as Purchase Order.
+//
+// Unlike the purchase order form, the vendor is never locked: a requisition's
+// vendor is only ever a suggestion, so it stays editable for as long as the
+// requisition itself is editable (DRFT).
+export function RequisitionFormBody({
+  activeTab, setActiveTab, requisitionId,
+  data, set, lineItems, setLineItems,
+  vendor, setVendor,
+  customFieldValues, setCustomField,
+  lookups, subtotal, taxTotal, estimatedTotal, filesPanelRef,
+}: {
+  activeTab: PageTab;
+  setActiveTab: (t: PageTab) => void;
+  /** Present only once the requisition is persisted (edit mode) — gates the
+   *  Audit tab and switches Files to immediate-upload mode. */
+  requisitionId?: string;
+  data: Record<string, unknown>;
+  set: (k: string, v: unknown) => void;
+  lineItems: RequisitionLineItem[];
+  setLineItems: (v: RequisitionLineItem[]) => void;
+  vendor: VendorRef | null;
+  setVendor: (v: VendorRef | null) => void;
+  customFieldValues: Record<string, unknown>;
+  setCustomField: (key: string, value: unknown) => void;
+  lookups?: CrmLookups;
+  subtotal: number; taxTotal: number; estimatedTotal: number;
+  filesPanelRef?: Ref<EditableFilesPanelHandle>;
+}) {
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const reqnWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'requisition');
+  const { data: reqnDef } = useQuery({
+    queryKey: ['workflow', reqnWorkflow?.id],
+    queryFn: () => workflowService.get(reqnWorkflow?.id ?? ''),
+    enabled: Boolean(reqnWorkflow?.id),
+  });
+  const customFieldDefs = reqnDef?.fields ?? [];
+
+  return (
+    <>
+      {/* Page-level tab bar */}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
+        {PAGE_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            aria-label={`${tab.label} tab`}
+            className={cn(
+              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
+              activeTab === tab.key
+                ? 'border-stone-800 text-stone-900'
+                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto modal-scrollbar">
+        <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
+
+          {activeTab === 'details' && (
+            <>
+              <ModernSection title="Primary Information" index={0}>
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+                  <div className="flex-1 min-w-0 space-y-4">
+                    <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+                      <ModernFieldShell label="Suggested Vendor">
+                        <VendorPicker value={vendor} onChange={setVendor} />
+                        <p className="text-2xs text-stone-400">
+                          A suggestion only — the vendor is confirmed when this becomes a purchase order.
+                        </p>
+                      </ModernFieldShell>
+                    </div>
+                    <RequisitionSectionGrid
+                      fields={PRIMARY_INFO_FIELDS}
+                      data={data} set={set} lookups={lookups} maxCols={2}
+                    />
+                  </div>
+                  <div className="w-full lg:w-56 shrink-0">
+                    <RequisitionSummaryCard
+                      subtotal={subtotal} taxTotal={taxTotal} estimatedTotal={estimatedTotal}
+                    />
+                  </div>
+                </div>
+              </ModernSection>
+
+              {customFieldDefs.length > 0 && (
+                <ModernSection title="Custom Fields" index={1}>
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {customFieldDefs.map((def) => (
+                      <DynamicFieldInput
+                        key={def.id}
+                        field={def}
+                        value={customFieldValues[def.key]}
+                        onChange={setCustomField}
+                      />
+                    ))}
+                  </div>
+                </ModernSection>
+              )}
+
+              <ModernSection title="Requested Items" index={2}>
+                <RequisitionLinesTable items={lineItems} onUpdate={setLineItems} />
+              </ModernSection>
+            </>
+          )}
+
+          {activeTab === 'audit' && <RequisitionAuditTab requisitionId={requisitionId} />}
+
+          {/* Always mounted so staged files / edits survive tab switches */}
+          <div className={activeTab === 'files' ? '' : 'hidden'}>
+            <EditableFilesPanel ref={filesPanelRef} recordId={requisitionId} />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

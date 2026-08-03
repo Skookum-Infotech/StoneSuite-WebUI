@@ -194,6 +194,18 @@ const VendorDetailPage = lazyWithRetry(
 const EditVendorPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/EditVendorPage"),
 );
+const RequisitionListPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/RequisitionListPage"),
+);
+const AddRequisitionPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/AddRequisitionPage"),
+);
+const RequisitionDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/RequisitionDetailPage"),
+);
+const EditRequisitionPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/EditRequisitionPage"),
+);
 const PurchaseOrderListPage = lazyWithRetry(
   () => import("@/pages/purchases/purchase-order/PurchaseOrderListPage"),
 );
@@ -707,6 +719,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="vendor" action="update">
             <EditVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Requisitions (specific routes must come before the catch-all)
+      {
+        path: "purchases/requisition",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="read">
+            <RequisitionListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/new",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="create">
+            <AddRequisitionPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/:id",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="read">
+            <RequisitionDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="update">
+            <EditRequisitionPage />
           </PermissionGuard>,
         ),
       },

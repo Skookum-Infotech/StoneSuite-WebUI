@@ -247,6 +247,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/requisition",
               icon: ClipboardList,
               iconColor: "text-amber-500 dark:text-amber-400",
+              permission: { resource: "requisition", action: "read" },
             },
             {
               type: "link",
