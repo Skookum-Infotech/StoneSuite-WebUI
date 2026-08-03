@@ -2,7 +2,7 @@ import axios, { type AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
   // Send httpOnly cookies (auth_token + refresh_token) automatically on every request.
   withCredentials: true,
@@ -32,7 +32,7 @@ async function attemptRefresh(): Promise<boolean> {
     refreshPromise = (async () => {
       try {
         const res = await axios.post<{ success: boolean; token?: string; expiresAt?: number }>(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/auth/refresh`,
+          `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/refresh`,
           {},
           { withCredentials: true },
         );
@@ -69,7 +69,7 @@ function forceLogout(): void {
   // Clear server-side cookies (fire-and-forget).
   axios
     .post(
-      `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/auth/logout`,
+      `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/logout`,
       {},
       { withCredentials: true },
     )
