@@ -218,6 +218,55 @@ const ItemReceiptDetailPage = lazyWithRetry(
 const EditItemReceiptPage = lazyWithRetry(
   () => import("@/pages/purchases/item-receipt/EditItemReceiptPage"),
 );
+// Inventory module
+const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
+const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
+const EditItemPage = lazyWithRetry(() => import("@/pages/inventory/item/EditItemPage"));
+const ItemDetailPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemDetailPage"));
+const UnitListPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitListPage"));
+const AddUnitPage = lazyWithRetry(() => import("@/pages/inventory/unit/AddUnitPage"));
+const UnitDetailPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitDetailPage"));
+const BinListPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinListPage"));
+const WarehouseListPage = lazyWithRetry(() => import("@/pages/inventory/warehouse/WarehouseListPage"));
+const BundleListPage = lazyWithRetry(() => import("@/pages/inventory/bundle/BundleListPage"));
+const BundleDetailPage = lazyWithRetry(() => import("@/pages/inventory/bundle/BundleDetailPage"));
+const AdjustmentListPage = lazyWithRetry(() => import("@/pages/inventory/adjustment/AdjustmentListPage"));
+const AddAdjustmentPage = lazyWithRetry(() => import("@/pages/inventory/adjustment/AddAdjustmentPage"));
+const EditAdjustmentPage = lazyWithRetry(() => import("@/pages/inventory/adjustment/EditAdjustmentPage"));
+const AdjustmentDetailPage = lazyWithRetry(() => import("@/pages/inventory/adjustment/AdjustmentDetailPage"));
+const TransferListPage = lazyWithRetry(() => import("@/pages/inventory/transfer/TransferListPage"));
+const AddTransferPage = lazyWithRetry(() => import("@/pages/inventory/transfer/AddTransferPage"));
+const EditTransferPage = lazyWithRetry(() => import("@/pages/inventory/transfer/EditTransferPage"));
+const TransferDetailPage = lazyWithRetry(() => import("@/pages/inventory/transfer/TransferDetailPage"));
+const CountListPage = lazyWithRetry(() => import("@/pages/inventory/count/CountListPage"));
+const AddCountPage = lazyWithRetry(() => import("@/pages/inventory/count/AddCountPage"));
+const CountDetailPage = lazyWithRetry(() => import("@/pages/inventory/count/CountDetailPage"));
+const InventorySetupPage = lazyWithRetry(() => import("@/pages/config/inventory-setup/InventorySetupPage"));
+
+const JournalEntryListPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/JournalEntryListPage"),
+);
+const AddJournalEntryPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/AddJournalEntryPage"),
+);
+const JournalEntryDetailPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/JournalEntryDetailPage"),
+);
+const EditJournalEntryPage = lazyWithRetry(
+  () => import("@/pages/finance/journal-entries/EditJournalEntryPage"),
+);
+const ChartOfAccountsPage = lazyWithRetry(
+  () => import("@/pages/finance/chart-of-accounts/ChartOfAccountsPage"),
+);
+const AccountDetailPage = lazyWithRetry(
+  () => import("@/pages/finance/chart-of-accounts/AccountDetailPage"),
+);
+const AccountDefaultsPage = lazyWithRetry(
+  () => import("@/pages/finance/account-defaults/AccountDefaultsPage"),
+);
+const AccountingPeriodsPage = lazyWithRetry(
+  () => import("@/pages/finance/accounting-periods/AccountingPeriodsPage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -730,13 +779,265 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Sales & Purchases modules (placeholder pages — full functionality coming soon)
+      // Finance: Journal Entries (specific routes must come before any future catch-all)
+      {
+        path: "finance/journal-entries",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="read">
+            <JournalEntryListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/journal-entries/new",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="create">
+            <AddJournalEntryPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/journal-entries/:id",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="read">
+            <JournalEntryDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/journal-entries/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="cash_transfer" action="update">
+            <EditJournalEntryPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Finance: Chart of Accounts (specific routes must come before any future catch-all)
+      {
+        path: "finance/chart-of-accounts",
+        element: lazy_(
+          <PermissionGuard resource="chart_of_account" action="read">
+            <ChartOfAccountsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/chart-of-accounts/:id",
+        element: lazy_(
+          <PermissionGuard resource="chart_of_account" action="read">
+            <AccountDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "finance/account-defaults",
+        element: lazy_(
+          <PermissionGuard resource="chart_of_account" action="configure">
+            <AccountDefaultsPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Finance: Accounting Periods
+      {
+        path: "finance/accounting-periods",
+        element: lazy_(
+          <PermissionGuard resource="accounting_period" action="read">
+            <AccountingPeriodsPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Inventory module
+      {
+        path: "inventory/item",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="read">
+            <ItemListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/item/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="create">
+            <AddItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/item/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="read">
+            <ItemDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/item/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="update">
+            <EditItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/unit",
+        element: lazy_(
+          <PermissionGuard resource="inventory_unit" action="read">
+            <UnitListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/unit/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_unit" action="create">
+            <AddUnitPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/unit/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_unit" action="read">
+            <UnitDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin",
+        element: lazy_(
+          <PermissionGuard resource="inventory_bin" action="read">
+            <BinListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/warehouse",
+        element: lazy_(
+          <PermissionGuard resource="warehouse" action="read">
+            <WarehouseListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bundle",
+        element: lazy_(
+          <PermissionGuard resource="inventory_bundle" action="read">
+            <BundleListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bundle/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_bundle" action="read">
+            <BundleDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/adjustment",
+        element: lazy_(
+          <PermissionGuard resource="inventory_adjustment" action="read">
+            <AdjustmentListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/adjustment/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_adjustment" action="create">
+            <AddAdjustmentPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/adjustment/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_adjustment" action="read">
+            <AdjustmentDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/adjustment/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="inventory_adjustment" action="update">
+            <EditAdjustmentPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/transfer",
+        element: lazy_(
+          <PermissionGuard resource="inventory_transfer" action="read">
+            <TransferListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/transfer/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_transfer" action="create">
+            <AddTransferPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/transfer/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_transfer" action="read">
+            <TransferDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/transfer/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="inventory_transfer" action="update">
+            <EditTransferPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/count",
+        element: lazy_(
+          <PermissionGuard resource="inventory_count" action="read">
+            <CountListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/count/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_count" action="create">
+            <AddCountPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/count/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_count" action="read">
+            <CountDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Sales, Purchases & Inventory modules (placeholder pages — full functionality coming soon)
       {
         path: "sales/:moduleKey",
         element: lazy_(<WorkflowPlaceholderPage />),
       },
       {
         path: "purchases/:moduleKey",
+        element: lazy_(<WorkflowPlaceholderPage />),
+      },
+      {
+        path: "inventory/:moduleKey",
         element: lazy_(<WorkflowPlaceholderPage />),
       },
 
@@ -803,6 +1104,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="audit" action="read">
             <AuditLogPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/inventory-setup",
+        element: lazy_(
+          <PermissionGuard resource="inventory_lookup" action="read">
+            <InventorySetupPage />
           </PermissionGuard>,
         ),
       },

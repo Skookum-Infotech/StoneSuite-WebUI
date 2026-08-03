@@ -10,13 +10,13 @@ interface Wf {
 const wf = (key: string, name = key, description = ''): Wf => ({ key, name, description });
 
 describe('groupWorkflows', () => {
-  it('splits the seeded workflows into CRM, Sales and Purchases', () => {
+  it('splits the seeded workflows into CRM, Sales, Purchases and Finance', () => {
     const all = WORKFLOW_GROUPS.flatMap((g) => g.keys).map((k) => wf(k));
 
     const sections = groupWorkflows(all);
 
-    expect(sections.map((s) => s.group.id)).toEqual(['crm', 'sales', 'purchases']);
-    expect(sections.map((s) => s.workflows.length)).toEqual([3, 8, 8]);
+    expect(sections.map((s) => s.group.id)).toEqual(['crm', 'sales', 'purchases', 'finance']);
+    expect(sections.map((s) => s.workflows.length)).toEqual([3, 8, 8, 1]);
   });
 
   it('orders each module by its declared keys, not the server order', () => {

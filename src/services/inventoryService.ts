@@ -1,40 +1,18 @@
 import { tenantClient } from '@/api/tenantClient';
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type {
+  InventoryItem, InventoryItemInput, InventoryItemPage, InventoryItemSearchRequest,
+  InventoryItemHistoryEntry,
+} from '@/types/inventory';
 
-// Inventory item catalog. Its own shared domain (design AD-2) served from
-// `/api/tenant/inventory/items*`, gated by the `inventory_item` RBAC resource.
-// The Sales Order line-item picker reads this catalog; `item.id` is the
-// `inventory_item_uuid` passed to a line as `inventoryItemUuid`.
+// Inventory item catalogue. Served from `/api/tenant/inventory/items*`,
+// gated by the `inventory_item` RBAC resource. `item.id` is the
+// `inventory_item_uuid` referenced elsewhere as `inventoryItemUuid`/
+// `inventoryItemId`.
+//
+// PATCH has PUT semantics server-side (pre-existing, documented on
+// InventoryItemInput) — always send the whole object via `updateItem`, never
+// a partial patch.
 const BASE = '/tenant/inventory/items';
-
-export interface InventoryItem {
-  id: string;                 // inventory_item_uuid
-  sku: string;
-  name: string;
-  description: string;
-  unitId: number;
-  unitPrice: number;
-  currencyId?: number | null;
-  taxRateId?: number | null;
-  isActive: boolean;
-  customFields: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface InventoryItemSearchRequest {
-  filters?: FilterClause[];
-  sort?: SortKey[];
-  limit?: number;
-  cursor?: string;
-  search?: string;
-}
-
-export interface InventoryItemPage {
-  records: InventoryItem[];
-  nextCursor: string;
-  hasMore: boolean;
-}
 
 export const inventoryService = {
   searchItems: (req: InventoryItemSearchRequest): Promise<InventoryItemPage> =>
@@ -52,4 +30,23 @@ export const inventoryService = {
     tenantClient
       .get<{ success: boolean; item: InventoryItem }>(`${BASE}/${uuid}`)
       .then((r) => r.data.item),
+
+  createItem: (payload: InventoryItemInput): Promise<InventoryItem> =>
+    tenantClient
+      .post<{ success: boolean; item: InventoryItem }>(BASE, payload)
+      .then((r) => r.data.item),
+
+  // Whole-object write — see the PUT-semantics note above.
+  updateItem: (uuid: string, payload: InventoryItemInput): Promise<InventoryItem> =>
+    tenantClient
+      .patch<{ success: boolean; item: InventoryItem }>(`${BASE}/${uuid}`, payload)
+      .then((r) => r.data.item),
+
+  deleteItem: (uuid: string): Promise<void> =>
+    tenantClient.delete(`${BASE}/${uuid}`).then(() => undefined),
+
+  getHistory: (uuid: string): Promise<InventoryItemHistoryEntry[]> =>
+    tenantClient
+      .get<{ success: boolean; history: InventoryItemHistoryEntry[] }>(`${BASE}/${uuid}/history`)
+      .then((r) => r.data.history ?? []),
 };

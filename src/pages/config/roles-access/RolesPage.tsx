@@ -32,6 +32,7 @@ const ACTION_ORDER = [
   "update",
   "delete",
   "transition",
+  "approve",
   "configure",
 ];
 
@@ -41,6 +42,7 @@ const ACTION_LABELS: Record<string, string> = {
   update: "Edit",
   delete: "Delete",
   transition: "Transition",
+  approve: "Approve",
   configure: "Configure",
 };
 
