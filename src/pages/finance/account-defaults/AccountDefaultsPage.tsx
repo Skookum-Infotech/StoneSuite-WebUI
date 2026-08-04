@@ -47,7 +47,7 @@ export default function AccountDefaultsPage() {
         ) : isError ? (
           <ErrorNote>{apiErrorMessage(error, 'Failed to load default accounts.')}</ErrorNote>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {slots.map((slot) => <SlotRow key={slot.key} slot={slot} />)}
           </div>
         )}
@@ -75,18 +75,16 @@ function SlotRow({ slot }: { slot: DefaultSlot }) {
 
   return (
     <div id={`slot-${slot.key}`} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 scroll-mt-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-stone-900">{slot.label}</p>
-          <p className="mt-0.5 text-xs text-stone-400">{slot.description}</p>
-        </div>
-        <div className="w-full shrink-0 sm:w-72">
-          <AccountPicker
-            value={value}
-            onChange={(account) => repoint.mutate(account?.id ?? '')}
-            options={{ ariaLabel: `Default account for ${slot.label}` }}
-          />
-        </div>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-stone-900">{slot.label}</p>
+        <p className="mt-0.5 text-xs text-stone-400">{slot.description}</p>
+      </div>
+      <div className="mt-3">
+        <AccountPicker
+          value={value}
+          onChange={(account) => repoint.mutate(account?.id ?? '')}
+          options={{ ariaLabel: `Default account for ${slot.label}` }}
+        />
       </div>
       {localError && <p className="mt-2 text-2xs text-destructive">{localError}</p>}
       {repoint.isPending && <p className="mt-2 text-2xs text-stone-400">Saving…</p>}
