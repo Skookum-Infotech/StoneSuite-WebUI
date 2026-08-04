@@ -1,49 +1,50 @@
-import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import type { InventoryAlertItem } from '../mockData';
+import { WidgetCard } from './WidgetCard';
+import { MoreHint } from './MoreHint';
+import type { InventoryAlert } from '../mockData';
 
-const severityBadge = {
-  critical: 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400',
-  low: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
-} as const;
+const LIMIT = 4;
 
-const severityLabel = { critical: 'Critical', low: 'Low' } as const;
+const SEVERITY_STYLE: Record<InventoryAlert['severity'], string> = {
+  critical: 'bg-red-100 text-red-700',
+  low: 'bg-amber-100 text-amber-700',
+};
 
-export function InventoryAlerts({ alerts }: { alerts: InventoryAlertItem[] }) {
-  const navigate = useNavigate();
+const SEVERITY_LABEL: Record<InventoryAlert['severity'], string> = {
+  critical: 'Critical',
+  low: 'Low',
+};
+
+export function InventoryAlerts({ alerts }: { alerts: InventoryAlert[] }) {
+  const visible = alerts.slice(0, LIMIT);
 
   return (
-    <div className="rounded-2xl border border-stone-300/70 bg-card p-6 ring-1 ring-foreground/5">
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-brand text-lg text-foreground">Low Stock Alerts</h2>
-        <button
-          type="button"
-          onClick={() => navigate('/inventory/unit')}
-          aria-label="View all inventory units"
-          className="cursor-pointer text-xs font-semibold text-brand-dark hover:underline"
-        >
-          View inventory
-        </button>
-      </div>
-
-      <ul className="mt-5 flex flex-col divide-y divide-stone-100 dark:divide-white/5">
-        {alerts.map((alert) => (
-          <li key={alert.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-            <span
-              aria-hidden="true"
-              className="size-6 shrink-0 rounded-full border border-black/10 shadow-sm"
-              style={{ backgroundColor: alert.swatch }}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">{alert.material}</p>
-              <p className="text-xs text-muted-foreground">{alert.detail}</p>
-            </div>
-            <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-2xs font-semibold', severityBadge[alert.severity])}>
-              {severityLabel[alert.severity]}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <WidgetCard title="Inventory alerts" subtitle="below reorder threshold">
+      {alerts.length === 0 ? (
+        <p className="text-xs text-stone-400">Nothing below threshold right now.</p>
+      ) : (
+        <>
+          <div className="flex flex-col divide-y divide-stone-100">
+            {visible.map((a) => (
+              <div key={a.id} className="flex items-center justify-between gap-2.5 py-2 first:pt-0 last:pb-0">
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-semibold text-stone-950">{a.itemName}</div>
+                  <div className="text-2xs text-stone-500">{a.warehouse}</div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2.5">
+                  <span className="text-2xs text-stone-500 tabular-nums">
+                    {a.quantityOnHand} / {a.reorderThreshold}
+                  </span>
+                  <span className={cn('rounded-full px-2 py-0.5 text-2xs font-bold', SEVERITY_STYLE[a.severity])}>
+                    {SEVERITY_LABEL[a.severity]}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <MoreHint count={alerts.length - LIMIT} label="more alerts" />
+        </>
+      )}
+    </WidgetCard>
   );
 }
