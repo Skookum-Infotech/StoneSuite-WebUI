@@ -41,6 +41,7 @@ import {
   Boxes,
   ArrowLeftRight,
   CalendarClock,
+  LayoutGrid,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -247,6 +248,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/requisition",
               icon: ClipboardList,
               iconColor: "text-amber-500 dark:text-amber-400",
+              permission: { resource: "requisition", action: "read" },
             },
             {
               type: "link",
@@ -476,6 +478,15 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Hash,
               iconColor: "text-amber-500 dark:text-amber-400",
               permission: { resource: "workflow_config", action: "configure" },
+            },
+            {
+              type: "link",
+              id: "dashboard-widgets",
+              label: "Dashboard Widgets",
+              path: "/config/dashboard-widgets",
+              icon: LayoutGrid,
+              iconColor: "text-cyan-500 dark:text-cyan-400",
+              permission: { resource: "dashboard_widget", action: "configure" },
             },
             {
               type: "link",

@@ -82,6 +82,9 @@ const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
+const DashboardWidgetsPage = lazyWithRetry(
+  () => import("@/pages/config/dashboard-widgets/DashboardWidgetsPage"),
+);
 const AuditLogPage = lazyWithRetry(
   () => import("@/pages/config/audit/AuditLogPage"),
 );
@@ -193,6 +196,18 @@ const VendorDetailPage = lazyWithRetry(
 );
 const EditVendorPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/EditVendorPage"),
+);
+const RequisitionListPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/RequisitionListPage"),
+);
+const AddRequisitionPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/AddRequisitionPage"),
+);
+const RequisitionDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/RequisitionDetailPage"),
+);
+const EditRequisitionPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/EditRequisitionPage"),
 );
 const PurchaseOrderListPage = lazyWithRetry(
   () => import("@/pages/purchases/purchase-order/PurchaseOrderListPage"),
@@ -711,6 +726,40 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Requisitions (specific routes must come before the catch-all)
+      {
+        path: "purchases/requisition",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="read">
+            <RequisitionListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/new",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="create">
+            <AddRequisitionPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/:id",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="read">
+            <RequisitionDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="update">
+            <EditRequisitionPage />
+          </PermissionGuard>,
+        ),
+      },
+
       // Purchase Orders (specific routes must come before the catch-all)
       {
         path: "purchases/purchase_order",
@@ -1096,6 +1145,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="workflow_config" action="configure">
             <RecordNumberingPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/dashboard-widgets",
+        element: lazy_(
+          <PermissionGuard resource="dashboard_widget" action="configure">
+            <DashboardWidgetsPage />
           </PermissionGuard>,
         ),
       },
