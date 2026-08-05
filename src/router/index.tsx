@@ -91,6 +91,9 @@ const AuditLogPage = lazyWithRetry(
 const SsoConfigPage = lazyWithRetry(
   () => import("@/pages/config/authentication/SsoConfigPage"),
 );
+const SamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/SamlSetupPage"),
+);
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
 );
@@ -1177,6 +1180,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sso_config" action="read">
             <SsoConfigPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <SamlSetupPage />
           </PermissionGuard>,
         ),
       },

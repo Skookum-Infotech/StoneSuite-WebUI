@@ -32,6 +32,7 @@ import {
   Landmark,
   ListTree,
   Settings2,
+  Fingerprint,
   Warehouse,
   MapPin,
   ClipboardEdit,
@@ -504,6 +505,15 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/config/authentication",
               icon: KeyRound,
               iconColor: "text-rose-500 dark:text-rose-400",
+              permission: { resource: "sso_config", action: "read" },
+            },
+            {
+              type: "link",
+              id: "saml-setup",
+              label: "SAML Setup",
+              path: "/config/saml-setup",
+              icon: Fingerprint,
+              iconColor: "text-indigo-500 dark:text-indigo-400",
               permission: { resource: "sso_config", action: "read" },
             },
             {
