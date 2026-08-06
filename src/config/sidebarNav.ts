@@ -9,7 +9,6 @@ import {
   UserPlus,
   UsersRound,
   Hash,
-  KeyRound,
   ScrollText,
   TrendingUp,
   FileSpreadsheet,
@@ -497,15 +496,6 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Boxes,
               iconColor: "text-purple-500 dark:text-purple-400",
               permission: { resource: "inventory_lookup", action: "read" },
-            },
-            {
-              type: "link",
-              id: "authentication",
-              label: "Authentication",
-              path: "/config/authentication",
-              icon: KeyRound,
-              iconColor: "text-rose-500 dark:text-rose-400",
-              permission: { resource: "sso_config", action: "read" },
             },
             {
               type: "link",

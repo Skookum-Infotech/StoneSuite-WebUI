@@ -4,12 +4,35 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function SamlConnectForm() {
+type SamlProvider = "cognito" | "entra";
+
+const PROVIDER_COPY: Record<
+  SamlProvider,
+  { name: string; metadataPlaceholder: string }
+> = {
+  cognito: {
+    name: "AWS Cognito",
+    metadataPlaceholder:
+      "https://cognito-idp.us-east-1.amazonaws.com/.../saml2/metadata",
+  },
+  entra: {
+    name: "Microsoft Entra ID",
+    metadataPlaceholder:
+      "https://login.microsoftonline.com/.../federationmetadata/2007-06/federationmetadata.xml",
+  },
+};
+
+interface SamlConnectFormProps {
+  provider: SamlProvider;
+}
+
+export function SamlConnectForm({ provider }: SamlConnectFormProps) {
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [metadataUrl, setMetadataUrl] = useState("");
   const [redirectUri, setRedirectUri] = useState("");
   const [enabled, setEnabled] = useState(false);
+  const copy = PROVIDER_COPY[provider];
 
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-5">
@@ -17,7 +40,7 @@ export function SamlConnectForm() {
         <div>
           <h3 className="text-sm font-bold text-stone-900">Connect StoneSuite</h3>
           <p className="mt-0.5 text-xs text-stone-500">
-            Enter the values from your AWS Cognito SAML identity provider.
+            Enter the values from your {copy.name} SAML identity provider.
           </p>
         </div>
         <span className="flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-2xs font-semibold text-stone-500">
@@ -27,54 +50,62 @@ export function SamlConnectForm() {
       </div>
 
       <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="cognito-client-id">Client ID</Label>
-          <Input
-            id="cognito-client-id"
-            type="text"
-            placeholder="e.g. 3n4b5c6d7e8f9g0h1i2j3k4l5m"
-            value={clientId}
-            onChange={(e) => setClientId(e.target.value)}
-            className="h-10"
-          />
-        </div>
+        {provider === "cognito" && (
+          <>
+            <div className="space-y-1.5">
+              <Label htmlFor="cognito-client-id">Client ID</Label>
+              <Input
+                id="cognito-client-id"
+                type="text"
+                placeholder="e.g. 3n4b5c6d7e8f9g0h1i2j3k4l5m"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="cognito-client-secret">Client secret</Label>
+              <Input
+                id="cognito-client-secret"
+                type="password"
+                autoComplete="new-password"
+                placeholder="Enter client secret"
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                className="h-10"
+              />
+            </div>
+          </>
+        )}
 
         <div className="space-y-1.5">
-          <Label htmlFor="cognito-client-secret">Client secret</Label>
+          <Label htmlFor={`${provider}-metadata-url`}>
+            SAML 2.0 metadata document URL
+          </Label>
           <Input
-            id="cognito-client-secret"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Enter client secret"
-            value={clientSecret}
-            onChange={(e) => setClientSecret(e.target.value)}
-            className="h-10"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="cognito-metadata-url">SAML 2.0 metadata document URL</Label>
-          <Input
-            id="cognito-metadata-url"
+            id={`${provider}-metadata-url`}
             type="text"
-            placeholder="https://cognito-idp.us-east-1.amazonaws.com/.../saml2/metadata"
+            placeholder={copy.metadataPlaceholder}
             value={metadataUrl}
             onChange={(e) => setMetadataUrl(e.target.value)}
             className="h-10"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="cognito-redirect-uri">Redirect URI</Label>
-          <Input
-            id="cognito-redirect-uri"
-            type="text"
-            placeholder="https://app.stonesuite.io/auth/sso/callback"
-            value={redirectUri}
-            onChange={(e) => setRedirectUri(e.target.value)}
-            className="h-10"
-          />
-        </div>
+        {provider === "cognito" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="cognito-redirect-uri">Redirect URI</Label>
+            <Input
+              id="cognito-redirect-uri"
+              type="text"
+              placeholder="https://app.stonesuite.io/auth/sso/callback"
+              value={redirectUri}
+              onChange={(e) => setRedirectUri(e.target.value)}
+              className="h-10"
+            />
+          </div>
+        )}
 
         <div className="flex items-start justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2.5">
           <div>
