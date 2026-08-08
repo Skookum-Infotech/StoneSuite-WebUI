@@ -81,7 +81,18 @@ function fmtDay(iso: string): string {
   // Locale is pinned rather than left as the runtime default: the default
   // varies between environments (e.g. local dev vs. CI), which made this
   // format non-deterministic across machines.
-  return new Date(iso).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
+  //
+  // The time zone is pinned for the same reason, and it is a correctness fix
+  // rather than a cosmetic one. These are date-only values ('2026-02-01') with
+  // no time component, which Date parses as UTC midnight; formatting them in
+  // the runtime's zone shifts anywhere west of UTC back a day, so a period
+  // starting 1 Feb rendered as "31 Jan" for every user in the Americas.
+  return new Date(iso).toLocaleDateString('en-GB', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 /** Always renders both full dates rather than eliding a shared year — a
