@@ -60,6 +60,11 @@ export interface NavLink {
   iconColor: string;
   permission?: NavPermission;
   platformAdminOnly?: boolean;
+  /** Opt out of permission gating for links every signed-in user may see.
+   *  Required: a link with neither `permission` nor `alwaysVisible` is hidden,
+   *  so forgetting to declare a permission fails closed rather than exposing
+   *  a module the API will refuse. */
+  alwaysVisible?: boolean;
 }
 
 export interface NavGroup {
@@ -107,6 +112,9 @@ export const sidebarNav: SidebarNavConfig = {
       path: "/dashboard",
       icon: LayoutDashboard,
       iconColor: "text-indigo-500 dark:text-indigo-400",
+      // The landing route for every signed-in user; it has no single backing
+      // resource and each widget gates its own data server-side.
+      alwaysVisible: true,
     },
   ],
   sections: [
@@ -166,6 +174,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/estimate",
               icon: FileSpreadsheet,
               iconColor: "text-teal-600 dark:text-teal-400",
+              permission: { resource: "estimate", action: "read" },
             },
             {
               type: "link",
@@ -174,6 +183,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/quote",
               icon: FileText,
               iconColor: "text-cyan-600 dark:text-cyan-400",
+              permission: { resource: "quote", action: "read" },
             },
             {
               type: "link",
@@ -182,6 +192,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/sales_order",
               icon: ShoppingCart,
               iconColor: "text-emerald-600 dark:text-emerald-400",
+              permission: { resource: "sales_order", action: "read" },
             },
             {
               type: "link",
@@ -190,6 +201,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/installation",
               icon: Wrench,
               iconColor: "text-orange-500 dark:text-orange-400",
+              permission: { resource: "installation", action: "read" },
             },
             {
               type: "link",
@@ -198,6 +210,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/invoice",
               icon: Receipt,
               iconColor: "text-violet-500 dark:text-violet-400",
+              permission: { resource: "invoice", action: "read" },
             },
             {
               type: "link",
@@ -206,6 +219,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/payment",
               icon: CreditCard,
               iconColor: "text-green-600 dark:text-green-400",
+              permission: { resource: "payment", action: "read" },
             },
             {
               type: "link",
@@ -214,6 +228,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/credit_memo",
               icon: FileMinus,
               iconColor: "text-rose-500 dark:text-rose-400",
+              permission: { resource: "credit_memo", action: "read" },
             },
             {
               type: "link",
@@ -222,6 +237,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/refund",
               icon: RotateCcw,
               iconColor: "text-red-500 dark:text-red-400",
+              permission: { resource: "refund", action: "read" },
             },
           ],
         },
@@ -240,6 +256,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor",
               icon: Building,
               iconColor: "text-indigo-500 dark:text-indigo-400",
+              permission: { resource: "vendor", action: "read" },
             },
             {
               type: "link",
@@ -257,6 +274,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/purchase_order",
               icon: Package,
               iconColor: "text-orange-500 dark:text-orange-400",
+              permission: { resource: "purchase_order", action: "read" },
             },
             {
               type: "link",
@@ -274,6 +292,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor_bill",
               icon: FileCheck,
               iconColor: "text-teal-600 dark:text-teal-400",
+              permission: { resource: "vendor_bill", action: "read" },
             },
             {
               type: "link",
@@ -282,6 +301,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor_payment",
               icon: Banknote,
               iconColor: "text-green-600 dark:text-green-400",
+              permission: { resource: "vendor_payment", action: "read" },
             },
             {
               type: "link",
@@ -290,6 +310,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor_credit",
               icon: FilePlus,
               iconColor: "text-rose-500 dark:text-rose-400",
+              permission: { resource: "vendor_credit", action: "read" },
             },
             {
               type: "link",
@@ -298,6 +319,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/expense",
               icon: Wallet,
               iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+              permission: { resource: "expense", action: "read" },
             },
           ],
         },
@@ -530,6 +552,9 @@ export const sidebarNav: SidebarNavConfig = {
           path: "/subscription",
           icon: CreditCard,
           iconColor: "text-purple-500 dark:text-purple-400",
+          // Billing is a workspace-level page with no catalog resource behind
+          // it; the page itself decides what a non-owner may change.
+          alwaysVisible: true,
         },
       ],
     },
