@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildCsvFilename, buildCsvText, downloadCsv } from '@/lib/csvExport';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { dashboardWidgetService } from '@/services/dashboardWidgetService';
-import { getAllocatedWidgetIds, getVisibleWidgetIds, isSuperAdminGrants } from '@/lib/dashboardWidgets';
+import { getVisibleWidgetIds } from '@/lib/dashboardWidgets';
 import { Spinner, EmptyState } from '@/components/tenant/ui';
 import type { WidgetDefinition, WidgetSize } from '@/types/dashboardWidgets';
 import { ConsoleHeader } from './components/ConsoleHeader';
@@ -74,22 +73,19 @@ function handleDownloadCsv(): void {
 
 export default function DashboardPage() {
   const userId = useAuthStore((s) => s.user?.id);
-  const userRoles = useAuthStore((s) => s.user?.roles);
-  const { activeRoleId, grants } = useUserPermissions();
-  const isSuperAdmin = isSuperAdminGrants(grants);
   const queryClient = useQueryClient();
   const [showCustomize, setShowCustomize] = useState(false);
-
-  const userRoleIds = useMemo(() => (userRoles ?? []).map((r) => r.id), [userRoles]);
 
   const catalogQ = useQuery({
     queryKey: ['dashboard-widget-catalog'],
     queryFn: dashboardWidgetService.getCatalog,
   });
-  const allocationsQ = useQuery({
-    queryKey: ['dashboard-widget-role-allocations', userRoleIds],
-    queryFn: () => dashboardWidgetService.getRoleAllocations(userRoleIds),
-    enabled: userRoleIds.length > 0,
+  // Resolved server-side from the caller's assigned role(s) (narrowed to the
+  // active role if switched), or every widget if they hold a wildcard grant
+  // — no client-side union or super-admin inference needed any more.
+  const allocationQ = useQuery({
+    queryKey: ['dashboard-widget-my-allocation'],
+    queryFn: dashboardWidgetService.getMyAllocation,
   });
   const preferenceQ = useQuery({
     queryKey: ['dashboard-widget-preference', userId],
@@ -106,13 +102,9 @@ export default function DashboardPage() {
 
   const preference = preferenceQ.data;
   const catalog: WidgetDefinition[] = catalogQ.data ?? [];
-  const isLoading = catalogQ.isLoading || allocationsQ.isLoading || preferenceQ.isLoading || !preference;
+  const isLoading = catalogQ.isLoading || allocationQ.isLoading || preferenceQ.isLoading || !preference;
 
-  // Super admin's allocation is locked to every widget — not editable from
-  // the admin screen — so their dashboard always has the full catalog available.
-  const allocatedWidgetIds = isSuperAdmin
-    ? catalog.map((w) => w.id)
-    : getAllocatedWidgetIds(allocationsQ.data ?? [], userRoleIds, activeRoleId);
+  const allocatedWidgetIds = allocationQ.data ?? [];
   const visibleWidgetIds = preference ? getVisibleWidgetIds(allocatedWidgetIds, preference.hidden) : [];
   const visibleWidgets = catalog.filter((w) => visibleWidgetIds.includes(w.id));
   const allocatedWidgets = catalog.filter((w) => allocatedWidgetIds.includes(w.id));

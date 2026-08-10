@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getDefaultWidgetIds,
-  createDefaultRoleAllocation,
-  effectiveRoleIds,
-  getAllocatedWidgetIds,
   getVisibleWidgetIds,
   toggleIds,
   resolvePresetWidgetIds,
@@ -21,67 +17,6 @@ const CATALOG: WidgetDefinition[] = [
   { id: 'b', title: 'B', description: '', category: 'core', size: 'half', defaultEnabled: true },
   { id: 'c', title: 'C', description: '', category: 'sales', size: 'half', defaultEnabled: false },
 ];
-
-describe('getDefaultWidgetIds', () => {
-  it.each([
-    [CATALOG, ['a', 'b']],
-    [[], []],
-  ])('returns the ids marked defaultEnabled', (catalog, expected) => {
-    expect(getDefaultWidgetIds(catalog)).toEqual(expected);
-  });
-});
-
-describe('createDefaultRoleAllocation', () => {
-  it('seeds a role with the catalog defaults', () => {
-    expect(createDefaultRoleAllocation('role-1', CATALOG)).toEqual({
-      roleId: 'role-1',
-      allocated: ['a', 'b'],
-    });
-  });
-});
-
-describe('effectiveRoleIds', () => {
-  it.each([
-    [['r1', 'r2'], '', ['r1', 'r2']],
-    [['r1', 'r2'], 'r2', ['r2']],
-    [[], '', []],
-  ])(
-    'narrows to the active role when set, otherwise unions all assigned roles',
-    (userRoleIds, activeRoleId, expected) => {
-      expect(effectiveRoleIds(userRoleIds, activeRoleId)).toEqual(expected);
-    },
-  );
-});
-
-describe('getAllocatedWidgetIds', () => {
-  const allocations: RoleWidgetAllocation[] = [
-    { roleId: 'sales-rep', allocated: ['a', 'c'] },
-    { roleId: 'accountant', allocated: ['b'] },
-  ];
-
-  it('unions allocations across every assigned role when no role is active', () => {
-    const result = getAllocatedWidgetIds(allocations, ['sales-rep', 'accountant'], '');
-    expect(result.sort()).toEqual(['a', 'b', 'c']);
-  });
-
-  it('narrows to only the active role', () => {
-    const result = getAllocatedWidgetIds(allocations, ['sales-rep', 'accountant'], 'accountant');
-    expect(result).toEqual(['b']);
-  });
-
-  it('de-duplicates widget ids allocated to more than one assigned role', () => {
-    const overlapping: RoleWidgetAllocation[] = [
-      { roleId: 'sales-rep', allocated: ['a'] },
-      { roleId: 'accountant', allocated: ['a', 'b'] },
-    ];
-    const result = getAllocatedWidgetIds(overlapping, ['sales-rep', 'accountant'], '');
-    expect(result.sort()).toEqual(['a', 'b']);
-  });
-
-  it('returns [] when the user has no roles with a matching allocation', () => {
-    expect(getAllocatedWidgetIds(allocations, ['ops-lead'], '')).toEqual([]);
-  });
-});
 
 describe('getVisibleWidgetIds', () => {
   it.each([

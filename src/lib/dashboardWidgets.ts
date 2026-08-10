@@ -1,40 +1,6 @@
 import type { RoleWidgetAllocation, WidgetDefinition } from '@/types/dashboardWidgets';
 import type { WidgetPreset, WidgetPresetId } from '@/config/dashboardWidgetPresets';
 
-export function getDefaultWidgetIds(catalog: WidgetDefinition[]): string[] {
-  return catalog.filter((w) => w.defaultEnabled).map((w) => w.id);
-}
-
-export function createDefaultRoleAllocation(
-  roleId: string,
-  catalog: WidgetDefinition[],
-): RoleWidgetAllocation {
-  return { roleId, allocated: getDefaultWidgetIds(catalog) };
-}
-
-// No active role selected (activeRoleId === '') means every assigned role's
-// allocation applies, unioned — mirrors rbacService.myPermissions()'s
-// activeRoleId semantics, so the dashboard always matches what the user can
-// currently do. A non-empty activeRoleId narrows to just that one role.
-export function effectiveRoleIds(userRoleIds: string[], activeRoleId: string): string[] {
-  return activeRoleId ? [activeRoleId] : userRoleIds;
-}
-
-export function getAllocatedWidgetIds(
-  roleAllocations: RoleWidgetAllocation[],
-  userRoleIds: string[],
-  activeRoleId: string,
-): string[] {
-  const roleIds = effectiveRoleIds(userRoleIds, activeRoleId);
-  const allocated = new Set<string>();
-  for (const allocation of roleAllocations) {
-    if (roleIds.includes(allocation.roleId)) {
-      allocation.allocated.forEach((id) => allocated.add(id));
-    }
-  }
-  return [...allocated];
-}
-
 // hidden is opt-out, so a widget newly granted to a role appears immediately
 // for everyone with that role without each user revisiting Customize.
 export function getVisibleWidgetIds(allocatedIds: string[], hidden: string[]): string[] {

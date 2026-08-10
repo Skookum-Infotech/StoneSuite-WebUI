@@ -54,7 +54,7 @@ export default function DashboardWidgetsPage() {
 
   const allocationsQ = useQuery({
     queryKey: ["dashboard-widget-role-allocations", roleIds],
-    queryFn: () => dashboardWidgetService.getRoleAllocations(roleIds),
+    queryFn: () => dashboardWidgetService.getRoleAllocations(),
     enabled: roleIds.length > 0,
   });
 
@@ -156,8 +156,8 @@ export default function DashboardWidgetsPage() {
         roleId,
         allocated: originalAllocatedByRoleId[roleId] ?? [],
       }));
-      const results = await Promise.all(
-        dirty.map((roleId) => dashboardWidgetService.setRoleAllocation(roleId, staged[roleId])),
+      const results = await dashboardWidgetService.setRoleAllocations(
+        dirty.map((roleId) => ({ roleId, allocated: staged[roleId] })),
       );
       return { results, snapshot };
     },
@@ -169,8 +169,7 @@ export default function DashboardWidgetsPage() {
   });
 
   const undoMutation = useMutation({
-    mutationFn: (snapshot: RoleWidgetAllocation[]) =>
-      Promise.all(snapshot.map((a) => dashboardWidgetService.setRoleAllocation(a.roleId, a.allocated))),
+    mutationFn: (snapshot: RoleWidgetAllocation[]) => dashboardWidgetService.setRoleAllocations(snapshot),
     onSuccess: (results) => {
       mergeAllocations(results);
       setUndoSnapshot(null);
