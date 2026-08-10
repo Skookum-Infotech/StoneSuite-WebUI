@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck, Info, AlertTriangle, Ban, ChevronLeft } from "lucide-react";
+import { Info, AlertTriangle, Ban, ChevronLeft } from "lucide-react";
+import { MicrosoftLogo } from "@/components/icons/MicrosoftLogo";
 import { SetupStep, StepChip } from "./components/SetupStep";
 import { CopyField } from "./components/CopyField";
 import { AttributeMappingTable } from "./components/AttributeMappingTable";
@@ -38,8 +39,8 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
       <div className="bg-background border-b border-stone-200 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
-              <ShieldCheck className="size-5" strokeWidth={2.5} />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-50 border border-stone-200">
+              <MicrosoftLogo className="size-5" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-stone-900">

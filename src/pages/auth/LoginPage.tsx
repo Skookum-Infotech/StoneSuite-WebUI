@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FaAws } from 'react-icons/fa'
+import { MicrosoftLogo } from '@/components/icons/MicrosoftLogo'
 import type { UserRole } from '@/types/auth'
 import type { SAMLProvider } from '@/types/tenant'
 import { SAML_PENDING_PROVIDER_KEY } from '@/lib/samlSession'
@@ -371,14 +372,7 @@ export default function LoginPage() {
                     <OAuthButton
                       label="Microsoft Entra ID"
                       onClick={() => startSso('entra')}
-                      icon={
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" className="size-5">
-                          <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                          <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                          <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                          <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-                        </svg>
-                      }
+                      icon={<MicrosoftLogo className="size-5" />}
                     />
                     <OAuthButton
                       label="AWS Cognito"

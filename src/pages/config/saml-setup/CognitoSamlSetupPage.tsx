@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Fingerprint, Info, AlertTriangle, ChevronLeft } from "lucide-react";
+import { Info, AlertTriangle, ChevronLeft } from "lucide-react";
+import { FaAws } from "react-icons/fa";
 import { SetupStep, StepChip } from "./components/SetupStep";
 import { CopyField } from "./components/CopyField";
 import { AttributeMappingTable } from "./components/AttributeMappingTable";
@@ -38,8 +39,8 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
       <div className="bg-background border-b border-stone-200 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
-              <Fingerprint className="size-5" strokeWidth={2.5} />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 border border-orange-100 text-[#FF9900]">
+              <FaAws className="size-5" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-stone-900">

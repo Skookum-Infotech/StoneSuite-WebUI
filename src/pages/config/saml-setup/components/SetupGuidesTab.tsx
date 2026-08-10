@@ -1,4 +1,5 @@
-import { Cloud, ShieldCheck } from "lucide-react";
+import { FaAws } from "react-icons/fa";
+import { MicrosoftLogo } from "@/components/icons/MicrosoftLogo";
 import { ProviderCard } from "./ProviderCard";
 
 export function SetupGuidesTab() {
@@ -13,17 +14,17 @@ export function SetupGuidesTab() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 max-w-2xl">
         <ProviderCard
           to="/config/saml-setup/cognito"
-          icon={Cloud}
+          icon={FaAws}
           iconBg="bg-orange-50"
-          iconColor="text-orange-500"
+          iconColor="text-[#FF9900]"
           label="AWS Cognito"
           description="Connect a Cognito user pool as a SAML identity provider."
         />
         <ProviderCard
           to="/config/saml-setup/entra"
-          icon={ShieldCheck}
-          iconBg="bg-sky-50"
-          iconColor="text-sky-600"
+          icon={MicrosoftLogo}
+          iconBg="bg-stone-50"
+          iconColor="text-stone-900"
           label="Microsoft Entra ID"
           description="Connect a Microsoft Entra ID enterprise application as a SAML identity provider."
         />
