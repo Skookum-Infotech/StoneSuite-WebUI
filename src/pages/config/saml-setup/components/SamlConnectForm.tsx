@@ -1,15 +1,20 @@
-import { useState } from "react";
-import { Lock, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Save, Loader2 } from "lucide-react";
+import { ssoConfigService } from "@/services/ssoConfigService";
+import { samlConfigSchema } from "@/lib/ssoConfigForm";
+import type { SAMLConfigFormValues } from "@/lib/ssoConfigForm";
+import { ssoConfigErrorMessage } from "@/lib/ssoConfigForm";
+import { Spinner, ErrorNote } from "@/components/tenant/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { SAMLConfig, SAMLProvider } from "@/types/tenant";
+import { SamlDerivedFields } from "./SamlDerivedFields";
+import { EnabledToggle } from "./EnabledToggle";
 
-type SamlProvider = "cognito" | "entra";
-
-const PROVIDER_COPY: Record<
-  SamlProvider,
-  { name: string; metadataPlaceholder: string }
-> = {
+const PROVIDER_COPY: Record<SAMLProvider, { name: string; metadataPlaceholder: string }> = {
   cognito: {
     name: "AWS Cognito",
     metadataPlaceholder:
@@ -23,133 +28,147 @@ const PROVIDER_COPY: Record<
 };
 
 interface SamlConnectFormProps {
-  provider: SamlProvider;
+  provider: SAMLProvider;
 }
 
 export function SamlConnectForm({ provider }: SamlConnectFormProps) {
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
-  const [metadataUrl, setMetadataUrl] = useState("");
-  const [redirectUri, setRedirectUri] = useState("");
-  const [enabled, setEnabled] = useState(false);
+  const qc = useQueryClient();
   const copy = PROVIDER_COPY[provider];
+
+  const configsQ = useQuery({
+    queryKey: ["sso-configs"],
+    queryFn: ssoConfigService.list,
+  });
+  const existing = configsQ.data?.find(
+    (c): c is SAMLConfig => c.provider === provider && c.protocol === "saml",
+  );
+  const isCreate = !existing;
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<SAMLConfigFormValues>({
+    resolver: zodResolver(samlConfigSchema()),
+    defaultValues: { provider, metadataUrl: "", enabled: false },
+  });
+
+  // Prefill once the existing config loads (or is confirmed absent) —
+  // configsQ resolves after mount, so the form starts empty and adopts the
+  // fetched values here rather than depending on a prop that isn't available yet.
+  useEffect(() => {
+    if (existing) {
+      reset({ provider, metadataUrl: existing.metadataUrl, enabled: existing.enabled });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing?.id, existing?.metadataUrl, existing?.enabled]);
+
+  const save = useMutation({
+    mutationFn: (data: SAMLConfigFormValues) => {
+      const payload = { protocol: "saml" as const, provider, metadataUrl: data.metadataUrl, enabled: data.enabled };
+      return existing ? ssoConfigService.update(existing.id, payload) : ssoConfigService.create(payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sso-configs"] });
+    },
+    onError: (err: unknown) => {
+      setError("root", { message: ssoConfigErrorMessage(err) });
+    },
+  });
+
+  const refresh = useMutation({
+    mutationFn: () => {
+      if (!existing) throw new Error("No SAML configuration to refresh.");
+      return ssoConfigService.refreshMetadata(existing.id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sso-configs"] });
+    },
+  });
+
+  const onSubmit = (data: SAMLConfigFormValues) => save.mutate(data);
+
+  if (configsQ.isLoading) {
+    return (
+      <div className="rounded-2xl border border-stone-200 bg-white p-5">
+        <Spinner label="Loading configuration…" />
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-5">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-bold text-stone-900">Connect StoneSuite</h3>
-          <p className="mt-0.5 text-xs text-stone-500">
-            Enter the values from your {copy.name} SAML identity provider.
-          </p>
-        </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-2xs font-semibold text-stone-500">
-          <Clock className="size-3" />
-          Coming soon
-        </span>
+      <div className="mb-4">
+        <h3 className="text-sm font-bold text-stone-900">Connect StoneSuite</h3>
+        <p className="mt-0.5 text-xs text-stone-500">
+          Enter the values from your {copy.name} SAML identity provider.
+        </p>
       </div>
 
-      <div className="space-y-4">
-        {provider === "cognito" && (
-          <>
-            <div className="space-y-1.5">
-              <Label htmlFor="cognito-client-id">Client ID</Label>
-              <Input
-                id="cognito-client-id"
-                type="text"
-                placeholder="e.g. 3n4b5c6d7e8f9g0h1i2j3k4l5m"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                className="h-10"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="cognito-client-secret">Client secret</Label>
-              <Input
-                id="cognito-client-secret"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Enter client secret"
-                value={clientSecret}
-                onChange={(e) => setClientSecret(e.target.value)}
-                className="h-10"
-              />
-            </div>
-          </>
-        )}
-
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor={`${provider}-metadata-url`}>
-            SAML 2.0 metadata document URL
+            SAML 2.0 metadata document URL <span className="text-red-500">*</span>
           </Label>
           <Input
             id={`${provider}-metadata-url`}
             type="text"
             placeholder={copy.metadataPlaceholder}
-            value={metadataUrl}
-            onChange={(e) => setMetadataUrl(e.target.value)}
+            aria-invalid={Boolean(errors.metadataUrl)}
+            {...register("metadataUrl")}
             className="h-10"
           />
+          {errors.metadataUrl && (
+            <p className="text-xs text-red-500">{errors.metadataUrl.message}</p>
+          )}
         </div>
 
-        {provider === "cognito" && (
-          <div className="space-y-1.5">
-            <Label htmlFor="cognito-redirect-uri">Redirect URI</Label>
-            <Input
-              id="cognito-redirect-uri"
-              type="text"
-              placeholder="https://app.stonesuite.io/auth/sso/callback"
-              value={redirectUri}
-              onChange={(e) => setRedirectUri(e.target.value)}
-              className="h-10"
-            />
-          </div>
+        <EnabledToggle
+          register={register}
+          control={control}
+          watchName="enabled"
+          hint="Allow sign-in via this identity provider once configured."
+        />
+
+        {errors.root && <ErrorNote>{errors.root.message}</ErrorNote>}
+        {configsQ.isError && (
+          <ErrorNote>{ssoConfigErrorMessage(configsQ.error)}</ErrorNote>
         )}
-
-        <div className="flex items-start justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2.5">
-          <div>
-            <p className="text-xs font-semibold text-stone-700">Enabled</p>
-            <p className="mt-0.5 text-2xs text-stone-400">
-              Preview only — this configuration isn&apos;t saved yet.
-            </p>
-          </div>
-          <label className="cursor-pointer shrink-0" aria-label="Toggle SAML provider enabled">
-            <input
-              type="checkbox"
-              className="sr-only"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-            />
-            <div
-              className={cn(
-                "relative h-5 w-9 rounded-full transition-colors duration-200",
-                enabled ? "bg-brand" : "bg-stone-200",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200",
-                  enabled ? "left-[18px]" : "left-0.5",
-                )}
-              />
-            </div>
-          </label>
-        </div>
 
         <div className="flex justify-end pt-1">
           <button
-            type="button"
-            disabled
-            aria-label="Save SAML configuration (not available yet)"
-            title="This step isn't wired up yet — nothing entered above is saved."
-            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg bg-stone-200 px-4 py-2 text-sm font-semibold text-stone-400"
+            type="submit"
+            disabled={isSubmitting}
+            aria-label={isCreate ? "Save SAML configuration" : "Update SAML configuration"}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 transition hover:bg-brand/80 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Lock className="size-3.5" />
-            Save
+            {isSubmitting ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Save className="size-3.5" />
+            )}
+            {isSubmitting ? "Saving…" : isCreate ? "Save" : "Update"}
           </button>
         </div>
-      </div>
+      </form>
+
+      {existing && (
+        <div className="mt-4">
+          <SamlDerivedFields
+            config={existing}
+            onRefresh={() => refresh.mutate()}
+            isRefreshing={refresh.isPending}
+          />
+          {refresh.isError && (
+            <div className="mt-2">
+              <ErrorNote>{ssoConfigErrorMessage(refresh.error)}</ErrorNote>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
