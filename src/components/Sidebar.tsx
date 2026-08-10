@@ -62,7 +62,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (item.platformAdminOnly && !user?.isPlatformAdmin) return false;
     if (permissionsLoading) return true;
     if (item.permission) return hasPermission(item.permission.resource, item.permission.action);
-    return true;
+    // Fail closed. A link that declares no access rule at all is a config
+    // oversight, and the safe reading of an oversight is "hide it" — the
+    // previous default showed it, which is how fourteen Sales and Purchases
+    // modules ended up advertised to users whose every click returned 403.
+    //
+    // `platformAdminOnly` counts as a declaration in its own right: reaching
+    // this line means the guard above already passed, so the caller *is* a
+    // platform admin. Omitting it here would hide the Platform section from
+    // the only people who can use it.
+    return item.alwaysVisible === true || item.platformAdminOnly === true;
   }
 
   function visibleChildren(group: NavGroup): NavLinkItem[] {
