@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { ssoConfigService } from "@/services/ssoConfigService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, EmptyState, Badge } from "@/components/tenant/ui";
-import { SSO_PROVIDERS, SSO_PROVIDER_LABELS } from "@/lib/ssoConfigForm";
+import { SSO_PROVIDERS, SSO_PROVIDER_LABELS, ssoConfigErrorMessage } from "@/lib/ssoConfigForm";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { SSOConfig, SSOProvider } from "@/types/tenant";
 import { SsoConfigModal } from "./SsoConfigModal";
+
+const GRID_COLUMNS =
+  "minmax(120px,0.9fr) 70px minmax(140px,1.3fr) minmax(160px,1.5fr) 90px 120px";
 
 export function ConfiguredProvidersTab() {
   const qc = useQueryClient();
@@ -20,6 +23,10 @@ export function ConfiguredProvidersTab() {
   });
   const configs = configsQ.data ?? [];
 
+  // A provider slot is shared across protocols (backend: unique per
+  // tenant+provider regardless of protocol) — one config of either kind
+  // takes it, so filtering by provider alone (not provider+protocol) is
+  // correct here.
   const availableProviders: SSOProvider[] = SSO_PROVIDERS.filter(
     (p) => !configs.some((c) => c.provider === p),
   );
@@ -27,12 +34,22 @@ export function ConfiguredProvidersTab() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [editingConfig, setEditingConfig] = useState<SSOConfig | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SSOConfig | null>(null);
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   const del = useMutation({
     mutationFn: (id: string) => ssoConfigService.remove(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sso-configs"] });
       setDeleteTarget(null);
+    },
+  });
+
+  const refresh = useMutation({
+    mutationFn: (id: string) => ssoConfigService.refreshMetadata(id),
+    onMutate: (id: string) => setRefreshingId(id),
+    onSettled: () => setRefreshingId(null),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sso-configs"] });
     },
   });
 
@@ -51,12 +68,12 @@ export function ConfiguredProvidersTab() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-bold text-stone-900">Configured providers</h2>
-          <p className="mt-0.5 text-xs text-stone-500">
-            Stores connection settings only — sign-in via SSO isn&apos;t
-            available yet.
+          <p className="text-xs text-stone-500">
+            SAML providers are fully wired for sign-in. OIDC providers store
+            connection settings only — sign-in via OIDC isn&apos;t available
+            yet.
           </p>
         </div>
         {canConfigure && availableProviders.length > 0 && (
@@ -90,19 +107,17 @@ export function ConfiguredProvidersTab() {
       )}
 
       {configs.length > 0 && (
-        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto modal-scrollbar">
-            <div style={{ minWidth: "760px" }}>
+            <div style={{ minWidth: "900px" }}>
               <div
                 className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 text-2xs font-bold uppercase tracking-widest text-stone-400 select-none"
-                style={{
-                  gridTemplateColumns:
-                    "minmax(140px,1fr) minmax(160px,1.4fr) minmax(160px,1.6fr) 90px 96px",
-                }}
+                style={{ gridTemplateColumns: GRID_COLUMNS }}
               >
                 <span>Provider</span>
-                <span>Client ID</span>
-                <span>Issuer</span>
+                <span>Protocol</span>
+                <span>{"Client ID / IdP entity"}</span>
+                <span>{"Issuer / SSO URL"}</span>
                 <span className="text-center">Enabled</span>
                 <span />
               </div>
@@ -112,8 +127,7 @@ export function ConfiguredProvidersTab() {
                   key={cfg.id}
                   className="grid items-center px-5 py-3 gap-3"
                   style={{
-                    gridTemplateColumns:
-                      "minmax(140px,1fr) minmax(160px,1.4fr) minmax(160px,1.6fr) 90px 96px",
+                    gridTemplateColumns: GRID_COLUMNS,
                     borderBottom:
                       idx === configs.length - 1 ? undefined : "1px solid rgb(245 245 244)",
                   }}
@@ -121,12 +135,29 @@ export function ConfiguredProvidersTab() {
                   <span className="text-xs font-semibold text-stone-800">
                     {SSO_PROVIDER_LABELS[cfg.provider]}
                   </span>
-                  <span className="font-mono text-2xs text-stone-500 truncate" title={cfg.clientId}>
-                    {cfg.clientId}
+                  <span>
+                    <Badge size="sm" color={cfg.protocol === "saml" ? "#0d9488" : undefined}>
+                      {cfg.protocol.toUpperCase()}
+                    </Badge>
                   </span>
-                  <span className="text-2xs text-stone-400 truncate" title={cfg.issuer || undefined}>
-                    {cfg.issuer || "—"}
-                  </span>
+                  {cfg.protocol === "saml" ? (
+                    <span className="font-mono text-2xs text-stone-500 truncate" title={cfg.idpEntityId || undefined}>
+                      {cfg.idpEntityId || "—"}
+                    </span>
+                  ) : (
+                    <span className="font-mono text-2xs text-stone-500 truncate" title={cfg.clientId}>
+                      {cfg.clientId}
+                    </span>
+                  )}
+                  {cfg.protocol === "saml" ? (
+                    <span className="text-2xs text-stone-400 truncate" title={cfg.ssoUrl || undefined}>
+                      {cfg.ssoUrl || "—"}
+                    </span>
+                  ) : (
+                    <span className="text-2xs text-stone-400 truncate" title={cfg.issuer || undefined}>
+                      {cfg.issuer || "—"}
+                    </span>
+                  )}
                   <span className="flex justify-center">
                     {cfg.enabled ? (
                       <Badge color="#16a34a">Enabled</Badge>
@@ -135,6 +166,21 @@ export function ConfiguredProvidersTab() {
                     )}
                   </span>
                   <span className="flex items-center justify-end gap-1">
+                    {canConfigure && cfg.protocol === "saml" && (
+                      <button
+                        type="button"
+                        onClick={() => refresh.mutate(cfg.id)}
+                        disabled={refreshingId === cfg.id}
+                        aria-label={`Refresh ${SSO_PROVIDER_LABELS[cfg.provider]} metadata`}
+                        className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {refreshingId === cfg.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="size-3.5" />
+                        )}
+                      </button>
+                    )}
                     {canConfigure && (
                       <>
                         <button
@@ -160,6 +206,11 @@ export function ConfiguredProvidersTab() {
               ))}
             </div>
           </div>
+          {refresh.isError && (
+            <div className="px-5 py-3 border-t border-stone-100">
+              <ErrorNote>{ssoConfigErrorMessage(refresh.error)}</ErrorNote>
+            </div>
+          )}
         </div>
       )}
 
@@ -196,8 +247,11 @@ export function ConfiguredProvidersTab() {
                   <span className="font-semibold text-stone-700">
                     {SSO_PROVIDER_LABELS[deleteTarget.provider]}
                   </span>{" "}
-                  configuration will be permanently removed. This cannot be
-                  undone.
+                  configuration will be permanently removed
+                  {deleteTarget.protocol === "saml" && deleteTarget.enabled
+                    ? " and users will no longer be able to sign in with it"
+                    : ""}
+                  . This cannot be undone.
                 </p>
                 {del.error && (
                   <div className="mt-2">

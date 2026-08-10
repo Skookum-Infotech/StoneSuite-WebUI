@@ -12,6 +12,9 @@ import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
 import { rbacService } from '@/services/tenantServices';
+import { samlAuthService } from '@/services/samlAuthService';
+import { SAML_ACTIVE_PROVIDER_KEY } from '@/lib/samlSession';
+import type { SAMLProvider } from '@/types/tenant';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
@@ -70,7 +73,31 @@ export default function MainLayout(): React.JSX.Element {
     });
   }, [location.pathname]);
 
-  const handleLogout = useCallback((): void => {
+  const handleLogout = useCallback(async (): Promise<void> => {
+    // A session established via SAML sign-in needs the IdP notified (SLO)
+    // in addition to the local logout — MainLayout is the only user-facing
+    // logout entry point, so this is the one place that distinction matters.
+    const samlProvider = sessionStorage.getItem(SAML_ACTIVE_PROVIDER_KEY) as SAMLProvider | null;
+    if (samlProvider) {
+      sessionStorage.removeItem(SAML_ACTIVE_PROVIDER_KEY);
+      try {
+        const result = await samlAuthService.logout(samlProvider);
+        // Local auth_token/refresh_token cookies are already cleared
+        // server-side by the time this resolves (saml_logout.go), regardless
+        // of sloAvailable.
+        logout();
+        if (result.sloAvailable && result.logoutUrl) {
+          window.location.href = result.logoutUrl; // IdP handles the rest
+          return;
+        }
+        navigate('/auth/login', { replace: true });
+        return;
+      } catch {
+        // Session may already be gone server-side — fall through to the
+        // password-logout path below so the user isn't stuck signed in locally.
+      }
+    }
+
     // Clear the httpOnly cookie server-side before wiping local state.
     // Fire-and-forget — navigate regardless of whether the call succeeds.
     apiClient.post('/auth/logout').catch(() => undefined);

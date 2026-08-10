@@ -30,6 +30,7 @@ const ForgotPasswordPage = lazyWithRetry(
   () => import("@/pages/auth/ForgotPasswordPage"),
 );
 const ResetPasswordPage = lazyWithRetry(() => import("@/pages/auth/ResetPasswordPage"));
+const SsoCallbackPage = lazyWithRetry(() => import("@/pages/auth/SsoCallbackPage"));
 const DashboardPage = lazyWithRetry(() => import("@/pages/dashboard/DashboardPage"));
 const OnboardingPage = lazyWithRetry(() => import("@/pages/customer/OnboardingPage"));
 const AddCustomerPage = lazyWithRetry(() => import("@/pages/customer/AddCustomerPage"));
@@ -1229,6 +1230,7 @@ export const router = createBrowserRouter([
       { path: "login", element: lazy_(<LoginPage />) },
       { path: "forgot-password", element: lazy_(<ForgotPasswordPage />) },
       { path: "reset-password", element: lazy_(<ResetPasswordPage />) },
+      { path: "sso/callback", element: lazy_(<SsoCallbackPage />) },
     ],
   },
   {

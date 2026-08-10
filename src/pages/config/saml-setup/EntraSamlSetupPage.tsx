@@ -1,12 +1,17 @@
 import { Link } from "react-router-dom";
-import { ShieldCheck, Info, AlertTriangle, Ban, ChevronLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Info, AlertTriangle, Ban, ChevronLeft } from "lucide-react";
+import { MicrosoftLogo } from "@/components/icons/MicrosoftLogo";
 import { SetupStep, StepChip } from "./components/SetupStep";
 import { CopyField } from "./components/CopyField";
 import { AttributeMappingTable } from "./components/AttributeMappingTable";
 import { SamlConnectForm } from "./components/SamlConnectForm";
+import { SsoSignInLink } from "./components/SsoSignInLink";
+import { samlAuthService } from "@/services/samlAuthService";
+import { apiErrorMessage } from "@/api/tenantClient";
+import { Spinner, ErrorNote } from "@/components/tenant/ui";
 
-const SP_ENTITY_ID = "https://app.stonesuite.io/saml/entra/metadata";
-const SP_ACS_URL = "https://app.stonesuite.io/saml/entra/acs";
+const PROVIDER = "entra" as const;
 
 function Callout({
   icon: Icon,
@@ -24,13 +29,18 @@ function Callout({
 }
 
 export default function EntraSamlSetupPage(): React.JSX.Element {
+  const spInfoQ = useQuery({
+    queryKey: ["saml-sp-info", PROVIDER],
+    queryFn: () => samlAuthService.spInfo(PROVIDER),
+  });
+
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-stone-50/60">
       <div className="bg-background border-b border-stone-200 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
-              <ShieldCheck className="size-5" strokeWidth={2.5} />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-50 border border-stone-200">
+              <MicrosoftLogo className="size-5" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-stone-900">
@@ -55,16 +65,6 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
 
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="mx-auto w-full max-w-[1500px] 3xl:max-w-[1800px] 4xl:max-w-full px-6 py-6">
-          <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
-            <p className="text-xs text-amber-800 leading-relaxed">
-              Preview walkthrough. The steps and StoneSuite values below are
-              placeholders to shape the setup flow — they haven&apos;t been
-              verified against a live Microsoft Entra ID tenant yet, and SAML
-              sign-in isn&apos;t available in StoneSuite yet.
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-6">
               <section className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
@@ -170,11 +170,17 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
                     }
                   />
                   <SetupStep number={9} title="Set the following fields">
-                    <CopyField
-                      label="Identifier (Entity ID)"
-                      value={SP_ENTITY_ID}
-                    />
-                    <CopyField label="Reply URL" value={SP_ACS_URL} />
+                    {spInfoQ.isLoading && <Spinner label="Loading StoneSuite values…" />}
+                    {spInfoQ.isError && <ErrorNote>{apiErrorMessage(spInfoQ.error)}</ErrorNote>}
+                    {spInfoQ.data && (
+                      <>
+                        <CopyField
+                          label="Identifier (Entity ID)"
+                          value={spInfoQ.data.spEntityId}
+                        />
+                        <CopyField label="Reply URL" value={spInfoQ.data.acsUrl} />
+                      </>
+                    )}
                   </SetupStep>
                   <SetupStep
                     number={10}
@@ -256,8 +262,9 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
               </section>
             </div>
 
-            <div className="lg:sticky lg:top-6 lg:self-start">
-              <SamlConnectForm provider="entra" />
+            <div className="lg:sticky lg:top-6 lg:self-start space-y-6">
+              <SamlConnectForm provider={PROVIDER} />
+              <SsoSignInLink provider={PROVIDER} />
             </div>
           </div>
         </div>

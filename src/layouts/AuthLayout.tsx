@@ -3,7 +3,11 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 // Routes under /auth that stay reachable while signed in. A reset-password link
 // arrives by email and must still work for a user who already has a session.
-const ALLOWED_WHILE_AUTHENTICATED = ['/auth/reset-password'];
+// The SSO callback also needs this: it calls setAuth() itself, then navigates
+// to return_to (or /dashboard) on its own terms -- without this, this layout's
+// redirect below would race that navigation and always win with /dashboard,
+// silently dropping return_to.
+const ALLOWED_WHILE_AUTHENTICATED = ['/auth/reset-password', '/auth/sso/callback'];
 
 export default function AuthLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
