@@ -62,7 +62,7 @@ export default function SamlSetupPage(): React.JSX.Element {
       </div>
 
       <div className="flex-1 overflow-y-auto modal-scrollbar">
-        <div className="mx-auto w-full max-w-[1500px] 3xl:max-w-[1800px] 4xl:max-w-full px-6 py-6">
+        <div className="mx-auto w-full max-w-[1500px] 3xl:max-w-[1800px] 4xl:max-w-full px-6 py-4">
           <div
             role="tabpanel"
             id="saml-setup-tabpanel-configured"

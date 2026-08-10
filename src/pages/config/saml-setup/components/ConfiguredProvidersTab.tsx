@@ -68,10 +68,9 @@ export function ConfiguredProvidersTab() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-bold text-stone-900">Configured providers</h2>
-          <p className="mt-0.5 text-xs text-stone-500">
+          <p className="text-xs text-stone-500">
             SAML providers are fully wired for sign-in. OIDC providers store
             connection settings only — sign-in via OIDC isn&apos;t available
             yet.
@@ -108,7 +107,7 @@ export function ConfiguredProvidersTab() {
       )}
 
       {configs.length > 0 && (
-        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto modal-scrollbar">
             <div style={{ minWidth: "900px" }}>
               <div

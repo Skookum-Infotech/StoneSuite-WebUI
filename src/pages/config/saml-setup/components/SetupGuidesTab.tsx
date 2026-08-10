@@ -5,7 +5,6 @@ export function SetupGuidesTab() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-sm font-bold text-stone-900">Setup guides</h2>
         <p className="mt-0.5 text-xs text-stone-500">
           Choose the identity provider you want to connect with StoneSuite.
         </p>
