@@ -59,7 +59,25 @@ Set the backend origin on the Pages project instead (Settings → Environment va
 API_ORIGIN=https://stonesuite-backend.fly.dev
 ```
 
-It defaults to that URL if unset, so it only needs changing when the backend moves.
+**`API_ORIGIN` is required, and must be set in BOTH the Production and Preview variable sets.**
+Cloudflare Pages keeps those two sets separate, and which one applies depends on whether the
+deploy's branch matches the project's production branch — so a deploy can land in Preview and read
+an empty value. When it is missing or malformed, the Function returns a 500 naming the variable.
+
+It used to fall back to the production backend when unset. That was removed deliberately: it meant a
+misconfigured DEV or preview deploy silently read and wrote **production** data instead of failing.
+
+### Checking the proxy is live
+
+Every response the Function produces carries `X-Proxied-To` naming the upstream it used:
+
+```bash
+curl -s -D - -o /dev/null https://<your-pages-host>/api/healthz | grep -i x-proxied-to
+```
+
+If that header is **absent**, the Function is not deployed and Pages is serving the SPA's
+`index.html` for `/api/*` — which shows up as `text/html` on GET and **405** on POST (login breaks).
+That means `functions/` did not make it into the deployed bundle; see the build artifact notes below.
 
 ---
 

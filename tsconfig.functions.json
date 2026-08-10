@@ -1,0 +1,32 @@
+{
+  /* Cloudflare Pages Functions. These run on workerd, not Node and not the
+     browser, so they get their own project rather than joining tsconfig.app:
+     the globals (PagesFunction, the Workers fetch) and the lib set differ.
+
+     Without this project the functions/ directory was typechecked by nothing at
+     all — wrangler strips types at deploy time and never reports errors, so a
+     genuine type error there shipped silently and only surfaced as a runtime
+     500 at the edge. */
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.functions.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "types": ["@cloudflare/workers-types"],
+    "skipLibCheck": true,
+
+    /* Bundler mode — matches how wrangler resolves and bundles. */
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["functions"]
+}
