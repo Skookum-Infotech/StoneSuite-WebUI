@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildCsvFilename, buildCsvText, downloadCsv } from '@/lib/csvExport';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { dashboardWidgetService } from '@/services/dashboardWidgetService';
-import { getVisibleWidgetIds } from '@/lib/dashboardWidgets';
+import { getAllocatedWidgetIds, getVisibleWidgetIds, isSuperAdminGrants } from '@/lib/dashboardWidgets';
 import { Spinner, EmptyState } from '@/components/tenant/ui';
 import type { WidgetDefinition, WidgetSize } from '@/types/dashboardWidgets';
 import { ConsoleHeader } from './components/ConsoleHeader';
@@ -73,41 +74,55 @@ function handleDownloadCsv(): void {
 
 export default function DashboardPage() {
   const userId = useAuthStore((s) => s.user?.id);
+  const userRoles = useAuthStore((s) => s.user?.roles);
+  const { activeRoleId, grants } = useUserPermissions();
+  const isSuperAdmin = isSuperAdminGrants(grants);
   const queryClient = useQueryClient();
   const [showCustomize, setShowCustomize] = useState(false);
+
+  const userRoleIds = useMemo(() => (userRoles ?? []).map((r) => r.id), [userRoles]);
 
   const catalogQ = useQuery({
     queryKey: ['dashboard-widget-catalog'],
     queryFn: dashboardWidgetService.getCatalog,
   });
-  const settingsQ = useQuery({
-    queryKey: ['dashboard-widget-settings', userId],
-    queryFn: () => dashboardWidgetService.getSettings(userId as string),
+  const allocationsQ = useQuery({
+    queryKey: ['dashboard-widget-role-allocations', userRoleIds],
+    queryFn: () => dashboardWidgetService.getRoleAllocations(userRoleIds),
+    enabled: userRoleIds.length > 0,
+  });
+  const preferenceQ = useQuery({
+    queryKey: ['dashboard-widget-preference', userId],
+    queryFn: () => dashboardWidgetService.getPreference(userId as string),
     enabled: Boolean(userId),
   });
 
   const preferenceMutation = useMutation({
-    mutationFn: (widgetIds: string[]) => dashboardWidgetService.setPreference(userId as string, widgetIds),
+    mutationFn: (hiddenIds: string[]) => dashboardWidgetService.setPreference(userId as string, hiddenIds),
     onSuccess: (updated) => {
-      queryClient.setQueryData(['dashboard-widget-settings', userId], updated);
+      queryClient.setQueryData(['dashboard-widget-preference', userId], updated);
     },
   });
 
-  const settings = settingsQ.data;
+  const preference = preferenceQ.data;
   const catalog: WidgetDefinition[] = catalogQ.data ?? [];
-  const isLoading = catalogQ.isLoading || settingsQ.isLoading || !settings;
+  const isLoading = catalogQ.isLoading || allocationsQ.isLoading || preferenceQ.isLoading || !preference;
 
-  const visibleWidgets = settings
-    ? catalog.filter((w) => getVisibleWidgetIds(settings).includes(w.id))
-    : [];
-  const allocatedWidgets = settings ? catalog.filter((w) => settings.allocated.includes(w.id)) : [];
+  // Super admin's allocation is locked to every widget — not editable from
+  // the admin screen — so their dashboard always has the full catalog available.
+  const allocatedWidgetIds = isSuperAdmin
+    ? catalog.map((w) => w.id)
+    : getAllocatedWidgetIds(allocationsQ.data ?? [], userRoleIds, activeRoleId);
+  const visibleWidgetIds = preference ? getVisibleWidgetIds(allocatedWidgetIds, preference.hidden) : [];
+  const visibleWidgets = catalog.filter((w) => visibleWidgetIds.includes(w.id));
+  const allocatedWidgets = catalog.filter((w) => allocatedWidgetIds.includes(w.id));
 
   function handleTogglePreference(widgetId: string, next: boolean) {
-    if (!settings) return;
-    const nextEnabled = next
-      ? [...settings.enabled, widgetId]
-      : settings.enabled.filter((id) => id !== widgetId);
-    preferenceMutation.mutate(nextEnabled);
+    if (!preference) return;
+    const nextHidden = next
+      ? preference.hidden.filter((id) => id !== widgetId) // next=true means "show"
+      : [...preference.hidden, widgetId]; // next=false means "hide"
+    preferenceMutation.mutate(nextHidden);
   }
 
   return (
@@ -117,10 +132,10 @@ export default function DashboardPage() {
 
         {isLoading && <Spinner label="Loading dashboard…" />}
 
-        {!isLoading && settings && visibleWidgets.length === 0 && (
+        {!isLoading && visibleWidgets.length === 0 && (
           <EmptyState>
-            {settings.allocated.length === 0
-              ? 'Ask your admin to allocate dashboard widgets for your account.'
+            {allocatedWidgetIds.length === 0
+              ? 'Ask your admin to allocate dashboard widgets to your role.'
               : 'All your widgets are hidden. Click Customize to turn some on.'}
           </EmptyState>
         )}
@@ -136,10 +151,10 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {showCustomize && settings && (
+      {showCustomize && preference && (
         <CustomizePanel
           widgets={allocatedWidgets}
-          enabledIds={settings.enabled}
+          enabledIds={visibleWidgetIds}
           onToggle={handleTogglePreference}
           onClose={() => setShowCustomize(false)}
         />

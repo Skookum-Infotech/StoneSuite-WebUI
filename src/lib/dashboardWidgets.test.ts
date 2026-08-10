@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
   getDefaultWidgetIds,
-  createDefaultSettings,
-  applyAllocation,
-  applyPreference,
+  createDefaultRoleAllocation,
+  effectiveRoleIds,
+  getAllocatedWidgetIds,
   getVisibleWidgetIds,
+  isSuperAdminGrants,
   rankTopCustomers,
   bucketInvoicesByAge,
 } from './dashboardWidgets';
-import type { WidgetDefinition, UserWidgetSettings } from '@/types/dashboardWidgets';
+import type { WidgetDefinition, RoleWidgetAllocation } from '@/types/dashboardWidgets';
 
 const CATALOG: WidgetDefinition[] = [
   { id: 'a', title: 'A', description: '', category: 'core', size: 'full', defaultEnabled: true },
@@ -25,58 +26,78 @@ describe('getDefaultWidgetIds', () => {
   });
 });
 
-describe('createDefaultSettings', () => {
-  it('seeds a new user with the catalog defaults as both allocated and enabled', () => {
-    expect(createDefaultSettings('u1', CATALOG)).toEqual({
-      userId: 'u1',
+describe('createDefaultRoleAllocation', () => {
+  it('seeds a role with the catalog defaults', () => {
+    expect(createDefaultRoleAllocation('role-1', CATALOG)).toEqual({
+      roleId: 'role-1',
       allocated: ['a', 'b'],
-      enabled: ['a', 'b'],
     });
   });
 });
 
-describe('applyAllocation', () => {
-  const base: UserWidgetSettings = { userId: 'u1', allocated: ['a', 'b'], enabled: ['a'] };
-
-  it('replaces the allocated list with the given ids', () => {
-    expect(applyAllocation(base, ['a', 'c']).allocated).toEqual(['a', 'c']);
-  });
-
-  it('auto-enables a newly allocated widget so it shows up immediately', () => {
-    const result = applyAllocation(base, ['a', 'b', 'c']);
-    expect(result.enabled).toEqual(['a', 'c']);
-  });
-
-  it('does not change enabled for a widget that was already allocated', () => {
-    const result = applyAllocation(base, ['a', 'b']);
-    expect(result.enabled).toEqual(['a']);
-  });
-
-  it('leaves enabled untouched when revoking allocation', () => {
-    const result = applyAllocation(base, ['a']);
-    expect(result.enabled).toEqual(['a']);
-  });
+describe('effectiveRoleIds', () => {
+  it.each([
+    [['r1', 'r2'], '', ['r1', 'r2']],
+    [['r1', 'r2'], 'r2', ['r2']],
+    [[], '', []],
+  ])(
+    'narrows to the active role when set, otherwise unions all assigned roles',
+    (userRoleIds, activeRoleId, expected) => {
+      expect(effectiveRoleIds(userRoleIds, activeRoleId)).toEqual(expected);
+    },
+  );
 });
 
-describe('applyPreference', () => {
-  const base: UserWidgetSettings = { userId: 'u1', allocated: ['a', 'b'], enabled: ['a'] };
+describe('getAllocatedWidgetIds', () => {
+  const allocations: RoleWidgetAllocation[] = [
+    { roleId: 'sales-rep', allocated: ['a', 'c'] },
+    { roleId: 'accountant', allocated: ['b'] },
+  ];
 
-  it('sets enabled to the given ids', () => {
-    expect(applyPreference(base, ['a', 'b']).enabled).toEqual(['a', 'b']);
+  it('unions allocations across every assigned role when no role is active', () => {
+    const result = getAllocatedWidgetIds(allocations, ['sales-rep', 'accountant'], '');
+    expect(result.sort()).toEqual(['a', 'b', 'c']);
   });
 
-  it('ignores ids the user is not allocated', () => {
-    expect(applyPreference(base, ['a', 'c']).enabled).toEqual(['a']);
+  it('narrows to only the active role', () => {
+    const result = getAllocatedWidgetIds(allocations, ['sales-rep', 'accountant'], 'accountant');
+    expect(result).toEqual(['b']);
+  });
+
+  it('de-duplicates widget ids allocated to more than one assigned role', () => {
+    const overlapping: RoleWidgetAllocation[] = [
+      { roleId: 'sales-rep', allocated: ['a'] },
+      { roleId: 'accountant', allocated: ['a', 'b'] },
+    ];
+    const result = getAllocatedWidgetIds(overlapping, ['sales-rep', 'accountant'], '');
+    expect(result.sort()).toEqual(['a', 'b']);
+  });
+
+  it('returns [] when the user has no roles with a matching allocation', () => {
+    expect(getAllocatedWidgetIds(allocations, ['ops-lead'], '')).toEqual([]);
   });
 });
 
 describe('getVisibleWidgetIds', () => {
   it.each([
-    [{ userId: 'u1', allocated: ['a', 'b'], enabled: ['a'] }, ['a']],
-    [{ userId: 'u1', allocated: [], enabled: ['a'] }, []],
-    [{ userId: 'u1', allocated: ['a'], enabled: [] }, []],
-  ])('is the intersection of allocated and enabled', (settings, expected) => {
-    expect(getVisibleWidgetIds(settings as UserWidgetSettings)).toEqual(expected);
+    [['a', 'b'], ['a'], ['b']],
+    [['a', 'b'], [], ['a', 'b']],
+    [['a'], ['a'], []],
+    [[], ['a'], []],
+  ])('is allocated minus hidden', (allocated, hidden, expected) => {
+    expect(getVisibleWidgetIds(allocated, hidden)).toEqual(expected);
+  });
+});
+
+describe('isSuperAdminGrants', () => {
+  it.each([
+    [[{ resource: '*', action: '*' }], true],
+    [[{ resource: 'lead', action: '*' }], false],
+    [[{ resource: '*', action: 'read' }], false],
+    [[{ resource: 'lead', action: 'read' }, { resource: '*', action: '*' }], true],
+    [[], false],
+  ])('is true only when a grant has both resource and action wildcarded', (grants, expected) => {
+    expect(isSuperAdminGrants(grants)).toBe(expected);
   });
 });
 

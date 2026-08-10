@@ -88,8 +88,14 @@ const DashboardWidgetsPage = lazyWithRetry(
 const AuditLogPage = lazyWithRetry(
   () => import("@/pages/config/audit/AuditLogPage"),
 );
-const SsoConfigPage = lazyWithRetry(
-  () => import("@/pages/config/authentication/SsoConfigPage"),
+const SamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/SamlSetupPage"),
+);
+const CognitoSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/CognitoSamlSetupPage"),
+);
+const EntraSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/EntraSamlSetupPage"),
 );
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
@@ -1173,10 +1179,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "config/authentication",
+        path: "config/saml-setup",
         element: lazy_(
           <PermissionGuard resource="sso_config" action="read">
-            <SsoConfigPage />
+            <SamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/cognito",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <CognitoSamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/entra",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <EntraSamlSetupPage />
           </PermissionGuard>,
         ),
       },

@@ -1,39 +1,50 @@
-import type { UserWidgetSettings, WidgetDefinition } from '@/types/dashboardWidgets';
+import type { RoleWidgetAllocation, WidgetDefinition } from '@/types/dashboardWidgets';
 
 export function getDefaultWidgetIds(catalog: WidgetDefinition[]): string[] {
   return catalog.filter((w) => w.defaultEnabled).map((w) => w.id);
 }
 
-export function createDefaultSettings(userId: string, catalog: WidgetDefinition[]): UserWidgetSettings {
-  const defaults = getDefaultWidgetIds(catalog);
-  return { userId, allocated: defaults, enabled: defaults };
+export function createDefaultRoleAllocation(
+  roleId: string,
+  catalog: WidgetDefinition[],
+): RoleWidgetAllocation {
+  return { roleId, allocated: getDefaultWidgetIds(catalog) };
 }
 
-// Newly-granted widget ids are auto-enabled so a widget the admin allocates
-// "because the user asked for it" shows up immediately. Ids that were
-// already allocated keep whatever enabled state they had. Revoked ids are
-// left in `enabled` untouched — visibility is always the allocated/enabled
-// intersection (see getVisibleWidgetIds), so a revoked widget disappears
-// regardless of its enabled state.
-export function applyAllocation(settings: UserWidgetSettings, allocatedIds: string[]): UserWidgetSettings {
-  const newlyAllocated = allocatedIds.filter((id) => !settings.allocated.includes(id));
-  return {
-    ...settings,
-    allocated: allocatedIds,
-    enabled: [...settings.enabled, ...newlyAllocated],
-  };
+// No active role selected (activeRoleId === '') means every assigned role's
+// allocation applies, unioned — mirrors rbacService.myPermissions()'s
+// activeRoleId semantics, so the dashboard always matches what the user can
+// currently do. A non-empty activeRoleId narrows to just that one role.
+export function effectiveRoleIds(userRoleIds: string[], activeRoleId: string): string[] {
+  return activeRoleId ? [activeRoleId] : userRoleIds;
 }
 
-// A user can only enable widgets they've been allocated.
-export function applyPreference(settings: UserWidgetSettings, enabledIds: string[]): UserWidgetSettings {
-  return {
-    ...settings,
-    enabled: enabledIds.filter((id) => settings.allocated.includes(id)),
-  };
+export function getAllocatedWidgetIds(
+  roleAllocations: RoleWidgetAllocation[],
+  userRoleIds: string[],
+  activeRoleId: string,
+): string[] {
+  const roleIds = effectiveRoleIds(userRoleIds, activeRoleId);
+  const allocated = new Set<string>();
+  for (const allocation of roleAllocations) {
+    if (roleIds.includes(allocation.roleId)) {
+      allocation.allocated.forEach((id) => allocated.add(id));
+    }
+  }
+  return [...allocated];
 }
 
-export function getVisibleWidgetIds(settings: UserWidgetSettings): string[] {
-  return settings.allocated.filter((id) => settings.enabled.includes(id));
+// hidden is opt-out, so a widget newly granted to a role appears immediately
+// for everyone with that role without each user revisiting Customize.
+export function getVisibleWidgetIds(allocatedIds: string[], hidden: string[]): string[] {
+  return allocatedIds.filter((id) => !hidden.includes(id));
+}
+
+// Matches the wildcard-grant convention used elsewhere (e.g.
+// AccountSettingsPage's AccessSummary) rather than a hardcoded role name/key,
+// since tenants can rename their admin role.
+export function isSuperAdminGrants(grants: { resource: string; action: string }[]): boolean {
+  return grants.some((g) => g.resource === '*' && g.action === '*');
 }
 
 export interface RankedCustomer {
