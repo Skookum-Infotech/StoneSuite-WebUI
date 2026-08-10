@@ -11,8 +11,15 @@ import type { RoleWidgetAllocation, WidgetDefinition } from "@/types/dashboardWi
 import { RoleRail } from "./components/RoleRail";
 import { RoleWidgetPanel } from "./components/RoleWidgetPanel";
 import { WidgetAllocationMatrix } from "./components/WidgetAllocationMatrix";
+import { RoleColumnPicker } from "./components/RoleColumnPicker";
 
 type ViewMode = "role" | "matrix";
+
+// Below this many editable roles, the matrix just shows every column, same
+// as before this existed. Past it, a role×widget grid stops being scannable
+// regardless of layout, so the admin picks a subset to compare instead.
+const MATRIX_AUTO_SHOW_THRESHOLD = 10;
+const MATRIX_DEFAULT_VISIBLE_COUNT = 8;
 
 // Local edits live here, keyed by roleId, until Save persists them. A role
 // only appears once the admin actually changes something — everything else
@@ -26,6 +33,9 @@ export default function DashboardWidgetsPage() {
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [staged, setStaged] = useState<StagedAllocations>({});
   const [undoSnapshot, setUndoSnapshot] = useState<RoleWidgetAllocation[] | null>(null);
+  // null = no explicit picker choice yet, so the matrix falls back to the
+  // first MATRIX_DEFAULT_VISIBLE_COUNT editable roles.
+  const [matrixVisibleRoleIds, setMatrixVisibleRoleIds] = useState<string[] | null>(null);
 
   const rolesQ = useQuery({ queryKey: ["roles"], queryFn: rbacService.listRoles });
   const catalogQ = useQuery({
@@ -76,6 +86,20 @@ export default function DashboardWidgetsPage() {
 
   const dirty = useMemo(() => dirtyRoleIds(staged, allocations), [staged, allocations]);
 
+  const matrixNeedsPicker = editableRoles.length > MATRIX_AUTO_SHOW_THRESHOLD;
+  const matrixVisibleIds = useMemo(() => {
+    if (!matrixNeedsPicker) return editableRoles.map((r) => r.id);
+    if (matrixVisibleRoleIds) return matrixVisibleRoleIds;
+    return editableRoles.slice(0, MATRIX_DEFAULT_VISIBLE_COUNT).map((r) => r.id);
+  }, [matrixNeedsPicker, matrixVisibleRoleIds, editableRoles]);
+  // What the matrix actually renders as columns — locked roles always show
+  // (there are typically only one or two), narrowed to the chosen editable
+  // subset once the picker is in play.
+  const matrixRoles = useMemo(() => {
+    const visible = new Set(matrixVisibleIds);
+    return roles.filter((r) => r.locked || visible.has(r.id));
+  }, [roles, matrixVisibleIds]);
+
   // Derived rather than defaulted via effect — falls back to the first role
   // until the admin explicitly picks one, with no synchronous setState needed.
   const selectedRole = roles.find((r) => r.id === selectedRoleId) ?? roles[0];
@@ -106,10 +130,15 @@ export default function DashboardWidgetsPage() {
     setRoleAllocation(roleId, toggleIds(effectiveAllocatedByRole[roleId] ?? [], [widgetId], next));
   }
 
+  // Scoped to the roles the matrix currently shows, not every role in the
+  // tenant — otherwise the "all on" state the toggle reads (also computed
+  // from the visible set) could silently bulk-edit roles the admin can't
+  // currently see and hasn't verified.
   function handleToggleWidgetForAllRoles(widgetId: string, next: boolean) {
+    const visibleEditableRoles = matrixRoles.filter((r) => !r.locked);
     setStaged((prev) => {
       const updated = { ...prev };
-      for (const role of editableRoles) {
+      for (const role of visibleEditableRoles) {
         const current = prev[role.id] ?? originalAllocatedByRoleId[role.id] ?? [];
         updated[role.id] = toggleIds(current, [widgetId], next);
       }
@@ -283,14 +312,24 @@ export default function DashboardWidgetsPage() {
         )}
 
         {!isLoading && roles.length > 0 && viewMode === "matrix" && (
-          <WidgetAllocationMatrix
-            catalog={catalog}
-            roles={roles}
-            allocatedIdsByRole={effectiveAllocatedByRole}
-            onToggleCell={handleToggleCell}
-            onToggleWidgetForAllRoles={handleToggleWidgetForAllRoles}
-            onToggleCategoryForRole={handleToggleCategoryForRole}
-          />
+          <div className="space-y-4">
+            {matrixNeedsPicker && (
+              <RoleColumnPicker
+                roles={editableRoles.map((r) => ({ id: r.id, name: r.name }))}
+                selectedIds={matrixVisibleIds}
+                onChange={setMatrixVisibleRoleIds}
+                onReset={() => setMatrixVisibleRoleIds(null)}
+              />
+            )}
+            <WidgetAllocationMatrix
+              catalog={catalog}
+              roles={matrixRoles}
+              allocatedIdsByRole={effectiveAllocatedByRole}
+              onToggleCell={handleToggleCell}
+              onToggleWidgetForAllRoles={handleToggleWidgetForAllRoles}
+              onToggleCategoryForRole={handleToggleCategoryForRole}
+            />
+          </div>
         )}
       </div>
     </div>
