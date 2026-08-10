@@ -5,11 +5,16 @@ import {
   effectiveRoleIds,
   getAllocatedWidgetIds,
   getVisibleWidgetIds,
+  toggleIds,
+  resolvePresetWidgetIds,
+  matchingPresetId,
+  dirtyRoleIds,
   isSuperAdminGrants,
   rankTopCustomers,
   bucketInvoicesByAge,
 } from './dashboardWidgets';
 import type { WidgetDefinition, RoleWidgetAllocation } from '@/types/dashboardWidgets';
+import type { WidgetPreset } from '@/config/dashboardWidgetPresets';
 
 const CATALOG: WidgetDefinition[] = [
   { id: 'a', title: 'A', description: '', category: 'core', size: 'full', defaultEnabled: true },
@@ -86,6 +91,75 @@ describe('getVisibleWidgetIds', () => {
     [[], ['a'], []],
   ])('is allocated minus hidden', (allocated, hidden, expected) => {
     expect(getVisibleWidgetIds(allocated, hidden)).toEqual(expected);
+  });
+});
+
+describe('toggleIds', () => {
+  it.each([
+    [['a'], ['b', 'c'], true, ['a', 'b', 'c']],
+    [['a', 'b'], ['b'], true, ['a', 'b']],
+    [['a', 'b', 'c'], ['b'], false, ['a', 'c']],
+    [['a'], ['b'], false, ['a']],
+  ])('adds or removes the given ids from the current set', (current, ids, next, expected) => {
+    expect(toggleIds(current, ids, next)).toEqual(expected);
+  });
+});
+
+describe('resolvePresetWidgetIds', () => {
+  it('resolves a category-list preset to the matching catalog ids', () => {
+    const preset: WidgetPreset = { id: 'essentials', label: 'Essentials', categories: ['core'] };
+    expect(resolvePresetWidgetIds(preset, CATALOG)).toEqual(['a', 'b']);
+  });
+
+  it('resolves a multi-category preset by unioning categories in catalog order', () => {
+    const preset: WidgetPreset = { id: 'sales-pack', label: 'Sales pack', categories: ['core', 'sales'] };
+    expect(resolvePresetWidgetIds(preset, CATALOG)).toEqual(['a', 'b', 'c']);
+  });
+
+  it("resolves 'all' to every catalog id", () => {
+    const preset: WidgetPreset = { id: 'everything', label: 'Everything', categories: 'all' };
+    expect(resolvePresetWidgetIds(preset, CATALOG)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('matchingPresetId', () => {
+  const presets: WidgetPreset[] = [
+    { id: 'essentials', label: 'Essentials', categories: ['core'] },
+    { id: 'everything', label: 'Everything', categories: 'all' },
+  ];
+
+  it('returns the id of the preset whose widget set exactly matches', () => {
+    expect(matchingPresetId(['a', 'b'], CATALOG, presets)).toBe('essentials');
+    expect(matchingPresetId(['a', 'b', 'c'], CATALOG, presets)).toBe('everything');
+  });
+
+  it('returns null when no preset matches exactly (superset, subset, or unrelated set)', () => {
+    expect(matchingPresetId(['a'], CATALOG, presets)).toBeNull();
+    expect(matchingPresetId(['a', 'b', 'c', 'd'], CATALOG, presets)).toBeNull();
+    expect(matchingPresetId([], CATALOG, presets)).toBeNull();
+  });
+});
+
+describe('dirtyRoleIds', () => {
+  const original: RoleWidgetAllocation[] = [
+    { roleId: 'sales-rep', allocated: ['a', 'b'] },
+    { roleId: 'accountant', allocated: ['b'] },
+  ];
+
+  it('excludes roles whose staged set matches the original, regardless of order', () => {
+    expect(dirtyRoleIds({ 'sales-rep': ['b', 'a'] }, original)).toEqual([]);
+  });
+
+  it('includes roles whose staged set differs', () => {
+    expect(dirtyRoleIds({ 'sales-rep': ['a'], accountant: ['b'] }, original)).toEqual(['sales-rep']);
+  });
+
+  it('treats a role with no prior allocation as dirty once anything is staged', () => {
+    expect(dirtyRoleIds({ 'new-role': ['a'] }, original)).toEqual(['new-role']);
+  });
+
+  it('returns [] when nothing is staged', () => {
+    expect(dirtyRoleIds({}, original)).toEqual([]);
   });
 });
 

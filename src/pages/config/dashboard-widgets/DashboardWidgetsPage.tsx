@@ -1,17 +1,31 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, LayoutList, Table2, Undo2 } from "lucide-react";
 import { rbacService } from "@/services/tenantServices";
 import { dashboardWidgetService } from "@/services/dashboardWidgetService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, EmptyState } from "@/components/tenant/ui";
-import { isSuperAdminGrants } from "@/lib/dashboardWidgets";
-import { WIDGET_CATEGORY_ORDER, WIDGET_CATEGORY_LABELS } from "@/config/dashboardWidgets";
+import { isSuperAdminGrants, dirtyRoleIds, toggleIds } from "@/lib/dashboardWidgets";
+import { cn } from "@/lib/utils";
 import type { RoleWidgetAllocation, WidgetDefinition } from "@/types/dashboardWidgets";
-import { WidgetAllocationCard } from "./components/WidgetAllocationCard";
+import { RoleRail } from "./components/RoleRail";
+import { RoleWidgetPanel } from "./components/RoleWidgetPanel";
+import { WidgetAllocationMatrix } from "./components/WidgetAllocationMatrix";
+
+type ViewMode = "role" | "matrix";
+
+// Local edits live here, keyed by roleId, until Save persists them. A role
+// only appears once the admin actually changes something — everything else
+// falls back to the persisted allocation, so dirtyRoleIds' equality check
+// naturally drops an entry the admin toggled back to its original state.
+type StagedAllocations = Record<string, string[]>;
 
 export default function DashboardWidgetsPage() {
   const queryClient = useQueryClient();
+  const [viewMode, setViewMode] = useState<ViewMode>("role");
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+  const [staged, setStaged] = useState<StagedAllocations>({});
+  const [undoSnapshot, setUndoSnapshot] = useState<RoleWidgetAllocation[] | null>(null);
 
   const rolesQ = useQuery({ queryKey: ["roles"], queryFn: rbacService.listRoles });
   const catalogQ = useQuery({
@@ -26,7 +40,7 @@ export default function DashboardWidgetsPage() {
     [rolesQ.data],
   );
   const roleIds = useMemo(() => roles.map((r) => r.id), [roles]);
-  const editableRoleIds = useMemo(() => roles.filter((r) => !r.locked).map((r) => r.id), [roles]);
+  const editableRoles = useMemo(() => roles.filter((r) => !r.locked), [roles]);
 
   const allocationsQ = useQuery({
     queryKey: ["dashboard-widget-role-allocations", roleIds],
@@ -35,18 +49,42 @@ export default function DashboardWidgetsPage() {
   });
 
   const allocations = useMemo(() => allocationsQ.data ?? [], [allocationsQ.data]);
-  const catalog: WidgetDefinition[] = catalogQ.data ?? [];
+  const catalog: WidgetDefinition[] = useMemo(() => catalogQ.data ?? [], [catalogQ.data]);
+  const catalogIds = useMemo(() => catalog.map((w) => w.id), [catalog]);
 
-  // widgetId -> ids of every role currently allocated that widget.
-  const assignedRoleIdsByWidget = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const allocation of allocations) {
-      for (const widgetId of allocation.allocated) {
-        map.set(widgetId, [...(map.get(widgetId) ?? []), allocation.roleId]);
-      }
-    }
+  const originalAllocatedByRoleId = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const a of allocations) map[a.roleId] = a.allocated;
     return map;
   }, [allocations]);
+
+  // What the admin currently sees/edits for every role — staged edit if any,
+  // otherwise the persisted allocation, otherwise (locked roles) everything.
+  const effectiveAllocatedByRole = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const role of roles) {
+      map[role.id] = role.locked ? catalogIds : staged[role.id] ?? originalAllocatedByRoleId[role.id] ?? [];
+    }
+    return map;
+  }, [roles, staged, originalAllocatedByRoleId, catalogIds]);
+
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const role of roles) map[role.id] = effectiveAllocatedByRole[role.id]?.length ?? 0;
+    return map;
+  }, [roles, effectiveAllocatedByRole]);
+
+  const dirty = useMemo(() => dirtyRoleIds(staged, allocations), [staged, allocations]);
+
+  // Derived rather than defaulted via effect — falls back to the first role
+  // until the admin explicitly picks one, with no synchronous setState needed.
+  const selectedRole = roles.find((r) => r.id === selectedRoleId) ?? roles[0];
+
+  useEffect(() => {
+    if (!undoSnapshot) return;
+    const t = setTimeout(() => setUndoSnapshot(null), 8000);
+    return () => clearTimeout(t);
+  }, [undoSnapshot]);
 
   function mergeAllocations(updated: RoleWidgetAllocation[]): void {
     queryClient.setQueryData<RoleWidgetAllocation[]>(["dashboard-widget-role-allocations", roleIds], (prev) => {
@@ -56,52 +94,155 @@ export default function DashboardWidgetsPage() {
     });
   }
 
-  const toggleMutation = useMutation({
-    mutationFn: ({ roleId, widgetId, next }: { roleId: string; widgetId: string; next: boolean }) => {
-      const current = allocations.find((a) => a.roleId === roleId)?.allocated ?? [];
-      const nextAllocated = next ? [...current, widgetId] : current.filter((id) => id !== widgetId);
-      return dashboardWidgetService.setRoleAllocation(roleId, nextAllocated);
+  function setRoleAllocation(roleId: string, nextIds: string[]) {
+    setStaged((prev) => ({ ...prev, [roleId]: nextIds }));
+  }
+
+  function handleCopyFrom(targetRoleId: string, sourceRoleId: string) {
+    setRoleAllocation(targetRoleId, [...(effectiveAllocatedByRole[sourceRoleId] ?? [])]);
+  }
+
+  function handleToggleCell(roleId: string, widgetId: string, next: boolean) {
+    setRoleAllocation(roleId, toggleIds(effectiveAllocatedByRole[roleId] ?? [], [widgetId], next));
+  }
+
+  function handleToggleWidgetForAllRoles(widgetId: string, next: boolean) {
+    setStaged((prev) => {
+      const updated = { ...prev };
+      for (const role of editableRoles) {
+        const current = prev[role.id] ?? originalAllocatedByRoleId[role.id] ?? [];
+        updated[role.id] = toggleIds(current, [widgetId], next);
+      }
+      return updated;
+    });
+  }
+
+  function handleToggleCategoryForRole(roleId: string, widgetIds: string[], next: boolean) {
+    setRoleAllocation(roleId, toggleIds(effectiveAllocatedByRole[roleId] ?? [], widgetIds, next));
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const snapshot = dirty.map((roleId) => ({
+        roleId,
+        allocated: originalAllocatedByRoleId[roleId] ?? [],
+      }));
+      const results = await Promise.all(
+        dirty.map((roleId) => dashboardWidgetService.setRoleAllocation(roleId, staged[roleId])),
+      );
+      return { results, snapshot };
     },
-    onSuccess: (updated) => mergeAllocations([updated]),
+    onSuccess: ({ results, snapshot }) => {
+      mergeAllocations(results);
+      setStaged({});
+      setUndoSnapshot(snapshot);
+    },
   });
 
-  // Assigns/clears one widget across every editable role in one action.
-  const toggleAllMutation = useMutation({
-    mutationFn: ({ widgetId, next }: { widgetId: string; next: boolean }) =>
-      Promise.all(
-        editableRoleIds.map((roleId) => {
-          const current = allocations.find((a) => a.roleId === roleId)?.allocated ?? [];
-          const nextAllocated = next ? [...current, widgetId] : current.filter((id) => id !== widgetId);
-          return dashboardWidgetService.setRoleAllocation(roleId, nextAllocated);
-        }),
-      ),
-    onSuccess: (updated) => mergeAllocations(updated),
+  const undoMutation = useMutation({
+    mutationFn: (snapshot: RoleWidgetAllocation[]) =>
+      Promise.all(snapshot.map((a) => dashboardWidgetService.setRoleAllocation(a.roleId, a.allocated))),
+    onSuccess: (results) => {
+      mergeAllocations(results);
+      setUndoSnapshot(null);
+    },
   });
-
-  function handleToggleRole(widgetId: string, roleId: string, next: boolean) {
-    toggleMutation.mutate({ roleId, widgetId, next });
-  }
-
-  function handleToggleAll(widgetId: string, next: boolean) {
-    toggleAllMutation.mutate({ widgetId, next });
-  }
 
   const isLoading = rolesQ.isLoading || catalogQ.isLoading || allocationsQ.isLoading;
 
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-background">
-      <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
-          <LayoutGrid className="size-6" />
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+            <LayoutGrid className="size-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-stone-900">Dashboard Widgets</h1>
+            <p className="text-sm text-stone-500">
+              Choose which roles can see each dashboard widget. Super admin roles always see everything.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Dashboard Widgets</h1>
-          <p className="text-sm text-stone-500">
-            Choose which roles can see each dashboard widget. Every user with a role sees what that
-            role is allocated. Super admin roles always see everything.
-          </p>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-stone-200 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("role")}
+              aria-pressed={viewMode === "role"}
+              aria-label="Role view"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors",
+                viewMode === "role" ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100",
+              )}
+            >
+              <LayoutList className="size-3.5" aria-hidden="true" />
+              Role view
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("matrix")}
+              aria-pressed={viewMode === "matrix"}
+              aria-label="Matrix view"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors",
+                viewMode === "matrix" ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100",
+              )}
+            >
+              <Table2 className="size-3.5" aria-hidden="true" />
+              Matrix view
+            </button>
+          </div>
+
+          {dirty.length > 0 && (
+            <>
+              <span className="text-xs font-medium text-stone-500">
+                {dirty.length} unsaved change{dirty.length !== 1 ? "s" : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => setStaged({})}
+                className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-stone-500 hover:bg-stone-100"
+              >
+                Discard
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => saveMutation.mutate()}
+            disabled={dirty.length === 0 || saveMutation.isPending}
+            aria-label="Save widget allocation changes"
+            className="rounded-md bg-brand-dark px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-stone-800 disabled:pointer-events-none disabled:opacity-40"
+          >
+            {saveMutation.isPending ? "Saving…" : "Save"}
+          </button>
         </div>
       </div>
+
+      {undoSnapshot && (
+        <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-brand/10 px-4 py-2 sm:px-6">
+          <p className="text-xs font-medium text-brand-dark">
+            Saved changes to {undoSnapshot.length} role{undoSnapshot.length !== 1 ? "s" : ""}.
+          </p>
+          <button
+            type="button"
+            onClick={() => undoMutation.mutate(undoSnapshot)}
+            disabled={undoMutation.isPending}
+            className="flex items-center gap-1 text-xs font-semibold text-brand-dark hover:underline disabled:pointer-events-none disabled:opacity-40"
+          >
+            <Undo2 className="size-3" aria-hidden="true" />
+            Undo
+          </button>
+        </div>
+      )}
+
+      {saveMutation.isError && (
+        <div className="border-b border-stone-100 px-4 py-2 sm:px-6">
+          <p className="text-xs text-red-500">{apiErrorMessage(saveMutation.error)}</p>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto modal-scrollbar p-4 sm:p-6">
         {isLoading && <Spinner label="Loading widget allocation…" />}
@@ -112,32 +253,44 @@ export default function DashboardWidgetsPage() {
           <EmptyState>No roles found. Create a role before allocating widgets.</EmptyState>
         )}
 
-        {!isLoading && roles.length > 0 && (
-          <div className="space-y-6">
-            {WIDGET_CATEGORY_ORDER.map((category) => {
-              const widgets = catalog.filter((w) => w.category === category);
-              if (widgets.length === 0) return null;
-              return (
-                <div key={category}>
-                  <h3 className="mb-2 text-2xs font-semibold uppercase tracking-[.09em] text-stone-500">
-                    {WIDGET_CATEGORY_LABELS[category]}
-                  </h3>
-                  <div className="space-y-2.5">
-                    {widgets.map((w) => (
-                      <WidgetAllocationCard
-                        key={w.id}
-                        widget={w}
-                        roles={roles}
-                        assignedRoleIds={assignedRoleIdsByWidget.get(w.id) ?? []}
-                        onToggleRole={(roleId, next) => handleToggleRole(w.id, roleId, next)}
-                        onToggleAll={(next) => handleToggleAll(w.id, next)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+        {!isLoading && roles.length > 0 && viewMode === "role" && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+            <aside className="lg:sticky lg:top-6 lg:self-start">
+              <RoleRail
+                roles={roles}
+                selectedRoleId={selectedRole?.id ?? ""}
+                onSelectRole={setSelectedRoleId}
+                counts={counts}
+                totalCount={catalog.length}
+                dirtyRoleIds={dirty}
+              />
+            </aside>
+            <section className="min-w-0">
+              {selectedRole && (
+                <RoleWidgetPanel
+                  role={selectedRole}
+                  catalog={catalog}
+                  allocatedIds={effectiveAllocatedByRole[selectedRole.id] ?? []}
+                  otherEditableRoles={editableRoles
+                    .filter((r) => r.id !== selectedRole.id)
+                    .map((r) => ({ id: r.id, name: r.name }))}
+                  onChange={(nextIds) => setRoleAllocation(selectedRole.id, nextIds)}
+                  onCopyFrom={(sourceRoleId) => handleCopyFrom(selectedRole.id, sourceRoleId)}
+                />
+              )}
+            </section>
           </div>
+        )}
+
+        {!isLoading && roles.length > 0 && viewMode === "matrix" && (
+          <WidgetAllocationMatrix
+            catalog={catalog}
+            roles={roles}
+            allocatedIdsByRole={effectiveAllocatedByRole}
+            onToggleCell={handleToggleCell}
+            onToggleWidgetForAllRoles={handleToggleWidgetForAllRoles}
+            onToggleCategoryForRole={handleToggleCategoryForRole}
+          />
         )}
       </div>
     </div>
