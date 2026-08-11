@@ -1,12 +1,13 @@
 import type { RoleWidgetAllocation, UserWidgetPreference, WidgetDefinition } from '@/types/dashboardWidgets';
 import { WIDGET_CATALOG } from '@/config/dashboardWidgets';
-import { createDefaultRoleAllocation } from '@/lib/dashboardWidgets';
+import { tenantClient } from '@/api/tenantClient';
 
-// No backend for this feature yet. Allocation (by role) and preference (by
-// user) are mocked via localStorage behind the same Promise-returning shape
-// as a real *Service.ts — swapping in a real endpoint later only touches
-// this file, not any calling page.
-const ALLOCATION_STORAGE_KEY = 'stonesuite:dashboard-widget-role-allocations';
+// Widget catalog (title/description/size/category, used for rendering) has
+// no backend endpoint -- it's a static frontend concern. Role allocation and
+// the caller's own resolved set are real API calls; preference (per-user
+// show/hide) still has no backend endpoint, so it stays mocked via
+// localStorage behind the same Promise-returning shape as the rest of this
+// service.
 const PREFERENCE_STORAGE_KEY = 'stonesuite:dashboard-widget-preferences';
 
 function readJson<T>(key: string, fallback: T): T {
@@ -30,38 +31,47 @@ function writeJson<T>(key: string, value: T): void {
   }
 }
 
-type AllocationStore = Record<string, RoleWidgetAllocation>; // keyed by roleId
 type PreferenceStore = Record<string, UserWidgetPreference>; // keyed by userId
+
+// Wire shape from the backend (dashboardui.RoleAllocation) — widgetIds, not
+// allocated. Mapped to the frontend's RoleWidgetAllocation at this service
+// boundary so every caller keeps using the existing field name.
+interface RoleAllocationWire {
+  roleId: string;
+  widgetIds: string[];
+}
+
+function toRoleAllocation(wire: RoleAllocationWire): RoleWidgetAllocation {
+  return { roleId: wire.roleId, allocated: wire.widgetIds };
+}
 
 export const dashboardWidgetService = {
   getCatalog: (): Promise<WidgetDefinition[]> => Promise.resolve(WIDGET_CATALOG),
 
-  // Returns each given role's allocation, seeding catalog defaults for any
-  // role that hasn't been configured yet (e.g. a role created after this
-  // feature shipped).
-  getRoleAllocations: (roleIds: string[]): Promise<RoleWidgetAllocation[]> => {
-    const store = readJson<AllocationStore>(ALLOCATION_STORAGE_KEY, {});
-    let dirty = false;
-    const result = roleIds.map((roleId) => {
-      const existing = store[roleId];
-      if (existing) return existing;
-      dirty = true;
-      const seeded = createDefaultRoleAllocation(roleId, WIDGET_CATALOG);
-      store[roleId] = seeded;
-      return seeded;
-    });
-    if (dirty) writeJson(ALLOCATION_STORAGE_KEY, store);
-    return Promise.resolve(result);
-  },
+  // Admin allocation page — every role's widget allocation. A role with no
+  // saved configuration comes back already seeded to the catalog defaults
+  // (resolved server-side, not persisted until the admin actually saves).
+  getRoleAllocations: (): Promise<RoleWidgetAllocation[]> =>
+    tenantClient
+      .get<{ success: boolean; allocations: RoleAllocationWire[] }>('/tenant/dashboard/widgets/roles')
+      .then((r) => (r.data.allocations ?? []).map(toRoleAllocation)),
 
-  // Admin action — grants/revokes which widgets every member of a role may see.
-  setRoleAllocation: (roleId: string, widgetIds: string[]): Promise<RoleWidgetAllocation> => {
-    const store = readJson<AllocationStore>(ALLOCATION_STORAGE_KEY, {});
-    const updated: RoleWidgetAllocation = { roleId, allocated: widgetIds };
-    store[roleId] = updated;
-    writeJson(ALLOCATION_STORAGE_KEY, store);
-    return Promise.resolve(updated);
-  },
+  // Admin action — batch-writes every given role's allocation in one atomic
+  // request; a partial failure leaves every role's saved allocation untouched.
+  setRoleAllocations: (allocations: RoleWidgetAllocation[]): Promise<RoleWidgetAllocation[]> =>
+    tenantClient
+      .put<{ success: boolean; allocations: RoleAllocationWire[] }>('/tenant/dashboard/widgets/roles', {
+        allocations: allocations.map((a) => ({ roleId: a.roleId, widgetIds: a.allocated })),
+      })
+      .then((r) => (r.data.allocations ?? []).map(toRoleAllocation)),
+
+  // End-user's own dashboard — resolved server-side from their assigned
+  // role(s) (narrowed to the active role if one is set), or every widget if
+  // any of their grants is the wildcard (super admin) grant.
+  getMyAllocation: (): Promise<string[]> =>
+    tenantClient
+      .get<{ success: boolean; widgetIds: string[] }>('/tenant/dashboard/widgets/me')
+      .then((r) => r.data.widgetIds ?? []),
 
   getPreference: (userId: string): Promise<UserWidgetPreference> => {
     const store = readJson<PreferenceStore>(PREFERENCE_STORAGE_KEY, {});

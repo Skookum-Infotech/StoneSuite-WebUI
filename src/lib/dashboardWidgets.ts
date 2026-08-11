@@ -1,43 +1,54 @@
 import type { RoleWidgetAllocation, WidgetDefinition } from '@/types/dashboardWidgets';
-
-export function getDefaultWidgetIds(catalog: WidgetDefinition[]): string[] {
-  return catalog.filter((w) => w.defaultEnabled).map((w) => w.id);
-}
-
-export function createDefaultRoleAllocation(
-  roleId: string,
-  catalog: WidgetDefinition[],
-): RoleWidgetAllocation {
-  return { roleId, allocated: getDefaultWidgetIds(catalog) };
-}
-
-// No active role selected (activeRoleId === '') means every assigned role's
-// allocation applies, unioned — mirrors rbacService.myPermissions()'s
-// activeRoleId semantics, so the dashboard always matches what the user can
-// currently do. A non-empty activeRoleId narrows to just that one role.
-export function effectiveRoleIds(userRoleIds: string[], activeRoleId: string): string[] {
-  return activeRoleId ? [activeRoleId] : userRoleIds;
-}
-
-export function getAllocatedWidgetIds(
-  roleAllocations: RoleWidgetAllocation[],
-  userRoleIds: string[],
-  activeRoleId: string,
-): string[] {
-  const roleIds = effectiveRoleIds(userRoleIds, activeRoleId);
-  const allocated = new Set<string>();
-  for (const allocation of roleAllocations) {
-    if (roleIds.includes(allocation.roleId)) {
-      allocation.allocated.forEach((id) => allocated.add(id));
-    }
-  }
-  return [...allocated];
-}
+import type { WidgetPreset, WidgetPresetId } from '@/config/dashboardWidgetPresets';
 
 // hidden is opt-out, so a widget newly granted to a role appears immediately
 // for everyone with that role without each user revisiting Customize.
 export function getVisibleWidgetIds(allocatedIds: string[], hidden: string[]): string[] {
   return allocatedIds.filter((id) => !hidden.includes(id));
+}
+
+// Adds/removes a batch of ids from a set in one step — shared by single-widget
+// toggles, category header toggles, and matrix row/column toggle-alls.
+export function toggleIds(currentIds: string[], ids: string[], next: boolean): string[] {
+  if (next) return [...new Set([...currentIds, ...ids])];
+  const remove = new Set(ids);
+  return currentIds.filter((id) => !remove.has(id));
+}
+
+export function resolvePresetWidgetIds(preset: WidgetPreset, catalog: WidgetDefinition[]): string[] {
+  if (preset.categories === 'all') return catalog.map((w) => w.id);
+  return catalog.filter((w) => preset.categories.includes(w.category)).map((w) => w.id);
+}
+
+// Which preset (if any) exactly matches a role's currently allocated widgets,
+// so the UI can highlight it as active rather than just offering it as an action.
+export function matchingPresetId(
+  allocatedIds: string[],
+  catalog: WidgetDefinition[],
+  presets: WidgetPreset[],
+): WidgetPresetId | null {
+  const allocatedSet = new Set(allocatedIds);
+  for (const preset of presets) {
+    const presetIds = resolvePresetWidgetIds(preset, catalog);
+    if (presetIds.length === allocatedSet.size && presetIds.every((id) => allocatedSet.has(id))) {
+      return preset.id;
+    }
+  }
+  return null;
+}
+
+// Role ids whose staged allocation differs from what's currently persisted —
+// drives the dirty count and which roles Save actually writes.
+export function dirtyRoleIds(
+  staged: Record<string, string[]>,
+  original: RoleWidgetAllocation[],
+): string[] {
+  const originalByRole = new Map(original.map((a) => [a.roleId, a.allocated]));
+  return Object.keys(staged).filter((roleId) => {
+    const orig = originalByRole.get(roleId) ?? [];
+    const next = staged[roleId];
+    return orig.length !== next.length || !orig.every((id) => next.includes(id));
+  });
 }
 
 // Matches the wildcard-grant convention used elsewhere (e.g.
