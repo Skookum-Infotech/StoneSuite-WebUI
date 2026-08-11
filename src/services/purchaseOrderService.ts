@@ -7,6 +7,7 @@ import type {
   PurchaseOrderSearchRequest,
   PurchaseOrderPage,
 } from '@/types/purchaseOrder';
+import type { VendorBill } from '@/types/vendorBill';
 
 // Purchase Order API wrapper. Talks to the dedicated relational module under
 // `/api/tenant/purchase-orders*` (NOT the generic `/api/tenant/crm/*` JSONB
@@ -73,4 +74,15 @@ export const purchaseOrderService = {
     tenantClient
       .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(`${BASE}/${uuid}/audit`)
       .then((r) => r.data.audit ?? []),
+
+  // Creates a Vendor Bill as a snapshot copy of this received purchase order
+  // (backend: purchaseorder_convert.go's ConvertToBill). Requires
+  // purchase_order:read on the source (IDOR-guarded) and vendor_bill:create
+  // on the target. NOT idempotent — a PO may be billed more than once
+  // (installment billing), so every call creates a new bill; `created` is
+  // always true.
+  convertToBill: (uuid: string): Promise<VendorBill> =>
+    tenantClient
+      .post<{ success: boolean; vendorBill: VendorBill; created: boolean }>(`${BASE}/${uuid}/convert-to-bill`, {})
+      .then((r) => r.data.vendorBill),
 };
