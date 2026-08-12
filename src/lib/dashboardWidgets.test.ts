@@ -1,14 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getDefaultWidgetIds,
-  createDefaultSettings,
-  applyAllocation,
-  applyPreference,
   getVisibleWidgetIds,
+  toggleIds,
+  resolvePresetWidgetIds,
+  matchingPresetId,
+  dirtyRoleIds,
+  isSuperAdminGrants,
   rankTopCustomers,
   bucketInvoicesByAge,
 } from './dashboardWidgets';
-import type { WidgetDefinition, UserWidgetSettings } from '@/types/dashboardWidgets';
+import type { WidgetDefinition, RoleWidgetAllocation } from '@/types/dashboardWidgets';
+import type { WidgetPreset } from '@/config/dashboardWidgetPresets';
 
 const CATALOG: WidgetDefinition[] = [
   { id: 'a', title: 'A', description: '', category: 'core', size: 'full', defaultEnabled: true },
@@ -16,67 +18,95 @@ const CATALOG: WidgetDefinition[] = [
   { id: 'c', title: 'C', description: '', category: 'sales', size: 'half', defaultEnabled: false },
 ];
 
-describe('getDefaultWidgetIds', () => {
-  it.each([
-    [CATALOG, ['a', 'b']],
-    [[], []],
-  ])('returns the ids marked defaultEnabled', (catalog, expected) => {
-    expect(getDefaultWidgetIds(catalog)).toEqual(expected);
-  });
-});
-
-describe('createDefaultSettings', () => {
-  it('seeds a new user with the catalog defaults as both allocated and enabled', () => {
-    expect(createDefaultSettings('u1', CATALOG)).toEqual({
-      userId: 'u1',
-      allocated: ['a', 'b'],
-      enabled: ['a', 'b'],
-    });
-  });
-});
-
-describe('applyAllocation', () => {
-  const base: UserWidgetSettings = { userId: 'u1', allocated: ['a', 'b'], enabled: ['a'] };
-
-  it('replaces the allocated list with the given ids', () => {
-    expect(applyAllocation(base, ['a', 'c']).allocated).toEqual(['a', 'c']);
-  });
-
-  it('auto-enables a newly allocated widget so it shows up immediately', () => {
-    const result = applyAllocation(base, ['a', 'b', 'c']);
-    expect(result.enabled).toEqual(['a', 'c']);
-  });
-
-  it('does not change enabled for a widget that was already allocated', () => {
-    const result = applyAllocation(base, ['a', 'b']);
-    expect(result.enabled).toEqual(['a']);
-  });
-
-  it('leaves enabled untouched when revoking allocation', () => {
-    const result = applyAllocation(base, ['a']);
-    expect(result.enabled).toEqual(['a']);
-  });
-});
-
-describe('applyPreference', () => {
-  const base: UserWidgetSettings = { userId: 'u1', allocated: ['a', 'b'], enabled: ['a'] };
-
-  it('sets enabled to the given ids', () => {
-    expect(applyPreference(base, ['a', 'b']).enabled).toEqual(['a', 'b']);
-  });
-
-  it('ignores ids the user is not allocated', () => {
-    expect(applyPreference(base, ['a', 'c']).enabled).toEqual(['a']);
-  });
-});
-
 describe('getVisibleWidgetIds', () => {
   it.each([
-    [{ userId: 'u1', allocated: ['a', 'b'], enabled: ['a'] }, ['a']],
-    [{ userId: 'u1', allocated: [], enabled: ['a'] }, []],
-    [{ userId: 'u1', allocated: ['a'], enabled: [] }, []],
-  ])('is the intersection of allocated and enabled', (settings, expected) => {
-    expect(getVisibleWidgetIds(settings as UserWidgetSettings)).toEqual(expected);
+    [['a', 'b'], ['a'], ['b']],
+    [['a', 'b'], [], ['a', 'b']],
+    [['a'], ['a'], []],
+    [[], ['a'], []],
+  ])('is allocated minus hidden', (allocated, hidden, expected) => {
+    expect(getVisibleWidgetIds(allocated, hidden)).toEqual(expected);
+  });
+});
+
+describe('toggleIds', () => {
+  it.each([
+    [['a'], ['b', 'c'], true, ['a', 'b', 'c']],
+    [['a', 'b'], ['b'], true, ['a', 'b']],
+    [['a', 'b', 'c'], ['b'], false, ['a', 'c']],
+    [['a'], ['b'], false, ['a']],
+  ])('adds or removes the given ids from the current set', (current, ids, next, expected) => {
+    expect(toggleIds(current, ids, next)).toEqual(expected);
+  });
+});
+
+describe('resolvePresetWidgetIds', () => {
+  it('resolves a category-list preset to the matching catalog ids', () => {
+    const preset: WidgetPreset = { id: 'essentials', label: 'Essentials', categories: ['core'] };
+    expect(resolvePresetWidgetIds(preset, CATALOG)).toEqual(['a', 'b']);
+  });
+
+  it('resolves a multi-category preset by unioning categories in catalog order', () => {
+    const preset: WidgetPreset = { id: 'sales-pack', label: 'Sales pack', categories: ['core', 'sales'] };
+    expect(resolvePresetWidgetIds(preset, CATALOG)).toEqual(['a', 'b', 'c']);
+  });
+
+  it("resolves 'all' to every catalog id", () => {
+    const preset: WidgetPreset = { id: 'everything', label: 'Everything', categories: 'all' };
+    expect(resolvePresetWidgetIds(preset, CATALOG)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('matchingPresetId', () => {
+  const presets: WidgetPreset[] = [
+    { id: 'essentials', label: 'Essentials', categories: ['core'] },
+    { id: 'everything', label: 'Everything', categories: 'all' },
+  ];
+
+  it('returns the id of the preset whose widget set exactly matches', () => {
+    expect(matchingPresetId(['a', 'b'], CATALOG, presets)).toBe('essentials');
+    expect(matchingPresetId(['a', 'b', 'c'], CATALOG, presets)).toBe('everything');
+  });
+
+  it('returns null when no preset matches exactly (superset, subset, or unrelated set)', () => {
+    expect(matchingPresetId(['a'], CATALOG, presets)).toBeNull();
+    expect(matchingPresetId(['a', 'b', 'c', 'd'], CATALOG, presets)).toBeNull();
+    expect(matchingPresetId([], CATALOG, presets)).toBeNull();
+  });
+});
+
+describe('dirtyRoleIds', () => {
+  const original: RoleWidgetAllocation[] = [
+    { roleId: 'sales-rep', allocated: ['a', 'b'] },
+    { roleId: 'accountant', allocated: ['b'] },
+  ];
+
+  it('excludes roles whose staged set matches the original, regardless of order', () => {
+    expect(dirtyRoleIds({ 'sales-rep': ['b', 'a'] }, original)).toEqual([]);
+  });
+
+  it('includes roles whose staged set differs', () => {
+    expect(dirtyRoleIds({ 'sales-rep': ['a'], accountant: ['b'] }, original)).toEqual(['sales-rep']);
+  });
+
+  it('treats a role with no prior allocation as dirty once anything is staged', () => {
+    expect(dirtyRoleIds({ 'new-role': ['a'] }, original)).toEqual(['new-role']);
+  });
+
+  it('returns [] when nothing is staged', () => {
+    expect(dirtyRoleIds({}, original)).toEqual([]);
+  });
+});
+
+describe('isSuperAdminGrants', () => {
+  it.each([
+    [[{ resource: '*', action: '*' }], true],
+    [[{ resource: 'lead', action: '*' }], false],
+    [[{ resource: '*', action: 'read' }], false],
+    [[{ resource: 'lead', action: 'read' }, { resource: '*', action: '*' }], true],
+    [[], false],
+  ])('is true only when a grant has both resource and action wildcarded', (grants, expected) => {
+    expect(isSuperAdminGrants(grants)).toBe(expected);
   });
 });
 

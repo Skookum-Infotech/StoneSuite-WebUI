@@ -30,6 +30,7 @@ const ForgotPasswordPage = lazyWithRetry(
   () => import("@/pages/auth/ForgotPasswordPage"),
 );
 const ResetPasswordPage = lazyWithRetry(() => import("@/pages/auth/ResetPasswordPage"));
+const SsoCallbackPage = lazyWithRetry(() => import("@/pages/auth/SsoCallbackPage"));
 const DashboardPage = lazyWithRetry(() => import("@/pages/dashboard/DashboardPage"));
 const OnboardingPage = lazyWithRetry(() => import("@/pages/customer/OnboardingPage"));
 const AddCustomerPage = lazyWithRetry(() => import("@/pages/customer/AddCustomerPage"));
@@ -88,8 +89,14 @@ const DashboardWidgetsPage = lazyWithRetry(
 const AuditLogPage = lazyWithRetry(
   () => import("@/pages/config/audit/AuditLogPage"),
 );
-const SsoConfigPage = lazyWithRetry(
-  () => import("@/pages/config/authentication/SsoConfigPage"),
+const SamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/SamlSetupPage"),
+);
+const CognitoSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/CognitoSamlSetupPage"),
+);
+const EntraSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/EntraSamlSetupPage"),
 );
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
@@ -232,6 +239,18 @@ const ItemReceiptDetailPage = lazyWithRetry(
 );
 const EditItemReceiptPage = lazyWithRetry(
   () => import("@/pages/purchases/item-receipt/EditItemReceiptPage"),
+);
+const VendorBillListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/VendorBillListPage"),
+);
+const AddVendorBillPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/AddVendorBillPage"),
+);
+const VendorBillDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/VendorBillDetailPage"),
+);
+const EditVendorBillPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/EditVendorBillPage"),
 );
 // Inventory module
 const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
@@ -828,6 +847,40 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Vendor Bills (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_bill",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="read">
+            <VendorBillListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="create">
+            <AddVendorBillPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="read">
+            <VendorBillDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="update">
+            <EditVendorBillPage />
+          </PermissionGuard>,
+        ),
+      },
+
       // Finance: Journal Entries (specific routes must come before any future catch-all)
       {
         path: "finance/journal-entries",
@@ -1173,10 +1226,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "config/authentication",
+        path: "config/saml-setup",
         element: lazy_(
           <PermissionGuard resource="sso_config" action="read">
-            <SsoConfigPage />
+            <SamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/cognito",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <CognitoSamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/entra",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <EntraSamlSetupPage />
           </PermissionGuard>,
         ),
       },
@@ -1207,6 +1276,7 @@ export const router = createBrowserRouter([
       { path: "login", element: lazy_(<LoginPage />) },
       { path: "forgot-password", element: lazy_(<ForgotPasswordPage />) },
       { path: "reset-password", element: lazy_(<ResetPasswordPage />) },
+      { path: "sso/callback", element: lazy_(<SsoCallbackPage />) },
     ],
   },
   {

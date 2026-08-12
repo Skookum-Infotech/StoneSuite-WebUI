@@ -242,43 +242,85 @@ export interface WorkflowNumberingConfig {
 }
 
 // ── SSO configuration (Configuration → Authentication) ───────────────────────
-// Configuration only — no login flow yet. client_secret is write-only and
-// never appears on SSOConfig (the read model).
+// A config is one of two protocols. client_secret (oidc) and the IdP
+// certificate (saml) are write-only and never appear on the read model —
+// saml exposes only a certificateFingerprint. SAML login is fully wired
+// (see samlAuthService); OIDC remains configuration-only, no login flow.
 
+export type SSOProtocol = 'oidc' | 'saml';
 export type SSOProvider = 'entra' | 'cognito' | 'okta';
+// Backend's samlProviders whitelist (controllers/sso.go) — protocol=saml
+// only supports these two; okta SAML is rejected with 400.
+export type SAMLProvider = 'entra' | 'cognito';
 
-export interface SSOConfig {
+interface SSOConfigBase {
   id: string;
   tenantId: string;
   provider: SSOProvider;
-  clientId: string;
-  issuer: string;
-  redirectUri: string;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface SSOConfigCreatePayload {
-  provider: SSOProvider;
+export interface OIDCConfig extends SSOConfigBase {
+  protocol: 'oidc';
   clientId: string;
-  clientSecret: string;
-  issuer?: string;
-  redirectUri?: string;
-  enabled: boolean;
+  issuer: string;
+  redirectUri: string;
 }
 
-// Full-replace on PUT: provider/clientId are re-sent every time. clientSecret
-// omitted (or empty) keeps the stored value — the server never returns it, so
-// there is nothing to prefill and no way to tell client-side whether it's set.
-export interface SSOConfigUpdatePayload {
-  provider: SSOProvider;
-  clientId: string;
-  clientSecret?: string;
-  issuer?: string;
-  redirectUri?: string;
-  enabled: boolean;
+export interface SAMLConfig extends SSOConfigBase {
+  protocol: 'saml';
+  provider: SAMLProvider;
+  metadataUrl: string;
+  idpEntityId: string;
+  ssoUrl: string;
+  sloUrl: string;
+  certificateFingerprint: string;
+  nameIdFormat: string;
+  metadataFetchedAt: string | null;
 }
+
+export type SSOConfig = OIDCConfig | SAMLConfig;
+
+export type SSOConfigCreatePayload =
+  | {
+      protocol: 'oidc';
+      provider: SSOProvider;
+      clientId: string;
+      clientSecret: string;
+      issuer?: string;
+      redirectUri?: string;
+      enabled: boolean;
+    }
+  | {
+      protocol: 'saml';
+      provider: SAMLProvider;
+      metadataUrl: string;
+      enabled: boolean;
+    };
+
+// Full-replace on PUT: provider (and metadataUrl for saml) are re-sent every
+// time. oidc's clientSecret omitted (or empty) keeps the stored value — the
+// server never returns it, so there is nothing to prefill and no way to tell
+// client-side whether it's set. saml has no client secret to preserve, but
+// metadata_url is always re-fetched server-side on every update regardless.
+export type SSOConfigUpdatePayload =
+  | {
+      protocol: 'oidc';
+      provider: SSOProvider;
+      clientId: string;
+      clientSecret?: string;
+      issuer?: string;
+      redirectUri?: string;
+      enabled: boolean;
+    }
+  | {
+      protocol: 'saml';
+      provider: SAMLProvider;
+      metadataUrl: string;
+      enabled: boolean;
+    };
 
 export interface StatusInfo {
   stateId: string;

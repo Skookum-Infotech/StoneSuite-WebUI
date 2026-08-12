@@ -80,34 +80,41 @@ export default function DashboardPage() {
     queryKey: ['dashboard-widget-catalog'],
     queryFn: dashboardWidgetService.getCatalog,
   });
-  const settingsQ = useQuery({
-    queryKey: ['dashboard-widget-settings', userId],
-    queryFn: () => dashboardWidgetService.getSettings(userId as string),
+  // Resolved server-side from the caller's assigned role(s) (narrowed to the
+  // active role if switched), or every widget if they hold a wildcard grant
+  // — no client-side union or super-admin inference needed any more.
+  const allocationQ = useQuery({
+    queryKey: ['dashboard-widget-my-allocation'],
+    queryFn: dashboardWidgetService.getMyAllocation,
+  });
+  const preferenceQ = useQuery({
+    queryKey: ['dashboard-widget-preference', userId],
+    queryFn: () => dashboardWidgetService.getPreference(userId as string),
     enabled: Boolean(userId),
   });
 
   const preferenceMutation = useMutation({
-    mutationFn: (widgetIds: string[]) => dashboardWidgetService.setPreference(userId as string, widgetIds),
+    mutationFn: (hiddenIds: string[]) => dashboardWidgetService.setPreference(userId as string, hiddenIds),
     onSuccess: (updated) => {
-      queryClient.setQueryData(['dashboard-widget-settings', userId], updated);
+      queryClient.setQueryData(['dashboard-widget-preference', userId], updated);
     },
   });
 
-  const settings = settingsQ.data;
+  const preference = preferenceQ.data;
   const catalog: WidgetDefinition[] = catalogQ.data ?? [];
-  const isLoading = catalogQ.isLoading || settingsQ.isLoading || !settings;
+  const isLoading = catalogQ.isLoading || allocationQ.isLoading || preferenceQ.isLoading || !preference;
 
-  const visibleWidgets = settings
-    ? catalog.filter((w) => getVisibleWidgetIds(settings).includes(w.id))
-    : [];
-  const allocatedWidgets = settings ? catalog.filter((w) => settings.allocated.includes(w.id)) : [];
+  const allocatedWidgetIds = allocationQ.data ?? [];
+  const visibleWidgetIds = preference ? getVisibleWidgetIds(allocatedWidgetIds, preference.hidden) : [];
+  const visibleWidgets = catalog.filter((w) => visibleWidgetIds.includes(w.id));
+  const allocatedWidgets = catalog.filter((w) => allocatedWidgetIds.includes(w.id));
 
   function handleTogglePreference(widgetId: string, next: boolean) {
-    if (!settings) return;
-    const nextEnabled = next
-      ? [...settings.enabled, widgetId]
-      : settings.enabled.filter((id) => id !== widgetId);
-    preferenceMutation.mutate(nextEnabled);
+    if (!preference) return;
+    const nextHidden = next
+      ? preference.hidden.filter((id) => id !== widgetId) // next=true means "show"
+      : [...preference.hidden, widgetId]; // next=false means "hide"
+    preferenceMutation.mutate(nextHidden);
   }
 
   return (
@@ -117,10 +124,10 @@ export default function DashboardPage() {
 
         {isLoading && <Spinner label="Loading dashboard…" />}
 
-        {!isLoading && settings && visibleWidgets.length === 0 && (
+        {!isLoading && visibleWidgets.length === 0 && (
           <EmptyState>
-            {settings.allocated.length === 0
-              ? 'Ask your admin to allocate dashboard widgets for your account.'
+            {allocatedWidgetIds.length === 0
+              ? 'Ask your admin to allocate dashboard widgets to your role.'
               : 'All your widgets are hidden. Click Customize to turn some on.'}
           </EmptyState>
         )}
@@ -136,10 +143,10 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {showCustomize && settings && (
+      {showCustomize && preference && (
         <CustomizePanel
           widgets={allocatedWidgets}
-          enabledIds={settings.enabled}
+          enabledIds={visibleWidgetIds}
           onToggle={handleTogglePreference}
           onClose={() => setShowCustomize(false)}
         />

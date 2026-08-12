@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AxiosError } from 'axios'
-import { isHttpUrl, ssoConfigSchema, ssoConfigErrorMessage } from './ssoConfigForm'
+import { isHttpUrl, ssoConfigSchema, samlConfigSchema, ssoConfigErrorMessage } from './ssoConfigForm'
 
 describe('isHttpUrl', () => {
   it.each([
@@ -45,6 +45,33 @@ describe('ssoConfigSchema', () => {
   })
 })
 
+describe('samlConfigSchema', () => {
+  const base = { provider: 'entra' as const, enabled: true }
+
+  it.each([
+    ['https://idp.example.com/metadata', true],
+    ['http://idp.example.com/metadata', false], // must be https, not just http(s)
+    ['', false],
+    ['not-a-url', false],
+    ['https://', false],
+  ])('metadataUrl %p -> valid=%p', (metadataUrl, expected) => {
+    const result = samlConfigSchema().safeParse({ ...base, metadataUrl })
+    expect(result.success).toBe(expected)
+  })
+
+  it('accepts entra and cognito but rejects okta (backend samlProviders whitelist)', () => {
+    const withProvider = (provider: string) =>
+      samlConfigSchema().safeParse({
+        provider,
+        metadataUrl: 'https://idp.example.com/metadata',
+        enabled: true,
+      })
+    expect(withProvider('entra').success).toBe(true)
+    expect(withProvider('cognito').success).toBe(true)
+    expect(withProvider('okta').success).toBe(false)
+  })
+})
+
 describe('ssoConfigErrorMessage', () => {
   it('overrides 503 with an admin-contact message', () => {
     const err = new AxiosError('fail', undefined, undefined, undefined, {
@@ -56,12 +83,30 @@ describe('ssoConfigErrorMessage', () => {
     )
   })
 
-  it('passes through the backend message for other errors', () => {
+  it('overrides 502 with a metadata-fetch-failure message (saml only)', () => {
+    const err = new AxiosError('fail', undefined, undefined, undefined, {
+      status: 502,
+      data: { message: 'Could not fetch or parse identity provider metadata: dial tcp: timeout' },
+    } as never)
+    expect(ssoConfigErrorMessage(err)).toBe(
+      "Couldn't reach or parse that identity provider's metadata document. Double-check the URL and try again.",
+    )
+  })
+
+  it('overrides 409 with a duplicate-provider message', () => {
     const err = new AxiosError('fail', undefined, undefined, undefined, {
       status: 409,
       data: { message: 'An SSO configuration for this provider already exists.' },
     } as never)
-    expect(ssoConfigErrorMessage(err)).toBe('An SSO configuration for this provider already exists.')
+    expect(ssoConfigErrorMessage(err)).toBe('A configuration for this provider already exists.')
+  })
+
+  it('passes through the backend message for other errors', () => {
+    const err = new AxiosError('fail', undefined, undefined, undefined, {
+      status: 400,
+      data: { message: 'metadata_url is required for protocol=saml.' },
+    } as never)
+    expect(ssoConfigErrorMessage(err)).toBe('metadata_url is required for protocol=saml.')
   })
 
   it('falls back for non-axios errors', () => {
