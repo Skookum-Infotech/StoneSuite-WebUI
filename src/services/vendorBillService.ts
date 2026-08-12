@@ -6,8 +6,7 @@ import type {
   UpdateVendorBillPayload,
   VendorBillSearchRequest,
   VendorBillPage,
-  VendorBillPayment,
-  RecordVendorBillPaymentPayload,
+  VendorBillPaymentLedger,
 } from '@/types/vendorBill';
 
 // Vendor Bill API wrapper. Talks to the dedicated relational module under
@@ -63,33 +62,19 @@ export const vendorBillService = {
       )
       .then((r) => r.data.vendorBill),
 
-  // Records one configured approver's sign-off on the bill's current status
-  // (AD-6). Rejected with 409 if the status has no approvers configured, or
-  // 403 if the caller isn't one of them.
-  approve: (uuid: string): Promise<VendorBill> =>
+  // AP reconciliation view: every live vendor payment application and refund
+  // against this bill. Read-only by design — a bill no longer owns a
+  // settlement ledger, so recording or reversing money happens on the Vendor
+  // Payment side (`vendorPaymentService.apply` / `.unapply`), which recomputes
+  // this bill's amount_paid/balance_due as a side effect.
+  getPayments: (uuid: string): Promise<VendorBillPaymentLedger> =>
     tenantClient
-      .post<{ success: boolean; vendorBill: VendorBill }>(`${BASE}/${uuid}/approve`, {})
-      .then((r) => r.data.vendorBill),
-
-  // Records a settlement against the bill (AD-7); recomputes amount_paid/
-  // balance_due and re-derives status. Only accepted on APPV/PART/ODUE — a
-  // 409 elsewhere, a 400 on overpayment (rejected, never clamped).
-  recordPayment: (uuid: string, payload: RecordVendorBillPaymentPayload): Promise<VendorBill> =>
-    tenantClient
-      .post<{ success: boolean; vendorBill: VendorBill }>(`${BASE}/${uuid}/payment`, payload)
-      .then((r) => r.data.vendorBill),
-
-  getPayments: (uuid: string): Promise<VendorBillPayment[]> =>
-    tenantClient
-      .get<{ success: boolean; recordId: string; payments: VendorBillPayment[] }>(`${BASE}/${uuid}/payments`)
-      .then((r) => r.data.payments ?? []),
-
-  // Soft-deletes one ledger entry (the "unapply") and recomputes the AP
-  // rollup.
-  removePayment: (uuid: string, paymentId: string): Promise<VendorBill> =>
-    tenantClient
-      .delete<{ success: boolean; vendorBill: VendorBill }>(`${BASE}/${uuid}/payments/${paymentId}`)
-      .then((r) => r.data.vendorBill),
+      .get<{
+        success: boolean; recordId: string;
+        payments: VendorBillPaymentLedger['payments'];
+        refunds: VendorBillPaymentLedger['refunds'];
+      }>(`${BASE}/${uuid}/payments`)
+      .then((r) => ({ payments: r.data.payments ?? [], refunds: r.data.refunds ?? [] })),
 
   getAudit: (uuid: string): Promise<AuditEntry[]> =>
     tenantClient

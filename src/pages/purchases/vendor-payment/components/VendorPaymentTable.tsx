@@ -2,49 +2,49 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Search, ArrowUp, ArrowDown, ArrowUpDown, X, FileCheck, Pencil, Filter,
+  Search, ArrowUp, ArrowDown, ArrowUpDown, X, Wallet, Pencil, Filter,
   ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { vendorBillService } from '@/services/vendorBillService';
+import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
+import { VP_STATUS_COLORS, VP_EDITABLE_STATUSES } from '@/lib/vendorPaymentForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
-  EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorBillFilterState,
-} from '@/lib/vendorBillFilters';
-import { VendorBillFilterDrawer } from './VendorBillFilterDrawer';
-import type { VendorBillSearchRequest } from '@/types/vendorBill';
+  EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorPaymentFilterState,
+} from '@/lib/vendorPaymentFilters';
+import { VendorPaymentFilterDrawer } from './VendorPaymentFilterDrawer';
+import type { VendorPaymentSearchRequest } from '@/types/vendorPayment';
 
 const EXPORT_PAGE_SIZE = 200;
-
-// Vendor Bills are a dedicated relational module, not a generic CRM/JSONB
-// workflow record, so — like Purchase Order — this table talks to
-// vendorBillService (/api/tenant/vendor-bills*) directly rather than reusing
-// CrmRecordTable/crmService. Mirrors PurchaseOrderTable's search/sort/
-// cursor-pagination UX, plus a filter drawer and the Approval badge column.
-// Sort buttons deliberately skip `status`/`vendor_id` even though the
-// backend allows sorting on them (they're internal integer ids/ordinals, not
-// meaningful to sort by from the UI) — mirrors PurchaseOrderTable.
-
-type SortField = 'billDate' | 'grandTotal' | 'balanceDue' | 'recordNumber';
-type SortDir = 'asc' | 'desc';
-
 const PAGE_SIZE = 25;
 
+// Vendor Payments are a dedicated relational module, not a generic CRM/JSONB
+// workflow record, so — like Vendor Bill — this table talks to
+// vendorPaymentService (/api/tenant/vendor-payments*) directly rather than
+// reusing CrmRecordTable/crmService. Mirrors VendorBillTable's search/sort/
+// cursor-pagination UX plus the Approval badge column.
+//
+// Sort buttons deliberately skip `status`/`vendor_id` even though the backend
+// allows sorting on them: both are internal integer ids, so their order means
+// nothing to a reader (mirrors VendorBillTable).
+
+type SortField = 'paymentDate' | 'amount' | 'unappliedAmount' | 'recordNumber';
+type SortDir = 'asc' | 'desc';
+
 const SORT_LABELS: Record<SortField, string> = {
-  billDate: 'Bill Date',
-  grandTotal: 'Amount',
-  balanceDue: 'Balance Due',
-  recordNumber: 'Bill #',
+  paymentDate: 'Payment Date',
+  amount: 'Amount',
+  unappliedAmount: 'Unapplied',
+  recordNumber: 'Payment #',
 };
 
 const SORT_KEY: Record<SortField, string> = {
-  billDate: 'bill_date',
-  grandTotal: 'grand_total',
-  balanceDue: 'balance_due',
+  paymentDate: 'payment_date',
+  amount: 'amount',
+  unappliedAmount: 'unapplied_amount',
   recordNumber: 'record_number',
 };
 
@@ -61,23 +61,23 @@ function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
-function fmtDate(iso?: string): string {
+function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
-export function VendorBillTable() {
+export function VendorPaymentTable() {
   const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement>(null);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
+  const canEdit = permissionsLoading || hasPermission('vendor_payment', 'update');
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('billDate');
+  const [sortBy, setSortBy] = useState<SortField>('paymentDate');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [filters, setFilters] = useState<VendorBillFilterState>(EMPTY_FILTER_STATE);
+  const [filters, setFilters] = useState<VendorPaymentFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [cursor, setCursor] = useState('');
@@ -102,7 +102,7 @@ export function VendorBillTable() {
     return () => clearTimeout(t);
   }, [term]);
 
-  const req: VendorBillSearchRequest = {
+  const req: VendorPaymentSearchRequest = {
     search: debounced || undefined,
     filters: toFilterClauses(filters),
     sort: [{ field: SORT_KEY[sortBy], dir: sortDir }],
@@ -111,8 +111,8 @@ export function VendorBillTable() {
   };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['vendor-bills', req],
-    queryFn: () => vendorBillService.searchVendorBills(req),
+    queryKey: ['vendor-payments', req],
+    queryFn: () => vendorPaymentService.searchVendorPayments(req),
     placeholderData: (prev) => prev,
   });
 
@@ -149,7 +149,7 @@ export function VendorBillTable() {
     setPrevCursors([]);
   }
 
-  function applyFilters(next: VendorBillFilterState) {
+  function applyFilters(next: VendorPaymentFilterState) {
     setFilters(next);
     setCursor('');
     setPrevCursors([]);
@@ -176,22 +176,23 @@ export function VendorBillTable() {
     setExportError(null);
     try {
       await exportPagedCsv(
-        (exportCursor) => vendorBillService.searchVendorBills({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Bill #', "Vendor's Invoice #", 'Vendor', 'Status', 'Approval', 'Bill Date', 'Due Date', 'Owner', 'Grand Total', 'Amount Paid', 'Balance Due'],
-        (bill) => [
-          bill.vendorBillNumber ?? '',
-          bill.vendorInvoiceNumber ?? '',
-          bill.vendor?.name ?? '',
-          bill.status ?? '',
-          APPROVAL_LABELS[bill.approvalStatus ?? 'none'] ?? '',
-          fmtCsvDate(bill.billDate),
-          fmtCsvDate(bill.dueDate),
-          (bill.ownerEmployeeId ? employeeNames.get(String(bill.ownerEmployeeId)) : undefined) ?? '',
-          String(bill.grandTotal ?? 0),
-          String(bill.amountPaid ?? 0),
-          String(bill.balanceDue ?? 0),
+        (exportCursor) => vendorPaymentService.searchVendorPayments({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
+        ['Payment #', 'Vendor', 'Status', 'Approval', 'Method', 'Reference #', 'Payment Date', 'Scheduled Date', 'Owner', 'Amount', 'Applied', 'Unapplied'],
+        (payment) => [
+          payment.vendorPaymentNumber ?? '',
+          payment.vendor?.name ?? '',
+          payment.status ?? '',
+          APPROVAL_LABELS[payment.approvalStatus] ?? '',
+          payment.method ?? '',
+          payment.referenceNumber ?? '',
+          fmtCsvDate(payment.paymentDate),
+          fmtCsvDate(payment.scheduledDate ?? undefined),
+          (payment.ownerEmployeeId ? employeeNames.get(String(payment.ownerEmployeeId)) : undefined) ?? '',
+          String(payment.amount ?? 0),
+          String(payment.appliedTotal ?? 0),
+          String(payment.unappliedAmount ?? 0),
         ],
-        'Vendor Bill',
+        'Vendor Payment',
       );
     } catch (err) {
       setExportError(apiErrorMessage(err));
@@ -208,15 +209,17 @@ export function VendorBillTable() {
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input
             type="text"
-            placeholder="Search bill #, vendor, invoice #…"
+            placeholder="Search payment #, vendor, reference…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
+            aria-label="Search vendor payments"
             className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <button
           onClick={() => setFiltersOpen(true)}
+          aria-label="Open filters"
           className={cn(
             'flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-colors',
             filtersActive
@@ -236,6 +239,7 @@ export function VendorBillTable() {
             <button
               key={field}
               onClick={() => handleSort(field)}
+              aria-label={`Sort by ${label}`}
               className={cn(
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
                 sortBy === field
@@ -252,6 +256,7 @@ export function VendorBillTable() {
         {hasFilters && (
           <button
             onClick={clearFilters}
+            aria-label="Clear search and filters"
             className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
           >
             <X className="size-3" />
@@ -264,7 +269,7 @@ export function VendorBillTable() {
             type="button"
             onClick={handleDownloadCsv}
             disabled={isExporting}
-            aria-label={hasFilters ? 'Download filtered vendor bills as CSV' : 'Download all vendor bills as CSV'}
+            aria-label={hasFilters ? 'Download filtered vendor payments as CSV' : 'Download all vendor payments as CSV'}
             className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
@@ -274,27 +279,29 @@ export function VendorBillTable() {
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load vendor bills. Please try again.')}</p>
+        <p role="alert" className="text-xs text-red-500">
+          {apiErrorMessage(error, 'Failed to load vendor payments. Please try again.')}
+        </p>
       )}
       {exportError && (
-        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
+        <p role="alert" className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[980px] text-left text-xs">
+          <table className="w-full min-w-[1020px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Bill #</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment #</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Bill Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Due Date</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Method</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment Date</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Grand Total</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Balance Due</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied</th>
                 {canEdit && (
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
                 )}
@@ -310,24 +317,23 @@ export function VendorBillTable() {
                   </tr>
                 ))
               ) : records.length > 0 ? (
-                records.map((bill) => {
-                  const color = VB_STATUS_COLORS[bill.statusCode] ?? '#a8a29e';
-                  const approvalStatus = bill.approvalStatus ?? 'none';
-                  const approvalLabel = APPROVAL_LABELS[approvalStatus];
-                  const ownerName = bill.ownerEmployeeId ? employeeNames.get(String(bill.ownerEmployeeId)) : undefined;
+                records.map((payment) => {
+                  const color = VP_STATUS_COLORS[payment.statusCode] ?? '#a8a29e';
+                  const approvalLabel = APPROVAL_LABELS[payment.approvalStatus];
+                  const ownerName = payment.ownerEmployeeId ? employeeNames.get(String(payment.ownerEmployeeId)) : undefined;
                   return (
-                    <tr key={bill.id} className="group hover:bg-accent/10 transition-colors duration-150">
+                    <tr key={payment.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
                         <button
                           type="button"
-                          onClick={() => navigate(`/purchases/vendor_bill/${bill.id}`)}
+                          onClick={() => navigate(`/purchases/vendor_payment/${payment.id}`)}
                           className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
-                          {bill.vendorBillNumber || '—'}
+                          {payment.vendorPaymentNumber || '—'}
                         </button>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {bill.vendor?.name ?? '—'}
+                        {payment.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
                         <span
@@ -335,14 +341,14 @@ export function VendorBillTable() {
                           style={{ backgroundColor: `${color}18` }}
                         >
                           <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {bill.status}
+                          {payment.status}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (
                           <span
                             className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
-                            style={{ backgroundColor: `${APPROVAL_COLORS[approvalStatus]}18`, color: APPROVAL_COLORS[approvalStatus] }}
+                            style={{ backgroundColor: `${APPROVAL_COLORS[payment.approvalStatus]}18`, color: APPROVAL_COLORS[payment.approvalStatus] }}
                           >
                             <ShieldCheck className="size-2.5" aria-hidden="true" />
                             {approvalLabel}
@@ -351,31 +357,35 @@ export function VendorBillTable() {
                           <span className="text-2xs text-stone-300">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
-                        {fmtDate(bill.billDate)}
+                      <td className="px-4 py-3.5 text-xs text-stone-500 whitespace-nowrap">
+                        {payment.method || '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
-                        {fmtDate(bill.dueDate)}
+                        {fmtDate(payment.paymentDate)}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[140px]">
                         {ownerName ?? '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(bill.grandTotal)}
+                        {currency(payment.amount)}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(bill.balanceDue)}
+                        {currency(payment.unappliedAmount)}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/purchases/vendor_bill/${bill.id}/edit`)}
-                            aria-label={`Edit vendor bill ${bill.vendorBillNumber}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
-                          >
-                            <Pencil className="size-4" />
-                          </button>
+                          {VP_EDITABLE_STATUSES.has(payment.statusCode) ? (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/purchases/vendor_payment/${payment.id}/edit`)}
+                              aria-label={`Edit vendor payment ${payment.vendorPaymentNumber}`}
+                              className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                          ) : (
+                            <span className="text-2xs text-stone-300">—</span>
+                          )}
                         </td>
                       )}
                     </tr>
@@ -387,17 +397,17 @@ export function VendorBillTable() {
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
-                          <FileCheck className="size-6 text-stone-400" />
+                          <Wallet className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No vendor bills added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first vendor bill to get started.</p>
+                        <p className="text-sm font-semibold text-stone-700">No vendor payments recorded yet.</p>
+                        <p className="text-xs text-stone-400">Record your first vendor payment to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No vendor bills match the current search.</p>
+                        <p className="text-sm font-semibold text-stone-700">No vendor payments match the current search.</p>
                         <p className="text-xs text-stone-400">Try adjusting your search or filters.</p>
                       </div>
                     )}
@@ -438,7 +448,7 @@ export function VendorBillTable() {
       </div>
 
       {filtersOpen && (
-        <VendorBillFilterDrawer
+        <VendorPaymentFilterDrawer
           onClose={() => setFiltersOpen(false)}
           value={filters}
           onApply={applyFilters}
