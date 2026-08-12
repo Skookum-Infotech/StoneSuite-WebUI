@@ -252,6 +252,18 @@ const VendorBillDetailPage = lazyWithRetry(
 const EditVendorBillPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor-bill/EditVendorBillPage"),
 );
+const VendorPaymentListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/VendorPaymentListPage"),
+);
+const AddVendorPaymentPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/AddVendorPaymentPage"),
+);
+const VendorPaymentDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/VendorPaymentDetailPage"),
+);
+const EditVendorPaymentPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/EditVendorPaymentPage"),
+);
 // Inventory module
 const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
@@ -877,6 +889,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="vendor_bill" action="update">
             <EditVendorBillPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Vendor Payments (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_payment",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="read">
+            <VendorPaymentListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_payment/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="create">
+            <AddVendorPaymentPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_payment/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="read">
+            <VendorPaymentDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_payment/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="update">
+            <EditVendorPaymentPage />
           </PermissionGuard>,
         ),
       },

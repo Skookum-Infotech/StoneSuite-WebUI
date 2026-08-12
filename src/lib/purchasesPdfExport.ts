@@ -28,7 +28,8 @@ import {
 // A Requisition's counterparty slot holds its *suggested* vendor, which may be
 // absent — unlike a purchase order's, which is mandatory.
 
-export type PurchasesRecordType = "requisition" | "purchase_order" | "item_receipt" | "vendor" | "vendor_bill";
+export type PurchasesRecordType =
+  | "requisition" | "purchase_order" | "item_receipt" | "vendor" | "vendor_bill" | "vendor_payment";
 
 export interface PurchasesPdfSection {
   title: string;
@@ -73,6 +74,7 @@ const RECORD_TYPE_LABEL: Record<PurchasesRecordType, string> = {
   item_receipt: "Item Receipt",
   vendor: "Vendor",
   vendor_bill: "Vendor Bill",
+  vendor_payment: "Vendor Payment",
 };
 
 export function buildExportFilename(
