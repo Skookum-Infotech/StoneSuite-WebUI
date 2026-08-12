@@ -240,6 +240,18 @@ const ItemReceiptDetailPage = lazyWithRetry(
 const EditItemReceiptPage = lazyWithRetry(
   () => import("@/pages/purchases/item-receipt/EditItemReceiptPage"),
 );
+const VendorBillListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/VendorBillListPage"),
+);
+const AddVendorBillPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/AddVendorBillPage"),
+);
+const VendorBillDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/VendorBillDetailPage"),
+);
+const EditVendorBillPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/EditVendorBillPage"),
+);
 // Inventory module
 const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
@@ -831,6 +843,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="item_receipt" action="update">
             <EditItemReceiptPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Vendor Bills (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_bill",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="read">
+            <VendorBillListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="create">
+            <AddVendorBillPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="read">
+            <VendorBillDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="update">
+            <EditVendorBillPage />
           </PermissionGuard>,
         ),
       },

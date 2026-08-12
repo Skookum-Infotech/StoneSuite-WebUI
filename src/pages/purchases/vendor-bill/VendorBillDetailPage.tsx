@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Package, Upload, Pencil, PackagePlus, FileDown, Loader2, ArrowRightLeft } from 'lucide-react';
-import { purchaseOrderService } from '@/services/purchaseOrderService';
+import { FileCheck, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -12,24 +12,18 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PO_STATUS_COLORS, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
-import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
-import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
-import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
-import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
-import { PurchaseOrderTransitionBar } from './components/PurchaseOrderTransitionBar';
-import { PurchaseOrderApprovalButton } from './components/PurchaseOrderApprovalButton';
-import { ConvertToBillDialog } from './components/ConvertToBillDialog';
+import { VB_STATUS_COLORS, VB_ALLOWED_TRANSITIONS, VB_DELETABLE_STATUSES } from '@/lib/vendorBillForm';
+import { VendorBillAuditTab } from './components/VendorBillAuditTab';
+import { BillPaymentsTab } from './components/BillPaymentsTab';
+import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
+import { VendorBillTransitionBar } from './components/VendorBillTransitionBar';
+import { VendorBillApprovalButton } from './components/VendorBillApprovalButton';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
-
-// PO statuses a vendor bill may be converted from — a bill only makes sense
-// once goods have actually been received (backend: vendorbill/store_convert.go).
-const PO_BILLABLE_STATUSES = new Set(['RCVD', 'CLSD']);
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
-  { key: 'receipts', label: 'Receipts' },
+  { key: 'payments', label: 'Payments' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -44,96 +38,93 @@ function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
-export default function PurchaseOrderDetailPage() {
+export default function VendorBillDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
-  const [convertOpen, setConvertOpen] = useState(false);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
-  const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
-  const canReceive = permissionsLoading || hasPermission('item_receipt', 'create');
-  const canTransition = permissionsLoading || hasPermission('purchase_order', 'transition');
-  const canConvertToBill = permissionsLoading || hasPermission('vendor_bill', 'create');
+  const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
+  const canDelete = permissionsLoading || hasPermission('vendor_bill', 'delete');
+  const canTransition = permissionsLoading || hasPermission('vendor_bill', 'transition');
 
-  const { data: po, isLoading, error } = useQuery({
-    queryKey: ['purchase-order', id],
-    queryFn: () => purchaseOrderService.getPurchaseOrder(id),
+  const { data: bill, isLoading, error } = useQuery({
+    queryKey: ['vendor-bill', id],
+    queryFn: () => vendorBillService.getVendorBill(id),
     enabled: Boolean(id),
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
-    if (po?.purchaseOrderNumber) {
-      setLabel(id, po.purchaseOrderNumber);
+    if (bill?.vendorBillNumber) {
+      setLabel(id, bill.vendorBillNumber);
       return () => clearLabel(id);
     }
-  }, [id, po?.purchaseOrderNumber, setLabel, clearLabel]);
+  }, [id, bill?.vendorBillNumber, setLabel, clearLabel]);
 
   const transition = useMutation({
-    mutationFn: (toStatusCode: string) => purchaseOrderService.transition(id, toStatusCode),
+    mutationFn: (toStatusCode: string) => vendorBillService.transition(id, toStatusCode),
     onSuccess: (updated) => {
-      queryClient.setQueryData(['purchase-order', id], updated);
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      queryClient.setQueryData(['vendor-bill', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
     },
   });
 
-  if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
-  if (error || !po)
-    return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load purchase order.')}</ErrorNote></div>;
+  if (isLoading) return <div className="p-6"><Spinner label="Loading vendor bill…" /></div>;
+  if (error || !bill)
+    return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor bill.')}</ErrorNote></div>;
 
-  const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
-  const canDeleteHere = canDelete && PO_DELETABLE_STATUSES.has(po.statusCode);
-  // Terminal statuses (CLSD/CANC) have no legal transitions, and a user without
-  // `purchase_order:transition` sees none either — in both cases the bar renders
-  // nothing, so the card would be an empty "Actions" header. Hide it unless it
-  // has real content (a transition, an approval gate, or a failed transition).
-  const hasTransitions = canTransition && (PO_ALLOWED_TRANSITIONS[po.statusCode]?.length ?? 0) > 0;
-  const isApprovalPending = po.approvalStatus === 'pending';
+  const color = VB_STATUS_COLORS[bill.statusCode] ?? '#a8a29e';
+  const canDeleteHere = canDelete && VB_DELETABLE_STATUSES.has(bill.statusCode);
+  // Terminal statuses (PAID/VOID) have no legal transitions, and a user
+  // without `vendor_bill:transition` sees none either — in both cases the
+  // bar renders nothing, so the card would be an empty "Actions" header.
+  // Hide it unless it has real content (mirrors PurchaseOrderDetailPage).
+  const hasTransitions = canTransition && (VB_ALLOWED_TRANSITIONS[bill.statusCode]?.length ?? 0) > 0;
+  const isApprovalPending = bill.approvalStatus === 'pending';
   const showActions = hasTransitions || isApprovalPending || Boolean(transition.error);
 
   async function handleExportPdf() {
-    if (!po) return;
+    if (!bill) return;
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
       await exportPurchasesRecordToPdf({
-        recordType: 'purchase_order',
-        title: po.purchaseOrderNumber || 'Purchase Order',
-        recordNumber: po.purchaseOrderNumber,
-        statusLabel: po.status,
-        counterpartyName: po.vendor.name,
-        createdAt: po.createdAt,
-        updatedAt: po.updatedAt,
+        recordType: 'vendor_bill',
+        title: bill.vendorBillNumber || 'Vendor Bill',
+        recordNumber: bill.vendorBillNumber,
+        statusLabel: bill.status,
+        counterpartyName: bill.vendor.name,
+        createdAt: bill.createdAt,
+        updatedAt: bill.updatedAt,
         sections: [
           {
             title: 'Primary Information',
             rows: [
-              ['Order Date', fmtDate(po.orderDate)],
-              ['Expected Date', po.expectedDate ? fmtDate(po.expectedDate) : ''],
-              ['Reference #', po.referenceNumber || ''],
-              ['Sales Tax %', `${po.salesTaxPercent}%`],
-              ['Memo', po.memo || ''],
-              ['Notes', po.notes || ''],
-              ['Terms & Conditions', po.termsConditions || ''],
+              ["Vendor's Invoice #", bill.vendorInvoiceNumber || ''],
+              ['Reference #', bill.referenceNumber || ''],
+              ['Bill Date', fmtDate(bill.billDate)],
+              ['Due Date', bill.dueDate ? fmtDate(bill.dueDate) : ''],
+              ['Sales Tax %', `${bill.salesTaxPercent}%`],
+              ['Purchase Order', bill.purchaseOrder?.number || ''],
+              ['Memo', bill.memo || ''],
+              ['Notes', bill.notes || ''],
+              ['Terms & Conditions', bill.termsConditions || ''],
             ],
           },
-          { title: 'Ship To', rows: addressRows(po.shipTo) },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: po.items.map((line) => [
+          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          rows: bill.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
             String(line.quantity),
-            String(line.qtyReceived),
             currency(line.unitPrice),
             `${line.discountPercent}%`,
             `${line.taxPercent}%`,
@@ -142,12 +133,13 @@ export default function PurchaseOrderDetailPage() {
           numericFrom: 3,
         },
         totals: [
-          { label: 'Subtotal', value: currency(po.subtotal) },
-          { label: 'Discount', value: currency(po.discountTotal) },
-          { label: 'Tax', value: currency(po.taxTotal) },
-          { label: 'Shipping', value: currency(po.shippingCharge) },
-          { label: 'Adjustment', value: currency(po.adjustment) },
-          { label: 'Grand Total', value: currency(po.grandTotal), bold: true },
+          { label: 'Subtotal', value: currency(bill.subtotal) },
+          { label: 'Discount', value: currency(bill.discountTotal) },
+          { label: 'Tax', value: currency(bill.taxTotal) },
+          { label: 'Adjustment', value: currency(bill.adjustment) },
+          { label: 'Grand Total', value: currency(bill.grandTotal), bold: true },
+          { label: 'Amount Paid', value: currency(bill.amountPaid) },
+          { label: 'Balance Due', value: currency(bill.balanceDue), bold: true },
         ],
       });
     } catch (err) {
@@ -160,13 +152,13 @@ export default function PurchaseOrderDetailPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <CrmPageHeader
-        backLabel="Purchase Orders"
-        onBack={() => navigate('/purchases/purchase_order')}
-        icon={Package}
-        title={po.purchaseOrderNumber || 'Purchase Order'}
-        subtitle={po.vendor.name}
-        recordNumber={po.purchaseOrderNumber}
-        statusBadge={<Badge color={color}>{po.status}</Badge>}
+        backLabel="Vendor Bills"
+        onBack={() => navigate('/purchases/vendor_bill')}
+        icon={FileCheck}
+        title={bill.vendorBillNumber || 'Vendor Bill'}
+        subtitle={bill.vendor.name}
+        recordNumber={bill.vendorBillNumber}
+        statusBadge={<Badge color={color}>{bill.status}</Badge>}
       />
 
       {/* Tab bar */}
@@ -195,27 +187,38 @@ export default function PurchaseOrderDetailPage() {
             <>
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <ReadonlyField label="Order Date" value={fmtDate(po.orderDate)} />
-                  <ReadonlyField label="Expected Date" value={po.expectedDate ? fmtDate(po.expectedDate) : undefined} />
-                  <ReadonlyField label="Reference #" value={po.referenceNumber} />
-                  <ReadonlyField label="Sales Tax %" value={`${po.salesTaxPercent}%`} />
-                  {po.memo && <ReadonlyField label="Memo" value={po.memo} full />}
-                  {po.notes && <ReadonlyField label="Notes" value={po.notes} full />}
-                  {po.internalNotes && <ReadonlyField label="Internal Notes" value={po.internalNotes} full />}
-                  {po.termsConditions && <ReadonlyField label="Terms & Conditions" value={po.termsConditions} full />}
+                  <ReadonlyField label="Vendor's Invoice #" value={bill.vendorInvoiceNumber} />
+                  <ReadonlyField label="Reference #" value={bill.referenceNumber} />
+                  <ReadonlyField label="Bill Date" value={fmtDate(bill.billDate)} />
+                  <ReadonlyField label="Due Date" value={bill.dueDate ? fmtDate(bill.dueDate) : undefined} />
+                  <ReadonlyField label="Sales Tax %" value={`${bill.salesTaxPercent}%`} />
+                  {bill.purchaseOrder && (
+                    <div className="space-y-1">
+                      <label className={fieldLabelCls}>Purchase Order</label>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/purchases/purchase_order/${bill.purchaseOrder!.id}`)}
+                        className={cn(readonlyCls, 'text-left text-accent-foreground hover:underline cursor-pointer')}
+                      >
+                        {bill.purchaseOrder.number}
+                      </button>
+                    </div>
+                  )}
+                  {bill.memo && <ReadonlyField label="Memo" value={bill.memo} full />}
+                  {bill.notes && <ReadonlyField label="Notes" value={bill.notes} full />}
+                  {bill.internalNotes && <ReadonlyField label="Internal Notes" value={bill.internalNotes} full />}
+                  {bill.termsConditions && <ReadonlyField label="Terms & Conditions" value={bill.termsConditions} full />}
                 </div>
               </ModernSection>
-              <ModernSection title="Ship To" index={1}>
-                <AddressBlock addr={po.shipTo} />
-              </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <Total label="Subtotal" value={po.subtotal} />
-                  <Total label="Discount" value={po.discountTotal} />
-                  <Total label="Tax" value={po.taxTotal} />
-                  <Total label="Shipping" value={po.shippingCharge} />
-                  <Total label="Adjustment" value={po.adjustment} />
-                  <Total label="Grand Total" value={po.grandTotal} bold />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+                  <Total label="Subtotal" value={bill.subtotal} />
+                  <Total label="Discount" value={bill.discountTotal} />
+                  <Total label="Tax" value={bill.taxTotal} />
+                  <Total label="Adjustment" value={bill.adjustment} />
+                  <Total label="Grand Total" value={bill.grandTotal} bold />
+                  <Total label="Amount Paid" value={bill.amountPaid} />
+                  <Total label="Balance Due" value={bill.balanceDue} bold />
                 </div>
               </div>
             </>
@@ -232,7 +235,6 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Description' },
                       { label: 'SKU' },
                       { label: 'Qty', right: true },
-                      { label: 'Received' },
                       { label: 'Unit Price', right: true },
                       { label: 'Disc %', right: true },
                       { label: 'Tax %', right: true },
@@ -243,7 +245,7 @@ export default function PurchaseOrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {po.items.map((line) => (
+                  {bill.items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
@@ -252,72 +254,50 @@ export default function PurchaseOrderDetailPage() {
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
-                      <td className="px-3 py-2.5">
-                        <ReceiptProgress received={line.qtyReceived} ordered={line.quantity} />
-                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
                   ))}
-                  {po.items.length === 0 && (
-                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                  {bill.items.length === 0 && (
+                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           )}
 
-          {activeTab === 'receipts' && <PurchaseOrderReceiptsTab purchaseOrderId={id} />}
-          {activeTab === 'audit' && <PurchaseOrderAuditTab purchaseOrderId={id} />}
+          {activeTab === 'payments' && (
+            <BillPaymentsTab vendorBillId={id} statusCode={bill.statusCode} balanceDue={bill.balanceDue} />
+          )}
+          {activeTab === 'audit' && <VendorBillAuditTab vendorBillId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
           <div className="h-6" />
         </div>
 
         {/* Right sidebar */}
-        <SalesDetailSidebar label="Purchase Order Details">
+        <SalesDetailSidebar label="Vendor Bill Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
-                onClick={() => navigate(`/purchases/purchase_order/${id}/edit`, { state: { initialTab: 'files' } })}
+                onClick={() => navigate(`/purchases/vendor_bill/${id}/edit`, { state: { initialTab: 'files' } })}
                 className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
               >
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {canReceive && isPurchaseOrderReceivable(po) && (
+              {canEdit && bill.statusCode === 'DRFT' && (
                 <button
                   type="button"
-                  onClick={() => navigate(`/purchases/item_receipt/new?po=${id}`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <PackagePlus className="size-4 text-stone-400 shrink-0" />
-                  Receive items
-                </button>
-              )}
-              {canConvertToBill && PO_BILLABLE_STATUSES.has(po.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => setConvertOpen(true)}
-                  aria-label="Convert this purchase order to a vendor bill"
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />
-                  Convert to Bill
-                </button>
-              )}
-              {canEdit && po.statusCode === 'DRFT' && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/purchases/purchase_order/${id}/edit`)}
+                  onClick={() => navigate(`/purchases/vendor_bill/${id}/edit`)}
                   className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
                 >
                   <Pencil className="size-4 text-stone-400 shrink-0" />
-                  Edit purchase order
+                  Edit vendor bill
                 </button>
               )}
               <button
@@ -339,18 +319,18 @@ export default function PurchaseOrderDetailPage() {
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <PurchaseOrderTransitionBar
-                statusCode={po.statusCode}
-                approvalStatus={po.approvalStatus}
+              <VendorBillTransitionBar
+                statusCode={bill.statusCode}
+                approvalStatus={bill.approvalStatus}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />
               {isApprovalPending && (
-                <PurchaseOrderApprovalButton
-                  purchaseOrderId={id}
+                <VendorBillApprovalButton
+                  vendorBillId={id}
                   onApproved={(updated) => {
-                    queryClient.setQueryData(['purchase-order', id], updated);
-                    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+                    queryClient.setQueryData(['vendor-bill', id], updated);
+                    queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
                   }}
                 />
               )}
@@ -364,74 +344,63 @@ export default function PurchaseOrderDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{po.status}</Badge>
+              <Badge color={color}>{bill.status}</Badge>
             </div>
+            {bill.approvalStatus !== 'none' && (
+              <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
+                <span className="text-stone-500">Approval</span>
+                <span className={cn('font-medium', bill.approvalStatus === 'approved' ? 'text-emerald-600' : 'text-amber-600')}>
+                  {bill.approvalStatus === 'approved' ? 'Approved' : 'Pending Approval'}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Vendor</span>
               <button
                 type="button"
-                onClick={() => navigate(`/purchases/vendor/${po.vendor.id}`)}
+                onClick={() => navigate(`/purchases/vendor/${bill.vendor.id}`)}
                 className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
               >
-                {po.vendor.name}
+                {bill.vendor.name}
               </button>
             </div>
+            {bill.purchaseOrder && (
+              <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
+                <span className="text-stone-500">Purchase Order</span>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/purchases/purchase_order/${bill.purchaseOrder!.id}`)}
+                  className="text-stone-700 hover:text-accent-foreground truncate max-w-[140px] transition-colors"
+                >
+                  {bill.purchaseOrder.number}
+                </button>
+              </div>
+            )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
-              <span className="text-stone-700">{fmtDate(po.createdAt)}</span>
+              <span className="text-stone-700">{fmtDate(bill.createdAt)}</span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
               <span className="text-stone-500">Updated</span>
-              <span className="text-stone-700">{fmtDate(po.updatedAt)}</span>
+              <span className="text-stone-700">{fmtDate(bill.updatedAt)}</span>
             </div>
           </div>
 
           {canDeleteHere && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-              <DeletePurchaseOrderDialog
-                purchaseOrderId={id}
-                label={`Purchase Order ${po.purchaseOrderNumber}`}
+              <DeleteVendorBillDialog
+                vendorBillId={id}
+                label={`Vendor Bill ${bill.vendorBillNumber}`}
                 onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-                  navigate('/purchases/purchase_order');
+                  queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+                  navigate('/purchases/vendor_bill');
                 }}
               />
             </div>
           )}
         </SalesDetailSidebar>
       </div>
-
-      {convertOpen && (
-        <ConvertToBillDialog
-          purchaseOrderId={id}
-          purchaseOrderNumber={po.purchaseOrderNumber}
-          vendorName={po.vendor.name}
-          grandTotal={po.grandTotal}
-          onClose={() => setConvertOpen(false)}
-          onConverted={(bill) => {
-            setConvertOpen(false);
-            queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
-            navigate(`/purchases/vendor_bill/${bill.id}`);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function ReceiptProgress({ received, ordered }: { received: number; ordered: number }) {
-  const pct = ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
-  const complete = ordered > 0 && received >= ordered;
-  return (
-    <div className="flex items-center gap-2 min-w-[100px]">
-      <div className="h-1.5 flex-1 rounded-full bg-stone-100 overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all', complete ? 'bg-emerald-500' : received > 0 ? 'bg-amber-400' : 'bg-stone-200')}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="shrink-0 text-2xs tabular-nums text-stone-500">{received}/{ordered}</span>
     </div>
   );
 }
@@ -441,37 +410,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
-    </div>
-  );
-}
-
-function addressRows(addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.name || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
-}
-
-function AddressBlock({ addr }: { addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
-  const lines = [
-    addr.attention,
-    [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
-    [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', '),
-    addr.phone && `Phone: ${addr.phone}`,
-    addr.email && `Email: ${addr.email}`,
-  ].filter(Boolean);
-
-  if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
-  }
-  return (
-    <div className="space-y-1 text-xs text-stone-700">
-      {addr.name && <p className="font-semibold text-stone-900">{addr.name}</p>}
-      {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
     </div>
   );
 }
