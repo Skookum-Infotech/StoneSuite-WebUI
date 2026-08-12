@@ -6,6 +6,7 @@ import { SetupStep, StepChip } from "./components/SetupStep";
 import { CopyField } from "./components/CopyField";
 import { AttributeMappingTable } from "./components/AttributeMappingTable";
 import { SamlConnectForm } from "./components/SamlConnectForm";
+import { SsoDomainsCard } from "./components/SsoDomainsCard";
 import { SsoSignInLink } from "./components/SsoSignInLink";
 import { samlAuthService } from "@/services/samlAuthService";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -64,9 +65,9 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
 
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="mx-auto w-full max-w-[1500px] 3xl:max-w-[1800px] 4xl:max-w-full px-6 py-6">
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="space-y-6">
-              <section className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="space-y-4">
+              <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
                 <h2 className="mb-5 text-base font-bold text-stone-900">
                   Set up AWS Cognito SAML
                 </h2>
@@ -128,7 +129,7 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
                 </ol>
               </section>
 
-              <section className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
+              <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
                 <h2 className="mb-5 text-base font-bold text-stone-900">
                   Configure AWS Cognito SAML
                 </h2>
@@ -239,6 +240,7 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
 
             <div className="lg:sticky lg:top-6 lg:self-start space-y-6">
               <SamlConnectForm provider={PROVIDER} />
+              <SsoDomainsCard provider={PROVIDER} />
               <SsoSignInLink provider={PROVIDER} />
             </div>
           </div>

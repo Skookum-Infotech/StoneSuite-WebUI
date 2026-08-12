@@ -46,7 +46,7 @@ describe('ssoConfigSchema', () => {
 })
 
 describe('samlConfigSchema', () => {
-  const base = { provider: 'entra' as const, enabled: true }
+  const base = { provider: 'entra' as const, enabled: true, defaultRoleId: '' }
 
   it.each([
     ['https://idp.example.com/metadata', true],
@@ -65,6 +65,7 @@ describe('samlConfigSchema', () => {
         provider,
         metadataUrl: 'https://idp.example.com/metadata',
         enabled: true,
+        defaultRoleId: '',
       })
     expect(withProvider('entra').success).toBe(true)
     expect(withProvider('cognito').success).toBe(true)

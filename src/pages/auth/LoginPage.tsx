@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FaAws } from 'react-icons/fa'
 import { MicrosoftLogo } from '@/components/icons/MicrosoftLogo'
+import { SSO_PROVIDER_LABELS } from '@/lib/ssoConfigForm'
+import { SsoEmailStep } from './components/SsoEmailStep'
 import type { UserRole } from '@/types/auth'
 import type { SAMLProvider } from '@/types/tenant'
 import { SAML_PENDING_PROVIDER_KEY } from '@/lib/samlSession'
@@ -55,17 +57,16 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    getValues,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<LoginFields>({ resolver: zodResolver(loginSchema) })
 
   const loggedOut = searchParams.get('logged_out') === 'true'
 
-  // Which provider's inline workspace-slug step is open (null = showing the
-  // two provider buttons instead).
+  // Which provider's inline work-email step is open (null = showing the two
+  // provider buttons instead).
   const [ssoStep, setSsoStep] = useState<SAMLProvider | null>(null)
-  const [workspaceSlug, setWorkspaceSlug] = useState('')
-  const [ssoError, setSsoError] = useState<string | null>(null)
 
   function redirectToSso(provider: SAMLProvider, opts: { tenantId?: string; tenantSlug?: string }) {
     const returnTo = searchParams.get('return_to') ?? undefined
@@ -93,19 +94,13 @@ export default function LoginPage() {
       redirectToSso(provider, { tenantId, tenantSlug })
       return
     }
-    setSsoError(null)
     setSsoStep(provider)
   }
 
-  function submitWorkspaceSlug(e: React.FormEvent) {
-    e.preventDefault()
-    if (!ssoStep) return
-    const slug = workspaceSlug.trim()
-    if (!slug) {
-      setSsoError('Enter your workspace slug.')
-      return
-    }
-    redirectToSso(ssoStep, { tenantSlug: slug })
+  // Home-realm discovery resolved the email to a tenant + provider (which
+  // may differ from the button the user clicked — see SsoEmailStep).
+  function handleSsoResolved(tenantId: string, provider: SAMLProvider) {
+    redirectToSso(provider, { tenantId })
   }
 
   const onSubmit = async (data: LoginFields) => {
@@ -228,145 +223,137 @@ export default function LoginPage() {
 
             {/* Logo + Heading */}
             <div className="mb-3 text-center sm:mb-8">
-              <div className="mx-auto mb-2 flex h-12 w-28 items-center justify-center sm:mb-5 sm:h-20 sm:w-40">
-                <img
-                  src="/logo-dark.png"
-                  alt="Stone Suite logo"
-                  className="h-16 w-auto object-contain sm:h-32"
-                  onError={(e) => {
-                    ;(e.currentTarget as HTMLImageElement).style.display = 'none'
-                    const parent = e.currentTarget.parentElement
-                    if (parent) parent.innerHTML = '<span style="color:#001219;font-size:1.25rem;font-weight:700">S</span>'
-                  }}
-                />
-              </div>
-              <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">Welcome back</h2>
-              <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">Sign in to your Stone Suite workspace</p>
+              {ssoStep ? (
+                <>
+                  <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 sm:mb-5 sm:h-16 sm:w-16">
+                    {ssoStep === 'entra' ? (
+                      <MicrosoftLogo className="size-7" />
+                    ) : (
+                      <FaAws className="size-7 text-[#FF9900]" />
+                    )}
+                  </div>
+                  <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">
+                    Sign in with {SSO_PROVIDER_LABELS[ssoStep]}
+                  </h2>
+                  <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">
+                    Enter your work email to continue
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="mx-auto mb-2 flex h-12 w-28 items-center justify-center sm:mb-5 sm:h-20 sm:w-40">
+                    <img
+                      src="/logo-dark.png"
+                      alt="Stone Suite logo"
+                      className="h-16 w-auto object-contain sm:h-32"
+                      onError={(e) => {
+                        ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                        const parent = e.currentTarget.parentElement
+                        if (parent) parent.innerHTML = '<span style="color:#001219;font-size:1.25rem;font-weight:700">S</span>'
+                      }}
+                    />
+                  </div>
+                  <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">Welcome back</h2>
+                  <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">Sign in to your Stone Suite workspace</p>
+                </>
+              )}
             </div>
 
-            {loggedOut && (
+            {!ssoStep && loggedOut && (
               <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700">
                 <CheckCircle2 className="size-4 shrink-0" />
                 You&apos;ve been signed out.
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="name@company.com"
-                    aria-invalid={Boolean(errors.email)}
-                    aria-describedby={errors.email ? 'email-error' : undefined}
-                    {...register('email')}
-                    className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
-                    style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
-                  />
-                </div>
-                {errors.email && <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    aria-invalid={Boolean(errors.password)}
-                    aria-describedby={errors.password ? 'password-error' : undefined}
-                    {...register('password')}
-                    className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
-                    style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Link
-                    to="/auth/forgot-password"
-                    className="text-xs font-medium transition-colors duration-150 hover:opacity-100"
-                    style={{ color: 'rgba(0,95,115,0.55)' }}
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                {errors.password && <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>}
-              </div>
-
-              {errors.root && (
-                <div className="text-sm font-medium text-destructive bg-destructive/5 p-2 rounded-md border border-destructive/15">
-                  {errors.root.message}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="mt-1 h-11 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
-                style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
-              >
-                {isSubmitting ? (
-                  <><Loader2 className="mr-2 size-4 animate-spin" />Signing in...</>
-                ) : (
-                  <>Sign In<ArrowRight className="ml-2 size-4" /></>
-                )}
-              </Button>
-            </form>
-
-            <div className="my-2 flex items-center gap-3 sm:my-6">
-              <div className="h-px flex-1 bg-stone-100" />
-              <span className="text-2xs font-bold uppercase tracking-[0.4em] text-stone-300">or</span>
-              <div className="h-px flex-1 bg-stone-100" />
-            </div>
-
-            <div className="flex flex-col items-center space-y-3">
-              {ssoStep ? (
-                <form onSubmit={submitWorkspaceSlug} className="w-full space-y-2">
-                  <Label htmlFor="sso-workspace" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
-                    Workspace
-                  </Label>
-                  <Input
-                    id="sso-workspace"
-                    type="text"
-                    autoFocus
-                    placeholder="your-workspace-slug"
-                    aria-invalid={Boolean(ssoError)}
-                    aria-describedby={ssoError ? 'sso-workspace-error' : undefined}
-                    value={workspaceSlug}
-                    onChange={(e) => setWorkspaceSlug(e.target.value)}
-                    className="h-10 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-300"
-                  />
-                  {ssoError && <p id="sso-workspace-error" className="text-xs text-destructive">{ssoError}</p>}
-                  <div className="flex gap-2 pt-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-9 flex-1 rounded-xl"
-                      onClick={() => {
-                        setSsoStep(null)
-                        setSsoError(null)
-                        setWorkspaceSlug('')
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="h-9 flex-1 rounded-xl bg-brand text-stone-950 hover:bg-brand-hover">
-                      Continue
-                    </Button>
+            {ssoStep ? (
+              <SsoEmailStep
+                provider={ssoStep}
+                defaultEmail={getValues('email') ?? ''}
+                onResolved={handleSsoResolved}
+                onBack={() => setSsoStep(null)}
+              />
+            ) : (
+              <>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+                      Email
+                    </Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+                      <Input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="name@company.com"
+                        aria-invalid={Boolean(errors.email)}
+                        aria-describedby={errors.email ? 'email-error' : undefined}
+                        {...register('email')}
+                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+                        style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
+                      />
+                    </div>
+                    {errors.email && <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>}
                   </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+                      <Input
+                        id="password"
+                        type="password"
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                        aria-invalid={Boolean(errors.password)}
+                        aria-describedby={errors.password ? 'password-error' : undefined}
+                        {...register('password')}
+                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+                        style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Link
+                        to="/auth/forgot-password"
+                        className="text-xs font-medium transition-colors duration-150 hover:opacity-100"
+                        style={{ color: 'rgba(0,95,115,0.55)' }}
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    {errors.password && <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>}
+                  </div>
+
+                  {errors.root && (
+                    <div className="text-sm font-medium text-destructive bg-destructive/5 p-2 rounded-md border border-destructive/15">
+                      {errors.root.message}
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="mt-1 h-11 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
+                    style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
+                  >
+                    {isSubmitting ? (
+                      <><Loader2 className="mr-2 size-4 animate-spin" />Signing in...</>
+                    ) : (
+                      <>Sign In<ArrowRight className="ml-2 size-4" /></>
+                    )}
+                  </Button>
                 </form>
-              ) : (
-                <>
+
+                <div className="my-2 flex items-center gap-3 sm:my-6">
+                  <div className="h-px flex-1 bg-stone-100" />
+                  <span className="text-2xs font-bold uppercase tracking-[0.4em] text-stone-300">or</span>
+                  <div className="h-px flex-1 bg-stone-100" />
+                </div>
+
+                <div className="flex flex-col items-center space-y-3">
                   <span className="text-xs font-medium text-stone-400">Continue with</span>
                   <div className="grid w-full grid-cols-2 gap-3">
                     <OAuthButton
@@ -380,9 +367,9 @@ export default function LoginPage() {
                       icon={<FaAws className="size-5 text-[#FF9900]" />}
                     />
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
 
             {/* Footer */}
             <div className="mt-3 hidden items-center justify-center gap-1.5 sm:flex sm:mt-6">

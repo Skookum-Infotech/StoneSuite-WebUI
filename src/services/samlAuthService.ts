@@ -34,6 +34,24 @@ interface SamlLogoutWire {
   logout_url?: string;
 }
 
+// Home-realm discovery result: which tenant + provider a work email belongs
+// to, so the login page can route straight to the right IdP without asking
+// for a workspace slug. `provider` may differ from the one the user clicked
+// (e.g. they picked Microsoft but their domain is registered under Cognito)
+// — callers decide whether to auto-continue or prompt for the switch.
+export interface SamlDiscoverResult {
+  found: boolean;
+  provider?: SAMLProvider;
+  tenantId?: string;
+}
+
+interface SamlDiscoverWire {
+  success: boolean;
+  found: boolean;
+  provider?: string;
+  tenant_id?: string;
+}
+
 interface InitiateUrlOptions {
   tenantId?: string;
   tenantSlug?: string;
@@ -61,6 +79,15 @@ export const samlAuthService = {
     apiClient.post<SamlLogoutWire>(`${AUTH_BASE}/${provider}/logout`).then((r) => ({
       sloAvailable: r.data.slo_available,
       logoutUrl: r.data.logout_url,
+    })),
+
+  // Public, pre-session — resolves a work email to its tenant + SAML
+  // provider via the domain registered against that tenant's SSO config.
+  discover: (email: string): Promise<SamlDiscoverResult> =>
+    apiClient.post<SamlDiscoverWire>(`${AUTH_BASE}/discover`, { email }).then((r) => ({
+      found: r.data.found,
+      provider: r.data.provider as SAMLProvider | undefined,
+      tenantId: r.data.tenant_id,
     })),
 
   // Pure string builder for a full-page redirect — GET /initiate is a 302,

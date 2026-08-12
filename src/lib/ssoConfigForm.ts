@@ -61,6 +61,9 @@ export function samlConfigSchema() {
       .refine((v) => v.startsWith('https://'), 'Must be an https:// URL')
       .refine(isHttpUrl, 'Must be a valid URL'),
     enabled: z.boolean(),
+    // '' means no default role — JIT sign-ins get no role, same as before
+    // this existed.
+    defaultRoleId: z.string(),
   });
 }
 

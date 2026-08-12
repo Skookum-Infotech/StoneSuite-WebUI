@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { ssoConfigService } from "@/services/ssoConfigService";
+import { rbacService } from "@/services/tenantServices";
 import { samlConfigSchema } from "@/lib/ssoConfigForm";
 import type { SAMLConfigFormValues } from "@/lib/ssoConfigForm";
 import { ssoConfigErrorMessage } from "@/lib/ssoConfigForm";
@@ -56,7 +57,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<SAMLConfigFormValues>({
     resolver: zodResolver(samlConfigSchema()),
-    defaultValues: { provider, metadataUrl: "", enabled: false },
+    defaultValues: { provider, metadataUrl: "", enabled: false, defaultRoleId: "" },
   });
 
   // Prefill once the existing config loads (or is confirmed absent) —
@@ -66,16 +67,33 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
   // clears back to blank instead of leaving stale values behind.
   useEffect(() => {
     if (existing) {
-      reset({ provider, metadataUrl: existing.metadataUrl, enabled: existing.enabled });
+      reset({
+        provider,
+        metadataUrl: existing.metadataUrl,
+        enabled: existing.enabled,
+        defaultRoleId: existing.defaultRoleId,
+      });
     } else {
-      reset({ provider, metadataUrl: "", enabled: false });
+      reset({ provider, metadataUrl: "", enabled: false, defaultRoleId: "" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existing?.id, existing?.metadataUrl, existing?.enabled]);
+  }, [existing?.id, existing?.metadataUrl, existing?.enabled, existing?.defaultRoleId]);
+
+  const rolesQ = useQuery({ queryKey: ["roles"], queryFn: rbacService.listRoles });
+  // System roles (e.g. super_admin) are rejected server-side as a default SSO
+  // role -- filter them out so the dropdown never offers a choice that would
+  // just 403 on save.
+  const assignableRoles = (rolesQ.data ?? []).filter((role) => !role.isSystem);
 
   const save = useMutation({
     mutationFn: (data: SAMLConfigFormValues) => {
-      const payload = { protocol: "saml" as const, provider, metadataUrl: data.metadataUrl, enabled: data.enabled };
+      const payload = {
+        protocol: "saml" as const,
+        provider,
+        metadataUrl: data.metadataUrl,
+        enabled: data.enabled,
+        defaultRoleId: data.defaultRoleId,
+      };
       return existing ? ssoConfigService.update(existing.id, payload) : ssoConfigService.create(payload);
     },
     onSuccess: () => {
@@ -108,6 +126,15 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
   });
 
   const onSubmit = (data: SAMLConfigFormValues) => save.mutate(data);
+
+  useEffect(() => {
+    if (!confirmingDelete) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmingDelete(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [confirmingDelete]);
 
   if (configsQ.isLoading) {
     return (
@@ -150,6 +177,25 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
           watchName="enabled"
           hint="Allow sign-in via this identity provider once configured."
         />
+
+        <div className="space-y-1.5">
+          <Label htmlFor={`${provider}-default-role`}>Default role for new sign-ins</Label>
+          <select
+            id={`${provider}-default-role`}
+            {...register("defaultRoleId")}
+            className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+          >
+            <option value="">No role — assign manually after sign-in</option>
+            {assignableRoles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-2xs text-stone-400">
+            Granted automatically to anyone signing in for the first time through this provider.
+          </p>
+        </div>
 
         {errors.root && <ErrorNote>{errors.root.message}</ErrorNote>}
         {configsQ.isError && (
@@ -234,6 +280,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
+                autoFocus
                 onClick={() => setConfirmingDelete(false)}
                 disabled={del.isPending}
                 className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"

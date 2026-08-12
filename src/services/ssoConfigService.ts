@@ -25,6 +25,7 @@ interface SSOConfigWire {
   certificate_fingerprint?: string;
   name_id_format?: string;
   metadata_fetched_at?: string;
+  default_role_id?: string;
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -50,6 +51,7 @@ function mapSSOConfig(w: SSOConfigWire): SSOConfig {
       certificateFingerprint: w.certificate_fingerprint ?? '',
       nameIdFormat: w.name_id_format ?? '',
       metadataFetchedAt: w.metadata_fetched_at ?? null,
+      defaultRoleId: w.default_role_id ?? '',
     };
   }
   return {
@@ -69,6 +71,7 @@ function toWirePayload(payload: SSOConfigCreatePayload | SSOConfigUpdatePayload)
       protocol: 'saml',
       metadata_url: payload.metadataUrl,
       enabled: payload.enabled,
+      default_role_id: payload.defaultRoleId ?? '',
     };
   }
   return {
