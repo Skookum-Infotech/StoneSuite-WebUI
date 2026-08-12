@@ -85,26 +85,32 @@ export interface VendorBillLine {
   lineTotal: number;
 }
 
-/** One live settlement ledger row (AD-7) — recorded via
- *  `POST /vendor-bills/{id}/payment`, removable via
- *  `DELETE /vendor-bills/{id}/payments/{paymentId}` (the "unapply"). */
-export interface VendorBillPayment {
-  id: string;
+/** One live vendor payment application against this bill — read-only. A bill
+ *  no longer owns its settlement ledger: money reaches it exclusively through
+ *  the Vendor Payment module's application ledger (`vendorpayment.Apply`), so
+ *  `GET /vendor-bills/{id}/payments` is an AP reconciliation view, not a
+ *  mutation surface. To settle a bill, create or apply a vendor payment. */
+export interface VendorBillPaymentEntry {
+  vendorPaymentId: string;
+  vendorPaymentNumber: string;
   amount: number;
-  methodId?: number;
-  method?: string;
-  referenceNumber: string;
-  memo: string;
-  paidAt: string;
-  createdAt: string;
+  appliedAt: string;
 }
 
-export interface RecordVendorBillPaymentPayload {
+/** One live vendor payment refund against this bill — money the vendor sent
+ *  back, which reduces what this bill counts as settled. Also read-only. */
+export interface VendorBillRefundEntry {
+  vendorPaymentId: string;
+  vendorPaymentNumber: string;
   amount: number;
-  methodId?: number | null;
-  referenceNumber?: string;
-  memo?: string;
-  paidAt?: string; // ISO date "yyyy-mm-dd"; blank => CURRENT_DATE
+  reason: string;
+  refundedAt: string;
+}
+
+/** Both halves of `GET /vendor-bills/{id}/payments`. */
+export interface VendorBillPaymentLedger {
+  payments: VendorBillPaymentEntry[];
+  refunds: VendorBillRefundEntry[];
 }
 
 /** `lkp_record_status` code for the VBIL record type — the state machine
@@ -123,7 +129,11 @@ export interface VendorBill {
 
   status: string;                     // human label, e.g. "Draft"
   statusCode: VendorBillStatusCode;   // drives the transition button map
-  approvalStatus: 'none' | 'pending' | 'approved'; // AD-6
+  /** Optional: the current backend's minimal vendor bill carries no approval
+   *  of its own (`vendorbill` has no approver tables and no /approve route) —
+   *  sign-off lives on the Vendor Payment that settles the bill. Kept on the
+   *  type so the list's Approval column degrades to "—" instead of breaking. */
+  approvalStatus?: 'none' | 'pending' | 'approved';
 
   vendor: VendorBillVendorRef;
   purchaseOrder?: VendorBillPurchaseOrderRef; // nullable lineage (AD-8)
@@ -156,16 +166,15 @@ export interface VendorBill {
 
   customFields?: Record<string, unknown>;
   items: VendorBillLine[];
-  payments?: VendorBillPayment[];
 
   createdAt?: string;
   updatedAt?: string;
   recordVersion?: number;
 }
 
-/** List/search rows are full `VendorBill` records server-side with `items`/
- *  `payments` omitted (mirrors purchaseorder.Search) — this type only names
- *  the subset the table actually renders. */
+/** List/search rows are full `VendorBill` records server-side with `items`
+ *  omitted (mirrors purchaseorder.Search) — this type only names the subset
+ *  the table actually renders. */
 export type VendorBillSummary = Pick<
   VendorBill,
   | 'id' | 'vendorBillNumber' | 'status' | 'statusCode' | 'approvalStatus'
