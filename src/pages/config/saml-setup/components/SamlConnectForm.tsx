@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { ssoConfigService } from "@/services/ssoConfigService";
 import { samlConfigSchema } from "@/lib/ssoConfigForm";
 import type { SAMLConfigFormValues } from "@/lib/ssoConfigForm";
 import { ssoConfigErrorMessage } from "@/lib/ssoConfigForm";
+import { apiErrorMessage } from "@/api/tenantClient";
+import { cn } from "@/lib/utils";
 import { Spinner, ErrorNote } from "@/components/tenant/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +36,7 @@ interface SamlConnectFormProps {
 export function SamlConnectForm({ provider }: SamlConnectFormProps) {
   const qc = useQueryClient();
   const copy = PROVIDER_COPY[provider];
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const configsQ = useQuery({
     queryKey: ["sso-configs"],
@@ -58,10 +61,14 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
 
   // Prefill once the existing config loads (or is confirmed absent) —
   // configsQ resolves after mount, so the form starts empty and adopts the
-  // fetched values here rather than depending on a prop that isn't available yet.
+  // fetched values here rather than depending on a prop that isn't available
+  // yet. Also re-runs on delete, when `existing` disappears, so the form
+  // clears back to blank instead of leaving stale values behind.
   useEffect(() => {
     if (existing) {
       reset({ provider, metadataUrl: existing.metadataUrl, enabled: existing.enabled });
+    } else {
+      reset({ provider, metadataUrl: "", enabled: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id, existing?.metadataUrl, existing?.enabled]);
@@ -86,6 +93,17 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sso-configs"] });
+    },
+  });
+
+  const del = useMutation({
+    mutationFn: () => {
+      if (!existing) throw new Error("No SAML configuration to delete.");
+      return ssoConfigService.remove(existing.id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sso-configs"] });
+      setConfirmingDelete(false);
     },
   });
 
@@ -138,7 +156,18 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
           <ErrorNote>{ssoConfigErrorMessage(configsQ.error)}</ErrorNote>
         )}
 
-        <div className="flex justify-end pt-1">
+        <div className={cn("flex items-center pt-1", existing ? "justify-between" : "justify-end")}>
+          {existing && (
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              aria-label="Delete SAML configuration"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              <Trash2 className="size-3.5" />
+              Delete
+            </button>
+          )}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -167,6 +196,61 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
               <ErrorNote>{ssoConfigErrorMessage(refresh.error)}</ErrorNote>
             </div>
           )}
+        </div>
+      )}
+
+      {confirmingDelete && existing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-saml-config-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmingDelete(false);
+          }}
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-50">
+                <AlertTriangle className="size-4 text-red-500" />
+              </span>
+              <div>
+                <h3 id="delete-saml-config-title" className="text-sm font-bold text-stone-900">
+                  Delete SAML configuration?
+                </h3>
+                <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+                  The {copy.name} configuration will be permanently removed
+                  {existing.enabled ? " and users will no longer be able to sign in with it" : ""}.
+                  This cannot be undone.
+                </p>
+                {del.error && (
+                  <div className="mt-2">
+                    <ErrorNote>{apiErrorMessage(del.error)}</ErrorNote>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={del.isPending}
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => del.mutate()}
+                disabled={del.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="size-3.5" />
+                {del.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

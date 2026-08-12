@@ -52,7 +52,7 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
             </div>
           </div>
           <Link
-            to="/config/saml-setup?tab=guides"
+            to="/config/saml-setup"
             aria-label="Back to identity providers"
             className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
           >
