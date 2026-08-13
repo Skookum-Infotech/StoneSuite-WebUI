@@ -130,10 +130,10 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute right-0 top-1/4 h-72 w-72 -translate-y-1/2 rounded-full blur-3xl" style={{ background: 'rgba(0,95,115,0.07)' }} />
         <div className="pointer-events-none absolute -left-8 bottom-1/4 h-52 w-52 rounded-full blur-3xl" style={{ background: 'rgba(163,230,53,0.07)' }} />
 
-        <div className="relative w-full max-w-sm sm:max-w-md">
+        <div className="relative w-full max-w-sm sm:max-w-lg">
 
           {/* Eyebrow label above card */}
-          <div className="mb-4 hidden md:flex items-center gap-3">
+          <div className="mb-5 hidden md:flex items-center gap-3">
             <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, transparent, rgba(0,95,115,0.2))' }} />
             <span className="text-2xs font-bold uppercase tracking-[0.35em]" style={{ color: 'rgba(0,95,115,0.45)' }}>Workspace Portal</span>
             <div className="h-px flex-1" style={{ background: 'linear-gradient(to left, transparent, rgba(0,95,115,0.2))' }} />
@@ -141,7 +141,7 @@ export default function LoginPage() {
 
           {/* Card */}
           <div
-            className="relative overflow-hidden rounded-3xl bg-white/80 p-4 backdrop-blur-xl sm:p-7"
+            className="relative overflow-hidden rounded-3xl bg-white/80 p-6 backdrop-blur-xl sm:p-10"
             style={{
               border: '1px solid rgba(0,95,115,0.1)',
               boxShadow: '0 32px 72px -12px rgba(0,95,115,0.14), 0 8px 24px -4px rgba(0,0,0,0.05), 0 0 0 1px rgba(255,255,255,0.85) inset',
@@ -157,7 +157,7 @@ export default function LoginPage() {
             </div>
 
             {/* Logo + Heading */}
-            <div className="mb-3 text-center sm:mb-8">
+            <div className="mb-4 text-center sm:mb-10">
               {step === 'redirecting' ? (
                 <>
                   <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 sm:mb-5 sm:h-16 sm:w-16">
@@ -216,7 +216,7 @@ export default function LoginPage() {
             )}
 
             {/* Footer */}
-            <div className="mt-3 hidden items-center justify-center gap-1.5 sm:flex sm:mt-6">
+            <div className="mt-4 hidden items-center justify-center gap-1.5 sm:flex sm:mt-8">
               <Lock className="size-3 text-stone-300" aria-hidden="true" />
               <p className="text-center text-xs text-stone-300">Protected by enterprise-grade security</p>
             </div>

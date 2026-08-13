@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowRight, Lock, Loader2, Mail } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff, Lock, Loader2, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { apiErrorMessage } from '@/api/tenantClient'
@@ -28,6 +29,7 @@ interface PasswordStepProps {
 // email itself is display-only here -- changing it means going back to
 // re-identify, since a different email could resolve to SSO instead.
 export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
+  const [showPassword, setShowPassword] = useState(false)
   const {
     register,
     handleSubmit,
@@ -49,8 +51,8 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-      <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-2.5">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+      <div className="flex items-center gap-2.5 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
         <Mail className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-700">{email}</span>
         <button
@@ -63,24 +65,33 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
         </button>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
           Password
         </Label>
         <div className="relative">
-          <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
           <Input
             id="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             autoFocus
             autoComplete="current-password"
             placeholder="••••••••"
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? 'password-error' : undefined}
             {...register('password')}
-            className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+            className="h-12 rounded-xl border-stone-200 bg-white pl-11 pr-11 text-sm text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
             style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
         </div>
         <div className="flex justify-end">
           <Link
@@ -104,7 +115,7 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
         type="submit"
         disabled={isSubmitting}
         aria-label="Sign in"
-        className="mt-1 h-11 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
+        className="mt-1 h-12 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
         style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
       >
         {isSubmitting ? (
