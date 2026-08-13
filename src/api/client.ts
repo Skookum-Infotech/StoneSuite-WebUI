@@ -45,10 +45,11 @@ async function attemptRefresh(): Promise<boolean> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const res = await axios.post<{ success: boolean; token?: string; expiresAt?: number }>(
-          `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/refresh`,
-          {},
-          { withCredentials: true },
+        // Goes through apiClient so the request interceptor still attaches the
+        // Authorization fallback and X-CSRF-Token. Safe from recursion: the
+        // response interceptor below skips 401 handling for /auth/refresh.
+        const res = await apiClient.post<{ success: boolean; token?: string; expiresAt?: number }>(
+          '/auth/refresh',
         );
         if (res.data.success && res.data.expiresAt) {
           useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
@@ -80,14 +81,10 @@ function forceLogout(): void {
 
   useAuthStore.getState().logout();
 
-  // Clear server-side cookies (fire-and-forget).
-  axios
-    .post(
-      `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/logout`,
-      {},
-      { withCredentials: true },
-    )
-    .catch(() => undefined);
+  // Clear server-side cookies (fire-and-forget). Uses apiClient so the request
+  // still carries X-CSRF-Token; isLoggingOut above stops the response
+  // interceptor from reacting to a 401 on this call.
+  apiClient.post('/auth/logout').catch(() => undefined);
 
   try {
     const ch = new BroadcastChannel('session-sync');
