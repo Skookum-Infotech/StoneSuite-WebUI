@@ -17,7 +17,7 @@ import { MicrosoftLogo } from '@/components/icons/MicrosoftLogo'
 import { SSO_PROVIDER_LABELS } from '@/lib/ssoConfigForm'
 import { SsoEmailStep } from './components/SsoEmailStep'
 import type { UserRole } from '@/types/auth'
-import type { SAMLProvider } from '@/types/tenant'
+import type { SAMLProvider, SSOProvider } from '@/types/tenant'
 import { SAML_PENDING_PROVIDER_KEY } from '@/lib/samlSession'
 
 const loginSchema = z.object({
@@ -67,6 +67,15 @@ export default function LoginPage() {
   // Which provider's inline work-email step is open (null = showing the two
   // provider buttons instead).
   const [ssoStep, setSsoStep] = useState<SAMLProvider | null>(null)
+  // Email step opened via "Sign in with a different provider" -- no button
+  // was clicked, so no provider is preset; discovery alone resolves it.
+  const [ssoGeneric, setSsoGeneric] = useState(false)
+  const ssoOpen = ssoStep !== null || ssoGeneric
+
+  function closeSso() {
+    setSsoStep(null)
+    setSsoGeneric(false)
+  }
 
   function redirectToSso(provider: SAMLProvider, opts: { tenantId?: string; tenantSlug?: string }) {
     const returnTo = searchParams.get('return_to') ?? undefined
@@ -95,6 +104,14 @@ export default function LoginPage() {
       return
     }
     setSsoStep(provider)
+  }
+
+  // Opens the work-email step with no provider preselected -- for tenants
+  // whose identity provider isn't one of the two buttons above (see
+  // CustomSamlSetupPage). Always shows the email step first, even on a
+  // tenant deep link, since there's no provider yet to redirect straight to.
+  function startSsoGeneric() {
+    setSsoGeneric(true)
   }
 
   // Home-realm discovery resolved the email to a tenant + provider (which
@@ -223,17 +240,19 @@ export default function LoginPage() {
 
             {/* Logo + Heading */}
             <div className="mb-3 text-center sm:mb-8">
-              {ssoStep ? (
+              {ssoOpen ? (
                 <>
                   <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 sm:mb-5 sm:h-16 sm:w-16">
                     {ssoStep === 'entra' ? (
                       <MicrosoftLogo className="size-7" />
-                    ) : (
+                    ) : ssoStep === 'cognito' ? (
                       <FaAws className="size-7 text-[#FF9900]" />
+                    ) : (
+                      <Mail className="size-7 text-stone-400" />
                     )}
                   </div>
                   <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">
-                    Sign in with {SSO_PROVIDER_LABELS[ssoStep]}
+                    {ssoStep ? `Sign in with ${SSO_PROVIDER_LABELS[ssoStep as SSOProvider]}` : 'Sign in with SSO'}
                   </h2>
                   <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">
                     Enter your work email to continue
@@ -259,19 +278,19 @@ export default function LoginPage() {
               )}
             </div>
 
-            {!ssoStep && loggedOut && (
+            {!ssoOpen && loggedOut && (
               <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700">
                 <CheckCircle2 className="size-4 shrink-0" />
                 You&apos;ve been signed out.
               </div>
             )}
 
-            {ssoStep ? (
+            {ssoOpen ? (
               <SsoEmailStep
-                provider={ssoStep}
+                provider={ssoStep ?? undefined}
                 defaultEmail={getValues('email') ?? ''}
                 onResolved={handleSsoResolved}
-                onBack={() => setSsoStep(null)}
+                onBack={closeSso}
               />
             ) : (
               <>
@@ -367,6 +386,14 @@ export default function LoginPage() {
                       icon={<FaAws className="size-5 text-[#FF9900]" />}
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={startSsoGeneric}
+                    aria-label="Sign in with a different identity provider"
+                    className="mt-2 text-xs font-medium text-stone-400 underline underline-offset-2 transition-colors hover:text-stone-700"
+                  >
+                    Sign in with a different provider
+                  </button>
                 </div>
               </>
             )}

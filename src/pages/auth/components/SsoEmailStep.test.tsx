@@ -10,12 +10,13 @@ vi.mock('@/services/samlAuthService', () => ({
 
 import { SsoEmailStep } from './SsoEmailStep'
 import { samlAuthService } from '@/services/samlAuthService'
+import type { SAMLProvider } from '@/types/tenant'
 
 function renderStep(
   overrides: Partial<{
-    provider: 'entra' | 'cognito'
+    provider: SAMLProvider
     defaultEmail: string
-    onResolved: (tenantId: string, provider: 'entra' | 'cognito') => void
+    onResolved: (tenantId: string, provider: SAMLProvider) => void
     onBack: () => void
   }> = {},
 ) {

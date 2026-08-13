@@ -98,6 +98,9 @@ const CognitoSamlSetupPage = lazyWithRetry(
 const EntraSamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/EntraSamlSetupPage"),
 );
+const CustomSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/CustomSamlSetupPage"),
+);
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
 );
@@ -1246,6 +1249,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sso_config" action="read">
             <EntraSamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/:provider",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <CustomSamlSetupPage />
           </PermissionGuard>,
         ),
       },

@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { AxiosError } from 'axios'
-import { isHttpUrl, ssoConfigSchema, samlConfigSchema, ssoConfigErrorMessage } from './ssoConfigForm'
+import {
+  isHttpUrl,
+  isValidSamlProvider,
+  ssoConfigSchema,
+  samlConfigSchema,
+  ssoConfigErrorMessage,
+} from './ssoConfigForm'
 
 describe('isHttpUrl', () => {
   it.each([
@@ -59,7 +65,7 @@ describe('samlConfigSchema', () => {
     expect(result.success).toBe(expected)
   })
 
-  it('accepts entra and cognito but rejects okta (backend samlProviders whitelist)', () => {
+  it('accepts entra, cognito, and any well-formed custom provider slug', () => {
     const withProvider = (provider: string) =>
       samlConfigSchema().safeParse({
         provider,
@@ -69,7 +75,40 @@ describe('samlConfigSchema', () => {
       })
     expect(withProvider('entra').success).toBe(true)
     expect(withProvider('cognito').success).toBe(true)
-    expect(withProvider('okta').success).toBe(false)
+    expect(withProvider('okta').success).toBe(true)
+    expect(withProvider('one-login2').success).toBe(true)
+  })
+
+  it.each([
+    ['', false],
+    ['A', false], // must be lowercase
+    ['1okta', false], // must start with a letter
+    ['ok', true], // 2 chars is the minimum
+    ['o', false], // 1 char is too short
+    ['x'.repeat(31), false], // over the 30-char cap
+    ['with spaces', false],
+  ])('rejects malformed provider slug %p -> valid=%p', (provider, expected) => {
+    const result = samlConfigSchema().safeParse({
+      provider,
+      metadataUrl: 'https://idp.example.com/metadata',
+      enabled: true,
+      defaultRoleId: '',
+    })
+    expect(result.success).toBe(expected)
+  })
+})
+
+describe('isValidSamlProvider', () => {
+  it.each([
+    ['entra', true],
+    ['cognito', true],
+    ['okta', true],
+    ['one-login2', true],
+    ['', false],
+    ['Entra', false], // must be lowercase
+    ['1okta', false], // must start with a letter
+  ])('isValidSamlProvider(%p) -> %p', (provider, expected) => {
+    expect(isValidSamlProvider(provider)).toBe(expected)
   })
 })
 

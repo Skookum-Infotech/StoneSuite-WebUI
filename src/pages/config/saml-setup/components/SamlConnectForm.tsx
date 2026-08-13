@@ -17,7 +17,10 @@ import type { SAMLConfig, SAMLProvider } from "@/types/tenant";
 import { SamlDerivedFields } from "./SamlDerivedFields";
 import { EnabledToggle } from "./EnabledToggle";
 
-const PROVIDER_COPY: Record<SAMLProvider, { name: string; metadataPlaceholder: string }> = {
+// Partial, not exhaustive: SAMLProvider also accepts a custom slug (see its
+// definition in types/tenant.ts) that has no entry here, and falls back to
+// defaultProviderCopy below.
+const PROVIDER_COPY: Partial<Record<string, { name: string; metadataPlaceholder: string }>> = {
   cognito: {
     name: "AWS Cognito",
     metadataPlaceholder:
@@ -30,13 +33,20 @@ const PROVIDER_COPY: Record<SAMLProvider, { name: string; metadataPlaceholder: s
   },
 };
 
+function defaultProviderCopy(provider: string): { name: string; metadataPlaceholder: string } {
+  return {
+    name: provider.charAt(0).toUpperCase() + provider.slice(1),
+    metadataPlaceholder: "https://your-identity-provider.example.com/saml/metadata",
+  };
+}
+
 interface SamlConnectFormProps {
   provider: SAMLProvider;
 }
 
 export function SamlConnectForm({ provider }: SamlConnectFormProps) {
   const qc = useQueryClient();
-  const copy = PROVIDER_COPY[provider];
+  const copy = PROVIDER_COPY[provider] ?? defaultProviderCopy(provider);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const configsQ = useQuery({

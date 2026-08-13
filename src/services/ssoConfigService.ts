@@ -1,5 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
-import type { SSOConfig, SSOConfigCreatePayload, SSOConfigUpdatePayload } from '@/types/tenant';
+import type { SSOConfig, SSOConfigCreatePayload, SSOConfigUpdatePayload, SSOProvider } from '@/types/tenant';
 
 // SSO provider configuration — /api/tenant/sso-configs*. protocol="oidc" is
 // configuration only (no login flow); protocol="saml" is fully wired end to
@@ -43,7 +43,7 @@ function mapSSOConfig(w: SSOConfigWire): SSOConfig {
     return {
       ...base,
       protocol: 'saml',
-      provider: w.provider as SSOConfig['provider'] & ('entra' | 'cognito'),
+      provider: w.provider,
       metadataUrl: w.metadata_url ?? '',
       idpEntityId: w.idp_entity_id ?? '',
       ssoUrl: w.sso_url ?? '',
@@ -57,7 +57,7 @@ function mapSSOConfig(w: SSOConfigWire): SSOConfig {
   return {
     ...base,
     protocol: 'oidc',
-    provider: w.provider as SSOConfig['provider'],
+    provider: w.provider as SSOProvider,
     clientId: w.client_id ?? '',
     issuer: w.issuer ?? '',
     redirectUri: w.redirect_uri ?? '',

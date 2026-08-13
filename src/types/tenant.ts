@@ -249,14 +249,18 @@ export interface WorkflowNumberingConfig {
 
 export type SSOProtocol = 'oidc' | 'saml';
 export type SSOProvider = 'entra' | 'cognito' | 'okta';
-// Backend's samlProviders whitelist (controllers/sso.go) — protocol=saml
-// only supports these two; okta SAML is rejected with 400.
-export type SAMLProvider = 'entra' | 'cognito';
+// entra/cognito get a first-class setup page with a vendor-specific
+// walkthrough; any other lowercase slug (2-30 chars, letters/digits/hyphens,
+// starting with a letter) is also accepted — see isValidSAMLProvider in the
+// backend's controllers/sso.go — and gets the generic CustomSamlSetupPage.
+// The `string & {}` branding keeps 'entra'/'cognito' autocompleting while
+// still allowing an arbitrary slug (unlike a bare `string`, which would
+// erase the two known literals from autocomplete).
+export type SAMLProvider = 'entra' | 'cognito' | (string & {});
 
 interface SSOConfigBase {
   id: string;
   tenantId: string;
-  provider: SSOProvider;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -264,6 +268,7 @@ interface SSOConfigBase {
 
 export interface OIDCConfig extends SSOConfigBase {
   protocol: 'oidc';
+  provider: SSOProvider;
   clientId: string;
   issuer: string;
   redirectUri: string;

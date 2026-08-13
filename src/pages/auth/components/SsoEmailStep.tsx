@@ -10,7 +10,16 @@ import { SSO_PROVIDER_LABELS } from '@/lib/ssoConfigForm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { SAMLProvider } from '@/types/tenant'
+import type { SAMLProvider, SSOProvider } from '@/types/tenant'
+
+// SSO_PROVIDER_LABELS only has entries for the fixed set of providers this
+// login-page step currently offers a button for (entra/cognito) -- a custom
+// SAML provider slug (see types/tenant.ts's SAMLProvider) isn't wired up
+// here yet, so this cast just asserts the runtime invariant that's already
+// true today. Revisit once the login page picks providers dynamically.
+function providerLabel(provider: SAMLProvider): string {
+  return SSO_PROVIDER_LABELS[provider as SSOProvider]
+}
 
 const emailSchema = z.object({
   email: z.string().min(1, 'Work email is required').email('Enter a valid email'),
@@ -18,7 +27,11 @@ const emailSchema = z.object({
 type EmailFields = z.infer<typeof emailSchema>
 
 interface SsoEmailStepProps {
-  provider: SAMLProvider
+  // Undefined when the user didn't preselect a provider button (see
+  // LoginPage's "Sign in with a different provider" link) -- discovery still
+  // resolves the real provider from the email domain, there's just nothing
+  // to compare it against, so a mismatch can never happen in that mode.
+  provider?: SAMLProvider
   defaultEmail: string
   onResolved: (tenantId: string, provider: SAMLProvider) => void
   onBack: () => void
@@ -30,7 +43,10 @@ interface SsoEmailStepProps {
 // the one clicked, we surface that instead of silently redirecting them
 // somewhere they didn't choose.
 export function SsoEmailStep({ provider, defaultEmail, onResolved, onBack }: SsoEmailStepProps) {
-  const [mismatch, setMismatch] = useState<{ tenantId: string; provider: SAMLProvider } | null>(null)
+  // Self-contains both providers (not just the discovered one) so the render
+  // below never needs to fall back on the outer `provider` prop, which is
+  // undefined in generic mode -- see SsoEmailStepProps.provider.
+  const [mismatch, setMismatch] = useState<{ tenantId: string; discovered: SAMLProvider; clicked: SAMLProvider } | null>(null)
 
   const {
     register,
@@ -59,8 +75,8 @@ export function SsoEmailStep({ provider, defaultEmail, onResolved, onBack }: Sso
       setError('email', { message: 'No SSO connection found for that email address.' })
       return
     }
-    if (result.provider !== provider) {
-      setMismatch({ tenantId: result.tenantId, provider: result.provider })
+    if (provider && result.provider !== provider) {
+      setMismatch({ tenantId: result.tenantId, discovered: result.provider, clicked: provider })
       return
     }
     onResolved(result.tenantId, result.provider)
@@ -97,16 +113,16 @@ export function SsoEmailStep({ provider, defaultEmail, onResolved, onBack }: Sso
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
           <p>
             That email signs in with{' '}
-            <strong className="font-semibold">{SSO_PROVIDER_LABELS[mismatch.provider]}</strong>, not{' '}
-            {SSO_PROVIDER_LABELS[provider]}.
+            <strong className="font-semibold">{providerLabel(mismatch.discovered)}</strong>, not{' '}
+            {providerLabel(mismatch.clicked)}.
           </p>
           <button
             type="button"
-            onClick={() => onResolved(mismatch.tenantId, mismatch.provider)}
-            aria-label={`Continue signing in with ${SSO_PROVIDER_LABELS[mismatch.provider]}`}
+            onClick={() => onResolved(mismatch.tenantId, mismatch.discovered)}
+            aria-label={`Continue signing in with ${providerLabel(mismatch.discovered)}`}
             className="mt-2 inline-flex items-center gap-1 font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-950"
           >
-            Continue with {SSO_PROVIDER_LABELS[mismatch.provider]}
+            Continue with {providerLabel(mismatch.discovered)}
             <ArrowRight className="size-3" />
           </button>
         </div>
@@ -121,7 +137,7 @@ export function SsoEmailStep({ provider, defaultEmail, onResolved, onBack }: Sso
       <Button
         type="submit"
         disabled={isSubmitting}
-        aria-label={`Continue signing in with ${SSO_PROVIDER_LABELS[provider]}`}
+        aria-label={provider ? `Continue signing in with ${providerLabel(provider)}` : 'Continue'}
         className="h-11 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
         style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
       >
