@@ -339,9 +339,11 @@ export const VB_STATUS_COLORS: Record<string, string> = {
   VOID: '#78716c',
 };
 
-/** Statuses `vendorBillService.recordPayment` will accept (vendorbill/
- *  balance.go `PayableStatuses`) — a bill must be approved before anything
- *  can be paid against it. */
+/** Statuses a vendor payment can be applied against (vendorbill/balance.go
+ *  `PayableStatuses`) — a bill must be approved before anything can be paid
+ *  against it. The bill itself no longer records settlements: the check runs
+ *  server-side inside `vendorpayment.Apply`, and this set only drives UI copy
+ *  (see VP_PAYABLE_BILL_STATUSES in lib/vendorPaymentForm.ts). */
 export const VB_PAYABLE_STATUSES = new Set(['APPV', 'PART', 'ODUE']);
 
 /** Statuses `vendorBillService.updateVendorBill` rejects edits against

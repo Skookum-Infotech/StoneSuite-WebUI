@@ -17,7 +17,6 @@ import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
 import { VendorBillTransitionBar } from './components/VendorBillTransitionBar';
-import { VendorBillApprovalButton } from './components/VendorBillApprovalButton';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
 const TABS = [
@@ -85,8 +84,7 @@ export default function VendorBillDetailPage() {
   // bar renders nothing, so the card would be an empty "Actions" header.
   // Hide it unless it has real content (mirrors PurchaseOrderDetailPage).
   const hasTransitions = canTransition && (VB_ALLOWED_TRANSITIONS[bill.statusCode]?.length ?? 0) > 0;
-  const isApprovalPending = bill.approvalStatus === 'pending';
-  const showActions = hasTransitions || isApprovalPending || Boolean(transition.error);
+  const showActions = hasTransitions || Boolean(transition.error);
 
   async function handleExportPdf() {
     if (!bill) return;
@@ -269,7 +267,7 @@ export default function VendorBillDetailPage() {
           )}
 
           {activeTab === 'payments' && (
-            <BillPaymentsTab vendorBillId={id} statusCode={bill.statusCode} balanceDue={bill.balanceDue} />
+            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} />
           )}
           {activeTab === 'audit' && <VendorBillAuditTab vendorBillId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
@@ -321,19 +319,10 @@ export default function VendorBillDetailPage() {
               <p className="text-xs font-semibold text-stone-400">Actions</p>
               <VendorBillTransitionBar
                 statusCode={bill.statusCode}
-                approvalStatus={bill.approvalStatus}
+                approvalStatus={bill.approvalStatus ?? 'none'}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />
-              {isApprovalPending && (
-                <VendorBillApprovalButton
-                  vendorBillId={id}
-                  onApproved={(updated) => {
-                    queryClient.setQueryData(['vendor-bill', id], updated);
-                    queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
-                  }}
-                />
-              )}
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
               )}
@@ -346,7 +335,7 @@ export default function VendorBillDetailPage() {
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{bill.status}</Badge>
             </div>
-            {bill.approvalStatus !== 'none' && (
+            {bill.approvalStatus && bill.approvalStatus !== 'none' && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
                 <span className="text-stone-500">Approval</span>
                 <span className={cn('font-medium', bill.approvalStatus === 'approved' ? 'text-emerald-600' : 'text-amber-600')}>

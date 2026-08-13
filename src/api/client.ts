@@ -8,12 +8,26 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+// Reads a cookie by name. Only useful for non-httpOnly cookies — csrf_token
+// is deliberately not httpOnly so this can read it (see backend
+// middleware/csrf.go for why the header must echo the cookie's value).
+function readCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 // Request interceptor: attach Authorization header as a fallback for environments
-// that do not support cookies (e.g. React Native, some CORS configurations).
+// that do not support cookies (e.g. React Native, some CORS configurations),
+// and echo the csrf_token cookie back as a header (double-submit CSRF check —
+// a no-op on the backend unless it's running with SameSite=None cookies).
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const csrfToken = readCookie('csrf_token');
+  if (csrfToken) {
+    config.headers['X-CSRF-Token'] = csrfToken;
   }
   return config;
 });
