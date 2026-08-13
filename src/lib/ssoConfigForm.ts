@@ -28,6 +28,16 @@ export const SSO_PROVIDER_LABELS: Record<SSOProvider, string> = {
   okta: 'Okta',
 };
 
+// Display label for any SAML provider slug, including a custom one with no
+// bespoke setup page (see CustomSamlSetupPage, which derives its own heading
+// the same way -- capitalize the slug).
+export function samlProviderLabel(provider: SAMLProvider): string {
+  if ((SSO_PROVIDERS as string[]).includes(provider)) {
+    return SSO_PROVIDER_LABELS[provider as SSOProvider];
+  }
+  return provider.charAt(0).toUpperCase() + provider.slice(1);
+}
+
 // Mirrors the backend's isHTTPURL (controllers/sso.go): absolute http(s) URL
 // with a host. Empty string is valid here — required-ness is handled by the
 // caller (issuer/redirectUri are optional fields).

@@ -1,3 +1,5 @@
+import type { SAMLProvider } from './tenant';
+
 export interface UserRole {
   id: string;
   name: string;
@@ -38,6 +40,14 @@ export interface LoginCredentials {
   password: string;
   rememberMe?: boolean;
 }
+
+// Result of POST /api/auth/identify -- tells the login page's email step
+// whether to show the password field or redirect to an identity provider.
+// A function of the email's domain only, never of whether an account
+// exists (see authService.identify).
+export type IdentifyResult =
+  | { method: 'password' }
+  | { method: 'sso'; provider: SAMLProvider; tenantId: string };
 
 export interface RegisterData {
   email: string;

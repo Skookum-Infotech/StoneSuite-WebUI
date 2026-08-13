@@ -15,8 +15,8 @@ interface SsoDomainsCardProps {
 }
 
 // Lets an admin register the email domains that should auto-route to this
-// SAML provider on the login page's work-email step (see SsoEmailStep /
-// samlAuthService.discover). Independent of the connect form's Save button —
+// SAML provider on the login page's email step (see EmailStep /
+// authService.identify). Independent of the connect form's Save button —
 // each add/remove is its own immediate request. Domains attach to a saved
 // config, so this renders nothing until one exists (mirrors SsoSignInLink,
 // which re-derives the same existing config from the same query key rather
