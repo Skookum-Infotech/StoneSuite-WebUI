@@ -6,26 +6,55 @@ import path from 'path'
 // Matches any absolute URL ("https://host/api", "//host/api"), i.e. anything
 // that is not a same-origin relative path.
 const ABSOLUTE_URL_PATTERN = /^([a-z][a-z0-9+.-]*:)?\/\//i
+// Only a full "https://host[:port]/path" URL is acceptable for the opt-in
+// cross-origin case below — "//host/api" (protocol-relative) is rejected so a
+// misconfigured build fails loudly instead of resolving against an unexpected
+// scheme.
+const ABSOLUTE_HTTPS_URL_PATTERN = /^https:\/\//i
 
 const API_BASE_URL_VAR = 'VITE_API_BASE_URL'
+const CROSS_ORIGIN_API_VAR = 'VITE_CROSS_ORIGIN_API'
 
 /**
- * A deployed build must call the API through a same-origin relative path.
+ * A deployed build must call the API through a same-origin relative path,
+ * unless it explicitly opts in via VITE_CROSS_ORIGIN_API=true.
  *
  * The backend issues its auth cookies (auth_token, refresh_token, csrf_token)
- * host-only. Point this at an absolute backend URL and the browser scopes
- * csrf_token to the backend's host, where document.cookie cannot read it — so
- * src/api/client.ts never attaches X-CSRF-Token and every mutating request is
- * rejected with "Request rejected: missing or invalid CSRF token." The
- * refresh_token round-trip breaks the same way.
+ * host-only. Point a same-origin build at an absolute backend URL and the
+ * browser scopes csrf_token to the backend's host, where document.cookie
+ * cannot read it — so src/api/client.ts never attaches X-CSRF-Token and every
+ * mutating request is rejected with "Request rejected: missing or invalid
+ * CSRF token." The refresh_token round-trip breaks the same way.
  *
- * Keeping this relative routes traffic through the Cloudflare Pages Function
+ * Same-origin builds route traffic through the Cloudflare Pages Function
  * (functions/api/[[path]].ts), which is what makes those cookies first-party.
- * This previously failed only at runtime, in the deployed environment, as an
- * opaque 403 — failing the build names the cause instead.
+ * That's still the default and what prod uses.
+ *
+ * A build can instead call the backend directly, cross-origin, by setting
+ * VITE_CROSS_ORIGIN_API=true — this is for the Azure DevOps dev pipeline
+ * (dev-stonesuite-webui.pages.dev -> dev-stonesuite-api.fly.dev). It only
+ * works because that backend deployment runs with COOKIE_SAME_SITE_MODE=none
+ * and APP_ENV=production (so cookies carry Secure), which activates the CSRF
+ * double-submit check in middleware/csrf.go — src/api/client.ts already
+ * echoes the csrf_token cookie back as X-CSRF-Token unconditionally, so no
+ * frontend change is needed to use it. Do not set this for prod: prod's
+ * backend still runs SameSite=Lax with no CSRF token issued, and cross-origin
+ * cookies would silently fail to persist there.
  */
-function assertSameOriginApiBase(apiBaseUrl: string | undefined): void {
-  if (!apiBaseUrl || !ABSOLUTE_URL_PATTERN.test(apiBaseUrl)) return
+export function assertSameOriginApiBase(apiBaseUrl: string | undefined, crossOriginOptIn: boolean): void {
+  const isAbsolute = !!apiBaseUrl && ABSOLUTE_URL_PATTERN.test(apiBaseUrl)
+
+  if (crossOriginOptIn) {
+    if (apiBaseUrl && ABSOLUTE_HTTPS_URL_PATTERN.test(apiBaseUrl)) return
+
+    throw new Error(
+      `${CROSS_ORIGIN_API_VAR}=true requires ${API_BASE_URL_VAR} to be a well-formed ` +
+        `absolute https:// URL (e.g. "https://dev-stonesuite-api.fly.dev/api"); got ` +
+        `${apiBaseUrl ? `"${apiBaseUrl}"` : '(unset)'}.`,
+    )
+  }
+
+  if (!isAbsolute) return
 
   throw new Error(
     `${API_BASE_URL_VAR} is set to "${apiBaseUrl}", but a build must use a same-origin ` +
@@ -37,7 +66,11 @@ function assertSameOriginApiBase(apiBaseUrl: string | undefined): void {
       `Set ${API_BASE_URL_VAR}=/api and set API_ORIGIN on the Cloudflare Pages project ` +
       `so functions/api/[[path]].ts proxies to the backend (see DEPLOY_FRONTEND.md).\n` +
       `To target a different backend while developing, use ` +
-      `VITE_DEV_API_ORIGIN=<origin> npm run dev instead.`,
+      `VITE_DEV_API_ORIGIN=<origin> npm run dev instead.\n\n` +
+      `If this build is meant to call the backend cross-origin on purpose (e.g. the ` +
+      `Azure dev pipeline), set ${CROSS_ORIGIN_API_VAR}=true — this requires the target ` +
+      `backend to run with COOKIE_SAME_SITE_MODE=none and APP_ENV=production ` +
+      `(stonesuite-backend/middleware/csrf.go and config/config.go).`,
   )
 }
 
@@ -49,7 +82,9 @@ export default defineConfig(({ command, mode }) => {
     const fileEnv = loadEnv(mode, process.cwd(), '')
     // Real environment variables (how CI/Pages inject config) take precedence
     // over .env files, matching Vite's own resolution order.
-    assertSameOriginApiBase(process.env[API_BASE_URL_VAR] ?? fileEnv[API_BASE_URL_VAR])
+    const apiBaseUrl = process.env[API_BASE_URL_VAR] ?? fileEnv[API_BASE_URL_VAR]
+    const crossOriginOptIn = (process.env[CROSS_ORIGIN_API_VAR] ?? fileEnv[CROSS_ORIGIN_API_VAR]) === 'true'
+    assertSameOriginApiBase(apiBaseUrl, crossOriginOptIn)
   }
 
   return {
