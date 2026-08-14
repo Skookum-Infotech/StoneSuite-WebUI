@@ -299,7 +299,8 @@ git push origin feat/dynamic-crm-platform
 
 **Fix:**
 1. Cloudflare Pages dashboard → stonesuite → **Settings** → **Environment variables**
-2. Verify `VITE_API_BASE_URL=https://stonesuite-backend.fly.dev/api` is set
+2. Verify `VITE_API_BASE_URL=/api` is set (it must stay relative — see above), and that
+   `API_ORIGIN=https://stonesuite-backend.fly.dev` is set in both variable sets
 3. **Rerun deployment** (click the latest deployment → Retry)
 
 ### Issue: Build Always Says "No Build Output"

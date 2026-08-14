@@ -52,10 +52,18 @@ npm run ci           # lint + test + build (what CI runs)
 
 ## Deployment (Cloudflare Pages)
 Built from `develop`/`master`. Framework `Vite`, build command `npm run build`, output
-dir `dist`. Every push to a tracked branch auto-builds and deploys. Pages env var:
+dir `dist`. Every push to a tracked branch auto-builds and deploys. Pages env vars:
 ```
-VITE_API_BASE_URL=https://stonesuite-backend.fly.dev/api
+VITE_API_BASE_URL=/api                                  # build-time (must stay relative)
+API_ORIGIN=https://stonesuite-backend.fly.dev           # runtime, read by the Pages Function
 ```
+**`VITE_API_BASE_URL` must stay a relative path.** Traffic routes through the same-origin
+Pages Function (`functions/api/[[path]].ts`), which is what keeps the backend's auth
+cookies first-party. Point it at an absolute backend URL and the browser scopes the
+`csrf_token` cookie to the backend host where JS cannot read it — every mutating request
+then fails with `Request rejected: missing or invalid CSRF token.` `vite.config.ts` fails
+the build if this is absolute. `API_ORIGIN` must be set in **both** the Production and
+Preview variable sets.
 (See `.env.example` for Entra ID / Cognito OAuth vars — not yet production-deployed.)
 
 ## Talking to the Backend API (what the frontend must respect)
