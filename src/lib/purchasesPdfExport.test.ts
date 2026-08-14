@@ -115,4 +115,32 @@ describe("exportPurchasesRecordToPdf", () => {
       }),
     ).resolves.toBeUndefined()
   })
+
+  it("builds and saves a Vendor Credit PDF with an applications table and totals", async () => {
+    await expect(
+      exportPurchasesRecordToPdf({
+        recordType: "vendor_credit",
+        title: "VCR-000001",
+        recordNumber: "VCR-000001",
+        statusLabel: "Approved",
+        counterpartyName: "Acme Supply Co",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-02T00:00:00Z",
+        sections: [
+          { title: "Primary Information", rows: [["Reference #", "RMA-4471"], ["Reason", "Returned defective slab"]] },
+        ],
+        itemsTable: {
+          title: "Applications",
+          head: ["Vendor Bill #", "Amount", "Applied On"],
+          rows: [["VBIL-000001", "$200.00", "Jan 2, 2026"]],
+          numericFrom: 1,
+        },
+        totals: [
+          { label: "Amount", value: "$850.00", bold: true },
+          { label: "Applied", value: "$200.00" },
+          { label: "Unapplied", value: "$650.00", bold: true },
+        ],
+      }),
+    ).resolves.toBeUndefined()
+  })
 })

@@ -267,6 +267,18 @@ const VendorPaymentDetailPage = lazyWithRetry(
 const EditVendorPaymentPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor-payment/EditVendorPaymentPage"),
 );
+const VendorCreditListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/VendorCreditListPage"),
+);
+const AddVendorCreditPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/AddVendorCreditPage"),
+);
+const VendorCreditDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/VendorCreditDetailPage"),
+);
+const EditVendorCreditPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/EditVendorCreditPage"),
+);
 // Inventory module
 const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
@@ -926,6 +938,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="vendor_payment" action="update">
             <EditVendorPaymentPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Vendor Credits (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_credit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="read">
+            <VendorCreditListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="create">
+            <AddVendorCreditPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="read">
+            <VendorCreditDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="update">
+            <EditVendorCreditPage />
           </PermissionGuard>,
         ),
       },

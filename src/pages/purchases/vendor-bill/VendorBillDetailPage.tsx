@@ -78,6 +78,12 @@ export default function VendorBillDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor bill.')}</ErrorNote></div>;
 
   const color = VB_STATUS_COLORS[bill.statusCode] ?? '#a8a29e';
+  // The bill API doesn't expose a credit_total field directly — it's derived
+  // here as the gap between grandTotal - amountPaid and the server's own
+  // balanceDue, which vendorbill.BalanceDue() computes as
+  // grand_total - amount_paid - credit_total. Floored at 0 defensively; it
+  // should never go negative in practice.
+  const creditsApplied = Math.max(0, bill.grandTotal - bill.amountPaid - bill.balanceDue);
   const canDeleteHere = canDelete && VB_DELETABLE_STATUSES.has(bill.statusCode);
   // Terminal statuses (PAID/VOID) have no legal transitions, and a user
   // without `vendor_bill:transition` sees none either — in both cases the
@@ -137,6 +143,7 @@ export default function VendorBillDetailPage() {
           { label: 'Adjustment', value: currency(bill.adjustment) },
           { label: 'Grand Total', value: currency(bill.grandTotal), bold: true },
           { label: 'Amount Paid', value: currency(bill.amountPaid) },
+          { label: 'Credits Applied', value: currency(creditsApplied) },
           { label: 'Balance Due', value: currency(bill.balanceDue), bold: true },
         ],
       });
@@ -209,13 +216,14 @@ export default function VendorBillDetailPage() {
                 </div>
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-8">
                   <Total label="Subtotal" value={bill.subtotal} />
                   <Total label="Discount" value={bill.discountTotal} />
                   <Total label="Tax" value={bill.taxTotal} />
                   <Total label="Adjustment" value={bill.adjustment} />
                   <Total label="Grand Total" value={bill.grandTotal} bold />
                   <Total label="Amount Paid" value={bill.amountPaid} />
+                  <Total label="Credits Applied" value={creditsApplied} />
                   <Total label="Balance Due" value={bill.balanceDue} bold />
                 </div>
               </div>
