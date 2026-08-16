@@ -105,6 +105,7 @@ describe('ssoConfigService — protocol=saml mapping', () => {
       protocol: 'saml',
       metadata_url: 'https://idp.example.com/metadata',
       enabled: false,
+      default_role_id: '',
     })
   })
 

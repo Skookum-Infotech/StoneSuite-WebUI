@@ -1,7 +1,35 @@
 import { apiClient } from '@/api/client';
-import type { LoginCredentials, RegisterData, AuthResponse, RefreshResponse, UserProfile } from '@/types/auth';
+import type {
+  LoginCredentials,
+  RegisterData,
+  AuthResponse,
+  RefreshResponse,
+  UserProfile,
+  IdentifyResult,
+} from '@/types/auth';
+import type { SAMLProvider } from '@/types/tenant';
+
+interface IdentifyWire {
+  success: boolean;
+  method: 'password' | 'sso';
+  provider?: string;
+  tenant_id?: string;
+}
 
 export const authService = {
+  // Login page's first step: resolves an email to "password" (show the
+  // password field) or "sso" (redirect to that provider). Always call this
+  // before showing a password field -- never assume "password" for an email
+  // that hasn't been through it, since a domain can be SSO-only.
+  identify: async (email: string): Promise<IdentifyResult> => {
+    const response = await apiClient.post<IdentifyWire>('/auth/identify', { email });
+    const { method, provider, tenant_id } = response.data;
+    if (method === 'sso' && provider && tenant_id) {
+      return { method: 'sso', provider: provider as SAMLProvider, tenantId: tenant_id };
+    }
+    return { method: 'password' };
+  },
+
   // Authenticate against the multi-tenant control plane. The response carries
   // the user's tenant context + platform-admin flag, used to gate owner-only UI.
   login: async (data: LoginCredentials): Promise<AuthResponse> => {

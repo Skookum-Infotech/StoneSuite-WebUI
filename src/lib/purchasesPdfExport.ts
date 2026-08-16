@@ -29,7 +29,8 @@ import {
 // absent — unlike a purchase order's, which is mandatory.
 
 export type PurchasesRecordType =
-  | "requisition" | "purchase_order" | "item_receipt" | "vendor" | "vendor_bill" | "vendor_payment";
+  | "requisition" | "purchase_order" | "item_receipt" | "vendor" | "vendor_bill" | "vendor_payment"
+  | "vendor_credit";
 
 export interface PurchasesPdfSection {
   title: string;
@@ -75,6 +76,7 @@ const RECORD_TYPE_LABEL: Record<PurchasesRecordType, string> = {
   vendor: "Vendor",
   vendor_bill: "Vendor Bill",
   vendor_payment: "Vendor Payment",
+  vendor_credit: "Vendor Credit",
 };
 
 export function buildExportFilename(

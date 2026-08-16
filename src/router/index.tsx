@@ -98,6 +98,9 @@ const CognitoSamlSetupPage = lazyWithRetry(
 const EntraSamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/EntraSamlSetupPage"),
 );
+const CustomSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/CustomSamlSetupPage"),
+);
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
 );
@@ -263,6 +266,18 @@ const VendorPaymentDetailPage = lazyWithRetry(
 );
 const EditVendorPaymentPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor-payment/EditVendorPaymentPage"),
+);
+const VendorCreditListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/VendorCreditListPage"),
+);
+const AddVendorCreditPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/AddVendorCreditPage"),
+);
+const VendorCreditDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/VendorCreditDetailPage"),
+);
+const EditVendorCreditPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/EditVendorCreditPage"),
 );
 // Inventory module
 const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
@@ -927,6 +942,40 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Vendor Credits (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_credit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="read">
+            <VendorCreditListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="create">
+            <AddVendorCreditPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="read">
+            <VendorCreditDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="update">
+            <EditVendorCreditPage />
+          </PermissionGuard>,
+        ),
+      },
+
       // Finance: Journal Entries (specific routes must come before any future catch-all)
       {
         path: "finance/journal-entries",
@@ -1292,6 +1341,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sso_config" action="read">
             <EntraSamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/:provider",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <CustomSamlSetupPage />
           </PermissionGuard>,
         ),
       },

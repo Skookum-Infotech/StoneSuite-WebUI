@@ -1,5 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
-import type { SSOConfig, SSOConfigCreatePayload, SSOConfigUpdatePayload } from '@/types/tenant';
+import type { SSOConfig, SSOConfigCreatePayload, SSOConfigUpdatePayload, SSOProvider } from '@/types/tenant';
 
 // SSO provider configuration — /api/tenant/sso-configs*. protocol="oidc" is
 // configuration only (no login flow); protocol="saml" is fully wired end to
@@ -25,6 +25,7 @@ interface SSOConfigWire {
   certificate_fingerprint?: string;
   name_id_format?: string;
   metadata_fetched_at?: string;
+  default_role_id?: string;
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -42,7 +43,7 @@ function mapSSOConfig(w: SSOConfigWire): SSOConfig {
     return {
       ...base,
       protocol: 'saml',
-      provider: w.provider as SSOConfig['provider'] & ('entra' | 'cognito'),
+      provider: w.provider,
       metadataUrl: w.metadata_url ?? '',
       idpEntityId: w.idp_entity_id ?? '',
       ssoUrl: w.sso_url ?? '',
@@ -50,12 +51,13 @@ function mapSSOConfig(w: SSOConfigWire): SSOConfig {
       certificateFingerprint: w.certificate_fingerprint ?? '',
       nameIdFormat: w.name_id_format ?? '',
       metadataFetchedAt: w.metadata_fetched_at ?? null,
+      defaultRoleId: w.default_role_id ?? '',
     };
   }
   return {
     ...base,
     protocol: 'oidc',
-    provider: w.provider as SSOConfig['provider'],
+    provider: w.provider as SSOProvider,
     clientId: w.client_id ?? '',
     issuer: w.issuer ?? '',
     redirectUri: w.redirect_uri ?? '',
@@ -69,6 +71,7 @@ function toWirePayload(payload: SSOConfigCreatePayload | SSOConfigUpdatePayload)
       protocol: 'saml',
       metadata_url: payload.metadataUrl,
       enabled: payload.enabled,
+      default_role_id: payload.defaultRoleId ?? '',
     };
   }
   return {
