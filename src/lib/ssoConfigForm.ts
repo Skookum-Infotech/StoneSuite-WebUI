@@ -4,15 +4,39 @@ import type { SAMLProvider, SSOProvider } from '@/types/tenant';
 
 export const SSO_PROVIDERS: SSOProvider[] = ['entra', 'cognito', 'okta'];
 
-// Backend's samlProviders whitelist (controllers/sso.go) — protocol=saml
-// only supports these two; okta is not offered when protocol=saml.
+// entra/cognito are the SAML providers with a first-class, vendor-specific
+// setup page (see EntraSamlSetupPage/CognitoSamlSetupPage). Any other slug
+// matching samlProviderSlugPattern is also accepted by the backend
+// (controllers/sso.go's isValidSAMLProvider) and gets the generic
+// CustomSamlSetupPage instead.
 export const SAML_PROVIDERS: SAMLProvider[] = ['entra', 'cognito'];
+
+// Mirrors the backend's samlProviderSlugPattern (controllers/sso.go): a
+// custom SAML provider slug is a URL path segment
+// (/api/auth/saml/{provider}/acs) and an SP entity id suffix, so it's kept
+// conservative -- lowercase letters/digits/hyphens, 2-30 chars, starting
+// with a letter.
+export const SAML_PROVIDER_SLUG_PATTERN = /^[a-z][a-z0-9-]{1,29}$/;
+
+export function isValidSamlProvider(provider: string): boolean {
+  return (SAML_PROVIDERS as string[]).includes(provider) || SAML_PROVIDER_SLUG_PATTERN.test(provider);
+}
 
 export const SSO_PROVIDER_LABELS: Record<SSOProvider, string> = {
   entra: 'Microsoft Entra ID',
   cognito: 'Amazon Cognito',
   okta: 'Okta',
 };
+
+// Display label for any SAML provider slug, including a custom one with no
+// bespoke setup page (see CustomSamlSetupPage, which derives its own heading
+// the same way -- capitalize the slug).
+export function samlProviderLabel(provider: SAMLProvider): string {
+  if ((SSO_PROVIDERS as string[]).includes(provider)) {
+    return SSO_PROVIDER_LABELS[provider as SSOProvider];
+  }
+  return provider.charAt(0).toUpperCase() + provider.slice(1);
+}
 
 // Mirrors the backend's isHTTPURL (controllers/sso.go): absolute http(s) URL
 // with a host. Empty string is valid here — required-ness is handled by the
@@ -53,7 +77,12 @@ export type SSOConfigFormValues = z.infer<ReturnType<typeof ssoConfigSchema>>;
 // backend's validateSSORequest: strings.HasPrefix(metadataURL, "https://")).
 export function samlConfigSchema() {
   return z.object({
-    provider: z.enum(['entra', 'cognito']),
+    provider: z
+      .string()
+      .refine(
+        isValidSamlProvider,
+        'Provider must be entra, cognito, or a custom slug (lowercase letters, digits, hyphens, 2-30 chars, starting with a letter).',
+      ),
     metadataUrl: z
       .string()
       .trim()
@@ -61,6 +90,9 @@ export function samlConfigSchema() {
       .refine((v) => v.startsWith('https://'), 'Must be an https:// URL')
       .refine(isHttpUrl, 'Must be a valid URL'),
     enabled: z.boolean(),
+    // '' means no default role — JIT sign-ins get no role, same as before
+    // this existed.
+    defaultRoleId: z.string(),
   });
 }
 
