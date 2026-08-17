@@ -279,6 +279,18 @@ const VendorCreditDetailPage = lazyWithRetry(
 const EditVendorCreditPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor-credit/EditVendorCreditPage"),
 );
+const ExpenseListPage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/ExpenseListPage"),
+);
+const AddExpensePage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/AddExpensePage"),
+);
+const ExpenseDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/ExpenseDetailPage"),
+);
+const EditExpensePage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/EditExpensePage"),
+);
 // Inventory module
 const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
@@ -972,6 +984,40 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="vendor_credit" action="update">
             <EditVendorCreditPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Expenses (specific routes must come before the catch-all)
+      {
+        path: "purchases/expense",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="read">
+            <ExpenseListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/expense/new",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="create">
+            <AddExpensePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/expense/:id",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="read">
+            <ExpenseDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/expense/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="update">
+            <EditExpensePage />
           </PermissionGuard>,
         ),
       },
