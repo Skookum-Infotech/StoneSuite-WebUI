@@ -76,10 +76,16 @@ export function assertSameOriginApiBase(apiBaseUrl: string | undefined, crossOri
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
+  // loadEnv (unlike Vite's automatic import.meta.env exposure) is the only
+  // thing that reads .env files into a value this config file can act on —
+  // process.env itself is never populated from .env, only from real shell
+  // env vars. Needed for both branches below: the build guard and the dev
+  // proxy target.
+  const fileEnv = loadEnv(mode, process.cwd(), '')
+
   // Guard builds only. `npm run dev` proxies /api itself (see server.proxy
   // below), so pointing a dev session straight at a backend stays available.
   if (command === 'build') {
-    const fileEnv = loadEnv(mode, process.cwd(), '')
     // Real environment variables (how CI/Pages inject config) take precedence
     // over .env files, matching Vite's own resolution order.
     const apiBaseUrl = process.env[API_BASE_URL_VAR] ?? fileEnv[API_BASE_URL_VAR]
@@ -104,7 +110,9 @@ export default defineConfig(({ command, mode }) => {
       // cross-site, the browser drops it, and every refresh logs you out.
       proxy: {
         '/api': {
-          target: process.env.VITE_DEV_API_ORIGIN || 'https://stonesuite-backend.fly.dev',
+          // Shell env var wins over .env, matching the build branch's
+          // resolution order above.
+          target: process.env.VITE_DEV_API_ORIGIN || fileEnv.VITE_DEV_API_ORIGIN || 'https://stonesuite-backend.fly.dev',
           changeOrigin: true,
         },
       },
