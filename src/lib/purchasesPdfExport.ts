@@ -30,7 +30,7 @@ import {
 
 export type PurchasesRecordType =
   | "requisition" | "purchase_order" | "item_receipt" | "vendor" | "vendor_bill" | "vendor_payment"
-  | "vendor_credit";
+  | "vendor_credit" | "expense";
 
 export interface PurchasesPdfSection {
   title: string;
@@ -77,6 +77,7 @@ const RECORD_TYPE_LABEL: Record<PurchasesRecordType, string> = {
   vendor_bill: "Vendor Bill",
   vendor_payment: "Vendor Payment",
   vendor_credit: "Vendor Credit",
+  expense: "Expense",
 };
 
 export function buildExportFilename(
