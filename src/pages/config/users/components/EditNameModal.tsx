@@ -10,6 +10,7 @@ import { ErrorNote } from "@/components/tenant/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { WorkspaceUser } from "@/types/tenant";
 
 const editNameSchema = z.object({
@@ -25,6 +26,8 @@ export function EditNameModal({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
+  const currentUserId = useAuthStore((s) => s.user?.id);
+  const updateProfile = useAuthStore((s) => s.updateProfile);
 
   const {
     register,
@@ -40,6 +43,7 @@ export function EditNameModal({
     try {
       await userService.updateUser(user.id, { fullName: data.fullName });
       qc.invalidateQueries({ queryKey: ["users"] });
+      if (user.identityId === currentUserId) updateProfile({ fullName: data.fullName });
       onClose();
     } catch (err) {
       setError("root", {

@@ -44,6 +44,9 @@ interface AuthState {
   setSessionExpiry: (expiresAt: number) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  // Patches the signed-in user's own profile fields (e.g. after editing your
+  // own display name elsewhere) without touching token/session state.
+  updateProfile: (patch: Partial<UserProfile>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -64,6 +67,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
     set({ sessionExpiresAt: expiresAt });
   },
+  updateProfile: (patch) =>
+    set((state) => {
+      if (!state.user) return state;
+      const user = { ...state.user, ...patch };
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      return { user };
+    }),
   logout: () => {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(SESSION_EXPIRY_KEY);
