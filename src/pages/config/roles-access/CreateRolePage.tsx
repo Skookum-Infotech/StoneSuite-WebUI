@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ShieldCheck, ChevronDown, Save } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { rbacService } from "@/services/tenantServices";
@@ -101,6 +101,7 @@ type RowSel = { actions: string[]; scope: Scope };
 
 export default function CreateRolePage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const catalogQ = useQuery({
     queryKey: ["catalog"],
     queryFn: rbacService.catalog,
@@ -339,6 +340,7 @@ export default function CreateRolePage() {
       );
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["roles"] });
       localStorage.removeItem(DRAFT_KEY);
       navigate("/config/roles");
     },
