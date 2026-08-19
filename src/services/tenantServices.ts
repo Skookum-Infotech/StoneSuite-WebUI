@@ -10,6 +10,7 @@ import type {
   Role,
   Grant,
   Workflow,
+  WorkflowStatus,
   WorkflowDefinition,
   WorkflowRecord,
   WorkflowNumberingConfig,
@@ -190,6 +191,14 @@ export const workflowService = {
   list: () =>
     tenantClient
       .get<{ success: boolean; workflows: Workflow[] }>('/tenant/workflows')
+      .then((r) => r.data.workflows ?? []),
+  // Unlike list() above (gated server-side by workflow:read, a
+  // Configuration-only permission), this is callable by any authenticated
+  // tenant member — it exists so a user with e.g. only lead:read can still
+  // learn whether the "lead" workflow is disabled, for UI-hiding purposes.
+  listEnabled: () =>
+    tenantClient
+      .get<{ success: boolean; workflows: WorkflowStatus[] }>('/tenant/workflows/enabled')
       .then((r) => r.data.workflows ?? []),
   get: (id: string) =>
     tenantClient

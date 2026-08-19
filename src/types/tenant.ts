@@ -131,6 +131,15 @@ export interface Workflow {
   approverUserIds: string[];
 }
 
+// Minimal {key, enabled} shape from GET /tenant/workflows/enabled — unlike
+// Workflow above, this endpoint is callable by any authenticated tenant
+// member regardless of RBAC grants, so it deliberately carries nothing more
+// sensitive than the enabled flag itself.
+export interface WorkflowStatus {
+  key: string;
+  enabled: boolean;
+}
+
 export interface WorkflowState {
   id: string;
   workflowId: string;

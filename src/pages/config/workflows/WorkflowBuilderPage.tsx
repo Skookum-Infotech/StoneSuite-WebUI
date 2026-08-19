@@ -65,6 +65,7 @@ export default function WorkflowBuilderPage() {
       setToggleError(null);
       qc.invalidateQueries({ queryKey: ['workflow', id] });
       qc.invalidateQueries({ queryKey: ['workflows'] });
+      qc.invalidateQueries({ queryKey: ['workflows', 'enabled'] });
     },
     onError: (err: unknown) => {
       if (err instanceof AxiosError && err.response?.status === 409) {
