@@ -1,5 +1,5 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { INVOICE_STATUS_CODES, INVOICE_ALLOWED_TRANSITIONS } from '@/lib/invoiceForm';
+import { INVOICE_STATUS_CODES, INVOICE_ALLOWED_TRANSITIONS, INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
 import { StatusSelect } from './StatusSelect';
 
 // Status select for the Invoice Edit page. Legal moves mirror the backend
@@ -7,10 +7,11 @@ import { StatusSelect } from './StatusSelect';
 // invoice:transition permission — Invoice has no separate approve action in
 // authz/catalog.go. The backend (ValidateTransition + RBAC) stays the source of
 // truth; this control just shouldn't offer a move it knows would 409 or 403.
-export function InvoiceStatusControl({ value, onChange, disabled }: {
+export function InvoiceStatusControl({ value, onChange, disabled, variant }: {
   value: string; // current status code, e.g. "DRFT"
   onChange: (code: string) => void;
   disabled?: boolean;
+  variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
   const guard = () => ({
@@ -26,6 +27,8 @@ export function InvoiceStatusControl({ value, onChange, disabled }: {
       statuses={INVOICE_STATUS_CODES}
       allowedTransitions={INVOICE_ALLOWED_TRANSITIONS}
       guard={guard}
+      variant={variant}
+      colorFor={(s) => INVOICE_STATUS_COLORS[s.label] ?? '#a8a29e'}
     />
   );
 }

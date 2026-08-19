@@ -18,6 +18,7 @@ import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -80,6 +81,16 @@ export default function SalesOrderDetailPage() {
   const fabricate = useMutation({
     mutationFn: () => fabricationService.fabricateFromOrder(id),
     onSuccess: (job) => navigate(`/sales/installation/${job.id}`),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation (see EditSalesOrderPage.tsx).
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => salesOrderService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
@@ -336,7 +347,12 @@ export default function SalesOrderDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{order.status}</Badge>
+              <SalesOrderStatusControl
+                value={order.statusCode}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

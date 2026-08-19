@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
   ChevronLeft, ChevronRight, ShieldAlert, Download, Loader2,
@@ -8,9 +8,10 @@ import {
 import { cn } from '@/lib/utils';
 import { crmService } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { resolveStatusColor } from '@/components/crm/formUtils';
+import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
+import { CRM_WORKFLOW_ROUTES } from '@/components/crm/crmWorkflowRoutes';
 import {
   recordApprovalState,
   type StatusInfo, type FilterRequest, type FilterClause, type WorkflowRecord,
@@ -78,12 +79,31 @@ type Props = { config: CrmTableConfig };
 
 export function CrmRecordTable({ config }: Props) {
   const navigate   = useNavigate();
+  const queryClient = useQueryClient();
   const topRef     = useRef<HTMLDivElement>(null);
 
   // Show the Edit action while permissions are still loading (avoids a flash
   // of a hidden button), then hide it once we know the user lacks update rights.
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission(config.workflowKey, 'update');
+
+  // Inline status change from the list row's status pill. Mirrors the Edit
+  // page's transition mutation (see EditLeadPage.tsx) — persists the moment a
+  // status is picked, no separate save. A converting transition (e.g. Lead ->
+  // Prospect) navigates to the new record, same as the Edit page does today.
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStateId: string }) =>
+      crmService.transitionRecord(vars.id, vars.toStateId, config.workflowKey),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ['crm-record', updated.id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-records', config.workflowKey] });
+      const newType = updated.workflowId?.toLowerCase();
+      if (newType && newType !== config.workflowKey && CRM_WORKFLOW_ROUTES[newType]) {
+        queryClient.invalidateQueries({ queryKey: ['crm-records', newType] });
+        navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
+      }
+    },
+  });
 
   // ── filter / sort state ────────────────────────────────────────────────────
   const [nameFilter,    setNameFilter]    = useState('');
@@ -392,22 +412,18 @@ export function CrmRecordTable({ config }: Props) {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        {statusInfo ? (() => {
-                          const color = resolveStatusColor(statusInfo.stateKey, statusInfo.color);
-                          return (
-                            <span
-                              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                              style={{ backgroundColor: `${color}18` }}
-                            >
-                              <span
-                                className="size-1.5 shrink-0 rounded-full"
-                                style={{ backgroundColor: color }}
-                                aria-hidden="true"
-                              />
-                              {statusInfo.statusLabel}
-                            </span>
-                          );
-                        })() : (
+                        {statusInfo ? (
+                          <StatusDropdown
+                            workflowKey={config.workflowKey}
+                            mode="transitions"
+                            recordId={record.id}
+                            value={record.currentStateId}
+                            onChange={(toStateId) => transition.mutate({ id: record.id, toStateId })}
+                            disabled={transition.isPending && transition.variables?.id === record.id}
+                            variant="pill"
+                            lazy
+                          />
+                        ) : (
                           <span className="text-xs text-stone-400">—</span>
                         )}
                         {recordApprovalState(record) === 'pending' && (

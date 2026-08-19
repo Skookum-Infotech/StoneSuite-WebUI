@@ -1,5 +1,5 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { REFUND_STATUS_CODES, REFUND_ALLOWED_TRANSITIONS, transitionPermission } from '@/lib/refundForm';
+import { REFUND_STATUS_CODES, REFUND_ALLOWED_TRANSITIONS, REFUND_STATUS_COLORS, transitionPermission } from '@/lib/refundForm';
 import { StatusSelect } from './StatusSelect';
 
 // Status select for the Refund Edit page. Legal moves mirror the backend
@@ -15,10 +15,11 @@ import { StatusSelect } from './StatusSelect';
 // can void a draft but cannot approve one — so the guard disables, rather than
 // hides, the moves they lack and says why. The backend stays authoritative: an
 // illegal move is a 409 and a permission-less one a 403.
-export function RefundStatusControl({ value, onChange, disabled }: {
+export function RefundStatusControl({ value, onChange, disabled, variant }: {
   value: string; // current status code, e.g. "PEND"
   onChange: (code: string) => void;
   disabled?: boolean;
+  variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
   const guard = (code: string) => {
@@ -42,6 +43,8 @@ export function RefundStatusControl({ value, onChange, disabled }: {
       statuses={REFUND_STATUS_CODES}
       allowedTransitions={REFUND_ALLOWED_TRANSITIONS}
       guard={guard}
+      variant={variant}
+      colorFor={(s) => REFUND_STATUS_COLORS[s.label] ?? '#a8a29e'}
     />
   );
 }

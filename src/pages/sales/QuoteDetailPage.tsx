@@ -16,6 +16,7 @@ import { QUOTE_STATUS_COLORS, QUOTE_CONVERTIBLE_STATUSES } from '@/lib/quoteForm
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { QuoteStatusControl } from './components/QuoteStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -69,6 +70,16 @@ export default function QuoteDetailPage() {
   const convert = useMutation({
     mutationFn: () => quoteService.convertToSalesOrder(id),
     onSuccess: ({ salesOrder }) => navigate(`/sales/sales_order/${salesOrder.id}`),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => quoteService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading quote…" /></div>;
@@ -322,7 +333,12 @@ export default function QuoteDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{quote.status}</Badge>
+              <QuoteStatusControl
+                value={quote.statusCode}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

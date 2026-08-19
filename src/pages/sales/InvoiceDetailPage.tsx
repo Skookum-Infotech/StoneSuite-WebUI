@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Receipt, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { invoiceService } from '@/services/invoiceService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -17,6 +17,7 @@ import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { RecordPaymentDialog } from './components/RecordPaymentDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -61,6 +62,16 @@ export default function InvoiceDetailPage() {
       return () => clearLabel(id);
     }
   }, [id, invoice?.invoiceNumber, setLabel, clearLabel]);
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => invoiceService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+  });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading invoice…" /></div>;
   if (error || !invoice)
@@ -295,7 +306,12 @@ export default function InvoiceDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{invoice.status}</Badge>
+              <InvoiceStatusControl
+                value={invoice.statusCode}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

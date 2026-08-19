@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox,
   ChevronLeft, ChevronRight, Download, Loader2,
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
-import { FJ_STATUS_COLORS } from '@/lib/fabricationForm';
+import { FabricationStatusControl } from './FabricationStatusControl';
 import type { FabricationJobSearchRequest } from '@/types/fabrication';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -45,7 +45,19 @@ function fmtDate(iso?: string): string {
 
 export function FabricationJobTable() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Inline status change from the list row's status pill — mirrors the Edit
+  // page's transition mutation. Forward-path moves only, same boundary as
+  // FabricationStatusControl everywhere else.
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStatusCode: string }) => fabricationService.transition(vars.id, vars.toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ['fabrication-job', updated.id] });
+      queryClient.invalidateQueries({ queryKey: ['fabrication-jobs'] });
+    },
+  });
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -241,7 +253,6 @@ export function FabricationJobTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((job) => {
-                  const color = FJ_STATUS_COLORS[job.status] ?? '#a8a29e';
                   return (
                     <tr key={job.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
@@ -257,13 +268,12 @@ export function FabricationJobTable() {
                         {job.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {job.status}
-                        </span>
+                        <FabricationStatusControl
+                          job={job}
+                          onChange={(code) => transition.mutate({ id: job.id, toStatusCode: code })}
+                          disabled={transition.isPending && transition.variables?.id === job.id}
+                          variant="pill"
+                        />
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {fmtDate(job.promisedInstallDate)}

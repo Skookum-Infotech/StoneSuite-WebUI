@@ -1,5 +1,5 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { FJ_STATUS_CODES, FJ_LINEAR_TRANSITIONS, needsApproval } from '@/lib/fabricationForm';
+import { FJ_STATUS_CODES, FJ_LINEAR_TRANSITIONS, FJ_STATUS_COLORS, needsApproval } from '@/lib/fabricationForm';
 import { StatusSelect } from './StatusSelect';
 import type { FabricationJob } from '@/types/fabrication';
 
@@ -13,10 +13,11 @@ import type { FabricationJob } from '@/types/fabrication';
 // (the current status has configured approvers awaiting sign-off) — the
 // backend would 409 with ErrApprovalRequired anyway, this just explains why
 // up front instead of after a failed save.
-export function FabricationStatusControl({ job, onChange, disabled }: {
+export function FabricationStatusControl({ job, onChange, disabled, variant }: {
   job: Pick<FabricationJob, 'statusCode' | 'approvalStatus'>;
   onChange: (code: string) => void;
   disabled?: boolean;
+  variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
   const guard = () => {
@@ -37,6 +38,8 @@ export function FabricationStatusControl({ job, onChange, disabled }: {
       statuses={FJ_STATUS_CODES}
       allowedTransitions={FJ_LINEAR_TRANSITIONS}
       guard={guard}
+      variant={variant}
+      colorFor={(s) => FJ_STATUS_COLORS[s.label] ?? '#a8a29e'}
     />
   );
 }

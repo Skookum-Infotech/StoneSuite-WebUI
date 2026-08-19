@@ -16,6 +16,7 @@ import { ESTIMATE_STATUS_COLORS, ESTIMATE_CONVERTIBLE_STATUSES } from '@/lib/est
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { EstimateStatusControl } from './components/EstimateStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -69,6 +70,16 @@ export default function EstimateDetailPage() {
   const convert = useMutation({
     mutationFn: () => estimateService.convertToQuote(id),
     onSuccess: ({ quote }) => navigate(`/sales/quote/${quote.id}`),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => estimateService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimate', id] });
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading estimate…" /></div>;
@@ -309,7 +320,12 @@ export default function EstimateDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{estimate.status}</Badge>
+              <EstimateStatusControl
+                value={estimate.statusCode}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

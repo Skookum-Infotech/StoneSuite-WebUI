@@ -19,6 +19,7 @@ import { DeletePaymentDialog } from './components/DeletePaymentDialog';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { PaymentStatusControl } from './components/PaymentStatusControl';
 import type { PaymentApplication } from '@/types/payment';
 
 const TABS = [
@@ -69,6 +70,16 @@ export default function PaymentDetailPage() {
   const unapply = useMutation({
     mutationFn: (invoiceId: string) => paymentService.unapply(id, invoiceId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payment', id] }),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => paymentService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payment', id] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading payment…" /></div>;
@@ -289,7 +300,12 @@ export default function PaymentDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{payment.status}</Badge>
+              <PaymentStatusControl
+                value={payment.statusCode}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

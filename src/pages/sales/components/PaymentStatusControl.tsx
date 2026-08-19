@@ -1,5 +1,5 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { PAYMENT_STATUS_CODES, PAYMENT_ALLOWED_TRANSITIONS } from '@/lib/paymentForm';
+import { PAYMENT_STATUS_CODES, PAYMENT_ALLOWED_TRANSITIONS, PAYMENT_STATUS_COLORS } from '@/lib/paymentForm';
 import { StatusSelect } from './StatusSelect';
 
 // Status select for the Payment Edit page. Payment's transitions branch
@@ -8,10 +8,11 @@ import { StatusSelect } from './StatusSelect';
 // needs the single payment:transition permission — Payment has no separate
 // approve action in authz/catalog.go. The backend (payment.Transition + RBAC)
 // stays the source of truth; this control just shouldn't offer a 409/403 move.
-export function PaymentStatusControl({ value, onChange, disabled }: {
+export function PaymentStatusControl({ value, onChange, disabled, variant }: {
   value: string; // current status code, e.g. "PEND"
   onChange: (code: string) => void;
   disabled?: boolean;
+  variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
   const guard = () => ({
@@ -27,6 +28,8 @@ export function PaymentStatusControl({ value, onChange, disabled }: {
       statuses={PAYMENT_STATUS_CODES}
       allowedTransitions={PAYMENT_ALLOWED_TRANSITIONS}
       guard={guard}
+      variant={variant}
+      colorFor={(s) => PAYMENT_STATUS_COLORS[s.label] ?? '#a8a29e'}
     />
   );
 }

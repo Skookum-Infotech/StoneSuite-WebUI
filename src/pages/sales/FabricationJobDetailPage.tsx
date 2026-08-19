@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Wrench, Upload, Pencil, ShoppingCart, FileDown, Loader2 } from 'lucide-react';
 import { fabricationService } from '@/services/fabricationService';
 import { salesOrderService } from '@/services/salesOrderService';
@@ -22,6 +22,7 @@ import { FabricationPiecesTable } from './components/FabricationPiecesTable';
 import { FabricationSlabsTab } from './components/FabricationSlabsTab';
 import { FabricationStepsTab } from './components/FabricationStepsTab';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
+import { FabricationStatusControl } from './components/FabricationStatusControl';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { FabricationApprovalButton } from './components/FabricationApprovalButton';
 import { CancelFabricationJobDialog } from './components/CancelFabricationJobDialog';
@@ -77,6 +78,15 @@ export default function FabricationJobDetailPage() {
     queryClient.setQueryData(['fabrication-job', id], updated);
     queryClient.invalidateQueries({ queryKey: ['fabrication-jobs'] });
   }
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation. Forward-path moves only: Hold/Resume/Cancel
+  // stay on their own dedicated controls (FabricationHoldResumeControl,
+  // CancelFabricationJobDialog), unaffected by this.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => fabricationService.transition(id, toStatusCode),
+    onSuccess: applyUpdatedJob,
+  });
 
   // The originating sales order's line items, for the pieces editor's
   // "linked line" dropdown — only fetched once the job (and its sales order
@@ -300,7 +310,12 @@ export default function FabricationJobDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{job.status}</Badge>
+              <FabricationStatusControl
+                job={job}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             {job.approvalStatus !== 'none' && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
