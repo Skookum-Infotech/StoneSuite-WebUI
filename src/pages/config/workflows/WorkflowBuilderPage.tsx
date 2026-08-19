@@ -142,9 +142,11 @@ export default function WorkflowBuilderPage() {
           narrow column. */}
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="space-y-6 px-4 py-8 sm:px-8">
-          <Section title="Approval chain" action={<Badge size="sm">Every status</Badge>}>
-            <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
-          </Section>
+          {crmKey && (
+            <Section title="Approval chain" action={<Badge size="sm">Every status</Badge>}>
+              <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
+            </Section>
+          )}
 
           {crmKey ? (
             <CrmStatusApprovers workflowKey={crmKey} />
