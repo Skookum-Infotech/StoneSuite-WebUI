@@ -8,7 +8,7 @@
 // served from `/api/tenant/vendor-bills*`. Unlike Purchase Order, a vendor
 // bill has no shipping/address block and carries its own settlement ledger
 // (payments) plus optional Purchase Order lineage.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -129,11 +129,14 @@ export interface VendorBill {
 
   status: string;                     // human label, e.g. "Draft"
   statusCode: VendorBillStatusCode;   // drives the transition button map
-  /** Optional: the current backend's minimal vendor bill carries no approval
-   *  of its own (`vendorbill` has no approver tables and no /approve route) —
-   *  sign-off lives on the Vendor Payment that settles the bill. Kept on the
-   *  type so the list's Approval column degrades to "—" instead of breaking. */
-  approvalStatus?: 'none' | 'pending' | 'approved';
+  approvalStatus: 'none' | 'pending' | 'approved'; // AD-6
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
 
   vendor: VendorBillVendorRef;
   purchaseOrder?: VendorBillPurchaseOrderRef; // nullable lineage (AD-8)

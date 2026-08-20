@@ -136,8 +136,8 @@ export function vpTransitionTargets(fromCode: string): string[] {
  *  requires sign-off, every move away from it is blocked except the recall
  *  back to DRFT — until `approvalStatus` reaches "approved". Mirrors
  *  isVbTransitionBlocked. */
-export function isVpTransitionBlocked(toCode: string, approvalStatus: string): boolean {
-  return toCode !== 'DRFT' && approvalStatus === 'pending';
+export function isVpTransitionBlocked(toCode: string, approvalStatus: string, gated?: boolean): boolean {
+  return toCode !== 'DRFT' && (gated ?? approvalStatus === 'pending');
 }
 
 /** A move to SCHD is refused (400) unless the payment already carries a

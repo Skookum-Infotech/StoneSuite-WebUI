@@ -19,10 +19,11 @@ import {
 // clicking the wrong button in a row of several should be recoverable
 // without an accidental server round-trip.
 export function VendorBillTransitionBar({
-  statusCode, approvalStatus, onTransition, isPending,
+  statusCode, approvalStatus, gated, onTransition, isPending,
 }: {
   statusCode: string;
   approvalStatus: string;
+  gated?: boolean;
   onTransition: (toCode: string) => void;
   isPending: boolean;
 }) {
@@ -37,7 +38,7 @@ export function VendorBillTransitionBar({
     <div className="space-y-0.5">
       {targets.map((toCode) => {
         const label = vbTransitionLabel(statusCode, toCode);
-        const blocked = isVbTransitionBlocked(toCode, approvalStatus);
+        const blocked = isVbTransitionBlocked(toCode, approvalStatus, gated);
         const isVoid = toCode === 'VOID';
         const isRework = toCode === 'DRFT';
         const Icon = isVoid ? XCircle : isRework ? RotateCcw : ArrowRight;

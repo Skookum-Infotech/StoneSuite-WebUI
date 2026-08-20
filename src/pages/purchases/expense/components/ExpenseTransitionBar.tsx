@@ -25,10 +25,11 @@ import {
 // Every transition is confirmed before it fires — clicking the wrong button in
 // a row of several should be recoverable without an accidental round-trip.
 export function ExpenseTransitionBar({
-  statusCode, approvalStatus, onTransition, isPending,
+  statusCode, approvalStatus, gated, onTransition, isPending,
 }: {
   statusCode: string;
   approvalStatus: string;
+  gated?: boolean;
   onTransition: (toCode: string) => void;
   isPending: boolean;
 }) {
@@ -43,7 +44,7 @@ export function ExpenseTransitionBar({
     <div className="space-y-0.5">
       {targets.map((toCode) => {
         const label = expTransitionLabel(statusCode, toCode);
-        const blocked = isExpTransitionBlocked(toCode, approvalStatus);
+        const blocked = isExpTransitionBlocked(toCode, approvalStatus, gated);
         const isRework = toCode === 'DRFT';
         const Icon = isRework ? RotateCcw : ArrowRight;
         return (

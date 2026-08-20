@@ -10,6 +10,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -19,7 +20,6 @@ import {
 import { ExpenseAuditTab } from './components/ExpenseAuditTab';
 import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
 import { ExpenseTransitionBar } from './components/ExpenseTransitionBar';
-import { ExpenseApprovalButton } from './components/ExpenseApprovalButton';
 import { RejectExpenseDialog } from './components/RejectExpenseDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -84,6 +84,14 @@ export default function ExpenseDetailPage() {
     },
   });
 
+  const approve = useMutation({
+    mutationFn: () => expenseService.approve(id),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['expense', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading expense claim…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
@@ -102,9 +110,8 @@ export default function ExpenseDetailPage() {
   // has real content (a transition, an approval gate, a reject option, or a
   // failed transition).
   const hasTransitions = canTransition && (EXPENSE_ALLOWED_TRANSITIONS[exp.statusCode]?.length ?? 0) > 0;
-  const isApprovalPending = exp.approvalStatus === 'pending';
   const canReject = canTransition && canRejectExpense(exp.statusCode);
-  const showActions = hasTransitions || isApprovalPending || canReject || Boolean(transition.error);
+  const showActions = hasTransitions || canReject || Boolean(transition.error);
 
   async function handleExportPdf() {
     if (!exp) return;
@@ -165,6 +172,26 @@ export default function ExpenseDetailPage() {
         recordNumber={exp.expenseNumber}
         statusBadge={<Badge color={color}>{exp.status}</Badge>}
       />
+
+      {exp.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={exp.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={exp.canApprove}
+            isOverride={exp.isOverride}
+            requiredApprovals={exp.requiredApprovals}
+            approvedCount={exp.approvedCount}
+            callerAlreadyApproved={exp.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve expense claim.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -296,18 +323,10 @@ export default function ExpenseDetailPage() {
               <ExpenseTransitionBar
                 statusCode={exp.statusCode}
                 approvalStatus={exp.approvalStatus}
+                gated={exp.gated}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />
-              {isApprovalPending && (
-                <ExpenseApprovalButton
-                  expenseId={id}
-                  onApproved={(updated) => {
-                    queryClient.setQueryData(['expense', id], updated);
-                    queryClient.invalidateQueries({ queryKey: ['expenses'] });
-                  }}
-                />
-              )}
               {canReject && (
                 <RejectExpenseDialog
                   expenseId={id}

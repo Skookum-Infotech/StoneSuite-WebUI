@@ -7,7 +7,7 @@
 // `/api/tenant/vendor-credits*`, not the generic WorkflowRecord JSONB CRM
 // router. Its sibling on the receivables side is `types/creditMemo.ts`; the
 // document it settles is `types/vendorBill.ts`.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -60,6 +60,14 @@ export interface VendorCredit {
 
   status: string;                     // human label, e.g. "Draft"
   statusCode: VendorCreditStatusCode; // drives the transition button map
+  approvalStatus: 'none' | 'pending' | 'approved'; // AD-8
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
 
   vendor: VendorCreditVendorRef;
   ownerEmployeeId?: number | null;

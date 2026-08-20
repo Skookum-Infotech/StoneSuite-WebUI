@@ -323,8 +323,8 @@ export function vbStatusLabel(code: string): string {
  *  requires approval, every move away from it is blocked except the recall
  *  back to DRFT — until `approvalStatus` reaches "approved". Mirrors
  *  isPoTransitionBlocked. */
-export function isVbTransitionBlocked(toCode: string, approvalStatus: string): boolean {
-  return toCode !== 'DRFT' && approvalStatus === 'pending';
+export function isVbTransitionBlocked(toCode: string, approvalStatus: string, gated?: boolean): boolean {
+  return toCode !== 'DRFT' && (gated ?? approvalStatus === 'pending');
 }
 
 /** Status badge color, keyed by status code (VBIL statuses are fixed/seeded,

@@ -13,19 +13,20 @@ import {
 // single StatusSelect dropdown, the handoff spec calls for a labeled action
 // row ("Submit for Approval", "Send to Vendor", "Short-Close", …) since each
 // target has a distinct business meaning rather than being one of many peer
-// options in a picklist. PAPV→APPV (or any non-DRFT move while approval is
-// pending) is disabled with a tooltip; the Detail page renders
-// PurchaseOrderApprovalButton alongside this to actually clear that gate.
+// options in a picklist. PAPV→APPV (or any non-DRFT move while gated, AD-8)
+// is disabled with a tooltip; the Detail page renders the ApprovalBanner
+// alongside this to actually clear that gate.
 //
 // Every transition is confirmed before it fires — a PO status change is
 // often a real-world commitment (submitting for approval, sending to a
 // vendor, cancelling) and clicking the wrong button in a row of several
 // should be recoverable without an accidental server round-trip.
 export function PurchaseOrderTransitionBar({
-  statusCode, approvalStatus, onTransition, isPending,
+  statusCode, approvalStatus, gated, onTransition, isPending,
 }: {
   statusCode: string;
   approvalStatus: string;
+  gated?: boolean;
   onTransition: (toCode: string) => void;
   isPending: boolean;
 }) {
@@ -40,7 +41,7 @@ export function PurchaseOrderTransitionBar({
     <div className="space-y-0.5">
       {targets.map((toCode) => {
         const label = poTransitionLabel(statusCode, toCode);
-        const blocked = isPoTransitionBlocked(toCode, approvalStatus);
+        const blocked = isPoTransitionBlocked(toCode, approvalStatus, gated);
         const isCancel = toCode === 'CANC';
         const isRework = toCode === 'DRFT';
         const Icon = isCancel ? XCircle : isRework ? RotateCcw : ArrowRight;

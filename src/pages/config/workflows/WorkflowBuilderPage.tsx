@@ -43,6 +43,7 @@ const APPROVAL_CHAIN_WORKFLOWS = new Set([
   'requisition',
   'vendor_bill',
   'vendor_payment',
+  'vendor_credit',
   'expense',
   'installation',
   'invoice',

@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -67,6 +68,14 @@ export default function VendorBillDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => vendorBillService.transition(id, toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['vendor-bill', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+    },
+  });
+
+  const approve = useMutation({
+    mutationFn: () => vendorBillService.approve(id),
     onSuccess: (updated) => {
       queryClient.setQueryData(['vendor-bill', id], updated);
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
@@ -165,6 +174,26 @@ export default function VendorBillDetailPage() {
         recordNumber={bill.vendorBillNumber}
         statusBadge={<Badge color={color}>{bill.status}</Badge>}
       />
+
+      {bill.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={bill.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={bill.canApprove}
+            isOverride={bill.isOverride}
+            requiredApprovals={bill.requiredApprovals}
+            approvedCount={bill.approvedCount}
+            callerAlreadyApproved={bill.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve vendor bill.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -327,7 +356,8 @@ export default function VendorBillDetailPage() {
               <p className="text-xs font-semibold text-stone-400">Actions</p>
               <VendorBillTransitionBar
                 statusCode={bill.statusCode}
-                approvalStatus={bill.approvalStatus ?? 'none'}
+                approvalStatus={bill.approvalStatus}
+                gated={bill.gated}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />

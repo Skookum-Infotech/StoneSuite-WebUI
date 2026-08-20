@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -18,7 +19,6 @@ import { VendorPaymentAuditTab } from './components/VendorPaymentAuditTab';
 import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicationsTab';
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
 import { VendorPaymentTransitionBar } from './components/VendorPaymentTransitionBar';
-import { VendorPaymentApprovalButton } from './components/VendorPaymentApprovalButton';
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
 import type { VendorPayment } from '@/types/vendorPayment';
 
@@ -84,6 +84,11 @@ export default function VendorPaymentDetailPage() {
     onSuccess: absorb,
   });
 
+  const approve = useMutation({
+    mutationFn: () => vendorPaymentService.approve(id),
+    onSuccess: absorb,
+  });
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor payment…" /></div>;
   if (error || !payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor payment.')}</ErrorNote></div>;
@@ -93,8 +98,7 @@ export default function VendorPaymentDetailPage() {
   // payment (409) — unapply or void it first.
   const canDeleteHere = canDelete && payment.applications.length === 0;
   const hasTransitions = canTransition && vpTransitionTargets(payment.statusCode).length > 0;
-  const isApprovalPending = payment.approvalStatus === 'pending';
-  const showActions = hasTransitions || isApprovalPending || Boolean(transition.error);
+  const showActions = hasTransitions || Boolean(transition.error);
   const canEditHere = canEdit && VP_EDITABLE_STATUSES.has(payment.statusCode);
 
   async function handleExportPdf() {
@@ -158,6 +162,26 @@ export default function VendorPaymentDetailPage() {
         recordNumber={payment.vendorPaymentNumber}
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
       />
+
+      {payment.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={payment.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={payment.canApprove}
+            isOverride={payment.isOverride}
+            requiredApprovals={payment.requiredApprovals}
+            approvedCount={payment.approvedCount}
+            callerAlreadyApproved={payment.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve vendor payment.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -261,13 +285,11 @@ export default function VendorPaymentDetailPage() {
               <VendorPaymentTransitionBar
                 statusCode={payment.statusCode}
                 approvalStatus={payment.approvalStatus}
+                gated={payment.gated}
                 scheduledDate={payment.scheduledDate}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />
-              {isApprovalPending && (
-                <VendorPaymentApprovalButton vendorPaymentId={id} onApproved={absorb} />
-              )}
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">
                   {apiErrorMessage(transition.error, 'Failed to change status.')}
