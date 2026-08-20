@@ -18,6 +18,8 @@ import type {
   OnboardingApplyDetails,
   WorkspaceUser,
   UserInvite,
+  ApprovalGate,
+  ApprovalChainEmployee,
 } from '@/types/tenant';
 
 // Flat onboarding form data keyed by Customer-workflow field keys (snake_case),
@@ -212,23 +214,29 @@ export const workflowService = {
         approverUserIds,
       })
       .then((r) => r.data.approverUserIds),
-  // Per-state approver config (generic workflow engine). Read uses
-  // workflow_config:read, write uses workflow_config:configure. The UI caps
-  // the selection at MAX_APPROVERS (see ApproverPicker); the backend accepts
-  // any number.
-  getStateApprovers: (workflowId: string, stateId: string) =>
+  // Module approval chain (Estimate/Quote/SalesOrder/PurchaseOrder/
+  // Requisition/VendorBill/VendorPayment/Expense/Fabrication). One or more
+  // named gates per workflow -- see APPROVAL_CHAIN_WORKFLOWS in
+  // WorkflowBuilderPage for which workflow keys have one. Read uses
+  // workflow_config:read, write uses workflow_config:configure, matching
+  // every other workflow config endpoint. The UI caps selection at
+  // MAX_APPROVERS (see ApproverPicker); the backend accepts any number.
+  // Employees come bundled in the same response, gated by the same
+  // workflow_config permission -- not sourced from /tenant/crm/lookups,
+  // whose employees field requires a separate user:read grant.
+  getApprovalChain: (workflowId: string) =>
     tenantClient
-      .get<{ success: boolean; approverUserIds: string[] }>(
-        `/tenant/workflows/${workflowId}/states/${stateId}/approvers`,
+      .get<{ success: boolean; gates: ApprovalGate[]; employees: ApprovalChainEmployee[] }>(
+        `/tenant/workflows/${workflowId}/approval-chain`,
       )
-      .then((r) => r.data.approverUserIds ?? []),
-  setStateApprovers: (workflowId: string, stateId: string, approverUserIds: string[]) =>
+      .then((r) => ({ gates: r.data.gates ?? [], employees: r.data.employees ?? [] })),
+  setApprovalChain: (workflowId: string, statusCode: string, approverEmployeeIds: string[]) =>
     tenantClient
-      .put<{ success: boolean; approverUserIds: string[] }>(
-        `/tenant/workflows/${workflowId}/states/${stateId}/approvers`,
-        { approverUserIds },
+      .put<{ success: boolean; statusCode: string; approverEmployeeIds: string[] }>(
+        `/tenant/workflows/${workflowId}/approval-chain`,
+        { statusCode, approverEmployeeIds },
       )
-      .then((r) => r.data.approverUserIds ?? []),
+      .then((r) => r.data.approverEmployeeIds ?? []),
   createField: (
     workflowId: string,
     field: {

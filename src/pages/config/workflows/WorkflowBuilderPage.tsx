@@ -23,11 +23,29 @@ import { Spinner, ErrorNote, EmptyState, Badge } from '@/components/tenant/ui';
 import { ApproverPicker, MAX_APPROVERS } from '@/components/tenant/ApproverPicker';
 import { StatesReference } from './StatesReference';
 import { CrmStatusApprovers } from './CrmStatusApprovers';
+import { ApprovalChainSection } from './ApprovalChainSection';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { cn } from '@/lib/utils';
 import type { FieldType, FieldDefinition } from '@/types/tenant';
 
 const FIELD_CAP = 15;
+
+// APPROVAL_CHAIN_WORKFLOWS mirrors the workflow keys registered in the
+// backend's approvalchain package (approvalchain/registry.go) -- workflows
+// with a configurable module approval chain. Keep in sync: adding a module
+// there without adding its key here just hides the section; the reverse
+// (adding a key here without a backend registry entry) 400s on load.
+const APPROVAL_CHAIN_WORKFLOWS = new Set([
+  'estimate',
+  'quote',
+  'sales_order',
+  'purchase_order',
+  'requisition',
+  'vendor_bill',
+  'vendor_payment',
+  'expense',
+  'installation',
+]);
 
 // Same icon per entity type used on the CRM detail pages, but the badge
 // itself is the uniform bg-accent/text-accent-foreground CrmPageHeader now
@@ -82,6 +100,7 @@ export default function WorkflowBuilderPage() {
   const enabled = def.workflow.enabled;
   const EntityIcon = ENTITY_ICON[def.workflow.key.toLowerCase()] ?? WorkflowIcon;
   const crmKey = isCrmWorkflowKey(def.workflow.key) ? def.workflow.key : null;
+  const hasApprovalChain = APPROVAL_CHAIN_WORKFLOWS.has(def.workflow.key);
 
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-background">
@@ -148,11 +167,12 @@ export default function WorkflowBuilderPage() {
             </Section>
           )}
 
+          {hasApprovalChain && <ApprovalChainSection workflowId={id} />}
+
           {crmKey ? (
             <CrmStatusApprovers workflowKey={crmKey} />
           ) : (
             <StatesReference
-              workflowId={id}
               workflowKey={def.workflow.key}
               states={def.states}
               transitions={def.transitions}

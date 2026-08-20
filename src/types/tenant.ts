@@ -151,6 +151,25 @@ export interface WorkflowState {
   color: string;
 }
 
+// One gate in a module's approval chain (e.g. "Pending Approval" for most
+// modules, "Templating" and "QC Pending" for Fabrication Job) plus its
+// currently configured approvers. See workflowService.getApprovalChain.
+export interface ApprovalGate {
+  statusCode: string;
+  statusLabel: string;
+  approverEmployeeIds: string[];
+}
+
+// An employee eligible to be picked as an approver, returned alongside the
+// gates by workflowService.getApprovalChain -- gated by workflow_config:read,
+// the same permission that already governs this whole page (not the
+// separate user:read permission that /tenant/crm/lookups' employees field
+// requires).
+export interface ApprovalChainEmployee {
+  id: string;
+  name: string;
+}
+
 export interface WorkflowTransition {
   id: string;
   workflowId: string;
