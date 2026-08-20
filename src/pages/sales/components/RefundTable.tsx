@@ -285,7 +285,7 @@ export function RefundTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <RefundStatusControl
-                          value={r.statusCode}
+                          refund={{ statusCode: r.statusCode, approvalStatus: r.approvalStatus ?? 'none' }}
                           onChange={(code) => transition.mutate({ id: r.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === r.id}
                           variant="pill"

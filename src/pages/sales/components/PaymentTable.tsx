@@ -272,7 +272,7 @@ export function PaymentTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <PaymentStatusControl
-                          value={p.statusCode}
+                          payment={{ statusCode: p.statusCode, approvalStatus: p.approvalStatus ?? 'none' }}
                           onChange={(code) => transition.mutate({ id: p.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === p.id}
                           variant="pill"

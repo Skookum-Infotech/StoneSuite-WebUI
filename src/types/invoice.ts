@@ -6,7 +6,7 @@
 // v1 JSONB CRM router — Invoices are a relational sibling of `sales_order` with
 // ordered line items, snapshots, and stored money totals (incl. amountPaid/
 // balanceDue), served from `/api/tenant/invoices*`.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -119,6 +119,14 @@ export interface Invoice {
   invoiceNumber: string;
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
+  approvalStatus: 'none' | 'pending' | 'approved';
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
   customer: InvoiceCustomerRef;
   salesOrder?: InvoiceSalesOrderRef | null;
   ownerEmployeeId?: number | null;
@@ -159,7 +167,7 @@ export interface Invoice {
  *  subset the table actually renders. */
 export type InvoiceSummary = Pick<
   Invoice,
-  'id' | 'invoiceNumber' | 'status' | 'statusCode' | 'customer' | 'invoiceDate' | 'grandTotal' | 'balanceDue' | 'createdAt' | 'updatedAt'
+  'id' | 'invoiceNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer' | 'invoiceDate' | 'grandTotal' | 'balanceDue' | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search

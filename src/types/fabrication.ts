@@ -7,7 +7,7 @@
 // allocation and a 16-step checklist. Served from
 // `/api/tenant/fabrication-jobs*` and `/api/tenant/inventory/slabs*` — a
 // relational sibling of Sales Order, not the generic JSONB CRM router.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 export interface FabricationCustomerRef {
   id: string;
@@ -106,6 +106,13 @@ export interface FabricationJob {
   status: string;
   statusCode: string;
   approvalStatus: 'none' | 'pending' | 'approved';
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
   salesOrderId: string;
   customer: FabricationCustomerRef;
   heldFromStatusCode?: string;

@@ -14,7 +14,7 @@ import type { FabricationJob } from '@/types/fabrication';
 // backend would 409 with ErrApprovalRequired anyway, this just explains why
 // up front instead of after a failed save.
 export function FabricationStatusControl({ job, onChange, disabled, variant }: {
-  job: Pick<FabricationJob, 'statusCode' | 'approvalStatus'>;
+  job: Pick<FabricationJob, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';

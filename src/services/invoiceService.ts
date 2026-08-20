@@ -32,7 +32,33 @@ export const invoiceService = {
 
   getInvoice: (uuid: string): Promise<Invoice> =>
     tenantClient
-      .get<{ success: boolean; invoice: Invoice }>(`${BASE}/${uuid}`)
+      .get<{
+        success: boolean; invoice: Invoice; approval?: {
+          gated?: boolean; approvers?: Invoice['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.invoice,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
+
+  // Records this caller's sign-off on the invoice's current gated status
+  // (PAPV, AD-8). Rejected with 409 if the status has no approvers
+  // configured, or 403 if the caller isn't a configured approver (and isn't
+  // a super admin override).
+  approve: (uuid: string): Promise<Invoice> =>
+    tenantClient
+      .post<{ success: boolean; invoice: Invoice }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.invoice),
 
   createInvoice: (payload: InvoiceCreatePayload): Promise<Invoice> =>

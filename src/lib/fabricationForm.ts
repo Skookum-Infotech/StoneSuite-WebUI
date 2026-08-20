@@ -203,15 +203,16 @@ export const FJ_STATUS_COLORS: Record<string, string> = {
 
 // ── Approval gate (data-driven — spec §2.7) ──────────────────────────────────
 
-/** The Approve action only ever makes sense while `approvalStatus ===
- *  'pending'` — the backend sets this automatically when a job enters a
- *  status that has configured approvers, and only such statuses can ever be
- *  'pending'. There is deliberately no static TAPV/QCPS check here: whether a
- *  given status gates on approval is configured per-tenant server-side
- *  (fabrication_job_approver rows), so the frontend can't know it statically
- *  — it just renders what the job's own approvalStatus reports. */
-export function needsApproval(job: Pick<FabricationJob, 'approvalStatus'>): boolean {
-  return job.approvalStatus === 'pending';
+/** Whether a job is currently blocked on approval sign-off. Prefers the
+ *  live-recomputed `gated` flag (activeApproverCount > 0 && approvalStatus
+ *  != approved) over the stored `approvalStatus` column alone, which goes
+ *  stale the moment an admin edits the approver list out from under a job
+ *  already sitting in a gated status. There is deliberately no static
+ *  TAPV/QCPS check here: whether a given status gates on approval is
+ *  configured per-tenant server-side (fabrication_job_approver rows), so the
+ *  frontend can't know it statically. */
+export function needsApproval(job: Pick<FabricationJob, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return job.gated ?? job.approvalStatus === 'pending';
 }
 
 export const APPROVAL_STATUS_LABELS: Record<FabricationJob['approvalStatus'], string> = {

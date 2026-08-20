@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -67,6 +68,14 @@ export default function InvoiceDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => invoiceService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+  });
+
+  const approve = useMutation({
+    mutationFn: () => invoiceService.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -149,6 +158,26 @@ export default function InvoiceDetailPage() {
         recordNumber={invoice.invoiceNumber}
         statusBadge={<Badge color={color}>{invoice.status}</Badge>}
       />
+
+      {invoice.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={invoice.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={invoice.canApprove}
+            isOverride={invoice.isOverride}
+            requiredApprovals={invoice.requiredApprovals}
+            approvedCount={invoice.approvedCount}
+            callerAlreadyApproved={invoice.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve invoice.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -307,7 +336,7 @@ export default function InvoiceDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <InvoiceStatusControl
-                value={invoice.statusCode}
+                invoice={invoice}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

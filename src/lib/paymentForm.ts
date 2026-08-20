@@ -75,6 +75,18 @@ export const PAYMENT_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   VOID: [],
 };
 
+/** Whether a payment is currently blocked on approval sign-off (AD-8) --
+ *  gated at PEND until a configured approver (or a super admin override)
+ *  calls paymentService.approve. Prefers the live `gated` flag from GET
+ *  (recomputed server-side from the *current* approver config every read)
+ *  over the stored approvalStatus column, which goes stale the moment an
+ *  admin empties the approver list out from under a payment already sitting
+ *  in "pending". List rows don't carry `gated` (too expensive to compute
+ *  per search result) so they fall back to the stored approvalStatus flag. */
+export function needsApproval(payment: Pick<Payment, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return payment.gated ?? payment.approvalStatus === 'pending';
+}
+
 /** Statuses that block apply/unapply (backend AD-7: applying is allowed at
  *  PEND/APPV/DEPO, blocked only at VOID — looser than Invoice's payable-
  *  status gate since this module records money in, not out). */

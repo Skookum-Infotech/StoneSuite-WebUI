@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -67,6 +68,14 @@ export default function RefundDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => refundService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['refund', id] });
+      queryClient.invalidateQueries({ queryKey: ['refunds'] });
+    },
+  });
+
+  const approve = useMutation({
+    mutationFn: () => refundService.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['refund', id] });
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
@@ -137,6 +146,26 @@ export default function RefundDetailPage() {
         recordNumber={refund.refundNumber}
         statusBadge={<Badge color={color}>{refund.status}</Badge>}
       />
+
+      {refund.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={refund.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={refund.canApprove}
+            isOverride={refund.isOverride}
+            requiredApprovals={refund.requiredApprovals}
+            approvedCount={refund.approvedCount}
+            callerAlreadyApproved={refund.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve refund.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -235,7 +264,7 @@ export default function RefundDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <RefundStatusControl
-                value={refund.statusCode}
+                refund={refund}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

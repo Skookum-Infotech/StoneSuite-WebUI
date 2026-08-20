@@ -45,6 +45,10 @@ const APPROVAL_CHAIN_WORKFLOWS = new Set([
   'vendor_payment',
   'expense',
   'installation',
+  'invoice',
+  'payment',
+  'credit_memo',
+  'refund',
 ]);
 
 // Same icon per entity type used on the CRM detail pages, but the badge

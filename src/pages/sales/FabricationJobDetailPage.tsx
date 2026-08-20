@@ -15,7 +15,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import {
   FJ_STATUS_COLORS, APPROVAL_STATUS_LABELS, APPROVAL_STATUS_COLORS,
-  needsApproval, canCancel, canDeleteJob, canEditPieces,
+  canCancel, canDeleteJob, canEditPieces,
 } from '@/lib/fabricationForm';
 import { FabricationPiecesEditableTab } from './components/FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './components/FabricationPiecesTable';
@@ -24,7 +24,7 @@ import { FabricationStepsTab } from './components/FabricationStepsTab';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
-import { FabricationApprovalButton } from './components/FabricationApprovalButton';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { CancelFabricationJobDialog } from './components/CancelFabricationJobDialog';
 import { DeleteFabricationJobDialog } from './components/DeleteFabricationJobDialog';
 import type { FabricationJob } from '@/types/fabrication';
@@ -85,6 +85,11 @@ export default function FabricationJobDetailPage() {
   // CancelFabricationJobDialog), unaffected by this.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => fabricationService.transition(id, toStatusCode),
+    onSuccess: applyUpdatedJob,
+  });
+
+  const approve = useMutation({
+    mutationFn: () => fabricationService.approve(id),
     onSuccess: applyUpdatedJob,
   });
 
@@ -187,6 +192,26 @@ export default function FabricationJobDetailPage() {
         recordNumber={job.jobNumber}
         statusBadge={<Badge color={color}>{job.status}</Badge>}
       />
+
+      {job.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={job.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={job.canApprove}
+            isOverride={job.isOverride}
+            requiredApprovals={job.requiredApprovals}
+            approvedCount={job.approvedCount}
+            callerAlreadyApproved={job.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve fabrication job.')}
+            </p>
+          )}
+        </>
+      )}
 
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
         {TABS.map((tab) => (
@@ -302,7 +327,6 @@ export default function FabricationJobDetailPage() {
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Status Actions</p>
               <FabricationHoldResumeControl job={job} onChanged={applyUpdatedJob} />
-              {needsApproval(job) && <FabricationApprovalButton jobId={id} onApproved={applyUpdatedJob} />}
             </div>
           )}
 
