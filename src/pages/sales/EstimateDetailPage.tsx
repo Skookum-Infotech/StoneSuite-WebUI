@@ -174,9 +174,12 @@ export default function EstimateDetailPage() {
       {estimate.gated && (
         <>
           <ApprovalBanner
-            approverNames={estimate.approvers.map((a) => a.name)}
+            approverNames={estimate.approvers.filter((a) => !a.approved).map((a) => a.name)}
             canApprove={estimate.canApprove}
             isOverride={estimate.isOverride}
+            requiredApprovals={estimate.requiredApprovals}
+            approvedCount={estimate.approvedCount}
+            callerAlreadyApproved={estimate.callerAlreadyApproved}
             onApprove={() => approve.mutate()}
             approving={approve.isPending}
           />

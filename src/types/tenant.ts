@@ -173,11 +173,15 @@ export interface ApprovalChainEmployee {
 // One of the active configured approvers for a live record's *current*
 // status (AD-8/AD-10) -- distinct from ApprovalChainEmployee, which lists who
 // is *eligible to be assigned* on the config screen. Returned by the
-// Estimate/Quote/Sales Order Get endpoints alongside `canApprove` only while
-// the record's approvalStatus is 'pending'.
+// Estimate/Quote/Sales Order Get endpoints (nested under `approval`) only
+// while the record is gated. `approved` is per-approver: with 2 required
+// approvers, one signing off doesn't finish the gate -- the record stays
+// gated until every configured approver has signed off (quorum), so the UI
+// needs to know who specifically still hasn't.
 export interface RecordApprover {
   id: string;
   name: string;
+  approved: boolean;
 }
 
 export interface WorkflowTransition {

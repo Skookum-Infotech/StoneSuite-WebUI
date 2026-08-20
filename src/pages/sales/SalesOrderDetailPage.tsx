@@ -183,9 +183,12 @@ export default function SalesOrderDetailPage() {
       {order.gated && (
         <>
           <ApprovalBanner
-            approverNames={order.approvers.map((a) => a.name)}
+            approverNames={order.approvers.filter((a) => !a.approved).map((a) => a.name)}
             canApprove={order.canApprove}
             isOverride={order.isOverride}
+            requiredApprovals={order.requiredApprovals}
+            approvedCount={order.approvedCount}
+            callerAlreadyApproved={order.callerAlreadyApproved}
             onApprove={() => approve.mutate()}
             approving={approve.isPending}
           />

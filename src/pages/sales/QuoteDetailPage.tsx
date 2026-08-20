@@ -175,9 +175,12 @@ export default function QuoteDetailPage() {
       {quote.gated && (
         <>
           <ApprovalBanner
-            approverNames={quote.approvers.map((a) => a.name)}
+            approverNames={quote.approvers.filter((a) => !a.approved).map((a) => a.name)}
             canApprove={quote.canApprove}
             isOverride={quote.isOverride}
+            requiredApprovals={quote.requiredApprovals}
+            approvedCount={quote.approvedCount}
+            callerAlreadyApproved={quote.callerAlreadyApproved}
             onApprove={() => approve.mutate()}
             approving={approve.isPending}
           />

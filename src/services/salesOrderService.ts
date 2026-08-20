@@ -35,16 +35,25 @@ export const salesOrderService = {
   getOrder: (uuid: string): Promise<SalesOrder> =>
     tenantClient
       .get<{
-        success: boolean; salesOrder: SalesOrder; gated?: boolean;
-        approvers?: SalesOrder['approvers']; canApprove?: boolean; isOverride?: boolean;
+        success: boolean; salesOrder: SalesOrder;
+        approval?: {
+          gated?: boolean; approvers?: SalesOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
       }>(`${BASE}/${uuid}`)
-      .then((r) => ({
-        ...r.data.salesOrder,
-        gated: r.data.gated ?? false,
-        approvers: r.data.approvers ?? [],
-        canApprove: r.data.canApprove ?? false,
-        isOverride: r.data.isOverride ?? false,
-      })),
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.salesOrder,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   createOrder: (payload: SalesOrderCreatePayload): Promise<SalesOrder> =>
     tenantClient
