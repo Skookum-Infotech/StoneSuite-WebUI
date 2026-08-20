@@ -6,7 +6,7 @@
 // v1 JSONB CRM router — Estimates are a relational sibling of `sales_order`/
 // `invoice` with ordered line items, snapshots, and stored money totals,
 // served from `/api/tenant/estimates*`.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -109,6 +109,8 @@ export interface Estimate {
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
   approvalStatus: string;      // none | pending | approved (AD-8)
+  approvers: RecordApprover[]; // configured approvers for the current status; only populated while pending
+  canApprove: boolean;         // whether the requesting user is one of them
   customer: EstimateCustomerRef;
   estimateDate: string;
   validUntil?: string;
@@ -144,7 +146,7 @@ export interface Estimate {
  *  subset the table actually renders. */
 export type EstimateSummary = Pick<
   Estimate,
-  'id' | 'estimateNumber' | 'status' | 'statusCode' | 'customer' | 'estimateDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
+  'id' | 'estimateNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer' | 'estimateDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search

@@ -6,7 +6,7 @@
 // billing/shipping address is a flat string shape (no lkp_state/lkp_country
 // numeric ids). A line item is either a catalog pick or free-text, same as
 // Estimate — see QuoteLineInput below.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -113,6 +113,8 @@ export interface Quote {
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
   approvalStatus: string;      // none | pending | approved
+  approvers: RecordApprover[]; // configured approvers for the current status; only populated while pending
+  canApprove: boolean;         // whether the requesting user is one of them
   customer: QuoteCustomerRef;
   estimate?: QuoteEstimateRef | null;
   quoteDate: string;
@@ -148,7 +150,7 @@ export interface Quote {
  *  this type only names the subset the table actually renders. */
 export type QuoteSummary = Pick<
   Quote,
-  'id' | 'quoteNumber' | 'status' | 'statusCode' | 'customer' | 'quoteDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
+  'id' | 'quoteNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer' | 'quoteDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
 >;
 
 export interface QuoteSearchRequest {

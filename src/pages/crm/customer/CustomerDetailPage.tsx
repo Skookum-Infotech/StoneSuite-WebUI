@@ -14,7 +14,7 @@ import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
 import { StatusDropdown } from "@/components/crm/StatusDropdown";
 import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
-import { ApprovalBanner } from "@/components/crm/ApprovalBanner";
+import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,

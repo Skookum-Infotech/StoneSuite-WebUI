@@ -33,8 +33,8 @@ export const estimateService = {
 
   getEstimate: (uuid: string): Promise<Estimate> =>
     tenantClient
-      .get<{ success: boolean; estimate: Estimate }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.estimate),
+      .get<{ success: boolean; estimate: Estimate; approvers?: Estimate['approvers']; canApprove?: boolean }>(`${BASE}/${uuid}`)
+      .then((r) => ({ ...r.data.estimate, approvers: r.data.approvers ?? [], canApprove: r.data.canApprove ?? false })),
 
   createEstimate: (payload: EstimateCreatePayload): Promise<Estimate> =>
     tenantClient

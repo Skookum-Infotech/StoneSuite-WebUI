@@ -282,7 +282,7 @@ export function EstimateTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <EstimateStatusControl
-                          value={est.statusCode}
+                          estimate={est}
                           onChange={(code) => transition.mutate({ id: est.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === est.id}
                           variant="pill"

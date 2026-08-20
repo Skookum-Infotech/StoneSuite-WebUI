@@ -282,7 +282,7 @@ export function QuoteTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <QuoteStatusControl
-                          value={q.statusCode}
+                          quote={q}
                           onChange={(code) => transition.mutate({ id: q.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === q.id}
                           variant="pill"

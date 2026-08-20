@@ -170,6 +170,16 @@ export interface ApprovalChainEmployee {
   name: string;
 }
 
+// One of the active configured approvers for a live record's *current*
+// status (AD-8/AD-10) -- distinct from ApprovalChainEmployee, which lists who
+// is *eligible to be assigned* on the config screen. Returned by the
+// Estimate/Quote/Sales Order Get endpoints alongside `canApprove` only while
+// the record's approvalStatus is 'pending'.
+export interface RecordApprover {
+  id: string;
+  name: string;
+}
+
 export interface WorkflowTransition {
   id: string;
   workflowId: string;

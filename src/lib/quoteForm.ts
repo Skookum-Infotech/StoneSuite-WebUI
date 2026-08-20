@@ -351,9 +351,16 @@ export const QUOTE_STATUS_COLORS: Record<string, string> = {
  *  expired, or cancelled quote cannot be edited. */
 export const QUOTE_TERMINAL_STATUSES = new Set(['RJCT', 'EXPR', 'CANC']);
 
-/** Status code at which a Quote is awaiting sign-off — QuoteApprovalButton is
- *  shown only when the current status matches this (see plan Decision #4). */
-export const QUOTE_APPROVAL_PENDING_STATUS = 'PAPV';
+/** Whether the quote's current status is awaiting sign-off (AD-8) — while
+ *  true, every transition 409s (quote/store_transition.go: ErrApprovalRequired)
+ *  until a configured approver calls quoteService.approve, regardless of
+ *  who's asking or which target they pick. Whether a given status gates on
+ *  approval is configured per-tenant server-side (quote_approver rows), so
+ *  the frontend can't know it statically — it just renders what the quote's
+ *  own approvalStatus reports. */
+export function needsApproval(quote: Pick<Quote, 'approvalStatus'>): boolean {
+  return quote.approvalStatus === 'pending';
+}
 
 /** Statuses from which "Convert to Sales Order" is offered — a quote has to
  *  have cleared internal approval and/or reached the customer before it can

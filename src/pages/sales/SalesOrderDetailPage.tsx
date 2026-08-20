@@ -6,6 +6,7 @@ import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -93,6 +94,18 @@ export default function SalesOrderDetailPage() {
     },
   });
 
+  // Records this user's sign-off (AD-10) — shown via the banner only while
+  // order.approvalStatus === 'pending'. A non-approver who tries anyway gets
+  // ApprovalBanner's own "not authorized" dialog; the backend still enforces
+  // this regardless (403 ErrNotApprover).
+  const approve = useMutation({
+    mutationFn: () => salesOrderService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+    },
+  });
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
   if (error || !order)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
@@ -166,6 +179,22 @@ export default function SalesOrderDetailPage() {
         recordNumber={order.salesOrderNumber}
         statusBadge={<Badge color={color}>{order.status}</Badge>}
       />
+
+      {order.approvalStatus === 'pending' && (
+        <>
+          <ApprovalBanner
+            approverNames={order.approvers.map((a) => a.name)}
+            canApprove={order.canApprove}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -348,7 +377,7 @@ export default function SalesOrderDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <SalesOrderStatusControl
-                value={order.statusCode}
+                order={order}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

@@ -278,7 +278,7 @@ export function SalesOrderTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <SalesOrderStatusControl
-                          value={order.statusCode ?? ''}
+                          order={{ statusCode: order.statusCode ?? '', approvalStatus: order.approvalStatus ?? 'none' }}
                           onChange={(code) => transition.mutate({ id: order.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === order.id}
                           variant="pill"

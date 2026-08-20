@@ -6,7 +6,7 @@
 // generic `WorkflowRecord` used by the v1 JSONB CRM router — Sales Orders are a
 // relational sibling of `customer` with ordered line items, snapshots, and
 // stored money totals, served from `/api/tenant/sales-orders*`.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -120,6 +120,9 @@ export interface SalesOrder {
   salesOrderNumber: string;
   status: string;             // human label, e.g. "Draft"
   statusCode: string;         // lkp_record_status code, e.g. "DRFT" — drives transitions
+  approvalStatus: string;     // none | pending | approved (AD-10)
+  approvers: RecordApprover[]; // configured approvers for the current status; only populated while pending
+  canApprove: boolean;        // whether the requesting user is one of them
   customer: SalesOrderCustomerRef;
   orderDate: string;
   expectedDelivery?: string;
@@ -159,6 +162,7 @@ export interface SalesOrderSummary {
   salesOrderNumber: string;
   status: string;
   statusCode?: string;
+  approvalStatus?: string;
   customer?: SalesOrderCustomerRef;
   orderDate?: string;
   grandTotal?: number;

@@ -33,8 +33,8 @@ export const quoteService = {
 
   getQuote: (uuid: string): Promise<Quote> =>
     tenantClient
-      .get<{ success: boolean; quote: Quote }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.quote),
+      .get<{ success: boolean; quote: Quote; approvers?: Quote['approvers']; canApprove?: boolean }>(`${BASE}/${uuid}`)
+      .then((r) => ({ ...r.data.quote, approvers: r.data.approvers ?? [], canApprove: r.data.canApprove ?? false })),
 
   createQuote: (payload: QuoteCreatePayload): Promise<Quote> =>
     tenantClient

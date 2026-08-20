@@ -5,11 +5,12 @@ import { ShieldAlert, ShieldCheck } from 'lucide-react';
 const UNAUTHORIZED_APPROVE_MESSAGE =
   'You are not authorized to approve this document. Only the assigned approver(s) can approve it.';
 
-/** Full-width banner shown between the CRM record header and the tab bar
- *  whenever the record is awaiting approval — surfaces the assigned
+/** Full-width banner shown between a detail page's record header and its tab
+ *  bar whenever the record is awaiting approval — surfaces the assigned
  *  approver(s) and the Approve action without needing to scroll to the
  *  sidebar. Renders nothing once the record is approved or approval isn't
- *  required for the workflow. */
+ *  required. Shared across CRM (Lead/Prospect/Customer) and the relational
+ *  Sales modules (Estimate/Quote/Sales Order). */
 export function ApprovalBanner({
   approverNames,
   canApprove,

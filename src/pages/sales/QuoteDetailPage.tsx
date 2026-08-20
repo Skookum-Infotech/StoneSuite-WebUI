@@ -5,6 +5,7 @@ import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, Fil
 import { quoteService } from '@/services/quoteService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -76,6 +77,18 @@ export default function QuoteDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => quoteService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    },
+  });
+
+  // Records this user's sign-off (AD-8) — shown via the banner only while
+  // quote.approvalStatus === 'pending'. A non-approver who tries anyway gets
+  // ApprovalBanner's own "not authorized" dialog; the backend still enforces
+  // this regardless (403 ErrNotApprover).
+  const approve = useMutation({
+    mutationFn: () => quoteService.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -158,6 +171,22 @@ export default function QuoteDetailPage() {
         recordNumber={quote.quoteNumber}
         statusBadge={<Badge color={color}>{quote.status}</Badge>}
       />
+
+      {quote.approvalStatus === 'pending' && (
+        <>
+          <ApprovalBanner
+            approverNames={quote.approvers.map((a) => a.name)}
+            canApprove={quote.canApprove}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve quote.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -334,7 +363,7 @@ export default function QuoteDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <QuoteStatusControl
-                value={quote.statusCode}
+                quote={quote}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"
