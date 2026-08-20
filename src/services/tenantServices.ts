@@ -13,6 +13,7 @@ import type {
   WorkflowDefinition,
   WorkflowRecord,
   WorkflowNumberingConfig,
+  TenantSettings,
   FieldDefinition,
   OnboardingApplyDetails,
   WorkspaceUser,
@@ -284,6 +285,19 @@ export const numberingService = {
         data,
       )
       .then((r) => r.data),
+};
+
+// ----- Tenant Branding Settings ----------------------------------------------
+
+export const tenantSettingsService = {
+  get: () =>
+    tenantClient
+      .get<{ success: boolean; logo_url: string }>('/tenant/settings')
+      .then((r): TenantSettings => ({ logoUrl: r.data.logo_url })),
+  update: (logoUrl: string) =>
+    tenantClient
+      .patch<{ success: boolean; logo_url: string }>('/tenant/settings', { logo_url: logoUrl })
+      .then((r): TenantSettings => ({ logoUrl: r.data.logo_url })),
 };
 
 // ----- User management (Phase 4) --------------------------------------------

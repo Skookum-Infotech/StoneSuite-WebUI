@@ -83,6 +83,9 @@ const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
+const BrandingSettingsPage = lazyWithRetry(
+  () => import("@/pages/config/branding/BrandingSettingsPage"),
+);
 const DashboardWidgetsPage = lazyWithRetry(
   () => import("@/pages/config/dashboard-widgets/DashboardWidgetsPage"),
 );
@@ -1339,6 +1342,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="workflow_config" action="configure">
             <RecordNumberingPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/branding",
+        element: lazy_(
+          <PermissionGuard resource="tenant_settings" action="configure">
+            <BrandingSettingsPage />
           </PermissionGuard>,
         ),
       },

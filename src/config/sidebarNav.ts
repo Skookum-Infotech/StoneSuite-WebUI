@@ -42,6 +42,7 @@ import {
   ArrowLeftRight,
   CalendarClock,
   LayoutGrid,
+  Palette,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -509,6 +510,15 @@ export const sidebarNav: SidebarNavConfig = {
               icon: LayoutGrid,
               iconColor: "text-cyan-500 dark:text-cyan-400",
               permission: { resource: "dashboard_widget", action: "configure" },
+            },
+            {
+              type: "link",
+              id: "branding",
+              label: "Branding",
+              path: "/config/branding",
+              icon: Palette,
+              iconColor: "text-rose-500 dark:text-rose-400",
+              permission: { resource: "tenant_settings", action: "configure" },
             },
             {
               type: "link",

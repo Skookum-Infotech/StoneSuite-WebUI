@@ -241,6 +241,12 @@ export interface WorkflowNumberingConfig {
   nextNumber: number;
 }
 
+// ── Tenant branding settings (Configuration → Branding) ──────────────────────
+
+export interface TenantSettings {
+  logoUrl: string;
+}
+
 // ── SSO configuration (Configuration → Authentication) ───────────────────────
 // A config is one of two protocols. client_secret (oidc) and the IdP
 // certificate (saml) are write-only and never appear on the read model —
