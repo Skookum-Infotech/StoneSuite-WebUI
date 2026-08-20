@@ -33,8 +33,17 @@ export const estimateService = {
 
   getEstimate: (uuid: string): Promise<Estimate> =>
     tenantClient
-      .get<{ success: boolean; estimate: Estimate; approvers?: Estimate['approvers']; canApprove?: boolean }>(`${BASE}/${uuid}`)
-      .then((r) => ({ ...r.data.estimate, approvers: r.data.approvers ?? [], canApprove: r.data.canApprove ?? false })),
+      .get<{
+        success: boolean; estimate: Estimate; gated?: boolean;
+        approvers?: Estimate['approvers']; canApprove?: boolean; isOverride?: boolean;
+      }>(`${BASE}/${uuid}`)
+      .then((r) => ({
+        ...r.data.estimate,
+        gated: r.data.gated ?? false,
+        approvers: r.data.approvers ?? [],
+        canApprove: r.data.canApprove ?? false,
+        isOverride: r.data.isOverride ?? false,
+      })),
 
   createEstimate: (payload: EstimateCreatePayload): Promise<Estimate> =>
     tenantClient

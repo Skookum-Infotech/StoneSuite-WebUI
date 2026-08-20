@@ -172,11 +172,12 @@ export default function QuoteDetailPage() {
         statusBadge={<Badge color={color}>{quote.status}</Badge>}
       />
 
-      {quote.approvalStatus === 'pending' && (
+      {quote.gated && (
         <>
           <ApprovalBanner
             approverNames={quote.approvers.map((a) => a.name)}
             canApprove={quote.canApprove}
+            isOverride={quote.isOverride}
             onApprove={() => approve.mutate()}
             approving={approve.isPending}
           />

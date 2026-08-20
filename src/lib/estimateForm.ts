@@ -425,13 +425,18 @@ export const ESTIMATE_TERMINAL_STATUSES = new Set(['RJCT', 'EXPR', 'CANC']);
 
 /** Whether the estimate's current status is awaiting sign-off (AD-8) — while
  *  true, every transition 409s (estimate/store_transition.go: ErrApprovalRequired)
- *  until a configured approver calls estimateService.approve, regardless of
- *  who's asking or which target they pick. Whether a given status gates on
- *  approval is configured per-tenant server-side (estimate_approver rows), so
- *  the frontend can't know it statically — it just renders what the
- *  estimate's own approvalStatus reports. */
-export function needsApproval(estimate: Pick<Estimate, 'approvalStatus'>): boolean {
-  return estimate.approvalStatus === 'pending';
+ *  until a configured approver (or a super admin override) calls
+ *  estimateService.approve, regardless of who's asking or which target they
+ *  pick. Prefers the live `gated` flag from GET (recomputed server-side from
+ *  the *current* approver config every read, so it correctly flips false the
+ *  moment an admin empties the approver list out from under an estimate
+ *  already sitting in "pending" — at that point Transition no longer blocks
+ *  either, so anyone with estimate:transition can move it forward directly).
+ *  List rows don't carry `gated` (too expensive to compute per search result)
+ *  so they fall back to the stored approvalStatus flag, which is a fine
+ *  approximation for a table cell. */
+export function needsApproval(estimate: Pick<Estimate, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return estimate.gated ?? estimate.approvalStatus === 'pending';
 }
 
 // ── Form defaults ─────────────────────────────────────────────────────────────

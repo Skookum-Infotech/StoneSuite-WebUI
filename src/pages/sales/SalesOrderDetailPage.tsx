@@ -180,11 +180,12 @@ export default function SalesOrderDetailPage() {
         statusBadge={<Badge color={color}>{order.status}</Badge>}
       />
 
-      {order.approvalStatus === 'pending' && (
+      {order.gated && (
         <>
           <ApprovalBanner
             approverNames={order.approvers.map((a) => a.name)}
             canApprove={order.canApprove}
+            isOverride={order.isOverride}
             onApprove={() => approve.mutate()}
             approving={approve.isPending}
           />

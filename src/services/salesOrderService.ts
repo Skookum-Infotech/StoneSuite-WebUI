@@ -34,8 +34,17 @@ export const salesOrderService = {
 
   getOrder: (uuid: string): Promise<SalesOrder> =>
     tenantClient
-      .get<{ success: boolean; salesOrder: SalesOrder; approvers?: SalesOrder['approvers']; canApprove?: boolean }>(`${BASE}/${uuid}`)
-      .then((r) => ({ ...r.data.salesOrder, approvers: r.data.approvers ?? [], canApprove: r.data.canApprove ?? false })),
+      .get<{
+        success: boolean; salesOrder: SalesOrder; gated?: boolean;
+        approvers?: SalesOrder['approvers']; canApprove?: boolean; isOverride?: boolean;
+      }>(`${BASE}/${uuid}`)
+      .then((r) => ({
+        ...r.data.salesOrder,
+        gated: r.data.gated ?? false,
+        approvers: r.data.approvers ?? [],
+        canApprove: r.data.canApprove ?? false,
+        isOverride: r.data.isOverride ?? false,
+      })),
 
   createOrder: (payload: SalesOrderCreatePayload): Promise<SalesOrder> =>
     tenantClient

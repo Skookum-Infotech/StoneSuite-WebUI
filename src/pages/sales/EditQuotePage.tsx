@@ -60,6 +60,7 @@ export default function EditQuotePage() {
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? quote?.statusCode ?? '';
   const approvalStatus = quote?.approvalStatus ?? 'none';
+  const gated = quote?.gated ?? false;
   const isTerminal = QUOTE_TERMINAL_STATUSES.has(statusCode);
 
   const set = useCallback(
@@ -194,7 +195,7 @@ export default function EditQuotePage() {
           total={total}
           statusControl={(
             <QuoteStatusControl
-              quote={{ statusCode, approvalStatus }}
+              quote={{ statusCode, approvalStatus, gated }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

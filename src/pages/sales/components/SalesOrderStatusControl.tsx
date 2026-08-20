@@ -14,7 +14,7 @@ import type { SalesOrder } from '@/types/salesOrder';
 // of after a failed save. Use the ApprovalBanner (rendered by the Detail
 // page) to actually approve.
 export function SalesOrderStatusControl({ order, onChange, disabled, variant }: {
-  order: Pick<SalesOrder, 'statusCode' | 'approvalStatus'>;
+  order: Pick<SalesOrder, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';

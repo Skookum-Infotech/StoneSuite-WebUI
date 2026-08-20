@@ -171,11 +171,12 @@ export default function EstimateDetailPage() {
         statusBadge={<Badge color={color}>{estimate.status}</Badge>}
       />
 
-      {estimate.approvalStatus === 'pending' && (
+      {estimate.gated && (
         <>
           <ApprovalBanner
             approverNames={estimate.approvers.map((a) => a.name)}
             canApprove={estimate.canApprove}
+            isOverride={estimate.isOverride}
             onApprove={() => approve.mutate()}
             approving={approve.isPending}
           />

@@ -353,13 +353,18 @@ export const QUOTE_TERMINAL_STATUSES = new Set(['RJCT', 'EXPR', 'CANC']);
 
 /** Whether the quote's current status is awaiting sign-off (AD-8) — while
  *  true, every transition 409s (quote/store_transition.go: ErrApprovalRequired)
- *  until a configured approver calls quoteService.approve, regardless of
- *  who's asking or which target they pick. Whether a given status gates on
- *  approval is configured per-tenant server-side (quote_approver rows), so
- *  the frontend can't know it statically — it just renders what the quote's
- *  own approvalStatus reports. */
-export function needsApproval(quote: Pick<Quote, 'approvalStatus'>): boolean {
-  return quote.approvalStatus === 'pending';
+ *  until a configured approver (or a super admin override) calls
+ *  quoteService.approve, regardless of who's asking or which target they
+ *  pick. Prefers the live `gated` flag from GET (recomputed server-side from
+ *  the *current* approver config every read, so it correctly flips false the
+ *  moment an admin empties the approver list out from under a quote already
+ *  sitting in "pending" — at that point Transition no longer blocks either,
+ *  so anyone with quote:transition can move it forward directly). List rows
+ *  don't carry `gated` (too expensive to compute per search result) so they
+ *  fall back to the stored approvalStatus flag, which is a fine
+ *  approximation for a table cell. */
+export function needsApproval(quote: Pick<Quote, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return quote.gated ?? quote.approvalStatus === 'pending';
 }
 
 /** Statuses from which "Convert to Sales Order" is offered — a quote has to

@@ -12,7 +12,7 @@ import type { Estimate } from '@/types/estimate';
 // after a failed save. Use the ApprovalBanner (rendered by the Detail page)
 // to actually approve.
 export function EstimateStatusControl({ estimate, onChange, disabled, variant }: {
-  estimate: Pick<Estimate, 'statusCode' | 'approvalStatus'>;
+  estimate: Pick<Estimate, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';

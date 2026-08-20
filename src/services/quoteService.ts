@@ -33,8 +33,17 @@ export const quoteService = {
 
   getQuote: (uuid: string): Promise<Quote> =>
     tenantClient
-      .get<{ success: boolean; quote: Quote; approvers?: Quote['approvers']; canApprove?: boolean }>(`${BASE}/${uuid}`)
-      .then((r) => ({ ...r.data.quote, approvers: r.data.approvers ?? [], canApprove: r.data.canApprove ?? false })),
+      .get<{
+        success: boolean; quote: Quote; gated?: boolean;
+        approvers?: Quote['approvers']; canApprove?: boolean; isOverride?: boolean;
+      }>(`${BASE}/${uuid}`)
+      .then((r) => ({
+        ...r.data.quote,
+        gated: r.data.gated ?? false,
+        approvers: r.data.approvers ?? [],
+        canApprove: r.data.canApprove ?? false,
+        isOverride: r.data.isOverride ?? false,
+      })),
 
   createQuote: (payload: QuoteCreatePayload): Promise<Quote> =>
     tenantClient

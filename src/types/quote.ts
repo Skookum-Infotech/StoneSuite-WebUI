@@ -112,9 +112,11 @@ export interface Quote {
   quoteNumber: string;
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
-  approvalStatus: string;      // none | pending | approved
-  approvers: RecordApprover[]; // configured approvers for the current status; only populated while pending
-  canApprove: boolean;         // whether the requesting user is one of them
+  approvalStatus: string;      // none | pending | approved -- display only, can go stale; use `gated` to decide UI behavior
+  gated: boolean;              // authoritative: true iff a live approval gate is currently blocking transitions out of this status
+  approvers: RecordApprover[]; // configured approvers for the current status; only populated while gated
+  canApprove: boolean;         // whether the requesting user can approve (configured approver OR super admin)
+  isOverride: boolean;         // true when canApprove is only true because the user is a super admin, not a configured approver
   customer: QuoteCustomerRef;
   estimate?: QuoteEstimateRef | null;
   quoteDate: string;

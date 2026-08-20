@@ -12,7 +12,7 @@ import type { Quote } from '@/types/quote';
 // after a failed save. Use the ApprovalBanner (rendered by the Detail page)
 // to actually approve.
 export function QuoteStatusControl({ quote, onChange, disabled, variant }: {
-  quote: Pick<Quote, 'statusCode' | 'approvalStatus'>;
+  quote: Pick<Quote, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';

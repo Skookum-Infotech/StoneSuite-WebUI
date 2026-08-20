@@ -467,14 +467,18 @@ export const SO_CONVERTIBLE_STATUSES = new Set(['APPV', 'OPEN', 'PART', 'FILL'])
 
 /** Whether the order's current status is awaiting sign-off (AD-10) — while
  *  true, every transition 409s (salesorder/store_transition.go:
- *  ErrApprovalRequired) until a configured approver calls
- *  salesOrderService.approve, regardless of who's asking or which target
- *  they pick. Whether a given status gates on approval is configured
- *  per-tenant server-side (sales_order_approver rows), so the frontend can't
- *  know it statically — it just renders what the order's own approvalStatus
- *  reports. */
-export function needsApproval(order: Pick<SalesOrder, 'approvalStatus'>): boolean {
-  return order.approvalStatus === 'pending';
+ *  ErrApprovalRequired) until a configured approver (or a super admin
+ *  override) calls salesOrderService.approve, regardless of who's asking or
+ *  which target they pick. Prefers the live `gated` flag from GET
+ *  (recomputed server-side from the *current* approver config every read, so
+ *  it correctly flips false the moment an admin empties the approver list
+ *  out from under an order already sitting in "pending" — at that point
+ *  Transition no longer blocks either, so anyone with sales_order:transition
+ *  can move it forward directly). List rows don't carry `gated` (too
+ *  expensive to compute per search result) so they fall back to the stored
+ *  approvalStatus flag, which is a fine approximation for a table cell. */
+export function needsApproval(order: Pick<SalesOrder, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return order.gated ?? order.approvalStatus === 'pending';
 }
 
 // ── Per-line fulfillment status (AD-9 — schema.org orderItemStatus) ──────────
