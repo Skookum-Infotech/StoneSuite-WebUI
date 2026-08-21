@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, Loader2 } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -57,6 +58,11 @@ export default function PaymentDetailPage() {
     queryKey: ['payment', id],
     queryFn: () => paymentService.getPayment(id),
     enabled: Boolean(id),
+  });
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -202,6 +208,12 @@ export default function PaymentDetailPage() {
                   <ReadonlyField label="Payment Method" value={payment.method} />
                   <ReadonlyField label="Reference #" value={payment.referenceNumber} />
                   <ReadonlyField label="Payment Date" value={fmtDate(payment.paymentDate)} />
+                  {payment.currencyId && (
+                    <ReadonlyField
+                      label="Currency"
+                      value={lookups?.currencies.find((c) => c.id === payment.currencyId)?.name ?? '—'}
+                    />
+                  )}
                   {payment.memo && <ReadonlyField label="Memo" value={payment.memo} full />}
                   {payment.internalNotes && <ReadonlyField label="Internal Notes" value={payment.internalNotes} full />}
                 </div>

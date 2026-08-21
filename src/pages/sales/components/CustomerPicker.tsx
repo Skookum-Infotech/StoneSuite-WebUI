@@ -4,6 +4,7 @@ import { Search, X, Loader2, Building2 } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { lookupService } from '@/services/lookupService';
 import { cn } from '@/lib/utils';
+import { customerCoreDefaults } from '@/lib/customerDefaults';
 import { fieldCls } from '@/components/crm/formUtils';
 import type { FilterClause } from '@/types/tenant';
 
@@ -19,6 +20,13 @@ const BILLABLE_STATUS_NAMES = ['Customer Closed Won', 'Customer Renewal'];
 export interface CustomerRef {
   id: string;
   name: string;
+  /** Derived from the customer CRM record at pick time — undefined when the
+   *  customer record has no value set for that field. Lets create forms
+   *  auto-populate their own currency/tax/terms/price-level fields. */
+  currencyId?: string;
+  salesTaxPercent?: string;
+  paymentTermsId?: string;
+  priceLevelId?: string;
 }
 
 // Billing-customer picker for the Sales Order create form. Opens showing the
@@ -87,6 +95,7 @@ export function CustomerPicker({
       return page.records.map((r) => ({
         id: r.id,
         name: String(r.coreFields.customer_name ?? '(unnamed)'),
+        ...customerCoreDefaults(r.coreFields),
       }));
     },
   });
