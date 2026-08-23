@@ -14,18 +14,21 @@ import type { SalesOrder } from '@/types/salesOrder';
 // of after a failed save. Use the ApprovalBanner (rendered by the Detail
 // page) to actually approve.
 export function SalesOrderStatusControl({ order, onChange, disabled, variant }: {
-  order: Pick<SalesOrder, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
+  order: Pick<SalesOrder, 'statusCode' | 'approvalStatus'> & { gated?: boolean; hasAttachments?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
-  const guard = () => {
+  const guard = (code: string) => {
     if (!isLoading && !hasPermission('sales_order', 'transition')) {
       return { permitted: false, reason: 'You do not have permission to change status' };
     }
     if (needsApproval(order)) {
       return { permitted: false, reason: 'Awaiting approval', needsApprove: true };
+    }
+    if (order.statusCode === 'DRFT' && code === 'PAPV' && order.hasAttachments === false) {
+      return { permitted: false, reason: 'Attach a file before submitting for approval' };
     }
     return { permitted: true };
   };

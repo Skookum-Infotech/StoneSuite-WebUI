@@ -11,18 +11,21 @@ import type { Invoice } from '@/types/invoice';
 // of after a failed save. Use the ApprovalBanner (rendered by the Detail
 // page) to actually approve.
 export function InvoiceStatusControl({ invoice, onChange, disabled, variant }: {
-  invoice: Pick<Invoice, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
+  invoice: Pick<Invoice, 'statusCode' | 'approvalStatus'> & { gated?: boolean; hasAttachments?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
-  const guard = () => {
+  const guard = (code: string) => {
     if (!isLoading && !hasPermission('invoice', 'transition')) {
       return { permitted: false, reason: 'You do not have permission to change status' };
     }
     if (needsApproval(invoice)) {
       return { permitted: false, reason: 'Awaiting approval', needsApprove: true };
+    }
+    if (invoice.statusCode === 'DRFT' && code === 'PAPV' && invoice.hasAttachments === false) {
+      return { permitted: false, reason: 'Attach a file before submitting for approval' };
     }
     return { permitted: true };
   };

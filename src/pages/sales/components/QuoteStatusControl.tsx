@@ -12,18 +12,21 @@ import type { Quote } from '@/types/quote';
 // after a failed save. Use the ApprovalBanner (rendered by the Detail page)
 // to actually approve.
 export function QuoteStatusControl({ quote, onChange, disabled, variant }: {
-  quote: Pick<Quote, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
+  quote: Pick<Quote, 'statusCode' | 'approvalStatus'> & { gated?: boolean; hasAttachments?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
-  const guard = () => {
+  const guard = (code: string) => {
     if (!isLoading && !hasPermission('quote', 'transition')) {
       return { permitted: false, reason: 'You do not have permission to change status' };
     }
     if (needsApproval(quote)) {
       return { permitted: false, reason: 'Awaiting approval', needsApprove: true };
+    }
+    if (quote.statusCode === 'DRFT' && code === 'PAPV' && quote.hasAttachments === false) {
+      return { permitted: false, reason: 'Attach a file before submitting for approval' };
     }
     return { permitted: true };
   };
