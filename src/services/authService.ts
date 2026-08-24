@@ -93,4 +93,23 @@ export const authService = {
     const response = await apiClient.post('/portal/auth/switch-workspace', { tenantId });
     return response.data;
   },
+
+  // The customer-portal counterpart of userService.getUserInvite/
+  // acceptUserInvite — a separate token namespace (portal_invites, not
+  // user_invites), so AcceptInvitePage tries the staff lookup first and
+  // falls back to this pair on a 404. Validates without consuming.
+  getPortalInvite: async (
+    token: string,
+  ): Promise<{ email: string; fullName: string; workspaceName: string; expiresAt: string }> => {
+    const response = await apiClient.get(`/portal/auth/invite/${token}`);
+    return response.data;
+  },
+
+  // No fullName field: unlike a staff invite, a portal customer's name was
+  // already set by the staff member who granted access (see
+  // PortalAccessOps.CreatePortalUser) — accepting only sets the password.
+  acceptPortalInvite: async (token: string, password: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.post('/portal/auth/accept-invite', { token, password });
+    return response.data;
+  },
 };

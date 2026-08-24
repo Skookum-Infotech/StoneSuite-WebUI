@@ -6,26 +6,36 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 import { userService } from '@/services/tenantServices';
+import { authService } from '@/services/authService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// ---------------------------------------------------------------------------
+// One token namespace, one accept path per kind: a staff workspace invite
+// (user_invites, /api/onboarding/user-invite/*) and a customer-portal invite
+// (portal_invites, /api/portal/auth/invite/*, see CLAUDE.md's merged-login
+// design). Both land on this one URL — the invite email no longer says which
+// kind it is — so this page tries the staff lookup first and falls back to
+// the portal lookup only once that one settles as an error (a portal token
+// simply does not exist in user_invites, a clean 404, never ambiguous).
 
-const schema = z
-  .object({
-    fullName: z.string().min(1, 'Full name is required').max(120),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirm: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((d) => d.password === d.confirm, {
-    message: 'Passwords do not match',
-    path: ['confirm'],
-  });
+const buildSchema = (requireFullName: boolean) =>
+  z
+    .object({
+      fullName: requireFullName
+        ? z.string().min(1, 'Full name is required').max(120)
+        : z.string().optional(),
+      password: z.string().min(8, 'Password must be at least 8 characters'),
+      confirm: z.string().min(1, 'Please confirm your password'),
+    })
+    .refine((d) => d.password === d.confirm, {
+      message: 'Passwords do not match',
+      path: ['confirm'],
+    });
 
-type Fields = z.infer<typeof schema>;
+type Fields = z.infer<ReturnType<typeof buildSchema>>;
 
 // ---------------------------------------------------------------------------
 
@@ -47,7 +57,7 @@ export default function AcceptInvitePage() {
   const [done, setDone] = useState(false);
   const [acceptedEmail, setAcceptedEmail] = useState('');
 
-  const inviteQ = useQuery({
+  const staffInviteQ = useQuery({
     queryKey: ['user-invite', token],
     queryFn: () => userService.getUserInvite(token),
     enabled: Boolean(token),
@@ -55,6 +65,27 @@ export default function AcceptInvitePage() {
     staleTime: Infinity,
   });
 
+  // Waterfall: only fires once the staff lookup has settled as an error, so
+  // a genuine staff invite never pays for a second round trip.
+  const portalInviteQ = useQuery({
+    queryKey: ['portal-invite', token],
+    queryFn: () => authService.getPortalInvite(token),
+    enabled: Boolean(token) && staffInviteQ.isError,
+    retry: false,
+    staleTime: Infinity,
+  });
+
+  const isLoading = staffInviteQ.isLoading || (staffInviteQ.isError && portalInviteQ.isLoading);
+  const kind: 'staff' | 'portal' | null = staffInviteQ.data ? 'staff' : portalInviteQ.data ? 'portal' : null;
+  const invite = staffInviteQ.data ?? portalInviteQ.data;
+  // Once staff has failed, the portal attempt is authoritative for what the
+  // user sees — new invites minted by this codebase are portal-shaped by
+  // default (see controllers/portal_auth.go's portalInviteLink), so a token
+  // that resolves nowhere is far more likely to be an expired/consumed
+  // portal invite than a staff one.
+  const settledError = staffInviteQ.isError && portalInviteQ.isError ? portalInviteQ.error : null;
+
+  const schema = buildSchema(kind === 'staff');
   const {
     register,
     handleSubmit,
@@ -63,21 +94,23 @@ export default function AcceptInvitePage() {
   } = useForm<Fields>({
     resolver: zodResolver(schema),
     defaultValues: {
-      fullName: inviteQ.data?.fullName ?? '',
+      fullName: invite?.fullName ?? '',
     },
   });
 
-  // Update fullName default once invite data loads.
-  const defaultFullName = inviteQ.data?.fullName ?? '';
-
   const onSubmit = async (data: Fields) => {
     try {
-      const result = await userService.acceptUserInvite({
-        token,
-        password: data.password,
-        fullName: data.fullName,
-      });
-      setAcceptedEmail(result.email);
+      if (kind === 'staff') {
+        const result = await userService.acceptUserInvite({
+          token,
+          password: data.password,
+          fullName: data.fullName ?? '',
+        });
+        setAcceptedEmail(result.email);
+      } else {
+        await authService.acceptPortalInvite(token, data.password);
+        setAcceptedEmail(invite?.email ?? '');
+      }
       setDone(true);
     } catch (err: unknown) {
       setError('root', { message: apiErrorMessage(err, 'Could not activate account.') });
@@ -100,13 +133,13 @@ export default function AcceptInvitePage() {
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────
-  if (inviteQ.isLoading) {
+  if (isLoading) {
     return <Card><Spinner label="Verifying invitation…" /></Card>;
   }
 
-  // ── Token validation errors ───────────────────────────────────────────────
-  if (inviteQ.isError) {
-    const raw = inviteQ.error as { response?: { data?: { status?: string; message?: string } } };
+  // ── Token validation errors (both lookups settled, neither resolved) ──────
+  if (settledError) {
+    const raw = settledError as { response?: { data?: { status?: string; message?: string } } };
     const status = raw?.response?.data?.status;
     const message = raw?.response?.data?.message;
 
@@ -137,7 +170,7 @@ export default function AcceptInvitePage() {
             <Clock className="mx-auto mb-3 size-8 text-amber-400" />
             <h1 className="text-base font-bold text-stone-900">Invitation expired</h1>
             <p className="mt-1 text-sm text-stone-500">
-              {message ?? 'This invitation has expired. Ask your workspace admin to resend it.'}
+              {message ?? 'This invitation has expired. Ask whoever invited you to send a new one.'}
             </p>
           </div>
         </Card>
@@ -151,7 +184,7 @@ export default function AcceptInvitePage() {
             <AlertTriangle className="mx-auto mb-3 size-8 text-red-400" />
             <h1 className="text-base font-bold text-stone-900">Invitation revoked</h1>
             <p className="mt-1 text-sm text-stone-500">
-              {message ?? 'This invitation has been revoked. Contact your workspace admin.'}
+              {message ?? 'This invitation has been revoked. Contact whoever invited you.'}
             </p>
           </div>
         </Card>
@@ -160,7 +193,7 @@ export default function AcceptInvitePage() {
 
     return (
       <Card>
-        <ErrorNote>{apiErrorMessage(inviteQ.error, 'This invitation link is invalid or has expired.')}</ErrorNote>
+        <ErrorNote>{apiErrorMessage(settledError, 'This invitation link is invalid or has expired.')}</ErrorNote>
       </Card>
     );
   }
@@ -188,37 +221,42 @@ export default function AcceptInvitePage() {
   }
 
   // ── Form ──────────────────────────────────────────────────────────────────
-  const invite = inviteQ.data!;
-
+  // Reached only once one of the two queries has resolved, so invite/kind
+  // are guaranteed non-null here.
   return (
     <Card>
       <div className="mb-6 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-brand-dark mb-1">
-          {invite.workspaceName}
+          {invite!.workspaceName}
         </p>
-        <h1 className="text-lg font-bold text-stone-900">Join your workspace</h1>
+        <h1 className="text-lg font-bold text-stone-900">
+          {kind === 'portal' ? 'Set your password' : 'Join your workspace'}
+        </h1>
         <p className="mt-1 text-xs text-stone-500">
-          Setting up account for <span className="font-semibold">{invite.email}</span>
+          {kind === 'portal' ? 'Setting up portal access for' : 'Setting up account for'}{' '}
+          <span className="font-semibold">{invite!.email}</span>
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="fullName">Full name</Label>
-          <Input
-            id="fullName"
-            type="text"
-            placeholder="Jane Smith"
-            defaultValue={defaultFullName}
-            aria-invalid={Boolean(errors.fullName)}
-            aria-describedby={errors.fullName ? 'name-error' : undefined}
-            {...register('fullName')}
-            className="h-11"
-          />
-          {errors.fullName && (
-            <p id="name-error" className="text-xs text-red-500">{errors.fullName.message}</p>
-          )}
-        </div>
+        {kind === 'staff' && (
+          <div className="space-y-1.5">
+            <Label htmlFor="fullName">Full name</Label>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Jane Smith"
+              defaultValue={invite!.fullName}
+              aria-invalid={Boolean(errors.fullName)}
+              aria-describedby={errors.fullName ? 'name-error' : undefined}
+              {...register('fullName')}
+              className="h-11"
+            />
+            {errors.fullName && (
+              <p id="name-error" className="text-xs text-red-500">{errors.fullName.message}</p>
+            )}
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
