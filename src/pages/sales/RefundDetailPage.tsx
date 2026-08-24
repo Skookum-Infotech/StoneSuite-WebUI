@@ -215,7 +215,7 @@ export default function RefundDetailPage() {
 
           {activeTab === 'applications' && <RefundApplicationsTab refund={refund} />}
           {activeTab === 'audit' && <RefundAuditTab refundId={id} />}
-          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
+          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
           <div className="h-6" />
         </div>
@@ -225,14 +225,16 @@ export default function RefundDetailPage() {
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => navigate(`/sales/refund/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-              >
-                <Upload className="size-4 text-stone-400 shrink-0" aria-hidden="true" />
-                Upload file
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/sales/refund/${id}/edit`, { state: { initialTab: 'files' } })}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <Upload className="size-4 text-stone-400 shrink-0" aria-hidden="true" />
+                  Upload file
+                </button>
+              )}
               {canEdit && (
                 <button
                   type="button"

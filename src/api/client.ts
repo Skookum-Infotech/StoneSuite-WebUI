@@ -109,12 +109,17 @@ function forceLogout(): void {
   if (isLoggingOut) return;
   isLoggingOut = true;
 
+  // Read before logout() clears it — a customer session's server-side
+  // cookies live at /api/portal/auth/logout, not /api/auth/logout, and
+  // RequireAuth's path confinement would 403 (not clear anything) if a
+  // portal-kind token hit the staff endpoint instead.
+  const wasPortal = useAuthStore.getState().kind === 'portal';
   useAuthStore.getState().logout();
 
   // Clear server-side cookies (fire-and-forget). Uses apiClient so the request
   // still carries X-CSRF-Token; isLoggingOut above stops the response
   // interceptor from reacting to a 401 on this call.
-  apiClient.post('/auth/logout').catch(() => undefined);
+  apiClient.post(wasPortal ? '/portal/auth/logout' : '/auth/logout').catch(() => undefined);
 
   try {
     const ch = new BroadcastChannel('session-sync');

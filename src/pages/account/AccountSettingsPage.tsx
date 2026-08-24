@@ -251,6 +251,7 @@ function Avatar({ name, className }: { name: string; className?: string }) {
 
 export default function AccountSettingsPage() {
   const { user, setAuth } = useAuthStore()
+  const isCustomer = useAuthStore((s) => s.kind === 'portal')
   const { grants, isLoading: permissionsLoading, activeRoleId } = useUserPermissions()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
@@ -262,11 +263,14 @@ export default function AccountSettingsPage() {
   const [firstName, ...lastParts] = (user?.fullName ?? '').split(' ')
   const lastName = lastParts.join(' ')
 
+  // A customer-portal session has no workspace `users` row and userService
+  // lives under /api/tenant/*, which a portal-kind token is structurally
+  // confined away from (RequireAuth) — skip the call rather than let it 403.
   const { data: workspaceUsers } = useQuery({
     queryKey: ['workspace-users'],
     queryFn: () => userService.listUsers(),
     staleTime: 1000 * 60 * 2,
-    enabled: Boolean(user?.email),
+    enabled: Boolean(user?.email) && !isCustomer,
   })
 
   const currentWorkspaceUser = workspaceUsers?.find((u) => u.email === user?.email)
@@ -309,10 +313,15 @@ export default function AccountSettingsPage() {
     },
   })
 
+  // A customer-portal session has no roles or role-switching concept at all
+  // — there is no RBAC surface behind /api/portal/*, just the fixed
+  // read-only grant CLAUDE.md documents (see useUserPermissions).
   const navItems: { id: Tab; label: string; icon: React.ElementType; badge?: string }[] = [
     { id: 'profile', label: 'Profile', icon: UserCircle },
     { id: 'password', label: 'Password', icon: KeyRound },
-    { id: 'roles', label: 'Roles & Access', icon: Shield, badge: roles.length > 0 ? String(roles.length) : undefined },
+    ...(isCustomer
+      ? []
+      : [{ id: 'roles' as Tab, label: 'Roles & Access', icon: Shield, badge: roles.length > 0 ? String(roles.length) : undefined }]),
   ]
 
   return (

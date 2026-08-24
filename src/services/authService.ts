@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client';
+import { isPortalSession } from '@/store/useAuthStore';
 import type {
   LoginCredentials,
   RegisterData,
@@ -73,8 +74,23 @@ export const authService = {
   },
 
   // Change password while authenticated (requires current password for verification).
+  // A customer-portal session changes its password at a different endpoint
+  // (see CLAUDE.md's merged-login design) — /auth/change-password requires a
+  // `users` row, which a portal identity never has, and a portal-kind token
+  // is structurally confined away from it regardless (RequireAuth).
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.post('/auth/change-password', { currentPassword, newPassword });
+    const path = isPortalSession() ? '/portal/auth/change-password' : '/auth/change-password';
+    const response = await apiClient.post(path, { currentPassword, newPassword });
+    return response.data;
+  },
+
+  // Re-mints a customer-portal session against a different linked workspace
+  // (see identity_tenants) — the only session kind with this concept; a
+  // staff identity belongs to exactly one workspace.
+  switchWorkspace: async (
+    tenantId: string,
+  ): Promise<{ success: boolean; token: string; expiresAt: number; tenantId: string; workspaceName: string }> => {
+    const response = await apiClient.post('/portal/auth/switch-workspace', { tenantId });
     return response.data;
   },
 };

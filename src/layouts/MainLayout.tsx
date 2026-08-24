@@ -16,6 +16,7 @@ import { samlAuthService } from '@/services/samlAuthService';
 import { SAML_ACTIVE_PROVIDER_KEY } from '@/lib/samlSession';
 import type { SAMLProvider } from '@/types/tenant';
 import Sidebar from '@/components/Sidebar';
+import { PortalWorkspaceSwitcher } from '@/components/PortalWorkspaceSwitcher';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
 import {
@@ -33,8 +34,20 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// See the isCustomer guard below for why this exists as an explicit allowlist
+// rather than per-route PermissionGuard coverage alone.
+const CUSTOMER_ALLOWED_PATH_PREFIXES = [
+  '/sales/sales_order',
+  '/sales/invoice',
+  '/sales/payment',
+  '/sales/refund',
+  '/account/settings',
+];
+
 export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, setAuth, logout } = useAuthStore();
+  const isCustomer = useAuthStore((s) => s.kind === 'portal');
+  const workspaceCount = useAuthStore((s) => s.workspaces.length);
   const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
   const { activeRoleId } = useUserPermissions();
   const queryClient = useQueryClient();
@@ -98,13 +111,15 @@ export default function MainLayout(): React.JSX.Element {
       }
     }
 
-    // Clear the httpOnly cookie server-side before wiping local state.
+    // Clear the httpOnly cookie server-side before wiping local state. A
+    // customer session's cookies live at /api/portal/auth/logout — the staff
+    // endpoint would 403 (RequireAuth's path confinement) and clear nothing.
     // Fire-and-forget — navigate regardless of whether the call succeeds.
-    apiClient.post('/auth/logout').catch(() => undefined);
+    apiClient.post(isCustomer ? '/portal/auth/logout' : '/auth/logout').catch(() => undefined);
     logout();
     // replace: true so Back after signing out does not re-enter the app shell.
     navigate('/auth/login', { replace: true });
-  }, [logout, navigate]);
+  }, [logout, navigate, isCustomer]);
 
   // Backing out of the bottom of the history stack drops the user out of the app
   // entirely, and that exit cannot be cancelled once it happens. The guard parks
@@ -114,6 +129,17 @@ export default function MainLayout(): React.JSX.Element {
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />;
+  }
+
+  // A customer-portal session may only reach its four document types (List
+  // and Detail — Add/Edit already render "Access Denied" via PermissionGuard,
+  // so there is no need to redirect away from those specifically) plus its
+  // own account settings. Everything else under this shell is staff-only.
+  // This is a single allowlisted choke point rather than relying on every
+  // route remembering its own PermissionGuard — /dashboard, /transactions and
+  // /subscription, for instance, declare none at all.
+  if (isCustomer && !CUSTOMER_ALLOWED_PATH_PREFIXES.some((p) => location.pathname.startsWith(p))) {
+    return <Navigate to="/sales/sales_order" replace />;
   }
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -218,6 +244,7 @@ export default function MainLayout(): React.JSX.Element {
 
           {/* Right actions */}
           <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
+            {isCustomer && workspaceCount > 1 && <PortalWorkspaceSwitcher />}
             <button
               onClick={() => setIsMobileSearchOpen((o) => !o)}
               aria-label={isMobileSearchOpen ? 'Close search' : 'Open search'}

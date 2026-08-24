@@ -279,7 +279,7 @@ export default function InvoiceDetailPage() {
           )}
 
           {activeTab === 'audit' && <InvoiceAuditTab invoiceId={id} />}
-          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
+          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
           <div className="h-6" />
         </div>
@@ -289,14 +289,16 @@ export default function InvoiceDetailPage() {
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => navigate(`/sales/invoice/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-              >
-                <Upload className="size-4 text-stone-400 shrink-0" />
-                Upload file
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/sales/invoice/${id}/edit`, { state: { initialTab: 'files' } })}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <Upload className="size-4 text-stone-400 shrink-0" />
+                  Upload file
+                </button>
+              )}
               {canEdit && (
                 <button
                   type="button"
