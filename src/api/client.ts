@@ -45,6 +45,30 @@ async function attemptRefresh(): Promise<boolean> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
+        const { kind, activeTenantId } = useAuthStore.getState();
+        // A customer-portal session refreshes at a different endpoint and
+        // must resend the active workspace's tenantId: the access token is
+        // already expired by the time refresh runs, so the server has
+        // nothing else to recover which workspace to resume (see
+        // controllers/portal_auth.go's Refresh). Omitting it would silently
+        // resume the customer's first linked workspace instead of the one
+        // they were actually using.
+        if (kind === 'portal') {
+          if (!activeTenantId) return false;
+          const res = await apiClient.post<{
+            success: boolean; token?: string; expiresAt?: number; tenantId?: string;
+          }>('/portal/auth/refresh', { tenantId: activeTenantId });
+          if (res.data.success && res.data.token && res.data.expiresAt) {
+            useAuthStore.getState().applyWorkspaceSwitch(
+              res.data.tenantId ?? activeTenantId,
+              res.data.token,
+              res.data.expiresAt,
+            );
+            broadcastSessionExtended(res.data.expiresAt);
+          }
+          return res.data.success === true;
+        }
+
         // Goes through apiClient so the request interceptor still attaches the
         // Authorization fallback and X-CSRF-Token. Safe from recursion: the
         // response interceptor below skips 401 handling for /auth/refresh.
@@ -53,14 +77,7 @@ async function attemptRefresh(): Promise<boolean> {
         );
         if (res.data.success && res.data.expiresAt) {
           useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
-          // Broadcast the new expiry to all other tabs.
-          try {
-            const ch = new BroadcastChannel('session-sync');
-            ch.postMessage({ type: 'SESSION_EXTENDED', expiresAt: res.data.expiresAt });
-            ch.close();
-          } catch {
-            // BroadcastChannel not available (SSR / old browser) — silently skip.
-          }
+          broadcastSessionExtended(res.data.expiresAt);
         }
         return res.data.success === true;
       } catch {
@@ -71,6 +88,19 @@ async function attemptRefresh(): Promise<boolean> {
     })();
   }
   return refreshPromise;
+}
+
+// Broadcasts the new expiry to all other tabs. Shared by both the staff and
+// portal refresh branches above — one channel, since the two client instances
+// were merged into one (see CLAUDE.md's merged-login design).
+function broadcastSessionExtended(expiresAt: number): void {
+  try {
+    const ch = new BroadcastChannel('session-sync');
+    ch.postMessage({ type: 'SESSION_EXTENDED', expiresAt });
+    ch.close();
+  } catch {
+    // BroadcastChannel not available (SSR / old browser) — silently skip.
+  }
 }
 
 function forceLogout(): void {
@@ -105,12 +135,15 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retried?: boolean };
 
-    // Only intercept 401s on first attempt. Skip the refresh endpoint itself to
-    // prevent an infinite loop when the refresh token is also expired.
+    // Only intercept 401s on first attempt. Skip both refresh endpoints
+    // themselves to prevent an infinite loop when the refresh token is also
+    // expired — /portal/auth/refresh is the customer-session equivalent of
+    // /auth/refresh, used when useAuthStore's kind is 'portal'.
     if (
       error.response?.status === 401 &&
       !originalRequest._retried &&
       !originalRequest.url?.includes('/auth/refresh') &&
+      !originalRequest.url?.includes('/portal/auth/refresh') &&
       !originalRequest.url?.includes('/auth/tenant-login') &&
       !originalRequest.url?.includes('/auth/register') &&
       !isLoggingOut
