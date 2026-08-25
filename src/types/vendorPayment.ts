@@ -6,7 +6,7 @@
 // served from `/api/tenant/vendor-payments*`, not the generic WorkflowRecord
 // JSONB CRM router. Its sibling on the receivables side is `types/payment.ts`;
 // the document it settles is `types/vendorBill.ts`.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -88,6 +88,13 @@ export interface VendorPayment {
   status: string;                        // human label, e.g. "Draft"
   statusCode: VendorPaymentStatusCode;    // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved'; // AD-6
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
 
   vendor: VendorPaymentVendorRef;
   ownerEmployeeId?: number | null;

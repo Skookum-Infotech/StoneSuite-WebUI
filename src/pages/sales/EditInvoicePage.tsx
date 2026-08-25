@@ -59,6 +59,8 @@ export default function EditInvoicePage() {
   const lineItems = localLineItems ?? mapped?.lineItems ?? EMPTY_ITEMS;
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? invoice?.statusCode ?? '';
+  const approvalStatus = invoice?.approvalStatus ?? 'none';
+  const gated = invoice?.gated ?? false;
   const isTerminal = INVOICE_TERMINAL_STATUSES.has(statusCode);
 
   const set = useCallback(
@@ -194,7 +196,7 @@ export default function EditInvoicePage() {
           amountPaid={invoice.amountPaid}
           statusControl={(
             <InvoiceStatusControl
-              value={statusCode}
+              invoice={{ statusCode, approvalStatus, gated }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

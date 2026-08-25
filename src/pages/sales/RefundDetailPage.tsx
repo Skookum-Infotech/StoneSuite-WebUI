@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Undo2, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,7 @@ import { RefundAuditTab } from './components/RefundAuditTab';
 import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { RefundStatusControl } from './components/RefundStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -61,6 +63,24 @@ export default function RefundDetailPage() {
       return () => clearLabel(id);
     }
   }, [id, refund?.refundNumber, setLabel, clearLabel]);
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => refundService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['refund', id] });
+      queryClient.invalidateQueries({ queryKey: ['refunds'] });
+    },
+  });
+
+  const approve = useMutation({
+    mutationFn: () => refundService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['refund', id] });
+      queryClient.invalidateQueries({ queryKey: ['refunds'] });
+    },
+  });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading refund…" /></div>;
   if (error || !refund)
@@ -126,6 +146,26 @@ export default function RefundDetailPage() {
         recordNumber={refund.refundNumber}
         statusBadge={<Badge color={color}>{refund.status}</Badge>}
       />
+
+      {refund.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={refund.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={refund.canApprove}
+            isOverride={refund.isOverride}
+            requiredApprovals={refund.requiredApprovals}
+            approvedCount={refund.approvedCount}
+            callerAlreadyApproved={refund.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve refund.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -223,7 +263,12 @@ export default function RefundDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{refund.status}</Badge>
+              <RefundStatusControl
+                refund={refund}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

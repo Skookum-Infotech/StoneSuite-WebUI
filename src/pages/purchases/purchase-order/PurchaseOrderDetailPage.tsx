@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,6 @@ import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { PurchaseOrderTransitionBar } from './components/PurchaseOrderTransitionBar';
-import { PurchaseOrderApprovalButton } from './components/PurchaseOrderApprovalButton';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -83,6 +83,14 @@ export default function PurchaseOrderDetailPage() {
     },
   });
 
+  const approve = useMutation({
+    mutationFn: () => purchaseOrderService.approve(id),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['purchase-order', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    },
+  });
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
   if (error || !po)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load purchase order.')}</ErrorNote></div>;
@@ -94,8 +102,7 @@ export default function PurchaseOrderDetailPage() {
   // nothing, so the card would be an empty "Actions" header. Hide it unless it
   // has real content (a transition, an approval gate, or a failed transition).
   const hasTransitions = canTransition && (PO_ALLOWED_TRANSITIONS[po.statusCode]?.length ?? 0) > 0;
-  const isApprovalPending = po.approvalStatus === 'pending';
-  const showActions = hasTransitions || isApprovalPending || Boolean(transition.error);
+  const showActions = hasTransitions || Boolean(transition.error);
 
   async function handleExportPdf() {
     if (!po) return;
@@ -168,6 +175,26 @@ export default function PurchaseOrderDetailPage() {
         recordNumber={po.purchaseOrderNumber}
         statusBadge={<Badge color={color}>{po.status}</Badge>}
       />
+
+      {po.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={po.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={po.canApprove}
+            isOverride={po.isOverride}
+            requiredApprovals={po.requiredApprovals}
+            approvedCount={po.approvedCount}
+            callerAlreadyApproved={po.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve purchase order.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -342,18 +369,10 @@ export default function PurchaseOrderDetailPage() {
               <PurchaseOrderTransitionBar
                 statusCode={po.statusCode}
                 approvalStatus={po.approvalStatus}
+                gated={po.gated}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />
-              {isApprovalPending && (
-                <PurchaseOrderApprovalButton
-                  purchaseOrderId={id}
-                  onApproved={(updated) => {
-                    queryClient.setQueryData(['purchase-order', id], updated);
-                    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-                  }}
-                />
-              )}
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
               )}

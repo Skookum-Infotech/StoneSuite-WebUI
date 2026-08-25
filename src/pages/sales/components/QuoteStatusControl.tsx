@@ -1,31 +1,43 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { QUOTE_STATUS_CODES, QUOTE_ALLOWED_TRANSITIONS } from '@/lib/quoteForm';
+import { QUOTE_STATUS_CODES, QUOTE_ALLOWED_TRANSITIONS, QUOTE_STATUS_COLORS, needsApproval } from '@/lib/quoteForm';
 import { StatusSelect } from './StatusSelect';
+import type { Quote } from '@/types/quote';
 
-// Status select for the Quote Edit page. Legal moves mirror the backend
-// quote/transitions.go (spec §7); every move needs the single quote:transition
-// permission — Quote has no separate approve action in authz/catalog.go. The
-// backend (ValidateTransition + RBAC) stays the source of truth; this control
-// just shouldn't offer a move it knows would 409 or 403.
-export function QuoteStatusControl({ value, onChange, disabled }: {
-  value: string; // current status code, e.g. "DRFT"
+// Status select for the Quote Edit/Detail pages. Legal moves mirror the
+// backend quote/transitions.go (spec §7); every move needs the single
+// quote:transition permission. A move is additionally blocked client-side
+// while approvalStatus is 'pending' (the current status has configured
+// approvers awaiting sign-off, AD-8) -- the backend would 409 with
+// ErrApprovalRequired anyway, this just explains why up front instead of
+// after a failed save. Use the ApprovalBanner (rendered by the Detail page)
+// to actually approve.
+export function QuoteStatusControl({ quote, onChange, disabled, variant }: {
+  quote: Pick<Quote, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
+  variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
-  const guard = () => ({
-    permitted: isLoading || hasPermission('quote', 'transition'),
-    reason: 'You do not have permission to change status',
-  });
+  const guard = () => {
+    if (!isLoading && !hasPermission('quote', 'transition')) {
+      return { permitted: false, reason: 'You do not have permission to change status' };
+    }
+    if (needsApproval(quote)) {
+      return { permitted: false, reason: 'Awaiting approval', needsApprove: true };
+    }
+    return { permitted: true };
+  };
 
   return (
     <StatusSelect
-      value={value}
+      value={quote.statusCode}
       onChange={onChange}
       disabled={disabled}
       statuses={QUOTE_STATUS_CODES}
       allowedTransitions={QUOTE_ALLOWED_TRANSITIONS}
       guard={guard}
+      variant={variant}
+      colorFor={(s) => QUOTE_STATUS_COLORS[s.label] ?? '#a8a29e'}
     />
   );
 }

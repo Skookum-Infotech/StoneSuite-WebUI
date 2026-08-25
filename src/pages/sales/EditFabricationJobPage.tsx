@@ -14,8 +14,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { FabricationJobFormBody } from './components/FabricationJobFormBody';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
-import { FabricationApprovalButton } from './components/FabricationApprovalButton';
-import { fromJob, toJobFields, needsApproval, canEditPieces, PAGE_TABS, type PageTab } from '@/lib/fabricationForm';
+import { fromJob, toJobFields, canEditPieces, PAGE_TABS, type PageTab } from '@/lib/fabricationForm';
 import type { FabricationJob } from '@/types/fabrication';
 
 export default function EditFabricationJobPage() {
@@ -152,9 +151,6 @@ export default function EditFabricationJobPage() {
           ) : undefined}
           holdResumeControl={canUpdate ? (
             <FabricationHoldResumeControl job={job} disabled={transition.isPending} onChanged={applyUpdatedJob} />
-          ) : undefined}
-          approvalControl={needsApproval(job) ? (
-            <FabricationApprovalButton jobId={id} onApproved={applyUpdatedJob} />
           ) : undefined}
         />
 

@@ -34,8 +34,25 @@ export const vendorBillService = {
 
   getVendorBill: (uuid: string): Promise<VendorBill> =>
     tenantClient
-      .get<{ success: boolean; vendorBill: VendorBill }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.vendorBill),
+      .get<{
+        success: boolean; vendorBill: VendorBill; approval?: {
+          gated?: boolean; approvers?: VendorBill['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.vendorBill,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   createVendorBill: (payload: CreateVendorBillPayload): Promise<VendorBill> =>
     tenantClient
@@ -60,6 +77,15 @@ export const vendorBillService = {
         `${BASE}/${uuid}/transition`,
         { toStatusCode },
       )
+      .then((r) => r.data.vendorBill),
+
+  // Records this caller's sign-off on the vendor bill's current gated status
+  // (PAPV, AD-8). Rejected with 409 if the status has no approvers
+  // configured, or 403 if the caller isn't a configured approver (and isn't
+  // a super admin override).
+  approve: (uuid: string): Promise<VendorBill> =>
+    tenantClient
+      .post<{ success: boolean; vendorBill: VendorBill }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.vendorBill),
 
   // AP reconciliation view: every live vendor payment application and refund

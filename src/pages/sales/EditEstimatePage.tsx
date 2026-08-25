@@ -59,6 +59,8 @@ export default function EditEstimatePage() {
   const lineItems = localLineItems ?? mapped?.lineItems ?? EMPTY_ITEMS;
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? estimate?.statusCode ?? '';
+  const approvalStatus = estimate?.approvalStatus ?? 'none';
+  const gated = estimate?.gated ?? false;
   const isTerminal = ESTIMATE_TERMINAL_STATUSES.has(statusCode);
 
   const set = useCallback(
@@ -193,7 +195,7 @@ export default function EditEstimatePage() {
           total={total}
           statusControl={(
             <EstimateStatusControl
-              value={statusCode}
+              estimate={{ statusCode, approvalStatus, gated }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

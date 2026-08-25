@@ -11,7 +11,7 @@
 // no address block, no per-line discount or tax, no shipping/adjustment, and
 // three live statuses instead of seven. A requisition is a rough ask, not a
 // priced commitment.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -87,6 +87,13 @@ export interface Requisition {
   status: string;                  // human label, e.g. "Draft"
   statusCode: RequisitionStatusCode; // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved';
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
 
   requestedByEmployeeId: number;
   department: string;

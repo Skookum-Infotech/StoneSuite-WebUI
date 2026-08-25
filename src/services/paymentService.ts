@@ -32,7 +32,33 @@ export const paymentService = {
 
   getPayment: (uuid: string): Promise<Payment> =>
     tenantClient
-      .get<{ success: boolean; payment: Payment }>(`${BASE}/${uuid}`)
+      .get<{
+        success: boolean; payment: Payment; approval?: {
+          gated?: boolean; approvers?: Payment['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.payment,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
+
+  // Records this caller's sign-off on the payment's current gated status
+  // (PEND, AD-8). Rejected with 409 if the status has no approvers
+  // configured, or 403 if the caller isn't a configured approver (and isn't
+  // a super admin override).
+  approve: (uuid: string): Promise<Payment> =>
+    tenantClient
+      .post<{ success: boolean; payment: Payment }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.payment),
 
   createPayment: (payload: PaymentCreatePayload): Promise<Payment> =>

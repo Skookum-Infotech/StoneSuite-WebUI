@@ -4,6 +4,7 @@ import { ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useWorkflows } from '@/hooks/useWorkflows';
 import { sidebarNav } from '@/config/sidebarNav';
 import type { NavLink as NavLinkItem, NavGroup, NavEntry, NavSection } from '@/config/sidebarNav';
 
@@ -51,6 +52,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(buildInitialOpenState);
 
   function toggleGroup(id: string) {
@@ -60,6 +62,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   // While permissions are loading, show all items to avoid layout shift.
   function canShowLink(item: NavLinkItem): boolean {
     if (item.platformAdminOnly && !user?.isPlatformAdmin) return false;
+    // Independent of the viewer's permissions: a workflow an admin disabled
+    // in Configuration > Workflows is hidden from every user, not just those
+    // without the resource grant.
+    if (item.workflowKey && !workflowsLoading && !isWorkflowEnabled(item.workflowKey)) return false;
     if (permissionsLoading) return true;
     if (item.permission) return hasPermission(item.permission.resource, item.permission.action);
     // Fail closed. A link that declares no access rule at all is a config

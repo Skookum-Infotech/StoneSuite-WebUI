@@ -34,8 +34,26 @@ export const salesOrderService = {
 
   getOrder: (uuid: string): Promise<SalesOrder> =>
     tenantClient
-      .get<{ success: boolean; salesOrder: SalesOrder }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.salesOrder),
+      .get<{
+        success: boolean; salesOrder: SalesOrder;
+        approval?: {
+          gated?: boolean; approvers?: SalesOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.salesOrder,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   createOrder: (payload: SalesOrderCreatePayload): Promise<SalesOrder> =>
     tenantClient
@@ -58,6 +76,14 @@ export const salesOrderService = {
         `${BASE}/${uuid}/transition`,
         { toStatusCode },
       )
+      .then((r) => r.data.salesOrder),
+
+  // Records this user's approval sign-off on the order's current status
+  // (AD-10). Rejected with 409 if the status has no approvers configured, or
+  // 403 if the caller isn't one of them.
+  approve: (uuid: string): Promise<SalesOrder> =>
+    tenantClient
+      .post<{ success: boolean; salesOrder: SalesOrder }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.salesOrder),
 
   getInventory: (uuid: string): Promise<SalesOrderInventoryRow[]> =>

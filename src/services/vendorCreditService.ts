@@ -33,8 +33,25 @@ export const vendorCreditService = {
 
   getVendorCredit: (uuid: string): Promise<VendorCredit> =>
     tenantClient
-      .get<{ success: boolean; vendorCredit: VendorCredit }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.vendorCredit),
+      .get<{
+        success: boolean; vendorCredit: VendorCredit; approval?: {
+          gated?: boolean; approvers?: VendorCredit['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.vendorCredit,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   createVendorCredit: (payload: CreateVendorCreditPayload): Promise<VendorCredit> =>
     tenantClient
@@ -47,6 +64,16 @@ export const vendorCreditService = {
   updateVendorCredit: (uuid: string, payload: UpdateVendorCreditPayload): Promise<VendorCredit> =>
     tenantClient
       .patch<{ success: boolean; vendorCredit: VendorCredit }>(`${BASE}/${uuid}`, payload)
+      .then((r) => r.data.vendorCredit),
+
+  // Records this caller's sign-off on the vendor credit's current gate
+  // (DRFT, AD-8). Rejected with 409 if the status has no approvers
+  // configured, or 403 if the caller isn't a configured approver (and isn't
+  // a super admin override) -- also requires vendor_credit:approve RBAC
+  // permission (see vendorCreditForm.ts's transitionPermission).
+  approve: (uuid: string): Promise<VendorCredit> =>
+    tenantClient
+      .post<{ success: boolean; vendorCredit: VendorCredit }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.vendorCredit),
 
   // Blocked (409) while any live application references the credit — reverse

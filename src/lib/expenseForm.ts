@@ -162,8 +162,8 @@ export function expStatusLabel(code: string): string {
  *  reaches "approved" — except the recall back to DRFT, which is always
  *  allowed, since it is how a submitter withdraws a pending claim for rework
  *  without an approver's sign-off. */
-export function isExpTransitionBlocked(toCode: string, approvalStatus: string): boolean {
-  return toCode !== 'DRFT' && approvalStatus === 'pending';
+export function isExpTransitionBlocked(toCode: string, approvalStatus: string, gated?: boolean): boolean {
+  return toCode !== 'DRFT' && (gated ?? approvalStatus === 'pending');
 }
 
 /** Status badge color, shared by the list table, detail page, and transition

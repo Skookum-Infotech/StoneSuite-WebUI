@@ -131,6 +131,15 @@ export interface Workflow {
   approverUserIds: string[];
 }
 
+// Minimal {key, enabled} shape from GET /tenant/workflows/enabled — unlike
+// Workflow above, this endpoint is callable by any authenticated tenant
+// member regardless of RBAC grants, so it deliberately carries nothing more
+// sensitive than the enabled flag itself.
+export interface WorkflowStatus {
+  key: string;
+  enabled: boolean;
+}
+
 export interface WorkflowState {
   id: string;
   workflowId: string;
@@ -140,6 +149,39 @@ export interface WorkflowState {
   isTerminal: boolean;
   sortOrder: number;
   color: string;
+}
+
+// One gate in a module's approval chain (e.g. "Pending Approval" for most
+// modules, "Templating" and "QC Pending" for Fabrication Job) plus its
+// currently configured approvers. See workflowService.getApprovalChain.
+export interface ApprovalGate {
+  statusCode: string;
+  statusLabel: string;
+  approverEmployeeIds: string[];
+}
+
+// An employee eligible to be picked as an approver, returned alongside the
+// gates by workflowService.getApprovalChain -- gated by workflow_config:read,
+// the same permission that already governs this whole page (not the
+// separate user:read permission that /tenant/crm/lookups' employees field
+// requires).
+export interface ApprovalChainEmployee {
+  id: string;
+  name: string;
+}
+
+// One of the active configured approvers for a live record's *current*
+// status (AD-8/AD-10) -- distinct from ApprovalChainEmployee, which lists who
+// is *eligible to be assigned* on the config screen. Returned by the
+// Estimate/Quote/Sales Order Get endpoints (nested under `approval`) only
+// while the record is gated. `approved` is per-approver: with 2 required
+// approvers, one signing off doesn't finish the gate -- the record stays
+// gated until every configured approver has signed off (quorum), so the UI
+// needs to know who specifically still hasn't.
+export interface RecordApprover {
+  id: string;
+  name: string;
+  approved: boolean;
 }
 
 export interface WorkflowTransition {

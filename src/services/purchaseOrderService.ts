@@ -34,8 +34,25 @@ export const purchaseOrderService = {
 
   getPurchaseOrder: (uuid: string): Promise<PurchaseOrder> =>
     tenantClient
-      .get<{ success: boolean; purchaseOrder: PurchaseOrder }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.purchaseOrder),
+      .get<{
+        success: boolean; purchaseOrder: PurchaseOrder; approval?: {
+          gated?: boolean; approvers?: PurchaseOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.purchaseOrder,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   createPurchaseOrder: (payload: PurchaseOrderCreatePayload): Promise<PurchaseOrder> =>
     tenantClient

@@ -6,6 +6,7 @@ import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -18,6 +19,7 @@ import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -80,6 +82,28 @@ export default function SalesOrderDetailPage() {
   const fabricate = useMutation({
     mutationFn: () => fabricationService.fabricateFromOrder(id),
     onSuccess: (job) => navigate(`/sales/installation/${job.id}`),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation (see EditSalesOrderPage.tsx).
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => salesOrderService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+    },
+  });
+
+  // Records this user's sign-off (AD-10) — shown via the banner only while
+  // order.approvalStatus === 'pending'. A non-approver who tries anyway gets
+  // ApprovalBanner's own "not authorized" dialog; the backend still enforces
+  // this regardless (403 ErrNotApprover).
+  const approve = useMutation({
+    mutationFn: () => salesOrderService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
@@ -155,6 +179,26 @@ export default function SalesOrderDetailPage() {
         recordNumber={order.salesOrderNumber}
         statusBadge={<Badge color={color}>{order.status}</Badge>}
       />
+
+      {order.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={order.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={order.canApprove}
+            isOverride={order.isOverride}
+            requiredApprovals={order.requiredApprovals}
+            approvedCount={order.approvedCount}
+            callerAlreadyApproved={order.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -336,7 +380,12 @@ export default function SalesOrderDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{order.status}</Badge>
+              <SalesOrderStatusControl
+                order={order}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

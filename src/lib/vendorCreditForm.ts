@@ -101,12 +101,26 @@ export function vcStatusLabel(code: string): string {
 }
 
 /** Which RBAC action gates a move to `toCode` (backend AD-2: DRFT->APPV rides
- *  `vendor_credit:approve`; every other move rides `vendor_credit:transition`
- *  — both cross the same generic /transition endpoint, unlike Vendor
- *  Payment's separate /approve sign-off). Mirrors refundForm.ts's
- *  transitionPermission. */
+ *  `vendor_credit:approve`; every other move rides `vendor_credit:transition`).
+ *  Mirrors refundForm.ts's transitionPermission. This is a role-level
+ *  capability check ("can this person ever approve") -- distinct from
+ *  needsApproval below, which is a record-level AD-8 quorum check ("does
+ *  *this* vendor credit's current status have sign-offs still outstanding"). */
 export function transitionPermission(toCode: string): 'approve' | 'transition' {
   return toCode === 'APPV' ? 'approve' : 'transition';
+}
+
+/** Whether a vendor credit is currently blocked on AD-8 approval sign-off --
+ *  gated at DRFT until every configured approver (or a super admin
+ *  override) has signed off via vendorCreditService.approve. Once gated,
+ *  even a vendor_credit:approve holder can't move DRFT->APPV directly
+ *  through the generic /transition endpoint (409 ErrApprovalRequired); they
+ *  go through the ApprovalBanner instead. Prefers the live `gated` flag
+ *  from GET over the stored approvalStatus column, which goes stale the
+ *  moment an admin edits the approver list. List rows don't carry `gated`
+ *  so they fall back to the stored flag. */
+export function needsApproval(vendorCredit: Pick<VendorCredit, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return vendorCredit.gated ?? vendorCredit.approvalStatus === 'pending';
 }
 
 // ── Status-driven gates ───────────────────────────────────────────────────────

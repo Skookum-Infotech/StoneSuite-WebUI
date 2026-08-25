@@ -10,6 +10,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -20,7 +21,6 @@ import {
 import { RequisitionAuditTab } from './components/RequisitionAuditTab';
 import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
 import { RequisitionTransitionBar } from './components/RequisitionTransitionBar';
-import { RequisitionApprovalButton } from './components/RequisitionApprovalButton';
 import { ConvertToPurchaseOrderDialog } from './components/ConvertToPurchaseOrderDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -90,6 +90,14 @@ export default function RequisitionDetailPage() {
     },
   });
 
+  const approve = useMutation({
+    mutationFn: () => requisitionService.approve(id),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['requisition', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['requisitions'] });
+    },
+  });
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading requisition…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
@@ -110,8 +118,7 @@ export default function RequisitionDetailPage() {
   // nothing, so the card would be an empty "Actions" header. Hide it unless it
   // has real content (a transition, an approval gate, or a failed transition).
   const hasTransitions = canTransition && (REQUISITION_ALLOWED_TRANSITIONS[reqn.statusCode]?.length ?? 0) > 0;
-  const isApprovalPending = reqn.approvalStatus === 'pending';
-  const showActions = hasTransitions || isApprovalPending || Boolean(transition.error);
+  const showActions = hasTransitions || Boolean(transition.error);
   const showConvert = canCreatePo && canConvertToPurchaseOrder(reqn.statusCode, reqn.convertedPurchaseOrderId);
 
   async function handleExportPdf() {
@@ -178,6 +185,26 @@ export default function RequisitionDetailPage() {
         recordNumber={reqn.requisitionNumber}
         statusBadge={<Badge color={color}>{reqn.status}</Badge>}
       />
+
+      {reqn.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={reqn.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={reqn.canApprove}
+            isOverride={reqn.isOverride}
+            requiredApprovals={reqn.requiredApprovals}
+            approvedCount={reqn.approvedCount}
+            callerAlreadyApproved={reqn.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -331,18 +358,10 @@ export default function RequisitionDetailPage() {
               <RequisitionTransitionBar
                 statusCode={reqn.statusCode}
                 approvalStatus={reqn.approvalStatus}
+                gated={reqn.gated}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />
-              {isApprovalPending && (
-                <RequisitionApprovalButton
-                  requisitionId={id}
-                  onApproved={(updated) => {
-                    queryClient.setQueryData(['requisition', id], updated);
-                    queryClient.invalidateQueries({ queryKey: ['requisitions'] });
-                  }}
-                />
-              )}
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
               )}

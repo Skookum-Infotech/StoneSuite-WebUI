@@ -32,7 +32,34 @@ export const refundService = {
 
   getRefund: (uuid: string): Promise<Refund> =>
     tenantClient
-      .get<{ success: boolean; refund: Refund }>(`${BASE}/${uuid}`)
+      .get<{
+        success: boolean; refund: Refund; approval?: {
+          gated?: boolean; approvers?: Refund['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.refund,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
+
+  // Records this caller's sign-off on the refund's current gated status
+  // (PEND, AD-8). Rejected with 409 if the status has no approvers
+  // configured, or 403 if the caller isn't a configured approver (and isn't
+  // a super admin override) -- also requires refund:approve RBAC permission
+  // (see refundForm.ts's transitionPermission).
+  approve: (uuid: string): Promise<Refund> =>
+    tenantClient
+      .post<{ success: boolean; refund: Refund }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.refund),
 
   createRefund: (payload: RefundCreatePayload): Promise<Refund> =>

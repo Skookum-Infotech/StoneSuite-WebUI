@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -77,6 +78,11 @@ export default function VendorCreditDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => vendorCreditService.transition(id, toStatusCode),
+    onSuccess: absorb,
+  });
+
+  const approve = useMutation({
+    mutationFn: () => vendorCreditService.approve(id),
     onSuccess: absorb,
   });
 
@@ -152,6 +158,26 @@ export default function VendorCreditDetailPage() {
         recordNumber={credit.vendorCreditNumber}
         statusBadge={<Badge color={color}>{credit.status}</Badge>}
       />
+
+      {credit.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={credit.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={credit.canApprove}
+            isOverride={credit.isOverride}
+            requiredApprovals={credit.requiredApprovals}
+            approvedCount={credit.approvedCount}
+            callerAlreadyApproved={credit.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve vendor credit.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -249,6 +275,8 @@ export default function VendorCreditDetailPage() {
               <p className="text-xs font-semibold text-stone-400">Actions</p>
               <VendorCreditTransitionBar
                 statusCode={credit.statusCode}
+                approvalStatus={credit.approvalStatus}
+                gated={credit.gated}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />

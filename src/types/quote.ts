@@ -6,7 +6,7 @@
 // billing/shipping address is a flat string shape (no lkp_state/lkp_country
 // numeric ids). A line item is either a catalog pick or free-text, same as
 // Estimate — see QuoteLineInput below.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -112,7 +112,14 @@ export interface Quote {
   quoteNumber: string;
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
-  approvalStatus: string;      // none | pending | approved
+  approvalStatus: string;      // none | pending | approved -- display only, can go stale; use `gated` to decide UI behavior
+  gated: boolean;              // authoritative: true iff a live approval gate is currently blocking transitions out of this status
+  approvers: RecordApprover[]; // configured approvers for the current status; only populated while gated
+  requiredApprovals: number;   // how many sign-offs the current status's quorum needs (e.g. 2)
+  approvedCount: number;       // how many of them have signed off so far
+  canApprove: boolean;         // whether the requesting user can approve (configured approver OR super admin)
+  isOverride: boolean;         // true when canApprove is only true because the user is a super admin, not a configured approver
+  callerAlreadyApproved: boolean; // true if the requesting user already signed off this round (quorum may still need others)
   customer: QuoteCustomerRef;
   estimate?: QuoteEstimateRef | null;
   quoteDate: string;
@@ -148,7 +155,7 @@ export interface Quote {
  *  this type only names the subset the table actually renders. */
 export type QuoteSummary = Pick<
   Quote,
-  'id' | 'quoteNumber' | 'status' | 'statusCode' | 'customer' | 'quoteDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
+  'id' | 'quoteNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer' | 'quoteDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
 >;
 
 export interface QuoteSearchRequest {

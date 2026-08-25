@@ -19,13 +19,22 @@ import {
 // caller lacks the specific permission, so the UI explains why rather than
 // silently omitting the option.
 //
+// On top of that RBAC split, the DRFT -> APPV move is *also* blocked while
+// the credit is AD-8 gated (needsApproval) -- once real approvers are
+// configured for DRFT, even a vendor_credit:approve holder can't flip it
+// straight to Approved from here; they go through the ApprovalBanner
+// (rendered by the Detail page) instead, same as every other approval-gated
+// module. The backend stays authoritative either way.
+//
 // Every transition is confirmed before it fires — voiding a credit cascades
 // a reversal across every bill it funded, so a misclick in a row of buttons
 // should not reach the server.
 export function VendorCreditTransitionBar({
-  statusCode, onTransition, isPending,
+  statusCode, approvalStatus, gated, onTransition, isPending,
 }: {
   statusCode: string;
+  approvalStatus: string;
+  gated?: boolean;
   onTransition: (toCode: string) => void;
   isPending: boolean;
 }) {
@@ -40,7 +49,8 @@ export function VendorCreditTransitionBar({
       {targets.map((toCode) => {
         const label = vcTransitionLabel(statusCode, toCode);
         const perm = transitionPermission(toCode);
-        const permitted = isLoading || hasPermission('vendor_credit', perm);
+        const blockedByApproval = toCode === 'APPV' && (gated ?? approvalStatus === 'pending');
+        const permitted = !blockedByApproval && (isLoading || hasPermission('vendor_credit', perm));
         const isVoid = toCode === 'VOID';
         const Icon = isVoid ? XCircle : ArrowRight;
         return (
@@ -49,7 +59,7 @@ export function VendorCreditTransitionBar({
             type="button"
             onClick={() => setPendingTarget(toCode)}
             disabled={isPending || !permitted}
-            title={!permitted ? `Needs the ${perm} permission` : undefined}
+            title={blockedByApproval ? 'Awaiting approval sign-off' : !permitted ? `Needs the ${perm} permission` : undefined}
             className={cn(
               'flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs w-full text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
               isVoid

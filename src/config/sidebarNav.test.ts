@@ -53,4 +53,42 @@ describe('sidebarNav access declarations', () => {
     const ids = allLinks().map(({ link }) => link.id);
     expect(ids).toHaveLength(new Set(ids).size);
   });
+
+  // workflowKey and permission.resource are declared separately but are
+  // expected to name the same workflow — this catches the two drifting apart
+  // (e.g. a resource rename that forgets its sibling workflowKey).
+  it('a declared workflowKey matches the link\'s permission resource', () => {
+    for (const { link, trail } of allLinks()) {
+      if (!link.workflowKey) continue;
+      expect(link.permission?.resource, `${trail} workflowKey vs resource`).toBe(link.workflowKey);
+    }
+  });
+
+  it('CRM and Sales links declare the workflow that backs their form', () => {
+    const expected: Record<string, string> = {
+      leads: 'lead',
+      prospects: 'prospect',
+      customers: 'customer',
+      estimates: 'estimate',
+      quotes: 'quote',
+      'sales-orders': 'sales_order',
+      installation: 'installation',
+      invoices: 'invoice',
+      payments: 'payment',
+      'credit-memos': 'credit_memo',
+      refunds: 'refund',
+      vendors: 'vendor',
+      requisitions: 'requisition',
+      'purchase-orders': 'purchase_order',
+      'item-receipts': 'item_receipt',
+      'vendor-bills': 'vendor_bill',
+      'vendor-payments': 'vendor_payment',
+      'vendor-credits': 'vendor_credit',
+      expenses: 'expense',
+    };
+    const byId = new Map(allLinks().map(({ link }) => [link.id, link]));
+    for (const [id, workflowKey] of Object.entries(expected)) {
+      expect(byId.get(id)?.workflowKey, `${id} workflowKey`).toBe(workflowKey);
+    }
+  });
 });

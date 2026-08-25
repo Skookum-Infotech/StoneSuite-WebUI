@@ -62,6 +62,8 @@ export default function EditSalesOrderPage() {
   const lineItems = localLineItems ?? mapped?.lineItems ?? EMPTY_ITEMS;
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? order?.statusCode ?? '';
+  const approvalStatus = order?.approvalStatus ?? 'none';
+  const gated = order?.gated ?? false;
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
@@ -173,7 +175,7 @@ export default function EditSalesOrderPage() {
           total={total}
           statusControl={(
             <SalesOrderStatusControl
-              value={statusCode}
+              order={{ statusCode, approvalStatus, gated }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

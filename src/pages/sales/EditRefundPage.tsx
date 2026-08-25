@@ -46,6 +46,8 @@ export default function EditRefundPage() {
   const mapped = useMemo(() => (refund ? fromRefund(refund) : null), [refund]);
   const data = localData ?? mapped?.data ?? {};
   const statusCode = localStatusCode ?? refund?.statusCode ?? '';
+  const approvalStatus = refund?.approvalStatus ?? 'none';
+  const gated = refund?.gated ?? false;
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
@@ -133,7 +135,7 @@ export default function EditRefundPage() {
                 <div className="space-y-1.5">
                   <label className={fieldLabelCls}>Status</label>
                   <RefundStatusControl
-                    value={statusCode}
+                    refund={{ statusCode, approvalStatus, gated }}
                     onChange={handleStatusChange}
                     disabled={transition.isPending}
                   />
