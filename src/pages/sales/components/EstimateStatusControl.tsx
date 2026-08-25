@@ -12,18 +12,21 @@ import type { Estimate } from '@/types/estimate';
 // after a failed save. Use the ApprovalBanner (rendered by the Detail page)
 // to actually approve.
 export function EstimateStatusControl({ estimate, onChange, disabled, variant }: {
-  estimate: Pick<Estimate, 'statusCode' | 'approvalStatus'> & { gated?: boolean };
+  estimate: Pick<Estimate, 'statusCode' | 'approvalStatus'> & { gated?: boolean; hasAttachments?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
-  const guard = () => {
+  const guard = (code: string) => {
     if (!isLoading && !hasPermission('estimate', 'transition')) {
       return { permitted: false, reason: 'You do not have permission to change status' };
     }
     if (needsApproval(estimate)) {
       return { permitted: false, reason: 'Awaiting approval', needsApprove: true };
+    }
+    if (estimate.statusCode === 'DRFT' && code === 'PAPV' && estimate.hasAttachments === false) {
+      return { permitted: false, reason: 'Attach a file before submitting for approval' };
     }
     return { permitted: true };
   };

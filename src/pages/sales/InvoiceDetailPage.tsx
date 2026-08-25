@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Receipt, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { invoiceService } from '@/services/invoiceService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -54,6 +55,13 @@ export default function InvoiceDetailPage() {
     queryFn: () => invoiceService.getInvoice(id),
     enabled: Boolean(id),
   });
+
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -338,7 +346,7 @@ export default function InvoiceDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <InvoiceStatusControl
-                invoice={invoice}
+                invoice={{ ...invoice, hasAttachments }}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

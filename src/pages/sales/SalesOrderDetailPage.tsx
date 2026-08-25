@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown } from 'lucide-react';
 import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
@@ -62,6 +63,13 @@ export default function SalesOrderDetailPage() {
     queryFn: () => salesOrderService.getOrder(id),
     enabled: Boolean(id),
   });
+
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -383,7 +391,7 @@ export default function SalesOrderDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <SalesOrderStatusControl
-                order={order}
+                order={{ ...order, hasAttachments }}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

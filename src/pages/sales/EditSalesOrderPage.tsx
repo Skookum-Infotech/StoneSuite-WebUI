@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ShoppingCart, AlertCircle, Loader2, Save } from 'lucide-react';
 import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -47,6 +48,13 @@ export default function EditSalesOrderPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -175,7 +183,7 @@ export default function EditSalesOrderPage() {
           total={total}
           statusControl={(
             <SalesOrderStatusControl
-              order={{ statusCode, approvalStatus, gated }}
+              order={{ statusCode, approvalStatus, gated, hasAttachments }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />
