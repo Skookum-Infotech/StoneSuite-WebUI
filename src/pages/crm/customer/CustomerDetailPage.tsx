@@ -23,6 +23,7 @@ import {
 } from "@/components/crm/CrmSubTabsPanel";
 import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
 import { PortalAccessPanel } from "@/pages/crm/customer/components/PortalAccessPanel";
+import { PortalAccessStatusCard } from "@/pages/crm/customer/components/PortalAccessStatusCard";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
@@ -149,6 +150,12 @@ export default function CustomerDetailPage() {
   const recordApproval = recordApprovalState(record);
   const approvalStatus: ApprovalStatus = recordApproval === "none" ? "not_required" : recordApproval;
   const canApprove = Boolean(record.canApprove);
+  // Mirrors the backend's CustomerEligible gate on portal access grants:
+  // customer_is_approved is only ever false while approval_status is
+  // 'pending' — a record with no configured approver auto-approves on entry,
+  // so 'not_required' here means the DB flag is already true, same as
+  // 'approved'. Only 'pending' should block granting a new portal login.
+  const customerApproved = approvalStatus !== "pending";
   const approverIds = statusData?.workflow.approverUserIds ?? [];
   const wildcardNames = approverIds.map((uid) => users.find((u) => u.id === uid)?.fullName || users.find((u) => u.id === uid)?.email || "Unknown user");
   const statusApproverNames = crmApprovers
@@ -253,7 +260,7 @@ export default function CustomerDetailPage() {
           {activeTab === "transactions" && <TransactionsContent />}
 
           {activeTab === "portal" && canViewPortalAccess && (
-            <PortalAccessPanel customerUuid={id} />
+            <PortalAccessPanel customerUuid={id} customerApproved={customerApproved} />
           )}
 
           {activeTab === "files" && (
@@ -304,6 +311,9 @@ export default function CustomerDetailPage() {
                   </div>
                 )}
               </>
+            )}
+            portalAccessSlot={canViewPortalAccess && (
+              <PortalAccessStatusCard customerUuid={id} onManage={() => setActiveTab("portal")} />
             )}
             deleteSlot={(
               <DeleteRecordDialog

@@ -21,7 +21,18 @@ function fmtDate(iso: string): string {
 // portal for this workspace — grant, suspend/resume, revoke, resend invite.
 // Lives as a tab on CustomerDetailPage; the tenant-wide roster across every
 // customer is a separate Config page (portalAccessService.listForTenant).
-export function PortalAccessPanel({ customerUuid }: { customerUuid: string }) {
+export function PortalAccessPanel({
+  customerUuid,
+  customerApproved,
+}: {
+  customerUuid: string;
+  // Mirrors the backend's CustomerEligible gate (portal/store.go) — granting
+  // is refused server-side (409) until the customer record is approved.
+  // Disabling the action here up front avoids a click that's guaranteed to
+  // fail; suspend/resume/revoke on an already-granted login are unaffected —
+  // that gate only applies to a first grant, same as the backend.
+  customerApproved: boolean;
+}) {
   const qc = useQueryClient();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canCreate = permissionsLoading || hasPermission("portal_access", "create");
@@ -84,8 +95,13 @@ export function PortalAccessPanel({ customerUuid }: { customerUuid: string }) {
           <button
             type="button"
             onClick={() => setShowGrantModal(true)}
+            disabled={!customerApproved}
             aria-label="Grant portal access"
-            className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover"
+            title={customerApproved ? undefined : "Approve this customer record first."}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover",
+              !customerApproved && "opacity-50 cursor-not-allowed hover:bg-brand",
+            )}
           >
             <Plus className="size-3.5" />
             Grant access
@@ -94,6 +110,13 @@ export function PortalAccessPanel({ customerUuid }: { customerUuid: string }) {
       </div>
 
       <div className="p-4">
+        {!customerApproved && (
+          <div className="mb-3">
+            <ErrorNote>
+              Portal access can only be granted once this customer record is approved.
+            </ErrorNote>
+          </div>
+        )}
         {actionError && (
           <div className="mb-3">
             <ErrorNote>{actionError}</ErrorNote>
