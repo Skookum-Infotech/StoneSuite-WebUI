@@ -12,11 +12,12 @@ import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
 import { rbacService } from '@/services/tenantServices';
+import { authService } from '@/services/authService';
+import { apiErrorMessage } from '@/api/tenantClient';
 import { samlAuthService } from '@/services/samlAuthService';
 import { SAML_ACTIVE_PROVIDER_KEY } from '@/lib/samlSession';
 import type { SAMLProvider } from '@/types/tenant';
 import Sidebar from '@/components/Sidebar';
-import { PortalWorkspaceSwitcher } from '@/components/PortalWorkspaceSwitcher';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
 import {
@@ -29,6 +30,7 @@ import {
   X,
   CreditCard,
   Shield,
+  Building2,
   Check,
   Loader2,
 } from 'lucide-react';
@@ -47,7 +49,8 @@ const CUSTOMER_ALLOWED_PATH_PREFIXES = [
 export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, setAuth, logout } = useAuthStore();
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
-  const workspaceCount = useAuthStore((s) => s.workspaces.length);
+  const workspaces = useAuthStore((s) => s.workspaces);
+  const applyWorkspaceSwitch = useAuthStore((s) => s.applyWorkspaceSwitch);
   const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
   const { activeRoleId } = useUserPermissions();
   const queryClient = useQueryClient();
@@ -69,6 +72,19 @@ export default function MainLayout(): React.JSX.Element {
         setAuth({ ...user, selectedRoleId: roleId }, data.token, data.expiresAt);
       }
       queryClient.invalidateQueries({ queryKey: ['user-permissions', user?.id] });
+    },
+  });
+
+  // A customer-portal identity linked to several tenants (identity_tenants)
+  // switching which workspace's documents the shared List/Detail pages show.
+  // switchWorkspace mints a token scoped to the new tenant — any cached
+  // sales-order/invoice/etc. data from the previous workspace is invalid,
+  // which is exactly what applyWorkspaceSwitch clears (see useAuthStore).
+  const switchWorkspaceMutation = useMutation({
+    mutationFn: (tenantId: string) => authService.switchWorkspace(tenantId),
+    onSuccess: (data) => {
+      applyWorkspaceSwitch(data.tenantId, data.token, data.expiresAt);
+      setIsProfileOpen(false);
     },
   });
 
@@ -244,7 +260,6 @@ export default function MainLayout(): React.JSX.Element {
 
           {/* Right actions */}
           <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
-            {isCustomer && workspaceCount > 1 && <PortalWorkspaceSwitcher />}
             <button
               onClick={() => setIsMobileSearchOpen((o) => !o)}
               aria-label={isMobileSearchOpen ? 'Close search' : 'Open search'}
@@ -314,46 +329,89 @@ export default function MainLayout(): React.JSX.Element {
                     </button>
                   </div>
                   <div className="h-px bg-white/[0.08] my-1" />
-                  <div className="py-1">
-                    <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
-                      Roles
+                  {isCustomer ? (
+                    <div className="py-1">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                        Workspaces
+                      </div>
+                      {workspaces.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {workspaces.map((w) => {
+                            const isActive = w.active;
+                            const isSwitching = switchWorkspaceMutation.isPending && switchWorkspaceMutation.variables === w.tenantId;
+                            return (
+                              <button
+                                key={w.tenantId}
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); if (!isActive) switchWorkspaceMutation.mutate(w.tenantId); }}
+                                disabled={switchWorkspaceMutation.isPending || isActive}
+                                aria-pressed={isActive}
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                              >
+                                {isSwitching ? (
+                                  <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
+                                ) : (
+                                  <Building2 className="size-4 text-stone-500 flex-shrink-0" />
+                                )}
+                                <span className="flex-1 truncate">{w.name}</span>
+                                {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="px-3 py-2 text-2xs text-stone-500">
+                          No workspaces
+                        </div>
+                      )}
+                      {switchWorkspaceMutation.isError && (
+                        <p className="px-3 pt-1 text-2xs text-destructive">
+                          {apiErrorMessage(switchWorkspaceMutation.error, 'Failed to switch workspace. Try again.')}
+                        </p>
+                      )}
                     </div>
-                    {user?.roles && user.roles.length > 0 ? (
-                      <div className="space-y-0.5">
-                        {user.roles.map((role) => {
-                          const isActive = role.id === (activeRoleId || user.selectedRoleId);
-                          const isSwitching = switchRoleMutation.isPending && switchRoleMutation.variables === role.id;
-                          return (
-                            <button
-                              key={role.id}
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); switchRoleMutation.mutate(role.id); }}
-                              disabled={switchRoleMutation.isPending || isActive}
-                              aria-pressed={isActive}
-                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                            >
-                              {isSwitching ? (
-                                <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
-                              ) : (
-                                <Shield className="size-4 text-stone-500 flex-shrink-0" />
-                              )}
-                              <span className="flex-1">{role.name}</span>
-                              {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
-                            </button>
-                          );
-                        })}
+                  ) : (
+                    <div className="py-1">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                        Roles
                       </div>
-                    ) : (
-                      <div className="px-3 py-2 text-2xs text-stone-500">
-                        No roles assigned
-                      </div>
-                    )}
-                    {switchRoleMutation.isError && (
-                      <p className="px-3 pt-1 text-2xs text-destructive">
-                        Failed to switch role. Try again.
-                      </p>
-                    )}
-                  </div>
+                      {user?.roles && user.roles.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {user.roles.map((role) => {
+                            const isActive = role.id === (activeRoleId || user.selectedRoleId);
+                            const isSwitching = switchRoleMutation.isPending && switchRoleMutation.variables === role.id;
+                            return (
+                              <button
+                                key={role.id}
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); switchRoleMutation.mutate(role.id); }}
+                                disabled={switchRoleMutation.isPending || isActive}
+                                aria-pressed={isActive}
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                              >
+                                {isSwitching ? (
+                                  <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
+                                ) : (
+                                  <Shield className="size-4 text-stone-500 flex-shrink-0" />
+                                )}
+                                <span className="flex-1">{role.name}</span>
+                                {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="px-3 py-2 text-2xs text-stone-500">
+                          No roles assigned
+                        </div>
+                      )}
+                      {switchRoleMutation.isError && (
+                        <p className="px-3 pt-1 text-2xs text-destructive">
+                          Failed to switch role. Try again.
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="h-px bg-white/[0.08] my-1" />
                   <button
                     onClick={handleLogout}

@@ -223,7 +223,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div className="space-y-0.5">
                   {section.entries.map((entry) => {
                     if (!canShowEntry(entry)) return null;
-                    return entry.type === 'link' ? renderLink(entry) : renderGroup(entry);
+                    if (entry.type === 'link') return renderLink(entry);
+                    // A customer's navigable surface is a handful of document
+                    // types, not a hierarchy — whatever's visible renders as
+                    // flat top-level links instead of a collapsible group.
+                    if (isCustomer) return visibleChildren(entry).map((child) => renderLink(child));
+                    return renderGroup(entry);
                   })}
                 </div>
               </div>
