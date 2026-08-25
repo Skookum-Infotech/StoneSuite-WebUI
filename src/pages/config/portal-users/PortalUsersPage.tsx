@@ -18,9 +18,10 @@ const STATUS_FILTERS: { value: PortalUserStatus | "all"; label: string }[] = [
 const CSV_HEADERS = ["Email", "Full Name", "Customer", "Status", "Invite Status", "Granted", "Granted By"];
 
 // Tenant-wide view of every customer-portal login, across every customer —
-// the "who from outside can get into my workspace" roster. Actions (grant,
-// suspend/resume, revoke) live on the customer's own Portal Access tab
-// (PortalAccessPanel); this page is read-only and links out to that tab.
+// the "who from outside can get into my workspace" roster. Enable/disable
+// (suspend/resume) can be done right here; granting a new login, resending
+// an invite, and permanently revoking still live on the customer's own
+// Portal Access tab (PortalAccessPanel), reached via each row's Manage link.
 export default function PortalUsersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PortalUserStatus | "all">("all");

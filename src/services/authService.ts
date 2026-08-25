@@ -7,6 +7,7 @@ import type {
   RefreshResponse,
   UserProfile,
   IdentifyResult,
+  PortalWorkspace,
 } from '@/types/auth';
 import type { SAMLProvider } from '@/types/tenant';
 
@@ -81,6 +82,15 @@ export const authService = {
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
     const path = isPortalSession() ? '/portal/auth/change-password' : '/auth/change-password';
     const response = await apiClient.post(path, { currentPassword, newPassword });
+    return response.data;
+  },
+
+  // Lists the workspaces the caller may switch between. setPortalAuth carries
+  // this at login, but it lives in memory only (see useAuthStore) — a hard
+  // refresh wipes it, so MainLayout re-fetches it on mount for a portal
+  // session to repopulate the profile menu's workspace list.
+  workspaces: async (): Promise<{ success: boolean; workspaces: PortalWorkspace[] }> => {
+    const response = await apiClient.get('/portal/workspaces');
     return response.data;
   },
 

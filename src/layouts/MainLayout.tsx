@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback, startTransition } from 'react';
 import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
@@ -50,6 +50,7 @@ export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, setAuth, logout } = useAuthStore();
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
   const workspaces = useAuthStore((s) => s.workspaces);
+  const setWorkspaces = useAuthStore((s) => s.setWorkspaces);
   const applyWorkspaceSwitch = useAuthStore((s) => s.applyWorkspaceSwitch);
   const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
   const { activeRoleId } = useUserPermissions();
@@ -87,6 +88,21 @@ export default function MainLayout(): React.JSX.Element {
       setIsProfileOpen(false);
     },
   });
+
+  // workspaces lives in memory only (see useAuthStore) — the session itself
+  // survives a hard refresh via the httpOnly cookie, but this list does not,
+  // so the profile menu's Workspaces section would go empty until re-fetched
+  // here. Only enabled while the list is actually empty: setPortalAuth
+  // already populates it at login, and applyWorkspaceSwitch keeps it in sync
+  // across a workspace switch, so this only ever fires right after a reload.
+  const workspacesQ = useQuery({
+    queryKey: ['portal-workspaces'],
+    queryFn: authService.workspaces,
+    enabled: isCustomer && workspaces.length === 0,
+  });
+  useEffect(() => {
+    if (workspacesQ.data?.workspaces) setWorkspaces(workspacesQ.data.workspaces);
+  }, [workspacesQ.data, setWorkspaces]);
 
   useEffect(() => {
     if (!isProfileOpen) return;
