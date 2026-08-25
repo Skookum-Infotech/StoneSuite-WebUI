@@ -1,4 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
+import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   Payment,
@@ -13,6 +14,12 @@ import type {
 // router). Every call carries the tenant Bearer JWT via `tenantClient`; the
 // server enforces tenancy, RBAC (`payment:*`), scope, and IDOR.
 const BASE = '/tenant/payments';
+// A customer-portal session (see useAuthStore's `kind`) reads through
+// /api/portal/payments* instead — same List/Detail pages, different
+// endpoint. Only search/get exist there: create/update/delete/transition/
+// approve are staff-only, and the backend's RequireAuth confines a portal
+// token to /api/portal/* regardless, so there is nothing to branch below.
+const PORTAL_BASE = '/portal/payments';
 
 export const paymentService = {
   // Full filter + sort + global search + keyset pagination. Cursors are
@@ -20,9 +27,9 @@ export const paymentService = {
   searchPayments: (req: PaymentSearchRequest): Promise<PaymentPage> =>
     tenantClient
       .post<{
-        success: boolean; scope: string; records: PaymentPage['records'];
+        success: boolean; scope?: string; records: PaymentPage['records'];
         nextCursor: string; hasMore: boolean;
-      }>(`${BASE}/search`, req)
+      }>(`${isPortalSession() ? PORTAL_BASE : BASE}/search`, req)
       .then((r) => ({
         records: r.data.records ?? [],
         nextCursor: r.data.nextCursor ?? '',
@@ -30,8 +37,20 @@ export const paymentService = {
         scope: r.data.scope ?? '',
       })),
 
-  getPayment: (uuid: string): Promise<Payment> =>
-    tenantClient
+  getPayment: (uuid: string): Promise<Payment> => {
+    if (isPortalSession()) {
+      // /api/portal/payments/{uuid} has no approval sub-object — a customer
+      // never sees the internal approval workflow, only the finalized
+      // document (see portal/visibility.go).
+      return tenantClient
+        .get<{ success: boolean; record: Payment }>(`${PORTAL_BASE}/${uuid}`)
+        .then((r) => ({
+          ...r.data.record,
+          gated: false, approvers: [], requiredApprovals: 0, approvedCount: 0,
+          canApprove: false, isOverride: false, callerAlreadyApproved: false,
+        }));
+    }
+    return tenantClient
       .get<{
         success: boolean; payment: Payment; approval?: {
           gated?: boolean; approvers?: Payment['approvers']; requiredApprovals?: number; approvedCount?: number;
@@ -50,7 +69,8 @@ export const paymentService = {
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
         };
-      }),
+      });
+  },
 
   // Records this caller's sign-off on the payment's current gated status
   // (PEND, AD-8). Rejected with 409 if the status has no approvers

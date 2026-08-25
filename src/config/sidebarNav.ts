@@ -42,6 +42,7 @@ import {
   ArrowLeftRight,
   CalendarClock,
   LayoutGrid,
+  KeyRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -515,6 +516,15 @@ export const sidebarNav: SidebarNavConfig = {
               icon: UsersRound,
               iconColor: "text-sky-500 dark:text-sky-400",
               permission: { resource: "user", action: "read" },
+            },
+            {
+              type: "link",
+              id: "portal-users",
+              label: "Customer Portal Users",
+              path: "/config/portal-users",
+              icon: KeyRound,
+              iconColor: "text-teal-500 dark:text-teal-400",
+              permission: { resource: "portal_access", action: "read" },
             },
             {
               type: "link",

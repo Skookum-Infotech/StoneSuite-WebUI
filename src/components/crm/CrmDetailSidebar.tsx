@@ -21,6 +21,8 @@ type Props = {
   exportingPdf?: boolean;
   exportPdfError?: string;
   approvalSlot?: ReactNode;
+  /** Customer-only: portal-login status card, shown just below Approval. */
+  portalAccessSlot?: ReactNode;
   deleteSlot?: ReactNode;
 };
 
@@ -56,6 +58,7 @@ export function CrmDetailSidebar({
   exportingPdf,
   exportPdfError,
   approvalSlot,
+  portalAccessSlot,
   deleteSlot,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -119,6 +122,8 @@ export function CrmDetailSidebar({
       </div>
 
       {approvalSlot}
+
+      {portalAccessSlot}
 
       {/* Status */}
       <div className={cardCls}>

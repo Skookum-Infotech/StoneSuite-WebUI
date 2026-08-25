@@ -51,6 +51,7 @@ function buildInitialOpenState(): Record<string, boolean> {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
+  const isCustomer = useAuthStore((s) => s.kind === 'portal');
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(buildInitialOpenState);
@@ -68,6 +69,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (item.workflowKey && !workflowsLoading && !isWorkflowEnabled(item.workflowKey)) return false;
     if (permissionsLoading) return true;
     if (item.permission) return hasPermission(item.permission.resource, item.permission.action);
+    // `alwaysVisible` means "every signed-in STAFF user" (Dashboard,
+    // Subscription) — neither has a /api/portal/* backing, so a customer
+    // session gets no catch-all here. Every link a customer may reach
+    // (Sales Orders/Invoices/Payments/Refunds) declares an explicit
+    // `permission` and is handled by the branch above via useUserPermissions'
+    // portal allowlist, never by this fallback.
+    if (isCustomer) return false;
     // Fail closed. A link that declares no access rule at all is a config
     // oversight, and the safe reading of an oversight is "hide it" — the
     // previous default showed it, which is how fourteen Sales and Purchases
@@ -204,8 +212,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-0.5 px-2.5 py-2">
-            {/* Top-level items (e.g. Dashboard) — always visible */}
-            {sidebarNav.topItems.map((item) => renderLink(item))}
+            {/* Top-level items (e.g. Dashboard) — always visible to staff,
+                filtered like everything else for a customer session. */}
+            {sidebarNav.topItems.filter(canShowLink).map((item) => renderLink(item))}
 
             {/* Sections driven by sidebarNav config */}
             {sidebarNav.sections.filter(canShowSection).map((section) => (
@@ -214,7 +223,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div className="space-y-0.5">
                   {section.entries.map((entry) => {
                     if (!canShowEntry(entry)) return null;
-                    return entry.type === 'link' ? renderLink(entry) : renderGroup(entry);
+                    if (entry.type === 'link') return renderLink(entry);
+                    // A customer's navigable surface is a handful of document
+                    // types, not a hierarchy — whatever's visible renders as
+                    // flat top-level links instead of a collapsible group.
+                    if (isCustomer) return visibleChildren(entry).map((child) => renderLink(child));
+                    return renderGroup(entry);
                   })}
                 </div>
               </div>

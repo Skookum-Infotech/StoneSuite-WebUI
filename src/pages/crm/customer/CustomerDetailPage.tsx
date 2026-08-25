@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import { crmService, CRM_RECORD_TYPE_CODES } from "@/services/crmService";
@@ -22,6 +22,8 @@ import {
   TransactionsContent,
 } from "@/components/crm/CrmSubTabsPanel";
 import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
+import { PortalAccessPanel } from "@/pages/crm/customer/components/PortalAccessPanel";
+import { PortalAccessStatusCard } from "@/pages/crm/customer/components/PortalAccessStatusCard";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
@@ -33,6 +35,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "transactions", label: "Transactions" },
   { key: "files", label: "Files" },
+  { key: "portal", label: "Portal Access" },
   { key: "audit", label: "Audit" },
   { key: "activity", label: "Activity" },
 ] as const;
@@ -42,10 +45,14 @@ type Tab = (typeof TABS)[number]["key"];
 export default function CustomerDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const initialTab = (location.state as { initialTab?: Tab } | null)?.initialTab ?? "overview";
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission("customer", "update");
+  const canViewPortalAccess = permissionsLoading || hasPermission("portal_access", "read");
+  const visibleTabs = TABS.filter((tab) => tab.key !== "portal" || canViewPortalAccess);
 
   const {
     data: record,
@@ -143,6 +150,12 @@ export default function CustomerDetailPage() {
   const recordApproval = recordApprovalState(record);
   const approvalStatus: ApprovalStatus = recordApproval === "none" ? "not_required" : recordApproval;
   const canApprove = Boolean(record.canApprove);
+  // Mirrors the backend's CustomerEligible gate on portal access grants:
+  // customer_is_approved is only ever false while approval_status is
+  // 'pending' — a record with no configured approver auto-approves on entry,
+  // so 'not_required' here means the DB flag is already true, same as
+  // 'approved'. Only 'pending' should block granting a new portal login.
+  const customerApproved = approvalStatus !== "pending";
   const approverIds = statusData?.workflow.approverUserIds ?? [];
   const wildcardNames = approverIds.map((uid) => users.find((u) => u.id === uid)?.fullName || users.find((u) => u.id === uid)?.email || "Unknown user");
   const statusApproverNames = crmApprovers
@@ -200,7 +213,7 @@ export default function CustomerDetailPage() {
 
       {/* Tab bar */}
       <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -245,6 +258,10 @@ export default function CustomerDetailPage() {
           )}
 
           {activeTab === "transactions" && <TransactionsContent />}
+
+          {activeTab === "portal" && canViewPortalAccess && (
+            <PortalAccessPanel customerUuid={id} customerApproved={customerApproved} />
+          )}
 
           {activeTab === "files" && (
             <FilesContent ref={null} recordId={id} readOnly={false} />
@@ -294,6 +311,9 @@ export default function CustomerDetailPage() {
                   </div>
                 )}
               </>
+            )}
+            portalAccessSlot={canViewPortalAccess && (
+              <PortalAccessStatusCard customerUuid={id} onManage={() => setActiveTab("portal")} />
             )}
             deleteSlot={(
               <DeleteRecordDialog

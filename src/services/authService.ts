@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client';
+import { isPortalSession } from '@/store/useAuthStore';
 import type {
   LoginCredentials,
   RegisterData,
@@ -6,6 +7,7 @@ import type {
   RefreshResponse,
   UserProfile,
   IdentifyResult,
+  PortalWorkspace,
 } from '@/types/auth';
 import type { SAMLProvider } from '@/types/tenant';
 
@@ -73,8 +75,51 @@ export const authService = {
   },
 
   // Change password while authenticated (requires current password for verification).
+  // A customer-portal session changes its password at a different endpoint
+  // (see CLAUDE.md's merged-login design) — /auth/change-password requires a
+  // `users` row, which a portal identity never has, and a portal-kind token
+  // is structurally confined away from it regardless (RequireAuth).
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.post('/auth/change-password', { currentPassword, newPassword });
+    const path = isPortalSession() ? '/portal/auth/change-password' : '/auth/change-password';
+    const response = await apiClient.post(path, { currentPassword, newPassword });
+    return response.data;
+  },
+
+  // Lists the workspaces the caller may switch between. setPortalAuth carries
+  // this at login, but it lives in memory only (see useAuthStore) — a hard
+  // refresh wipes it, so MainLayout re-fetches it on mount for a portal
+  // session to repopulate the profile menu's workspace list.
+  workspaces: async (): Promise<{ success: boolean; workspaces: PortalWorkspace[] }> => {
+    const response = await apiClient.get('/portal/workspaces');
+    return response.data;
+  },
+
+  // Re-mints a customer-portal session against a different linked workspace
+  // (see identity_tenants) — the only session kind with this concept; a
+  // staff identity belongs to exactly one workspace.
+  switchWorkspace: async (
+    tenantId: string,
+  ): Promise<{ success: boolean; token: string; expiresAt: number; tenantId: string; workspaceName: string }> => {
+    const response = await apiClient.post('/portal/auth/switch-workspace', { tenantId });
+    return response.data;
+  },
+
+  // The customer-portal counterpart of userService.getUserInvite/
+  // acceptUserInvite — a separate token namespace (portal_invites, not
+  // user_invites), so AcceptInvitePage tries the staff lookup first and
+  // falls back to this pair on a 404. Validates without consuming.
+  getPortalInvite: async (
+    token: string,
+  ): Promise<{ email: string; fullName: string; workspaceName: string; expiresAt: string }> => {
+    const response = await apiClient.get(`/portal/auth/invite/${token}`);
+    return response.data;
+  },
+
+  // No fullName field: unlike a staff invite, a portal customer's name was
+  // already set by the staff member who granted access (see
+  // PortalAccessOps.CreatePortalUser) — accepting only sets the password.
+  acceptPortalInvite: async (token: string, password: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.post('/portal/auth/accept-invite', { token, password });
     return response.data;
   },
 };

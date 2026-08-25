@@ -83,6 +83,9 @@ const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
+const PortalUsersPage = lazyWithRetry(
+  () => import("@/pages/config/portal-users/PortalUsersPage"),
+);
 const DashboardWidgetsPage = lazyWithRetry(
   () => import("@/pages/config/dashboard-widgets/DashboardWidgetsPage"),
 );
@@ -1331,6 +1334,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="user" action="read">
             <UsersPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/portal-users",
+        element: lazy_(
+          <PermissionGuard resource="portal_access" action="read">
+            <PortalUsersPage />
           </PermissionGuard>,
         ),
       },

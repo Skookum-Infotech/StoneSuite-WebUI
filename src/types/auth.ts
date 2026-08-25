@@ -18,6 +18,25 @@ export interface UserProfile {
   selectedRoleId?: string;
 }
 
+// One workspace a customer-portal identity may sign into. Only present on a
+// portal login/refresh response — a customer linked to several tenants
+// (identity_tenants) gets the full list so the switcher can render without a
+// second round-trip; a staff response never carries this.
+export interface PortalWorkspace {
+  tenantId: string;
+  name: string;
+  slug: string;
+  active: boolean;
+}
+
+// The customer a portal session represents — fetched separately via
+// GET /api/portal/me once the session is established, since neither the
+// login nor refresh response carries it (see portal_profile.go's Me).
+export interface PortalCustomer {
+  id: string;
+  name: string;
+}
+
 export interface AuthResponse {
   success: boolean;
   message?: string;
@@ -26,6 +45,16 @@ export interface AuthResponse {
   // Returned by login and refresh endpoints so the frontend can drive the session timer.
   expiresAt?: number;
   user?: UserProfile;
+  // Present only when POST /api/auth/tenant-login resolved this identity as a
+  // customer-portal login rather than a staff one (see controllers/tenant.go's
+  // tryPortalLogin) — absent means staff, mirroring the backend JWT convention
+  // where staff tokens carry no `kind` claim.
+  kind?: 'portal';
+  // The active workspace's tenant id. Only meaningful when kind is 'portal':
+  // a customer session must resend this on every /portal/auth/refresh call,
+  // since the expired access token can no longer be decoded to recover it.
+  tenantId?: string;
+  workspaces?: PortalWorkspace[];
 }
 
 export interface RefreshResponse {
