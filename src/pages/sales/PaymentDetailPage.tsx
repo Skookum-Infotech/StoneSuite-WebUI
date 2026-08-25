@@ -4,12 +4,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, Loader2 } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls, fieldCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -19,6 +21,7 @@ import { DeletePaymentDialog } from './components/DeletePaymentDialog';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { PaymentStatusControl } from './components/PaymentStatusControl';
 import type { PaymentApplication } from '@/types/payment';
 
 const TABS = [
@@ -57,6 +60,11 @@ export default function PaymentDetailPage() {
     enabled: Boolean(id),
   });
 
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+  });
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -69,6 +77,24 @@ export default function PaymentDetailPage() {
   const unapply = useMutation({
     mutationFn: (invoiceId: string) => paymentService.unapply(id, invoiceId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payment', id] }),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => paymentService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payment', id] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+    },
+  });
+
+  const approve = useMutation({
+    mutationFn: () => paymentService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payment', id] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading payment…" /></div>;
@@ -133,6 +159,26 @@ export default function PaymentDetailPage() {
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
       />
 
+      {payment.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={payment.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={payment.canApprove}
+            isOverride={payment.isOverride}
+            requiredApprovals={payment.requiredApprovals}
+            approvedCount={payment.approvedCount}
+            callerAlreadyApproved={payment.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve payment.')}
+            </p>
+          )}
+        </>
+      )}
+
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
         {TABS.map((tab) => (
@@ -162,6 +208,12 @@ export default function PaymentDetailPage() {
                   <ReadonlyField label="Payment Method" value={payment.method} />
                   <ReadonlyField label="Reference #" value={payment.referenceNumber} />
                   <ReadonlyField label="Payment Date" value={fmtDate(payment.paymentDate)} />
+                  {payment.currencyId && (
+                    <ReadonlyField
+                      label="Currency"
+                      value={lookups?.currencies.find((c) => c.id === payment.currencyId)?.name ?? '—'}
+                    />
+                  )}
                   {payment.memo && <ReadonlyField label="Memo" value={payment.memo} full />}
                   {payment.internalNotes && <ReadonlyField label="Internal Notes" value={payment.internalNotes} full />}
                 </div>
@@ -241,7 +293,7 @@ export default function PaymentDetailPage() {
           )}
 
           {activeTab === 'audit' && <PaymentAuditTab paymentId={id} />}
-          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
+          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
           <div className="h-6" />
         </div>
@@ -251,14 +303,16 @@ export default function PaymentDetailPage() {
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => navigate(`/sales/payment/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-              >
-                <Upload className="size-4 text-stone-400 shrink-0" />
-                Upload file
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/sales/payment/${id}/edit`, { state: { initialTab: 'files' } })}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <Upload className="size-4 text-stone-400 shrink-0" />
+                  Upload file
+                </button>
+              )}
               {canEdit && (
                 <button
                   type="button"
@@ -289,7 +343,12 @@ export default function PaymentDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{payment.status}</Badge>
+              <PaymentStatusControl
+                payment={payment}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

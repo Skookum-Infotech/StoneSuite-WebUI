@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Receipt, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { invoiceService } from '@/services/invoiceService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -17,6 +19,7 @@ import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { RecordPaymentDialog } from './components/RecordPaymentDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -53,6 +56,13 @@ export default function InvoiceDetailPage() {
     enabled: Boolean(id),
   });
 
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -61,6 +71,24 @@ export default function InvoiceDetailPage() {
       return () => clearLabel(id);
     }
   }, [id, invoice?.invoiceNumber, setLabel, clearLabel]);
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => invoiceService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+  });
+
+  const approve = useMutation({
+    mutationFn: () => invoiceService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+  });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading invoice…" /></div>;
   if (error || !invoice)
@@ -138,6 +166,26 @@ export default function InvoiceDetailPage() {
         recordNumber={invoice.invoiceNumber}
         statusBadge={<Badge color={color}>{invoice.status}</Badge>}
       />
+
+      {invoice.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={invoice.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={invoice.canApprove}
+            isOverride={invoice.isOverride}
+            requiredApprovals={invoice.requiredApprovals}
+            approvedCount={invoice.approvedCount}
+            callerAlreadyApproved={invoice.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve invoice.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -239,7 +287,7 @@ export default function InvoiceDetailPage() {
           )}
 
           {activeTab === 'audit' && <InvoiceAuditTab invoiceId={id} />}
-          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
+          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
           <div className="h-6" />
         </div>
@@ -249,14 +297,16 @@ export default function InvoiceDetailPage() {
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => navigate(`/sales/invoice/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-              >
-                <Upload className="size-4 text-stone-400 shrink-0" />
-                Upload file
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/sales/invoice/${id}/edit`, { state: { initialTab: 'files' } })}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <Upload className="size-4 text-stone-400 shrink-0" />
+                  Upload file
+                </button>
+              )}
               {canEdit && (
                 <button
                   type="button"
@@ -295,7 +345,12 @@ export default function InvoiceDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{invoice.status}</Badge>
+              <InvoiceStatusControl
+                invoice={{ ...invoice, hasAttachments }}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

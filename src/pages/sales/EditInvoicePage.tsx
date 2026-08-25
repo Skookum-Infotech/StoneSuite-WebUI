@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Receipt, AlertCircle, Loader2, Save, Lock } from 'lucide-react';
 import { invoiceService } from '@/services/invoiceService';
 import { lookupService } from '@/services/lookupService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -45,6 +46,13 @@ export default function EditInvoicePage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -59,6 +67,8 @@ export default function EditInvoicePage() {
   const lineItems = localLineItems ?? mapped?.lineItems ?? EMPTY_ITEMS;
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? invoice?.statusCode ?? '';
+  const approvalStatus = invoice?.approvalStatus ?? 'none';
+  const gated = invoice?.gated ?? false;
   const isTerminal = INVOICE_TERMINAL_STATUSES.has(statusCode);
 
   const set = useCallback(
@@ -194,7 +204,7 @@ export default function EditInvoicePage() {
           amountPaid={invoice.amountPaid}
           statusControl={(
             <InvoiceStatusControl
-              value={statusCode}
+              invoice={{ statusCode, approvalStatus, gated, hasAttachments }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

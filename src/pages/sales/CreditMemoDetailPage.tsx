@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileMinus, Upload, Pencil, CheckCircle2, DollarSign, Unlink, Loader2, FileDown } from 'lucide-react';
+import { FileMinus, Upload, Pencil, DollarSign, Unlink, Loader2, FileDown } from 'lucide-react';
 import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -9,6 +9,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -51,7 +52,6 @@ export default function CreditMemoDetailPage() {
   const canUpdate = permissionsLoading || hasPermission('credit_memo', 'update');
   const canDelete = permissionsLoading || hasPermission('credit_memo', 'delete');
   const canTransition = permissionsLoading || hasPermission('credit_memo', 'transition');
-  const canApprove = permissionsLoading || hasPermission('credit_memo', 'approve');
 
   const { data: creditMemo, isLoading, error } = useQuery({
     queryKey: ['creditMemo', id],
@@ -68,8 +68,12 @@ export default function CreditMemoDetailPage() {
     }
   }, [id, creditMemo?.creditMemoNumber, setLabel, clearLabel]);
 
+  // Records this caller's sign-off on the memo's current gate (DRFT, AD-8)
+  // via the shared approvalchain engine -- NOT a direct transition(id,
+  // 'APPV'), which the backend now blocks with a 409 once real approvers
+  // are configured for DRFT (ErrApprovalRequired).
   const approve = useMutation({
-    mutationFn: () => creditMemoService.transition(id, 'APPV'),
+    mutationFn: () => creditMemoService.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creditMemo', id] });
       queryClient.invalidateQueries({ queryKey: ['creditMemos'] });
@@ -164,6 +168,26 @@ export default function CreditMemoDetailPage() {
         recordNumber={creditMemo.creditMemoNumber}
         statusBadge={<Badge color={color}>{creditMemo.status}</Badge>}
       />
+
+      {creditMemo.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={creditMemo.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={creditMemo.canApprove}
+            isOverride={creditMemo.isOverride}
+            requiredApprovals={creditMemo.requiredApprovals}
+            approvedCount={creditMemo.approvedCount}
+            callerAlreadyApproved={creditMemo.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve credit memo.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -388,26 +412,6 @@ export default function CreditMemoDetailPage() {
               {exportPdfError && (
                 <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
               )}
-            </div>
-          )}
-
-          {isDraft && canApprove && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Approval</p>
-              <div className="space-y-1.5">
-                <button
-                  type="button"
-                  onClick={() => approve.mutate()}
-                  disabled={approve.isPending}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all"
-                >
-                  {approve.isPending ? <Loader2 className="size-3 animate-spin" /> : <CheckCircle2 className="size-3" />}
-                  {approve.isPending ? 'Approving…' : 'Approve Credit Memo'}
-                </button>
-                {approve.error && (
-                  <p className="text-2xs text-destructive">{apiErrorMessage(approve.error, 'Failed to approve credit memo.')}</p>
-                )}
-              </div>
             </div>
           )}
 

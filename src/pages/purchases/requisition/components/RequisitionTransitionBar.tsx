@@ -14,20 +14,20 @@ import {
 // "Revise", "Cancel") rather than being one of many peer options, so this is a
 // labeled action row rather than a status picklist.
 //
-// Any non-DRFT move while approval is pending is disabled with a tooltip; the
-// Detail page renders RequisitionApprovalButton alongside this to clear that
-// gate. When no approvers are configured for the current status the server
-// reports approvalStatus 'none', nothing is gated, and the approval button is
-// absent entirely — the ordinary case until requisition approvers can be
-// configured.
+// Any non-DRFT move while gated (AD-8) is disabled with a tooltip; the
+// Detail page renders the ApprovalBanner alongside this to clear that gate.
+// When no approvers are configured for the current status the server
+// reports gated: false, nothing is blocked here, and the banner is absent
+// entirely — the ordinary case until requisition approvers can be configured.
 //
 // Every transition is confirmed before it fires — clicking the wrong button in
 // a row of several should be recoverable without an accidental round-trip.
 export function RequisitionTransitionBar({
-  statusCode, approvalStatus, onTransition, isPending,
+  statusCode, approvalStatus, gated, onTransition, isPending,
 }: {
   statusCode: string;
   approvalStatus: string;
+  gated?: boolean;
   onTransition: (toCode: string) => void;
   isPending: boolean;
 }) {
@@ -42,7 +42,7 @@ export function RequisitionTransitionBar({
     <div className="space-y-0.5">
       {targets.map((toCode) => {
         const label = reqnTransitionLabel(statusCode, toCode);
-        const blocked = isReqnTransitionBlocked(toCode, approvalStatus);
+        const blocked = isReqnTransitionBlocked(toCode, approvalStatus, gated);
         const isCancel = toCode === 'CANC';
         const isRework = toCode === 'DRFT';
         const Icon = isCancel ? XCircle : isRework ? RotateCcw : ArrowRight;

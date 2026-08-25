@@ -10,6 +10,7 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
+import { customerDefaultFields } from '@/lib/customerDefaults';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import {
   quoteDefaults, toCreatePayload, fromSourceEstimate, PAGE_TABS, type PageTab,
@@ -53,7 +54,20 @@ export default function AddQuotePage() {
   const customer = customerTouched ? localCustomer : (prefill?.customer ?? null);
 
   const set = useCallback((key: string, value: unknown) => setLocalData((d) => ({ ...(d ?? baseData), [key]: value })), [baseData]);
-  const setCustomer = useCallback((c: CustomerRef | null) => { setLocalCustomer(c); setCustomerTouched(true); }, []);
+  const setCustomer = useCallback((c: CustomerRef | null) => {
+    setLocalCustomer(c);
+    setCustomerTouched(true);
+    if (c) {
+      const defaults = customerDefaultFields(c);
+      setLocalData((d) => {
+        const current = d ?? baseData;
+        return {
+          ...current,
+          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !current[k])),
+        };
+      });
+    }
+  }, [baseData]);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],

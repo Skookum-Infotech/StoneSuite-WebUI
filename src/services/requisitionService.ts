@@ -35,8 +35,25 @@ export const requisitionService = {
 
   getRequisition: (uuid: string): Promise<Requisition> =>
     tenantClient
-      .get<{ success: boolean; requisition: Requisition }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.requisition),
+      .get<{
+        success: boolean; requisition: Requisition; approval?: {
+          gated?: boolean; approvers?: Requisition['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.requisition,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   createRequisition: (payload: RequisitionCreatePayload): Promise<Requisition> =>
     tenantClient

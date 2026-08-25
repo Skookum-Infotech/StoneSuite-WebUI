@@ -19,6 +19,7 @@ type Step = 'email' | 'password' | 'redirecting'
 export default function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
+  const setPortalAuth = useAuthStore((state) => state.setPortalAuth)
   const [searchParams] = useSearchParams()
 
   const [step, setStep] = useState<Step>('email')
@@ -52,6 +53,23 @@ export default function LoginPage() {
     // present, but narrow again since AuthResponse's fields are optional.
     if (!response.user || !response.token || !response.expiresAt) return
     const expiresAt = response.expiresAt
+
+    // A customer-portal identity landed here too (one login box, see
+    // controllers/tenant.go's tryPortalLogin) — must branch BEFORE the staff
+    // role-enrichment call below. That call hits /api/tenant/users, which a
+    // portal-kind token is structurally confined away from (RequireAuth's
+    // path confinement) and would 403.
+    if (response.kind === 'portal') {
+      setPortalAuth({
+        user: response.user,
+        token: response.token,
+        expiresAt,
+        tenantId: response.tenantId ?? '',
+        workspaces: response.workspaces ?? [],
+      })
+      navigate('/sales/sales_order', { replace: true })
+      return
+    }
 
     // Set auth BEFORE any subsequent API calls so the in-memory Bearer token
     // is available. On cross-origin deployments (Cloudflare Pages → Fly.io)

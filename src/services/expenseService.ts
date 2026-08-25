@@ -34,8 +34,25 @@ export const expenseService = {
 
   getExpense: (uuid: string): Promise<Expense> =>
     tenantClient
-      .get<{ success: boolean; expense: Expense }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.expense),
+      .get<{
+        success: boolean; expense: Expense; approval?: {
+          gated?: boolean; approvers?: Expense['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.expense,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   // Claimant is never sent — the server always resolves it from the caller
   // (spec AD-2, self-service; never "file on behalf of").

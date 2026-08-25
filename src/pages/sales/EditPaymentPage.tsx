@@ -46,6 +46,8 @@ export default function EditPaymentPage() {
   const mapped = useMemo(() => (payment ? fromPayment(payment) : null), [payment]);
   const data = localData ?? mapped?.data ?? {};
   const statusCode = localStatusCode ?? payment?.statusCode ?? '';
+  const approvalStatus = payment?.approvalStatus ?? 'none';
+  const gated = payment?.gated ?? false;
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
@@ -129,7 +131,7 @@ export default function EditPaymentPage() {
                 <div className="space-y-1.5">
                   <label className={fieldLabelCls}>Status</label>
                   <PaymentStatusControl
-                    value={statusCode}
+                    payment={{ statusCode, approvalStatus, gated }}
                     onChange={handleStatusChange}
                     disabled={transition.isPending}
                   />

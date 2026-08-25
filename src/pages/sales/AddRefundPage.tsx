@@ -12,6 +12,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
+import { customerDefaultFields } from '@/lib/customerDefaults';
 import { RefundSourcePicker, type RefundSourceRef } from './components/RefundSourcePicker';
 import { RefundSectionGrid } from './components/RefundFormFields';
 import {
@@ -71,6 +72,13 @@ export default function AddRefundPage() {
     setCustomer(next);
     setLineagePayment(null);
     setLineageCreditMemo(null);
+    if (next) {
+      const defaults = customerDefaultFields(next);
+      setData((d) => ({
+        ...d,
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+      }));
+    }
   }, []);
 
   return (

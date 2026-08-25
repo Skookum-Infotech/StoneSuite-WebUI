@@ -407,8 +407,8 @@ export function poStatusLabel(code: string): string {
  *  back to DRFT — until `approvalStatus` reaches "approved". Recalling to
  *  draft is always allowed (it's how a submitter withdraws a pending order
  *  for rework without an approver's sign-off). */
-export function isPoTransitionBlocked(toCode: string, approvalStatus: string): boolean {
-  return toCode !== 'DRFT' && approvalStatus === 'pending';
+export function isPoTransitionBlocked(toCode: string, approvalStatus: string, gated?: boolean): boolean {
+  return toCode !== 'DRFT' && (gated ?? approvalStatus === 'pending');
 }
 
 /** Status badge color (spec §2) — shared by the list table, detail page, and

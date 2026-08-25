@@ -11,7 +11,7 @@
 // Structurally simpler than Requisition (spec AD-3): no vendor, no tax, no
 // priority. The claimant is never a request field (spec AD-2) — it is always
 // the acting employee, resolved server-side from the caller's JWT.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -67,6 +67,13 @@ export interface Expense {
   status: string;              // human label, e.g. "Draft"
   statusCode: ExpenseStatusCode; // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved';
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
 
   claimantEmployeeId: number;
   department: string;

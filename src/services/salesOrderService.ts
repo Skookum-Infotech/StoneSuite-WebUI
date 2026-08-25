@@ -1,4 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
+import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   SalesOrder,
@@ -15,6 +16,12 @@ import type { Invoice } from '@/types/invoice';
 // router). Every call carries the tenant Bearer JWT via `tenantClient`; the
 // server enforces tenancy, RBAC (`sales_order:*`), scope, and IDOR.
 const BASE = '/tenant/sales-orders';
+// A customer-portal session (see useAuthStore's `kind`) reads through
+// /api/portal/sales-orders* instead — same List/Detail pages, different
+// endpoint. Only search/get exist there: create/update/delete/transition/
+// approve are staff-only, and the backend's RequireAuth confines a portal
+// token to /api/portal/* regardless, so there is nothing to branch below.
+const PORTAL_BASE = '/portal/sales-orders';
 
 export const salesOrderService = {
   // Full filter + sort + global search + keyset pagination (design §11).
@@ -22,9 +29,9 @@ export const salesOrderService = {
   searchOrders: (req: SalesOrderSearchRequest): Promise<SalesOrderPage> =>
     tenantClient
       .post<{
-        success: boolean; scope: string; records: SalesOrderPage['records'];
+        success: boolean; scope?: string; records: SalesOrderPage['records'];
         nextCursor: string; hasMore: boolean;
-      }>(`${BASE}/search`, req)
+      }>(`${isPortalSession() ? PORTAL_BASE : BASE}/search`, req)
       .then((r) => ({
         records: r.data.records ?? [],
         nextCursor: r.data.nextCursor ?? '',
@@ -32,10 +39,41 @@ export const salesOrderService = {
         scope: r.data.scope ?? '',
       })),
 
-  getOrder: (uuid: string): Promise<SalesOrder> =>
-    tenantClient
-      .get<{ success: boolean; salesOrder: SalesOrder }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.salesOrder),
+  getOrder: (uuid: string): Promise<SalesOrder> => {
+    if (isPortalSession()) {
+      // /api/portal/sales-orders/{uuid} has no approval sub-object — a
+      // customer never sees the internal approval workflow, only the
+      // finalized document (see portal/visibility.go).
+      return tenantClient
+        .get<{ success: boolean; record: SalesOrder }>(`${PORTAL_BASE}/${uuid}`)
+        .then((r) => ({
+          ...r.data.record,
+          gated: false, approvers: [], requiredApprovals: 0, approvedCount: 0,
+          canApprove: false, isOverride: false, callerAlreadyApproved: false,
+        }));
+    }
+    return tenantClient
+      .get<{
+        success: boolean; salesOrder: SalesOrder;
+        approval?: {
+          gated?: boolean; approvers?: SalesOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.salesOrder,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      });
+  },
 
   createOrder: (payload: SalesOrderCreatePayload): Promise<SalesOrder> =>
     tenantClient
@@ -58,6 +96,14 @@ export const salesOrderService = {
         `${BASE}/${uuid}/transition`,
         { toStatusCode },
       )
+      .then((r) => r.data.salesOrder),
+
+  // Records this user's approval sign-off on the order's current status
+  // (AD-10). Rejected with 409 if the status has no approvers configured, or
+  // 403 if the caller isn't one of them.
+  approve: (uuid: string): Promise<SalesOrder> =>
+    tenantClient
+      .post<{ success: boolean; salesOrder: SalesOrder }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.salesOrder),
 
   getInventory: (uuid: string): Promise<SalesOrderInventoryRow[]> =>

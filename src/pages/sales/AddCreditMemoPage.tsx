@@ -9,6 +9,7 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
+import { customerDefaultFields } from '@/lib/customerDefaults';
 import { type InvoiceRef } from './components/InvoicePicker';
 import { type SalesOrderRef } from './components/SalesOrderPicker';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
@@ -30,6 +31,17 @@ export default function AddCreditMemoPage() {
   const [salesOrder, setSalesOrder] = useState<SalesOrderRef | null>(null);
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+
+  const handleCustomerChange = useCallback((next: CustomerRef | null) => {
+    setCustomer(next);
+    if (next) {
+      const defaults = customerDefaultFields(next);
+      setData((d) => ({
+        ...d,
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+      }));
+    }
+  }, []);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -107,7 +119,7 @@ export default function AddCreditMemoPage() {
           lineItems={lineItems}
           setLineItems={setLineItems}
           customer={customer}
-          setCustomer={setCustomer}
+          setCustomer={handleCustomerChange}
           invoice={invoice}
           setInvoice={setInvoice}
           salesOrder={salesOrder}

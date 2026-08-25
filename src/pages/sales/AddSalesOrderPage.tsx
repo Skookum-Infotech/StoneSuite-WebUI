@@ -11,6 +11,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
+import { customerDefaultFields } from '@/lib/customerDefaults';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import {
   soDefaults, toCreatePayload, PAGE_TABS, type PageTab,
@@ -29,6 +30,17 @@ export default function AddSalesOrderPage() {
   const [customer, setCustomer] = useState<CustomerRef | null>(null);
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+
+  const handleCustomerChange = useCallback((next: CustomerRef | null) => {
+    setCustomer(next);
+    if (next) {
+      const defaults = customerDefaultFields(next);
+      setData((d) => ({
+        ...d,
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+      }));
+    }
+  }, []);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -105,7 +117,7 @@ export default function AddSalesOrderPage() {
           drawings={drawings}
           setDrawings={setDrawings}
           customer={customer}
-          setCustomer={setCustomer}
+          setCustomer={handleCustomerChange}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

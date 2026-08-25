@@ -7,6 +7,10 @@ import type { StatusInfo, WorkspaceUser } from "@/types/tenant";
 
 type Props = {
   statusInfo?: StatusInfo;
+  /** Interactive status pill (StatusDropdown variant="pill") for the Status
+   *  row — lets status be changed right here instead of only via Edit. Falls
+   *  back to the static badge derived from `statusInfo` when omitted. */
+  statusControl?: ReactNode;
   ownerUserId?: string;
   users: WorkspaceUser[];
   createdAt: string;
@@ -17,6 +21,8 @@ type Props = {
   exportingPdf?: boolean;
   exportPdfError?: string;
   approvalSlot?: ReactNode;
+  /** Customer-only: portal-login status card, shown just below Approval. */
+  portalAccessSlot?: ReactNode;
   deleteSlot?: ReactNode;
 };
 
@@ -41,6 +47,7 @@ const actionRowCls =
  *  On lg+: renders inline. On mobile: FAB in bottom-right corner → slide-up sheet. */
 export function CrmDetailSidebar({
   statusInfo,
+  statusControl,
   ownerUserId,
   users,
   createdAt,
@@ -51,6 +58,7 @@ export function CrmDetailSidebar({
   exportingPdf,
   exportPdfError,
   approvalSlot,
+  portalAccessSlot,
   deleteSlot,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -115,16 +123,18 @@ export function CrmDetailSidebar({
 
       {approvalSlot}
 
+      {portalAccessSlot}
+
       {/* Status */}
       <div className={cardCls}>
         <p className={headingCls}>Status</p>
         <div className={rowCls}>
           <span className="text-xs text-stone-500">Status</span>
-          {statusInfo ? (
+          {statusControl ?? (statusInfo ? (
             <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
           ) : (
             <span className="text-stone-400">—</span>
-          )}
+          ))}
         </div>
         <div className={rowCls}>
           <span className="text-xs text-stone-500">Account owner</span>

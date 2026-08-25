@@ -37,8 +37,25 @@ export const vendorPaymentService = {
 
   getVendorPayment: (uuid: string): Promise<VendorPayment> =>
     tenantClient
-      .get<{ success: boolean; vendorPayment: VendorPayment }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.vendorPayment),
+      .get<{
+        success: boolean; vendorPayment: VendorPayment; approval?: {
+          gated?: boolean; approvers?: VendorPayment['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.vendorPayment,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   // Inline `applications` are applied AFTER the header commits, each in its own
   // transaction — a failure there leaves the header saved with a partial

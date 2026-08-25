@@ -31,3 +31,12 @@ export function resolveStatusOptions(
   const options = statuses.filter((s) => s.code === value || nextCodes.includes(s.code));
   return { options, isTerminal: nextCodes.length === 0 };
 }
+
+/** Whether picking `code` would land on a status with no further legal moves
+ *  out of it — i.e. this move can't be walked back via the status control
+ *  afterward. Used to gate the compact 'pill' variant's two-step confirm.
+ *  Without `allowedTransitions` nothing is ever terminal. */
+export function isTerminalTarget(code: string, allowedTransitions?: Record<string, string[]>): boolean {
+  if (!allowedTransitions) return false;
+  return (allowedTransitions[code] ?? []).length === 0;
+}

@@ -398,6 +398,19 @@ export const INVOICE_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   VOID: [],
 };
 
+/** Whether an invoice is currently blocked on approval sign-off (AD-8) --
+ *  gated at PAPV until a configured approver (or a super admin override)
+ *  calls invoiceService.approve, regardless of who's asking or which target
+ *  they pick. Prefers the live `gated` flag from GET (recomputed
+ *  server-side from the *current* approver config every read) over the
+ *  stored approvalStatus column, which goes stale the moment an admin
+ *  empties the approver list out from under an invoice already sitting in
+ *  "pending". List rows don't carry `gated` (too expensive to compute per
+ *  search result) so they fall back to the stored approvalStatus flag. */
+export function needsApproval(invoice: Pick<Invoice, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return invoice.gated ?? invoice.approvalStatus === 'pending';
+}
+
 /** Status badge color, keyed by the human label (matches INVOICE_STATUS_CODES'
  *  labels) — shared by the list table, detail page, and status control. */
 export const INVOICE_STATUS_COLORS: Record<string, string> = {

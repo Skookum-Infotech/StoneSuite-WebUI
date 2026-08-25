@@ -42,6 +42,7 @@ import {
   ArrowLeftRight,
   CalendarClock,
   LayoutGrid,
+  KeyRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -65,6 +66,11 @@ export interface NavLink {
    *  so forgetting to declare a permission fails closed rather than exposing
    *  a module the API will refuse. */
   alwaysVisible?: boolean;
+  /** Workflow key (Configuration > Workflows) backing this link's form, e.g.
+   *  "lead". When set, the link is hidden for every user — independent of
+   *  permission — while that workflow is disabled. Omit for links with no
+   *  backing workflow. */
+  workflowKey?: string;
 }
 
 export interface NavGroup {
@@ -138,6 +144,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Sparkles,
               iconColor: "text-amber-500 dark:text-amber-400",
               permission: { resource: "lead", action: "read" },
+              workflowKey: "lead",
             },
             {
               type: "link",
@@ -147,6 +154,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Users,
               iconColor: "text-sky-500 dark:text-sky-400",
               permission: { resource: "prospect", action: "read" },
+              workflowKey: "prospect",
             },
             {
               type: "link",
@@ -156,6 +164,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Building2,
               iconColor: "text-blue-600 dark:text-blue-400",
               permission: { resource: "customer", action: "read" },
+              workflowKey: "customer",
             },
           ],
         },
@@ -175,6 +184,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: FileSpreadsheet,
               iconColor: "text-teal-600 dark:text-teal-400",
               permission: { resource: "estimate", action: "read" },
+              workflowKey: "estimate",
             },
             {
               type: "link",
@@ -184,6 +194,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: FileText,
               iconColor: "text-cyan-600 dark:text-cyan-400",
               permission: { resource: "quote", action: "read" },
+              workflowKey: "quote",
             },
             {
               type: "link",
@@ -193,6 +204,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: ShoppingCart,
               iconColor: "text-emerald-600 dark:text-emerald-400",
               permission: { resource: "sales_order", action: "read" },
+              workflowKey: "sales_order",
             },
             {
               type: "link",
@@ -202,6 +214,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Wrench,
               iconColor: "text-orange-500 dark:text-orange-400",
               permission: { resource: "installation", action: "read" },
+              workflowKey: "installation",
             },
             {
               type: "link",
@@ -211,6 +224,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Receipt,
               iconColor: "text-violet-500 dark:text-violet-400",
               permission: { resource: "invoice", action: "read" },
+              workflowKey: "invoice",
             },
             {
               type: "link",
@@ -220,6 +234,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: CreditCard,
               iconColor: "text-green-600 dark:text-green-400",
               permission: { resource: "payment", action: "read" },
+              workflowKey: "payment",
             },
             {
               type: "link",
@@ -229,6 +244,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: FileMinus,
               iconColor: "text-rose-500 dark:text-rose-400",
               permission: { resource: "credit_memo", action: "read" },
+              workflowKey: "credit_memo",
             },
             {
               type: "link",
@@ -238,6 +254,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: RotateCcw,
               iconColor: "text-red-500 dark:text-red-400",
               permission: { resource: "refund", action: "read" },
+              workflowKey: "refund",
             },
           ],
         },
@@ -257,6 +274,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Building,
               iconColor: "text-indigo-500 dark:text-indigo-400",
               permission: { resource: "vendor", action: "read" },
+              workflowKey: "vendor",
             },
             {
               type: "link",
@@ -266,6 +284,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: ClipboardList,
               iconColor: "text-amber-500 dark:text-amber-400",
               permission: { resource: "requisition", action: "read" },
+              workflowKey: "requisition",
             },
             {
               type: "link",
@@ -275,6 +294,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Package,
               iconColor: "text-orange-500 dark:text-orange-400",
               permission: { resource: "purchase_order", action: "read" },
+              workflowKey: "purchase_order",
             },
             {
               type: "link",
@@ -284,6 +304,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Inbox,
               iconColor: "text-lime-600 dark:text-lime-400",
               permission: { resource: "item_receipt", action: "read" },
+              workflowKey: "item_receipt",
             },
             {
               type: "link",
@@ -293,6 +314,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: FileCheck,
               iconColor: "text-teal-600 dark:text-teal-400",
               permission: { resource: "vendor_bill", action: "read" },
+              workflowKey: "vendor_bill",
             },
             {
               type: "link",
@@ -302,6 +324,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Banknote,
               iconColor: "text-green-600 dark:text-green-400",
               permission: { resource: "vendor_payment", action: "read" },
+              workflowKey: "vendor_payment",
             },
             {
               type: "link",
@@ -311,6 +334,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: FilePlus,
               iconColor: "text-rose-500 dark:text-rose-400",
               permission: { resource: "vendor_credit", action: "read" },
+              workflowKey: "vendor_credit",
             },
             {
               type: "link",
@@ -320,6 +344,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Wallet,
               iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
               permission: { resource: "expense", action: "read" },
+              workflowKey: "expense",
             },
           ],
         },
@@ -491,6 +516,15 @@ export const sidebarNav: SidebarNavConfig = {
               icon: UsersRound,
               iconColor: "text-sky-500 dark:text-sky-400",
               permission: { resource: "user", action: "read" },
+            },
+            {
+              type: "link",
+              id: "portal-users",
+              label: "Customer Portal Users",
+              path: "/config/portal-users",
+              icon: KeyRound,
+              iconColor: "text-teal-500 dark:text-teal-400",
+              permission: { resource: "portal_access", action: "read" },
             },
             {
               type: "link",

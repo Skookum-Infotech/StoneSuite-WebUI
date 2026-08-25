@@ -12,10 +12,11 @@ import { cn } from '@/lib/utils';
 
 // Per-status approver config for CRM (lead/prospect/customer) workflows.
 // Backed by crm_workflow_approver (crm_status_id scoped), the table that
-// actually gates real record transitions — unlike the generic workflow
-// engine's workflow_state_approver, which only applies to non-CRM workflows
-// (Estimate, Sales/Purchase orders). The wildcard (any-status) approver set
-// is managed separately by the "Approval chain" section above this one.
+// actually gates real record transitions — non-CRM workflows (Estimate,
+// Sales/Purchase orders, etc.) instead configure their approval chain via
+// the ApprovalChainSection component (this same directory). The wildcard
+// (any-status) approver set is managed separately by the "Approval chain"
+// section above this one.
 export function CrmStatusApprovers({ workflowKey }: { workflowKey: CRMWorkflowKey }) {
   const { hasPermission, isLoading: permsLoading } = useUserPermissions();
   const canRead = permsLoading || hasPermission('workflow_config', 'read');

@@ -24,10 +24,11 @@ import {
 // an unapply across every bill it settled, so a misclick in a row of buttons
 // should not reach the server.
 export function VendorPaymentTransitionBar({
-  statusCode, approvalStatus, scheduledDate, onTransition, isPending,
+  statusCode, approvalStatus, gated, scheduledDate, onTransition, isPending,
 }: {
   statusCode: string;
   approvalStatus: string;
+  gated?: boolean;
   scheduledDate?: string | null;
   onTransition: (toCode: string) => void;
   isPending: boolean;
@@ -43,7 +44,7 @@ export function VendorPaymentTransitionBar({
     <div className="space-y-0.5">
       {targets.map((toCode) => {
         const label = vpTransitionLabel(statusCode, toCode);
-        const approvalBlocked = isVpTransitionBlocked(toCode, approvalStatus);
+        const approvalBlocked = isVpTransitionBlocked(toCode, approvalStatus, gated);
         const scheduleBlocked = isScheduleBlocked(toCode, scheduledDate);
         const blocked = approvalBlocked || scheduleBlocked;
         const isVoid = toCode === 'VOID';

@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown } from 'lucide-react';
 import { estimateService } from '@/services/estimateService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -16,6 +18,7 @@ import { ESTIMATE_STATUS_COLORS, ESTIMATE_CONVERTIBLE_STATUSES } from '@/lib/est
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { EstimateStatusControl } from './components/EstimateStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -55,6 +58,13 @@ export default function EstimateDetailPage() {
     enabled: Boolean(id),
   });
 
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -69,6 +79,28 @@ export default function EstimateDetailPage() {
   const convert = useMutation({
     mutationFn: () => estimateService.convertToQuote(id),
     onSuccess: ({ quote }) => navigate(`/sales/quote/${quote.id}`),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => estimateService.transition(id, toStatusCode),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimate', id] });
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+    },
+  });
+
+  // Records this user's sign-off (AD-8) — shown via the banner only while
+  // estimate.approvalStatus === 'pending'. A non-approver who tries anyway
+  // gets ApprovalBanner's own "not authorized" dialog; the backend still
+  // enforces this regardless (403 ErrNotApprover).
+  const approve = useMutation({
+    mutationFn: () => estimateService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['estimate', id] });
+      queryClient.invalidateQueries({ queryKey: ['estimates'] });
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading estimate…" /></div>;
@@ -146,6 +178,26 @@ export default function EstimateDetailPage() {
         recordNumber={estimate.estimateNumber}
         statusBadge={<Badge color={color}>{estimate.status}</Badge>}
       />
+
+      {estimate.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={estimate.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={estimate.canApprove}
+            isOverride={estimate.isOverride}
+            requiredApprovals={estimate.requiredApprovals}
+            approvedCount={estimate.approvedCount}
+            callerAlreadyApproved={estimate.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve estimate.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -309,7 +361,12 @@ export default function EstimateDetailPage() {
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{estimate.status}</Badge>
+              <EstimateStatusControl
+                estimate={{ ...estimate, hasAttachments }}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>

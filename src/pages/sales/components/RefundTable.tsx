@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
   ChevronLeft, ChevronRight, Download, Loader2,
@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { REFUND_STATUS_COLORS } from '@/lib/refundForm';
+import { RefundStatusControl } from './RefundStatusControl';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { RefundSearchRequest } from '@/types/refund';
 
@@ -39,10 +39,21 @@ function currency(n: number | undefined): string {
 
 export function RefundTable() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('refund', 'update');
+
+  // Inline status change from the list row's status pill — mirrors the Edit
+  // page's transition mutation.
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStatusCode: string }) => refundService.transition(vars.id, vars.toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ['refund', updated.id] });
+      queryClient.invalidateQueries({ queryKey: ['refunds'] });
+    },
+  });
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -258,7 +269,6 @@ export function RefundTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((r) => {
-                  const color = REFUND_STATUS_COLORS[r.status] ?? '#a8a29e';
                   return (
                     <tr key={r.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
@@ -274,13 +284,12 @@ export function RefundTable() {
                         {r.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {r.status}
-                        </span>
+                        <RefundStatusControl
+                          refund={{ statusCode: r.statusCode, approvalStatus: r.approvalStatus ?? 'none' }}
+                          onChange={(code) => transition.mutate({ id: r.id, toStatusCode: code })}
+                          disabled={transition.isPending && transition.variables?.id === r.id}
+                          variant="pill"
+                        />
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {r.refundDate
