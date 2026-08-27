@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
 import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
 import { attachmentService } from '@/services/attachmentService';
@@ -15,10 +15,11 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES } from '@/lib/salesOrderForm';
+import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
+import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 
@@ -47,6 +48,9 @@ export default function SalesOrderDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [sendErrors, setSendErrors] = useState<string[]>([]);
+  const [sendSuccess, setSendSuccess] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('sales_order', 'update');
@@ -174,6 +178,18 @@ export default function SalesOrderDetailPage() {
     } finally {
       setExportingPdf(false);
     }
+  }
+
+  function handleSendClick() {
+    if (!order) return;
+    setSendSuccess(undefined);
+    const errors = validateForSend(order);
+    if (errors.length > 0) {
+      setSendErrors(errors);
+      return;
+    }
+    setSendErrors([]);
+    setSendDialogOpen(true);
   }
 
   return (
@@ -342,6 +358,17 @@ export default function SalesOrderDetailPage() {
                   Edit sales order
                 </button>
               )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleSendClick}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  aria-label="Send sales order to customer"
+                >
+                  <Send className="size-4 text-stone-400 shrink-0" />
+                  Send to Customer
+                </button>
+              )}
               {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
                 <button
                   type="button"
@@ -383,6 +410,16 @@ export default function SalesOrderDetailPage() {
             )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
+            {sendErrors.length > 0 && (
+              <div role="alert" className="space-y-0.5">
+                {sendErrors.map((e) => (
+                  <p key={e} className="text-2xs text-destructive">{e}</p>
+                ))}
+              </div>
+            )}
+            {sendSuccess && (
+              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -426,6 +463,15 @@ export default function SalesOrderDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      <SendToCustomerDialog
+        recordId={id}
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        recipientEmail={order.billing.email ?? ''}
+        label={`Sales Order ${order.salesOrderNumber}`}
+        onSent={() => setSendSuccess(`Sent to ${order.billing.email}.`)}
+      />
     </div>
   );
 }

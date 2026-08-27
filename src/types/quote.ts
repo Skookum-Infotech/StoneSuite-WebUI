@@ -2,24 +2,32 @@
 //
 // Mirrors the dedicated relational Quote backend module, sibling to Estimate
 // (types/estimate.ts) — served from `/api/tenant/quotes*`, distinct from the
-// generic WorkflowRecord JSONB CRM router. Unlike Estimate, a Quote's
-// billing/shipping address is a flat string shape (no lkp_state/lkp_country
-// numeric ids). A line item is either a catalog pick or free-text, same as
-// Estimate — see QuoteLineInput below.
+// generic WorkflowRecord JSONB CRM router. Like Estimate/SalesOrder/Invoice,
+// a Quote's billing/shipping address references lkp_state/lkp_country by
+// numeric id (stateId/countryId), not free-text. A line item is either a
+// catalog pick or free-text, same as Estimate — see QuoteLineInput below.
 import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
 /** Billing or shipping snapshot block. All fields optional; the server fills
- *  gaps from the referenced customer at create time. */
+ *  gaps from the referenced customer at create time. IDs reference `lkp_state`
+ *  / `lkp_country`. Matches the sibling SalesOrderAddressInput / EstimateAddressInput
+ *  / InvoiceAddressInput shape (and the backend's quote.AddressInput struct). */
 export interface QuoteAddressInput {
   customerName?: string;
+  attention?: string;
   addrLine1?: string;
   addrLine2?: string;
+  suiteUnit?: string;
   city?: string;
-  stateProvince?: string;
-  postalCode?: string;
-  country?: string;
+  stateId?: number | null;
+  countryId?: number | null;
+  zip?: string;
+  phone?: string;
+  fax?: string;
+  // Used as the default "Send to Customer" recipient (quote.Recipient()).
+  email?: string;
 }
 
 /** One quoted line. `inventoryItemUuid` selects a catalog item (server

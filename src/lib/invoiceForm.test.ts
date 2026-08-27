@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { clampPercent, calcLineItem, toCreatePayload, fromInvoice, type InvoiceLineItem } from './invoiceForm'
+import { clampPercent, calcLineItem, toCreatePayload, fromInvoice, validateForSend, type InvoiceLineItem } from './invoiceForm'
 import type { Invoice } from '@/types/invoice'
 
 // clampPercent guards the discount % input on the Invoice items table — see
@@ -245,5 +245,50 @@ describe('fromInvoice', () => {
       itemDescription: 'Blue widget, medium',
       inventoryItemUuid: 'inv-item-1',
     })
+  })
+})
+
+// validateForSend gates the Invoice detail page's "Send to Customer" quick
+// action — see InvoiceDetailPage's handleSendClick. The billing email check
+// mirrors the backend's own requirement (the generic /document/send route
+// 400s "At least one recipient is required" when billing.email is blank and
+// no `to` override is supplied).
+const baseSendInvoice: Pick<Invoice, 'customer' | 'items' | 'billing'> = {
+  customer: { id: 'cust-1', name: 'Acme Co' },
+  items: [{
+    id: 'line-1', lineNumber: 1, sku: '', itemName: 'Item', description: '',
+    unitCode: '', quantity: 1, unitPrice: 10, discountPercent: 0, taxPercent: 0,
+    lineSubtotal: 10, lineDiscount: 0, lineTax: 0, lineTotal: 10,
+  }],
+  billing: { email: 'billing@acme.test' },
+}
+
+describe('validateForSend', () => {
+  it('returns no errors when customer, items, and billing email are all present', () => {
+    expect(validateForSend(baseSendInvoice)).toEqual([])
+  })
+
+  it('flags a missing customer', () => {
+    expect(validateForSend({ ...baseSendInvoice, customer: { id: '', name: '' } }))
+      .toContain('A customer is required.')
+  })
+
+  it('flags an empty items array', () => {
+    expect(validateForSend({ ...baseSendInvoice, items: [] }))
+      .toContain('At least one line item is required.')
+  })
+
+  it.each([
+    [undefined],
+    [''],
+    ['   '],
+  ])('flags a missing/blank billing email (%p)', (email) => {
+    expect(validateForSend({ ...baseSendInvoice, billing: { email } }))
+      .toContain('A billing email is required to send this invoice.')
+  })
+
+  it('returns all applicable errors at once, not just the first', () => {
+    const errors = validateForSend({ customer: { id: '', name: '' }, items: [], billing: { email: '' } })
+    expect(errors).toHaveLength(3)
   })
 })

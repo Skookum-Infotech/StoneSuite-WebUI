@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Receipt, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { Receipt, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
 import { invoiceService } from '@/services/invoiceService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -11,10 +11,11 @@ import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
+import { INVOICE_STATUS_COLORS, validateForSend } from '@/lib/invoiceForm';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { RecordPaymentDialog } from './components/RecordPaymentDialog';
@@ -45,6 +46,9 @@ export default function InvoiceDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [sendErrors, setSendErrors] = useState<string[]>([]);
+  const [sendSuccess, setSendSuccess] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('invoice', 'update');
@@ -153,6 +157,18 @@ export default function InvoiceDetailPage() {
     } finally {
       setExportingPdf(false);
     }
+  }
+
+  function handleSendClick() {
+    if (!invoice) return;
+    setSendSuccess(undefined);
+    const errors = validateForSend(invoice);
+    if (errors.length > 0) {
+      setSendErrors(errors);
+      return;
+    }
+    setSendErrors([]);
+    setSendDialogOpen(true);
   }
 
   return (
@@ -318,6 +334,17 @@ export default function InvoiceDetailPage() {
                 </button>
               )}
               {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleSendClick}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  aria-label="Send invoice to customer"
+                >
+                  <Send className="size-4 text-stone-400 shrink-0" />
+                  Send to Customer
+                </button>
+              )}
+              {canEdit && (
                 <RecordPaymentDialog
                   invoiceId={id}
                   statusCode={invoice.statusCode}
@@ -338,6 +365,16 @@ export default function InvoiceDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
+            {sendErrors.length > 0 && (
+              <div role="alert" className="space-y-0.5">
+                {sendErrors.map((e) => (
+                  <p key={e} className="text-2xs text-destructive">{e}</p>
+                ))}
+              </div>
+            )}
+            {sendSuccess && (
+              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -381,6 +418,15 @@ export default function InvoiceDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      <SendToCustomerDialog
+        recordId={id}
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        recipientEmail={invoice.billing.email ?? ''}
+        label={`Invoice ${invoice.invoiceNumber}`}
+        onSent={() => setSendSuccess(`Sent to ${invoice.billing.email}.`)}
+      />
     </div>
   );
 }

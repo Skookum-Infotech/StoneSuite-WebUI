@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, FileDown } from 'lucide-react';
+import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
 import { quoteService } from '@/services/quoteService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -14,7 +15,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { QUOTE_STATUS_COLORS, QUOTE_CONVERTIBLE_STATUSES } from '@/lib/quoteForm';
+import { QUOTE_STATUS_COLORS, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -44,6 +45,9 @@ export default function QuoteDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [sendErrors, setSendErrors] = useState<string[]>([]);
+  const [sendSuccess, setSendSuccess] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('quote', 'update');
@@ -166,6 +170,18 @@ export default function QuoteDetailPage() {
     } finally {
       setExportingPdf(false);
     }
+  }
+
+  function handleSendClick() {
+    if (!quote) return;
+    setSendSuccess(undefined);
+    const errors = validateForSend(quote);
+    if (errors.length > 0) {
+      setSendErrors(errors);
+      return;
+    }
+    setSendErrors([]);
+    setSendDialogOpen(true);
   }
 
   return (
@@ -340,6 +356,17 @@ export default function QuoteDetailPage() {
                   Edit quote
                 </button>
               )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleSendClick}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  aria-label="Send quote to customer"
+                >
+                  <Send className="size-4 text-stone-400 shrink-0" />
+                  Send to Customer
+                </button>
+              )}
               {canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
                 <button
                   type="button"
@@ -367,6 +394,16 @@ export default function QuoteDetailPage() {
             )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
+            {sendErrors.length > 0 && (
+              <div role="alert" className="space-y-0.5">
+                {sendErrors.map((e) => (
+                  <p key={e} className="text-2xs text-destructive">{e}</p>
+                ))}
+              </div>
+            )}
+            {sendSuccess && (
+              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -410,6 +447,15 @@ export default function QuoteDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      <SendToCustomerDialog
+        recordId={id}
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        recipientEmail={quote.billing.email ?? ''}
+        label={`Quote ${quote.quoteNumber}`}
+        onSent={() => setSendSuccess(`Sent to ${quote.billing.email}.`)}
+      />
     </div>
   );
 }
@@ -423,20 +469,24 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   );
 }
 
-function addressRows(addr: { customerName?: string; addrLine1?: string; addrLine2?: string; city?: string; stateProvince?: string; postalCode?: string; country?: string }): Array<[string, string]> {
+function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
   return [
     ['Name', addr.customerName || ''],
+    ['Attention', addr.attention || ''],
     ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/State/Zip', [addr.city, addr.stateProvince, addr.postalCode].filter(Boolean).join(', ')],
-    ['Country', addr.country || ''],
+    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
+    ['Phone', addr.phone || ''],
+    ['Email', addr.email || ''],
   ];
 }
 
-function AddressBlock({ addr }: { addr: { customerName?: string; addrLine1?: string; addrLine2?: string; city?: string; stateProvince?: string; postalCode?: string; country?: string } }) {
+function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
+    addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
-    [addr.city, addr.stateProvince, addr.postalCode].filter(Boolean).join(', '),
-    addr.country,
+    [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', '),
+    addr.phone && `Phone: ${addr.phone}`,
+    addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
   if (lines.length === 0) {
