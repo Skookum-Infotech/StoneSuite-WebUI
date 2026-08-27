@@ -481,6 +481,23 @@ export function needsApproval(order: Pick<SalesOrder, 'approvalStatus'> & { gate
   return order.gated ?? order.approvalStatus === 'pending';
 }
 
+/** Client-side precondition check for the "Send to Customer" quick action
+ *  (Sales Order detail page). Mirrors the backend's own requirement — the
+ *  generic document/send endpoint 400s "At least one recipient is required"
+ *  when billing.email is blank and no `to` override is supplied — plus two
+ *  UX-only checks (customer, line items) so the user gets one inline list of
+ *  problems instead of a raw 400 after opening the confirm dialog. Not
+ *  status-gated: available regardless of order.statusCode. */
+export function validateForSend(
+  order: Pick<SalesOrder, 'customer' | 'items' | 'billing'>,
+): string[] {
+  const errors: string[] = [];
+  if (!order.customer?.id) errors.push('A customer is required.');
+  if (!order.items || order.items.length === 0) errors.push('At least one line item is required.');
+  if (!order.billing?.email?.trim()) errors.push('A billing email is required to send this order.');
+  return errors;
+}
+
 // ── Per-line fulfillment status (AD-9 — schema.org orderItemStatus) ──────────
 
 /** Derived server-side from fulfilledQuantity vs quantity; always "open"

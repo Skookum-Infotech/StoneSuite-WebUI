@@ -411,6 +411,23 @@ export function needsApproval(invoice: Pick<Invoice, 'approvalStatus'> & { gated
   return invoice.gated ?? invoice.approvalStatus === 'pending';
 }
 
+/** Client-side precondition check for the "Send to Customer" quick action
+ *  (Invoice detail page). Mirrors the backend's own requirement — the
+ *  generic document/send endpoint 400s "At least one recipient is required"
+ *  when billing.email is blank and no `to` override is supplied — plus two
+ *  UX-only checks (customer, line items) so the user gets one inline list of
+ *  problems instead of a raw 400 after opening the confirm dialog. Not
+ *  status-gated: available regardless of invoice.statusCode. */
+export function validateForSend(
+  invoice: Pick<Invoice, 'customer' | 'items' | 'billing'>,
+): string[] {
+  const errors: string[] = [];
+  if (!invoice.customer?.id) errors.push('A customer is required.');
+  if (!invoice.items || invoice.items.length === 0) errors.push('At least one line item is required.');
+  if (!invoice.billing?.email?.trim()) errors.push('A billing email is required to send this invoice.');
+  return errors;
+}
+
 /** Status badge color, keyed by the human label (matches INVOICE_STATUS_CODES'
  *  labels) — shared by the list table, detail page, and status control. */
 export const INVOICE_STATUS_COLORS: Record<string, string> = {

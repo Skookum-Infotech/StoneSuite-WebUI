@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown } from 'lucide-react';
+import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
 import { estimateService } from '@/services/estimateService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -14,7 +15,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { ESTIMATE_STATUS_COLORS, ESTIMATE_CONVERTIBLE_STATUSES } from '@/lib/estimateForm';
+import { ESTIMATE_STATUS_COLORS, ESTIMATE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/estimateForm';
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -44,6 +45,9 @@ export default function EstimateDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [sendErrors, setSendErrors] = useState<string[]>([]);
+  const [sendSuccess, setSendSuccess] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('estimate', 'update');
@@ -165,6 +169,18 @@ export default function EstimateDetailPage() {
     } finally {
       setExportingPdf(false);
     }
+  }
+
+  function handleSendClick() {
+    if (!estimate) return;
+    setSendSuccess(undefined);
+    const errors = validateForSend(estimate);
+    if (errors.length > 0) {
+      setSendErrors(errors);
+      return;
+    }
+    setSendErrors([]);
+    setSendDialogOpen(true);
   }
 
   return (
@@ -327,6 +343,17 @@ export default function EstimateDetailPage() {
                   Edit estimate
                 </button>
               )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleSendClick}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  aria-label="Send estimate to customer"
+                >
+                  <Send className="size-4 text-stone-400 shrink-0" />
+                  Send to Customer
+                </button>
+              )}
               {canConvert && ESTIMATE_CONVERTIBLE_STATUSES.has(estimate.statusCode) && (
                 <button
                   type="button"
@@ -354,6 +381,16 @@ export default function EstimateDetailPage() {
             )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+            )}
+            {sendErrors.length > 0 && (
+              <div role="alert" className="space-y-0.5">
+                {sendErrors.map((e) => (
+                  <p key={e} className="text-2xs text-destructive">{e}</p>
+                ))}
+              </div>
+            )}
+            {sendSuccess && (
+              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -397,6 +434,15 @@ export default function EstimateDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      <SendToCustomerDialog
+        recordId={id}
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        recipientEmail={estimate.billing.email ?? ''}
+        label={`Estimate ${estimate.estimateNumber}`}
+        onSent={() => setSendSuccess(`Sent to ${estimate.billing.email}.`)}
+      />
     </div>
   );
 }
