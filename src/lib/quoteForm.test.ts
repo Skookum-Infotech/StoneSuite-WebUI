@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   clampPercent, calcLineItem, toCreatePayload, fromQuote, fromSourceEstimate,
-  QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES,
+  QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, validateForSend,
 } from './quoteForm'
 import type { Quote } from '@/types/quote'
 import type { Estimate } from '@/types/estimate'
@@ -46,11 +46,15 @@ describe('toCreatePayload', () => {
     sales_tax_pct: '8.25',
     memo: 'Test memo',
     ship_same_as_bill: true,
+    bill_attn: 'Jane Buyer',
     bill_address1: '123 Main St',
+    bill_suite: 'Suite 4',
     bill_city: 'Springfield',
-    bill_state_province: 'IL',
-    bill_postal_code: '62701',
-    bill_country: 'USA',
+    bill_state: '14',
+    bill_country: '1',
+    bill_zip: '62701',
+    bill_phone: '+1 555-000-1111',
+    bill_fax: '+1 555-000-2222',
   }
 
   it('maps form fields to the create payload', () => {
@@ -70,11 +74,15 @@ describe('toCreatePayload', () => {
       memo: 'Test memo',
       shipSameAsBilling: true,
       billing: {
+        attention: 'Jane Buyer',
         addrLine1: '123 Main St',
+        suiteUnit: 'Suite 4',
         city: 'Springfield',
-        stateProvince: 'IL',
-        postalCode: '62701',
-        country: 'USA',
+        stateId: 14,
+        countryId: 1,
+        zip: '62701',
+        phone: '+1 555-000-1111',
+        fax: '+1 555-000-2222',
       },
       shipping: undefined,
       items: [],
@@ -90,17 +98,22 @@ describe('toCreatePayload', () => {
   it('sends a distinct shipping block when ship_same_as_bill is false', () => {
     const payload = toCreatePayload({
       ...baseData, ship_same_as_bill: false,
-      ship_customer: 'Warehouse Co', ship_address1: '9 Dock Rd', ship_city: 'Metropolis',
-      ship_state_province: 'NY', ship_postal_code: '10001', ship_country: 'USA',
+      ship_customer: 'Warehouse Co', ship_attn: 'Dock Manager', ship_address1: '9 Dock Rd', ship_suite: '',
+      ship_city: 'Metropolis', ship_state: '33', ship_country: '1', ship_zip: '10001',
+      ship_phone: '+1 555-000-3333', ship_fax: '',
     }, [])
     expect(payload.shipping).toEqual({
       customerName: 'Warehouse Co',
+      attention: 'Dock Manager',
       addrLine1: '9 Dock Rd',
       addrLine2: '',
+      suiteUnit: '',
       city: 'Metropolis',
-      stateProvince: 'NY',
-      postalCode: '10001',
-      country: 'USA',
+      stateId: 33,
+      countryId: 1,
+      zip: '10001',
+      phone: '+1 555-000-3333',
+      fax: '',
     })
   })
 
@@ -178,7 +191,7 @@ describe('fromQuote', () => {
     ownerEmployeeId: 7,
     salesTaxPercent: 8.25,
     shipSameAsBilling: true,
-    billing: { addrLine1: '123 Main St', city: 'Springfield', stateProvince: 'IL', postalCode: '62701', country: 'USA' },
+    billing: { addrLine1: '123 Main St', city: 'Springfield', stateId: 14, countryId: 1, zip: '62701' },
     shipping: {},
     subtotal: 1500,
     discountTotal: 75,
@@ -206,9 +219,9 @@ describe('fromQuote', () => {
       sales_tax_pct: '8.25',
       bill_address1: '123 Main St',
       bill_city: 'Springfield',
-      bill_state_province: 'IL',
-      bill_postal_code: '62701',
-      bill_country: 'USA',
+      bill_state: '14',
+      bill_country: '1',
+      bill_zip: '62701',
     })
     expect(customer).toEqual({ id: 'cust-1', name: 'Acme Corp' })
   })
@@ -313,5 +326,50 @@ describe('QUOTE_CONVERTIBLE_STATUSES', () => {
     ['CANC', false],
   ])('has(%p) -> %p', (code, expected) => {
     expect(QUOTE_CONVERTIBLE_STATUSES.has(code)).toBe(expected)
+  })
+})
+
+// validateForSend gates the Quote detail page's "Send to Customer" quick
+// action — see QuoteDetailPage's handleSendClick. The billing email check
+// mirrors the backend's own requirement (the generic /document/send route
+// 400s "At least one recipient is required" when billing.email is blank and
+// no `to` override is supplied).
+const baseSendQuote: Pick<Quote, 'customer' | 'items' | 'billing'> = {
+  customer: { id: 'cust-1', name: 'Acme Co' },
+  items: [{
+    id: 'line-1', lineNumber: 1, sku: '', itemName: 'Item', description: '',
+    unitCode: '', quantity: 1, unitPrice: 10, discountPercent: 0, taxPercent: 0,
+    lineSubtotal: 10, lineDiscount: 0, lineTax: 0, lineTotal: 10,
+  }],
+  billing: { email: 'billing@acme.test' },
+}
+
+describe('validateForSend', () => {
+  it('returns no errors when customer, items, and billing email are all present', () => {
+    expect(validateForSend(baseSendQuote)).toEqual([])
+  })
+
+  it('flags a missing customer', () => {
+    expect(validateForSend({ ...baseSendQuote, customer: { id: '', name: '' } }))
+      .toContain('A customer is required.')
+  })
+
+  it('flags an empty items array', () => {
+    expect(validateForSend({ ...baseSendQuote, items: [] }))
+      .toContain('At least one line item is required.')
+  })
+
+  it.each([
+    [undefined],
+    [''],
+    ['   '],
+  ])('flags a missing/blank billing email (%p)', (email) => {
+    expect(validateForSend({ ...baseSendQuote, billing: { email } }))
+      .toContain('A billing email is required to send this quote.')
+  })
+
+  it('returns all applicable errors at once, not just the first', () => {
+    const errors = validateForSend({ customer: { id: '', name: '' }, items: [], billing: { email: '' } })
+    expect(errors).toHaveLength(3)
   })
 })

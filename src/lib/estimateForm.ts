@@ -439,6 +439,23 @@ export function needsApproval(estimate: Pick<Estimate, 'approvalStatus'> & { gat
   return estimate.gated ?? estimate.approvalStatus === 'pending';
 }
 
+/** Client-side precondition check for the "Send to Customer" quick action
+ *  (Estimate detail page). Mirrors the backend's own requirement — the
+ *  generic document/send endpoint 400s "At least one recipient is required"
+ *  when billing.email is blank and no `to` override is supplied — plus two
+ *  UX-only checks (customer, line items) so the user gets one inline list of
+ *  problems instead of a raw 400 after opening the confirm dialog. Not
+ *  status-gated: available regardless of estimate.statusCode. */
+export function validateForSend(
+  estimate: Pick<Estimate, 'customer' | 'items' | 'billing'>,
+): string[] {
+  const errors: string[] = [];
+  if (!estimate.customer?.id) errors.push('A customer is required.');
+  if (!estimate.items || estimate.items.length === 0) errors.push('At least one line item is required.');
+  if (!estimate.billing?.email?.trim()) errors.push('A billing email is required to send this estimate.');
+  return errors;
+}
+
 // ── Form defaults ─────────────────────────────────────────────────────────────
 
 export function estimateDefaults(): Record<string, unknown> {
