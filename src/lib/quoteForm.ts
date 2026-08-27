@@ -125,6 +125,7 @@ export const BILL_TO_FIELDS: QuoteFormField[] = [
     type: 'textarea',
     rows: 2,
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -141,13 +142,14 @@ export const BILL_TO_FIELDS: QuoteFormField[] = [
     type: 'text',
     placeholder: 'Suite 100',
   },
-  { key: 'bill_city', label: 'City', type: 'text', placeholder: 'City' },
-  { key: 'bill_country', label: 'Country', type: 'select', lookupKey: 'countries' },
-  { key: 'bill_state', label: 'State', type: 'select', lookupKey: 'states', dependsOn: 'bill_country' },
+  { key: 'bill_city', label: 'City', type: 'text', required: true, placeholder: 'City' },
+  { key: 'bill_country', label: 'Country', type: 'select', required: true, lookupKey: 'countries' },
+  { key: 'bill_state', label: 'State', type: 'select', required: true, lookupKey: 'states', dependsOn: 'bill_country' },
   {
     key: 'bill_zip',
     label: 'Zip / Postal Code',
     type: 'text',
+    required: true,
     placeholder: '12345',
   },
   {
@@ -204,6 +206,7 @@ export const SHIP_TO_FIELDS: QuoteFormField[] = [
     rows: 2,
     showIfFieldFalse: 'ship_same_as_bill',
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -227,6 +230,7 @@ export const SHIP_TO_FIELDS: QuoteFormField[] = [
     label: 'City',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     placeholder: 'City',
   },
   {
@@ -234,6 +238,7 @@ export const SHIP_TO_FIELDS: QuoteFormField[] = [
     label: 'Country',
     type: 'select',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     lookupKey: 'countries',
   },
   {
@@ -241,6 +246,7 @@ export const SHIP_TO_FIELDS: QuoteFormField[] = [
     label: 'State',
     type: 'select',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     lookupKey: 'states',
     dependsOn: 'ship_country',
   },
@@ -249,6 +255,7 @@ export const SHIP_TO_FIELDS: QuoteFormField[] = [
     label: 'Zip / Postal Code',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     placeholder: '12345',
   },
   {
