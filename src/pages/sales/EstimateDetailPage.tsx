@@ -441,7 +441,11 @@ export default function EstimateDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={estimate.billing.email ?? ''}
         label={`Estimate ${estimate.estimateNumber}`}
-        onSent={() => setSendSuccess(`Sent to ${estimate.billing.email}.`)}
+        onSent={(result) =>
+          setSendSuccess(
+            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
+          )
+        }
       />
     </div>
   );

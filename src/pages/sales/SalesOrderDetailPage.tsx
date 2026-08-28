@@ -470,7 +470,11 @@ export default function SalesOrderDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={order.billing.email ?? ''}
         label={`Sales Order ${order.salesOrderNumber}`}
-        onSent={() => setSendSuccess(`Sent to ${order.billing.email}.`)}
+        onSent={(result) =>
+          setSendSuccess(
+            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
+          )
+        }
       />
     </div>
   );
