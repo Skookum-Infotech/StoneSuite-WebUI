@@ -425,7 +425,11 @@ export default function InvoiceDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={invoice.billing.email ?? ''}
         label={`Invoice ${invoice.invoiceNumber}`}
-        onSent={() => setSendSuccess(`Sent to ${invoice.billing.email}.`)}
+        onSent={(result) =>
+          setSendSuccess(
+            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
+          )
+        }
       />
     </div>
   );
