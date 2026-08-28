@@ -454,7 +454,11 @@ export default function QuoteDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={quote.billing.email ?? ''}
         label={`Quote ${quote.quoteNumber}`}
-        onSent={() => setSendSuccess(`Sent to ${quote.billing.email}.`)}
+        onSent={(result) =>
+          setSendSuccess(
+            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
+          )
+        }
       />
     </div>
   );
