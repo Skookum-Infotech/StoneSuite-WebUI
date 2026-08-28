@@ -5,7 +5,7 @@ import { feedbackAdminService } from '@/services/feedbackAdminService';
 import { platformService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
-import { feedbackCategoryLabel, feedbackPriorityLabel, feedbackStatusLabel } from '@/lib/feedback';
+import { feedbackAreaLabel, feedbackCategoryLabel, feedbackPriorityLabel, feedbackStatusLabel } from '@/lib/feedback';
 import { FeedbackStatsTiles } from './components/FeedbackStatsTiles';
 import { FeedbackFiltersBar } from './components/FeedbackFiltersBar';
 import { FeedbackAdminTable } from './components/FeedbackAdminTable';
@@ -79,12 +79,13 @@ export default function FeedbackListPage() {
           feedbackAdminService
             .list({ ...filters, cursor: exportCursor, limit: EXPORT_PAGE_SIZE })
             .then((page) => ({ records: page.tickets, hasMore: Boolean(page.nextCursor), nextCursor: page.nextCursor })),
-        ['Ticket #', 'Tenant', 'Reporter', 'Category', 'Description', 'Rating', 'Priority', 'Status', 'Submitted'],
+        ['Ticket #', 'Tenant', 'Reporter', 'Category', 'Area', 'Description', 'Rating', 'Priority', 'Status', 'Submitted'],
         (t) => [
           t.ticketNumber,
           t.tenantName ?? '',
           t.reporterName || t.reporterEmail,
           feedbackCategoryLabel(t.category),
+          feedbackAreaLabel(t.area),
           t.description,
           typeof t.rating === 'number' ? String(t.rating) : '',
           feedbackPriorityLabel(t.priority),

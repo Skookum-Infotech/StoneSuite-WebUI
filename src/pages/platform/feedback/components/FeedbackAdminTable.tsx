@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { Spinner } from '@/components/tenant/ui';
 import {
+  feedbackAreaLabel,
   feedbackCategoryOption,
   feedbackPriorityLabel,
   feedbackStatusLabel,
@@ -56,6 +57,9 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                     <category.icon className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                     {category.label}
                   </span>
+                  {ticket.area && (
+                    <span className="mt-0.5 block text-2xs text-stone-400">{feedbackAreaLabel(ticket.area)}</span>
+                  )}
                 </td>
                 <td className="max-w-72 truncate px-3.5 py-2.5 text-stone-600 dark:text-stone-300" title={ticket.description}>
                   {ticket.description}

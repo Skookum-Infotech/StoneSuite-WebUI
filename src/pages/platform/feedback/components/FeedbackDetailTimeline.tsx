@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { textareaCls } from '@/components/crm/formUtils';
 import {
   MAX_COMMENT_LENGTH,
+  feedbackAreaLabel,
   feedbackStatusLabel,
   formatFeedbackFileSize,
   formatFeedbackTime,
@@ -94,8 +95,9 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
     <div className="space-y-4">
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
         <p className="whitespace-pre-wrap text-sm text-stone-700 dark:text-stone-200">{ticket.description}</p>
-        {(ticket.pageUrl || ticket.userAgent) && (
+        {(ticket.area || ticket.pageUrl || ticket.userAgent) && (
           <div className="mt-3 space-y-0.5 border-t border-stone-100 pt-3 text-2xs text-stone-400 dark:border-white/10">
+            {ticket.area && <p>Area: <span className="text-stone-500 dark:text-stone-300">{feedbackAreaLabel(ticket.area)}</span></p>}
             {ticket.pageUrl && <p>Page: <span className="text-stone-500 dark:text-stone-300">{ticket.pageUrl}</span></p>}
             {ticket.userAgent && <p className="truncate">Browser: <span className="text-stone-500 dark:text-stone-300">{ticket.userAgent}</span></p>}
           </div>

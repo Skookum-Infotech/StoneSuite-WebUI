@@ -16,6 +16,20 @@ export type FeedbackCategory =
   | 'performance'
   | 'general';
 
+// Which section of the app the reporter had open. Named "area", not
+// "workspace" — that word already means the tenant a customer-portal
+// session is signed into (see PortalWorkspace in types/auth.ts).
+export type FeedbackArea =
+  | 'dashboard'
+  | 'crm'
+  | 'sales'
+  | 'purchases'
+  | 'inventory'
+  | 'finance'
+  | 'configuration'
+  | 'account'
+  | 'other';
+
 export type FeedbackStatus = 'new' | 'in_progress' | 'done' | 'cancelled';
 
 export type FeedbackPriority = 'low' | 'normal' | 'high' | 'urgent';
@@ -35,6 +49,7 @@ export interface FeedbackTicket {
   reporterEmail: string;
   reporterName: string;
   category: FeedbackCategory;
+  area?: FeedbackArea | '';
   rating?: number | null;
   description: string;
   pageUrl?: string;
@@ -80,6 +95,7 @@ export interface FeedbackAttachment {
 /** POST /api/{tenant,portal}/feedback body. */
 export interface FeedbackSubmitInput {
   category: FeedbackCategory;
+  area?: FeedbackArea | '';
   rating?: number | null;
   description: string;
   pageUrl?: string;

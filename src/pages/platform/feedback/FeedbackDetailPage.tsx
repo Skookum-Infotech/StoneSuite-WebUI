@@ -9,6 +9,7 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { FeedbackDetailSidebar } from './components/FeedbackDetailSidebar';
 import { FeedbackDetailTimeline } from './components/FeedbackDetailTimeline';
 import {
+  feedbackAreaLabel,
   feedbackCategoryLabel,
   feedbackStatusLabel,
   formatFeedbackTime,
@@ -57,6 +58,7 @@ export default function FeedbackDetailPage() {
             title: 'Ticket Details',
             rows: [
               ['Category', feedbackCategoryLabel(ticket.category)],
+              ['Area', feedbackAreaLabel(ticket.area)],
               ['Priority', ticket.priority],
               ['Rating', typeof ticket.rating === 'number' ? `${ticket.rating} / 5` : ''],
               ['Tenant', ticket.tenantName ?? ''],
@@ -116,7 +118,8 @@ export default function FeedbackDetailPage() {
             )}
           </div>
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            {feedbackCategoryLabel(ticket.category)} · {ticket.tenantName} · reported by {ticket.reporterName} ({ticket.reporterEmail}) · {formatFeedbackTime(ticket.createdAt)}
+            {feedbackCategoryLabel(ticket.category)}
+            {ticket.area && ` · ${feedbackAreaLabel(ticket.area)}`} · {ticket.tenantName} · reported by {ticket.reporterName} ({ticket.reporterEmail}) · {formatFeedbackTime(ticket.createdAt)}
           </p>
         </div>
       </div>

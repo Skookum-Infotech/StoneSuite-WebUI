@@ -133,7 +133,11 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
         </button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
+      {/* min-h-0 overrides this flex item's default min-height:auto — without
+          it, a long conversation grows the item to fit every turn instead of
+          shrinking to the space under the header, and overflow-y-auto never
+          gets a chance to scroll it. */}
+      <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
         {turns.length === 0 && (
           <p className="text-xs text-stone-500 dark:text-stone-400">
             Ask about a record, workflow, or how to do something in StoneSuite.

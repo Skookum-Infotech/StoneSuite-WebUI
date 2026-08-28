@@ -4,7 +4,7 @@
 // adds a category/status/priority or changes a limit.
 import { Bug, Lightbulb, Sparkles, Zap, MessageCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { FeedbackCategory, FeedbackPriority, FeedbackStatus } from '@/types/feedback';
+import type { FeedbackArea, FeedbackCategory, FeedbackPriority, FeedbackStatus } from '@/types/feedback';
 
 export const MAX_DESCRIPTION_LENGTH = 5000;
 export const MAX_COMMENT_LENGTH = 5000;
@@ -41,6 +41,47 @@ export const FEEDBACK_CATEGORY_OPTIONS: FeedbackCategoryOption[] = [
 
 export function feedbackCategoryLabel(category: string): string {
   return FEEDBACK_CATEGORY_OPTIONS.find((c) => c.value === category)?.label ?? category;
+}
+
+// Areas — which section of the app the reporter had open. Displayed as a
+// dropdown in the submit form, defaulted from the current route (see
+// resolveFeedbackArea) but left editable — a reporter may have navigated
+// away from where the bug actually happened before opening the panel.
+export const FEEDBACK_AREA_OPTIONS: { value: FeedbackArea; label: string }[] = [
+  { value: 'dashboard', label: 'Dashboard' },
+  { value: 'crm', label: 'CRM (Leads / Prospects / Customers)' },
+  { value: 'sales', label: 'Sales (Orders / Invoices / Payments)' },
+  { value: 'purchases', label: 'Purchases' },
+  { value: 'inventory', label: 'Inventory' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'configuration', label: 'Configuration' },
+  { value: 'account', label: 'Account / Subscription' },
+  { value: 'other', label: 'Other' },
+];
+
+export function feedbackAreaLabel(area: string | undefined): string {
+  if (!area) return '';
+  return FEEDBACK_AREA_OPTIONS.find((a) => a.value === area)?.label ?? area;
+}
+
+/** Best-effort area guess from the current route, e.g. /crm/lead/123 -> 'crm'.
+ *  Only a starting suggestion for the submit form's dropdown — the reporter
+ *  can always override it, so an unmatched path falling back to 'other' is
+ *  fine rather than something to guard closely. */
+export function resolveFeedbackArea(pathname: string): FeedbackArea {
+  const prefixes: [string, FeedbackArea][] = [
+    ['/dashboard', 'dashboard'],
+    ['/crm', 'crm'],
+    ['/sales', 'sales'],
+    ['/purchases', 'purchases'],
+    ['/inventory', 'inventory'],
+    ['/finance', 'finance'],
+    ['/config', 'configuration'],
+    ['/account', 'account'],
+    ['/subscription', 'account'],
+  ];
+  const match = prefixes.find(([prefix]) => pathname.startsWith(prefix));
+  return match ? match[1] : 'other';
 }
 
 // Returns the whole option (never just the bare icon component) — callers

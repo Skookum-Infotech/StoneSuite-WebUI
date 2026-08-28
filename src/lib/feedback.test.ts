@@ -3,6 +3,8 @@ import {
   feedbackCategoryLabel,
   feedbackStatusLabel,
   feedbackPriorityLabel,
+  feedbackAreaLabel,
+  resolveFeedbackArea,
   validateFeedbackDescription,
   validateFeedbackComment,
   validateFeedbackFile,
@@ -12,6 +14,7 @@ import {
   MAX_COMMENT_LENGTH,
   MAX_FEEDBACK_FILE_SIZE_BYTES,
   FEEDBACK_CATEGORY_OPTIONS,
+  FEEDBACK_AREA_OPTIONS,
 } from './feedback'
 
 function makeFile(name: string, type: string, size: number): File {
@@ -53,6 +56,40 @@ describe('feedbackPriorityLabel', () => {
     ['urgent', 'Urgent'],
   ])('labels %s as %s', (priority, label) => {
     expect(feedbackPriorityLabel(priority)).toBe(label)
+  })
+})
+
+describe('feedbackAreaLabel', () => {
+  it('resolves every curated area', () => {
+    for (const opt of FEEDBACK_AREA_OPTIONS) {
+      expect(feedbackAreaLabel(opt.value)).toBe(opt.label)
+    }
+  })
+
+  it('falls back to the raw value for an unknown area', () => {
+    expect(feedbackAreaLabel('made_up')).toBe('made_up')
+  })
+
+  it('returns empty string for undefined', () => {
+    expect(feedbackAreaLabel(undefined)).toBe('')
+  })
+})
+
+describe('resolveFeedbackArea', () => {
+  it.each([
+    ['/dashboard', 'dashboard'],
+    ['/crm/lead/123', 'crm'],
+    ['/sales/sales_order', 'sales'],
+    ['/purchases/vendor', 'purchases'],
+    ['/inventory/item', 'inventory'],
+    ['/finance/chart-of-accounts', 'finance'],
+    ['/config/workflows', 'configuration'],
+    ['/account/settings', 'account'],
+    ['/subscription', 'account'],
+    ['/transactions', 'other'],
+    ['/', 'other'],
+  ])('resolves %s to %s', (pathname, area) => {
+    expect(resolveFeedbackArea(pathname)).toBe(area)
   })
 })
 
