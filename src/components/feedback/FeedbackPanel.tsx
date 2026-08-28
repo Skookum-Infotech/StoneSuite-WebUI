@@ -17,7 +17,7 @@ const TABS: { key: Tab; label: string }[] = [
 // Right slide-over with two tabs — Submit a new ticket, or track ones already
 // filed ("My Tickets"). Deliberately no dedicated page: this panel is the
 // whole reporter-facing surface, for both tenant staff and customer-portal
-// users (see FeedbackWidget, mounted in MainLayout for both session kinds).
+// users (see HelpMenu, mounted in MainLayout for both session kinds).
 export function FeedbackPanel({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<Tab>('submit');
   const contentRef = useModalDialog(onClose);
