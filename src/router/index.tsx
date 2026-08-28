@@ -92,6 +92,12 @@ const DashboardWidgetsPage = lazyWithRetry(
 const AuditLogPage = lazyWithRetry(
   () => import("@/pages/config/audit/AuditLogPage"),
 );
+const FeedbackListPage = lazyWithRetry(
+  () => import("@/pages/platform/feedback/FeedbackListPage"),
+);
+const FeedbackDetailPage = lazyWithRetry(
+  () => import("@/pages/platform/feedback/FeedbackDetailPage"),
+);
 const SamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/SamlSetupPage"),
 );
@@ -1424,6 +1430,24 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard platformAdminOnly>
             <AddCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Platform-owner only: cross-tenant support ticket queue.
+      {
+        path: "platform/feedback",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <FeedbackListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "platform/feedback/:id",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <FeedbackDetailPage />
           </PermissionGuard>,
         ),
       },

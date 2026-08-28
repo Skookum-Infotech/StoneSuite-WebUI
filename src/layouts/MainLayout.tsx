@@ -19,7 +19,7 @@ import { SAML_ACTIVE_PROVIDER_KEY } from '@/lib/samlSession';
 import type { SAMLProvider } from '@/types/tenant';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
-import { AssistantPanel } from '@/components/ai/AssistantPanel';
+import { HelpMenu } from '@/components/HelpMenu';
 import {
   Menu,
   ChevronRight,
@@ -289,6 +289,8 @@ export default function MainLayout(): React.JSX.Element {
               {isMobileSearchOpen ? <X className="size-4" /> : <Search className="size-4" />}
             </button>
 
+            <HelpMenu />
+
             <button
               aria-label="Notifications"
               className="relative rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
@@ -510,8 +512,6 @@ export default function MainLayout(): React.JSX.Element {
           <Outlet />
         </main>
       </div>
-
-      <AssistantPanel />
     </div>
   );
 }
