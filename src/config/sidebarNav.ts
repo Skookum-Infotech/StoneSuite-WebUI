@@ -43,6 +43,7 @@ import {
   CalendarClock,
   LayoutGrid,
   KeyRound,
+  MessageSquareText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -604,6 +605,15 @@ export const sidebarNav: SidebarNavConfig = {
           path: "/customer/onboarding",
           icon: UserPlus,
           iconColor: "text-pink-500 dark:text-pink-400",
+          platformAdminOnly: true,
+        },
+        {
+          type: "link",
+          id: "support-tickets",
+          label: "Support Tickets",
+          path: "/platform/feedback",
+          icon: MessageSquareText,
+          iconColor: "text-teal-500 dark:text-teal-400",
           platformAdminOnly: true,
         },
       ],
