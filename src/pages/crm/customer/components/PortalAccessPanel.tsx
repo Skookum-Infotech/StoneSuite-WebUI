@@ -106,12 +106,12 @@ export function PortalAccessPanel({
 
   return (
     <div className="rounded-xl border border-stone-200 bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-stone-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-stone-100 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
             <KeyRound className="size-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-sm font-bold text-stone-800">Portal Access</h3>
             <p className="text-2xs text-stone-500">How this customer signs in to the portal.</p>
           </div>
@@ -130,7 +130,7 @@ export function PortalAccessPanel({
                   : undefined
             }
             className={cn(
-              "flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover",
+              "flex shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover",
               !canGrant && "opacity-50 cursor-not-allowed hover:bg-brand",
             )}
           >

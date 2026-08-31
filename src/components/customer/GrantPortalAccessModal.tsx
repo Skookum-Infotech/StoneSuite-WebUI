@@ -45,12 +45,12 @@ export function GrantPortalAccessModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Grant portal access"
     >
-      <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-5 shadow-xl sm:p-6">
         <div className="mb-5 flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-stone-900">

@@ -220,15 +220,16 @@ export default function CustomerDetailPage() {
         />
       )}
 
-      {/* Tab bar */}
-      <div className="flex shrink-0 border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16">
+      {/* Tab bar — scrolls horizontally on small screens rather than
+          overflowing the page (6 tabs don't fit a phone width). */}
+      <div className="flex shrink-0 overflow-x-auto modal-scrollbar border-b border-stone-200 bg-white px-3 sm:px-5 3xl:px-12 4xl:px-16">
         {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150",
+              "shrink-0 whitespace-nowrap px-3 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 sm:px-4",
               activeTab === tab.key
                 ? "border-brand text-stone-950"
                 : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200",
