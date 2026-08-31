@@ -142,6 +142,15 @@ export default function CustomerDetailPage() {
   const statusInfo = statusMap.get(record.currentStateId);
   const cf = record.coreFields;
   const company = String(cf.customer_name ?? "(unnamed)");
+  // The portal login is minted for the customer record's own contact email
+  // (required at creation) — one customer, one login. The display name mirrors
+  // the backend's ContactInfoForInvite: authorized contact, else the company.
+  const portalContactEmail = String(cf.customer_contact_email ?? "").trim();
+  const portalContactName =
+    [cf.customer_authorized_person_fname, cf.customer_authorized_person_lname]
+      .map((v) => String(v ?? "").trim())
+      .filter(Boolean)
+      .join(" ") || company;
 
   // approvalStatus is authoritative from the record itself — the server
   // already accounts for both wildcard and status-specific approvers.
@@ -260,7 +269,12 @@ export default function CustomerDetailPage() {
           {activeTab === "transactions" && <TransactionsContent />}
 
           {activeTab === "portal" && canViewPortalAccess && (
-            <PortalAccessPanel customerUuid={id} customerApproved={customerApproved} />
+            <PortalAccessPanel
+              customerUuid={id}
+              customerApproved={customerApproved}
+              contactEmail={portalContactEmail}
+              contactName={portalContactName}
+            />
           )}
 
           {activeTab === "files" && (

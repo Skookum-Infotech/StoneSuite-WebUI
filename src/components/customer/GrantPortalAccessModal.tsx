@@ -1,55 +1,37 @@
 import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Send, X, Loader2 } from "lucide-react";
 import { portalAccessService } from "@/services/portalAccessService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-const grantSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
-  fullName: z.string().optional(),
-});
-type GrantFields = z.infer<typeof grantSchema>;
-
+// Confirmation dialog for granting this customer a portal login. The login is
+// always the customer record's own contact email (customer_contact_email,
+// required at creation) — one customer, one portal login — so there is no
+// email entry here, just a confirm step before the invite email goes out.
 export function GrantPortalAccessModal({
   customerUuid,
+  contactEmail,
+  contactName,
   onClose,
 }: {
   customerUuid: string;
+  contactEmail: string;
+  contactName: string;
   onClose: () => void;
 }) {
   const qc = useQueryClient();
 
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<GrantFields>({ resolver: zodResolver(grantSchema) });
-
   const grant = useMutation({
-    mutationFn: (data: GrantFields) =>
+    mutationFn: () =>
       portalAccessService.grant(customerUuid, {
-        email: data.email,
-        fullName: data.fullName ?? "",
+        email: contactEmail,
+        fullName: contactName,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["portal-users", customerUuid] });
       onClose();
-    },
-    onError: (err) => {
-      setError("root", {
-        // Backend 409s with a specific message when the email already
-        // belongs to a workspace user — surface it verbatim rather than a
-        // generic fallback.
-        message: apiErrorMessage(err, "Failed to grant portal access."),
-      });
     },
   });
 
@@ -88,44 +70,29 @@ export function GrantPortalAccessModal({
           </button>
         </div>
 
-        <form
-          onSubmit={handleSubmit((data) => grant.mutate(data))}
-          className="space-y-4"
-        >
-          <div className="space-y-1.5">
-            <Label htmlFor="grant-email">
-              Email address <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="grant-email"
-              type="email"
-              placeholder="contact@customer.com"
-              autoFocus
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? "grant-email-error" : undefined}
-              {...register("email")}
-              className="h-10"
-            />
-            {errors.email && (
-              <p id="grant-email-error" className="text-xs text-red-500">{errors.email.message}</p>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5">
+            <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">
+              Portal login
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-stone-800 break-all">
+              {contactEmail}
+            </p>
+            {contactName && (
+              <p className="text-xs text-stone-500">{contactName}</p>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="grant-name">
-              Full name{" "}
-              <span className="text-stone-400 font-normal">(optional)</span>
-            </Label>
-            <Input
-              id="grant-name"
-              type="text"
-              placeholder="Jane Smith"
-              {...register("fullName")}
-              className="h-10"
-            />
-          </div>
+          <p className="text-xs text-stone-500">
+            This is the contact email on the customer record. Update the record
+            first if it should go to a different address.
+          </p>
 
-          {errors.root && <ErrorNote>{errors.root.message}</ErrorNote>}
+          {grant.isError && (
+            <ErrorNote>
+              {apiErrorMessage(grant.error, "Failed to grant portal access.")}
+            </ErrorNote>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <button
@@ -135,16 +102,21 @@ export function GrantPortalAccessModal({
             >
               Cancel
             </button>
-            <Button type="submit" disabled={isSubmitting} className="h-9 gap-2">
-              {isSubmitting ? (
+            <Button
+              type="button"
+              onClick={() => grant.mutate()}
+              disabled={grant.isPending}
+              className="h-9 gap-2"
+            >
+              {grant.isPending ? (
                 <Loader2 className="size-3.5 animate-spin" />
               ) : (
                 <Send className="size-3.5" />
               )}
-              {isSubmitting ? "Granting…" : "Grant access"}
+              {grant.isPending ? "Granting…" : "Grant access"}
             </Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
