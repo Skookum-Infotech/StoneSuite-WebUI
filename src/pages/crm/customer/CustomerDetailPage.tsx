@@ -8,7 +8,7 @@ import { userService } from "@/services/tenantServices";
 import { lookupService } from "@/services/lookupService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
-import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
+import { CustomerDeleteButton } from "@/pages/crm/customer/components/CustomerDeleteButton";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
 import { StatusDropdown } from "@/components/crm/StatusDropdown";
@@ -331,12 +331,15 @@ export default function CustomerDetailPage() {
               <PortalAccessStatusCard customerUuid={id} onManage={() => setActiveTab("portal")} />
             )}
             deleteSlot={(
-              <DeleteRecordDialog
+              <CustomerDeleteButton
                 recordId={id}
-                workflowKey="customer"
-                label={`Customer — ${company}`}
+                company={company}
+                onManagePortal={() => setActiveTab("portal")}
                 onDeleted={() => {
                   queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
+                  // Drop this customer's now-orphaned rows from the tenant-wide
+                  // portal-user roster (the server already filters them out).
+                  queryClient.invalidateQueries({ queryKey: ["portal-users", "tenant"] });
                   navigate("/crm/customer");
                 }}
               />
