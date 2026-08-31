@@ -22,7 +22,6 @@ import { Switch } from '@/components/ui/switch';
 import { Spinner, ErrorNote, EmptyState, Badge } from '@/components/tenant/ui';
 import { ApproverPicker, MAX_APPROVERS } from '@/components/tenant/ApproverPicker';
 import { StatesReference } from './StatesReference';
-import { CrmStatusApprovers } from './CrmStatusApprovers';
 import { ApprovalChainSection } from './ApprovalChainSection';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { cn } from '@/lib/utils';
@@ -167,16 +166,14 @@ export default function WorkflowBuilderPage() {
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="space-y-6 px-4 py-8 sm:px-8">
           {crmKey && (
-            <Section title="Approval chain" action={<Badge size="sm">Every status</Badge>}>
+            <Section title="Approval chain" action={<Badge size="sm">Whole stage</Badge>}>
               <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
             </Section>
           )}
 
           {hasApprovalChain && <ApprovalChainSection workflowId={id} />}
 
-          {crmKey ? (
-            <CrmStatusApprovers workflowKey={crmKey} />
-          ) : (
+          {!crmKey && (
             <StatesReference
               workflowKey={def.workflow.key}
               states={def.states}
@@ -264,8 +261,8 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
   return (
     <div>
       <p className="mb-3 max-w-xl text-xs text-stone-500">
-        Up to {MAX_APPROVERS} active users required to sign off before a record can leave <em>any</em> status in this
-        workflow. Leave empty to skip. For approvers scoped to a single status, configure them individually below.
+        Up to {MAX_APPROVERS} active users required to sign off before a record can leave this stage — e.g. moving a
+        Lead to Prospect or Customer. Leave empty to skip approval for this stage.
       </p>
       {usersQ.isLoading ? (
         <Spinner label="Loading users…" />

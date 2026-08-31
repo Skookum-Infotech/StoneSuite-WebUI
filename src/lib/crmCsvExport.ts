@@ -1,7 +1,15 @@
 import type { StatusInfo, WorkflowRecord } from "@/types/tenant";
+import { recordApprovalState } from "@/types/tenant";
 import { buildCsvText, buildCsvFilename, fmtCsvDate } from "@/lib/csvExport";
 
 export { csvEscapeValue, downloadCsv, fmtCsvDate } from "@/lib/csvExport";
+
+const APPROVAL_LABEL: Record<ReturnType<typeof recordApprovalState>, string> = {
+  none: "",
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+};
 
 /** Builds CSV text (with header row) for a page of CRM lead/prospect/customer records. */
 export function buildCrmRecordsCsv(
@@ -13,6 +21,7 @@ export function buildCrmRecordsCsv(
     "Record Number",
     "Company",
     "Status",
+    "Approval",
     ...(showEmail ? ["Email"] : []),
     "Created",
     "Updated",
@@ -24,6 +33,7 @@ export function buildCrmRecordsCsv(
       record.recordNumber ?? "",
       String(record.coreFields.customer_name ?? ""),
       statusInfo?.statusLabel ?? "",
+      APPROVAL_LABEL[recordApprovalState(record)],
       ...(showEmail ? [String(record.coreFields.customer_contact_email ?? "")] : []),
       fmtCsvDate(record.createdAt),
       fmtCsvDate(record.updatedAt),

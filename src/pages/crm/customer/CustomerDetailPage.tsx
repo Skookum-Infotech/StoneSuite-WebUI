@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
-import { crmService, CRM_RECORD_TYPE_CODES } from "@/services/crmService";
-import { crmAdminService } from "@/services/crmAdminService";
+import { crmService } from "@/services/crmService";
 import { userService } from "@/services/tenantServices";
 import { lookupService } from "@/services/lookupService";
 import { apiErrorMessage } from "@/api/tenantClient";
@@ -15,6 +14,7 @@ import { StatusDropdown } from "@/components/crm/StatusDropdown";
 import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
+import { RejectRecordDialog } from "@/components/crm/RejectRecordDialog";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,
@@ -73,12 +73,6 @@ export default function CustomerDetailPage() {
   const { data: users = [] } = useQuery({
     queryKey: ["workspace-users"],
     queryFn: userService.listUsers,
-  });
-
-  const { data: crmApprovers = [] } = useQuery({
-    queryKey: ["crm-approvers"],
-    queryFn: crmAdminService.listApprovers,
-    staleTime: 60 * 1000,
   });
 
   const { data: lookups } = useQuery({
@@ -152,25 +146,20 @@ export default function CustomerDetailPage() {
       .filter(Boolean)
       .join(" ") || company;
 
-  // approvalStatus is authoritative from the record itself — the server
-  // already accounts for both wildcard and status-specific approvers.
-  // approverIds below is only the wildcard chain, used for display alongside
-  // any status-specific approvers configured for the record's current status.
+  // The approval overlay is authoritative from the server — see
+  // crmService.getRecord / types/tenant.ts's CrmApproval. `gated` (pending or
+  // rejected) drives the banner; `approvalStatus` drives the sidebar card,
+  // portal-eligibility gate, and list-style badges via the plain
+  // approval_status core field.
+  const approval = record.approval;
   const recordApproval = recordApprovalState(record);
   const approvalStatus: ApprovalStatus = recordApproval === "none" ? "not_required" : recordApproval;
-  const canApprove = Boolean(record.canApprove);
   // Mirrors the backend's CustomerEligible gate on portal access grants:
-  // customer_is_approved is only ever false while approval_status is
-  // 'pending' — a record with no configured approver auto-approves on entry,
-  // so 'not_required' here means the DB flag is already true, same as
-  // 'approved'. Only 'pending' should block granting a new portal login.
-  const customerApproved = approvalStatus !== "pending";
-  const approverIds = statusData?.workflow.approverUserIds ?? [];
-  const wildcardNames = approverIds.map((uid) => users.find((u) => u.id === uid)?.fullName || users.find((u) => u.id === uid)?.email || "Unknown user");
-  const statusApproverNames = crmApprovers
-    .filter((a) => a.recordTypeCode === CRM_RECORD_TYPE_CODES.customer && a.crmStatusCode !== "" && a.crmStatusCode === statusInfo?.stateKey)
-    .map((a) => a.approverName);
-  const approverNames = [...wildcardNames, ...statusApproverNames];
+  // customer_is_approved is only ever true for 'approved' or 'not_required'
+  // (a record with no configured approver auto-approves on entry) — both
+  // 'pending' and 'rejected' must block granting a new portal login.
+  const customerApproved = approvalStatus === "approved" || approvalStatus === "not_required";
+  const approverNames = (approval?.approvers ?? []).map((a) => a.name);
 
   async function handleExportPdf() {
     setExportPdfError(undefined);
@@ -211,12 +200,25 @@ export default function CustomerDetailPage() {
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
       />
 
-      {approvalStatus === "pending" && (
+      {approval?.gated && (
         <ApprovalBanner
+          status={approval.status === "rejected" ? "rejected" : "pending"}
           approverNames={approverNames}
-          canApprove={canApprove}
+          canApprove={approval.canApprove}
+          isOverride={approval.isOverride}
+          requiredApprovals={approval.requiredApprovals}
+          approvedCount={approval.approvedCount}
+          callerAlreadyApproved={approval.callerAlreadyApproved}
           onApprove={() => approve.mutate()}
           approving={approve.isPending}
+          rejection={{ byName: approval.rejectedByName, reason: approval.rejectionReason }}
+          actions={approval.canReject && (
+            <RejectRecordDialog
+              recordId={id}
+              workflowKey="customer"
+              onRejected={() => queryClient.invalidateQueries({ queryKey: ["crm-record", id] })}
+            />
+          )}
         />
       )}
 
@@ -306,6 +308,7 @@ export default function CustomerDetailPage() {
                 onChange={(toStateId) => transition.mutate(toStateId)}
                 disabled={transition.isPending}
                 variant="pill"
+                gated={approval?.gated}
               />
             )}
             ownerUserId={record.ownerUserId}
@@ -319,7 +322,12 @@ export default function CustomerDetailPage() {
             exportPdfError={exportPdfError}
             approvalSlot={(
               <>
-                <ApprovalCard approverNames={approverNames} status={approvalStatus} />
+                <ApprovalCard
+                  approvers={approval?.approvers ?? []}
+                  status={approvalStatus}
+                  rejectedByName={approval?.rejectedByName}
+                  rejectionReason={approval?.rejectionReason}
+                />
                 {approve.error && (
                   <div className="mb-4">
                     <ErrorNote>{apiErrorMessage(approve.error, "Failed to approve record.")}</ErrorNote>

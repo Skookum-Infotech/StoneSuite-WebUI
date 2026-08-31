@@ -69,7 +69,7 @@ describe("buildCrmRecordsCsv", () => {
   it("includes an email column when showEmail is true", () => {
     const csv = buildCrmRecordsCsv([makeRecord()], statusMap, true);
     const [header, row] = csv.split("\r\n");
-    expect(header).toBe("Record Number,Company,Status,Email,Created,Updated");
+    expect(header).toBe("Record Number,Company,Status,Approval,Email,Created,Updated");
     expect(row).toContain("buyer@acme.com");
     expect(row).toContain("New");
   });
@@ -77,7 +77,7 @@ describe("buildCrmRecordsCsv", () => {
   it("omits the email column when showEmail is false", () => {
     const csv = buildCrmRecordsCsv([makeRecord()], statusMap, false);
     const [header] = csv.split("\r\n");
-    expect(header).toBe("Record Number,Company,Status,Created,Updated");
+    expect(header).toBe("Record Number,Company,Status,Approval,Created,Updated");
   });
 
   it("falls back to an empty status cell when the state has no status mapping", () => {
@@ -88,7 +88,7 @@ describe("buildCrmRecordsCsv", () => {
 
   it("produces only the header row for an empty record list", () => {
     const csv = buildCrmRecordsCsv([], statusMap, true);
-    expect(csv).toBe("Record Number,Company,Status,Email,Created,Updated");
+    expect(csv).toBe("Record Number,Company,Status,Approval,Email,Created,Updated");
   });
 
   it("quotes company names containing commas", () => {
@@ -99,6 +99,26 @@ describe("buildCrmRecordsCsv", () => {
     );
     const [, row] = csv.split("\r\n");
     expect(row).toContain('"Acme, Inc."');
+  });
+
+  it.each([
+    ["pending", "Pending"],
+    ["approved", "Approved"],
+    ["rejected", "Rejected"],
+  ] as const)("labels approval_status %p as %p", (status, label) => {
+    const csv = buildCrmRecordsCsv(
+      [makeRecord({ coreFields: { customer_name: "Acme Corp", approval_status: status } })],
+      statusMap,
+      false,
+    );
+    const [, row] = csv.split("\r\n");
+    expect(row?.split(",")[3]).toBe(label);
+  });
+
+  it("leaves the approval cell empty when approval is not required", () => {
+    const csv = buildCrmRecordsCsv([makeRecord()], statusMap, false);
+    const [, row] = csv.split("\r\n");
+    expect(row?.split(",")[3]).toBe("");
   });
 });
 

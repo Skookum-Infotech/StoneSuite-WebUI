@@ -5,6 +5,7 @@ import { ChevronDown, Check } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { fieldCls, resolveStatusColor } from '@/components/crm/formUtils';
 import { useFloatingDropdownPosition } from '@/hooks/useFloatingDropdownPosition';
+import { isCrmTransitionBlocked } from '@/lib/crmApproval';
 import type { StatusInfo } from '@/types/tenant';
 
 type Props = {
@@ -23,6 +24,11 @@ type Props = {
    *  when this control sits in a list table. The Edit page (one record on
    *  screen) omits this so its dropdown preloads instantly. */
   lazy?: boolean;
+  /** True while the record's stage is awaiting or rejected from approval
+   *  (record.approval.gated) — every option except the stage's own lost/
+   *  unqualified exit renders disabled with a tooltip instead of firing and
+   *  409ing server-side. Omit (or false) for a workflow with no approval gate. */
+  gated?: boolean;
 };
 
 const PANEL_WIDTH = 224; // w-56
@@ -40,7 +46,7 @@ const PANEL_WIDTH = 224; // w-56
 // to document.body with fixed positioning, since a pill lives in a table
 // cell whose overflow-x-auto scroll wrapper would otherwise clip it.
 export function StatusDropdown({
-  workflowKey, mode, recordId, value, onChange, disabled, variant = 'field', lazy = false,
+  workflowKey, mode, recordId, value, onChange, disabled, variant = 'field', lazy = false, gated = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [armedStateId, setArmedStateId] = useState<string | null>(null);
@@ -151,23 +157,29 @@ export function StatusDropdown({
     const isCurrent = s.stateId === value;
     const terminalTarget = isPill && !isCurrent && s.isTerminal;
     const armed = armedStateId === s.stateId;
+    const blocked = !isCurrent && isCrmTransitionBlocked(gated, s.stateKey);
     return (
       <button
         key={s.stateId}
         type="button"
         role="option"
         aria-selected={isCurrent}
+        aria-disabled={blocked}
+        title={blocked ? 'Awaiting approval sign-off' : undefined}
         onClick={() => {
+          if (blocked) return;
           if (terminalTarget && !armed) { setArmedStateId(s.stateId); return; }
           onChange(s.stateId, s.statusLabel);
           closeAndReturnFocus();
         }}
         className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-sm transition ${
-          isCurrent
-            ? 'bg-brand/10 font-semibold text-stone-900'
-            : armed
-              ? 'bg-red-50 font-semibold text-red-700'
-              : 'text-stone-700 hover:bg-stone-50'
+          blocked
+            ? 'cursor-not-allowed text-stone-300'
+            : isCurrent
+              ? 'bg-brand/10 font-semibold text-stone-900'
+              : armed
+                ? 'bg-red-50 font-semibold text-red-700'
+                : 'text-stone-700 hover:bg-stone-50'
         }`}
       >
         <span className="flex-1 text-left">{armed ? `Confirm: ${s.statusLabel}` : s.statusLabel}</span>
