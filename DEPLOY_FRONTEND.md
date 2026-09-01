@@ -9,6 +9,7 @@
 ## Pre-Deployment Checklist
 
 - [ ] `frontend/.env.production` exists with `VITE_API_BASE_URL`
+- [ ] `VITE_NOTIFY_BASE_URL` is set **in the build step's own environment** (see below)
 - [ ] Backend URL is stable (e.g., `https://stonesuite-backend.fly.dev`)
 - [ ] GitHub repository is connected to Cloudflare Pages
 - [ ] `npm run build` succeeds locally with no errors
@@ -96,6 +97,44 @@ needs it, and this pipeline just doesn't exercise it.
 **Do not set `VITE_CROSS_ORIGIN_API=true` on the GitHub Actions / prod pipeline.** Prod's backend
 (`stonesuite-backend.fly.dev`) still runs `SameSite=Lax` with no CSRF token issued; forcing a
 cross-origin base URL there would silently drop the auth cookie, not merely warn.
+
+### `VITE_NOTIFY_BASE_URL` — required on every pipeline
+
+`stonesuite-notify` is a separate service on its own origin; it is **not** proxied through
+`functions/api/[[path]].ts`. Every build must therefore be told where it lives:
+
+```
+VITE_NOTIFY_BASE_URL=https://stonesuite-notify.fly.dev        # prod
+VITE_NOTIFY_BASE_URL=https://dev-stonesuite-notify.fly.dev    # Azure DevOps dev pipeline
+```
+
+**It must be present in the environment of the `npm run build` step itself.** Vite inlines every
+`VITE_*` value into the bundle at build time, so setting it as a Cloudflare Pages project variable,
+an Azure App Service application setting, or a release/deploy-stage variable has no effect — the
+string is already baked in by then. Common ways this goes wrong:
+
+- **Azure DevOps:** a variable marked **"Keep this value secret"** is *not* auto-exported to the
+  task environment. It must be mapped explicitly on the build task:
+  ```yaml
+  - script: npm run build
+    env:
+      VITE_NOTIFY_BASE_URL: $(VITE_NOTIFY_BASE_URL)
+  ```
+  Non-secret pipeline variables are exported automatically. Also check the variable's **scope** —
+  a variable defined on the deploy stage never reaches the build stage.
+- **Re-running only the deploy stage** republishes the *previously built* artifact. After adding
+  the variable you must re-run the **build**, not just the deployment.
+- **Setting it on the hosting project** (Pages / App Service). Runtime config cannot reach a
+  static SPA bundle.
+
+`vite.config.ts`'s `assertNotifyBaseUrl` fails the build when this is missing or same-origin, so a
+misconfigured pipeline now stops with an actionable error instead of shipping a bell that silently
+404s. Confirm what actually shipped by grepping the deployed bundle:
+
+```bash
+curl -s https://<your-pages-host>/ | grep -o '/assets/index-[^"]*\.js' | head -1 \
+  | xargs -I{} curl -s https://<your-pages-host>{} | grep -o 'baseURL:`[^`]*`'
+```
 
 ### Checking the proxy is live
 
@@ -332,6 +371,18 @@ git push origin feat/dynamic-crm-platform
 2. Verify `VITE_API_BASE_URL=/api` is set (it must stay relative — see above), and that
    `API_ORIGIN=https://stonesuite-backend.fly.dev` is set in both variable sets
 3. **Rerun deployment** (click the latest deployment → Retry)
+
+### Issue: Notification Bell Empty / Notify Calls Hit the App's Own Host
+
+**Symptom:** `/api/notifications/summary` and `/api/notifications` are requested against the Pages
+host (e.g. `dev-stonesuite-webui.pages.dev`) instead of the notify service, and return 404 or HTML.
+
+**Cause:** `VITE_NOTIFY_BASE_URL` was missing from the environment of the **build step**, so
+`src/api/notifyClient.ts` fell back to `baseURL: undefined` and axios issued relative URLs. Setting
+it on the Pages project or an App Service is too late — Vite inlines `VITE_*` at build time.
+
+**Fix:** See "`VITE_NOTIFY_BASE_URL` — required on every pipeline" above. Builds from this commit
+onward fail loudly instead of shipping this silently.
 
 ### Issue: Build Always Says "No Build Output"
 
