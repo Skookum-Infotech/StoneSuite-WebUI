@@ -4,6 +4,7 @@ import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 // The vendor picker is a purchases-wide control, reused as-is from the
 // purchase-order folder rather than duplicated (mirrors how both modules
 // share the sales folder's InventoryItemPicker).
@@ -56,7 +57,7 @@ export function RequisitionFormBody({
     queryFn: () => workflowService.get(reqnWorkflow?.id ?? ''),
     enabled: Boolean(reqnWorkflow?.id),
   });
-  const customFieldDefs = reqnDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(reqnDef);
 
   return (
     <>

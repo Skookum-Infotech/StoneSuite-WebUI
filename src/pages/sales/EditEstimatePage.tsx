@@ -33,6 +33,7 @@ export default function EditEstimatePage() {
   const [localLineItems, setLocalLineItems] = useState<EstimateLineItem[] | null>(null);
   const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: estimate, isLoading, error: loadError } = useQuery({
     queryKey: ['estimate', id],
@@ -70,9 +71,15 @@ export default function EditEstimatePage() {
   const approvalStatus = estimate?.approvalStatus ?? 'none';
   const gated = estimate?.gated ?? false;
   const isTerminal = ESTIMATE_TERMINAL_STATUSES.has(statusCode);
+  const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
+    [mapped],
+  );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
@@ -110,7 +117,7 @@ export default function EditEstimatePage() {
   );
 
   const save = useMutation({
-    mutationFn: () => estimateService.updateEstimate(id, toCreatePayload(data, lineItems)),
+    mutationFn: () => estimateService.updateEstimate(id, toCreatePayload(data, lineItems, customFieldValues)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
@@ -196,6 +203,8 @@ export default function EditEstimatePage() {
           customer={customer}
           setCustomer={setLocalCustomer}
           customerLocked
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

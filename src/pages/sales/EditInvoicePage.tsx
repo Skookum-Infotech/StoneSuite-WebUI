@@ -33,6 +33,7 @@ export default function EditInvoicePage() {
   const [localLineItems, setLocalLineItems] = useState<InvoiceLineItem[] | null>(null);
   const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: invoice, isLoading, error: loadError } = useQuery({
     queryKey: ['invoice', id],
@@ -70,9 +71,15 @@ export default function EditInvoicePage() {
   const approvalStatus = invoice?.approvalStatus ?? 'none';
   const gated = invoice?.gated ?? false;
   const isTerminal = INVOICE_TERMINAL_STATUSES.has(statusCode);
+  const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
+    [mapped],
+  );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
@@ -110,7 +117,7 @@ export default function EditInvoicePage() {
   );
 
   const save = useMutation({
-    mutationFn: () => invoiceService.updateInvoice(id, toCreatePayload(data, lineItems)),
+    mutationFn: () => invoiceService.updateInvoice(id, toCreatePayload(data, lineItems, customFieldValues)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -196,6 +203,8 @@ export default function EditInvoicePage() {
           customer={customer}
           setCustomer={setLocalCustomer}
           customerLocked
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

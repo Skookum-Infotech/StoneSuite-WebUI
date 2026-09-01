@@ -5,6 +5,7 @@ import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { EMPTY_FILTER_STATE, type VendorCreditFilterState } from '@/lib/vendorCreditFilters';
 
@@ -37,7 +38,7 @@ export function VendorCreditFilterDrawer({ onClose, value, onApply }: {
     queryFn: () => workflowService.get(vcWorkflow?.id ?? ''),
     enabled: Boolean(vcWorkflow?.id),
   });
-  const customFieldDefs = vcDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(vcDef);
 
   const set = <K extends keyof VendorCreditFilterState>(key: K, val: VendorCreditFilterState[K]) =>
     setDraft((d) => ({ ...d, [key]: val }));

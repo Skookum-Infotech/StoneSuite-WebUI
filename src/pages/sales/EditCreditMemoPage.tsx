@@ -30,6 +30,7 @@ export default function EditCreditMemoPage() {
   const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
   const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
   const [localLineItems, setLocalLineItems] = useState<CreditMemoLineItem[] | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: creditMemo, isLoading, error: loadError } = useQuery({
     queryKey: ['creditMemo', id],
@@ -58,6 +59,7 @@ export default function EditCreditMemoPage() {
   const customer: CustomerRef | null = mapped?.customer ?? null;
   const invoice: InvoiceRef | null = mapped?.invoice ? { ...mapped.invoice, balanceDue: 0 } : null;
   const salesOrder: SalesOrderRef | null = mapped?.salesOrder ?? null;
+  const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
   // Money fields (lines/sales tax/adjustment) are only editable while DRFT —
   // every other status disables just those fields, not the whole form.
@@ -65,6 +67,11 @@ export default function EditCreditMemoPage() {
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
+    [mapped],
+  );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
@@ -86,7 +93,7 @@ export default function EditCreditMemoPage() {
       if (!creditMemo) throw new Error('Credit memo not loaded.');
       return creditMemoService.updateCreditMemo(
         id,
-        toUpdatePayload(data, lineItems, creditMemo.recordVersion ?? 0),
+        toUpdatePayload(data, lineItems, creditMemo.recordVersion ?? 0, customFieldValues),
       );
     },
     onSuccess: () => {
@@ -150,6 +157,8 @@ export default function EditCreditMemoPage() {
           salesOrder={salesOrder}
           setSalesOrder={() => { /* immutable after creation */ }}
           salesOrderLocked
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

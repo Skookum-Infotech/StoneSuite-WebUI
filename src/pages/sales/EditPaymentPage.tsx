@@ -10,6 +10,9 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
 import { EDIT_FIELDS, fromPayment, toUpdatePayload } from '@/lib/paymentForm';
@@ -21,6 +24,7 @@ export default function EditPaymentPage() {
 
   const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: payment, isLoading, error: loadError } = useQuery({
     queryKey: ['payment', id],
@@ -33,6 +37,15 @@ export default function EditPaymentPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const paymentWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'payment');
+  const { data: paymentDef } = useQuery({
+    queryKey: ['workflow', paymentWorkflow?.id],
+    queryFn: () => workflowService.get(paymentWorkflow?.id ?? ''),
+    enabled: Boolean(paymentWorkflow?.id),
+  });
+  const customFieldDefs = activeCustomFields(paymentDef);
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -48,9 +61,15 @@ export default function EditPaymentPage() {
   const statusCode = localStatusCode ?? payment?.statusCode ?? '';
   const approvalStatus = payment?.approvalStatus ?? 'none';
   const gated = payment?.gated ?? false;
+  const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
+    [mapped],
+  );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
@@ -76,7 +95,7 @@ export default function EditPaymentPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => paymentService.updatePayment(id, toUpdatePayload(data)),
+    mutationFn: () => paymentService.updatePayment(id, toUpdatePayload(data, customFieldValues)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
@@ -152,6 +171,21 @@ export default function EditPaymentPage() {
             <ModernSection title="Payment Details" index={1}>
               <PaymentSectionGrid fields={EDIT_FIELDS} data={data} set={set} lookups={lookups} />
             </ModernSection>
+
+            {customFieldDefs.length > 0 && (
+              <ModernSection title="Custom Fields" index={2}>
+                <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {customFieldDefs.map((def) => (
+                    <DynamicFieldInput
+                      key={def.id}
+                      field={def}
+                      value={customFieldValues[def.key]}
+                      onChange={setCustomField}
+                    />
+                  ))}
+                </div>
+              </ModernSection>
+            )}
           </div>
         </div>
 

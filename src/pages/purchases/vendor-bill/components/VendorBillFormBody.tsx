@@ -6,6 +6,7 @@ import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/
 import { readonlyCls } from '@/components/crm/formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
 import { VendorBillSectionGrid } from './VendorBillFormFields';
 import { VendorBillSummaryCard } from './VendorBillSummaryCard';
@@ -57,7 +58,7 @@ export function VendorBillFormBody({
     queryFn: () => workflowService.get(vbWorkflow?.id ?? ''),
     enabled: Boolean(vbWorkflow?.id),
   });
-  const customFieldDefs = vbDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(vbDef);
 
   return (
     <>

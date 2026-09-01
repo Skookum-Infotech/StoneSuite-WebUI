@@ -5,6 +5,7 @@ import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { EMPTY_FILTER_STATE, type JournalEntryFilterState } from '@/lib/journalEntryFilters';
 
@@ -32,7 +33,7 @@ export function JournalEntryFilterDrawer({ onClose, value, onApply }: {
     queryFn: () => workflowService.get(jeWorkflow?.id ?? ''),
     enabled: Boolean(jeWorkflow?.id),
   });
-  const customFieldDefs = jeDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(jeDef);
 
   const set = <K extends keyof JournalEntryFilterState>(key: K, val: JournalEntryFilterState[K]) =>
     setDraft((d) => ({ ...d, [key]: val }));

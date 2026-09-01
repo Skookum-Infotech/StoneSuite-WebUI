@@ -29,8 +29,13 @@ export default function AddCreditMemoPage() {
   const [customer, setCustomer] = useState<CustomerRef | null>(null);
   const [invoice, setInvoice] = useState<InvoiceRef | null>(null);
   const [salesOrder, setSalesOrder] = useState<SalesOrderRef | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const setCustomField = useCallback(
+    (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
+    [],
+  );
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
@@ -69,6 +74,7 @@ export default function AddCreditMemoPage() {
       const payload = toCreatePayload(
         { ...data, customer_uuid: customer.id, invoice_uuid: invoice?.id, sales_order_uuid: salesOrder?.id },
         lineItems,
+        customFieldValues,
       );
       return creditMemoService.createCreditMemo(payload);
     },
@@ -124,6 +130,8 @@ export default function AddCreditMemoPage() {
           setInvoice={setInvoice}
           salesOrder={salesOrder}
           setSalesOrder={setSalesOrder}
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

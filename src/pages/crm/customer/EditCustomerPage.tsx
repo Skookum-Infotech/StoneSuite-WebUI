@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, AlertCircle, ChevronRight, Loader2, Save, ShieldAlert } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
@@ -62,7 +63,7 @@ export default function EditCustomerPage() {
     queryFn: () => workflowService.get(customerWorkflow!.id),
     enabled: Boolean(customerWorkflow?.id),
   });
-  const customFieldDefs: FieldDefinition[] = customerDef?.fields ?? [];
+  const customFieldDefs: FieldDefinition[] = activeCustomFields(customerDef);
 
   const routeMap: Record<string, string> = {
     lead: '/crm/lead',

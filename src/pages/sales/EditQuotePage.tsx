@@ -33,6 +33,7 @@ export default function EditQuotePage() {
   const [localLineItems, setLocalLineItems] = useState<QuoteLineItem[] | null>(null);
   const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: quote, isLoading, error: loadError } = useQuery({
     queryKey: ['quote', id],
@@ -70,9 +71,15 @@ export default function EditQuotePage() {
   const approvalStatus = quote?.approvalStatus ?? 'none';
   const gated = quote?.gated ?? false;
   const isTerminal = QUOTE_TERMINAL_STATUSES.has(statusCode);
+  const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
+    [mapped],
+  );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
@@ -110,7 +117,7 @@ export default function EditQuotePage() {
   );
 
   const save = useMutation({
-    mutationFn: () => quoteService.updateQuote(id, toCreatePayload(data, lineItems)),
+    mutationFn: () => quoteService.updateQuote(id, toCreatePayload(data, lineItems, undefined, customFieldValues)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -196,6 +203,8 @@ export default function EditQuotePage() {
           customer={customer}
           setCustomer={setLocalCustomer}
           customerLocked
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

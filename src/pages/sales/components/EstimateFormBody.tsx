@@ -1,8 +1,12 @@
 import type { Ref, ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { readonlyCls } from '@/components/crm/formUtils';
+import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker, type CustomerRef } from './CustomerPicker';
 import { EstimateSectionGrid } from './EstimateFormFields';
 import { EstimateSummaryCard } from './EstimateSummaryCard';
@@ -20,6 +24,7 @@ export function EstimateFormBody({
   activeTab, setActiveTab, estimateId,
   data, set, lineItems, setLineItems,
   customer, setCustomer, customerLocked = false,
+  customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, total, filesPanelRef, statusControl,
 }: {
   activeTab: PageTab;
@@ -36,6 +41,8 @@ export function EstimateFormBody({
   /** The customer is fixed after creation (UpdateEstimateInput has no
    *  customerUuid) — edit mode shows it read-only instead of the picker. */
   customerLocked?: boolean;
+  customFieldValues: Record<string, unknown>;
+  setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
   subtotal: number; discountAmt: number; taxTotal: number; total: number;
   filesPanelRef?: Ref<EditableFilesPanelHandle>;
@@ -45,6 +52,15 @@ export function EstimateFormBody({
   statusControl?: ReactNode;
 }) {
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
+
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const estWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'estimate');
+  const { data: estDef } = useQuery({
+    queryKey: ['workflow', estWorkflow?.id],
+    queryFn: () => workflowService.get(estWorkflow?.id ?? ''),
+    enabled: Boolean(estWorkflow?.id),
+  });
+  const customFieldDefs = activeCustomFields(estDef);
 
   return (
     <>
@@ -113,7 +129,23 @@ export function EstimateFormBody({
               <ModernSection title="Sales Fields" index={3}>
                 <EstimateSectionGrid fields={SALES_INFO_FIELDS} data={data} set={set} lookups={lookups} />
               </ModernSection>
-              <ModernSection title="Items" index={4}>
+
+              {customFieldDefs.length > 0 && (
+                <ModernSection title="Custom Fields" index={4}>
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {customFieldDefs.map((def) => (
+                      <DynamicFieldInput
+                        key={def.id}
+                        field={def}
+                        value={customFieldValues[def.key]}
+                        onChange={setCustomField}
+                      />
+                    ))}
+                  </div>
+                </ModernSection>
+              )}
+
+              <ModernSection title="Items" index={5}>
                 <EstimateItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} />
               </ModernSection>
             </>

@@ -20,9 +20,10 @@ import {
   type SOLineItem, type SODrawing,
 } from '@/lib/salesOrderForm';
 
-// Stable reference so `lineItems`'s fallback doesn't create a new array
-// identity every render (which would defeat the totals useMemo below).
+// Stable references so the fallbacks don't create a new identity every render
+// (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: SOLineItem[] = [];
+const EMPTY_CUSTOM: Record<string, unknown> = {};
 
 export default function EditSalesOrderPage() {
   const { id = '' } = useParams();
@@ -36,6 +37,7 @@ export default function EditSalesOrderPage() {
   const [localLineItems, setLocalLineItems] = useState<SOLineItem[] | null>(null);
   const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: order, isLoading, error: loadError } = useQuery({
     queryKey: ['sales-order', id],
@@ -72,15 +74,21 @@ export default function EditSalesOrderPage() {
   const statusCode = localStatusCode ?? order?.statusCode ?? '';
   const approvalStatus = order?.approvalStatus ?? 'none';
   const gated = order?.gated ?? false;
+  const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? EMPTY_CUSTOM;
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
     [mapped],
   );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
+    [mapped],
+  );
 
   // Status changes are saved by their own transition mutation the moment they are
   // picked, so they are excluded from the snapshot — only unsaved form edits count.
-  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer }, Boolean(mapped));
+  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer, customFieldValues }, Boolean(mapped));
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
     const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
@@ -114,7 +122,7 @@ export default function EditSalesOrderPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => salesOrderService.updateOrder(id, toCreatePayload(data, lineItems)),
+    mutationFn: () => salesOrderService.updateOrder(id, toCreatePayload(data, lineItems, customFieldValues)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
@@ -176,6 +184,8 @@ export default function EditSalesOrderPage() {
           customer={customer}
           setCustomer={setLocalCustomer}
           customerLocked
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

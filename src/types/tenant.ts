@@ -126,6 +126,11 @@ export interface Workflow {
   enabled: boolean;
   isDefault: boolean;
   pipelineOrder: number;
+  // Master switch for this workflow's Custom Fields section (opt-in, default
+  // false). Field definitions and any values already stored under their keys
+  // persist either way — this only governs whether the section renders and
+  // whether its fields are enforced as required. See lib/customFields.ts.
+  customFieldsEnabled: boolean;
   // Up to 2 active users (see MAX_APPROVERS) whose sign-off is required before
   // records created under this workflow can be approved. Empty = no approval required.
   approverUserIds: string[];

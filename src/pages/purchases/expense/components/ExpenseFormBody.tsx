@@ -4,6 +4,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { ExpenseSectionGrid } from './ExpenseFormFields';
 import { ExpenseSummaryCard } from './ExpenseSummaryCard';
 import { ExpenseLinesTable } from './ExpenseLinesTable';
@@ -45,7 +46,7 @@ export function ExpenseFormBody({
     queryFn: () => workflowService.get(expWorkflow?.id ?? ''),
     enabled: Boolean(expWorkflow?.id),
   });
-  const customFieldDefs = expDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(expDef);
 
   return (
     <>
