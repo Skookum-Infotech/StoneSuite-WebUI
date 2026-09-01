@@ -34,6 +34,11 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
+
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -65,6 +70,7 @@ export default function RequisitionDetailPage() {
     queryKey: ['requisition', id],
     queryFn: () => requisitionService.getRequisition(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: lookups } = useQuery({
@@ -105,7 +111,7 @@ export default function RequisitionDetailPage() {
   if (isLoading) return <div className="p-6"><Spinner label="Loading requisition…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
-  if (error || !reqn)
+  if (!reqn)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Requisition not available.')}</ErrorNote></div>;
 
   const color = REQUISITION_STATUS_COLORS[reqn.statusCode] ?? '#a8a29e';

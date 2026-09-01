@@ -35,6 +35,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -66,6 +71,7 @@ export default function PurchaseOrderDetailPage() {
     queryKey: ['purchase-order', id],
     queryFn: () => purchaseOrderService.getPurchaseOrder(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -96,7 +102,7 @@ export default function PurchaseOrderDetailPage() {
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
-  if (error || !po)
+  if (!po)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load purchase order.')}</ErrorNote></div>;
 
   const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';

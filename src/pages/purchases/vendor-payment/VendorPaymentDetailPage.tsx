@@ -31,6 +31,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string | null): string {
@@ -59,6 +64,7 @@ export default function VendorPaymentDetailPage() {
     queryKey: ['vendor-payment', id],
     queryFn: () => vendorPaymentService.getVendorPayment(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -98,7 +104,7 @@ export default function VendorPaymentDetailPage() {
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor payment…" /></div>;
-  if (error || !payment)
+  if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor payment.')}</ErrorNote></div>;
 
   const color = VP_STATUS_COLORS[payment.statusCode] ?? '#a8a29e';

@@ -29,6 +29,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -58,6 +63,7 @@ export default function CreditMemoDetailPage() {
     queryKey: ['creditMemo', id],
     queryFn: () => creditMemoService.getCreditMemo(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -88,7 +94,7 @@ export default function CreditMemoDetailPage() {
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading credit memo…" /></div>;
-  if (error || !creditMemo)
+  if (!creditMemo)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load credit memo.')}</ErrorNote></div>;
 
   const color = CREDIT_MEMO_STATUS_COLORS[creditMemo.status] ?? '#a8a29e';
