@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle, XCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { expenseService } from '@/services/expenseService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
@@ -64,7 +65,10 @@ function RejectDialogContent({ expenseId, onClose, onRejected }: {
 
   const reject = useMutation({
     mutationFn: () => expenseService.reject(expenseId, reason.trim()),
-    onSuccess: onRejected,
+    onSuccess: (updated) => {
+      onRejected(updated);
+      toast.success('Expense claim rejected.');
+    },
   });
 
   // isPending read via a ref, not a useCallback dependency: depending on

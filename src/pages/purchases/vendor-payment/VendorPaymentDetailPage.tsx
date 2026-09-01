@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Wallet, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -14,7 +15,8 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VP_STATUS_COLORS, VP_EDITABLE_STATUSES, vpTransitionTargets } from '@/lib/vendorPaymentForm';
+import { VP_STATUS_COLORS, VP_STATUS_CODES, VP_EDITABLE_STATUSES, vpTransitionTargets } from '@/lib/vendorPaymentForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { VendorPaymentAuditTab } from './components/VendorPaymentAuditTab';
 import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicationsTab';
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
@@ -81,12 +83,18 @@ export default function VendorPaymentDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => vendorPaymentService.transition(id, toStatusCode),
-    onSuccess: absorb,
+    onSuccess: (updated, toStatusCode) => {
+      absorb(updated);
+      toast.success(`Moved to ${statusToastLabel(VP_STATUS_CODES, toStatusCode)}.`);
+    },
   });
 
   const approve = useMutation({
     mutationFn: () => vendorPaymentService.approve(id),
-    onSuccess: absorb,
+    onSuccess: (updated) => {
+      absorb(updated);
+      toast.success('Approved.');
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor payment…" /></div>;
