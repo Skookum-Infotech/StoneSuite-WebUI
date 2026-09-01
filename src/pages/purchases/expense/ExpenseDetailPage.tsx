@@ -33,6 +33,11 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
+
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -59,6 +64,7 @@ export default function ExpenseDetailPage() {
     queryKey: ['expense', id],
     queryFn: () => expenseService.getExpense(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: lookups } = useQuery({
@@ -99,7 +105,7 @@ export default function ExpenseDetailPage() {
   if (isLoading) return <div className="p-6"><Spinner label="Loading expense claim…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
-  if (error || !exp)
+  if (!exp)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Expense claim not available.')}</ErrorNote></div>;
 
   const color = EXPENSE_STATUS_COLORS[exp.statusCode] ?? '#a8a29e';

@@ -46,6 +46,7 @@ export function NotificationBell() {
     queryKey: LIST_KEY,
     queryFn: () => notificationService.list(false, LIST_LIMIT),
     enabled: enabled && open,
+    refetchInterval: UNREAD_POLL_MS,
   });
 
   const markRead = useMutation({
@@ -128,7 +129,7 @@ export function NotificationBell() {
             {listQ.isLoading && (
               <p className="px-3 py-4 text-center text-2xs text-stone-500">Loading…</p>
             )}
-            {listQ.isError && (
+            {listQ.isError && !listQ.data && (
               <p className="px-3 py-4 text-center text-2xs text-stone-500">Couldn't load notifications.</p>
             )}
             {listQ.data?.length === 0 && (
