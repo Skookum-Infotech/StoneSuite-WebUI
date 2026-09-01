@@ -49,18 +49,8 @@ export const kpiMetrics: KpiMetric[] = [
   },
 ];
 
-export interface PipelineSegment {
-  id: 'lead' | 'prospect' | 'customer';
-  label: string;
-  count: number;
-  color: string;
-}
-
-export const pipelineSegments: PipelineSegment[] = [
-  { id: 'lead', label: 'Lead', count: 24, color: '#a855f7' },
-  { id: 'prospect', label: 'Prospect', count: 17, color: '#3b82f6' },
-  { id: 'customer', label: 'Customer', count: 9, color: '#c2f589' },
-];
+// Pipeline mix now runs on real data — see dashboardDataService.getPipelineMix
+// and src/types/dashboardData.ts (PipelineMix/PipelineMixSegment).
 
 export interface MaterialUsage {
   id: string;

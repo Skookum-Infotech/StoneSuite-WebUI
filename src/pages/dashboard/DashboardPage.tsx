@@ -4,9 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildCsvFilename, buildCsvText, downloadCsv } from '@/lib/csvExport';
 import { useAuthStore } from '@/store/useAuthStore';
 import { dashboardWidgetService } from '@/services/dashboardWidgetService';
+import { dashboardDataService } from '@/services/dashboardDataService';
 import { getVisibleWidgetIds } from '@/lib/dashboardWidgets';
 import { Spinner, EmptyState } from '@/components/tenant/ui';
 import type { WidgetDefinition, WidgetSize } from '@/types/dashboardWidgets';
+import type { DashboardRange } from '@/types/dashboardData';
 import { ConsoleHeader } from './components/ConsoleHeader';
 import { CustomizePanel } from './components/CustomizePanel';
 import { KpiStrip } from './components/KpiStrip';
@@ -21,7 +23,6 @@ import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
 import {
   kpiMetrics,
-  pipelineSegments,
   materialUsage,
   recentRecords,
   openSalesOrders,
@@ -40,10 +41,12 @@ const SIZE_CLASS: Record<WidgetSize, string> = {
 };
 
 // Maps a catalog widget id to its rendered content. Add an entry here
-// whenever a widget is added to src/config/dashboardWidgets.ts.
+// whenever a widget is added to src/config/dashboardWidgets.ts. Real-data
+// widgets that need query state (currently just pipeline-donut) are rendered
+// via a special case in the grid below instead of from this table, since
+// their content depends on data resolved inside the component body.
 const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
   'kpi-strip': () => <KpiStrip metrics={kpiMetrics} />,
-  'pipeline-donut': () => <PipelineDonut segments={pipelineSegments} />,
   'material-consumption': () => <MaterialConsumption items={materialUsage} />,
   'recent-records': () => <RecentRecordsTable records={recentRecords} />,
   'sales-orders-snapshot': () => <SalesOrdersSnapshot orders={openSalesOrders} />,
@@ -75,6 +78,9 @@ export default function DashboardPage() {
   const userId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
   const [showCustomize, setShowCustomize] = useState(false);
+  // 'All time' default so the console opens on the true current shape of the
+  // data, not a recent-activity window (see ConsoleHeader's RANGE_OPTIONS).
+  const [range, setRange] = useState<DashboardRange>('all');
 
   const catalogQ = useQuery({
     queryKey: ['dashboard-widget-catalog'],
@@ -109,6 +115,14 @@ export default function DashboardPage() {
   const visibleWidgets = catalog.filter((w) => visibleWidgetIds.includes(w.id));
   const allocatedWidgets = catalog.filter((w) => allocatedWidgetIds.includes(w.id));
 
+  // Only fetched when the widget is actually visible — no work done for a
+  // user who doesn't have it allocated or has hidden it.
+  const pipelineMixQ = useQuery({
+    queryKey: ['dashboard-pipeline-mix', range],
+    queryFn: () => dashboardDataService.getPipelineMix(range),
+    enabled: visibleWidgetIds.includes('pipeline-donut'),
+  });
+
   function handleTogglePreference(widgetId: string, next: boolean) {
     if (!preference) return;
     const nextHidden = next
@@ -120,7 +134,12 @@ export default function DashboardPage() {
   return (
     <div className="flex-1 p-4 sm:p-6 3xl:p-10 4xl:p-14">
       <div className="flex flex-col gap-3.5">
-        <ConsoleHeader onDownloadCsv={handleDownloadCsv} onCustomize={() => setShowCustomize(true)} />
+        <ConsoleHeader
+          range={range}
+          onRangeChange={setRange}
+          onDownloadCsv={handleDownloadCsv}
+          onCustomize={() => setShowCustomize(true)}
+        />
 
         {isLoading && <Spinner label="Loading dashboard…" />}
 
@@ -136,7 +155,11 @@ export default function DashboardPage() {
           <div className="grid grid-cols-12 gap-3.5">
             {visibleWidgets.map((w) => (
               <div key={w.id} className={SIZE_CLASS[w.size]}>
-                {WIDGET_RENDERERS[w.id]?.()}
+                {w.id === 'pipeline-donut' ? (
+                  <PipelineDonut data={pipelineMixQ.data} isLoading={pipelineMixQ.isLoading} isError={pipelineMixQ.isError} />
+                ) : (
+                  WIDGET_RENDERERS[w.id]?.()
+                )}
               </div>
             ))}
           </div>

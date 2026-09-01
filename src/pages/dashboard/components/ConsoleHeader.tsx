@@ -1,10 +1,17 @@
-import { useState } from 'react';
 import { Download, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
+import type { DashboardRange } from '@/types/dashboardData';
 
-const RANGES = ['7d', '30d', 'Quarter'] as const;
-type Range = (typeof RANGES)[number];
+// 'All time' first and default (see DashboardPage) so the console opens on
+// the true current shape of the data, not a recent-activity window; the
+// date-bounded options are an opt-in "new business in this window" lens.
+const RANGE_OPTIONS: { value: DashboardRange; label: string }[] = [
+  { value: 'all', label: 'All time' },
+  { value: '7d', label: '7d' },
+  { value: '30d', label: '30d' },
+  { value: 'quarter', label: 'Quarter' },
+];
 
 const MORNING_HOUR_END = 12;
 const AFTERNOON_HOUR_END = 18;
@@ -22,13 +29,16 @@ const TODAY_LABEL = new Date().toLocaleDateString('en-US', {
 });
 
 export function ConsoleHeader({
+  range,
+  onRangeChange,
   onDownloadCsv,
   onCustomize,
 }: {
+  range: DashboardRange;
+  onRangeChange: (range: DashboardRange) => void;
   onDownloadCsv: () => void;
   onCustomize: () => void;
 }) {
-  const [range, setRange] = useState<Range>('30d');
   const fullName = useAuthStore((state) => state.user?.fullName);
   const firstName = fullName?.split(' ')[0];
   const greeting = getGreeting(new Date().getHours());
@@ -46,18 +56,18 @@ export function ConsoleHeader({
 
       <div className="flex items-center gap-2">
         <div role="group" aria-label="Time range" className="inline-flex gap-0.5 rounded-lg bg-stone-100 p-[3px]">
-          {RANGES.map((r) => (
+          {RANGE_OPTIONS.map((opt) => (
             <button
-              key={r}
+              key={opt.value}
               type="button"
-              aria-pressed={range === r}
-              onClick={() => setRange(r)}
+              aria-pressed={range === opt.value}
+              onClick={() => onRangeChange(opt.value)}
               className={cn(
                 'rounded-md px-[13px] py-1.5 text-xs font-semibold transition-colors',
-                range === r ? 'bg-card text-stone-950 shadow-sm' : 'text-stone-500 hover:text-stone-700',
+                range === opt.value ? 'bg-card text-stone-950 shadow-sm' : 'text-stone-500 hover:text-stone-700',
               )}
             >
-              {r}
+              {opt.label}
             </button>
           ))}
         </div>
