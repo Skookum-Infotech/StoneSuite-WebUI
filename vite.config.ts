@@ -15,6 +15,20 @@ const ABSOLUTE_HTTPS_URL_PATTERN = /^https:\/\//i
 const API_BASE_URL_VAR = 'VITE_API_BASE_URL'
 const CROSS_ORIGIN_API_VAR = 'VITE_CROSS_ORIGIN_API'
 
+const NOTIFY_BASE_URL_VAR = 'VITE_NOTIFY_BASE_URL'
+// Only loopback may drop to http:// — see assertNotifyBaseUrl.
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1'])
+
+/** URL parse that reports failure as undefined rather than throwing, so callers
+ *  can treat "malformed" and "wrong scheme" as one rejection path. */
+function parseUrl(value: string): URL | undefined {
+  try {
+    return new URL(value)
+  } catch {
+    return undefined
+  }
+}
+
 /**
  * A deployed build must call the API through a same-origin relative path,
  * unless it explicitly opts in via VITE_CROSS_ORIGIN_API=true.
@@ -74,6 +88,48 @@ export function assertSameOriginApiBase(apiBaseUrl: string | undefined, crossOri
   )
 }
 
+/**
+ * A build must know stonesuite-notify's own origin.
+ *
+ * notifyClient falls back to `baseURL: undefined` when VITE_NOTIFY_BASE_URL is
+ * missing (src/api/notifyClient.ts), which makes axios issue *relative* URLs.
+ * Every notificationService call then requests /api/notifications/* against the
+ * app's own host instead of the notify service — on a Pages deploy that means
+ * functions/api/[[path]].ts proxies it to the main backend, which has no such
+ * routes, so the bell silently 404s. Vite inlines VITE_* at build time, so
+ * setting this on the Pages project or an App Service after the fact does
+ * nothing: it has to be in the environment of the `npm run build` step itself
+ * (in Azure DevOps a *secret* pipeline variable is not auto-exported — it needs
+ * an explicit env: mapping on the task).
+ *
+ * https:// is required because the service is always a separate origin;
+ * http:// is allowed only for loopback so a local `npm run ci` still builds
+ * against the dev notify service in .env.example.
+ */
+export function assertNotifyBaseUrl(notifyBaseUrl: string | undefined): void {
+  const value = notifyBaseUrl?.trim()
+  const parsed = value ? parseUrl(value) : undefined
+
+  if (parsed) {
+    const isLoopbackHttp = parsed.protocol === 'http:' && LOOPBACK_HOSTNAMES.has(parsed.hostname)
+    if (parsed.protocol === 'https:' || isLoopbackHttp) return
+  }
+
+  throw new Error(
+    `${NOTIFY_BASE_URL_VAR} must be the absolute origin of stonesuite-notify ` +
+      `(e.g. "https://dev-stonesuite-notify.fly.dev"); got ` +
+      `${value ? `"${value}"` : '(unset)'}.\n\n` +
+      `Vite inlines VITE_* at build time. Left unset, src/api/notifyClient.ts falls back to a ` +
+      `relative base URL, so every /api/notifications/* call hits this app's own origin instead ` +
+      `of the notify service — on a Pages deploy functions/api/[[path]].ts then proxies it to ` +
+      `the main backend, which has no notification routes, and the bell fails silently.\n\n` +
+      `Set it in the environment of the build step itself, not on the hosting project ` +
+      `(a Cloudflare Pages variable or an App Service app setting is read too late to be ` +
+      `inlined). On Azure DevOps a secret pipeline variable is not auto-exported to the task ` +
+      `environment — map it explicitly with env: on the npm build task. See DEPLOY_FRONTEND.md.`,
+  )
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
   // loadEnv (unlike Vite's automatic import.meta.env exposure) is the only
@@ -91,6 +147,9 @@ export default defineConfig(({ command, mode }) => {
     const apiBaseUrl = process.env[API_BASE_URL_VAR] ?? fileEnv[API_BASE_URL_VAR]
     const crossOriginOptIn = (process.env[CROSS_ORIGIN_API_VAR] ?? fileEnv[CROSS_ORIGIN_API_VAR]) === 'true'
     assertSameOriginApiBase(apiBaseUrl, crossOriginOptIn)
+
+    // Same resolution order: real env vars (how CI injects config) beat .env files.
+    assertNotifyBaseUrl(process.env[NOTIFY_BASE_URL_VAR] ?? fileEnv[NOTIFY_BASE_URL_VAR])
   }
 
   return {
