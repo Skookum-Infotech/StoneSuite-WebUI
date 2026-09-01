@@ -334,6 +334,7 @@ function billingFromData(data: Record<string, unknown>) {
 export function toCreatePayload(
   data: Record<string, unknown>,
   lineItems: CreditMemoLineItem[],
+  customFields: Record<string, unknown> = {},
 ): CreditMemoCreatePayload {
   return {
     customerUuid: toStr(data.customer_uuid),
@@ -348,7 +349,7 @@ export function toCreatePayload(
     notes: toStr(data.notes),
     internalNotes: toStr(data.internal_notes),
     billing: billingFromData(data),
-    customFields: {},
+    customFields,
     lines: lineItems.map((item, i) => toLineInput(item, i + 1)),
   };
 }
@@ -361,6 +362,7 @@ export function toUpdatePayload(
   data: Record<string, unknown>,
   lineItems: CreditMemoLineItem[],
   recordVersion: number,
+  customFields: Record<string, unknown> = {},
 ): CreditMemoUpdatePayload {
   return {
     referenceNumber: toStr(data.reference_number),
@@ -372,7 +374,7 @@ export function toUpdatePayload(
     notes: toStr(data.notes),
     internalNotes: toStr(data.internal_notes),
     billing: billingFromData(data),
-    customFields: {},
+    customFields,
     lines: lineItems.map((item, i) => toLineInput(item, i + 1)),
     recordVersion,
   };
@@ -394,6 +396,7 @@ export function fromCreditMemo(creditMemo: CreditMemo): {
   customer: { id: string; name: string };
   invoice: { id: string; number: string } | null;
   salesOrder: { id: string; number: string } | null;
+  customFieldValues: Record<string, unknown>;
 } {
   // Older/legacy records can round-trip without a `billing` block at all —
   // fall back to an empty snapshot rather than crash the edit form.
@@ -443,5 +446,6 @@ export function fromCreditMemo(creditMemo: CreditMemo): {
     customer: { id: creditMemo.customer.id, name: creditMemo.customer.name },
     invoice: creditMemo.invoice ? { id: creditMemo.invoice.id, number: creditMemo.invoice.number } : null,
     salesOrder: creditMemo.salesOrder ? { id: creditMemo.salesOrder.id, number: creditMemo.salesOrder.number } : null,
+    customFieldValues: creditMemo.customFields ?? {},
   };
 }

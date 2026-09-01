@@ -7,6 +7,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { ItemReceiptSectionGrid } from './ItemReceiptFormFields';
 import { ReceiptLinesTable } from './ReceiptLinesTable';
 import { ItemReceiptAuditTab } from './ItemReceiptAuditTab';
@@ -50,7 +51,7 @@ export function ItemReceiptFormBody({
     queryFn: () => workflowService.get(irWorkflow?.id ?? ''),
     enabled: Boolean(irWorkflow?.id),
   });
-  const customFieldDefs = irDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(irDef);
 
   return (
     <>

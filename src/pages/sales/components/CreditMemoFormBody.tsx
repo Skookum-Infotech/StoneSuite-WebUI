@@ -1,8 +1,12 @@
 import type { Ref } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { readonlyCls } from '@/components/crm/formUtils';
+import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker, type CustomerRef } from './CustomerPicker';
 import { InvoicePicker, type InvoiceRef } from './InvoicePicker';
 import { SalesOrderPicker, type SalesOrderRef } from './SalesOrderPicker';
@@ -25,6 +29,7 @@ export function CreditMemoFormBody({
   customer, setCustomer, customerLocked = false,
   invoice, setInvoice, invoiceLocked = false,
   salesOrder, setSalesOrder, salesOrderLocked = false,
+  customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, adjustment, total, appliedTotal,
   filesPanelRef, moneyFieldsDisabled = false,
 }: {
@@ -47,6 +52,8 @@ export function CreditMemoFormBody({
   salesOrder: SalesOrderRef | null;
   setSalesOrder: (s: SalesOrderRef | null) => void;
   salesOrderLocked?: boolean;
+  customFieldValues: Record<string, unknown>;
+  setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
   subtotal: number; discountAmt: number; taxTotal: number; adjustment: number; total: number;
   appliedTotal: number;
@@ -56,6 +63,15 @@ export function CreditMemoFormBody({
   moneyFieldsDisabled?: boolean;
 }) {
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
+
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const cmWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'credit_memo');
+  const { data: cmDef } = useQuery({
+    queryKey: ['workflow', cmWorkflow?.id],
+    queryFn: () => workflowService.get(cmWorkflow?.id ?? ''),
+    enabled: Boolean(cmWorkflow?.id),
+  });
+  const customFieldDefs = activeCustomFields(cmDef);
 
   return (
     <>
@@ -138,7 +154,22 @@ export function CreditMemoFormBody({
                 <CreditMemoSectionGrid fields={BILLING_FIELDS} data={data} set={set} lookups={lookups} />
               </ModernSection>
 
-              <ModernSection title="Items" index={4}>
+              {customFieldDefs.length > 0 && (
+                <ModernSection title="Custom Fields" index={4}>
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {customFieldDefs.map((def) => (
+                      <DynamicFieldInput
+                        key={def.id}
+                        field={def}
+                        value={customFieldValues[def.key]}
+                        onChange={setCustomField}
+                      />
+                    ))}
+                  </div>
+                </ModernSection>
+              )}
+
+              <ModernSection title="Items" index={5}>
                 <CreditMemoItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} disabled={moneyFieldsDisabled} />
               </ModernSection>
             </>

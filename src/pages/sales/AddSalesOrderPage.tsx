@@ -28,8 +28,13 @@ export default function AddSalesOrderPage() {
   const [lineItems, setLineItems] = useState<SOLineItem[]>([]);
   const [drawings, setDrawings] = useState<SODrawing[]>([]);
   const [customer, setCustomer] = useState<CustomerRef | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const setCustomField = useCallback(
+    (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
+    [],
+  );
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
@@ -48,7 +53,7 @@ export default function AddSalesOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer });
+  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer, customFieldValues });
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
     const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
@@ -63,7 +68,7 @@ export default function AddSalesOrderPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
-      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems);
+      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems, customFieldValues);
       return salesOrderService.createOrder(payload);
     },
     onSuccess: async (order) => {
@@ -118,6 +123,8 @@ export default function AddSalesOrderPage() {
           setDrawings={setDrawings}
           customer={customer}
           setCustomer={handleCustomerChange}
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

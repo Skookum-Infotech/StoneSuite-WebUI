@@ -6,6 +6,7 @@ import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/
 import { readonlyCls } from '@/components/crm/formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
 import { VendorPaymentSectionGrid } from './VendorPaymentFormFields';
 import { VendorPaymentAuditTab } from './VendorPaymentAuditTab';
@@ -63,7 +64,7 @@ export function VendorPaymentFormBody({ shell, form, vendor, filesPanelRef, chil
     queryFn: () => workflowService.get(vpWorkflow?.id ?? ''),
     enabled: Boolean(vpWorkflow?.id),
   });
-  const customFieldDefs = vpDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(vpDef);
 
   return (
     <>

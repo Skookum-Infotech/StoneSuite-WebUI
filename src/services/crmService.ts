@@ -1,6 +1,6 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
-  WorkflowRecord, Workflow, StatusInfo, CRMCreatePayload, FilterRequest, RecordPage,
+  WorkflowRecord, Workflow, StatusInfo, CRMCreatePayload, FilterRequest, RecordPage, CrmApproval,
 } from '@/types/tenant';
 
 export const CRM_WORKFLOW_KEYS = {
@@ -73,8 +73,10 @@ export const crmService = {
   // workflow key when available; fall back to '_' as a dummy segment.
   getRecord: (id: string, workflowKey = '_'): Promise<WorkflowRecord> =>
     tenantClient
-      .get<{ success: boolean; record: WorkflowRecord; canApprove?: boolean }>(`/tenant/crm/${workflowKey}/records/${id}`)
-      .then((r) => ({ ...r.data.record, canApprove: r.data.canApprove })),
+      .get<{ success: boolean; record: WorkflowRecord; canApprove?: boolean; approval?: CrmApproval }>(
+        `/tenant/crm/${workflowKey}/records/${id}`,
+      )
+      .then((r) => ({ ...r.data.record, canApprove: r.data.canApprove, approval: r.data.approval })),
 
   updateRecord: (
     id: string,
@@ -109,6 +111,17 @@ export const crmService = {
       .post<{ success: boolean; record: WorkflowRecord }>(
         `/tenant/crm/${workflowKey}/records/${id}/approve`,
         {},
+      )
+      .then((r) => r.data.record),
+
+  // Rejects a record pending approval, with a reason — a veto, not a vote:
+  // any single configured approver (or a Super Admin) may reject without
+  // waiting on quorum. Backend validates the caller the same way approve does.
+  rejectRecord: (id: string, reason: string, workflowKey = '_'): Promise<WorkflowRecord> =>
+    tenantClient
+      .post<{ success: boolean; record: WorkflowRecord }>(
+        `/tenant/crm/${workflowKey}/records/${id}/reject`,
+        { reason },
       )
       .then((r) => r.data.record),
 

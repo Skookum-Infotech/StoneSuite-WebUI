@@ -5,6 +5,7 @@ import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { EMPTY_FILTER_STATE, type ExpenseFilterState } from '@/lib/expenseFilters';
 
@@ -38,7 +39,7 @@ export function ExpenseFilterDrawer({ onClose, value, onApply }: {
     queryFn: () => workflowService.get(expWorkflow?.id ?? ''),
     enabled: Boolean(expWorkflow?.id),
   });
-  const customFieldDefs = expDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(expDef);
 
   const set = <K extends keyof ExpenseFilterState>(key: K, val: ExpenseFilterState[K]) =>
     setDraft((d) => ({ ...d, [key]: val }));

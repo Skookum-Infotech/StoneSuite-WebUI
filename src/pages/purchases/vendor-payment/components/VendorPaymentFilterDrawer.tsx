@@ -5,6 +5,7 @@ import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { PAYMENT_METHODS } from '@/lib/paymentMethods';
 import { EMPTY_FILTER_STATE, type VendorPaymentFilterState } from '@/lib/vendorPaymentFilters';
@@ -47,7 +48,7 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
     queryFn: () => workflowService.get(vpWorkflow?.id ?? ''),
     enabled: Boolean(vpWorkflow?.id),
   });
-  const customFieldDefs = vpDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(vpDef);
 
   const set = <K extends keyof VendorPaymentFilterState>(key: K, val: VendorPaymentFilterState[K]) =>
     setDraft((d) => ({ ...d, [key]: val }));

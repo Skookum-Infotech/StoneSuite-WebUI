@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
-  ChevronLeft, ChevronRight, ShieldAlert, Download, Loader2,
+  ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { crmService } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { Badge } from '@/components/tenant/ui';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
@@ -16,6 +17,12 @@ import {
   recordApprovalState,
   type StatusInfo, type FilterRequest, type FilterClause, type WorkflowRecord,
 } from '@/types/tenant';
+
+const APPROVAL_BADGE: Record<'pending' | 'approved' | 'rejected', { label: string; color: string }> = {
+  pending: { label: 'Pending', color: '#f59e0b' },
+  approved: { label: 'Approved', color: '#22c55e' },
+  rejected: { label: 'Rejected', color: '#ef4444' },
+};
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
@@ -354,6 +361,7 @@ export function CrmRecordTable({ config }: Props) {
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
                 {config.showEmail && (
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
                 )}
@@ -374,6 +382,7 @@ export function CrmRecordTable({ config }: Props) {
                       </div>
                     </td>
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
+                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     {config.showEmail && <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-32" /></td>}
                     <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
                     {canEdit && <td className="px-4 py-3" />}
@@ -386,6 +395,8 @@ export function CrmRecordTable({ config }: Props) {
                   const email      = String(record.coreFields.customer_contact_email ?? '—');
                   const label      = `${config.label} — ${company}`;
                   const avatar     = companyAvatarVars(company);
+                  const approvalState = recordApprovalState(record);
+                  const gated      = approvalState === 'pending' || approvalState === 'rejected';
                   return (
                     <tr key={record.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
@@ -422,18 +433,19 @@ export function CrmRecordTable({ config }: Props) {
                             disabled={transition.isPending && transition.variables?.id === record.id}
                             variant="pill"
                             lazy
+                            gated={gated}
                           />
                         ) : (
                           <span className="text-xs text-stone-400">—</span>
                         )}
-                        {recordApprovalState(record) === 'pending' && (
-                          <span
-                            className="ml-1.5 inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-700 whitespace-nowrap"
-                            title="Awaiting approver sign-off"
-                          >
-                            <ShieldAlert className="size-2.5" aria-hidden="true" />
-                            Needs Approval
-                          </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {approvalState === 'none' ? (
+                          <span className="text-xs text-stone-400">—</span>
+                        ) : (
+                          <Badge size="sm" color={APPROVAL_BADGE[approvalState].color}>
+                            {APPROVAL_BADGE[approvalState].label}
+                          </Badge>
                         )}
                       </td>
                       {config.showEmail && (
@@ -461,7 +473,7 @@ export function CrmRecordTable({ config }: Props) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={3 + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={4 + (config.showEmail ? 1 : 0) + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">

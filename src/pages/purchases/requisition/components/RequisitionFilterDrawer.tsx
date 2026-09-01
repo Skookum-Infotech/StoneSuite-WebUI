@@ -5,6 +5,7 @@ import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { REQUISITION_PRIORITIES } from '@/lib/requisitionForm';
 import { EMPTY_FILTER_STATE, type RequisitionFilterState } from '@/lib/requisitionFilters';
@@ -46,7 +47,7 @@ export function RequisitionFilterDrawer({ onClose, value, onApply }: {
     queryFn: () => workflowService.get(reqnWorkflow?.id ?? ''),
     enabled: Boolean(reqnWorkflow?.id),
   });
-  const customFieldDefs = reqnDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(reqnDef);
 
   const set = <K extends keyof RequisitionFilterState>(key: K, val: RequisitionFilterState[K]) =>
     setDraft((d) => ({ ...d, [key]: val }));
