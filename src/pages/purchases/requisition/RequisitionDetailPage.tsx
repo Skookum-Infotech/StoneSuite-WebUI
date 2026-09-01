@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ClipboardList, Upload, Pencil, ArrowRightLeft, FileDown, Loader2, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import { requisitionService } from '@/services/requisitionService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,9 +16,10 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import {
-  REQUISITION_STATUS_COLORS, REQN_DELETABLE_STATUSES, REQUISITION_ALLOWED_TRANSITIONS,
+  REQUISITION_STATUS_COLORS, REQUISITION_STATUS_CODES, REQN_DELETABLE_STATUSES, REQUISITION_ALLOWED_TRANSITIONS,
   PRIORITY_COLORS, priorityLabel, canConvertToPurchaseOrder,
 } from '@/lib/requisitionForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { RequisitionAuditTab } from './components/RequisitionAuditTab';
 import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
 import { RequisitionTransitionBar } from './components/RequisitionTransitionBar';
@@ -31,6 +33,11 @@ const TABS = [
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -63,6 +70,7 @@ export default function RequisitionDetailPage() {
     queryKey: ['requisition', id],
     queryFn: () => requisitionService.getRequisition(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: lookups } = useQuery({
@@ -84,9 +92,10 @@ export default function RequisitionDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => requisitionService.transition(id, toStatusCode),
-    onSuccess: (updated) => {
+    onSuccess: (updated, toStatusCode) => {
       queryClient.setQueryData(['requisition', id], updated);
       queryClient.invalidateQueries({ queryKey: ['requisitions'] });
+      toast.success(`Moved to ${statusToastLabel(REQUISITION_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -95,13 +104,14 @@ export default function RequisitionDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['requisition', id], updated);
       queryClient.invalidateQueries({ queryKey: ['requisitions'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading requisition…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
-  if (error || !reqn)
+  if (!reqn)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Requisition not available.')}</ErrorNote></div>;
 
   const color = REQUISITION_STATUS_COLORS[reqn.statusCode] ?? '#a8a29e';

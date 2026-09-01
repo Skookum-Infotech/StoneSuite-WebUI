@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Receipt, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { INVOICE_STATUS_COLORS, validateForSend } from '@/lib/invoiceForm';
+import { INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { RecordPaymentDialog } from './components/RecordPaymentDialog';
@@ -29,6 +31,11 @@ const TABS = [
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -58,6 +65,7 @@ export default function InvoiceDetailPage() {
     queryKey: ['invoice', id],
     queryFn: () => invoiceService.getInvoice(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: attachments } = useQuery({
@@ -80,9 +88,10 @@ export default function InvoiceDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => invoiceService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success(`Moved to ${statusToastLabel(INVOICE_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -91,11 +100,12 @@ export default function InvoiceDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading invoice…" /></div>;
-  if (error || !invoice)
+  if (!invoice)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load invoice.')}</ErrorNote></div>;
 
   const color = INVOICE_STATUS_COLORS[invoice.status] ?? '#a8a29e';

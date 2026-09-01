@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { QUOTE_STATUS_COLORS, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
+import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -28,6 +30,11 @@ const TABS = [
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -60,6 +67,7 @@ export default function QuoteDetailPage() {
     queryKey: ['quote', id],
     queryFn: () => quoteService.getQuote(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: attachments } = useQuery({
@@ -89,9 +97,10 @@ export default function QuoteDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => quoteService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast.success(`Moved to ${statusToastLabel(QUOTE_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -104,11 +113,12 @@ export default function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading quote…" /></div>;
-  if (error || !quote)
+  if (!quote)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load quote.')}</ErrorNote></div>;
 
   const color = QUOTE_STATUS_COLORS[quote.status] ?? '#a8a29e';

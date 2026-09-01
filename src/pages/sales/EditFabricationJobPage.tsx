@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wrench, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { fabricationService } from '@/services/fabricationService';
 import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
@@ -14,7 +15,8 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { FabricationJobFormBody } from './components/FabricationJobFormBody';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
-import { fromJob, toJobFields, canEditPieces, PAGE_TABS, type PageTab } from '@/lib/fabricationForm';
+import { fromJob, toJobFields, canEditPieces, PAGE_TABS, type PageTab, FJ_STATUS_CODES } from '@/lib/fabricationForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import type { FabricationJob } from '@/types/fabrication';
 
 export default function EditFabricationJobPage() {
@@ -81,7 +83,10 @@ export default function EditFabricationJobPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => fabricationService.transition(id, toStatusCode),
-    onSuccess: applyUpdatedJob,
+    onSuccess: (updated, toStatusCode) => {
+      applyUpdatedJob(updated);
+      toast.success(`Moved to ${statusToastLabel(FJ_STATUS_CODES, toStatusCode)}.`);
+    },
   });
 
   const save = useMutation({

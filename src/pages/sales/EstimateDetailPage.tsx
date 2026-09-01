@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { ESTIMATE_STATUS_COLORS, ESTIMATE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/estimateForm';
+import { ESTIMATE_STATUS_COLORS, ESTIMATE_STATUS_CODES, ESTIMATE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/estimateForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -28,6 +30,11 @@ const TABS = [
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -60,6 +67,7 @@ export default function EstimateDetailPage() {
     queryKey: ['estimate', id],
     queryFn: () => estimateService.getEstimate(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: attachments } = useQuery({
@@ -89,9 +97,10 @@ export default function EstimateDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => estimateService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      toast.success(`Moved to ${statusToastLabel(ESTIMATE_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -104,11 +113,12 @@ export default function EstimateDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading estimate…" /></div>;
-  if (error || !estimate)
+  if (!estimate)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load estimate.')}</ErrorNote></div>;
 
   const color = ESTIMATE_STATUS_COLORS[estimate.status] ?? '#a8a29e';

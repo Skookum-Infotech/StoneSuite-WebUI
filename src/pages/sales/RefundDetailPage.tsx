@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Undo2, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -13,7 +14,8 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { REFUND_STATUS_COLORS } from '@/lib/refundForm';
+import { REFUND_STATUS_COLORS, REFUND_STATUS_CODES } from '@/lib/refundForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { RefundAuditTab } from './components/RefundAuditTab';
 import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
@@ -26,6 +28,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -53,6 +60,7 @@ export default function RefundDetailPage() {
     queryKey: ['refund', id],
     queryFn: () => refundService.getRefund(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -68,9 +76,10 @@ export default function RefundDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => refundService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['refund', id] });
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
+      toast.success(`Moved to ${statusToastLabel(REFUND_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -79,11 +88,12 @@ export default function RefundDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['refund', id] });
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading refund…" /></div>;
-  if (error || !refund)
+  if (!refund)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load refund.')}</ErrorNote></div>;
 
   const color = REFUND_STATUS_COLORS[refund.status] ?? '#a8a29e';

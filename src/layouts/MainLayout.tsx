@@ -20,11 +20,11 @@ import type { SAMLProvider } from '@/types/tenant';
 import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { HelpMenu } from '@/components/HelpMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import {
   Menu,
   ChevronRight,
   LogOut,
-  Bell,
   Settings,
   Search,
   X,
@@ -291,13 +291,7 @@ export default function MainLayout(): React.JSX.Element {
 
             <HelpMenu />
 
-            <button
-              aria-label="Notifications"
-              className="relative rounded-xl border border-white/10 p-2 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors cursor-pointer"
-            >
-              <Bell className="size-4.5" />
-              <span className="absolute right-2 top-2 flex h-1.5 w-1.5 rounded-full bg-destructive" />
-            </button>
+            <NotificationBell />
 
             <div className="relative">
               <button

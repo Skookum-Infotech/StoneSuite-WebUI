@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
-import { EDIT_FIELDS, fromPayment, toUpdatePayload } from '@/lib/paymentForm';
+import { EDIT_FIELDS, fromPayment, toUpdatePayload, PAYMENT_STATUS_CODES } from '@/lib/paymentForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 export default function EditPaymentPage() {
   const { id = '' } = useParams();
@@ -79,6 +81,7 @@ export default function EditPaymentPage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success(`Moved to ${statusToastLabel(PAYMENT_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 

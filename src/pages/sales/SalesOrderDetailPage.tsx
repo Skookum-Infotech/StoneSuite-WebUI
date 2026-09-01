@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
 import { attachmentService } from '@/services/attachmentService';
@@ -15,7 +16,8 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
+import { SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
@@ -31,6 +33,11 @@ const TABS = [
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -66,6 +73,7 @@ export default function SalesOrderDetailPage() {
     queryKey: ['sales-order', id],
     queryFn: () => salesOrderService.getOrder(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: attachments } = useQuery({
@@ -100,9 +108,10 @@ export default function SalesOrderDetailPage() {
   // page's transition mutation (see EditSalesOrderPage.tsx).
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => salesOrderService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -115,11 +124,12 @@ export default function SalesOrderDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
-  if (error || !order)
+  if (!order)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';

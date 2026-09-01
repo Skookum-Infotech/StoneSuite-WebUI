@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileCheck, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -13,7 +14,8 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VB_STATUS_COLORS, VB_ALLOWED_TRANSITIONS, VB_DELETABLE_STATUSES } from '@/lib/vendorBillForm';
+import { VB_STATUS_COLORS, VB_STATUS_CODES, VB_ALLOWED_TRANSITIONS, VB_DELETABLE_STATUSES } from '@/lib/vendorBillForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
@@ -27,6 +29,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -55,6 +62,7 @@ export default function VendorBillDetailPage() {
     queryKey: ['vendor-bill', id],
     queryFn: () => vendorBillService.getVendorBill(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -68,9 +76,10 @@ export default function VendorBillDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => vendorBillService.transition(id, toStatusCode),
-    onSuccess: (updated) => {
+    onSuccess: (updated, toStatusCode) => {
       queryClient.setQueryData(['vendor-bill', id], updated);
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+      toast.success(`Moved to ${statusToastLabel(VB_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -79,11 +88,12 @@ export default function VendorBillDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['vendor-bill', id], updated);
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor bill…" /></div>;
-  if (error || !bill)
+  if (!bill)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor bill.')}</ErrorNote></div>;
 
   const color = VB_STATUS_COLORS[bill.statusCode] ?? '#a8a29e';

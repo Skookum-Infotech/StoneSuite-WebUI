@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Undo2, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { refundService } from '@/services/refundService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { RefundSectionGrid } from './components/RefundFormFields';
 import { RefundStatusControl } from './components/RefundStatusControl';
-import { EDIT_FIELDS, fromRefund, toUpdatePayload } from '@/lib/refundForm';
+import { EDIT_FIELDS, fromRefund, toUpdatePayload, REFUND_STATUS_CODES } from '@/lib/refundForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 export default function EditRefundPage() {
   const { id = '' } = useParams();
@@ -79,6 +81,7 @@ export default function EditRefundPage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['refund', id] });
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
+      toast.success(`Moved to ${statusToastLabel(REFUND_STATUS_CODES, updated.statusCode)}.`);
     },
     // A denied move (409) or missing refund:approve (403) leaves the server's
     // status unchanged, so roll the optimistic pick back rather than leave the

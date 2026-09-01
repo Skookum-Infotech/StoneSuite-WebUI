@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Wallet, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { expenseService } from '@/services/expenseService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,8 +16,9 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import {
-  EXPENSE_STATUS_COLORS, EXPENSE_DELETABLE_STATUSES, EXPENSE_ALLOWED_TRANSITIONS, canRejectExpense,
+  EXPENSE_STATUS_COLORS, EXPENSE_STATUS_CODES, EXPENSE_DELETABLE_STATUSES, EXPENSE_ALLOWED_TRANSITIONS, canRejectExpense,
 } from '@/lib/expenseForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { ExpenseAuditTab } from './components/ExpenseAuditTab';
 import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
 import { ExpenseTransitionBar } from './components/ExpenseTransitionBar';
@@ -30,6 +32,11 @@ const TABS = [
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -57,6 +64,7 @@ export default function ExpenseDetailPage() {
     queryKey: ['expense', id],
     queryFn: () => expenseService.getExpense(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: lookups } = useQuery({
@@ -78,9 +86,10 @@ export default function ExpenseDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => expenseService.transition(id, toStatusCode),
-    onSuccess: (updated) => {
+    onSuccess: (updated, toStatusCode) => {
       queryClient.setQueryData(['expense', id], updated);
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success(`Moved to ${statusToastLabel(EXPENSE_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -89,13 +98,14 @@ export default function ExpenseDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['expense', id], updated);
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading expense claim…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
-  if (error || !exp)
+  if (!exp)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Expense claim not available.')}</ErrorNote></div>;
 
   const color = EXPENSE_STATUS_COLORS[exp.statusCode] ?? '#a8a29e';

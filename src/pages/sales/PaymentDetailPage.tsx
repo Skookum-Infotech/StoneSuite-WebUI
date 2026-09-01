@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PAYMENT_STATUS_COLORS, PAYMENT_BLOCKS_APPLY } from '@/lib/paymentForm';
+import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY } from '@/lib/paymentForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { PaymentAuditTab } from './components/PaymentAuditTab';
 import { DeletePaymentDialog } from './components/DeletePaymentDialog';
 import { InvoicePicker } from './components/InvoicePicker';
@@ -30,6 +32,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -58,6 +65,7 @@ export default function PaymentDetailPage() {
     queryKey: ['payment', id],
     queryFn: () => paymentService.getPayment(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: lookups } = useQuery({
@@ -83,9 +91,10 @@ export default function PaymentDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => paymentService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success(`Moved to ${statusToastLabel(PAYMENT_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -94,11 +103,12 @@ export default function PaymentDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading payment…" /></div>;
-  if (error || !payment)
+  if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load payment.')}</ErrorNote></div>;
 
   const color = PAYMENT_STATUS_COLORS[payment.status] ?? '#a8a29e';
