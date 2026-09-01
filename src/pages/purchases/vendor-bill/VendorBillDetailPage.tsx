@@ -29,6 +29,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -57,6 +62,7 @@ export default function VendorBillDetailPage() {
     queryKey: ['vendor-bill', id],
     queryFn: () => vendorBillService.getVendorBill(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -87,7 +93,7 @@ export default function VendorBillDetailPage() {
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor bill…" /></div>;
-  if (error || !bill)
+  if (!bill)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor bill.')}</ErrorNote></div>;
 
   const color = VB_STATUS_COLORS[bill.statusCode] ?? '#a8a29e';

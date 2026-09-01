@@ -32,6 +32,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -60,6 +65,7 @@ export default function PaymentDetailPage() {
     queryKey: ['payment', id],
     queryFn: () => paymentService.getPayment(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: lookups } = useQuery({
@@ -102,7 +108,7 @@ export default function PaymentDetailPage() {
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading payment…" /></div>;
-  if (error || !payment)
+  if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load payment.')}</ErrorNote></div>;
 
   const color = PAYMENT_STATUS_COLORS[payment.status] ?? '#a8a29e';

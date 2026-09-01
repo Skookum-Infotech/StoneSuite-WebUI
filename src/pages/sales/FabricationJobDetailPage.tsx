@@ -36,6 +36,11 @@ function fmtDate(iso?: string): string {
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
+
 export default function FabricationJobDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -65,6 +70,7 @@ export default function FabricationJobDetailPage() {
     queryKey: ['fabrication-job', id],
     queryFn: () => fabricationService.getJob(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -118,7 +124,7 @@ export default function FabricationJobDetailPage() {
   // A 404 here means "not found or not yours" (IDOR guard) — always rendered
   // as a not-found message, never a permissions message, so the UI can't leak
   // whether a record exists to a caller outside its scope.
-  if (error || !job)
+  if (!job)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Fabrication job not found.')}</ErrorNote></div>;
 
   const color = FJ_STATUS_COLORS[job.status] ?? '#a8a29e';

@@ -34,6 +34,11 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
+
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -68,6 +73,7 @@ export default function SalesOrderDetailPage() {
     queryKey: ['sales-order', id],
     queryFn: () => salesOrderService.getOrder(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const { data: attachments } = useQuery({
@@ -123,7 +129,7 @@ export default function SalesOrderDetailPage() {
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
-  if (error || !order)
+  if (!order)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';

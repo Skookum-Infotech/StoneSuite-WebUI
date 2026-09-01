@@ -31,6 +31,11 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
+
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -56,6 +61,7 @@ export default function VendorCreditDetailPage() {
     queryKey: ['vendor-credit', id],
     queryFn: () => vendorCreditService.getVendorCredit(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -95,7 +101,7 @@ export default function VendorCreditDetailPage() {
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor credit…" /></div>;
-  if (error || !credit)
+  if (!credit)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor credit.')}</ErrorNote></div>;
 
   const color = VC_STATUS_COLORS[credit.statusCode] ?? '#a8a29e';
