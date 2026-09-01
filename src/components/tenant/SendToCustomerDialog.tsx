@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Send } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { documentService } from '@/services/documentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { DocumentSendResult } from '@/services/documentService';
@@ -34,6 +35,14 @@ export function SendToCustomerDialog({
     onSuccess: (result) => {
       onOpenChange(false);
       onSent(result);
+      // The page-local success text below the action buttons (see each
+      // detail page's onSent handler) is easy to miss if the user has
+      // already scrolled or navigates right away — this toast is the
+      // actual "you did it" confirmation, visible regardless of scroll
+      // position and independent of the page staying mounted.
+      toast.success(
+        result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
+      );
     },
   });
 

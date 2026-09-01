@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FilePlus, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorCreditService } from '@/services/vendorCreditService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -14,7 +15,8 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VC_STATUS_COLORS, VC_EDITABLE_STATUSES, VC_ALLOWED_TRANSITIONS } from '@/lib/vendorCreditForm';
+import { VC_STATUS_COLORS, VC_STATUS_CODES, VC_EDITABLE_STATUSES, VC_ALLOWED_TRANSITIONS } from '@/lib/vendorCreditForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { VendorCreditAuditTab } from './components/VendorCreditAuditTab';
 import { VendorCreditApplicationsTab } from './components/VendorCreditApplicationsTab';
 import { VendorCreditTransitionBar } from './components/VendorCreditTransitionBar';
@@ -78,12 +80,18 @@ export default function VendorCreditDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => vendorCreditService.transition(id, toStatusCode),
-    onSuccess: absorb,
+    onSuccess: (updated, toStatusCode) => {
+      absorb(updated);
+      toast.success(`Moved to ${statusToastLabel(VC_STATUS_CODES, toStatusCode)}.`);
+    },
   });
 
   const approve = useMutation({
     mutationFn: () => vendorCreditService.approve(id),
-    onSuccess: absorb,
+    onSuccess: (updated) => {
+      absorb(updated);
+      toast.success('Approved.');
+    },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor credit…" /></div>;

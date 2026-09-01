@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Wrench, Upload, Pencil, ShoppingCart, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { fabricationService } from '@/services/fabricationService';
 import { salesOrderService } from '@/services/salesOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -14,9 +15,10 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import {
-  FJ_STATUS_COLORS, APPROVAL_STATUS_LABELS, APPROVAL_STATUS_COLORS,
+  FJ_STATUS_COLORS, FJ_STATUS_CODES, APPROVAL_STATUS_LABELS, APPROVAL_STATUS_COLORS,
   canCancel, canDeleteJob, canEditPieces,
 } from '@/lib/fabricationForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { FabricationPiecesEditableTab } from './components/FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './components/FabricationPiecesTable';
 import { FabricationSlabsTab } from './components/FabricationSlabsTab';
@@ -85,12 +87,18 @@ export default function FabricationJobDetailPage() {
   // CancelFabricationJobDialog), unaffected by this.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => fabricationService.transition(id, toStatusCode),
-    onSuccess: applyUpdatedJob,
+    onSuccess: (updated, toStatusCode) => {
+      applyUpdatedJob(updated);
+      toast.success(`Moved to ${statusToastLabel(FJ_STATUS_CODES, toStatusCode)}.`);
+    },
   });
 
   const approve = useMutation({
     mutationFn: () => fabricationService.approve(id),
-    onSuccess: applyUpdatedJob,
+    onSuccess: (updated) => {
+      applyUpdatedJob(updated);
+      toast.success('Approved.');
+    },
   });
 
   // The originating sales order's line items, for the pieces editor's

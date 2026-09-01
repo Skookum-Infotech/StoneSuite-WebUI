@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PAYMENT_STATUS_COLORS, PAYMENT_BLOCKS_APPLY } from '@/lib/paymentForm';
+import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY } from '@/lib/paymentForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { PaymentAuditTab } from './components/PaymentAuditTab';
 import { DeletePaymentDialog } from './components/DeletePaymentDialog';
 import { InvoicePicker } from './components/InvoicePicker';
@@ -83,9 +85,10 @@ export default function PaymentDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => paymentService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success(`Moved to ${statusToastLabel(PAYMENT_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -94,6 +97,7 @@ export default function PaymentDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success('Approved.');
     },
   });
 

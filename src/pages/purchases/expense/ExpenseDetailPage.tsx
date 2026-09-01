@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Wallet, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { expenseService } from '@/services/expenseService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,8 +16,9 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import {
-  EXPENSE_STATUS_COLORS, EXPENSE_DELETABLE_STATUSES, EXPENSE_ALLOWED_TRANSITIONS, canRejectExpense,
+  EXPENSE_STATUS_COLORS, EXPENSE_STATUS_CODES, EXPENSE_DELETABLE_STATUSES, EXPENSE_ALLOWED_TRANSITIONS, canRejectExpense,
 } from '@/lib/expenseForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { ExpenseAuditTab } from './components/ExpenseAuditTab';
 import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
 import { ExpenseTransitionBar } from './components/ExpenseTransitionBar';
@@ -78,9 +80,10 @@ export default function ExpenseDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => expenseService.transition(id, toStatusCode),
-    onSuccess: (updated) => {
+    onSuccess: (updated, toStatusCode) => {
       queryClient.setQueryData(['expense', id], updated);
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success(`Moved to ${statusToastLabel(EXPENSE_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -89,6 +92,7 @@ export default function ExpenseDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['expense', id], updated);
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast.success('Approved.');
     },
   });
 

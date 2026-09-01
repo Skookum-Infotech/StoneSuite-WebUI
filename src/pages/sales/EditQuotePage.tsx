@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, AlertCircle, Loader2, Save, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { lookupService } from '@/services/lookupService';
 import { attachmentService } from '@/services/attachmentService';
@@ -15,8 +16,9 @@ import { QuoteStatusControl } from './components/QuoteStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import {
   fromQuote, toCreatePayload, PAGE_TABS, type PageTab,
-  type QuoteLineItem, QUOTE_TERMINAL_STATUSES,
+  type QuoteLineItem, QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES,
 } from '@/lib/quoteForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -94,6 +96,7 @@ export default function EditQuotePage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast.success(`Moved to ${statusToastLabel(QUOTE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { ESTIMATE_STATUS_COLORS, ESTIMATE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/estimateForm';
+import { ESTIMATE_STATUS_COLORS, ESTIMATE_STATUS_CODES, ESTIMATE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/estimateForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -89,9 +91,10 @@ export default function EstimateDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => estimateService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      toast.success(`Moved to ${statusToastLabel(ESTIMATE_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -104,6 +107,7 @@ export default function EstimateDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      toast.success('Approved.');
     },
   });
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileCheck, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -13,7 +14,8 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VB_STATUS_COLORS, VB_ALLOWED_TRANSITIONS, VB_DELETABLE_STATUSES } from '@/lib/vendorBillForm';
+import { VB_STATUS_COLORS, VB_STATUS_CODES, VB_ALLOWED_TRANSITIONS, VB_DELETABLE_STATUSES } from '@/lib/vendorBillForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
@@ -68,9 +70,10 @@ export default function VendorBillDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => vendorBillService.transition(id, toStatusCode),
-    onSuccess: (updated) => {
+    onSuccess: (updated, toStatusCode) => {
       queryClient.setQueryData(['vendor-bill', id], updated);
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+      toast.success(`Moved to ${statusToastLabel(VB_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -79,6 +82,7 @@ export default function VendorBillDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['vendor-bill', id], updated);
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+      toast.success('Approved.');
     },
   });
 
