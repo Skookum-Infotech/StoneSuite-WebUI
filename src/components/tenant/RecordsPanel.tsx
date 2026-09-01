@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge, ErrorNote, Spinner, EmptyState } from '@/components/tenant/ui';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
-import { coerceCustomFields } from '@/lib/customFields';
+import { activeCustomFields, coerceCustomFields } from '@/lib/customFields';
 import type { WorkflowDefinition, WorkflowRecord, WorkflowState } from '@/types/tenant';
 
 export function RecordsPanel({ def }: { def: WorkflowDefinition }) {
@@ -68,12 +68,13 @@ function CreateRecordForm({ def, onDone }: { def: WorkflowDefinition; onDone: ()
   const [name, setName] = useState('');
   const [custom, setCustom] = useState<Record<string, unknown>>({});
   const setField = (key: string, value: unknown) => setCustom((c) => ({ ...c, [key]: value }));
+  const customFieldDefs = activeCustomFields(def);
 
   const create = useMutation({
     mutationFn: () =>
       workflowService.createRecord(def.workflow.id, {
         coreFields: name ? { name } : {},
-        customFields: coerceCustomFields(def.fields, custom),
+        customFields: coerceCustomFields(customFieldDefs, custom),
       }),
     onSuccess: onDone,
   });
@@ -85,7 +86,7 @@ function CreateRecordForm({ def, onDone }: { def: WorkflowDefinition; onDone: ()
           <Label htmlFor="rec-name">Name</Label>
           <Input id="rec-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Globex Corp" />
         </div>
-        {def.fields.map((f) => (
+        {customFieldDefs.map((f) => (
           <DynamicFieldInput key={f.id} field={f} value={custom[f.key]} onChange={setField} />
         ))}
       </div>
@@ -187,16 +188,17 @@ function EditFieldsForm({
 }) {
   const [custom, setCustom] = useState<Record<string, unknown>>({ ...rec.customFields });
   const setField = (key: string, value: unknown) => setCustom((c) => ({ ...c, [key]: value }));
+  const customFieldDefs = activeCustomFields(def);
 
   const save = useMutation({
-    mutationFn: () => workflowService.updateRecord(rec.id, coerceCustomFields(def.fields, custom)),
+    mutationFn: () => workflowService.updateRecord(rec.id, coerceCustomFields(customFieldDefs, custom)),
     onSuccess: onDone,
   });
 
   return (
     <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-950/40">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4">
-        {def.fields.map((f) => (
+        {customFieldDefs.map((f) => (
           <DynamicFieldInput key={f.id} field={f} value={custom[f.key]} onChange={setField} />
         ))}
       </div>

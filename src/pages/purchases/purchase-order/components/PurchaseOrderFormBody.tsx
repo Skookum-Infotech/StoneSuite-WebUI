@@ -6,6 +6,7 @@ import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/
 import { readonlyCls } from '@/components/crm/formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { VendorPicker, type VendorRef } from './VendorPicker';
 import { PurchaseOrderSectionGrid } from './PurchaseOrderFormFields';
 import { PurchaseOrderSummaryCard } from './PurchaseOrderSummaryCard';
@@ -59,7 +60,7 @@ export function PurchaseOrderFormBody({
     queryFn: () => workflowService.get(poWorkflow?.id ?? ''),
     enabled: Boolean(poWorkflow?.id),
   });
-  const customFieldDefs = poDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(poDef);
 
   return (
     <>

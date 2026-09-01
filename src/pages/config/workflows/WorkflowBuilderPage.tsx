@@ -22,7 +22,6 @@ import { Switch } from '@/components/ui/switch';
 import { Spinner, ErrorNote, EmptyState, Badge } from '@/components/tenant/ui';
 import { ApproverPicker, MAX_APPROVERS } from '@/components/tenant/ApproverPicker';
 import { StatesReference } from './StatesReference';
-import { CrmStatusApprovers } from './CrmStatusApprovers';
 import { ApprovalChainSection } from './ApprovalChainSection';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { cn } from '@/lib/utils';
@@ -65,6 +64,7 @@ export default function WorkflowBuilderPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [customFieldsToggleError, setCustomFieldsToggleError] = useState<string | null>(null);
   const [fieldFormOpen, setFieldFormOpen] = useState(false);
 
   const { data: def, isLoading, error } = useQuery({
@@ -97,6 +97,19 @@ export default function WorkflowBuilderPage() {
         setToggleError(apiErrorMessage(err, 'Failed to update workflow status.'));
       }
     },
+  });
+
+  // Master switch for the Custom Fields section (distinct from `toggle`
+  // above, which enables/disables the whole workflow/record type). Field
+  // definitions and any values already stored under their keys persist
+  // either way — see lib/customFields.ts activeCustomFields().
+  const customFieldsToggle = useMutation({
+    mutationFn: (enabled: boolean) => workflowService.setCustomFieldsEnabled(id, enabled),
+    onSuccess: () => {
+      setCustomFieldsToggleError(null);
+      qc.invalidateQueries({ queryKey: ['workflow', id] });
+    },
+    onError: (err: unknown) => setCustomFieldsToggleError(apiErrorMessage(err, 'Failed to update custom fields status.')),
   });
 
   if (isLoading) return <div className="p-6"><Spinner /></div>;
@@ -167,16 +180,14 @@ export default function WorkflowBuilderPage() {
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="space-y-6 px-4 py-8 sm:px-8">
           {crmKey && (
-            <Section title="Approval chain" action={<Badge size="sm">Every status</Badge>}>
+            <Section title="Approval chain" action={<Badge size="sm">Whole stage</Badge>}>
               <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
             </Section>
           )}
 
           {hasApprovalChain && <ApprovalChainSection workflowId={id} />}
 
-          {crmKey ? (
-            <CrmStatusApprovers workflowKey={crmKey} />
-          ) : (
+          {!crmKey && (
             <StatesReference
               workflowKey={def.workflow.key}
               states={def.states}
@@ -188,12 +199,23 @@ export default function WorkflowBuilderPage() {
             title="Custom fields"
             action={
               <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 select-none">
+                  <Switch
+                    checked={def.workflow.customFieldsEnabled}
+                    onCheckedChange={(checked) => { setCustomFieldsToggleError(null); customFieldsToggle.mutate(checked); }}
+                    disabled={customFieldsToggle.isPending}
+                    aria-label={def.workflow.customFieldsEnabled ? 'Disable custom fields section' : 'Enable custom fields section'}
+                  />
+                  <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
+                    {customFieldsToggle.isPending ? 'Saving…' : def.workflow.customFieldsEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                </label>
                 <FieldsCounter count={def.fields.length} />
                 {!fieldFormOpen && (
                   <button
                     type="button"
                     onClick={() => setFieldFormOpen(true)}
-                    disabled={def.fields.length >= FIELD_CAP}
+                    disabled={def.fields.length >= FIELD_CAP || !def.workflow.customFieldsEnabled}
                     className="inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-colors hover:bg-brand-hover disabled:opacity-50"
                   >
                     <Plus className="size-3.5" /> Add field
@@ -202,7 +224,20 @@ export default function WorkflowBuilderPage() {
               </div>
             }
           >
-            <FieldsSection workflowId={id} fields={def.fields} open={fieldFormOpen} onOpenChange={setFieldFormOpen} />
+            {customFieldsToggleError && (
+              <div className="mb-3">
+                <ErrorNote>{customFieldsToggleError}</ErrorNote>
+              </div>
+            )}
+            {!def.workflow.customFieldsEnabled && (
+              <p className="mb-3 text-xs text-stone-400">
+                This section is switched off — {def.workflow.name} forms won&apos;t show these fields until you turn it
+                on. Field definitions and any values already saved under them are kept either way.
+              </p>
+            )}
+            <div className={cn(!def.workflow.customFieldsEnabled && 'opacity-60')}>
+              <FieldsSection workflowId={id} fields={def.fields} open={fieldFormOpen} onOpenChange={setFieldFormOpen} />
+            </div>
           </Section>
 
         </div>
@@ -264,8 +299,8 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
   return (
     <div>
       <p className="mb-3 max-w-xl text-xs text-stone-500">
-        Up to {MAX_APPROVERS} active users required to sign off before a record can leave <em>any</em> status in this
-        workflow. Leave empty to skip. For approvers scoped to a single status, configure them individually below.
+        Up to {MAX_APPROVERS} active users required to sign off before a record can leave this stage — e.g. moving a
+        Lead to Prospect or Customer. Leave empty to skip approval for this stage.
       </p>
       {usersQ.isLoading ? (
         <Spinner label="Loading users…" />

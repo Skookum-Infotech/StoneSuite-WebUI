@@ -10,6 +10,9 @@ import { fieldLabelCls } from '@/components/crm/formUtils';
 import { ModernSection, FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields } from '@/lib/customerDefaults';
@@ -37,14 +40,28 @@ export default function AddRefundPage() {
   // money is drawn afterwards from the detail page's Applications tab.
   const [lineagePayment, setLineagePayment] = useState<RefundSourceRef | null>(null);
   const [lineageCreditMemo, setLineageCreditMemo] = useState<RefundSourceRef | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const setCustomField = useCallback(
+    (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
+    [],
+  );
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const refundWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'refund');
+  const { data: refundDef } = useQuery({
+    queryKey: ['workflow', refundWorkflow?.id],
+    queryFn: () => workflowService.get(refundWorkflow?.id ?? ''),
+    enabled: Boolean(refundWorkflow?.id),
+  });
+  const customFieldDefs = activeCustomFields(refundDef);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -53,7 +70,7 @@ export default function AddRefundPage() {
         toCreatePayload(data, customer.id, {
           paymentUuid: lineagePayment?.id,
           creditMemoUuid: lineageCreditMemo?.id,
-        }),
+        }, customFieldValues),
       );
     },
     onSuccess: async (refund) => {
@@ -145,7 +162,22 @@ export default function AddRefundPage() {
                   <RefundSectionGrid fields={PRIMARY_INFO_FIELDS} data={data} set={set} lookups={lookups} />
                 </ModernSection>
 
-                <ModernSection title="Related Documents (optional)" index={2}>
+                {customFieldDefs.length > 0 && (
+                  <ModernSection title="Custom Fields" index={2}>
+                    <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {customFieldDefs.map((def) => (
+                        <DynamicFieldInput
+                          key={def.id}
+                          field={def}
+                          value={customFieldValues[def.key]}
+                          onChange={setCustomField}
+                        />
+                      ))}
+                    </div>
+                  </ModernSection>
+                )}
+
+                <ModernSection title="Related Documents (optional)" index={3}>
                   <div className="space-y-3">
                     <div className="flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
                       <Info className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />

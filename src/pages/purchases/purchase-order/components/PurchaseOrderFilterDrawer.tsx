@@ -5,6 +5,7 @@ import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { EMPTY_FILTER_STATE, type PurchaseOrderFilterState } from '@/lib/purchaseOrderFilters';
 
@@ -41,7 +42,7 @@ export function PurchaseOrderFilterDrawer({ onClose, value, onApply }: {
     queryFn: () => workflowService.get(poWorkflow?.id ?? ''),
     enabled: Boolean(poWorkflow?.id),
   });
-  const customFieldDefs = poDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(poDef);
 
   const set = <K extends keyof PurchaseOrderFilterState>(key: K, val: PurchaseOrderFilterState[K]) =>
     setDraft((d) => ({ ...d, [key]: val }));

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Users, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -49,7 +50,7 @@ export default function AddProspectPage() {
     queryFn: () => workflowService.get(prospectWorkflow?.id ?? ''),
     enabled: Boolean(prospectWorkflow?.id),
   });
-  const customFieldDefs: FieldDefinition[] = prospectDef?.fields ?? [];
+  const customFieldDefs: FieldDefinition[] = activeCustomFields(prospectDef);
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
 

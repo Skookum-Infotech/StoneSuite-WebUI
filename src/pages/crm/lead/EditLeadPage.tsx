@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Sparkles, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
+import { Sparkles, AlertCircle, ChevronRight, Loader2, Save, ShieldAlert } from 'lucide-react';
 import { crmService } from '@/services/crmService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
@@ -61,7 +63,7 @@ export default function EditLeadPage() {
     queryFn: () => workflowService.get(leadWorkflow?.id ?? ''),
     enabled: Boolean(leadWorkflow?.id),
   });
-  const customFieldDefs: FieldDefinition[] = leadDef?.fields ?? [];
+  const customFieldDefs: FieldDefinition[] = activeCustomFields(leadDef);
 
   const routeMap: Record<string, string> = {
     lead: '/crm/lead',
@@ -128,6 +130,12 @@ export default function EditLeadPage() {
   const nameParts = [coreFields.customer_authorized_person_fname, coreFields.customer_authorized_person_lname].filter(Boolean).join(' ');
   const company = String((coreFields.customer_name ?? nameParts) || '—');
   const saveError = save.error ?? transition.error;
+  const approval = record.approval;
+  // A record awaiting approval is locked server-side (UpdateRecord returns
+  // 409) — the Save button is disabled here too so the click never round-
+  // trips. Editing a REJECTED record is how its owner resubmits it, so that
+  // stays fully editable; only 'pending' locks.
+  const locked = approval?.status === 'pending';
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -135,6 +143,7 @@ export default function EditLeadPage() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          if (locked) return;
           const errors = validateCrmRecord(coreFields, customFieldDefs, customFieldValues);
           if (errors.length > 0) { setValidationErrors(errors); setActiveTab('details'); return; }
           setValidationErrors([]);
@@ -154,7 +163,8 @@ export default function EditLeadPage() {
           actions={(
             <button
               type="submit"
-              disabled={save.isPending}
+              disabled={save.isPending || locked}
+              title={locked ? 'This record is awaiting approval and cannot be edited.' : undefined}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
             >
               {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
@@ -162,6 +172,25 @@ export default function EditLeadPage() {
             </button>
           )}
         />
+
+        {locked && (
+          <div className="shrink-0 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
+            <ShieldAlert className="size-4 shrink-0 text-amber-500" aria-hidden="true" />
+            <p className="text-xs font-medium text-amber-800">
+              <span className="font-semibold">Locked</span> — this record is awaiting approval and cannot be edited
+              until it is approved.
+            </p>
+          </div>
+        )}
+        {approval?.status === 'rejected' && (
+          <ApprovalBanner
+            status="rejected"
+            approverNames={[]}
+            canApprove={false}
+            onApprove={() => {}}
+            rejection={{ byName: approval.rejectedByName, reason: approval.rejectionReason }}
+          />
+        )}
 
         {saveError && (
           <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
@@ -234,6 +263,7 @@ export default function EditLeadPage() {
                     value={currentStateId}
                     onChange={handleStatusChange}
                     disabled={transition.isPending}
+                    gated={approval?.gated}
                   />
                 )}
               />

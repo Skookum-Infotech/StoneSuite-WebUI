@@ -24,8 +24,13 @@ export default function AddFabricationJobPage() {
   const [data, setData] = useState<Record<string, unknown>>(fjDefaults);
   const [pieces, setPieces] = useState<FJPieceRow[]>([]);
   const [sourceOrder, setSourceOrder] = useState<FabricationSourceOrder | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const setCustomField = useCallback(
+    (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
+    [],
+  );
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -50,7 +55,7 @@ export default function AddFabricationJobPage() {
       if (!sourceOrder) throw new Error('A sales order is required to open a fabrication job.');
       return fabricationService.createJob({
         salesOrderUuid: sourceOrder.id,
-        ...toJobFields(data),
+        ...toJobFields(data, customFieldValues),
         pieces: pieces.map(toPieceInput),
       });
     },
@@ -103,6 +108,8 @@ export default function AddFabricationJobPage() {
           pieces={pieces}
           setPieces={setPieces}
           sourceOrderItems={sourceOrderItems}
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           filesPanelRef={panelRef}
         />

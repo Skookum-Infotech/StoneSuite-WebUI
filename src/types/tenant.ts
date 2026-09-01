@@ -126,6 +126,11 @@ export interface Workflow {
   enabled: boolean;
   isDefault: boolean;
   pipelineOrder: number;
+  // Master switch for this workflow's Custom Fields section (opt-in, default
+  // false). Field definitions and any values already stored under their keys
+  // persist either way — this only governs whether the section renders and
+  // whether its fields are enforced as required. See lib/customFields.ts.
+  customFieldsEnabled: boolean;
   // Up to 2 active users (see MAX_APPROVERS) whose sign-off is required before
   // records created under this workflow can be approved. Empty = no approval required.
   approverUserIds: string[];
@@ -232,15 +237,56 @@ export interface WorkflowRecord {
   // right now (accounts for "already approved by you" when 2 approvers are
   // configured). Attached client-side from the sibling `canApprove` field the
   // GET endpoint returns alongside the record — see crmService.getRecord.
+  // Superseded by `approval.canApprove` (richer, includes quorum progress and
+  // reject eligibility) but kept for callers that only need the flag.
   canApprove?: boolean;
+  // The full approval overlay, embedded on GetRecord — see crmService.getRecord
+  // and CrmApproval below. Undefined for a workflow that isn't CRM-gated.
+  approval?: CrmApproval;
 }
 
-// The record's actual approval state ('none' | 'pending' | 'approved') lives
-// in coreFields.approval_status (snake_case, set by the backend), not as a
-// top-level field — read it via this helper rather than record.approvalStatus.
-export function recordApprovalState(record: Pick<WorkflowRecord, 'coreFields'>): 'none' | 'pending' | 'approved' {
+// The record's actual approval state ('none' | 'pending' | 'approved' |
+// 'rejected') lives in coreFields.approval_status (snake_case, set by the
+// backend), not as a top-level field — read it via this helper rather than
+// record.approvalStatus.
+export function recordApprovalState(
+  record: Pick<WorkflowRecord, 'coreFields'>,
+): 'none' | 'pending' | 'approved' | 'rejected' {
   const v = record.coreFields.approval_status;
-  return v === 'pending' || v === 'approved' ? v : 'none';
+  return v === 'pending' || v === 'approved' || v === 'rejected' ? v : 'none';
+}
+
+// One configured approver for a CRM record's stage, and whether they've
+// signed off this round — see CrmApproval.approvers.
+export interface CrmApprover {
+  id: string;
+  name: string;
+  approved: boolean;
+}
+
+// Read-only approval overlay for a single CRM (Lead/Prospect/Customer)
+// record, embedded on crmService.getRecord under `approval` — mirrors the
+// Estimate/Quote/Sales Order `approval` shape (RecordApprover/ApprovalGate)
+// but scoped to CRM's stage-level gate. See crmstore.ApprovalInfo (backend).
+export interface CrmApproval {
+  status: 'none' | 'pending' | 'approved' | 'rejected';
+  // Computed fresh server-side (requiredApprovals > 0 && status is pending or
+  // rejected) — not read off `status` alone, so it stays correct even if the
+  // stage's approver config changed after the record entered it.
+  gated: boolean;
+  approvers: CrmApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  canReject: boolean;
+  // True when canApprove is true only because the caller is a Super Admin,
+  // not because they're a configured approver for this stage.
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
+  // Only set while status === 'rejected'.
+  rejectedByName?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
 }
 
 // ── Record filter / pagination (server-side search engine) ───────────────────

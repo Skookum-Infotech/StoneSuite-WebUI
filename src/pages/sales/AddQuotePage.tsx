@@ -48,12 +48,17 @@ export default function AddQuotePage() {
   const [localLineItems, setLocalLineItems] = useState<QuoteLineItem[] | null>(null);
   const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
   const [customerTouched, setCustomerTouched] = useState(false);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const data = localData ?? baseData;
   const lineItems = useMemo(() => localLineItems ?? prefill?.lineItems ?? [], [localLineItems, prefill]);
   const customer = customerTouched ? localCustomer : (prefill?.customer ?? null);
 
   const set = useCallback((key: string, value: unknown) => setLocalData((d) => ({ ...(d ?? baseData), [key]: value })), [baseData]);
+  const setCustomField = useCallback(
+    (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
+    [],
+  );
   const setCustomer = useCallback((c: CustomerRef | null) => {
     setLocalCustomer(c);
     setCustomerTouched(true);
@@ -90,7 +95,7 @@ export default function AddQuotePage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
-      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems, sourceEstimate?.id);
+      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems, sourceEstimate?.id, customFieldValues);
       return quoteService.createQuote(payload);
     },
     onSuccess: async (quote) => {
@@ -141,6 +146,8 @@ export default function AddQuotePage() {
           setLineItems={setLocalLineItems}
           customer={customer}
           setCustomer={setCustomer}
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

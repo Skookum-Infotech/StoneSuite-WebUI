@@ -25,8 +25,13 @@ export default function AddEstimatePage() {
   const [data, setData] = useState<Record<string, unknown>>(estimateDefaults);
   const [lineItems, setLineItems] = useState<EstimateLineItem[]>([]);
   const [customer, setCustomer] = useState<CustomerRef | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const setCustomField = useCallback(
+    (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
+    [],
+  );
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
@@ -60,7 +65,7 @@ export default function AddEstimatePage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
-      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems);
+      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems, customFieldValues);
       return estimateService.createEstimate(payload);
     },
     onSuccess: async (estimate) => {
@@ -111,6 +116,8 @@ export default function AddEstimatePage() {
           setLineItems={setLineItems}
           customer={customer}
           setCustomer={handleCustomerChange}
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           subtotal={subtotal}
           discountAmt={discountAmt}

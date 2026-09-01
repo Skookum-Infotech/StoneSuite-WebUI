@@ -1,10 +1,14 @@
 import type { Ref, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { readonlyCls } from '@/components/crm/formUtils';
+import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { FJSectionGrid } from './FabricationJobFormFields';
 import { FabricationSourceOrderPicker, type FabricationSourceOrder } from './FabricationSourceOrderPicker';
 import { FabricationPiecesEditor } from './FabricationPiecesEditor';
@@ -29,6 +33,7 @@ export function FabricationJobFormBody({
   data, set,
   sourceOrder, setSourceOrder,
   pieces, setPieces, sourceOrderItems = [],
+  customFieldValues, setCustomField,
   lookups, statusControl, holdResumeControl, approvalControl,
   canAllocateSlabs = false, canEditSteps = false, piecesEditableNow = false,
   filesPanelRef,
@@ -52,6 +57,8 @@ export function FabricationJobFormBody({
   pieces: FJPieceRow[];
   setPieces?: (v: FJPieceRow[]) => void;
   sourceOrderItems?: { id: string; label: string }[];
+  customFieldValues: Record<string, unknown>;
+  setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
   /** Interactive status control (edit mode only) — a new job always starts
    *  at Order Received once created, so create mode omits this. */
@@ -67,6 +74,15 @@ export function FabricationJobFormBody({
   filesPanelRef?: Ref<EditableFilesPanelHandle>;
 }) {
   const isEdit = Boolean(jobId && job);
+
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const fjWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'installation');
+  const { data: fjDef } = useQuery({
+    queryKey: ['workflow', fjWorkflow?.id],
+    queryFn: () => workflowService.get(fjWorkflow?.id ?? ''),
+    enabled: Boolean(fjWorkflow?.id),
+  });
+  const customFieldDefs = activeCustomFields(fjDef);
 
   return (
     <>
@@ -137,6 +153,21 @@ export function FabricationJobFormBody({
               <ModernSection title="Notes" index={5}>
                 <FJSectionGrid fields={NOTES_FIELDS} data={data} set={set} lookups={lookups} />
               </ModernSection>
+
+              {customFieldDefs.length > 0 && (
+                <ModernSection title="Custom Fields" index={6}>
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {customFieldDefs.map((def) => (
+                      <DynamicFieldInput
+                        key={def.id}
+                        field={def}
+                        value={customFieldValues[def.key]}
+                        onChange={setCustomField}
+                      />
+                    ))}
+                  </div>
+                </ModernSection>
+              )}
             </>
           )}
 

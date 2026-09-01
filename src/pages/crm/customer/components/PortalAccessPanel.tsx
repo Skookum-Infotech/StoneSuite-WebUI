@@ -17,13 +17,22 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-// Who from outside this customer's contacts can sign in to the customer
-// portal for this workspace — grant, suspend/resume, revoke, resend invite.
-// Lives as a tab on CustomerDetailPage; the tenant-wide roster across every
-// customer is a separate Config page (portalAccessService.listForTenant).
+// Shared shape for the per-login row actions (Resend / Suspend / Resume /
+// Revoke) — icon + short text label, colour set per action by the caller.
+const actionBtnCls =
+  "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
+
+// Manages the one portal login a customer may hold — grant, suspend/resume,
+// revoke, resend invite. The login is always the customer record's own contact
+// email (customer_contact_email), so there is no address to choose: one
+// customer, one login. Lives as a tab on CustomerDetailPage; the tenant-wide
+// roster across every customer is a separate Config page
+// (portalAccessService.listForTenant).
 export function PortalAccessPanel({
   customerUuid,
   customerApproved,
+  contactEmail,
+  contactName,
 }: {
   customerUuid: string;
   // Mirrors the backend's CustomerEligible gate (portal/store.go) — granting
@@ -32,6 +41,13 @@ export function PortalAccessPanel({
   // fail; suspend/resume/revoke on an already-granted login are unaffected —
   // that gate only applies to a first grant, same as the backend.
   customerApproved: boolean;
+  // The customer record's contact email (customer_contact_email) — the address
+  // the portal login is minted for. Required at record creation, so normally
+  // always present; the grant action is disabled if it is somehow blank.
+  contactEmail: string;
+  // Display name for the login — the authorized contact, falling back to the
+  // company name. Sent alongside the email when granting.
+  contactName: string;
 }) {
   const qc = useQueryClient();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
@@ -49,6 +65,15 @@ export function PortalAccessPanel({
     enabled: Boolean(customerUuid),
   });
   const users = usersQ.data ?? [];
+
+  // One login per customer: once a live (active or suspended) login exists,
+  // there is nothing left to grant. A history of only revoked logins still
+  // allows a fresh grant — the backend reactivates the same identity row.
+  const hasLiveLogin = users.some(
+    (u) => u.status === "active" || u.status === "suspended",
+  );
+  const hasContactEmail = contactEmail.trim().length > 0;
+  const canGrant = customerApproved && hasContactEmail;
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["portal-users", customerUuid] });
@@ -81,26 +106,32 @@ export function PortalAccessPanel({
 
   return (
     <div className="rounded-xl border border-stone-200 bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-stone-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-stone-100 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
             <KeyRound className="size-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-sm font-bold text-stone-800">Portal Access</h3>
-            <p className="text-2xs text-stone-500">Who can sign in as this customer.</p>
+            <p className="text-2xs text-stone-500">How this customer signs in to the portal.</p>
           </div>
         </div>
-        {canCreate && (
+        {canCreate && !hasLiveLogin && (
           <button
             type="button"
             onClick={() => setShowGrantModal(true)}
-            disabled={!customerApproved}
+            disabled={!canGrant}
             aria-label="Grant portal access"
-            title={customerApproved ? undefined : "Approve this customer record first."}
+            title={
+              !customerApproved
+                ? "Approve this customer record first."
+                : !hasContactEmail
+                  ? "Add a contact email to this customer record first."
+                  : undefined
+            }
             className={cn(
-              "flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover",
-              !customerApproved && "opacity-50 cursor-not-allowed hover:bg-brand",
+              "flex shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover",
+              !canGrant && "opacity-50 cursor-not-allowed hover:bg-brand",
             )}
           >
             <Plus className="size-3.5" />
@@ -110,10 +141,17 @@ export function PortalAccessPanel({
       </div>
 
       <div className="p-4">
-        {!customerApproved && (
+        {!hasLiveLogin && !customerApproved && (
           <div className="mb-3">
             <ErrorNote>
               Portal access can only be granted once this customer record is approved.
+            </ErrorNote>
+          </div>
+        )}
+        {!hasLiveLogin && customerApproved && !hasContactEmail && (
+          <div className="mb-3">
+            <ErrorNote>
+              Add a contact email to this customer record before granting portal access.
             </ErrorNote>
           </div>
         )}
@@ -157,6 +195,8 @@ export function PortalAccessPanel({
       {showGrantModal && (
         <GrantPortalAccessModal
           customerUuid={customerUuid}
+          contactEmail={contactEmail}
+          contactName={contactName}
           onClose={() => setShowGrantModal(false)}
         />
       )}
@@ -221,20 +261,17 @@ function PortalUserRow({
         </div>
 
         {!confirmingRevoke && (
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
             {canResend && canUpdate && (
               <button
                 type="button"
                 onClick={onResend}
                 disabled={busy}
                 aria-label={`Resend invitation to ${user.email}`}
-                title="Resend invitation"
-                className={cn(
-                  "flex size-7 items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-700",
-                  busy && "opacity-50 cursor-not-allowed",
-                )}
+                className={cn(actionBtnCls, "text-stone-600 hover:bg-stone-100 hover:text-stone-800")}
               >
                 <Send className="size-3.5" />
+                Resend
               </button>
             )}
             {user.status === "active" && canUpdate && (
@@ -243,13 +280,10 @@ function PortalUserRow({
                 onClick={onSuspend}
                 disabled={busy}
                 aria-label={`Suspend portal access for ${user.email}`}
-                title="Suspend"
-                className={cn(
-                  "flex size-7 items-center justify-center rounded-lg text-amber-600 transition hover:bg-amber-50",
-                  busy && "opacity-50 cursor-not-allowed",
-                )}
+                className={cn(actionBtnCls, "text-amber-700 hover:bg-amber-50")}
               >
                 <PauseCircle className="size-3.5" />
+                Suspend
               </button>
             )}
             {user.status === "suspended" && canUpdate && (
@@ -258,13 +292,10 @@ function PortalUserRow({
                 onClick={onResume}
                 disabled={busy}
                 aria-label={`Resume portal access for ${user.email}`}
-                title="Resume"
-                className={cn(
-                  "flex size-7 items-center justify-center rounded-lg text-emerald-600 transition hover:bg-emerald-50",
-                  busy && "opacity-50 cursor-not-allowed",
-                )}
+                className={cn(actionBtnCls, "text-emerald-700 hover:bg-emerald-50")}
               >
                 <PlayCircle className="size-3.5" />
+                Resume
               </button>
             )}
             {user.status !== "revoked" && canDelete && (
@@ -274,13 +305,10 @@ function PortalUserRow({
                 onClick={onRequestRevoke}
                 disabled={busy}
                 aria-label={`Revoke portal access for ${user.email}`}
-                title="Revoke"
-                className={cn(
-                  "flex size-7 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50",
-                  busy && "opacity-50 cursor-not-allowed",
-                )}
+                className={cn(actionBtnCls, "text-red-600 hover:bg-red-50")}
               >
                 <XCircle className="size-3.5" />
+                Revoke
               </button>
             )}
           </div>

@@ -235,6 +235,7 @@ export function toCreatePayload(
   data: Record<string, unknown>,
   customerUuid: string,
   lineage: { paymentUuid?: string; creditMemoUuid?: string; invoiceUuid?: string } = {},
+  customFields: Record<string, unknown> = {},
 ): RefundCreatePayload {
   return {
     customerUuid,
@@ -246,7 +247,7 @@ export function toCreatePayload(
     reason: toStr(data.reason),
     memo: toStr(data.memo),
     internalNotes: toStr(data.internal_notes),
-    customFields: {},
+    customFields,
     ...(lineage.paymentUuid ? { paymentUuid: lineage.paymentUuid } : {}),
     ...(lineage.creditMemoUuid ? { creditMemoUuid: lineage.creditMemoUuid } : {}),
     ...(lineage.invoiceUuid ? { invoiceUuid: lineage.invoiceUuid } : {}),
@@ -255,7 +256,10 @@ export function toCreatePayload(
 
 /** Maps the EditRefundPage form state to the backend's `RefundUpdatePayload`
  *  (no amount, no customer, no lineage — all immutable post-creation, AD-8). */
-export function toUpdatePayload(data: Record<string, unknown>): RefundUpdatePayload {
+export function toUpdatePayload(
+  data: Record<string, unknown>,
+  customFields: Record<string, unknown> = {},
+): RefundUpdatePayload {
   return {
     methodId: toIntOrZero(data.refund_method),
     referenceNumber: toStr(data.reference_num),
@@ -264,7 +268,7 @@ export function toUpdatePayload(data: Record<string, unknown>): RefundUpdatePayl
     reason: toStr(data.reason),
     memo: toStr(data.memo),
     internalNotes: toStr(data.internal_notes),
-    customFields: {},
+    customFields,
   };
 }
 
@@ -281,6 +285,7 @@ function idOrEmpty(id: number | null | undefined): string {
 export function fromRefund(refund: Refund): {
   data: Record<string, unknown>;
   customer: { id: string; name: string };
+  customFieldValues: Record<string, unknown>;
 } {
   const data: Record<string, unknown> = {
     refund_method: String(refund.methodId),
@@ -291,5 +296,9 @@ export function fromRefund(refund: Refund): {
     memo: refund.memo ?? '',
     internal_notes: refund.internalNotes ?? '',
   };
-  return { data, customer: { id: refund.customer.id, name: refund.customer.name } };
+  return {
+    data,
+    customer: { id: refund.customer.id, name: refund.customer.name },
+    customFieldValues: refund.customFields ?? {},
+  };
 }
