@@ -6,7 +6,7 @@
 // sibling of Invoice — a money ledger with cross-invoice application — served
 // from /api/tenant/payments*, distinct from the generic WorkflowRecord JSONB
 // CRM router.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -58,6 +58,14 @@ export interface Payment {
   paymentNumber: string;
   status: string;              // human label, e.g. "Pending"
   statusCode: string;          // lkp_record_status code, e.g. "PEND" — drives transitions
+  approvalStatus: 'none' | 'pending' | 'approved';
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
   customer: PaymentCustomerRef;
   ownerEmployeeId?: number | null;
   methodId: number;
@@ -81,7 +89,7 @@ export interface Payment {
  *  names the subset the table actually renders. */
 export type PaymentSummary = Pick<
   Payment,
-  | 'id' | 'paymentNumber' | 'status' | 'statusCode' | 'customer'
+  | 'id' | 'paymentNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer'
   | 'paymentDate' | 'amount' | 'unappliedAmount' | 'createdAt' | 'updatedAt'
 >;
 

@@ -25,10 +25,8 @@ export interface QuoteFormField {
    *  the lookup row's numeric id (as a string), matching the create payload's
    *  *Id fields. */
   lookupKey?: keyof CrmLookups;
-  /** For a lookupKey field whose rows carry a `countryId`: only show options
-   *  where countryId matches the value of this other field. Unused by
-   *  Quote's address fields (plain text, no lookup — see BILL_TO_FIELDS doc)
-   *  but kept on the type for parity with any future lookup-backed field. */
+  /** For a lookupKey field whose rows carry a `countryId` (states): only show
+   *  options where countryId matches the value of this other field. */
   dependsOn?: string;
   placeholder?: string;
   /** Span two grid columns */
@@ -112,18 +110,22 @@ export const PRIMARY_INFO_FIELDS: QuoteFormField[] = [
 // (CustomerPicker) in AddQuotePage, not the generic QuoteSectionGrid — a
 // customer is a searchable record, not a static lookup list.
 //
-// Unlike Estimate's Bill To (numeric lookupKey country/state selects), a
-// Quote's billing block is the flat string shape given by the backend
-// contract (QuoteAddressInput: addrLine1/addrLine2/city/stateProvince/
-// postalCode/country, no attention/suiteUnit/phone/fax/email) — every
-// address field here is plain text.
+// Same shape as Estimate/SalesOrder's Bill To: state/country are numeric
+// lookupKey selects (QuoteAddressInput: stateId/countryId), not free text.
 export const BILL_TO_FIELDS: QuoteFormField[] = [
+  {
+    key: 'bill_attn',
+    label: 'Attn:',
+    type: 'text',
+    placeholder: 'Authorized contact person',
+  },
   {
     key: 'bill_address1',
     label: 'Address Line 1',
     type: 'textarea',
     rows: 2,
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -134,10 +136,34 @@ export const BILL_TO_FIELDS: QuoteFormField[] = [
     colSpan2: true,
     placeholder: 'Apt, suite, floor, etc.',
   },
-  { key: 'bill_city', label: 'City', type: 'text', placeholder: 'City' },
-  { key: 'bill_state_province', label: 'State / Province', type: 'text', placeholder: 'State or province' },
-  { key: 'bill_postal_code', label: 'Postal Code', type: 'text', placeholder: '12345' },
-  { key: 'bill_country', label: 'Country', type: 'text', placeholder: 'Country' },
+  {
+    key: 'bill_suite',
+    label: 'Suite / Unit #',
+    type: 'text',
+    placeholder: 'Suite 100',
+  },
+  { key: 'bill_city', label: 'City', type: 'text', required: true, placeholder: 'City' },
+  { key: 'bill_country', label: 'Country', type: 'select', required: true, lookupKey: 'countries' },
+  { key: 'bill_state', label: 'State', type: 'select', required: true, lookupKey: 'states', dependsOn: 'bill_country' },
+  {
+    key: 'bill_zip',
+    label: 'Zip / Postal Code',
+    type: 'text',
+    required: true,
+    placeholder: '12345',
+  },
+  {
+    key: 'bill_phone',
+    label: 'Phone',
+    type: 'tel',
+    placeholder: '+1 (555) 000-0000',
+  },
+  {
+    key: 'bill_fax',
+    label: 'Fax',
+    type: 'tel',
+    placeholder: '+1 (555) 000-0000',
+  },
   {
     key: 'payment_terms',
     label: 'Payment Terms',
@@ -167,12 +193,20 @@ export const SHIP_TO_FIELDS: QuoteFormField[] = [
     placeholder: 'Shipping customer name',
   },
   {
+    key: 'ship_attn',
+    label: 'Attn:',
+    type: 'text',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: 'Authorized contact person',
+  },
+  {
     key: 'ship_address1',
     label: 'Address Line 1',
     type: 'textarea',
     rows: 2,
     showIfFieldFalse: 'ship_same_as_bill',
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -185,32 +219,58 @@ export const SHIP_TO_FIELDS: QuoteFormField[] = [
     placeholder: 'Apt, suite, floor, etc.',
   },
   {
+    key: 'ship_suite',
+    label: 'Suite / Unit #',
+    type: 'text',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: 'Suite 100',
+  },
+  {
     key: 'ship_city',
     label: 'City',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     placeholder: 'City',
-  },
-  {
-    key: 'ship_state_province',
-    label: 'State / Province',
-    type: 'text',
-    showIfFieldFalse: 'ship_same_as_bill',
-    placeholder: 'State or province',
-  },
-  {
-    key: 'ship_postal_code',
-    label: 'Postal Code',
-    type: 'text',
-    showIfFieldFalse: 'ship_same_as_bill',
-    placeholder: '12345',
   },
   {
     key: 'ship_country',
     label: 'Country',
+    type: 'select',
+    showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
+    lookupKey: 'countries',
+  },
+  {
+    key: 'ship_state',
+    label: 'State',
+    type: 'select',
+    showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
+    lookupKey: 'states',
+    dependsOn: 'ship_country',
+  },
+  {
+    key: 'ship_zip',
+    label: 'Zip / Postal Code',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
-    placeholder: 'Country',
+    required: true,
+    placeholder: '12345',
+  },
+  {
+    key: 'ship_phone',
+    label: 'Phone',
+    type: 'tel',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: '+1 (555) 000-0000',
+  },
+  {
+    key: 'ship_fax',
+    label: 'Fax',
+    type: 'tel',
+    showIfFieldFalse: 'ship_same_as_bill',
+    placeholder: '+1 (555) 000-0000',
   },
 ];
 
@@ -351,9 +411,38 @@ export const QUOTE_STATUS_COLORS: Record<string, string> = {
  *  expired, or cancelled quote cannot be edited. */
 export const QUOTE_TERMINAL_STATUSES = new Set(['RJCT', 'EXPR', 'CANC']);
 
-/** Status code at which a Quote is awaiting sign-off — QuoteApprovalButton is
- *  shown only when the current status matches this (see plan Decision #4). */
-export const QUOTE_APPROVAL_PENDING_STATUS = 'PAPV';
+/** Whether the quote's current status is awaiting sign-off (AD-8) — while
+ *  true, every transition 409s (quote/store_transition.go: ErrApprovalRequired)
+ *  until a configured approver (or a super admin override) calls
+ *  quoteService.approve, regardless of who's asking or which target they
+ *  pick. Prefers the live `gated` flag from GET (recomputed server-side from
+ *  the *current* approver config every read, so it correctly flips false the
+ *  moment an admin empties the approver list out from under a quote already
+ *  sitting in "pending" — at that point Transition no longer blocks either,
+ *  so anyone with quote:transition can move it forward directly). List rows
+ *  don't carry `gated` (too expensive to compute per search result) so they
+ *  fall back to the stored approvalStatus flag, which is a fine
+ *  approximation for a table cell. */
+export function needsApproval(quote: Pick<Quote, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return quote.gated ?? quote.approvalStatus === 'pending';
+}
+
+/** Client-side precondition check for the "Send to Customer" quick action
+ *  (Quote detail page). Mirrors the backend's own requirement — the generic
+ *  document/send endpoint 400s "At least one recipient is required" when
+ *  billing.email is blank and no `to` override is supplied — plus two
+ *  UX-only checks (customer, line items) so the user gets one inline list of
+ *  problems instead of a raw 400 after opening the confirm dialog. Not
+ *  status-gated: available regardless of quote.statusCode. */
+export function validateForSend(
+  quote: Pick<Quote, 'customer' | 'items' | 'billing'>,
+): string[] {
+  const errors: string[] = [];
+  if (!quote.customer?.id) errors.push('A customer is required.');
+  if (!quote.items || quote.items.length === 0) errors.push('At least one line item is required.');
+  if (!quote.billing?.email?.trim()) errors.push('A billing email is required to send this quote.');
+  return errors;
+}
 
 /** Statuses from which "Convert to Sales Order" is offered — a quote has to
  *  have cleared internal approval and/or reached the customer before it can
@@ -441,21 +530,29 @@ export function toCreatePayload(
     memo: toStr(data.memo),
     shipSameAsBilling,
     billing: {
+      attention: toStr(data.bill_attn),
       addrLine1: toStr(data.bill_address1),
       addrLine2: toStr(data.bill_address2),
+      suiteUnit: toStr(data.bill_suite),
       city: toStr(data.bill_city),
-      stateProvince: toStr(data.bill_state_province),
-      postalCode: toStr(data.bill_postal_code),
-      country: toStr(data.bill_country),
+      stateId: toIntOrNull(data.bill_state),
+      countryId: toIntOrNull(data.bill_country),
+      zip: toStr(data.bill_zip),
+      phone: toStr(data.bill_phone),
+      fax: toStr(data.bill_fax),
     },
     shipping: shipSameAsBilling ? undefined : {
       customerName: toStr(data.ship_customer),
+      attention: toStr(data.ship_attn),
       addrLine1: toStr(data.ship_address1),
       addrLine2: toStr(data.ship_address2),
+      suiteUnit: toStr(data.ship_suite),
       city: toStr(data.ship_city),
-      stateProvince: toStr(data.ship_state_province),
-      postalCode: toStr(data.ship_postal_code),
-      country: toStr(data.ship_country),
+      stateId: toIntOrNull(data.ship_state),
+      countryId: toIntOrNull(data.ship_country),
+      zip: toStr(data.ship_zip),
+      phone: toStr(data.ship_phone),
+      fax: toStr(data.ship_fax),
     },
     customFields: {},
     items: lineItems.map((item, i) => toLineInput(item, i + 1)),
@@ -486,22 +583,30 @@ export function fromQuote(quote: Quote): {
     sales_tax_pct: String(quote.salesTaxPercent ?? 0),
     currency_id: idOrEmpty(quote.currencyId),
     memo: quote.memo ?? '',
+    bill_attn: quote.billing.attention ?? '',
     bill_address1: quote.billing.addrLine1 ?? '',
     bill_address2: quote.billing.addrLine2 ?? '',
+    bill_suite: quote.billing.suiteUnit ?? '',
     bill_city: quote.billing.city ?? '',
-    bill_state_province: quote.billing.stateProvince ?? '',
-    bill_postal_code: quote.billing.postalCode ?? '',
-    bill_country: quote.billing.country ?? '',
+    bill_state: idOrEmpty(quote.billing.stateId),
+    bill_country: idOrEmpty(quote.billing.countryId),
+    bill_zip: quote.billing.zip ?? '',
+    bill_phone: quote.billing.phone ?? '',
+    bill_fax: quote.billing.fax ?? '',
     payment_terms: idOrEmpty(quote.paymentTermsId),
     price_level: idOrEmpty(quote.priceLevelId),
     ship_same_as_bill: quote.shipSameAsBilling,
     ship_customer: quote.shipping.customerName ?? '',
+    ship_attn: quote.shipping.attention ?? '',
     ship_address1: quote.shipping.addrLine1 ?? '',
     ship_address2: quote.shipping.addrLine2 ?? '',
+    ship_suite: quote.shipping.suiteUnit ?? '',
     ship_city: quote.shipping.city ?? '',
-    ship_state_province: quote.shipping.stateProvince ?? '',
-    ship_postal_code: quote.shipping.postalCode ?? '',
-    ship_country: quote.shipping.country ?? '',
+    ship_state: idOrEmpty(quote.shipping.stateId),
+    ship_country: idOrEmpty(quote.shipping.countryId),
+    ship_zip: quote.shipping.zip ?? '',
+    ship_phone: quote.shipping.phone ?? '',
+    ship_fax: quote.shipping.fax ?? '',
     sales_rep: idOrEmpty(quote.salesRepEmployeeId),
     customer_owner: idOrEmpty(quote.ownerEmployeeId),
   };
@@ -527,10 +632,11 @@ export function fromQuote(quote: Quote): {
 /** Prefills the Add Quote form from a source estimate (`?fromEstimate=<uuid>`
  *  — see plan Decision #6). Only header fields with a direct, unambiguous
  *  mapping are carried over (PO number, sales tax %, memo); billing/shipping
- *  is intentionally left blank since Estimate's numeric stateId/countryId
- *  have no direct mapping to Quote's plain-text stateProvince/country. Every
- *  estimate line carries over, catalog-referenced or free-text — a Quote
- *  line supports both, same as Estimate (see QuoteLineItem doc). */
+ *  is intentionally left blank — a quote's address block should reflect the
+ *  customer as of quote creation, not stale data copied from the source
+ *  estimate. Every estimate line carries over, catalog-referenced or
+ *  free-text — a Quote line supports both, same as Estimate (see
+ *  QuoteLineItem doc). */
 export function fromSourceEstimate(estimate: Estimate): {
   data: Record<string, unknown>;
   lineItems: QuoteLineItem[];

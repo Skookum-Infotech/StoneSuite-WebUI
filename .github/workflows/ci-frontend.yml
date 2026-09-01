@@ -31,7 +31,11 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          # jsdom 30 declares engines "^22.22.2 || ^24.15.0 || >=26.0.0" and its
+          # undici dependency calls worker_threads.markAsUncloneable, which does
+          # not exist on Node 20 — every jsdom test file fails to start its
+          # worker there. Node 20 is also past EOL (April 2026).
+          node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 

@@ -131,6 +131,15 @@ export interface Workflow {
   approverUserIds: string[];
 }
 
+// Minimal {key, enabled} shape from GET /tenant/workflows/enabled — unlike
+// Workflow above, this endpoint is callable by any authenticated tenant
+// member regardless of RBAC grants, so it deliberately carries nothing more
+// sensitive than the enabled flag itself.
+export interface WorkflowStatus {
+  key: string;
+  enabled: boolean;
+}
+
 export interface WorkflowState {
   id: string;
   workflowId: string;
@@ -140,6 +149,39 @@ export interface WorkflowState {
   isTerminal: boolean;
   sortOrder: number;
   color: string;
+}
+
+// One gate in a module's approval chain (e.g. "Pending Approval" for most
+// modules, "Templating" and "QC Pending" for Fabrication Job) plus its
+// currently configured approvers. See workflowService.getApprovalChain.
+export interface ApprovalGate {
+  statusCode: string;
+  statusLabel: string;
+  approverEmployeeIds: string[];
+}
+
+// An employee eligible to be picked as an approver, returned alongside the
+// gates by workflowService.getApprovalChain -- gated by workflow_config:read,
+// the same permission that already governs this whole page (not the
+// separate user:read permission that /tenant/crm/lookups' employees field
+// requires).
+export interface ApprovalChainEmployee {
+  id: string;
+  name: string;
+}
+
+// One of the active configured approvers for a live record's *current*
+// status (AD-8/AD-10) -- distinct from ApprovalChainEmployee, which lists who
+// is *eligible to be assigned* on the config screen. Returned by the
+// Estimate/Quote/Sales Order Get endpoints (nested under `approval`) only
+// while the record is gated. `approved` is per-approver: with 2 required
+// approvers, one signing off doesn't finish the gate -- the record stays
+// gated until every configured approver has signed off (quorum), so the UI
+// needs to know who specifically still hasn't.
+export interface RecordApprover {
+  id: string;
+  name: string;
+  approved: boolean;
 }
 
 export interface WorkflowTransition {
@@ -242,43 +284,106 @@ export interface WorkflowNumberingConfig {
 }
 
 // ── SSO configuration (Configuration → Authentication) ───────────────────────
-// Configuration only — no login flow yet. client_secret is write-only and
-// never appears on SSOConfig (the read model).
+// A config is one of two protocols. client_secret (oidc) and the IdP
+// certificate (saml) are write-only and never appear on the read model —
+// saml exposes only a certificateFingerprint. SAML login is fully wired
+// (see samlAuthService); OIDC remains configuration-only, no login flow.
 
+export type SSOProtocol = 'oidc' | 'saml';
 export type SSOProvider = 'entra' | 'cognito' | 'okta';
+// entra/cognito get a first-class setup page with a vendor-specific
+// walkthrough; any other lowercase slug (2-30 chars, letters/digits/hyphens,
+// starting with a letter) is also accepted — see isValidSAMLProvider in the
+// backend's controllers/sso.go — and gets the generic CustomSamlSetupPage.
+// The `string & {}` branding keeps 'entra'/'cognito' autocompleting while
+// still allowing an arbitrary slug (unlike a bare `string`, which would
+// erase the two known literals from autocomplete).
+export type SAMLProvider = 'entra' | 'cognito' | (string & {});
 
-export interface SSOConfig {
+interface SSOConfigBase {
   id: string;
   tenantId: string;
-  provider: SSOProvider;
-  clientId: string;
-  issuer: string;
-  redirectUri: string;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface SSOConfigCreatePayload {
+export interface OIDCConfig extends SSOConfigBase {
+  protocol: 'oidc';
   provider: SSOProvider;
   clientId: string;
-  clientSecret: string;
-  issuer?: string;
-  redirectUri?: string;
-  enabled: boolean;
+  issuer: string;
+  redirectUri: string;
 }
 
-// Full-replace on PUT: provider/clientId are re-sent every time. clientSecret
-// omitted (or empty) keeps the stored value — the server never returns it, so
-// there is nothing to prefill and no way to tell client-side whether it's set.
-export interface SSOConfigUpdatePayload {
-  provider: SSOProvider;
-  clientId: string;
-  clientSecret?: string;
-  issuer?: string;
-  redirectUri?: string;
-  enabled: boolean;
+export interface SAMLConfig extends SSOConfigBase {
+  protocol: 'saml';
+  provider: SAMLProvider;
+  metadataUrl: string;
+  idpEntityId: string;
+  ssoUrl: string;
+  sloUrl: string;
+  certificateFingerprint: string;
+  nameIdFormat: string;
+  metadataFetchedAt: string | null;
+  // Role auto-granted to a user JIT-provisioned via this config's SAML flow.
+  // '' means none — the user is created with no role, same as before this
+  // existed.
+  defaultRoleId: string;
 }
+
+export type SSOConfig = OIDCConfig | SAMLConfig;
+
+export type SSOConfigCreatePayload =
+  | {
+      protocol: 'oidc';
+      provider: SSOProvider;
+      clientId: string;
+      clientSecret: string;
+      issuer?: string;
+      redirectUri?: string;
+      enabled: boolean;
+    }
+  | {
+      protocol: 'saml';
+      provider: SAMLProvider;
+      metadataUrl: string;
+      enabled: boolean;
+      defaultRoleId?: string;
+    };
+
+// An email domain registered against a SAML config for home-realm discovery
+// on the login page (a user types their work email instead of a workspace
+// slug — see samlAuthService.discover).
+export interface SSODomain {
+  id: string;
+  ssoConfigId: string;
+  domain: string;
+  createdAt: string;
+}
+
+// Full-replace on PUT: provider (and metadataUrl for saml) are re-sent every
+// time. oidc's clientSecret omitted (or empty) keeps the stored value — the
+// server never returns it, so there is nothing to prefill and no way to tell
+// client-side whether it's set. saml has no client secret to preserve, but
+// metadata_url is always re-fetched server-side on every update regardless.
+export type SSOConfigUpdatePayload =
+  | {
+      protocol: 'oidc';
+      provider: SSOProvider;
+      clientId: string;
+      clientSecret?: string;
+      issuer?: string;
+      redirectUri?: string;
+      enabled: boolean;
+    }
+  | {
+      protocol: 'saml';
+      provider: SAMLProvider;
+      metadataUrl: string;
+      enabled: boolean;
+      defaultRoleId?: string;
+    };
 
 export interface StatusInfo {
   stateId: string;

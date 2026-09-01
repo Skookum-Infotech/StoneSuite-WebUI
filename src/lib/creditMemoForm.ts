@@ -129,6 +129,7 @@ export const BILLING_FIELDS: CreditMemoFormField[] = [
     type: 'textarea',
     rows: 2,
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -145,13 +146,14 @@ export const BILLING_FIELDS: CreditMemoFormField[] = [
     type: 'text',
     placeholder: 'Suite 100',
   },
-  { key: 'bill_city', label: 'City', type: 'text', placeholder: 'City' },
-  { key: 'bill_country', label: 'Country', type: 'select', lookupKey: 'countries' },
-  { key: 'bill_state', label: 'State', type: 'select', lookupKey: 'states', dependsOn: 'bill_country' },
+  { key: 'bill_city', label: 'City', type: 'text', required: true, placeholder: 'City' },
+  { key: 'bill_country', label: 'Country', type: 'select', required: true, lookupKey: 'countries' },
+  { key: 'bill_state', label: 'State', type: 'select', required: true, lookupKey: 'states', dependsOn: 'bill_country' },
   {
     key: 'bill_zip',
     label: 'Zip / Postal Code',
     type: 'text',
+    required: true,
     placeholder: '12345',
   },
   {

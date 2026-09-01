@@ -169,6 +169,7 @@ export const SHIP_TO_FIELDS: PurchaseOrderFormField[] = [
     type: 'textarea',
     rows: 2,
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -185,13 +186,14 @@ export const SHIP_TO_FIELDS: PurchaseOrderFormField[] = [
     type: 'text',
     placeholder: 'Suite 100',
   },
-  { key: 'ship_city', label: 'City', type: 'text', placeholder: 'City' },
-  { key: 'ship_country', label: 'Country', type: 'select', lookupKey: 'countries' },
-  { key: 'ship_state', label: 'State', type: 'select', lookupKey: 'states', dependsOn: 'ship_country' },
+  { key: 'ship_city', label: 'City', type: 'text', required: true, placeholder: 'City' },
+  { key: 'ship_country', label: 'Country', type: 'select', required: true, lookupKey: 'countries' },
+  { key: 'ship_state', label: 'State', type: 'select', required: true, lookupKey: 'states', dependsOn: 'ship_country' },
   {
     key: 'ship_zip',
     label: 'Zip / Postal Code',
     type: 'text',
+    required: true,
     placeholder: '12345',
   },
   {
@@ -407,8 +409,8 @@ export function poStatusLabel(code: string): string {
  *  back to DRFT — until `approvalStatus` reaches "approved". Recalling to
  *  draft is always allowed (it's how a submitter withdraws a pending order
  *  for rework without an approver's sign-off). */
-export function isPoTransitionBlocked(toCode: string, approvalStatus: string): boolean {
-  return toCode !== 'DRFT' && approvalStatus === 'pending';
+export function isPoTransitionBlocked(toCode: string, approvalStatus: string, gated?: boolean): boolean {
+  return toCode !== 'DRFT' && (gated ?? approvalStatus === 'pending');
 }
 
 /** Status badge color (spec §2) — shared by the list table, detail page, and

@@ -44,7 +44,9 @@ Edit or create `frontend/.env.production`:
 VITE_API_BASE_URL=/api
 ```
 
-**This must stay a relative path — do not point it at the backend URL directly.**
+**This must stay a relative path for this (Cloudflare Pages / GitHub Actions) pipeline — do not
+point it at the backend URL directly.** See "Exception: the Azure DevOps dev pipeline" below for
+the one deployment that intentionally does the opposite.
 
 `/api/*` is proxied to the backend by the Pages Function in `functions/api/[[path]].ts`, which keeps
 the API *same-origin* with the app. That is load-bearing for authentication, not a nicety: the
@@ -59,7 +61,53 @@ Set the backend origin on the Pages project instead (Settings → Environment va
 API_ORIGIN=https://stonesuite-backend.fly.dev
 ```
 
-It defaults to that URL if unset, so it only needs changing when the backend moves.
+**`API_ORIGIN` is required, and must be set in BOTH the Production and Preview variable sets.**
+Cloudflare Pages keeps those two sets separate, and which one applies depends on whether the
+deploy's branch matches the project's production branch — so a deploy can land in Preview and read
+an empty value. When it is missing or malformed, the Function returns a 500 naming the variable.
+
+It used to fall back to the production backend when unset. That was removed deliberately: it meant a
+misconfigured DEV or preview deploy silently read and wrote **production** data instead of failing.
+
+### Exception: the Azure DevOps dev pipeline
+
+One deployment deliberately does the opposite of everything above: Azure DevOps pipeline 6
+(`StoneSuite - WebUI`) builds this same `master` branch for `dev-stonesuite-webui.pages.dev`, and
+calls `dev-stonesuite-api.fly.dev` **directly, cross-origin** — no Pages Function proxy involved.
+It sets, as build-step variables:
+
+```
+VITE_API_BASE_URL=https://dev-stonesuite-api.fly.dev/api
+VITE_CROSS_ORIGIN_API=true
+```
+
+`vite.config.ts`'s `assertSameOriginApiBase` guard hard-fails an absolute `VITE_API_BASE_URL` unless
+`VITE_CROSS_ORIGIN_API=true` is also set — that's what stops this exception from being copy-pasted
+into a GitHub Actions build by accident. This only works because `dev-stonesuite-api`'s
+`fly.dev.toml` runs with `COOKIE_SAME_SITE_MODE=none` and `APP_ENV=production` (the latter is what
+puts `Secure` on the auth cookies, which browsers require alongside `SameSite=None`), which activates
+the CSRF double-submit check in `stonesuite-backend/middleware/csrf.go`. `src/api/client.ts` already
+echoes the `csrf_token` cookie back as `X-CSRF-Token` unconditionally, so no per-environment frontend
+code path is needed — it's simply a no-op against prod, which never issues that cookie.
+
+`functions/api/[[path]].ts` stays in the repo unchanged either way — GitHub Actions' prod build still
+needs it, and this pipeline just doesn't exercise it.
+
+**Do not set `VITE_CROSS_ORIGIN_API=true` on the GitHub Actions / prod pipeline.** Prod's backend
+(`stonesuite-backend.fly.dev`) still runs `SameSite=Lax` with no CSRF token issued; forcing a
+cross-origin base URL there would silently drop the auth cookie, not merely warn.
+
+### Checking the proxy is live
+
+Every response the Function produces carries `X-Proxied-To` naming the upstream it used:
+
+```bash
+curl -s -D - -o /dev/null https://<your-pages-host>/api/healthz | grep -i x-proxied-to
+```
+
+If that header is **absent**, the Function is not deployed and Pages is serving the SPA's
+`index.html` for `/api/*` — which shows up as `text/html` on GET and **405** on POST (login breaks).
+That means `functions/` did not make it into the deployed bundle; see the build artifact notes below.
 
 ---
 
@@ -281,7 +329,8 @@ git push origin feat/dynamic-crm-platform
 
 **Fix:**
 1. Cloudflare Pages dashboard → stonesuite → **Settings** → **Environment variables**
-2. Verify `VITE_API_BASE_URL=https://stonesuite-backend.fly.dev/api` is set
+2. Verify `VITE_API_BASE_URL=/api` is set (it must stay relative — see above), and that
+   `API_ORIGIN=https://stonesuite-backend.fly.dev` is set in both variable sets
 3. **Rerun deployment** (click the latest deployment → Retry)
 
 ### Issue: Build Always Says "No Build Output"

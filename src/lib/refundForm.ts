@@ -98,6 +98,19 @@ export function transitionPermission(toCode: string): 'approve' | 'transition' {
   return toCode === 'APPV' ? 'approve' : 'transition';
 }
 
+/** Whether a refund is currently blocked on AD-8 approval sign-off -- gated
+ *  at PEND until every configured approver (or a super admin override) has
+ *  signed off via refundService.approve. Distinct from refund:approve RBAC
+ *  permission above: that's a role-level capability check ("can this person
+ *  ever approve"), this is a record-level one ("does *this* refund's current
+ *  status have a quorum still outstanding"). Prefers the live `gated` flag
+ *  from GET over the stored approvalStatus column, which goes stale the
+ *  moment an admin edits the approver list. List rows don't carry `gated`
+ *  so they fall back to the stored flag. */
+export function needsApproval(refund: Pick<Refund, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return refund.gated ?? refund.approvalStatus === 'pending';
+}
+
 /** Statuses at which apply/unapply is blocked (backend AD-5: applying
  *  requires the refund be APPV — money may only be drawn once approved).
  *  Stricter than Payment's gate, which blocks only at VOID, because a

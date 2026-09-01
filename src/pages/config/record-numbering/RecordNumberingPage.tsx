@@ -137,7 +137,7 @@ function WorkflowRow({
     handleSubmit,
     control,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<NumberingFormValues>({
     resolver: zodResolver(
       numberingSchema,
@@ -378,12 +378,12 @@ function WorkflowRow({
         )}
         <button
           type="submit"
-          disabled={isSubmitting || save.isPending || !enabled}
+          disabled={isSubmitting || save.isPending || !isDirty}
           className={cn(
             "inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all shrink-0",
             saveSuccess
               ? "bg-emerald-500 text-white shadow-sm"
-              : !enabled
+              : !isDirty
                 ? "bg-stone-100 text-stone-400 cursor-not-allowed"
                 : "bg-brand text-stone-950 shadow-sm hover:bg-brand/80 disabled:opacity-60",
           )}

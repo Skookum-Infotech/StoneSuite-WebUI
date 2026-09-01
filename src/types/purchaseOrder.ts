@@ -7,7 +7,7 @@
 // router — served from `/api/tenant/purchase-orders*`. Structurally
 // identical to Estimate, with a vendor instead of a customer and a single
 // ship-to address instead of a billing/shipping pair.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -114,6 +114,13 @@ export interface PurchaseOrder {
   status: string;                       // human label, e.g. "Draft"
   statusCode: PurchaseOrderStatusCode;   // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved'; // AD-6
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
   vendor: PurchaseOrderVendorRef;
   orderDate: string;
   expectedDate?: string;

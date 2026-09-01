@@ -16,7 +16,7 @@
 //     pair below is populated on any given row.
 //  2. It has no line items and no subtotal/tax rollup (spec AD-1) — a refund is
 //     scalar; the itemization already lives on the source document.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -79,6 +79,14 @@ export interface Refund {
   refundNumber: string;
   status: string;              // human label, e.g. "Pending"
   statusCode: string;          // lkp_record_status code, e.g. "PEND" — drives transitions
+  approvalStatus: 'none' | 'pending' | 'approved';
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
   customer: RefundCustomerRef;
   ownerEmployeeId?: number | null;
 
@@ -109,7 +117,7 @@ export interface Refund {
  *  names the subset the table actually renders. */
 export type RefundSummary = Pick<
   Refund,
-  | 'id' | 'refundNumber' | 'status' | 'statusCode' | 'customer'
+  | 'id' | 'refundNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer'
   | 'refundDate' | 'amount' | 'unappliedAmount' | 'reason' | 'createdAt' | 'updatedAt'
 >;
 

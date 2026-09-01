@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -13,11 +16,14 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { SO_STATUS_COLORS, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES } from '@/lib/salesOrderForm';
+import { SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
+import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -27,6 +33,11 @@ const TABS = [
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -44,6 +55,9 @@ export default function SalesOrderDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [sendErrors, setSendErrors] = useState<string[]>([]);
+  const [sendSuccess, setSendSuccess] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('sales_order', 'update');
@@ -59,7 +73,15 @@ export default function SalesOrderDetailPage() {
     queryKey: ['sales-order', id],
     queryFn: () => salesOrderService.getOrder(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
+
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -82,8 +104,32 @@ export default function SalesOrderDetailPage() {
     onSuccess: (job) => navigate(`/sales/installation/${job.id}`),
   });
 
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation (see EditSalesOrderPage.tsx).
+  const transition = useMutation({
+    mutationFn: (toStatusCode: string) => salesOrderService.transition(id, toStatusCode),
+    onSuccess: (_data, toStatusCode) => {
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, toStatusCode)}.`);
+    },
+  });
+
+  // Records this user's sign-off (AD-10) — shown via the banner only while
+  // order.approvalStatus === 'pending'. A non-approver who tries anyway gets
+  // ApprovalBanner's own "not authorized" dialog; the backend still enforces
+  // this regardless (403 ErrNotApprover).
+  const approve = useMutation({
+    mutationFn: () => salesOrderService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      toast.success('Approved.');
+    },
+  });
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
-  if (error || !order)
+  if (!order)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';
@@ -144,6 +190,18 @@ export default function SalesOrderDetailPage() {
     }
   }
 
+  function handleSendClick() {
+    if (!order) return;
+    setSendSuccess(undefined);
+    const errors = validateForSend(order);
+    if (errors.length > 0) {
+      setSendErrors(errors);
+      return;
+    }
+    setSendErrors([]);
+    setSendDialogOpen(true);
+  }
+
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <CrmPageHeader
@@ -155,6 +213,26 @@ export default function SalesOrderDetailPage() {
         recordNumber={order.salesOrderNumber}
         statusBadge={<Badge color={color}>{order.status}</Badge>}
       />
+
+      {order.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={order.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={order.canApprove}
+            isOverride={order.isOverride}
+            requiredApprovals={order.requiredApprovals}
+            approvedCount={order.approvedCount}
+            callerAlreadyApproved={order.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -260,7 +338,7 @@ export default function SalesOrderDetailPage() {
 
           {activeTab === 'inventory' && <SalesOrderInventoryTab orderId={id} />}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
-          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
+          {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
           <div className="h-6" />
         </div>
@@ -270,14 +348,16 @@ export default function SalesOrderDetailPage() {
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
             <div className="space-y-0.5">
-              <button
-                type="button"
-                onClick={() => navigate(`/sales/sales_order/${id}/edit`, { state: { initialTab: 'files' } })}
-                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-              >
-                <Upload className="size-4 text-stone-400 shrink-0" />
-                Upload file
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/sales/sales_order/${id}/edit`, { state: { initialTab: 'files' } })}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <Upload className="size-4 text-stone-400 shrink-0" />
+                  Upload file
+                </button>
+              )}
               {canEdit && (
                 <button
                   type="button"
@@ -286,6 +366,17 @@ export default function SalesOrderDetailPage() {
                 >
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit sales order
+                </button>
+              )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleSendClick}
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                  aria-label="Send sales order to customer"
+                >
+                  <Send className="size-4 text-stone-400 shrink-0" />
+                  Send to Customer
                 </button>
               )}
               {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
@@ -330,13 +421,28 @@ export default function SalesOrderDetailPage() {
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
+            {sendErrors.length > 0 && (
+              <div role="alert" className="space-y-0.5">
+                {sendErrors.map((e) => (
+                  <p key={e} className="text-2xs text-destructive">{e}</p>
+                ))}
+              </div>
+            )}
+            {sendSuccess && (
+              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
-              <Badge color={color}>{order.status}</Badge>
+              <SalesOrderStatusControl
+                order={{ ...order, hasAttachments }}
+                onChange={(code) => transition.mutate(code)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
@@ -367,6 +473,19 @@ export default function SalesOrderDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      <SendToCustomerDialog
+        recordId={id}
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        recipientEmail={order.billing.email ?? ''}
+        label={`Sales Order ${order.salesOrderNumber}`}
+        onSent={(result) =>
+          setSendSuccess(
+            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
+          )
+        }
+      />
     </div>
   );
 }

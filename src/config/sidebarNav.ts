@@ -9,7 +9,6 @@ import {
   UserPlus,
   UsersRound,
   Hash,
-  KeyRound,
   ScrollText,
   TrendingUp,
   FileSpreadsheet,
@@ -32,6 +31,7 @@ import {
   Landmark,
   ListTree,
   Settings2,
+  Fingerprint,
   Warehouse,
   MapPin,
   ClipboardEdit,
@@ -41,6 +41,9 @@ import {
   Boxes,
   ArrowLeftRight,
   CalendarClock,
+  LayoutGrid,
+  KeyRound,
+  MessageSquareText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -59,6 +62,16 @@ export interface NavLink {
   iconColor: string;
   permission?: NavPermission;
   platformAdminOnly?: boolean;
+  /** Opt out of permission gating for links every signed-in user may see.
+   *  Required: a link with neither `permission` nor `alwaysVisible` is hidden,
+   *  so forgetting to declare a permission fails closed rather than exposing
+   *  a module the API will refuse. */
+  alwaysVisible?: boolean;
+  /** Workflow key (Configuration > Workflows) backing this link's form, e.g.
+   *  "lead". When set, the link is hidden for every user — independent of
+   *  permission — while that workflow is disabled. Omit for links with no
+   *  backing workflow. */
+  workflowKey?: string;
 }
 
 export interface NavGroup {
@@ -106,6 +119,9 @@ export const sidebarNav: SidebarNavConfig = {
       path: "/dashboard",
       icon: LayoutDashboard,
       iconColor: "text-indigo-500 dark:text-indigo-400",
+      // The landing route for every signed-in user; it has no single backing
+      // resource and each widget gates its own data server-side.
+      alwaysVisible: true,
     },
   ],
   sections: [
@@ -129,6 +145,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Sparkles,
               iconColor: "text-amber-500 dark:text-amber-400",
               permission: { resource: "lead", action: "read" },
+              workflowKey: "lead",
             },
             {
               type: "link",
@@ -138,6 +155,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Users,
               iconColor: "text-sky-500 dark:text-sky-400",
               permission: { resource: "prospect", action: "read" },
+              workflowKey: "prospect",
             },
             {
               type: "link",
@@ -147,6 +165,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Building2,
               iconColor: "text-blue-600 dark:text-blue-400",
               permission: { resource: "customer", action: "read" },
+              workflowKey: "customer",
             },
           ],
         },
@@ -165,6 +184,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/estimate",
               icon: FileSpreadsheet,
               iconColor: "text-teal-600 dark:text-teal-400",
+              permission: { resource: "estimate", action: "read" },
+              workflowKey: "estimate",
             },
             {
               type: "link",
@@ -173,6 +194,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/quote",
               icon: FileText,
               iconColor: "text-cyan-600 dark:text-cyan-400",
+              permission: { resource: "quote", action: "read" },
+              workflowKey: "quote",
             },
             {
               type: "link",
@@ -181,6 +204,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/sales_order",
               icon: ShoppingCart,
               iconColor: "text-emerald-600 dark:text-emerald-400",
+              permission: { resource: "sales_order", action: "read" },
+              workflowKey: "sales_order",
             },
             {
               type: "link",
@@ -189,6 +214,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/installation",
               icon: Wrench,
               iconColor: "text-orange-500 dark:text-orange-400",
+              permission: { resource: "installation", action: "read" },
+              workflowKey: "installation",
             },
             {
               type: "link",
@@ -197,6 +224,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/invoice",
               icon: Receipt,
               iconColor: "text-violet-500 dark:text-violet-400",
+              permission: { resource: "invoice", action: "read" },
+              workflowKey: "invoice",
             },
             {
               type: "link",
@@ -205,6 +234,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/payment",
               icon: CreditCard,
               iconColor: "text-green-600 dark:text-green-400",
+              permission: { resource: "payment", action: "read" },
+              workflowKey: "payment",
             },
             {
               type: "link",
@@ -213,6 +244,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/credit_memo",
               icon: FileMinus,
               iconColor: "text-rose-500 dark:text-rose-400",
+              permission: { resource: "credit_memo", action: "read" },
+              workflowKey: "credit_memo",
             },
             {
               type: "link",
@@ -221,6 +254,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/sales/refund",
               icon: RotateCcw,
               iconColor: "text-red-500 dark:text-red-400",
+              permission: { resource: "refund", action: "read" },
+              workflowKey: "refund",
             },
           ],
         },
@@ -239,6 +274,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor",
               icon: Building,
               iconColor: "text-indigo-500 dark:text-indigo-400",
+              permission: { resource: "vendor", action: "read" },
+              workflowKey: "vendor",
             },
             {
               type: "link",
@@ -247,6 +284,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/requisition",
               icon: ClipboardList,
               iconColor: "text-amber-500 dark:text-amber-400",
+              permission: { resource: "requisition", action: "read" },
+              workflowKey: "requisition",
             },
             {
               type: "link",
@@ -255,6 +294,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/purchase_order",
               icon: Package,
               iconColor: "text-orange-500 dark:text-orange-400",
+              permission: { resource: "purchase_order", action: "read" },
+              workflowKey: "purchase_order",
             },
             {
               type: "link",
@@ -264,6 +305,7 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Inbox,
               iconColor: "text-lime-600 dark:text-lime-400",
               permission: { resource: "item_receipt", action: "read" },
+              workflowKey: "item_receipt",
             },
             {
               type: "link",
@@ -272,6 +314,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor_bill",
               icon: FileCheck,
               iconColor: "text-teal-600 dark:text-teal-400",
+              permission: { resource: "vendor_bill", action: "read" },
+              workflowKey: "vendor_bill",
             },
             {
               type: "link",
@@ -280,6 +324,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor_payment",
               icon: Banknote,
               iconColor: "text-green-600 dark:text-green-400",
+              permission: { resource: "vendor_payment", action: "read" },
+              workflowKey: "vendor_payment",
             },
             {
               type: "link",
@@ -288,6 +334,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/vendor_credit",
               icon: FilePlus,
               iconColor: "text-rose-500 dark:text-rose-400",
+              permission: { resource: "vendor_credit", action: "read" },
+              workflowKey: "vendor_credit",
             },
             {
               type: "link",
@@ -296,6 +344,8 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/purchases/expense",
               icon: Wallet,
               iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+              permission: { resource: "expense", action: "read" },
+              workflowKey: "expense",
             },
           ],
         },
@@ -470,12 +520,30 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
+              id: "portal-users",
+              label: "Customer Portal Users",
+              path: "/config/portal-users",
+              icon: KeyRound,
+              iconColor: "text-teal-500 dark:text-teal-400",
+              permission: { resource: "portal_access", action: "read" },
+            },
+            {
+              type: "link",
               id: "record-numbering",
               label: "Record Numbering",
               path: "/config/record-numbering",
               icon: Hash,
               iconColor: "text-amber-500 dark:text-amber-400",
               permission: { resource: "workflow_config", action: "configure" },
+            },
+            {
+              type: "link",
+              id: "dashboard-widgets",
+              label: "Dashboard Widgets",
+              path: "/config/dashboard-widgets",
+              icon: LayoutGrid,
+              iconColor: "text-cyan-500 dark:text-cyan-400",
+              permission: { resource: "dashboard_widget", action: "configure" },
             },
             {
               type: "link",
@@ -488,11 +556,11 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
-              id: "authentication",
-              label: "Authentication",
-              path: "/config/authentication",
-              icon: KeyRound,
-              iconColor: "text-rose-500 dark:text-rose-400",
+              id: "saml-setup",
+              label: "SAML Setup",
+              path: "/config/saml-setup",
+              icon: Fingerprint,
+              iconColor: "text-indigo-500 dark:text-indigo-400",
               permission: { resource: "sso_config", action: "read" },
             },
             {
@@ -519,6 +587,9 @@ export const sidebarNav: SidebarNavConfig = {
           path: "/subscription",
           icon: CreditCard,
           iconColor: "text-purple-500 dark:text-purple-400",
+          // Billing is a workspace-level page with no catalog resource behind
+          // it; the page itself decides what a non-owner may change.
+          alwaysVisible: true,
         },
       ],
     },
@@ -534,6 +605,15 @@ export const sidebarNav: SidebarNavConfig = {
           path: "/customer/onboarding",
           icon: UserPlus,
           iconColor: "text-pink-500 dark:text-pink-400",
+          platformAdminOnly: true,
+        },
+        {
+          type: "link",
+          id: "support-tickets",
+          label: "Support Tickets",
+          path: "/platform/feedback",
+          icon: MessageSquareText,
+          iconColor: "text-teal-500 dark:text-teal-400",
           platformAdminOnly: true,
         },
       ],

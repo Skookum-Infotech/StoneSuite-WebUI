@@ -12,6 +12,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
+import { customerDefaultFields } from '@/lib/customerDefaults';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
@@ -39,6 +40,17 @@ export default function AddPaymentPage() {
   const [pendingAmount, setPendingAmount] = useState('');
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+
+  const handleCustomerChange = useCallback((next: CustomerRef | null) => {
+    setCustomer(next);
+    if (next) {
+      const defaults = customerDefaultFields(next);
+      setData((d) => ({
+        ...d,
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+      }));
+    }
+  }, []);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -137,7 +149,7 @@ export default function AddPaymentPage() {
             {activeTab === 'details' && (
               <>
                 <ModernSection title="Customer" index={0}>
-                  <CustomerPicker value={customer} onChange={setCustomer} required />
+                  <CustomerPicker value={customer} onChange={handleCustomerChange} required />
                 </ModernSection>
 
                 <ModernSection title="Payment Details" index={1}>

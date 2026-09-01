@@ -1,31 +1,46 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { ESTIMATE_STATUS_CODES, ESTIMATE_ALLOWED_TRANSITIONS } from '@/lib/estimateForm';
+import { ESTIMATE_STATUS_CODES, ESTIMATE_ALLOWED_TRANSITIONS, ESTIMATE_STATUS_COLORS, needsApproval } from '@/lib/estimateForm';
 import { StatusSelect } from './StatusSelect';
+import type { Estimate } from '@/types/estimate';
 
-// Status select for the Estimate Edit page. Legal moves mirror the backend
-// estimate/transitions.go (spec §7); every move needs the single
-// estimate:transition permission — Estimate has no separate approve action in
-// authz/catalog.go. The backend (ValidateTransition + RBAC) stays the source of
-// truth; this control just shouldn't offer a move it knows would 409 or 403.
-export function EstimateStatusControl({ value, onChange, disabled }: {
-  value: string; // current status code, e.g. "DRFT"
+// Status select for the Estimate Edit/Detail pages. Legal moves mirror the
+// backend estimate/transitions.go (spec §7); every move needs the single
+// estimate:transition permission. A move is additionally blocked client-side
+// while approvalStatus is 'pending' (the current status has configured
+// approvers awaiting sign-off, AD-8) -- the backend would 409 with
+// ErrApprovalRequired anyway, this just explains why up front instead of
+// after a failed save. Use the ApprovalBanner (rendered by the Detail page)
+// to actually approve.
+export function EstimateStatusControl({ estimate, onChange, disabled, variant }: {
+  estimate: Pick<Estimate, 'statusCode' | 'approvalStatus'> & { gated?: boolean; hasAttachments?: boolean };
   onChange: (code: string) => void;
   disabled?: boolean;
+  variant?: 'field' | 'pill';
 }) {
   const { hasPermission, isLoading } = useUserPermissions();
-  const guard = () => ({
-    permitted: isLoading || hasPermission('estimate', 'transition'),
-    reason: 'You do not have permission to change status',
-  });
+  const guard = (code: string) => {
+    if (!isLoading && !hasPermission('estimate', 'transition')) {
+      return { permitted: false, reason: 'You do not have permission to change status' };
+    }
+    if (needsApproval(estimate)) {
+      return { permitted: false, reason: 'Awaiting approval', needsApprove: true };
+    }
+    if (estimate.statusCode === 'DRFT' && code === 'PAPV' && estimate.hasAttachments === false) {
+      return { permitted: false, reason: 'Attach a file before submitting for approval' };
+    }
+    return { permitted: true };
+  };
 
   return (
     <StatusSelect
-      value={value}
+      value={estimate.statusCode}
       onChange={onChange}
       disabled={disabled}
       statuses={ESTIMATE_STATUS_CODES}
       allowedTransitions={ESTIMATE_ALLOWED_TRANSITIONS}
       guard={guard}
+      variant={variant}
+      colorFor={(s) => ESTIMATE_STATUS_COLORS[s.label] ?? '#a8a29e'}
     />
   );
 }

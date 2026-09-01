@@ -1,9 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { Undo2, Plus } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 import { RefundTable } from './components/RefundTable';
 
 export default function RefundListPage() {
   const navigate = useNavigate();
+  // A customer-portal session reads this same page (see CLAUDE.md's
+  // merged-login design) but never creates a refund — the backend has no
+  // such endpoint under /api/portal/*, so the button would always 404.
+  const isCustomer = useAuthStore((s) => s.kind === 'portal');
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -18,13 +23,15 @@ export default function RefundListPage() {
               <p className="text-sm text-stone-500">Money returned to customers.</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/sales/refund/new')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
-          >
-            <Plus className="size-3.5" aria-hidden="true" />
-            New Refund
-          </button>
+          {!isCustomer && (
+            <button
+              onClick={() => navigate('/sales/refund/new')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+            >
+              <Plus className="size-3.5" aria-hidden="true" />
+              New Refund
+            </button>
+          )}
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">

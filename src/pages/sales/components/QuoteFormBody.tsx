@@ -47,8 +47,8 @@ export function QuoteFormBody({
   /** Interactive status control (edit mode only) — a new quote always starts
    *  at Draft, so create mode omits this and shows a plain "Draft" display. */
   statusControl?: ReactNode;
-  /** Approve-sign-off action (edit mode only, shown by the page when
-   *  statusCode === QUOTE_APPROVAL_PENDING_STATUS). */
+  /** Approve-sign-off action (edit mode only, shown by the page while
+   *  needsApproval(quote) — see lib/quoteForm.ts). */
   approvalControl?: ReactNode;
   /** The estimate this quote was converted from, if any — renders a
    *  read-only link (plan Decision #1/§ ticket item). */

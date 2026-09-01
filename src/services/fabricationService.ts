@@ -45,8 +45,25 @@ export const fabricationService = {
 
   getJob: (uuid: string): Promise<FabricationJob> =>
     tenantClient
-      .get<{ success: boolean; fabricationJob: FabricationJob }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.fabricationJob),
+      .get<{
+        success: boolean; fabricationJob: FabricationJob; approval?: {
+          gated?: boolean; approvers?: FabricationJob['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.fabricationJob,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      }),
 
   // A job always originates from a sales order — this create path takes an
   // explicit salesOrderUuid in the payload (used by the standalone Add page).

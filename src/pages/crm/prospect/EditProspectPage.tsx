@@ -77,6 +77,7 @@ export default function EditProspectPage() {
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== 'prospect' && routeMap[newType]) {
+        queryClient.invalidateQueries({ queryKey: ['crm-records', newType] });
         guard.markClean();
         navigate(`${routeMap[newType]}/${updated.id}`);
       }

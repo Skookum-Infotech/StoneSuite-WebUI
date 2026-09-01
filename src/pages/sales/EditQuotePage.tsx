@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, AlertCircle, Loader2, Save, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { lookupService } from '@/services/lookupService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -14,8 +16,9 @@ import { QuoteStatusControl } from './components/QuoteStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import {
   fromQuote, toCreatePayload, PAGE_TABS, type PageTab,
-  type QuoteLineItem, QUOTE_TERMINAL_STATUSES,
+  type QuoteLineItem, QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES,
 } from '@/lib/quoteForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -45,6 +48,13 @@ export default function EditQuotePage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -59,6 +69,8 @@ export default function EditQuotePage() {
   const lineItems = localLineItems ?? mapped?.lineItems ?? EMPTY_ITEMS;
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? quote?.statusCode ?? '';
+  const approvalStatus = quote?.approvalStatus ?? 'none';
+  const gated = quote?.gated ?? false;
   const isTerminal = QUOTE_TERMINAL_STATUSES.has(statusCode);
 
   const set = useCallback(
@@ -84,6 +96,7 @@ export default function EditQuotePage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast.success(`Moved to ${statusToastLabel(QUOTE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -193,7 +206,7 @@ export default function EditQuotePage() {
           total={total}
           statusControl={(
             <QuoteStatusControl
-              value={statusCode}
+              quote={{ statusCode, approvalStatus, gated, hasAttachments }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

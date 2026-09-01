@@ -121,6 +121,7 @@ export const BILL_TO_FIELDS: EstimateFormField[] = [
     type: 'textarea',
     rows: 2,
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -137,13 +138,14 @@ export const BILL_TO_FIELDS: EstimateFormField[] = [
     type: 'text',
     placeholder: 'Suite 100',
   },
-  { key: 'bill_city', label: 'City', type: 'text', placeholder: 'City' },
-  { key: 'bill_country', label: 'Country', type: 'select', lookupKey: 'countries' },
-  { key: 'bill_state', label: 'State', type: 'select', lookupKey: 'states', dependsOn: 'bill_country' },
+  { key: 'bill_city', label: 'City', type: 'text', required: true, placeholder: 'City' },
+  { key: 'bill_country', label: 'Country', type: 'select', required: true, lookupKey: 'countries' },
+  { key: 'bill_state', label: 'State', type: 'select', required: true, lookupKey: 'states', dependsOn: 'bill_country' },
   {
     key: 'bill_zip',
     label: 'Zip / Postal Code',
     type: 'text',
+    required: true,
     placeholder: '12345',
   },
   {
@@ -206,6 +208,7 @@ export const SHIP_TO_FIELDS: EstimateFormField[] = [
     rows: 2,
     showIfFieldFalse: 'ship_same_as_bill',
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -229,6 +232,7 @@ export const SHIP_TO_FIELDS: EstimateFormField[] = [
     label: 'City',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     placeholder: 'City',
   },
   {
@@ -236,6 +240,7 @@ export const SHIP_TO_FIELDS: EstimateFormField[] = [
     label: 'Country',
     type: 'select',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     lookupKey: 'countries',
   },
   {
@@ -243,6 +248,7 @@ export const SHIP_TO_FIELDS: EstimateFormField[] = [
     label: 'State',
     type: 'select',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     lookupKey: 'states',
     dependsOn: 'ship_country',
   },
@@ -251,6 +257,7 @@ export const SHIP_TO_FIELDS: EstimateFormField[] = [
     label: 'Zip / Postal Code',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     placeholder: '12345',
   },
   {
@@ -422,6 +429,39 @@ export const ESTIMATE_CONVERTIBLE_STATUSES = new Set(['APPV', 'SENT']);
  *  (estimate/store_update.go — "A rejected, expired, or cancelled estimate
  *  cannot be edited."). */
 export const ESTIMATE_TERMINAL_STATUSES = new Set(['RJCT', 'EXPR', 'CANC']);
+
+/** Whether the estimate's current status is awaiting sign-off (AD-8) — while
+ *  true, every transition 409s (estimate/store_transition.go: ErrApprovalRequired)
+ *  until a configured approver (or a super admin override) calls
+ *  estimateService.approve, regardless of who's asking or which target they
+ *  pick. Prefers the live `gated` flag from GET (recomputed server-side from
+ *  the *current* approver config every read, so it correctly flips false the
+ *  moment an admin empties the approver list out from under an estimate
+ *  already sitting in "pending" — at that point Transition no longer blocks
+ *  either, so anyone with estimate:transition can move it forward directly).
+ *  List rows don't carry `gated` (too expensive to compute per search result)
+ *  so they fall back to the stored approvalStatus flag, which is a fine
+ *  approximation for a table cell. */
+export function needsApproval(estimate: Pick<Estimate, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return estimate.gated ?? estimate.approvalStatus === 'pending';
+}
+
+/** Client-side precondition check for the "Send to Customer" quick action
+ *  (Estimate detail page). Mirrors the backend's own requirement — the
+ *  generic document/send endpoint 400s "At least one recipient is required"
+ *  when billing.email is blank and no `to` override is supplied — plus two
+ *  UX-only checks (customer, line items) so the user gets one inline list of
+ *  problems instead of a raw 400 after opening the confirm dialog. Not
+ *  status-gated: available regardless of estimate.statusCode. */
+export function validateForSend(
+  estimate: Pick<Estimate, 'customer' | 'items' | 'billing'>,
+): string[] {
+  const errors: string[] = [];
+  if (!estimate.customer?.id) errors.push('A customer is required.');
+  if (!estimate.items || estimate.items.length === 0) errors.push('At least one line item is required.');
+  if (!estimate.billing?.email?.trim()) errors.push('A billing email is required to send this estimate.');
+  return errors;
+}
 
 // ── Form defaults ─────────────────────────────────────────────────────────────
 

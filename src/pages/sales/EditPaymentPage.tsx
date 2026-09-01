@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -12,7 +13,8 @@ import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
-import { EDIT_FIELDS, fromPayment, toUpdatePayload } from '@/lib/paymentForm';
+import { EDIT_FIELDS, fromPayment, toUpdatePayload, PAYMENT_STATUS_CODES } from '@/lib/paymentForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 export default function EditPaymentPage() {
   const { id = '' } = useParams();
@@ -46,6 +48,8 @@ export default function EditPaymentPage() {
   const mapped = useMemo(() => (payment ? fromPayment(payment) : null), [payment]);
   const data = localData ?? mapped?.data ?? {};
   const statusCode = localStatusCode ?? payment?.statusCode ?? '';
+  const approvalStatus = payment?.approvalStatus ?? 'none';
+  const gated = payment?.gated ?? false;
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
@@ -58,6 +62,7 @@ export default function EditPaymentPage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      toast.success(`Moved to ${statusToastLabel(PAYMENT_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -129,7 +134,7 @@ export default function EditPaymentPage() {
                 <div className="space-y-1.5">
                   <label className={fieldLabelCls}>Status</label>
                   <PaymentStatusControl
-                    value={statusCode}
+                    payment={{ statusCode, approvalStatus, gated }}
                     onChange={handleStatusChange}
                     disabled={transition.isPending}
                   />

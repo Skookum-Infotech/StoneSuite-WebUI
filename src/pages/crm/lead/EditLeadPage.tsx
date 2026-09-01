@@ -77,6 +77,7 @@ export default function EditLeadPage() {
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== 'lead' && routeMap[newType]) {
+        queryClient.invalidateQueries({ queryKey: ['crm-records', newType] });
         guard.markClean();
         navigate(`${routeMap[newType]}/${updated.id}`);
       }

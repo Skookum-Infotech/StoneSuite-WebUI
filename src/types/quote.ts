@@ -2,24 +2,32 @@
 //
 // Mirrors the dedicated relational Quote backend module, sibling to Estimate
 // (types/estimate.ts) — served from `/api/tenant/quotes*`, distinct from the
-// generic WorkflowRecord JSONB CRM router. Unlike Estimate, a Quote's
-// billing/shipping address is a flat string shape (no lkp_state/lkp_country
-// numeric ids). A line item is either a catalog pick or free-text, same as
-// Estimate — see QuoteLineInput below.
-import type { FilterClause, SortKey } from '@/types/tenant';
+// generic WorkflowRecord JSONB CRM router. Like Estimate/SalesOrder/Invoice,
+// a Quote's billing/shipping address references lkp_state/lkp_country by
+// numeric id (stateId/countryId), not free-text. A line item is either a
+// catalog pick or free-text, same as Estimate — see QuoteLineInput below.
+import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
 /** Billing or shipping snapshot block. All fields optional; the server fills
- *  gaps from the referenced customer at create time. */
+ *  gaps from the referenced customer at create time. IDs reference `lkp_state`
+ *  / `lkp_country`. Matches the sibling SalesOrderAddressInput / EstimateAddressInput
+ *  / InvoiceAddressInput shape (and the backend's quote.AddressInput struct). */
 export interface QuoteAddressInput {
   customerName?: string;
+  attention?: string;
   addrLine1?: string;
   addrLine2?: string;
+  suiteUnit?: string;
   city?: string;
-  stateProvince?: string;
-  postalCode?: string;
-  country?: string;
+  stateId?: number | null;
+  countryId?: number | null;
+  zip?: string;
+  phone?: string;
+  fax?: string;
+  // Used as the default "Send to Customer" recipient (quote.Recipient()).
+  email?: string;
 }
 
 /** One quoted line. `inventoryItemUuid` selects a catalog item (server
@@ -112,7 +120,14 @@ export interface Quote {
   quoteNumber: string;
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
-  approvalStatus: string;      // none | pending | approved
+  approvalStatus: string;      // none | pending | approved -- display only, can go stale; use `gated` to decide UI behavior
+  gated: boolean;              // authoritative: true iff a live approval gate is currently blocking transitions out of this status
+  approvers: RecordApprover[]; // configured approvers for the current status; only populated while gated
+  requiredApprovals: number;   // how many sign-offs the current status's quorum needs (e.g. 2)
+  approvedCount: number;       // how many of them have signed off so far
+  canApprove: boolean;         // whether the requesting user can approve (configured approver OR super admin)
+  isOverride: boolean;         // true when canApprove is only true because the user is a super admin, not a configured approver
+  callerAlreadyApproved: boolean; // true if the requesting user already signed off this round (quorum may still need others)
   customer: QuoteCustomerRef;
   estimate?: QuoteEstimateRef | null;
   quoteDate: string;
@@ -148,7 +163,7 @@ export interface Quote {
  *  this type only names the subset the table actually renders. */
 export type QuoteSummary = Pick<
   Quote,
-  'id' | 'quoteNumber' | 'status' | 'statusCode' | 'customer' | 'quoteDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
+  'id' | 'quoteNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer' | 'quoteDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
 >;
 
 export interface QuoteSearchRequest {

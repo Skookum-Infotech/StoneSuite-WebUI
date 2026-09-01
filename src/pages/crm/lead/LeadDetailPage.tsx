@@ -11,8 +11,10 @@ import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
+import { StatusDropdown } from "@/components/crm/StatusDropdown";
+import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
-import { ApprovalBanner } from "@/components/crm/ApprovalBanner";
+import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
 import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,
@@ -76,6 +78,23 @@ export default function LeadDetailPage() {
   const approve = useMutation({
     mutationFn: () => crmService.approveRecord(id, "lead"),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
+  });
+
+  // Inline status change from the sidebar's Status row — mirrors the Edit
+  // page's transition mutation (see EditLeadPage.tsx). A converting
+  // transition (e.g. Lead -> Prospect) navigates to the new record, same as
+  // the Edit page does today.
+  const transition = useMutation({
+    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "lead"),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+      queryClient.invalidateQueries({ queryKey: ["crm-records", "lead"] });
+      const newType = updated.workflowId?.toLowerCase();
+      if (newType && newType !== "lead" && CRM_WORKFLOW_ROUTES[newType]) {
+        queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
+        navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
+      }
+    },
   });
 
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -237,6 +256,17 @@ export default function LeadDetailPage() {
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <CrmDetailSidebar
             statusInfo={statusInfo}
+            statusControl={statusInfo && (
+              <StatusDropdown
+                workflowKey="lead"
+                mode="transitions"
+                recordId={id}
+                value={record.currentStateId}
+                onChange={(toStateId) => transition.mutate(toStateId)}
+                disabled={transition.isPending}
+                variant="pill"
+              />
+            )}
             ownerUserId={record.ownerUserId}
             users={users}
             createdAt={record.createdAt}

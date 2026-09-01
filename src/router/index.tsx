@@ -30,6 +30,7 @@ const ForgotPasswordPage = lazyWithRetry(
   () => import("@/pages/auth/ForgotPasswordPage"),
 );
 const ResetPasswordPage = lazyWithRetry(() => import("@/pages/auth/ResetPasswordPage"));
+const SsoCallbackPage = lazyWithRetry(() => import("@/pages/auth/SsoCallbackPage"));
 const DashboardPage = lazyWithRetry(() => import("@/pages/dashboard/DashboardPage"));
 const OnboardingPage = lazyWithRetry(() => import("@/pages/customer/OnboardingPage"));
 const AddCustomerPage = lazyWithRetry(() => import("@/pages/customer/AddCustomerPage"));
@@ -82,11 +83,32 @@ const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
+const PortalUsersPage = lazyWithRetry(
+  () => import("@/pages/config/portal-users/PortalUsersPage"),
+);
+const DashboardWidgetsPage = lazyWithRetry(
+  () => import("@/pages/config/dashboard-widgets/DashboardWidgetsPage"),
+);
 const AuditLogPage = lazyWithRetry(
   () => import("@/pages/config/audit/AuditLogPage"),
 );
-const SsoConfigPage = lazyWithRetry(
-  () => import("@/pages/config/authentication/SsoConfigPage"),
+const FeedbackListPage = lazyWithRetry(
+  () => import("@/pages/platform/feedback/FeedbackListPage"),
+);
+const FeedbackDetailPage = lazyWithRetry(
+  () => import("@/pages/platform/feedback/FeedbackDetailPage"),
+);
+const SamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/SamlSetupPage"),
+);
+const CognitoSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/CognitoSamlSetupPage"),
+);
+const EntraSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/EntraSamlSetupPage"),
+);
+const CustomSamlSetupPage = lazyWithRetry(
+  () => import("@/pages/config/saml-setup/CustomSamlSetupPage"),
 );
 const WorkflowPlaceholderPage = lazyWithRetry(
   () => import("@/pages/common/WorkflowPlaceholderPage"),
@@ -194,6 +216,18 @@ const VendorDetailPage = lazyWithRetry(
 const EditVendorPage = lazyWithRetry(
   () => import("@/pages/purchases/vendor/EditVendorPage"),
 );
+const RequisitionListPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/RequisitionListPage"),
+);
+const AddRequisitionPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/AddRequisitionPage"),
+);
+const RequisitionDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/RequisitionDetailPage"),
+);
+const EditRequisitionPage = lazyWithRetry(
+  () => import("@/pages/purchases/requisition/EditRequisitionPage"),
+);
 const PurchaseOrderListPage = lazyWithRetry(
   () => import("@/pages/purchases/purchase-order/PurchaseOrderListPage"),
 );
@@ -217,6 +251,54 @@ const ItemReceiptDetailPage = lazyWithRetry(
 );
 const EditItemReceiptPage = lazyWithRetry(
   () => import("@/pages/purchases/item-receipt/EditItemReceiptPage"),
+);
+const VendorBillListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/VendorBillListPage"),
+);
+const AddVendorBillPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/AddVendorBillPage"),
+);
+const VendorBillDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/VendorBillDetailPage"),
+);
+const EditVendorBillPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-bill/EditVendorBillPage"),
+);
+const VendorPaymentListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/VendorPaymentListPage"),
+);
+const AddVendorPaymentPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/AddVendorPaymentPage"),
+);
+const VendorPaymentDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/VendorPaymentDetailPage"),
+);
+const EditVendorPaymentPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-payment/EditVendorPaymentPage"),
+);
+const VendorCreditListPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/VendorCreditListPage"),
+);
+const AddVendorCreditPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/AddVendorCreditPage"),
+);
+const VendorCreditDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/VendorCreditDetailPage"),
+);
+const EditVendorCreditPage = lazyWithRetry(
+  () => import("@/pages/purchases/vendor-credit/EditVendorCreditPage"),
+);
+const ExpenseListPage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/ExpenseListPage"),
+);
+const AddExpensePage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/AddExpensePage"),
+);
+const ExpenseDetailPage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/ExpenseDetailPage"),
+);
+const EditExpensePage = lazyWithRetry(
+  () => import("@/pages/purchases/expense/EditExpensePage"),
 );
 // Inventory module
 const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemListPage"));
@@ -307,7 +389,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/prospect",
         element: lazy_(
-          <PermissionGuard resource="prospect" action="read">
+          <PermissionGuard resource="prospect" action="read" workflowKey="prospect">
             <ProspectListPage />
           </PermissionGuard>,
         ),
@@ -315,7 +397,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/prospect/new",
         element: lazy_(
-          <PermissionGuard resource="prospect" action="create">
+          <PermissionGuard resource="prospect" action="create" workflowKey="prospect">
             <AddProspectPage />
           </PermissionGuard>,
         ),
@@ -323,7 +405,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/prospect/:id",
         element: lazy_(
-          <PermissionGuard resource="prospect" action="read">
+          <PermissionGuard resource="prospect" action="read" workflowKey="prospect">
             <ProspectViewPage />
           </PermissionGuard>,
         ),
@@ -331,7 +413,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/prospect/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="prospect" action="update">
+          <PermissionGuard resource="prospect" action="update" workflowKey="prospect">
             <EditProspectPage />
           </PermissionGuard>,
         ),
@@ -341,7 +423,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/lead",
         element: lazy_(
-          <PermissionGuard resource="lead" action="read">
+          <PermissionGuard resource="lead" action="read" workflowKey="lead">
             <LeadPage />
           </PermissionGuard>,
         ),
@@ -349,7 +431,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/lead/new",
         element: lazy_(
-          <PermissionGuard resource="lead" action="create">
+          <PermissionGuard resource="lead" action="create" workflowKey="lead">
             <AddLeadPage />
           </PermissionGuard>,
         ),
@@ -357,7 +439,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/lead/:id",
         element: lazy_(
-          <PermissionGuard resource="lead" action="read">
+          <PermissionGuard resource="lead" action="read" workflowKey="lead">
             <LeadDetailPage />
           </PermissionGuard>,
         ),
@@ -365,7 +447,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/lead/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="lead" action="update">
+          <PermissionGuard resource="lead" action="update" workflowKey="lead">
             <EditLeadPage />
           </PermissionGuard>,
         ),
@@ -375,7 +457,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/customer",
         element: lazy_(
-          <PermissionGuard resource="customer" action="read">
+          <PermissionGuard resource="customer" action="read" workflowKey="customer">
             <CustomerListPage />
           </PermissionGuard>,
         ),
@@ -383,7 +465,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/customer/new",
         element: lazy_(
-          <PermissionGuard resource="customer" action="create">
+          <PermissionGuard resource="customer" action="create" workflowKey="customer">
             <AddCRMCustomerPage />
           </PermissionGuard>,
         ),
@@ -391,7 +473,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/customer/:id",
         element: lazy_(
-          <PermissionGuard resource="customer" action="read">
+          <PermissionGuard resource="customer" action="read" workflowKey="customer">
             <CustomerDetailPage />
           </PermissionGuard>,
         ),
@@ -399,7 +481,7 @@ export const router = createBrowserRouter([
       {
         path: "crm/customer/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="customer" action="update">
+          <PermissionGuard resource="customer" action="update" workflowKey="customer">
             <EditCustomerPage />
           </PermissionGuard>,
         ),
@@ -409,7 +491,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/estimate",
         element: lazy_(
-          <PermissionGuard resource="estimate" action="read">
+          <PermissionGuard resource="estimate" action="read" workflowKey="estimate">
             <EstimateListPage />
           </PermissionGuard>,
         ),
@@ -417,7 +499,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/estimate/new",
         element: lazy_(
-          <PermissionGuard resource="estimate" action="create">
+          <PermissionGuard resource="estimate" action="create" workflowKey="estimate">
             <AddEstimatePage />
           </PermissionGuard>,
         ),
@@ -425,7 +507,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/estimate/:id",
         element: lazy_(
-          <PermissionGuard resource="estimate" action="read">
+          <PermissionGuard resource="estimate" action="read" workflowKey="estimate">
             <EstimateDetailPage />
           </PermissionGuard>,
         ),
@@ -433,7 +515,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/estimate/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="estimate" action="update">
+          <PermissionGuard resource="estimate" action="update" workflowKey="estimate">
             <EditEstimatePage />
           </PermissionGuard>,
         ),
@@ -443,7 +525,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/quote",
         element: lazy_(
-          <PermissionGuard resource="quote" action="read">
+          <PermissionGuard resource="quote" action="read" workflowKey="quote">
             <QuoteListPage />
           </PermissionGuard>,
         ),
@@ -451,7 +533,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/quote/new",
         element: lazy_(
-          <PermissionGuard resource="quote" action="create">
+          <PermissionGuard resource="quote" action="create" workflowKey="quote">
             <AddQuotePage />
           </PermissionGuard>,
         ),
@@ -459,7 +541,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/quote/:id",
         element: lazy_(
-          <PermissionGuard resource="quote" action="read">
+          <PermissionGuard resource="quote" action="read" workflowKey="quote">
             <QuoteDetailPage />
           </PermissionGuard>,
         ),
@@ -467,7 +549,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/quote/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="quote" action="update">
+          <PermissionGuard resource="quote" action="update" workflowKey="quote">
             <EditQuotePage />
           </PermissionGuard>,
         ),
@@ -477,7 +559,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/sales_order",
         element: lazy_(
-          <PermissionGuard resource="sales_order" action="read">
+          <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
             <SalesOrderListPage />
           </PermissionGuard>,
         ),
@@ -485,7 +567,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/sales_order/new",
         element: lazy_(
-          <PermissionGuard resource="sales_order" action="create">
+          <PermissionGuard resource="sales_order" action="create" workflowKey="sales_order">
             <AddSalesOrderPage />
           </PermissionGuard>,
         ),
@@ -493,7 +575,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/sales_order/:id",
         element: lazy_(
-          <PermissionGuard resource="sales_order" action="read">
+          <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
             <SalesOrderDetailPage />
           </PermissionGuard>,
         ),
@@ -501,7 +583,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/sales_order/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="sales_order" action="update">
+          <PermissionGuard resource="sales_order" action="update" workflowKey="sales_order">
             <EditSalesOrderPage />
           </PermissionGuard>,
         ),
@@ -511,7 +593,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/installation",
         element: lazy_(
-          <PermissionGuard resource="installation" action="read">
+          <PermissionGuard resource="installation" action="read" workflowKey="installation">
             <FabricationJobListPage />
           </PermissionGuard>,
         ),
@@ -519,7 +601,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/installation/new",
         element: lazy_(
-          <PermissionGuard resource="installation" action="create">
+          <PermissionGuard resource="installation" action="create" workflowKey="installation">
             <AddFabricationJobPage />
           </PermissionGuard>,
         ),
@@ -527,7 +609,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/installation/:id",
         element: lazy_(
-          <PermissionGuard resource="installation" action="read">
+          <PermissionGuard resource="installation" action="read" workflowKey="installation">
             <FabricationJobDetailPage />
           </PermissionGuard>,
         ),
@@ -535,7 +617,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/installation/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="installation" action="update">
+          <PermissionGuard resource="installation" action="update" workflowKey="installation">
             <EditFabricationJobPage />
           </PermissionGuard>,
         ),
@@ -545,7 +627,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/invoice",
         element: lazy_(
-          <PermissionGuard resource="invoice" action="read">
+          <PermissionGuard resource="invoice" action="read" workflowKey="invoice">
             <InvoiceListPage />
           </PermissionGuard>,
         ),
@@ -553,7 +635,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/invoice/new",
         element: lazy_(
-          <PermissionGuard resource="invoice" action="create">
+          <PermissionGuard resource="invoice" action="create" workflowKey="invoice">
             <AddInvoicePage />
           </PermissionGuard>,
         ),
@@ -561,7 +643,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/invoice/:id",
         element: lazy_(
-          <PermissionGuard resource="invoice" action="read">
+          <PermissionGuard resource="invoice" action="read" workflowKey="invoice">
             <InvoiceDetailPage />
           </PermissionGuard>,
         ),
@@ -569,7 +651,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/invoice/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="invoice" action="update">
+          <PermissionGuard resource="invoice" action="update" workflowKey="invoice">
             <EditInvoicePage />
           </PermissionGuard>,
         ),
@@ -579,7 +661,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/payment",
         element: lazy_(
-          <PermissionGuard resource="payment" action="read">
+          <PermissionGuard resource="payment" action="read" workflowKey="payment">
             <PaymentListPage />
           </PermissionGuard>,
         ),
@@ -587,7 +669,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/payment/new",
         element: lazy_(
-          <PermissionGuard resource="payment" action="create">
+          <PermissionGuard resource="payment" action="create" workflowKey="payment">
             <AddPaymentPage />
           </PermissionGuard>,
         ),
@@ -595,7 +677,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/payment/:id",
         element: lazy_(
-          <PermissionGuard resource="payment" action="read">
+          <PermissionGuard resource="payment" action="read" workflowKey="payment">
             <PaymentDetailPage />
           </PermissionGuard>,
         ),
@@ -603,7 +685,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/payment/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="payment" action="update">
+          <PermissionGuard resource="payment" action="update" workflowKey="payment">
             <EditPaymentPage />
           </PermissionGuard>,
         ),
@@ -613,7 +695,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/credit_memo",
         element: lazy_(
-          <PermissionGuard resource="credit_memo" action="read">
+          <PermissionGuard resource="credit_memo" action="read" workflowKey="credit_memo">
             <CreditMemoListPage />
           </PermissionGuard>,
         ),
@@ -621,7 +703,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/credit_memo/new",
         element: lazy_(
-          <PermissionGuard resource="credit_memo" action="create">
+          <PermissionGuard resource="credit_memo" action="create" workflowKey="credit_memo">
             <AddCreditMemoPage />
           </PermissionGuard>,
         ),
@@ -629,7 +711,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/credit_memo/:id",
         element: lazy_(
-          <PermissionGuard resource="credit_memo" action="read">
+          <PermissionGuard resource="credit_memo" action="read" workflowKey="credit_memo">
             <CreditMemoDetailPage />
           </PermissionGuard>,
         ),
@@ -637,7 +719,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/credit_memo/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="credit_memo" action="update">
+          <PermissionGuard resource="credit_memo" action="update" workflowKey="credit_memo">
             <EditCreditMemoPage />
           </PermissionGuard>,
         ),
@@ -647,7 +729,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/refund",
         element: lazy_(
-          <PermissionGuard resource="refund" action="read">
+          <PermissionGuard resource="refund" action="read" workflowKey="refund">
             <RefundListPage />
           </PermissionGuard>,
         ),
@@ -655,7 +737,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/refund/new",
         element: lazy_(
-          <PermissionGuard resource="refund" action="create">
+          <PermissionGuard resource="refund" action="create" workflowKey="refund">
             <AddRefundPage />
           </PermissionGuard>,
         ),
@@ -663,7 +745,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/refund/:id",
         element: lazy_(
-          <PermissionGuard resource="refund" action="read">
+          <PermissionGuard resource="refund" action="read" workflowKey="refund">
             <RefundDetailPage />
           </PermissionGuard>,
         ),
@@ -671,7 +753,7 @@ export const router = createBrowserRouter([
       {
         path: "sales/refund/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="refund" action="update">
+          <PermissionGuard resource="refund" action="update" workflowKey="refund">
             <EditRefundPage />
           </PermissionGuard>,
         ),
@@ -681,7 +763,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/vendor",
         element: lazy_(
-          <PermissionGuard resource="vendor" action="read">
+          <PermissionGuard resource="vendor" action="read" workflowKey="vendor">
             <VendorListPage />
           </PermissionGuard>,
         ),
@@ -689,7 +771,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/vendor/new",
         element: lazy_(
-          <PermissionGuard resource="vendor" action="create">
+          <PermissionGuard resource="vendor" action="create" workflowKey="vendor">
             <AddVendorPage />
           </PermissionGuard>,
         ),
@@ -697,7 +779,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/vendor/:id",
         element: lazy_(
-          <PermissionGuard resource="vendor" action="read">
+          <PermissionGuard resource="vendor" action="read" workflowKey="vendor">
             <VendorDetailPage />
           </PermissionGuard>,
         ),
@@ -705,8 +787,42 @@ export const router = createBrowserRouter([
       {
         path: "purchases/vendor/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="vendor" action="update">
+          <PermissionGuard resource="vendor" action="update" workflowKey="vendor">
             <EditVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Requisitions (specific routes must come before the catch-all)
+      {
+        path: "purchases/requisition",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="read" workflowKey="requisition">
+            <RequisitionListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/new",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="create" workflowKey="requisition">
+            <AddRequisitionPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/:id",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="read" workflowKey="requisition">
+            <RequisitionDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/requisition/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="requisition" action="update" workflowKey="requisition">
+            <EditRequisitionPage />
           </PermissionGuard>,
         ),
       },
@@ -715,7 +831,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/purchase_order",
         element: lazy_(
-          <PermissionGuard resource="purchase_order" action="read">
+          <PermissionGuard resource="purchase_order" action="read" workflowKey="purchase_order">
             <PurchaseOrderListPage />
           </PermissionGuard>,
         ),
@@ -723,7 +839,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/purchase_order/new",
         element: lazy_(
-          <PermissionGuard resource="purchase_order" action="create">
+          <PermissionGuard resource="purchase_order" action="create" workflowKey="purchase_order">
             <AddPurchaseOrderPage />
           </PermissionGuard>,
         ),
@@ -731,7 +847,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/purchase_order/:id",
         element: lazy_(
-          <PermissionGuard resource="purchase_order" action="read">
+          <PermissionGuard resource="purchase_order" action="read" workflowKey="purchase_order">
             <PurchaseOrderDetailPage />
           </PermissionGuard>,
         ),
@@ -739,7 +855,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/purchase_order/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="purchase_order" action="update">
+          <PermissionGuard resource="purchase_order" action="update" workflowKey="purchase_order">
             <EditPurchaseOrderPage />
           </PermissionGuard>,
         ),
@@ -749,7 +865,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/item_receipt",
         element: lazy_(
-          <PermissionGuard resource="item_receipt" action="read">
+          <PermissionGuard resource="item_receipt" action="read" workflowKey="item_receipt">
             <ItemReceiptListPage />
           </PermissionGuard>,
         ),
@@ -757,7 +873,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/item_receipt/new",
         element: lazy_(
-          <PermissionGuard resource="item_receipt" action="create">
+          <PermissionGuard resource="item_receipt" action="create" workflowKey="item_receipt">
             <ReceiveItemsPage />
           </PermissionGuard>,
         ),
@@ -765,7 +881,7 @@ export const router = createBrowserRouter([
       {
         path: "purchases/item_receipt/:id",
         element: lazy_(
-          <PermissionGuard resource="item_receipt" action="read">
+          <PermissionGuard resource="item_receipt" action="read" workflowKey="item_receipt">
             <ItemReceiptDetailPage />
           </PermissionGuard>,
         ),
@@ -773,8 +889,144 @@ export const router = createBrowserRouter([
       {
         path: "purchases/item_receipt/:id/edit",
         element: lazy_(
-          <PermissionGuard resource="item_receipt" action="update">
+          <PermissionGuard resource="item_receipt" action="update" workflowKey="item_receipt">
             <EditItemReceiptPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Vendor Bills (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_bill",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="read" workflowKey="vendor_bill">
+            <VendorBillListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="create" workflowKey="vendor_bill">
+            <AddVendorBillPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="read" workflowKey="vendor_bill">
+            <VendorBillDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_bill/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_bill" action="update" workflowKey="vendor_bill">
+            <EditVendorBillPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Vendor Payments (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_payment",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="read" workflowKey="vendor_payment">
+            <VendorPaymentListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_payment/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="create" workflowKey="vendor_payment">
+            <AddVendorPaymentPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_payment/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="read" workflowKey="vendor_payment">
+            <VendorPaymentDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_payment/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_payment" action="update" workflowKey="vendor_payment">
+            <EditVendorPaymentPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Vendor Credits (specific routes must come before the catch-all)
+      {
+        path: "purchases/vendor_credit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="read" workflowKey="vendor_credit">
+            <VendorCreditListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/new",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="create" workflowKey="vendor_credit">
+            <AddVendorCreditPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/:id",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="read" workflowKey="vendor_credit">
+            <VendorCreditDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/vendor_credit/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="vendor_credit" action="update" workflowKey="vendor_credit">
+            <EditVendorCreditPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Expenses (specific routes must come before the catch-all)
+      {
+        path: "purchases/expense",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="read" workflowKey="expense">
+            <ExpenseListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/expense/new",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="create" workflowKey="expense">
+            <AddExpensePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/expense/:id",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="read" workflowKey="expense">
+            <ExpenseDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "purchases/expense/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="expense" action="update" workflowKey="expense">
+            <EditExpensePage />
           </PermissionGuard>,
         ),
       },
@@ -1092,10 +1344,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "config/portal-users",
+        element: lazy_(
+          <PermissionGuard resource="portal_access" action="read">
+            <PortalUsersPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
         path: "config/record-numbering",
         element: lazy_(
           <PermissionGuard resource="workflow_config" action="configure">
             <RecordNumberingPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/dashboard-widgets",
+        element: lazy_(
+          <PermissionGuard resource="dashboard_widget" action="configure">
+            <DashboardWidgetsPage />
           </PermissionGuard>,
         ),
       },
@@ -1116,10 +1384,34 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "config/authentication",
+        path: "config/saml-setup",
         element: lazy_(
           <PermissionGuard resource="sso_config" action="read">
-            <SsoConfigPage />
+            <SamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/cognito",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <CognitoSamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/entra",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <EntraSamlSetupPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/saml-setup/:provider",
+        element: lazy_(
+          <PermissionGuard resource="sso_config" action="read">
+            <CustomSamlSetupPage />
           </PermissionGuard>,
         ),
       },
@@ -1141,6 +1433,24 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+
+      // Platform-owner only: cross-tenant support ticket queue.
+      {
+        path: "platform/feedback",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <FeedbackListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "platform/feedback/:id",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <FeedbackDetailPage />
+          </PermissionGuard>,
+        ),
+      },
     ],
   },
   {
@@ -1150,6 +1460,7 @@ export const router = createBrowserRouter([
       { path: "login", element: lazy_(<LoginPage />) },
       { path: "forgot-password", element: lazy_(<ForgotPasswordPage />) },
       { path: "reset-password", element: lazy_(<ResetPasswordPage />) },
+      { path: "sso/callback", element: lazy_(<SsoCallbackPage />) },
     ],
   },
   {

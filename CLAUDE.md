@@ -52,10 +52,18 @@ npm run ci           # lint + test + build (what CI runs)
 
 ## Deployment (Cloudflare Pages)
 Built from `develop`/`master`. Framework `Vite`, build command `npm run build`, output
-dir `dist`. Every push to a tracked branch auto-builds and deploys. Pages env var:
+dir `dist`. Every push to a tracked branch auto-builds and deploys. Pages env vars:
 ```
-VITE_API_BASE_URL=https://stonesuite-backend.fly.dev/api
+VITE_API_BASE_URL=/api                                  # build-time (must stay relative)
+API_ORIGIN=https://stonesuite-backend.fly.dev           # runtime, read by the Pages Function
 ```
+**`VITE_API_BASE_URL` must stay a relative path.** Traffic routes through the same-origin
+Pages Function (`functions/api/[[path]].ts`), which is what keeps the backend's auth
+cookies first-party. Point it at an absolute backend URL and the browser scopes the
+`csrf_token` cookie to the backend host where JS cannot read it — every mutating request
+then fails with `Request rejected: missing or invalid CSRF token.` `vite.config.ts` fails
+the build if this is absolute. `API_ORIGIN` must be set in **both** the Production and
+Preview variable sets.
 (See `.env.example` for Entra ID / Cognito OAuth vars — not yet production-deployed.)
 
 ## Talking to the Backend API (what the frontend must respect)
@@ -78,6 +86,29 @@ can bypass or duplicate that logic client-side:
 6. **Custom fields (`custom_fields`) are validated server-side** against
    `workflow_field_definitions` (type, required, enum, regex, max 15 per workflow).
    `DynamicFieldInput` renders these at runtime — never hardcode a workflow's fields.
+
+## Notifications & Toasts
+Two separate, deliberately non-overlapping feedback mechanisms — don't conflate them:
+1. **Durable history → `stonesuite-notify`** (separate deployed service/repo, own base URL
+   `VITE_NOTIFY_BASE_URL`, authenticated with the same JWT `apiClient` already carries via
+   `api/notifyClient.ts`). `services/notificationService.ts` wraps its user-facing API
+   (`unreadCount`/`list`/`markRead`/`markAllRead`); `components/NotificationBell.tsx` is the
+   only consumer — a 60s-polled unread badge + dropdown, hidden for portal/customer
+   sessions (`useAuthStore().kind === 'portal'`) since that API has no notifications for
+   them. This is for "what happened while I wasn't looking" — retries can take it up to
+   ~30 min to land, so never use it for instant feedback.
+2. **Instant "you just did this" → `sonner` toasts.** Every transition/approve/reject
+   mutation on a document-module detail or edit page (`quote`, `estimate`, `salesorder`,
+   `invoice`, `payment`, `refund`, `creditmemo`, `fabrication`, `purchaseorder`,
+   `requisition`, `vendorbill`, `vendorpayment`, `vendorcredit`, `expense`) calls
+   `toast.success(...)` from its mutation's `onSuccess` — never from a dedicated
+   notify-service call, since the toast only needs to reflect a mutation that already
+   succeeded client-side. For a status change, build the message with
+   `statusToastLabel(<MODULE>_STATUS_CODES, toStatusCode)` from `lib/statusToast.ts` so the
+   wording always matches the status pill instead of drifting from it. New modules /
+   new transition actions should follow this same pattern — see `QuoteDetailPage.tsx` and
+   `SendToCustomerDialog.tsx` for the reference shape. `<Toaster>` is mounted once in
+   `App.tsx`; don't mount a second one.
 
 ## React Rules (always enforce)
 - Component files: PascalCase — `UserProfile.tsx`. One component per file.

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Package, Upload, Pencil, PackagePlus, FileDown, Loader2 } from 'lucide-react';
+import { Package, Upload, Pencil, PackagePlus, FileDown, Loader2, ArrowRightLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -9,17 +10,23 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
+import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PO_STATUS_COLORS, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
+import { PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { PurchaseOrderTransitionBar } from './components/PurchaseOrderTransitionBar';
-import { PurchaseOrderApprovalButton } from './components/PurchaseOrderApprovalButton';
+import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
+
+// PO statuses a vendor bill may be converted from — a bill only makes sense
+// once goods have actually been received (backend: vendorbill/store_convert.go).
+const PO_BILLABLE_STATUSES = new Set(['RCVD', 'CLSD']);
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -28,6 +35,11 @@ const TABS = [
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
+
+// Poll the primary record so status/approval changes made by another user or
+// tab show up without a manual reload — same cadence as NotificationBell's
+// unread poll.
+const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -46,17 +58,20 @@ export default function PurchaseOrderDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
+  const [convertOpen, setConvertOpen] = useState(false);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
   const canReceive = permissionsLoading || hasPermission('item_receipt', 'create');
   const canTransition = permissionsLoading || hasPermission('purchase_order', 'transition');
+  const canConvertToBill = permissionsLoading || hasPermission('vendor_bill', 'create');
 
   const { data: po, isLoading, error } = useQuery({
     queryKey: ['purchase-order', id],
     queryFn: () => purchaseOrderService.getPurchaseOrder(id),
     enabled: Boolean(id),
+    refetchInterval: DETAIL_POLL_MS,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -70,14 +85,24 @@ export default function PurchaseOrderDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => purchaseOrderService.transition(id, toStatusCode),
+    onSuccess: (updated, toStatusCode) => {
+      queryClient.setQueryData(['purchase-order', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast.success(`Moved to ${statusToastLabel(PO_STATUS_CODES, toStatusCode)}.`);
+    },
+  });
+
+  const approve = useMutation({
+    mutationFn: () => purchaseOrderService.approve(id),
     onSuccess: (updated) => {
       queryClient.setQueryData(['purchase-order', id], updated);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast.success('Approved.');
     },
   });
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
-  if (error || !po)
+  if (!po)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load purchase order.')}</ErrorNote></div>;
 
   const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
@@ -87,8 +112,7 @@ export default function PurchaseOrderDetailPage() {
   // nothing, so the card would be an empty "Actions" header. Hide it unless it
   // has real content (a transition, an approval gate, or a failed transition).
   const hasTransitions = canTransition && (PO_ALLOWED_TRANSITIONS[po.statusCode]?.length ?? 0) > 0;
-  const isApprovalPending = po.approvalStatus === 'pending';
-  const showActions = hasTransitions || isApprovalPending || Boolean(transition.error);
+  const showActions = hasTransitions || Boolean(transition.error);
 
   async function handleExportPdf() {
     if (!po) return;
@@ -161,6 +185,26 @@ export default function PurchaseOrderDetailPage() {
         recordNumber={po.purchaseOrderNumber}
         statusBadge={<Badge color={color}>{po.status}</Badge>}
       />
+
+      {po.gated && (
+        <>
+          <ApprovalBanner
+            approverNames={po.approvers.filter((a) => !a.approved).map((a) => a.name)}
+            canApprove={po.canApprove}
+            isOverride={po.isOverride}
+            requiredApprovals={po.requiredApprovals}
+            approvedCount={po.approvedCount}
+            callerAlreadyApproved={po.callerAlreadyApproved}
+            onApprove={() => approve.mutate()}
+            approving={approve.isPending}
+          />
+          {approve.isError && (
+            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+              {apiErrorMessage(approve.error, 'Failed to approve purchase order.')}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
@@ -292,6 +336,17 @@ export default function PurchaseOrderDetailPage() {
                   Receive items
                 </button>
               )}
+              {canConvertToBill && PO_BILLABLE_STATUSES.has(po.statusCode) && (
+                <button
+                  type="button"
+                  onClick={() => setConvertOpen(true)}
+                  aria-label="Convert this purchase order to a vendor bill"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />
+                  Convert to Bill
+                </button>
+              )}
               {canEdit && po.statusCode === 'DRFT' && (
                 <button
                   type="button"
@@ -324,18 +379,10 @@ export default function PurchaseOrderDetailPage() {
               <PurchaseOrderTransitionBar
                 statusCode={po.statusCode}
                 approvalStatus={po.approvalStatus}
+                gated={po.gated}
                 onTransition={(toCode) => transition.mutate(toCode)}
                 isPending={transition.isPending}
               />
-              {isApprovalPending && (
-                <PurchaseOrderApprovalButton
-                  purchaseOrderId={id}
-                  onApproved={(updated) => {
-                    queryClient.setQueryData(['purchase-order', id], updated);
-                    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-                  }}
-                />
-              )}
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
               )}
@@ -383,6 +430,21 @@ export default function PurchaseOrderDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      {convertOpen && (
+        <ConvertToBillDialog
+          purchaseOrderId={id}
+          purchaseOrderNumber={po.purchaseOrderNumber}
+          vendorName={po.vendor.name}
+          grandTotal={po.grandTotal}
+          onClose={() => setConvertOpen(false)}
+          onConverted={(bill) => {
+            setConvertOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+            navigate(`/purchases/vendor_bill/${bill.id}`);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
+import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   Refund,
@@ -13,6 +14,12 @@ import type {
 // Every call carries the tenant Bearer JWT via `tenantClient`; the server
 // enforces tenancy, RBAC (`refund:*`), scope, and IDOR.
 const BASE = '/tenant/refunds';
+// A customer-portal session (see useAuthStore's `kind`) reads through
+// /api/portal/refunds* instead — same List/Detail pages, different
+// endpoint. Only search/get exist there: create/update/delete/transition/
+// approve are staff-only, and the backend's RequireAuth confines a portal
+// token to /api/portal/* regardless, so there is nothing to branch below.
+const PORTAL_BASE = '/portal/refunds';
 
 export const refundService = {
   // Full filter + sort + global search + keyset pagination. Cursors are
@@ -20,9 +27,9 @@ export const refundService = {
   searchRefunds: (req: RefundSearchRequest): Promise<RefundPage> =>
     tenantClient
       .post<{
-        success: boolean; scope: string; records: RefundPage['records'];
+        success: boolean; scope?: string; records: RefundPage['records'];
         nextCursor: string; hasMore: boolean;
-      }>(`${BASE}/search`, req)
+      }>(`${isPortalSession() ? PORTAL_BASE : BASE}/search`, req)
       .then((r) => ({
         records: r.data.records ?? [],
         nextCursor: r.data.nextCursor ?? '',
@@ -30,9 +37,49 @@ export const refundService = {
         scope: r.data.scope ?? '',
       })),
 
-  getRefund: (uuid: string): Promise<Refund> =>
+  getRefund: (uuid: string): Promise<Refund> => {
+    if (isPortalSession()) {
+      // /api/portal/refunds/{uuid} has no approval sub-object — a customer
+      // never sees the internal approval workflow, only the finalized
+      // document (see portal/visibility.go).
+      return tenantClient
+        .get<{ success: boolean; record: Refund }>(`${PORTAL_BASE}/${uuid}`)
+        .then((r) => ({
+          ...r.data.record,
+          gated: false, approvers: [], requiredApprovals: 0, approvedCount: 0,
+          canApprove: false, isOverride: false, callerAlreadyApproved: false,
+        }));
+    }
+    return tenantClient
+      .get<{
+        success: boolean; refund: Refund; approval?: {
+          gated?: boolean; approvers?: Refund['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.refund,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      });
+  },
+
+  // Records this caller's sign-off on the refund's current gated status
+  // (PEND, AD-8). Rejected with 409 if the status has no approvers
+  // configured, or 403 if the caller isn't a configured approver (and isn't
+  // a super admin override) -- also requires refund:approve RBAC permission
+  // (see refundForm.ts's transitionPermission).
+  approve: (uuid: string): Promise<Refund> =>
     tenantClient
-      .get<{ success: boolean; refund: Refund }>(`${BASE}/${uuid}`)
+      .post<{ success: boolean; refund: Refund }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.refund),
 
   createRefund: (payload: RefundCreatePayload): Promise<Refund> =>

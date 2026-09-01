@@ -112,6 +112,7 @@ export const BILL_TO_FIELDS: SOFormField[] = [
     type: 'textarea',
     rows: 2,
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -128,13 +129,14 @@ export const BILL_TO_FIELDS: SOFormField[] = [
     type: 'text',
     placeholder: 'Suite 100',
   },
-  { key: 'bill_city', label: 'City', type: 'text', placeholder: 'City' },
-  { key: 'bill_country', label: 'Country', type: 'select', lookupKey: 'countries' },
-  { key: 'bill_state', label: 'State', type: 'select', lookupKey: 'states', dependsOn: 'bill_country' },
+  { key: 'bill_city', label: 'City', type: 'text', required: true, placeholder: 'City' },
+  { key: 'bill_country', label: 'Country', type: 'select', required: true, lookupKey: 'countries' },
+  { key: 'bill_state', label: 'State', type: 'select', required: true, lookupKey: 'states', dependsOn: 'bill_country' },
   {
     key: 'bill_zip',
     label: 'Zip / Postal Code',
     type: 'text',
+    required: true,
     placeholder: '12345',
   },
   {
@@ -203,6 +205,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     rows: 2,
     showIfFieldFalse: 'ship_same_as_bill',
     colSpan2: true,
+    required: true,
     placeholder: '123 Main Street',
   },
   {
@@ -226,6 +229,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     label: 'City',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     placeholder: 'City',
   },
   {
@@ -233,6 +237,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     label: 'Country',
     type: 'select',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     lookupKey: 'countries',
   },
   {
@@ -240,6 +245,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     label: 'State',
     type: 'select',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     lookupKey: 'states',
     dependsOn: 'ship_country',
   },
@@ -248,6 +254,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     label: 'Zip / Postal Code',
     type: 'text',
     showIfFieldFalse: 'ship_same_as_bill',
+    required: true,
     placeholder: '12345',
   },
   {
@@ -464,6 +471,39 @@ export const SO_STATUS_COLORS: Record<string, string> = {
  *  approved and confirmed (or further along fulfillment) before it can be
  *  billed. Hidden on Draft/Pending Approval (not confirmed) and Cancelled. */
 export const SO_CONVERTIBLE_STATUSES = new Set(['APPV', 'OPEN', 'PART', 'FILL']);
+
+/** Whether the order's current status is awaiting sign-off (AD-10) — while
+ *  true, every transition 409s (salesorder/store_transition.go:
+ *  ErrApprovalRequired) until a configured approver (or a super admin
+ *  override) calls salesOrderService.approve, regardless of who's asking or
+ *  which target they pick. Prefers the live `gated` flag from GET
+ *  (recomputed server-side from the *current* approver config every read, so
+ *  it correctly flips false the moment an admin empties the approver list
+ *  out from under an order already sitting in "pending" — at that point
+ *  Transition no longer blocks either, so anyone with sales_order:transition
+ *  can move it forward directly). List rows don't carry `gated` (too
+ *  expensive to compute per search result) so they fall back to the stored
+ *  approvalStatus flag, which is a fine approximation for a table cell. */
+export function needsApproval(order: Pick<SalesOrder, 'approvalStatus'> & { gated?: boolean }): boolean {
+  return order.gated ?? order.approvalStatus === 'pending';
+}
+
+/** Client-side precondition check for the "Send to Customer" quick action
+ *  (Sales Order detail page). Mirrors the backend's own requirement — the
+ *  generic document/send endpoint 400s "At least one recipient is required"
+ *  when billing.email is blank and no `to` override is supplied — plus two
+ *  UX-only checks (customer, line items) so the user gets one inline list of
+ *  problems instead of a raw 400 after opening the confirm dialog. Not
+ *  status-gated: available regardless of order.statusCode. */
+export function validateForSend(
+  order: Pick<SalesOrder, 'customer' | 'items' | 'billing'>,
+): string[] {
+  const errors: string[] = [];
+  if (!order.customer?.id) errors.push('A customer is required.');
+  if (!order.items || order.items.length === 0) errors.push('At least one line item is required.');
+  if (!order.billing?.email?.trim()) errors.push('A billing email is required to send this order.');
+  return errors;
+}
 
 // ── Per-line fulfillment status (AD-9 — schema.org orderItemStatus) ──────────
 

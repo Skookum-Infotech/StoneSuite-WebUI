@@ -5,7 +5,7 @@
 // Payment's cross-invoice application model), served from
 // `/api/tenant/credit-memos*`, distinct from the generic `WorkflowRecord`
 // JSONB CRM router.
-import type { FilterClause, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -132,6 +132,14 @@ export interface CreditMemo {
   creditMemoNumber: string;
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
+  approvalStatus: 'none' | 'pending' | 'approved';
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
   customer: CreditMemoCustomerRef;
   invoice?: CreditMemoInvoiceRef | null;
   salesOrder?: CreditMemoSalesOrderRef | null;

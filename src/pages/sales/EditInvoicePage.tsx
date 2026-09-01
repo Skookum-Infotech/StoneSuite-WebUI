@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Receipt, AlertCircle, Loader2, Save, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
 import { lookupService } from '@/services/lookupService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -14,8 +16,9 @@ import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import {
   fromInvoice, toCreatePayload, PAGE_TABS, type PageTab,
-  type InvoiceLineItem, INVOICE_TERMINAL_STATUSES,
+  type InvoiceLineItem, INVOICE_TERMINAL_STATUSES, INVOICE_STATUS_CODES,
 } from '@/lib/invoiceForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -45,6 +48,13 @@ export default function EditInvoicePage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -59,6 +69,8 @@ export default function EditInvoicePage() {
   const lineItems = localLineItems ?? mapped?.lineItems ?? EMPTY_ITEMS;
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? invoice?.statusCode ?? '';
+  const approvalStatus = invoice?.approvalStatus ?? 'none';
+  const gated = invoice?.gated ?? false;
   const isTerminal = INVOICE_TERMINAL_STATUSES.has(statusCode);
 
   const set = useCallback(
@@ -84,6 +96,7 @@ export default function EditInvoicePage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success(`Moved to ${statusToastLabel(INVOICE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -194,7 +207,7 @@ export default function EditInvoicePage() {
           amountPaid={invoice.amountPaid}
           statusControl={(
             <InvoiceStatusControl
-              value={statusCode}
+              invoice={{ statusCode, approvalStatus, gated, hasAttachments }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

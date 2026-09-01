@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { ESTIMATE_CONVERTIBLE_STATUSES, toCreatePayload } from './estimateForm'
+import { ESTIMATE_CONVERTIBLE_STATUSES, toCreatePayload, validateForSend } from './estimateForm'
+import type { Estimate } from '@/types/estimate'
 
 describe('ESTIMATE_CONVERTIBLE_STATUSES', () => {
   it.each([
@@ -61,5 +62,50 @@ describe('toCreatePayload line item description mapping', () => {
     expect(payload.items).toEqual([
       { lineNumber: 1, description: 'Custom labor', quantity: 1, unitPrice: 10, discountPercent: 0 },
     ])
+  })
+})
+
+// validateForSend gates the Estimate detail page's "Send to Customer" quick
+// action — see EstimateDetailPage's handleSendClick. The billing email check
+// mirrors the backend's own requirement (the generic /document/send route
+// 400s "At least one recipient is required" when billing.email is blank and
+// no `to` override is supplied).
+const baseSendEstimate: Pick<Estimate, 'customer' | 'items' | 'billing'> = {
+  customer: { id: 'cust-1', name: 'Acme Co' },
+  items: [{
+    id: 'line-1', lineNumber: 1, sku: '', itemName: 'Item', description: '',
+    unitCode: '', quantity: 1, unitPrice: 10, discountPercent: 0, taxPercent: 0,
+    lineSubtotal: 10, lineDiscount: 0, lineTax: 0, lineTotal: 10,
+  }],
+  billing: { email: 'billing@acme.test' },
+}
+
+describe('validateForSend', () => {
+  it('returns no errors when customer, items, and billing email are all present', () => {
+    expect(validateForSend(baseSendEstimate)).toEqual([])
+  })
+
+  it('flags a missing customer', () => {
+    expect(validateForSend({ ...baseSendEstimate, customer: { id: '', name: '' } }))
+      .toContain('A customer is required.')
+  })
+
+  it('flags an empty items array', () => {
+    expect(validateForSend({ ...baseSendEstimate, items: [] }))
+      .toContain('At least one line item is required.')
+  })
+
+  it.each([
+    [undefined],
+    [''],
+    ['   '],
+  ])('flags a missing/blank billing email (%p)', (email) => {
+    expect(validateForSend({ ...baseSendEstimate, billing: { email } }))
+      .toContain('A billing email is required to send this estimate.')
+  })
+
+  it('returns all applicable errors at once, not just the first', () => {
+    const errors = validateForSend({ customer: { id: '', name: '' }, items: [], billing: { email: '' } })
+    expect(errors).toHaveLength(3)
   })
 })

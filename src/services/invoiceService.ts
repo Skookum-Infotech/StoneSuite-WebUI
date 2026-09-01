@@ -1,4 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
+import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   Invoice,
@@ -13,6 +14,12 @@ import type {
 // Every call carries the tenant Bearer JWT via `tenantClient`; the server
 // enforces tenancy, RBAC (`invoice:*`), scope, and IDOR.
 const BASE = '/tenant/invoices';
+// A customer-portal session (see useAuthStore's `kind`) reads through
+// /api/portal/invoices* instead — same List/Detail pages, different
+// endpoint. Only search/get exist there: create/update/delete/transition/
+// approve are staff-only, and the backend's RequireAuth confines a portal
+// token to /api/portal/* regardless, so there is nothing to branch below.
+const PORTAL_BASE = '/portal/invoices';
 
 export const invoiceService = {
   // Full filter + sort + global search + keyset pagination. Cursors are
@@ -20,9 +27,9 @@ export const invoiceService = {
   searchInvoices: (req: InvoiceSearchRequest): Promise<InvoicePage> =>
     tenantClient
       .post<{
-        success: boolean; scope: string; records: InvoicePage['records'];
+        success: boolean; scope?: string; records: InvoicePage['records'];
         nextCursor: string; hasMore: boolean;
-      }>(`${BASE}/search`, req)
+      }>(`${isPortalSession() ? PORTAL_BASE : BASE}/search`, req)
       .then((r) => ({
         records: r.data.records ?? [],
         nextCursor: r.data.nextCursor ?? '',
@@ -30,9 +37,48 @@ export const invoiceService = {
         scope: r.data.scope ?? '',
       })),
 
-  getInvoice: (uuid: string): Promise<Invoice> =>
+  getInvoice: (uuid: string): Promise<Invoice> => {
+    if (isPortalSession()) {
+      // /api/portal/invoices/{uuid} has no approval sub-object — a customer
+      // never sees the internal approval workflow, only the finalized
+      // document (see portal/visibility.go).
+      return tenantClient
+        .get<{ success: boolean; record: Invoice }>(`${PORTAL_BASE}/${uuid}`)
+        .then((r) => ({
+          ...r.data.record,
+          gated: false, approvers: [], requiredApprovals: 0, approvedCount: 0,
+          canApprove: false, isOverride: false, callerAlreadyApproved: false,
+        }));
+    }
+    return tenantClient
+      .get<{
+        success: boolean; invoice: Invoice; approval?: {
+          gated?: boolean; approvers?: Invoice['approvers']; requiredApprovals?: number; approvedCount?: number;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+        };
+      }>(`${BASE}/${uuid}`)
+      .then((r) => {
+        const a = r.data.approval;
+        return {
+          ...r.data.invoice,
+          gated: a?.gated ?? false,
+          approvers: a?.approvers ?? [],
+          requiredApprovals: a?.requiredApprovals ?? 0,
+          approvedCount: a?.approvedCount ?? 0,
+          canApprove: a?.canApprove ?? false,
+          isOverride: a?.isOverride ?? false,
+          callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+        };
+      });
+  },
+
+  // Records this caller's sign-off on the invoice's current gated status
+  // (PAPV, AD-8). Rejected with 409 if the status has no approvers
+  // configured, or 403 if the caller isn't a configured approver (and isn't
+  // a super admin override).
+  approve: (uuid: string): Promise<Invoice> =>
     tenantClient
-      .get<{ success: boolean; invoice: Invoice }>(`${BASE}/${uuid}`)
+      .post<{ success: boolean; invoice: Invoice }>(`${BASE}/${uuid}/approve`, {})
       .then((r) => r.data.invoice),
 
   createInvoice: (payload: InvoiceCreatePayload): Promise<Invoice> =>

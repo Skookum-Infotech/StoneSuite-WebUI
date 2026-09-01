@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileSpreadsheet, AlertCircle, Loader2, Save, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { lookupService } from '@/services/lookupService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -14,8 +16,9 @@ import { EstimateStatusControl } from './components/EstimateStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import {
   fromEstimate, toCreatePayload, PAGE_TABS, type PageTab,
-  type EstimateLineItem, ESTIMATE_TERMINAL_STATUSES,
+  type EstimateLineItem, ESTIMATE_TERMINAL_STATUSES, ESTIMATE_STATUS_CODES,
 } from '@/lib/estimateForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -45,6 +48,13 @@ export default function EditEstimatePage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: attachments } = useQuery({
+    queryKey: ['record-attachments', id],
+    queryFn: () => attachmentService.listAttachments(id),
+    enabled: Boolean(id),
+  });
+  const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -59,6 +69,8 @@ export default function EditEstimatePage() {
   const lineItems = localLineItems ?? mapped?.lineItems ?? EMPTY_ITEMS;
   const customer = localCustomer ?? mapped?.customer ?? null;
   const statusCode = localStatusCode ?? estimate?.statusCode ?? '';
+  const approvalStatus = estimate?.approvalStatus ?? 'none';
+  const gated = estimate?.gated ?? false;
   const isTerminal = ESTIMATE_TERMINAL_STATUSES.has(statusCode);
 
   const set = useCallback(
@@ -84,6 +96,7 @@ export default function EditEstimatePage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      toast.success(`Moved to ${statusToastLabel(ESTIMATE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -193,7 +206,7 @@ export default function EditEstimatePage() {
           total={total}
           statusControl={(
             <EstimateStatusControl
-              value={statusCode}
+              estimate={{ statusCode, approvalStatus, gated, hasAttachments }}
               onChange={handleStatusChange}
               disabled={transition.isPending}
             />

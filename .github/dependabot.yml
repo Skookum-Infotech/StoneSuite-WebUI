@@ -11,6 +11,20 @@ updates:
       npm-dependencies:
         patterns:
           - "*"
+    ignore:
+      # TypeScript majors are held back until typescript-eslint supports them.
+      # On 2026-07-29 Dependabot took typescript 7.0.2 because it is the
+      # `latest` dist-tag, but typescript-eslint declares
+      # `peerDependencies: { typescript: ">=4.8.4 <6.1.0" }`. npm could not
+      # resolve it, so `npm ci` failed outright on master for ten days and took
+      # both GitHub CI and the Azure build pipeline with it (fixed in #70).
+      #
+      # No published typescript-eslint supports TypeScript 7 — not 8.66.0, not
+      # the 8.66.1-alpha line, and there is no v9. Remove this entry once one
+      # ships, and bump both together in a single PR.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
