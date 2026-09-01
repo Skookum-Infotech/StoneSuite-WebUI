@@ -147,6 +147,7 @@ function toStr(v: unknown): string {
 export function toCreatePayload(
   data: Record<string, unknown>,
   customerUuid: string,
+  customFields: Record<string, unknown> = {},
 ): Omit<PaymentCreatePayload, 'applications'> {
   return {
     customerUuid,
@@ -157,13 +158,16 @@ export function toCreatePayload(
     amount: toNum(data.amount),
     memo: toStr(data.memo),
     internalNotes: toStr(data.internal_notes),
-    customFields: {},
+    customFields,
   };
 }
 
 /** Maps the EditPaymentPage form state to the backend's `PaymentUpdatePayload`
  *  (no amount — immutable post-creation). */
-export function toUpdatePayload(data: Record<string, unknown>): PaymentUpdatePayload {
+export function toUpdatePayload(
+  data: Record<string, unknown>,
+  customFields: Record<string, unknown> = {},
+): PaymentUpdatePayload {
   return {
     methodId: toIntOrZero(data.payment_method),
     referenceNumber: toStr(data.reference_num),
@@ -171,7 +175,7 @@ export function toUpdatePayload(data: Record<string, unknown>): PaymentUpdatePay
     currencyId: toIntOrNull(data.currency_id),
     memo: toStr(data.memo),
     internalNotes: toStr(data.internal_notes),
-    customFields: {},
+    customFields,
   };
 }
 
@@ -188,6 +192,7 @@ function idOrEmpty(id: number | null | undefined): string {
 export function fromPayment(payment: Payment): {
   data: Record<string, unknown>;
   customer: { id: string; name: string };
+  customFieldValues: Record<string, unknown>;
 } {
   const data: Record<string, unknown> = {
     payment_method: String(payment.methodId),
@@ -197,5 +202,9 @@ export function fromPayment(payment: Payment): {
     memo: payment.memo ?? '',
     internal_notes: payment.internalNotes ?? '',
   };
-  return { data, customer: { id: payment.customer.id, name: payment.customer.name } };
+  return {
+    data,
+    customer: { id: payment.customer.id, name: payment.customer.name },
+    customFieldValues: payment.customFields ?? {},
+  };
 }

@@ -582,6 +582,7 @@ function toLineInput(item: SOLineItem): SalesOrderLineInput {
 export function toCreatePayload(
   data: Record<string, unknown>,
   lineItems: SOLineItem[],
+  customFields: Record<string, unknown> = {},
 ): SalesOrderCreatePayload {
   const shipSameAsBilling = Boolean(data.ship_same_as_bill);
 
@@ -625,7 +626,7 @@ export function toCreatePayload(
       fax: toStr(data.ship_fax),
       email: toStr(data.ship_email),
     },
-    customFields: {},
+    customFields,
     items: lineItems.map(toLineInput),
   };
 }
@@ -643,6 +644,7 @@ export function fromOrder(order: SalesOrder): {
   data: Record<string, unknown>;
   lineItems: SOLineItem[];
   customer: { id: string; name: string };
+  customFieldValues: Record<string, unknown>;
 } {
   const data: Record<string, unknown> = {
     sales_order_status: order.status,
@@ -701,5 +703,10 @@ export function fromOrder(order: SalesOrder): {
     status: line.status,
   }));
 
-  return { data, lineItems, customer: { id: order.customer.id, name: order.customer.name } };
+  return {
+    data,
+    lineItems,
+    customer: { id: order.customer.id, name: order.customer.name },
+    customFieldValues: order.customFields ?? {},
+  };
 }

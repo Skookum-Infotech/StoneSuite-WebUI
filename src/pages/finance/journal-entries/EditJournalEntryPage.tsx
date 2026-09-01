@@ -5,6 +5,7 @@ import { ArrowLeftRight, AlertCircle, Loader2, Save } from 'lucide-react';
 import { journalEntryService } from '@/services/journalEntryService';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { cn } from '@/lib/utils';
 import { fieldLabelCls } from '@/components/crm/formUtils';
@@ -56,7 +57,7 @@ export default function EditJournalEntryPage() {
     queryFn: () => workflowService.get(jeWorkflow?.id ?? ''),
     enabled: Boolean(jeWorkflow?.id),
   });
-  const customFieldDefs = jeDef?.fields ?? [];
+  const customFieldDefs = activeCustomFields(jeDef);
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);

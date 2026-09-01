@@ -11,6 +11,9 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { RefundSectionGrid } from './components/RefundFormFields';
 import { RefundStatusControl } from './components/RefundStatusControl';
 import { EDIT_FIELDS, fromRefund, toUpdatePayload, REFUND_STATUS_CODES } from '@/lib/refundForm';
@@ -23,6 +26,7 @@ export default function EditRefundPage() {
 
   const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: refund, isLoading, error: loadError } = useQuery({
     queryKey: ['refund', id],
@@ -35,6 +39,15 @@ export default function EditRefundPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const refundWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'refund');
+  const { data: refundDef } = useQuery({
+    queryKey: ['workflow', refundWorkflow?.id],
+    queryFn: () => workflowService.get(refundWorkflow?.id ?? ''),
+    enabled: Boolean(refundWorkflow?.id),
+  });
+  const customFieldDefs = activeCustomFields(refundDef);
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -50,9 +63,15 @@ export default function EditRefundPage() {
   const statusCode = localStatusCode ?? refund?.statusCode ?? '';
   const approvalStatus = refund?.approvalStatus ?? 'none';
   const gated = refund?.gated ?? false;
+  const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
+    [mapped],
+  );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
@@ -83,7 +102,7 @@ export default function EditRefundPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => refundService.updateRefund(id, toUpdatePayload(data)),
+    mutationFn: () => refundService.updateRefund(id, toUpdatePayload(data, customFieldValues)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['refund', id] });
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
@@ -159,6 +178,21 @@ export default function EditRefundPage() {
             <ModernSection title="Refund Details" index={1}>
               <RefundSectionGrid fields={EDIT_FIELDS} data={data} set={set} lookups={lookups} />
             </ModernSection>
+
+            {customFieldDefs.length > 0 && (
+              <ModernSection title="Custom Fields" index={2}>
+                <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {customFieldDefs.map((def) => (
+                    <DynamicFieldInput
+                      key={def.id}
+                      field={def}
+                      value={customFieldValues[def.key]}
+                      onChange={setCustomField}
+                    />
+                  ))}
+                </div>
+              </ModernSection>
+            )}
           </div>
         </div>
 

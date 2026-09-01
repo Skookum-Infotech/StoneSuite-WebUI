@@ -27,6 +27,7 @@ export default function EditFabricationJobPage() {
 
   const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
   const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
 
   const { data: job, isLoading, error: loadError } = useQuery({
     queryKey: ['fabrication-job', id],
@@ -63,10 +64,16 @@ export default function EditFabricationJobPage() {
 
   const mapped = useMemo(() => (job ? fromJob(job) : null), [job]);
   const data = localData ?? mapped ?? {};
+  const customFieldValues = localCustomFields ?? job?.customFields ?? {};
 
   const set = useCallback(
     (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped ?? {}), [key]: value })),
     [mapped],
+  );
+  const setCustomField = useCallback(
+    (key: string, value: unknown) =>
+      setLocalCustomFields((prev) => ({ ...(prev ?? job?.customFields ?? {}), [key]: value })),
+    [job],
   );
 
   function applyUpdatedJob(updated: FabricationJob) {
@@ -83,7 +90,7 @@ export default function EditFabricationJobPage() {
   });
 
   const save = useMutation({
-    mutationFn: () => fabricationService.updateJob(id, toJobFields(data)),
+    mutationFn: () => fabricationService.updateJob(id, toJobFields(data, customFieldValues)),
     onSuccess: (updated) => {
       applyUpdatedJob(updated);
       navigate('/sales/installation');
@@ -143,6 +150,8 @@ export default function EditFabricationJobPage() {
           sourceOrder={null}
           pieces={[]}
           sourceOrderItems={sourceOrderItems}
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
           lookups={lookups}
           canAllocateSlabs={canReadSlabs && canAllocateSlabs}
           canEditSteps={canUpdate}

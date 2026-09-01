@@ -10,6 +10,9 @@ import { fieldCls } from '@/components/crm/formUtils';
 import { ModernSection, FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
+import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { workflowService } from '@/services/tenantServices';
+import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields } from '@/lib/customerDefaults';
@@ -33,6 +36,7 @@ export default function AddPaymentPage() {
   const [activeTab, setActiveTab] = useState<PageTab>('details');
   const [data, setData]           = useState<Record<string, unknown>>(paymentDefaults);
   const [customer, setCustomer]   = useState<CustomerRef | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
   const [applications, setApplications] = useState<ApplicationInput[]>([]);
   const [appliedInvoiceNumbers, setAppliedInvoiceNumbers] = useState<Record<string, string>>({});
@@ -40,6 +44,10 @@ export default function AddPaymentPage() {
   const [pendingAmount, setPendingAmount] = useState('');
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const setCustomField = useCallback(
+    (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
+    [],
+  );
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
@@ -57,6 +65,15 @@ export default function AddPaymentPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
+  const paymentWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'payment');
+  const { data: paymentDef } = useQuery({
+    queryKey: ['workflow', paymentWorkflow?.id],
+    queryFn: () => workflowService.get(paymentWorkflow?.id ?? ''),
+    enabled: Boolean(paymentWorkflow?.id),
+  });
+  const customFieldDefs = activeCustomFields(paymentDef);
 
   function addApplication() {
     if (!pendingInvoice) return;
@@ -80,7 +97,7 @@ export default function AddPaymentPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A customer is required.');
-      const payload = { ...toCreatePayload(data, customer.id), applications };
+      const payload = { ...toCreatePayload(data, customer.id, customFieldValues), applications };
       return paymentService.createPayment(payload);
     },
     onSuccess: async (payment) => {
@@ -156,7 +173,22 @@ export default function AddPaymentPage() {
                   <PaymentSectionGrid fields={PRIMARY_INFO_FIELDS} data={data} set={set} lookups={lookups} />
                 </ModernSection>
 
-                <ModernSection title="Apply to Invoices (optional)" index={2}>
+                {customFieldDefs.length > 0 && (
+                  <ModernSection title="Custom Fields" index={2}>
+                    <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {customFieldDefs.map((def) => (
+                        <DynamicFieldInput
+                          key={def.id}
+                          field={def}
+                          value={customFieldValues[def.key]}
+                          onChange={setCustomField}
+                        />
+                      ))}
+                    </div>
+                  </ModernSection>
+                )}
+
+                <ModernSection title="Apply to Invoices (optional)" index={3}>
                   <div className="space-y-3">
                     {applications.length > 0 && (
                       <div className="space-y-1.5">

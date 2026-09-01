@@ -175,7 +175,14 @@ export const rbacService = {
  */
 function normalizeDefinition(def: WorkflowDefinition): WorkflowDefinition {
   return {
-    workflow: { ...def.workflow, approverUserIds: def.workflow.approverUserIds ?? [] },
+    workflow: {
+      ...def.workflow,
+      // Default false on an older backend response that doesn't carry this
+      // field yet, so the section stays hidden rather than rendering fields
+      // the API can't govern (enable/required-enforcement).
+      customFieldsEnabled: def.workflow.customFieldsEnabled ?? false,
+      approverUserIds: def.workflow.approverUserIds ?? [],
+    },
     states: def.states ?? [],
     transitions: (def.transitions ?? []).map((t) => ({
       ...t,
@@ -208,6 +215,10 @@ export const workflowService = {
       .then((r) => normalizeDefinition(r.data.definition)),
   setEnabled: (id: string, enabled: boolean) =>
     tenantClient.post(`/tenant/workflows/${id}/enabled`, { enabled }).then((r) => r.data),
+  // Master switch for the workflow's Custom Fields section — distinct from
+  // setEnabled above (which toggles the whole workflow/record type).
+  setCustomFieldsEnabled: (id: string, enabled: boolean) =>
+    tenantClient.post(`/tenant/workflows/${id}/custom-fields/enabled`, { enabled }).then((r) => r.data),
   updateApprovers: (id: string, approverUserIds: string[]) =>
     tenantClient
       .patch<{ success: boolean; approverUserIds: string[] }>(`/tenant/workflows/${id}/approvers`, {

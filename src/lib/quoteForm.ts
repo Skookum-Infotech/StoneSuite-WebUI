@@ -511,6 +511,7 @@ export function toCreatePayload(
   data: Record<string, unknown>,
   lineItems: QuoteLineItem[],
   estimateUuid?: string,
+  customFields: Record<string, unknown> = {},
 ): QuoteCreatePayload {
   const shipSameAsBilling = Boolean(data.ship_same_as_bill);
 
@@ -554,7 +555,7 @@ export function toCreatePayload(
       phone: toStr(data.ship_phone),
       fax: toStr(data.ship_fax),
     },
-    customFields: {},
+    customFields,
     items: lineItems.map((item, i) => toLineInput(item, i + 1)),
   };
 }
@@ -572,6 +573,7 @@ export function fromQuote(quote: Quote): {
   data: Record<string, unknown>;
   lineItems: QuoteLineItem[];
   customer: { id: string; name: string };
+  customFieldValues: Record<string, unknown>;
 } {
   const data: Record<string, unknown> = {
     quote_status: quote.status,
@@ -626,7 +628,12 @@ export function fromQuote(quote: Quote): {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
   }));
 
-  return { data, lineItems, customer: { id: quote.customer.id, name: quote.customer.name } };
+  return {
+    data,
+    lineItems,
+    customer: { id: quote.customer.id, name: quote.customer.name },
+    customFieldValues: quote.customFields ?? {},
+  };
 }
 
 /** Prefills the Add Quote form from a source estimate (`?fromEstimate=<uuid>`

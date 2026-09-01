@@ -514,6 +514,7 @@ function toLineInput(item: InvoiceLineItem, lineNo: number): InvoiceLineInput {
 export function toCreatePayload(
   data: Record<string, unknown>,
   lineItems: InvoiceLineItem[],
+  customFields: Record<string, unknown> = {},
 ): InvoiceCreatePayload {
   const shipSameAsBilling = Boolean(data.ship_same_as_bill);
 
@@ -558,7 +559,7 @@ export function toCreatePayload(
       fax: toStr(data.ship_fax),
       email: toStr(data.ship_email),
     },
-    customFields: {},
+    customFields,
     items: lineItems.map((item, i) => toLineInput(item, i + 1)),
   };
 }
@@ -576,6 +577,7 @@ export function fromInvoice(invoice: Invoice): {
   data: Record<string, unknown>;
   lineItems: InvoiceLineItem[];
   customer: { id: string; name: string };
+  customFieldValues: Record<string, unknown>;
 } {
   const data: Record<string, unknown> = {
     invoice_status: invoice.status,
@@ -638,5 +640,10 @@ export function fromInvoice(invoice: Invoice): {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
   }));
 
-  return { data, lineItems, customer: { id: invoice.customer.id, name: invoice.customer.name } };
+  return {
+    data,
+    lineItems,
+    customer: { id: invoice.customer.id, name: invoice.customer.name },
+    customFieldValues: invoice.customFields ?? {},
+  };
 }

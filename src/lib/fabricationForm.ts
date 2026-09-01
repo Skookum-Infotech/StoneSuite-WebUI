@@ -301,7 +301,10 @@ function idOrEmpty(id: number | null | undefined): string {
 
 /** Maps the form's flat data record to the header-only update/create fields
  *  shared by both payload shapes. */
-export function toJobFields(data: Record<string, unknown>): FabricationJobFields {
+export function toJobFields(
+  data: Record<string, unknown>,
+  customFields: Record<string, unknown> = {},
+): FabricationJobFields {
   return {
     siteCustomerName: toStr(data.siteCustomerName) || undefined,
     siteAddrLine1: toStr(data.siteAddrLine1) || undefined,
@@ -318,7 +321,7 @@ export function toJobFields(data: Record<string, unknown>): FabricationJobFields
     fabricatorEmployeeId: toIntOrNull(data.fabricatorEmployeeId),
     installCrewEmployeeId: toIntOrNull(data.installCrewEmployeeId),
     notes: toStr(data.notes) || undefined,
-    customFields: {},
+    customFields,
   };
 }
 
