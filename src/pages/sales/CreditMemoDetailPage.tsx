@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileMinus, Upload, Pencil, DollarSign, Unlink, Loader2, FileDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -77,6 +78,7 @@ export default function CreditMemoDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creditMemo', id] });
       queryClient.invalidateQueries({ queryKey: ['creditMemos'] });
+      toast.success('Approved.');
     },
   });
 

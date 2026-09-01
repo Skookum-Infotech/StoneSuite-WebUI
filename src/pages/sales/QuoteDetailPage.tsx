@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +16,8 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { QUOTE_STATUS_COLORS, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
+import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -89,9 +91,10 @@ export default function QuoteDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => quoteService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast.success(`Moved to ${statusToastLabel(QUOTE_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -104,6 +107,7 @@ export default function QuoteDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast.success('Approved.');
     },
   });
 

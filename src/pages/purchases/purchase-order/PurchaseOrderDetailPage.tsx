@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Package, Upload, Pencil, PackagePlus, FileDown, Loader2, ArrowRightLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -13,7 +14,8 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PO_STATUS_COLORS, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
+import { PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
@@ -77,9 +79,10 @@ export default function PurchaseOrderDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => purchaseOrderService.transition(id, toStatusCode),
-    onSuccess: (updated) => {
+    onSuccess: (updated, toStatusCode) => {
       queryClient.setQueryData(['purchase-order', id], updated);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast.success(`Moved to ${statusToastLabel(PO_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -88,6 +91,7 @@ export default function PurchaseOrderDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['purchase-order', id], updated);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast.success('Approved.');
     },
   });
 

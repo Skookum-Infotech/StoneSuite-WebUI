@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Undo2, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -13,7 +14,8 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { REFUND_STATUS_COLORS } from '@/lib/refundForm';
+import { REFUND_STATUS_COLORS, REFUND_STATUS_CODES } from '@/lib/refundForm';
+import { statusToastLabel } from '@/lib/statusToast';
 import { RefundAuditTab } from './components/RefundAuditTab';
 import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
@@ -68,9 +70,10 @@ export default function RefundDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => refundService.transition(id, toStatusCode),
-    onSuccess: () => {
+    onSuccess: (_data, toStatusCode) => {
       queryClient.invalidateQueries({ queryKey: ['refund', id] });
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
+      toast.success(`Moved to ${statusToastLabel(REFUND_STATUS_CODES, toStatusCode)}.`);
     },
   });
 
@@ -79,6 +82,7 @@ export default function RefundDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['refund', id] });
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
+      toast.success('Approved.');
     },
   });
 

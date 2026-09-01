@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Receipt, AlertCircle, Loader2, Save, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
 import { lookupService } from '@/services/lookupService';
 import { attachmentService } from '@/services/attachmentService';
@@ -15,8 +16,9 @@ import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import {
   fromInvoice, toCreatePayload, PAGE_TABS, type PageTab,
-  type InvoiceLineItem, INVOICE_TERMINAL_STATUSES,
+  type InvoiceLineItem, INVOICE_TERMINAL_STATUSES, INVOICE_STATUS_CODES,
 } from '@/lib/invoiceForm';
+import { statusToastLabel } from '@/lib/statusToast';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -94,6 +96,7 @@ export default function EditInvoicePage() {
       setLocalStatusCode(updated.statusCode);
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success(`Moved to ${statusToastLabel(INVOICE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
