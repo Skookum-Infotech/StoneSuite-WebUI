@@ -13,6 +13,8 @@ import type {
   SalesOrderAtRisk,
   SalesOrderStatusBucket,
   SalesOrdersSnapshotData,
+  TopCustomer,
+  TopCustomersData,
 } from '@/types/dashboardData';
 
 interface PipelineMixWire {
@@ -44,6 +46,14 @@ interface SalesOrdersSnapshotWire {
   lateValue?: number;
   statuses?: SalesOrderStatusBucket[];
   atRisk?: SalesOrderAtRisk[];
+}
+
+interface TopCustomersWire {
+  success: boolean;
+  range: DashboardRange;
+  customers?: TopCustomer[];
+  totalValue?: number;
+  customerCount?: number;
 }
 
 export const dashboardDataService = {
@@ -84,5 +94,15 @@ export const dashboardDataService = {
         lateValue: r.data.lateValue ?? 0,
         statuses: r.data.statuses ?? [],
         atRisk: r.data.atRisk ?? [],
+      })),
+
+  getTopCustomers: (range: DashboardRange): Promise<TopCustomersData> =>
+    tenantClient
+      .get<TopCustomersWire>('/tenant/dashboard/widgets/top-customers/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        customers: r.data.customers ?? [],
+        totalValue: r.data.totalValue ?? 0,
+        customerCount: r.data.customerCount ?? 0,
       })),
 };

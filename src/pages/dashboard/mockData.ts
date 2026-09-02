@@ -26,22 +26,10 @@ export const materialUsage: MaterialUsage[] = [
 // dashboardDataService.getSalesOrdersSnapshot and src/types/dashboardData.ts
 // (SalesOrdersSnapshotData/SalesOrderStatusBucket/SalesOrderAtRisk).
 
+// Top customers now runs on real data — see dashboardDataService.getTopCustomers
+// and src/types/dashboardData.ts (TopCustomer/TopCustomersData).
+
 // ----- Additional widgets (allocated/enabled per user via Config > Dashboard Widgets) -----
-
-export interface CustomerValue {
-  id: string;
-  name: string;
-  value: number;
-}
-
-export const customerValues: CustomerValue[] = [
-  { id: '1', name: 'Bellwood Design Group', value: 142300 },
-  { id: '2', name: 'Fontaine Builders', value: 118900 },
-  { id: '3', name: 'Sterling Kitchen & Bath', value: 96500 },
-  { id: '4', name: 'Meridian Countertops', value: 74200 },
-  { id: '5', name: 'Marsh Countertop Co.', value: 61800 },
-  { id: '6', name: 'Whitmore Residence', value: 44100 },
-];
 
 export interface InventoryAlert {
   id: string;

@@ -90,3 +90,24 @@ export interface SalesOrdersSnapshotData {
   statuses: SalesOrderStatusBucket[];
   atRisk: SalesOrderAtRisk[];
 }
+
+// One row in the Top customers widget's leaderboard, ranked by billed
+// invoice revenue. id is null when the caller holds no customer:read grant
+// (render the name unlinked, not a route into a permission wall).
+// priorValue is null when the selected range has no applicable prior period
+// ("all" time); otherwise a real number (including 0, meaning the customer
+// billed nothing in the prior window -- a "new this period" signal, not
+// missing data) for the immediately preceding equal-length window.
+export interface TopCustomer {
+  id: string | null;
+  name: string;
+  value: number;
+  priorValue: number | null;
+}
+
+export interface TopCustomersData {
+  range: DashboardRange;
+  customers: TopCustomer[];
+  totalValue: number;
+  customerCount: number;
+}

@@ -194,3 +194,49 @@ describe('dashboardDataService.getSalesOrdersSnapshot', () => {
     expect(result.atRisk).toEqual([])
   })
 })
+
+describe('dashboardDataService.getTopCustomers', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: '30d',
+        customers: [
+          { id: 'cust-1', name: 'Fontaine Builders', value: 142300, priorValue: 120600 },
+          { id: null, name: 'Sterling Kitchen & Bath', value: 96500, priorValue: null },
+        ],
+        totalValue: 638800,
+        customerCount: 23,
+      },
+    })
+
+    const result = await dashboardDataService.getTopCustomers('30d')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/top-customers/data', {
+      params: { range: '30d' },
+    })
+    expect(result).toEqual({
+      range: '30d',
+      customers: [
+        { id: 'cust-1', name: 'Fontaine Builders', value: 142300, priorValue: 120600 },
+        { id: null, name: 'Sterling Kitchen & Bath', value: 96500, priorValue: null },
+      ],
+      totalValue: 638800,
+      customerCount: 23,
+    })
+  })
+
+  it('defaults customers to an empty array and totals to 0 when the backend omits them', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getTopCustomers('all')
+
+    expect(result.customers).toEqual([])
+    expect(result.totalValue).toBe(0)
+    expect(result.customerCount).toBe(0)
+  })
+})
