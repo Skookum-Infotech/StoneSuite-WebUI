@@ -212,7 +212,44 @@ export default function SalesOrderDetailPage() {
         subtitle={order.customer.name}
         recordNumber={order.salesOrderNumber}
         statusBadge={<Badge color={color}>{order.status}</Badge>}
+        actions={(canConvert || canFabricate) && (
+          <>
+            {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+              <button
+                type="button"
+                onClick={() => convert.mutate()}
+                disabled={convert.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+                Convert to Invoice
+              </button>
+            )}
+            {canFabricate && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+              <button
+                type="button"
+                onClick={() => fabricate.mutate()}
+                disabled={fabricate.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                {fabricate.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Wrench className="size-3.5" />}
+                Create Fabrication Job
+              </button>
+            )}
+          </>
+        )}
       />
+
+      {convert.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(convert.error, 'Failed to convert sales order.')}
+        </p>
+      )}
+      {fabricate.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}
+        </p>
+      )}
 
       {order.gated && (
         <>
@@ -379,28 +416,6 @@ export default function SalesOrderDetailPage() {
                   Send to Customer
                 </button>
               )}
-              {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => convert.mutate()}
-                  disabled={convert.isPending}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
-                >
-                  {convert.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />}
-                  Convert to Invoice
-                </button>
-              )}
-              {canFabricate && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => fabricate.mutate()}
-                  disabled={fabricate.isPending}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
-                >
-                  {fabricate.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <Wrench className="size-4 text-stone-400 shrink-0" />}
-                  Create Fabrication Job
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -412,12 +427,6 @@ export default function SalesOrderDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {convert.isError && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert sales order.')}</p>
-            )}
-            {fabricate.isError && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}</p>
-            )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
