@@ -22,25 +22,11 @@ export const materialUsage: MaterialUsage[] = [
 // Recent records now runs on real data — see dashboardDataService.getRecentRecords
 // and src/types/dashboardData.ts (RecentRecord/RecentRecordsData).
 
+// Sales orders snapshot now runs on real data — see
+// dashboardDataService.getSalesOrdersSnapshot and src/types/dashboardData.ts
+// (SalesOrdersSnapshotData/SalesOrderStatusBucket/SalesOrderAtRisk).
+
 // ----- Additional widgets (allocated/enabled per user via Config > Dashboard Widgets) -----
-
-export interface OpenSalesOrder {
-  id: string;
-  orderNumber: string;
-  customer: string;
-  value: number;
-  status: string;
-  isOverdue: boolean;
-}
-
-export const openSalesOrders: OpenSalesOrder[] = [
-  { id: '1', orderNumber: 'SO-1042', customer: 'Fontaine Builders', value: 28400, status: 'Fabrication', isOverdue: false },
-  { id: '2', orderNumber: 'SO-1039', customer: 'Sterling Kitchen & Bath', value: 15200, status: 'Install Scheduled', isOverdue: false },
-  { id: '3', orderNumber: 'SO-1031', customer: 'Marsh Countertop Co.', value: 9800, status: 'Fabrication', isOverdue: true },
-  { id: '4', orderNumber: 'SO-1027', customer: 'Whitmore Residence', value: 21750, status: 'Awaiting Deposit', isOverdue: true },
-  { id: '5', orderNumber: 'SO-1024', customer: 'Meridian Countertops', value: 12300, status: 'Fabrication', isOverdue: false },
-  { id: '6', orderNumber: 'SO-1019', customer: 'Bellwood Design Group', value: 33500, status: 'Install Scheduled', isOverdue: false },
-];
 
 export interface CustomerValue {
   id: string;

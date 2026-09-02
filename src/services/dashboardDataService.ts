@@ -10,6 +10,9 @@ import type {
   PipelineMixSegment,
   RecentRecord,
   RecentRecordsData,
+  SalesOrderAtRisk,
+  SalesOrderStatusBucket,
+  SalesOrdersSnapshotData,
 } from '@/types/dashboardData';
 
 interface PipelineMixWire {
@@ -30,6 +33,17 @@ interface RecentRecordsWire {
   range: DashboardRange;
   records?: RecentRecord[];
   hasMore?: boolean;
+}
+
+interface SalesOrdersSnapshotWire {
+  success: boolean;
+  range: DashboardRange;
+  openCount?: number;
+  openValue?: number;
+  lateCount?: number;
+  lateValue?: number;
+  statuses?: SalesOrderStatusBucket[];
+  atRisk?: SalesOrderAtRisk[];
 }
 
 export const dashboardDataService = {
@@ -57,5 +71,18 @@ export const dashboardDataService = {
         range: r.data.range,
         records: r.data.records ?? [],
         hasMore: r.data.hasMore ?? false,
+      })),
+
+  getSalesOrdersSnapshot: (range: DashboardRange): Promise<SalesOrdersSnapshotData> =>
+    tenantClient
+      .get<SalesOrdersSnapshotWire>('/tenant/dashboard/widgets/sales-orders-snapshot/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        openCount: r.data.openCount ?? 0,
+        openValue: r.data.openValue ?? 0,
+        lateCount: r.data.lateCount ?? 0,
+        lateValue: r.data.lateValue ?? 0,
+        statuses: r.data.statuses ?? [],
+        atRisk: r.data.atRisk ?? [],
       })),
 };

@@ -135,3 +135,62 @@ describe('dashboardDataService.getRecentRecords', () => {
     expect(result.hasMore).toBe(false)
   })
 })
+
+describe('dashboardDataService.getSalesOrdersSnapshot', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: '30d',
+        openCount: 20,
+        openValue: 412300,
+        lateCount: 3,
+        lateValue: 47250,
+        statuses: [
+          { code: 'DRFT', label: 'Draft', count: 3, value: 18400 },
+          { code: 'OPEN', label: 'Open', count: 11, value: 240300 },
+        ],
+        atRisk: [
+          { id: 'so-1', recordNumber: 'SO-1042', customer: 'Fontaine Builders', value: 28400, status: 'Open', daysLate: 12 },
+        ],
+      },
+    })
+
+    const result = await dashboardDataService.getSalesOrdersSnapshot('30d')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/sales-orders-snapshot/data', {
+      params: { range: '30d' },
+    })
+    expect(result).toEqual({
+      range: '30d',
+      openCount: 20,
+      openValue: 412300,
+      lateCount: 3,
+      lateValue: 47250,
+      statuses: [
+        { code: 'DRFT', label: 'Draft', count: 3, value: 18400 },
+        { code: 'OPEN', label: 'Open', count: 11, value: 240300 },
+      ],
+      atRisk: [
+        { id: 'so-1', recordNumber: 'SO-1042', customer: 'Fontaine Builders', value: 28400, status: 'Open', daysLate: 12 },
+      ],
+    })
+  })
+
+  it('defaults statuses/atRisk to empty arrays and counts/values to 0 when the backend omits them', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getSalesOrdersSnapshot('all')
+
+    expect(result.openCount).toBe(0)
+    expect(result.openValue).toBe(0)
+    expect(result.lateCount).toBe(0)
+    expect(result.lateValue).toBe(0)
+    expect(result.statuses).toEqual([])
+    expect(result.atRisk).toEqual([])
+  })
+})

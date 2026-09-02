@@ -58,3 +58,35 @@ export interface RecentRecordsData {
   records: RecentRecord[];
   hasMore: boolean;
 }
+
+// One live (non-terminal) status's aggregate in the Sales orders snapshot
+// widget's status breakdown -- see controllers/dashboard_salesorders.go.
+export interface SalesOrderStatusBucket {
+  code: string;
+  label: string;
+  count: number;
+  value: number;
+}
+
+// One row in the Sales orders snapshot widget's at-risk worklist -- an open
+// (approved-or-further) order ranked most-overdue-or-soonest-due first.
+// daysLate is positive when overdue, negative when due in the future, and
+// null when the order has no expected delivery date set.
+export interface SalesOrderAtRisk {
+  id: string;
+  recordNumber: string;
+  customer: string;
+  value: number;
+  status: string;
+  daysLate: number | null;
+}
+
+export interface SalesOrdersSnapshotData {
+  range: DashboardRange;
+  openCount: number;
+  openValue: number;
+  lateCount: number;
+  lateValue: number;
+  statuses: SalesOrderStatusBucket[];
+  atRisk: SalesOrderAtRisk[];
+}
