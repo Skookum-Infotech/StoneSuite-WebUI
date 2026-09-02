@@ -2,13 +2,14 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildCsvFilename, buildCsvText, downloadCsv } from '@/lib/csvExport';
+import { recentRecordsToCsvRows } from '@/lib/recentRecordsCsv';
 import { useAuthStore } from '@/store/useAuthStore';
 import { dashboardWidgetService } from '@/services/dashboardWidgetService';
 import { dashboardDataService } from '@/services/dashboardDataService';
 import { getVisibleWidgetIds } from '@/lib/dashboardWidgets';
 import { Spinner, EmptyState } from '@/components/tenant/ui';
 import type { WidgetDefinition, WidgetSize } from '@/types/dashboardWidgets';
-import type { DashboardRange } from '@/types/dashboardData';
+import type { DashboardRange, RecentRecord } from '@/types/dashboardData';
 import { ConsoleHeader } from './components/ConsoleHeader';
 import { CustomizePanel } from './components/CustomizePanel';
 import { KpiStrip } from './components/KpiStrip';
@@ -23,7 +24,6 @@ import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
 import {
   materialUsage,
-  recentRecords,
   openSalesOrders,
   customerValues,
   inventoryAlerts,
@@ -46,7 +46,6 @@ const SIZE_CLASS: Record<WidgetSize, string> = {
 // depends on data resolved inside the component body.
 const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
   'material-consumption': () => <MaterialConsumption items={materialUsage} />,
-  'recent-records': () => <RecentRecordsTable records={recentRecords} />,
   'sales-orders-snapshot': () => <SalesOrdersSnapshot orders={openSalesOrders} />,
   'top-customers': () => <TopCustomers customers={customerValues} />,
   'inventory-alerts': () => <InventoryAlerts alerts={inventoryAlerts} />,
@@ -57,18 +56,13 @@ const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
   ),
 };
 
-function handleDownloadCsv(): void {
-  const csv = buildCsvText(
-    ['Type', 'Record', 'Account', 'Value', 'Status', 'Updated'],
-    recentRecords.map((r) => [
-      r.type,
-      r.recordNumber,
-      r.account,
-      r.value === null ? '' : String(r.value),
-      r.status,
-      r.updatedAt,
-    ]),
-  );
+// Exports the Recent records widget's currently-loaded rows -- the same
+// bounded feed shown on screen, not a full unpaginated history (that's what
+// exportPagedCsv is for on a list page; this is a console-level "download
+// what you see" button). Empty when the widget isn't visible/loaded yet, or
+// has nothing to show, rather than throwing.
+function handleDownloadCsv(records: RecentRecord[]): void {
+  const csv = buildCsvText(['Type', 'Record', 'Account', 'Value', 'Status', 'Updated'], recentRecordsToCsvRows(records));
   downloadCsv(buildCsvFilename('operations-console'), csv);
 }
 
@@ -125,6 +119,11 @@ export default function DashboardPage() {
     queryFn: () => dashboardDataService.getKpiStrip(range),
     enabled: visibleWidgetIds.includes('kpi-strip'),
   });
+  const recentRecordsQ = useQuery({
+    queryKey: ['dashboard-recent-records', range],
+    queryFn: () => dashboardDataService.getRecentRecords(range),
+    enabled: visibleWidgetIds.includes('recent-records'),
+  });
 
   function renderWidget(w: WidgetDefinition): ReactNode {
     switch (w.id) {
@@ -132,6 +131,15 @@ export default function DashboardPage() {
         return <PipelineDonut data={pipelineMixQ.data} isLoading={pipelineMixQ.isLoading} isError={pipelineMixQ.isError} />;
       case 'kpi-strip':
         return <KpiStrip metrics={kpiStripQ.data?.metrics} isLoading={kpiStripQ.isLoading} isError={kpiStripQ.isError} />;
+      case 'recent-records':
+        return (
+          <RecentRecordsTable
+            records={recentRecordsQ.data?.records}
+            isLoading={recentRecordsQ.isLoading}
+            isError={recentRecordsQ.isError}
+            hasMore={recentRecordsQ.data?.hasMore}
+          />
+        );
       default:
         return WIDGET_RENDERERS[w.id]?.();
     }
@@ -151,7 +159,7 @@ export default function DashboardPage() {
         <ConsoleHeader
           range={range}
           onRangeChange={setRange}
-          onDownloadCsv={handleDownloadCsv}
+          onDownloadCsv={() => handleDownloadCsv(recentRecordsQ.data?.records ?? [])}
           onCustomize={() => setShowCustomize(true)}
         />
 

@@ -36,3 +36,25 @@ export interface KpiStripData {
   range: DashboardRange;
   metrics: KpiMetric[];
 }
+
+// One row in the Recent records widget, merged server-side across every
+// CRM/Sales/Purchases module the caller can read (see
+// controllers/dashboard_recent.go). module/domain are backend keys, not
+// display labels -- see lib/recentRecordRoute.ts (route building) and
+// RecentRecordsTable.tsx (badge label/color lookup).
+export interface RecentRecord {
+  id: string;
+  module: string;
+  domain: 'crm' | 'sales' | 'purchases';
+  recordNumber: string;
+  account: string | null;
+  value: number | null;
+  status: string;
+  updatedAt: string;
+}
+
+export interface RecentRecordsData {
+  range: DashboardRange;
+  records: RecentRecord[];
+  hasMore: boolean;
+}

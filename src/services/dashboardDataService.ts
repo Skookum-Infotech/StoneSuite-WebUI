@@ -2,7 +2,15 @@
 // controllers/dashboard_pipeline.go on the backend), as opposed to
 // dashboardWidgetService.ts, which covers widget allocation/preference.
 import { tenantClient } from '@/api/tenantClient';
-import type { DashboardRange, KpiMetric, KpiStripData, PipelineMix, PipelineMixSegment } from '@/types/dashboardData';
+import type {
+  DashboardRange,
+  KpiMetric,
+  KpiStripData,
+  PipelineMix,
+  PipelineMixSegment,
+  RecentRecord,
+  RecentRecordsData,
+} from '@/types/dashboardData';
 
 interface PipelineMixWire {
   success: boolean;
@@ -15,6 +23,13 @@ interface KpiStripWire {
   success: boolean;
   range: DashboardRange;
   metrics?: KpiMetric[];
+}
+
+interface RecentRecordsWire {
+  success: boolean;
+  range: DashboardRange;
+  records?: RecentRecord[];
+  hasMore?: boolean;
 }
 
 export const dashboardDataService = {
@@ -33,5 +48,14 @@ export const dashboardDataService = {
       .then((r) => ({
         range: r.data.range,
         metrics: r.data.metrics ?? [],
+      })),
+
+  getRecentRecords: (range: DashboardRange): Promise<RecentRecordsData> =>
+    tenantClient
+      .get<RecentRecordsWire>('/tenant/dashboard/widgets/recent-records/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        records: r.data.records ?? [],
+        hasMore: r.data.hasMore ?? false,
       })),
 };

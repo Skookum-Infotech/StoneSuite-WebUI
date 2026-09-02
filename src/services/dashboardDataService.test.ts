@@ -88,3 +88,50 @@ describe('dashboardDataService.getKpiStrip', () => {
     expect(result.metrics).toEqual([])
   })
 })
+
+describe('dashboardDataService.getRecentRecords', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: '30d',
+        records: [
+          {
+            id: 'so-1', module: 'sales_order', domain: 'sales', recordNumber: 'SO-1042',
+            account: 'Fontaine Builders', value: 28400, status: 'Fabrication', updatedAt: '2026-09-02T14:32:11Z',
+          },
+        ],
+        hasMore: true,
+      },
+    })
+
+    const result = await dashboardDataService.getRecentRecords('30d')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/recent-records/data', {
+      params: { range: '30d' },
+    })
+    expect(result).toEqual({
+      range: '30d',
+      hasMore: true,
+      records: [
+        {
+          id: 'so-1', module: 'sales_order', domain: 'sales', recordNumber: 'SO-1042',
+          account: 'Fontaine Builders', value: 28400, status: 'Fabrication', updatedAt: '2026-09-02T14:32:11Z',
+        },
+      ],
+    })
+  })
+
+  it('defaults records to an empty array and hasMore to false when the backend omits them', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getRecentRecords('all')
+
+    expect(result.records).toEqual([])
+    expect(result.hasMore).toBe(false)
+  })
+})

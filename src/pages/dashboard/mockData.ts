@@ -19,46 +19,8 @@ export const materialUsage: MaterialUsage[] = [
   { id: '5', name: 'Verde Alpi', slabsCut: 11, swatch: 'linear-gradient(115deg,#4a5b52,#26332c 60%,#3d4c44)' },
 ];
 
-export interface RecentRecord {
-  id: string;
-  type: string;
-  typeBg: string;
-  typeText: string;
-  recordNumber: string;
-  account: string;
-  value: number | null;
-  status: string;
-  statusColor: string;
-  updatedAt: string;
-}
-
-export const recentRecords: RecentRecord[] = [
-  {
-    id: '1', type: 'Lead', typeBg: 'bg-workflow-lead-bg', typeText: 'text-workflow-lead-text',
-    recordNumber: 'LEAD-1084', account: 'Whitmore Residence', value: null,
-    status: 'New', statusColor: '#a855f7', updatedAt: '12m ago',
-  },
-  {
-    id: '2', type: 'Sales Order', typeBg: 'bg-emerald-100', typeText: 'text-emerald-700',
-    recordNumber: 'SO-1042', account: 'Fontaine Builders', value: 28400,
-    status: 'Fabrication', statusColor: '#d97706', updatedAt: '48m ago',
-  },
-  {
-    id: '3', type: 'Vendor Bill', typeBg: 'bg-teal-100', typeText: 'text-teal-700',
-    recordNumber: 'VB-2091', account: 'Apex Stone Supply', value: 9120,
-    status: 'Approved', statusColor: '#059669', updatedAt: '2h ago',
-  },
-  {
-    id: '4', type: 'Requisition', typeBg: 'bg-amber-100', typeText: 'text-amber-700',
-    recordNumber: 'REQ-118', account: 'Warehouse 1', value: 4780,
-    status: 'Pending', statusColor: '#d97706', updatedAt: '5h ago',
-  },
-  {
-    id: '5', type: 'Prospect', typeBg: 'bg-workflow-prospect-bg', typeText: 'text-workflow-prospect-text',
-    recordNumber: 'PRO-0417', account: 'Marsh Countertop Co.', value: 16900,
-    status: 'Quoted', statusColor: '#3b82f6', updatedAt: '1d ago',
-  },
-];
+// Recent records now runs on real data — see dashboardDataService.getRecentRecords
+// and src/types/dashboardData.ts (RecentRecord/RecentRecordsData).
 
 // ----- Additional widgets (allocated/enabled per user via Config > Dashboard Widgets) -----
 
