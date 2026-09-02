@@ -5,6 +5,7 @@ import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, Fil
 import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { attachmentService } from '@/services/attachmentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
@@ -76,6 +77,11 @@ export default function QuoteDetailPage() {
     enabled: Boolean(id),
   });
   const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+  });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -257,6 +263,15 @@ export default function QuoteDetailPage() {
                   <ReadonlyField label="PO Number" value={quote.poNumber} />
                   <ReadonlyField label="Reference #" value={quote.referenceNumber} />
                   <ReadonlyField label="Sales Tax %" value={`${quote.salesTaxPercent}%`} />
+                  {quote.currencyId && (
+                    <ReadonlyField label="Currency" value={lookups?.currencies.find((c) => c.id === quote.currencyId)?.name ?? '—'} />
+                  )}
+                  {quote.paymentTermsId && (
+                    <ReadonlyField label="Payment Terms" value={lookups?.paymentTerms.find((p) => p.id === quote.paymentTermsId)?.name ?? '—'} />
+                  )}
+                  {quote.priceLevelId && (
+                    <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === quote.priceLevelId)?.name ?? '—'} />
+                  )}
                   {quote.estimate && (
                     <div className="space-y-1">
                       <label className={fieldLabelCls}>Source Estimate</label>

@@ -5,6 +5,7 @@ import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Sen
 import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { attachmentService } from '@/services/attachmentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
@@ -76,6 +77,11 @@ export default function EstimateDetailPage() {
     enabled: Boolean(id),
   });
   const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+  });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -256,6 +262,15 @@ export default function EstimateDetailPage() {
                   <ReadonlyField label="PO Number" value={estimate.poNumber} />
                   <ReadonlyField label="Reference #" value={estimate.referenceNumber} />
                   <ReadonlyField label="Sales Tax %" value={`${estimate.salesTaxPercent}%`} />
+                  {estimate.currencyId && (
+                    <ReadonlyField label="Currency" value={lookups?.currencies.find((c) => c.id === estimate.currencyId)?.name ?? '—'} />
+                  )}
+                  {estimate.paymentTermsId && (
+                    <ReadonlyField label="Payment Terms" value={lookups?.paymentTerms.find((p) => p.id === estimate.paymentTermsId)?.name ?? '—'} />
+                  )}
+                  {estimate.priceLevelId && (
+                    <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === estimate.priceLevelId)?.name ?? '—'} />
+                  )}
                   {estimate.memo && <ReadonlyField label="Memo" value={estimate.memo} full />}
                 </div>
               </ModernSection>
