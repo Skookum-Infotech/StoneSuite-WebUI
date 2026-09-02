@@ -17,3 +17,22 @@ export interface PipelineMix {
   segments: PipelineMixSegment[];
   closeRate: number;
 }
+
+// One KPI strip tile. deltaPct (Revenue) and deltaCount (Open Leads) are
+// mutually exclusive with each other and with subLabel (Sales Orders,
+// Needs Approval) -- a metric has a %/count trend or a sub-metric label,
+// never both. sparkline is present only for the two trend-bearing metrics.
+export interface KpiMetric {
+  id: 'revenue' | 'open-leads' | 'sales-orders-fabrication' | 'needs-approval';
+  value: number;
+  deltaPct?: number;
+  deltaCount?: number;
+  sparkline?: number[];
+  subLabel?: string;
+  oldestDays?: number;
+}
+
+export interface KpiStripData {
+  range: DashboardRange;
+  metrics: KpiMetric[];
+}

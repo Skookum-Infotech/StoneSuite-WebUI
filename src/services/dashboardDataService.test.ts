@@ -50,3 +50,41 @@ describe('dashboardDataService.getPipelineMix', () => {
     expect(result.segments).toEqual([])
   })
 })
+
+describe('dashboardDataService.getKpiStrip', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: '30d',
+        metrics: [
+          { id: 'revenue', value: 184250, deltaPct: 18, sparkline: [58, 64, 60, 74, 70, 86, 92] },
+          { id: 'open-leads', value: 24, deltaCount: 6, sparkline: [59, 62, 58, 72, 71, 82, 88] },
+          { id: 'sales-orders-fabrication', value: 12, subLabel: '4 in fabrication' },
+          { id: 'needs-approval', value: 5, subLabel: 'oldest 2 days', oldestDays: 2 },
+        ],
+      },
+    })
+
+    const result = await dashboardDataService.getKpiStrip('30d')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/kpi-strip/data', {
+      params: { range: '30d' },
+    })
+    expect(result.range).toBe('30d')
+    expect(result.metrics).toHaveLength(4)
+    expect(result.metrics[0]).toEqual({ id: 'revenue', value: 184250, deltaPct: 18, sparkline: [58, 64, 60, 74, 70, 86, 92] })
+  })
+
+  it('defaults metrics to an empty array when the backend omits it', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getKpiStrip('all')
+
+    expect(result.metrics).toEqual([])
+  })
+})

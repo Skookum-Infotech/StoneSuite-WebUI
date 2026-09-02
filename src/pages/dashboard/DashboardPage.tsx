@@ -22,7 +22,6 @@ import { PurchasesStatus } from './components/PurchasesStatus';
 import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
 import {
-  kpiMetrics,
   materialUsage,
   recentRecords,
   openSalesOrders,
@@ -42,11 +41,10 @@ const SIZE_CLASS: Record<WidgetSize, string> = {
 
 // Maps a catalog widget id to its rendered content. Add an entry here
 // whenever a widget is added to src/config/dashboardWidgets.ts. Real-data
-// widgets that need query state (currently just pipeline-donut) are rendered
-// via a special case in the grid below instead of from this table, since
-// their content depends on data resolved inside the component body.
+// widgets that need query state (pipeline-donut, kpi-strip) are rendered via
+// renderWidget below instead of from this table, since their content
+// depends on data resolved inside the component body.
 const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
-  'kpi-strip': () => <KpiStrip metrics={kpiMetrics} />,
   'material-consumption': () => <MaterialConsumption items={materialUsage} />,
   'recent-records': () => <RecentRecordsTable records={recentRecords} />,
   'sales-orders-snapshot': () => <SalesOrdersSnapshot orders={openSalesOrders} />,
@@ -122,6 +120,22 @@ export default function DashboardPage() {
     queryFn: () => dashboardDataService.getPipelineMix(range),
     enabled: visibleWidgetIds.includes('pipeline-donut'),
   });
+  const kpiStripQ = useQuery({
+    queryKey: ['dashboard-kpi-strip', range],
+    queryFn: () => dashboardDataService.getKpiStrip(range),
+    enabled: visibleWidgetIds.includes('kpi-strip'),
+  });
+
+  function renderWidget(w: WidgetDefinition): ReactNode {
+    switch (w.id) {
+      case 'pipeline-donut':
+        return <PipelineDonut data={pipelineMixQ.data} isLoading={pipelineMixQ.isLoading} isError={pipelineMixQ.isError} />;
+      case 'kpi-strip':
+        return <KpiStrip metrics={kpiStripQ.data?.metrics} isLoading={kpiStripQ.isLoading} isError={kpiStripQ.isError} />;
+      default:
+        return WIDGET_RENDERERS[w.id]?.();
+    }
+  }
 
   function handleTogglePreference(widgetId: string, next: boolean) {
     if (!preference) return;
@@ -155,11 +169,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-12 gap-3.5">
             {visibleWidgets.map((w) => (
               <div key={w.id} className={SIZE_CLASS[w.size]}>
-                {w.id === 'pipeline-donut' ? (
-                  <PipelineDonut data={pipelineMixQ.data} isLoading={pipelineMixQ.isLoading} isError={pipelineMixQ.isError} />
-                ) : (
-                  WIDGET_RENDERERS[w.id]?.()
-                )}
+                {renderWidget(w)}
               </div>
             ))}
           </div>

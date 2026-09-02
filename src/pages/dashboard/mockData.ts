@@ -1,53 +1,5 @@
-export interface KpiMetric {
-  id: string;
-  label: string;
-  value: string;
-  delta: string;
-  deltaTone: 'up' | 'warn' | 'neutral';
-  sparkline: number[];
-  sparklineColor: string;
-}
-
-// Placeholder figures for a stone-fabrication CRM's operations console —
-// replace with a real dashboard-summary service call once that endpoint exists.
-export const kpiMetrics: KpiMetric[] = [
-  {
-    id: 'revenue',
-    label: 'Revenue',
-    value: '$184,250',
-    delta: '▲ 18%',
-    deltaTone: 'up',
-    sparkline: [58, 64, 60, 74, 70, 86, 92],
-    sparklineColor: '#719c3b',
-  },
-  {
-    id: 'leads',
-    label: 'Open Leads',
-    value: '24',
-    delta: '▲ 6 this week',
-    deltaTone: 'up',
-    sparkline: [59, 62, 58, 72, 71, 82, 88],
-    sparklineColor: '#a855f7',
-  },
-  {
-    id: 'sales-orders',
-    label: 'Sales Orders',
-    value: '12',
-    delta: '4 in fabrication',
-    deltaTone: 'neutral',
-    sparkline: [70, 72, 66, 76, 71, 78, 74],
-    sparklineColor: '#059669',
-  },
-  {
-    id: 'requisitions',
-    label: 'Needs Approval',
-    value: '5',
-    delta: 'oldest 2 days',
-    deltaTone: 'warn',
-    sparkline: [78, 72, 76, 64, 70, 58, 62],
-    sparklineColor: '#d97706',
-  },
-];
+// KPI strip now runs on real data — see dashboardDataService.getKpiStrip and
+// src/types/dashboardData.ts (KpiMetric/KpiStripData).
 
 // Pipeline mix now runs on real data — see dashboardDataService.getPipelineMix
 // and src/types/dashboardData.ts (PipelineMix/PipelineMixSegment).
