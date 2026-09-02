@@ -111,3 +111,33 @@ export interface TopCustomersData {
   totalValue: number;
   customerCount: number;
 }
+
+// One row in the Inventory alerts widget's list -- an (item, warehouse)
+// stock level with a problem, ranked most-severe-tier first by the backend.
+// severity is server-computed (see controllers/dashboard_inventory.go's
+// classifyStockAlert) rather than re-derived client-side, so a row's badge
+// can never disagree with the rank that put it in this list:
+//   'short' -- allocated to open sales orders exceeds on-hand stock (a
+//              commitment that can't currently be fulfilled)
+//   'out'   -- nothing on hand at all
+//   'low'   -- on-hand at or under a configured reorder point
+export type StockAlertSeverity = 'short' | 'out' | 'low';
+
+export interface InventoryStockAlert {
+  id: string;
+  itemName: string;
+  warehouse: string;
+  onHand: number;
+  allocated: number;
+  reorderPoint: number;
+  severity: StockAlertSeverity;
+}
+
+// Stock levels are current-state, not date-windowed -- range is carried
+// here for contract uniformity with the other widgets, but changing it has
+// no effect on this widget's data (see the backend handler's doc comment).
+export interface InventoryAlertsData {
+  range: DashboardRange;
+  alerts: InventoryStockAlert[];
+  alertCount: number;
+}

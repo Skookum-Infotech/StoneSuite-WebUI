@@ -24,7 +24,6 @@ import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
 import {
   materialUsage,
-  inventoryAlerts,
   purchaseStatusItems,
   recentJournalEntries,
   currentAccountingPeriod,
@@ -44,7 +43,6 @@ const SIZE_CLASS: Record<WidgetSize, string> = {
 // depends on data resolved inside the component body.
 const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
   'material-consumption': () => <MaterialConsumption items={materialUsage} />,
-  'inventory-alerts': () => <InventoryAlerts alerts={inventoryAlerts} />,
   'purchases-status': () => <PurchasesStatus items={purchaseStatusItems} />,
   'ar-outstanding': () => <ArOutstanding invoices={outstandingInvoices} />,
   'accounting-snapshot': () => (
@@ -130,6 +128,11 @@ export default function DashboardPage() {
     queryFn: () => dashboardDataService.getTopCustomers(range),
     enabled: visibleWidgetIds.includes('top-customers'),
   });
+  const inventoryAlertsQ = useQuery({
+    queryKey: ['dashboard-inventory-alerts', range],
+    queryFn: () => dashboardDataService.getInventoryAlerts(range),
+    enabled: visibleWidgetIds.includes('inventory-alerts'),
+  });
 
   function renderWidget(w: WidgetDefinition): ReactNode {
     switch (w.id) {
@@ -157,6 +160,10 @@ export default function DashboardPage() {
       case 'top-customers':
         return (
           <TopCustomers data={topCustomersQ.data} isLoading={topCustomersQ.isLoading} isError={topCustomersQ.isError} />
+        );
+      case 'inventory-alerts':
+        return (
+          <InventoryAlerts data={inventoryAlertsQ.data} isLoading={inventoryAlertsQ.isLoading} isError={inventoryAlertsQ.isError} />
         );
       default:
         return WIDGET_RENDERERS[w.id]?.();

@@ -29,23 +29,10 @@ export const materialUsage: MaterialUsage[] = [
 // Top customers now runs on real data — see dashboardDataService.getTopCustomers
 // and src/types/dashboardData.ts (TopCustomer/TopCustomersData).
 
+// Inventory alerts now runs on real data — see dashboardDataService.getInventoryAlerts
+// and src/types/dashboardData.ts (InventoryStockAlert/InventoryAlertsData).
+
 // ----- Additional widgets (allocated/enabled per user via Config > Dashboard Widgets) -----
-
-export interface InventoryAlert {
-  id: string;
-  itemName: string;
-  warehouse: string;
-  quantityOnHand: number;
-  reorderThreshold: number;
-  severity: 'critical' | 'low';
-}
-
-export const inventoryAlerts: InventoryAlert[] = [
-  { id: '1', itemName: 'Carrara Marble Slab', warehouse: 'Warehouse 1', quantityOnHand: 2, reorderThreshold: 10, severity: 'critical' },
-  { id: '2', itemName: 'Edge Polish Adhesive', warehouse: 'Warehouse 2', quantityOnHand: 6, reorderThreshold: 12, severity: 'low' },
-  { id: '3', itemName: 'Black Galaxy Slab', warehouse: 'Warehouse 1', quantityOnHand: 3, reorderThreshold: 8, severity: 'critical' },
-  { id: '4', itemName: 'Sink Cutout Templates', warehouse: 'Warehouse 2', quantityOnHand: 9, reorderThreshold: 15, severity: 'low' },
-];
 
 export interface PurchaseStatusItem {
   id: string;

@@ -4,6 +4,8 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
   DashboardRange,
+  InventoryAlertsData,
+  InventoryStockAlert,
   KpiMetric,
   KpiStripData,
   PipelineMix,
@@ -56,6 +58,13 @@ interface TopCustomersWire {
   customerCount?: number;
 }
 
+interface InventoryAlertsWire {
+  success: boolean;
+  range: DashboardRange;
+  alerts?: InventoryStockAlert[];
+  alertCount?: number;
+}
+
 export const dashboardDataService = {
   getPipelineMix: (range: DashboardRange): Promise<PipelineMix> =>
     tenantClient
@@ -104,5 +113,14 @@ export const dashboardDataService = {
         customers: r.data.customers ?? [],
         totalValue: r.data.totalValue ?? 0,
         customerCount: r.data.customerCount ?? 0,
+      })),
+
+  getInventoryAlerts: (range: DashboardRange): Promise<InventoryAlertsData> =>
+    tenantClient
+      .get<InventoryAlertsWire>('/tenant/dashboard/widgets/inventory-alerts/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        alerts: r.data.alerts ?? [],
+        alertCount: r.data.alertCount ?? 0,
       })),
 };

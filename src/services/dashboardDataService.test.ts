@@ -240,3 +240,44 @@ describe('dashboardDataService.getTopCustomers', () => {
     expect(result.customerCount).toBe(0)
   })
 })
+
+describe('dashboardDataService.getInventoryAlerts', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: 'all',
+        alerts: [
+          { id: 'item-1', itemName: 'Black Galaxy Slab', warehouse: 'Warehouse 1', onHand: 4, allocated: 10, reorderPoint: 0, severity: 'short' },
+        ],
+        alertCount: 7,
+      },
+    })
+
+    const result = await dashboardDataService.getInventoryAlerts('all')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/inventory-alerts/data', {
+      params: { range: 'all' },
+    })
+    expect(result).toEqual({
+      range: 'all',
+      alerts: [
+        { id: 'item-1', itemName: 'Black Galaxy Slab', warehouse: 'Warehouse 1', onHand: 4, allocated: 10, reorderPoint: 0, severity: 'short' },
+      ],
+      alertCount: 7,
+    })
+  })
+
+  it('defaults alerts to an empty array and alertCount to 0 when the backend omits them', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getInventoryAlerts('all')
+
+    expect(result.alerts).toEqual([])
+    expect(result.alertCount).toBe(0)
+  })
+})
