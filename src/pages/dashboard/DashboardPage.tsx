@@ -24,7 +24,6 @@ import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
 import {
   materialUsage,
-  purchaseStatusItems,
   recentJournalEntries,
   currentAccountingPeriod,
   outstandingInvoices,
@@ -43,7 +42,6 @@ const SIZE_CLASS: Record<WidgetSize, string> = {
 // depends on data resolved inside the component body.
 const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
   'material-consumption': () => <MaterialConsumption items={materialUsage} />,
-  'purchases-status': () => <PurchasesStatus items={purchaseStatusItems} />,
   'ar-outstanding': () => <ArOutstanding invoices={outstandingInvoices} />,
   'accounting-snapshot': () => (
     <AccountingSnapshot period={currentAccountingPeriod} entries={recentJournalEntries} />
@@ -133,6 +131,11 @@ export default function DashboardPage() {
     queryFn: () => dashboardDataService.getInventoryAlerts(range),
     enabled: visibleWidgetIds.includes('inventory-alerts'),
   });
+  const purchasesStatusQ = useQuery({
+    queryKey: ['dashboard-purchases-status', range],
+    queryFn: () => dashboardDataService.getPurchasesStatus(range),
+    enabled: visibleWidgetIds.includes('purchases-status'),
+  });
 
   function renderWidget(w: WidgetDefinition): ReactNode {
     switch (w.id) {
@@ -164,6 +167,10 @@ export default function DashboardPage() {
       case 'inventory-alerts':
         return (
           <InventoryAlerts data={inventoryAlertsQ.data} isLoading={inventoryAlertsQ.isLoading} isError={inventoryAlertsQ.isError} />
+        );
+      case 'purchases-status':
+        return (
+          <PurchasesStatus data={purchasesStatusQ.data} isLoading={purchasesStatusQ.isLoading} isError={purchasesStatusQ.isError} />
         );
       default:
         return WIDGET_RENDERERS[w.id]?.();

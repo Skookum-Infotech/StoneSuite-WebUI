@@ -141,3 +141,43 @@ export interface InventoryAlertsData {
   alerts: InventoryStockAlert[];
   alertCount: number;
 }
+
+// One tile's count + value pair in the Purchases & requisitions status
+// widget (Incoming, Overdue, Pending).
+export interface PurchasesTileValue {
+  count: number;
+  value: number;
+}
+
+export type PurchasesAttentionKind = 'purchase_order' | 'requisition';
+
+// One row in the widget's combined attention worklist -- either a
+// SENT/PART purchase order whose expected delivery has passed (daysOverdue
+// set, daysWaiting null), or a purchase order/requisition stuck waiting for
+// approval sign-off (daysWaiting set, daysOverdue null). See
+// controllers/dashboard_purchases.go's attentionRow -- exactly one of the
+// two day counts is ever set.
+export interface PurchasesAttentionRow {
+  kind: PurchasesAttentionKind;
+  id: string;
+  recordNumber: string;
+  party: string;
+  value: number;
+  daysOverdue: number | null;
+  daysWaiting: number | null;
+}
+
+// Purchases & requisitions status widget payload. pending is null when the
+// caller is not a configured approver for purchase orders or requisitions
+// at all -- "not applicable to you", distinct from a real 0 tile meaning
+// "you're caught up" (see controllers/dashboard_purchases.go's
+// buildPurchasesStatus). Ignores range like inventory-alerts -- every
+// figure here is "right now" open work, not date-windowed.
+export interface PurchasesStatusData {
+  range: DashboardRange;
+  incoming: PurchasesTileValue;
+  overdue: PurchasesTileValue;
+  pending: PurchasesTileValue | null;
+  attention: PurchasesAttentionRow[];
+  attentionCount: number;
+}

@@ -10,6 +10,9 @@ import type {
   KpiStripData,
   PipelineMix,
   PipelineMixSegment,
+  PurchasesAttentionRow,
+  PurchasesStatusData,
+  PurchasesTileValue,
   RecentRecord,
   RecentRecordsData,
   SalesOrderAtRisk,
@@ -63,6 +66,16 @@ interface InventoryAlertsWire {
   range: DashboardRange;
   alerts?: InventoryStockAlert[];
   alertCount?: number;
+}
+
+interface PurchasesStatusWire {
+  success: boolean;
+  range: DashboardRange;
+  incoming?: PurchasesTileValue;
+  overdue?: PurchasesTileValue;
+  pending?: PurchasesTileValue | null;
+  attention?: PurchasesAttentionRow[];
+  attentionCount?: number;
 }
 
 export const dashboardDataService = {
@@ -122,5 +135,17 @@ export const dashboardDataService = {
         range: r.data.range,
         alerts: r.data.alerts ?? [],
         alertCount: r.data.alertCount ?? 0,
+      })),
+
+  getPurchasesStatus: (range: DashboardRange): Promise<PurchasesStatusData> =>
+    tenantClient
+      .get<PurchasesStatusWire>('/tenant/dashboard/widgets/purchases-status/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        incoming: r.data.incoming ?? { count: 0, value: 0 },
+        overdue: r.data.overdue ?? { count: 0, value: 0 },
+        pending: r.data.pending ?? null,
+        attention: r.data.attention ?? [],
+        attentionCount: r.data.attentionCount ?? 0,
       })),
 };

@@ -32,24 +32,11 @@ export const materialUsage: MaterialUsage[] = [
 // Inventory alerts now runs on real data — see dashboardDataService.getInventoryAlerts
 // and src/types/dashboardData.ts (InventoryStockAlert/InventoryAlertsData).
 
+// Purchases & requisitions status now runs on real data -- see
+// dashboardDataService.getPurchasesStatus and src/types/dashboardData.ts
+// (PurchasesStatusData/PurchasesTileValue/PurchasesAttentionRow).
+
 // ----- Additional widgets (allocated/enabled per user via Config > Dashboard Widgets) -----
-
-export interface PurchaseStatusItem {
-  id: string;
-  recordNumber: string;
-  vendor: string;
-  amount: number;
-  status: 'pending_approval' | 'incoming' | 'overdue_receipt';
-  detail: string;
-}
-
-export const purchaseStatusItems: PurchaseStatusItem[] = [
-  { id: '1', recordNumber: 'REQ-118', vendor: 'Apex Stone Supply', amount: 4780, status: 'pending_approval', detail: 'oldest 2 days' },
-  { id: '2', recordNumber: 'REQ-121', vendor: 'Coastal Fabrication Tools', amount: 1250, status: 'pending_approval', detail: 'oldest 4 hours' },
-  { id: '3', recordNumber: 'PO-2087', vendor: 'Apex Stone Supply', amount: 18400, status: 'incoming', detail: 'due Thursday' },
-  { id: '4', recordNumber: 'PO-2091', vendor: 'Granite Direct Wholesale', amount: 9600, status: 'incoming', detail: 'due next week' },
-  { id: '5', recordNumber: 'ITR-330', vendor: 'Apex Stone Supply', amount: 6200, status: 'overdue_receipt', detail: '3 days overdue' },
-];
 
 export interface JournalEntrySummary {
   id: string;

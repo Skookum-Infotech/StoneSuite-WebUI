@@ -281,3 +281,66 @@ describe('dashboardDataService.getInventoryAlerts', () => {
     expect(result.alertCount).toBe(0)
   })
 })
+
+describe('dashboardDataService.getPurchasesStatus', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: 'all',
+        incoming: { count: 3, value: 4120 },
+        overdue: { count: 1, value: 6200 },
+        pending: { count: 2, value: 2250 },
+        attention: [
+          { kind: 'purchase_order', id: 'po-1', recordNumber: 'PORD-000087', party: 'Apex Stone Supply', value: 6200, daysOverdue: 3, daysWaiting: null },
+        ],
+        attentionCount: 3,
+      },
+    })
+
+    const result = await dashboardDataService.getPurchasesStatus('all')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/purchases-status/data', {
+      params: { range: 'all' },
+    })
+    expect(result).toEqual({
+      range: 'all',
+      incoming: { count: 3, value: 4120 },
+      overdue: { count: 1, value: 6200 },
+      pending: { count: 2, value: 2250 },
+      attention: [
+        { kind: 'purchase_order', id: 'po-1', recordNumber: 'PORD-000087', party: 'Apex Stone Supply', value: 6200, daysOverdue: 3, daysWaiting: null },
+      ],
+      attentionCount: 3,
+    })
+  })
+
+  it('passes a null pending tile through unchanged (not applicable to this caller)', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true, range: 'all',
+        incoming: { count: 0, value: 0 }, overdue: { count: 0, value: 0 }, pending: null,
+      },
+    })
+
+    const result = await dashboardDataService.getPurchasesStatus('all')
+
+    expect(result.pending).toBeNull()
+  })
+
+  it('defaults incoming/overdue to zero, pending to null, and attention to an empty array when the backend omits them', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getPurchasesStatus('all')
+
+    expect(result.incoming).toEqual({ count: 0, value: 0 })
+    expect(result.overdue).toEqual({ count: 0, value: 0 })
+    expect(result.pending).toBeNull()
+    expect(result.attention).toEqual([])
+    expect(result.attentionCount).toBe(0)
+  })
+})
