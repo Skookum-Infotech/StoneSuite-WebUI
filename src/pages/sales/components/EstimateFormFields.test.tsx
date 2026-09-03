@@ -22,7 +22,8 @@ describe('EstimateSectionGrid — date fields', () => {
 
     // The DatePicker trigger is an accessible button showing the formatted
     // date — a native <input type="date"> would not expose a "button" role.
-    const trigger = screen.getByRole('button', { name: 'Estimate Date' });
+    // Name carries "(required)" since aria-required isn't valid on role=button.
+    const trigger = screen.getByRole('button', { name: 'Estimate Date (required)' });
     expect(trigger).toHaveTextContent('Aug 19, 2026');
     expect(screen.queryByDisplayValue('2026-08-19')).not.toBeInTheDocument();
   });

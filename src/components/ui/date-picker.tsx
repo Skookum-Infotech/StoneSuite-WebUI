@@ -32,8 +32,7 @@ export function DatePicker({ value, onChange, label, disabled, required }: DateP
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={label}
-          aria-required={required}
+          aria-label={required ? `${label} (required)` : label}
           disabled={disabled}
           className={cn(
             "flex h-8 w-full items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 text-left text-sm text-stone-900 transition-colors outline-none",
