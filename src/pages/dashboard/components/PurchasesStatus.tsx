@@ -43,25 +43,25 @@ export function PurchasesStatus({
 
   return (
     <WidgetCard title="Purchases & requisitions" subtitle="status">
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="rounded-xl bg-stone-50 p-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Pending</div>
-          <div className="mt-1 text-lg font-bold tabular-nums text-stone-950">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
+          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Pending</div>
+          <div className="mt-1 text-sm font-bold tabular-nums text-stone-950 sm:text-base lg:text-lg">
             {data.pending ? data.pending.count : <span className="text-stone-300">—</span>}
           </div>
-          {data.pending && <div className="text-2xs text-stone-500 tabular-nums">{currency(data.pending.value)}</div>}
+          {data.pending && <div className="truncate text-2xs text-stone-500 tabular-nums">{currency(data.pending.value)}</div>}
         </div>
-        <div className="rounded-xl bg-stone-50 p-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Incoming</div>
-          <div className="mt-1 text-lg font-bold text-stone-950 tabular-nums">{data.incoming.count}</div>
-          <div className="text-2xs text-stone-500 tabular-nums">{currency(data.incoming.value)}</div>
+        <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
+          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Incoming</div>
+          <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{data.incoming.count}</div>
+          <div className="truncate text-2xs text-stone-500 tabular-nums">{currency(data.incoming.value)}</div>
         </div>
-        <div className="rounded-xl bg-stone-50 p-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Overdue</div>
-          <div className={cn('mt-1 text-lg font-bold tabular-nums', overdueActive ? 'text-warning' : 'text-stone-950')}>
+        <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
+          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Overdue</div>
+          <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', overdueActive ? 'text-warning' : 'text-stone-950')}>
             {data.overdue.count}
           </div>
-          <div className={cn('text-2xs tabular-nums', overdueActive ? 'text-warning' : 'text-stone-500')}>
+          <div className={cn('truncate text-2xs tabular-nums', overdueActive ? 'text-warning' : 'text-stone-500')}>
             {currency(data.overdue.value)}
           </div>
         </div>

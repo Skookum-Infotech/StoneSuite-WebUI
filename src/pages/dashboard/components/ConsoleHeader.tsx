@@ -64,29 +64,35 @@ export function ConsoleHeader({
   const freshnessLabel = formatFreshness(refresh.updatedAt, refresh.isRefreshing, now);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-300 pb-[18px]">
-      <div>
-        <h1 className="text-[22px] font-bold tracking-[-0.015em] text-stone-950">
+    <div className="flex flex-col gap-3 border-b border-stone-300 pb-[18px] lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+      <div className="min-w-0">
+        <h1 className="text-[20px] font-bold tracking-[-0.015em] text-stone-950 sm:text-[22px]">
           {greeting}{firstName ? `, ${firstName}` : ''}
         </h1>
-        <p className="mt-[3px] text-[12.5px] text-stone-500">
-          {TODAY_LABEL} &middot; all figures scoped to your active role
+        <p className="mt-[3px] flex flex-wrap items-center gap-x-1.5 text-[12.5px] text-stone-500">
+          <span>{TODAY_LABEL}</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>all figures scoped to your active role</span>
         </p>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={refresh.onRefresh}
           disabled={refresh.isRefreshing}
           aria-label="Refresh dashboard data"
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-semibold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:cursor-default disabled:hover:bg-transparent"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-semibold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:cursor-default disabled:hover:bg-transparent"
         >
-          <RefreshCw className={cn('size-3', refresh.isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+          <RefreshCw className={cn('size-3 shrink-0', refresh.isRefreshing && 'animate-spin motion-reduce:animate-none')} />
           <span className="tabular-nums">{freshnessLabel}</span>
         </button>
 
-        <div role="group" aria-label="Time range" className="inline-flex gap-0.5 rounded-lg bg-stone-100 p-[3px]">
+        <div
+          role="group"
+          aria-label="Time range"
+          className="inline-flex shrink-0 gap-0.5 rounded-lg bg-stone-100 p-[3px]"
+        >
           {RANGE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -94,7 +100,7 @@ export function ConsoleHeader({
               aria-pressed={range === opt.value}
               onClick={() => onRangeChange(opt.value)}
               className={cn(
-                'rounded-md px-[13px] py-1.5 text-xs font-semibold transition-colors',
+                'rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors sm:px-[13px]',
                 range === opt.value ? 'bg-card text-stone-950 shadow-sm' : 'text-stone-500 hover:text-stone-700',
               )}
             >
@@ -107,20 +113,20 @@ export function ConsoleHeader({
           type="button"
           onClick={onCustomize}
           aria-label="Customize dashboard widgets"
-          className="flex items-center gap-1.5 rounded-lg border border-stone-300 bg-card px-3.5 py-2 text-xs font-semibold text-stone-950 transition-colors hover:border-brand-dark hover:bg-accent"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-card px-2.5 py-2 text-xs font-semibold text-stone-950 transition-colors hover:border-brand-dark hover:bg-accent sm:px-3.5"
         >
-          <SlidersHorizontal className="size-3.5" />
-          Customize
+          <SlidersHorizontal className="size-3.5 shrink-0" />
+          <span className="hidden sm:inline">Customize</span>
         </button>
 
         <button
           type="button"
           onClick={onDownloadCsv}
           aria-label="Download console data as CSV"
-          className="flex items-center gap-1.5 rounded-lg border border-stone-300 bg-card px-3.5 py-2 text-xs font-semibold text-stone-950 transition-colors hover:border-brand-dark hover:bg-accent"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-stone-300 bg-card px-2.5 py-2 text-xs font-semibold text-stone-950 transition-colors hover:border-brand-dark hover:bg-accent sm:px-3.5"
         >
-          <Download className="size-3.5" />
-          Download CSV
+          <Download className="size-3.5 shrink-0" />
+          <span className="hidden sm:inline">Download CSV</span>
         </button>
       </div>
     </div>

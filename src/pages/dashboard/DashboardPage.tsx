@@ -25,10 +25,12 @@ import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
 import { recentJournalEntries, currentAccountingPeriod, outstandingInvoices } from './mockData';
 
+// Widgets go full-width on phones, pair up from `md` (tablet / small laptop),
+// and thirds get their own row of three only once there's `xl` room for it.
 const SIZE_CLASS: Record<WidgetSize, string> = {
   full: 'col-span-12',
-  half: 'col-span-12 lg:col-span-6',
-  third: 'col-span-12 lg:col-span-4',
+  half: 'col-span-12 md:col-span-6',
+  third: 'col-span-12 md:col-span-6 xl:col-span-4',
 };
 
 // Widget data quietly refreshes on this cadence and on tab refocus, so the
@@ -237,7 +239,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex-1 p-4 sm:p-6 3xl:p-10 4xl:p-14">
+    <div className="mx-auto w-full max-w-[1800px] flex-1 p-4 sm:p-6 3xl:p-10 4xl:p-14">
       <div className="flex flex-col gap-3.5">
         <ConsoleHeader
           range={range}

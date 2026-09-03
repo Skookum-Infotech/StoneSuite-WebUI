@@ -46,13 +46,13 @@ export function MaterialConsumption({
         <>
           <div className="flex flex-col gap-[13px]">
             {data.materials.map((m) => (
-              <div key={m.id} className="flex items-center gap-[11px]">
+              <div key={m.id} className="flex items-center gap-2 sm:gap-[11px]">
                 <span
                   className="h-[22px] w-[22px] shrink-0 rounded-md shadow-[0_0_0_1px_rgba(28,25,23,0.09)]"
                   style={materialSwatchStyle(m.colorHex, m.id)}
                   aria-hidden="true"
                 />
-                <div className="w-[132px] shrink-0">
+                <div className="min-w-0 flex-1">
                   <button
                     type="button"
                     onClick={() => navigate(`/inventory/item/${m.id}`)}
@@ -63,10 +63,10 @@ export function MaterialConsumption({
                   </button>
                   <div className="truncate text-2xs text-stone-500">{materialDetailLine(m)}</div>
                 </div>
-                <div className="h-[9px] flex-1 overflow-hidden rounded-full bg-stone-100">
+                <div className="hidden h-[9px] w-14 shrink-0 overflow-hidden rounded-full bg-stone-100 sm:block md:w-20 lg:w-28">
                   <div className="h-full rounded-full bg-brand-dark" style={{ width: `${(m.netUsed / max) * 100}%` }} />
                 </div>
-                <div className="flex w-[92px] shrink-0 flex-col items-end gap-0.5">
+                <div className="flex w-[84px] shrink-0 flex-col items-end gap-0.5 sm:w-[92px]">
                   <span className="text-xs font-bold text-stone-950 tabular-nums">
                     {formatMaterialArea(m.netUsed, m.unitCode)}
                   </span>

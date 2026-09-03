@@ -76,7 +76,7 @@ export function RecentRecordsTable({
 
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200 bg-card shadow-sm">
-      <div className="flex items-baseline justify-between gap-2.5 px-[19px] pb-[13px] pt-[17px]">
+      <div className="flex flex-col gap-0.5 px-4 pb-[13px] pt-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2.5 sm:px-[19px] sm:pt-[17px]">
         <span className="text-[13.5px] font-bold text-stone-950">Recent records</span>
         <span className="text-[11.5px] text-stone-500">across CRM, Sales &amp; Purchases</span>
       </div>
