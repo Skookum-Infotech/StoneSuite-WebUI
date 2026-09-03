@@ -587,9 +587,11 @@ export const sidebarNav: SidebarNavConfig = {
           path: "/subscription",
           icon: CreditCard,
           iconColor: "text-purple-500 dark:text-purple-400",
-          // Billing is a workspace-level page with no catalog resource behind
-          // it; the page itself decides what a non-owner may change.
-          alwaysVisible: true,
+          // Billing has no catalog resource, so only the wildcard super_admin
+          // grant (the tenant's owner) ever satisfies this — every other
+          // staff role is fail-closed out, matching PermissionGuard on the
+          // /subscription route in router/index.tsx.
+          permission: { resource: "subscription", action: "read" },
         },
       ],
     },
