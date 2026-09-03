@@ -39,6 +39,8 @@ export const recentJournalEntries: JournalEntrySummary[] = [
   { id: '1', entryNumber: 'JE-0231', description: 'Fabrication labor accrual', amount: 4200, date: '2h ago' },
   { id: '2', entryNumber: 'JE-0230', description: 'Slab inventory adjustment', amount: 1180, date: '5h ago' },
   { id: '3', entryNumber: 'JE-0229', description: 'Vendor payment — Apex Stone Supply', amount: 9120, date: '1d ago' },
+  { id: '4', entryNumber: 'JE-0228', description: 'Sales tax accrual', amount: 2640, date: '1d ago' },
+  { id: '5', entryNumber: 'JE-0227', description: 'Equipment depreciation', amount: 1750, date: '2d ago' },
 ];
 
 export interface AccountingPeriodSummary {

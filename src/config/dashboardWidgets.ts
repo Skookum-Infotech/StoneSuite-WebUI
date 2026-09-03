@@ -51,7 +51,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
     title: "Top Customers by Value",
     description: "Ranked leaderboard of the highest-value customers.",
     category: "sales",
-    size: "third",
+    size: "half",
     defaultEnabled: false,
   },
   {
@@ -83,7 +83,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
     title: "Accounting Snapshot",
     description: "Current period status and recent journal entries.",
     category: "finance",
-    size: "third",
+    size: "half",
     defaultEnabled: false,
   },
 ];

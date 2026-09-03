@@ -81,17 +81,17 @@ export function TopCustomers({
                   type="button"
                   onClick={() => navigate(`/crm/customer/${c.id}`)}
                   aria-label={`View customer ${c.name}`}
-                  className="w-[104px] shrink-0 truncate rounded text-left text-xs font-medium text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-40 shrink-0 truncate rounded text-left text-xs font-medium text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {c.name}
                 </button>
               ) : (
-                <span className="w-[104px] shrink-0 truncate text-xs font-medium text-stone-950">{c.name}</span>
+                <span className="w-40 shrink-0 truncate text-xs font-medium text-stone-950">{c.name}</span>
               )}
               <div className="h-[9px] flex-1 overflow-hidden rounded-full bg-stone-100">
                 <div className="h-full rounded-full bg-brand-dark" style={{ width: `${proportion * 100}%` }} />
               </div>
-              <div className="w-20 shrink-0 text-right">
+              <div className="w-24 shrink-0 text-right">
                 <div className="text-xs font-bold text-stone-950 tabular-nums">{currency(c.value)}</div>
                 {delta && <div className={cn('text-2xs font-semibold', DELTA_TONE_CLASS[delta.tone])}>{delta.text}</div>}
               </div>
