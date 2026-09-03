@@ -204,7 +204,24 @@ export default function QuoteDetailPage() {
         subtitle={quote.customer.name}
         recordNumber={quote.quoteNumber}
         statusBadge={<Badge color={color}>{quote.status}</Badge>}
+        actions={canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
+          <button
+            type="button"
+            onClick={() => convert.mutate()}
+            disabled={convert.isPending}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+          >
+            {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+            Convert to Sales Order
+          </button>
+        )}
       />
+
+      {convert.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(convert.error, 'Failed to convert quote.')}
+        </p>
+      )}
 
       {quote.gated && (
         <>
@@ -377,17 +394,6 @@ export default function QuoteDetailPage() {
                   Send to Customer
                 </button>
               )}
-              {canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => convert.mutate()}
-                  disabled={convert.isPending}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
-                >
-                  {convert.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />}
-                  Convert to Sales Order
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -399,9 +405,6 @@ export default function QuoteDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {convert.isError && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert quote.')}</p>
-            )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
