@@ -25,7 +25,7 @@ export const WIDGET_CATALOG: WidgetDefinition[] = [
   {
     id: "material-consumption",
     title: "Material Consumption",
-    description: "Slabs cut per material over the last 30 days.",
+    description: "Net area consumed per material, ranked highest first.",
     category: "core",
     size: "half",
     defaultEnabled: true,

@@ -181,3 +181,33 @@ export interface PurchasesStatusData {
   attention: PurchasesAttentionRow[];
   attentionCount: number;
 }
+
+// One row in the Material consumption widget's ranked list -- a slab-tracked
+// inventory item, ranked by net area consumed within the console's selected
+// range. netUsed is server-computed (consumed minus recovered remnants,
+// clamped at zero -- see controllers/dashboard_material.go's netUsedArea) and
+// is what the widget leads with; consumedArea/recoveredArea/scrappedArea are
+// the raw components behind it, for the row's sub-label. colorHex is '' when
+// the item has no color assigned (or the tenant hasn't set a swatch for its
+// color yet) -- the widget falls back to a deterministic palette keyed on id
+// rather than rendering an empty swatch. unitCode is the item's own unit
+// (SQFT, EA, ...) -- never summed across rows, since items can carry
+// different units.
+export interface MaterialConsumptionRow {
+  id: string;
+  name: string;
+  unitCode: string;
+  colorHex: string;
+  netUsed: number;
+  consumedArea: number;
+  recoveredArea: number;
+  scrappedArea: number;
+  slabCount: number;
+}
+
+export interface MaterialConsumptionData {
+  range: DashboardRange;
+  materials: MaterialConsumptionRow[];
+  materialCount: number;
+  slabTotal: number;
+}

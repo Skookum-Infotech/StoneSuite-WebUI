@@ -22,12 +22,7 @@ import { InventoryAlerts } from './components/InventoryAlerts';
 import { PurchasesStatus } from './components/PurchasesStatus';
 import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
-import {
-  materialUsage,
-  recentJournalEntries,
-  currentAccountingPeriod,
-  outstandingInvoices,
-} from './mockData';
+import { recentJournalEntries, currentAccountingPeriod, outstandingInvoices } from './mockData';
 
 const SIZE_CLASS: Record<WidgetSize, string> = {
   full: 'col-span-12',
@@ -41,7 +36,6 @@ const SIZE_CLASS: Record<WidgetSize, string> = {
 // renderWidget below instead of from this table, since their content
 // depends on data resolved inside the component body.
 const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
-  'material-consumption': () => <MaterialConsumption items={materialUsage} />,
   'ar-outstanding': () => <ArOutstanding invoices={outstandingInvoices} />,
   'accounting-snapshot': () => (
     <AccountingSnapshot period={currentAccountingPeriod} entries={recentJournalEntries} />
@@ -136,6 +130,11 @@ export default function DashboardPage() {
     queryFn: () => dashboardDataService.getPurchasesStatus(range),
     enabled: visibleWidgetIds.includes('purchases-status'),
   });
+  const materialConsumptionQ = useQuery({
+    queryKey: ['dashboard-material-consumption', range],
+    queryFn: () => dashboardDataService.getMaterialConsumption(range),
+    enabled: visibleWidgetIds.includes('material-consumption'),
+  });
 
   function renderWidget(w: WidgetDefinition): ReactNode {
     switch (w.id) {
@@ -171,6 +170,14 @@ export default function DashboardPage() {
       case 'purchases-status':
         return (
           <PurchasesStatus data={purchasesStatusQ.data} isLoading={purchasesStatusQ.isLoading} isError={purchasesStatusQ.isError} />
+        );
+      case 'material-consumption':
+        return (
+          <MaterialConsumption
+            data={materialConsumptionQ.data}
+            isLoading={materialConsumptionQ.isLoading}
+            isError={materialConsumptionQ.isError}
+          />
         );
       default:
         return WIDGET_RENDERERS[w.id]?.();

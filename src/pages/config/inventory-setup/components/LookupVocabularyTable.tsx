@@ -11,9 +11,16 @@ interface DraftRow {
   name: string;
   code: string;
   isActive: boolean;
+  // Colors only — see the hex input in EditRow below. Kept on every draft
+  // (not just colors') so EditRow's props stay uniform across vocabularies.
+  hex: string;
 }
 
-const emptyDraft: DraftRow = { name: '', code: '', isActive: true };
+const emptyDraft: DraftRow = { name: '', code: '', isActive: true, hex: '' };
+
+// Mirrors inventory/lookups_store.go's colorHex regex so a bad swatch is
+// caught in the form instead of round-tripping to the server for a 400.
+const HEX_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
 // Generic vocabulary admin table — materials, colors, finishes, reasons are
 // writable here; units and tax-rates render read-only (they 400 on write —
@@ -36,10 +43,14 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
     queryClient.invalidateQueries({ queryKey: ['inventory-lookups'] });
   };
 
+  // hex only actually applies to the 'colors' vocabulary server-side
+  // (inventory/lookups.go's extraCols registry) -- sending it for any other
+  // kind is a harmless no-op there, so it's simplest to always include it
+  // rather than branch on kind here too.
   const { mutate: save, isPending: saving, error: saveError } = useMutation({
     mutationFn: () => (editingId === 'new'
-      ? inventoryLookupService.create(kind, { name: draft.name.trim(), code: draft.code.trim(), isActive: draft.isActive })
-      : inventoryLookupService.update(kind, editingId as number, { name: draft.name.trim(), code: draft.code.trim(), isActive: draft.isActive })),
+      ? inventoryLookupService.create(kind, { name: draft.name.trim(), code: draft.code.trim(), isActive: draft.isActive, hex: draft.hex.trim() })
+      : inventoryLookupService.update(kind, editingId as number, { name: draft.name.trim(), code: draft.code.trim(), isActive: draft.isActive, hex: draft.hex.trim() })),
     onSuccess: () => { invalidate(); setEditingId(null); setDraft(emptyDraft); },
   });
 
@@ -50,7 +61,8 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
 
   function startEdit(item: LookupItem) {
     setEditingId(item.id);
-    setDraft({ id: item.id, name: item.name, code: item.code, isActive: item.isActive });
+    const hex = typeof item.extra?.hex === 'string' ? item.extra.hex : '';
+    setDraft({ id: item.id, name: item.name, code: item.code, isActive: item.isActive, hex });
   }
   function startNew() {
     setEditingId('new');
@@ -60,6 +72,10 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
     setEditingId(null);
     setDraft(emptyDraft);
   }
+
+  const isColors = kind === 'colors';
+  const colCount = 3 + (isColors ? 1 : 0) + (writable ? 1 : 0);
+  const hexInvalid = isColors && draft.hex !== '' && !HEX_PATTERN.test(draft.hex);
 
   return (
     <div className="space-y-3">
@@ -71,6 +87,7 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
         <table className="w-full text-left text-xs">
           <thead className="border-b border-stone-200 bg-table-header">
             <tr>
+              {isColors && <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Swatch</th>}
               <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Name</th>
               <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Code</th>
               <th className="px-4 py-2.5 font-semibold uppercase tracking-wider text-stone-500">Status</th>
@@ -79,15 +96,32 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
           </thead>
           <tbody className="divide-y divide-stone-100">
             {isLoading ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-stone-400">Loading…</td></tr>
+              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-400">Loading…</td></tr>
             ) : items.length === 0 && editingId !== 'new' ? (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-stone-400">No {label.toLowerCase()} yet.</td></tr>
+              <tr><td colSpan={colCount} className="px-4 py-6 text-center text-stone-400">No {label.toLowerCase()} yet.</td></tr>
             ) : (
-              items.map((item) => (
-                editingId === item.id ? (
-                  <EditRow key={item.id} draft={draft} setDraft={setDraft} onSave={save} onCancel={cancel} saving={saving} colSpanActions={writable} />
+              items.map((item) => {
+                const itemHex = typeof item.extra?.hex === 'string' ? item.extra.hex : '';
+                return editingId === item.id ? (
+                  <EditRow
+                    key={item.id}
+                    draft={draft}
+                    onChange={setDraft}
+                    actions={{ onSave: save, onCancel: cancel, saving }}
+                    colSpanActions={writable}
+                    kind={kind}
+                  />
                 ) : (
                   <tr key={item.id} className="hover:bg-accent/10 transition-colors">
+                    {isColors && (
+                      <td className="px-4 py-2.5">
+                        <span
+                          className="inline-block size-4 rounded-full shadow-[0_0_0_1px_rgba(28,25,23,0.15)]"
+                          style={{ backgroundColor: itemHex || undefined }}
+                          aria-hidden="true"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-2.5 font-medium text-stone-800">{item.name}</td>
                     <td className="px-4 py-2.5 font-mono text-stone-500">{item.code}</td>
                     <td className="px-4 py-2.5">
@@ -106,11 +140,17 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
                       </td>
                     )}
                   </tr>
-                )
-              ))
+                );
+              })
             )}
             {editingId === 'new' && (
-              <EditRow draft={draft} setDraft={setDraft} onSave={save} onCancel={cancel} saving={saving} colSpanActions={writable} />
+              <EditRow
+                draft={draft}
+                onChange={setDraft}
+                actions={{ onSave: save, onCancel: cancel, saving }}
+                colSpanActions={writable}
+                kind={kind}
+              />
             )}
           </tbody>
         </table>
@@ -121,36 +161,62 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
           <Plus className="size-3.5" /> Add {label}
         </button>
       )}
+      {hexInvalid && <p className="text-xs text-destructive">Colour must be a hex value like #A1B2C3.</p>}
     </div>
   );
 }
 
-function EditRow({ draft, setDraft, onSave, onCancel, saving, colSpanActions }: {
+function EditRow({ draft, onChange, actions, colSpanActions, kind }: {
   draft: DraftRow;
-  setDraft: (d: DraftRow) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  saving: boolean;
+  onChange: (d: DraftRow) => void;
+  actions: { onSave: () => void; onCancel: () => void; saving: boolean };
   colSpanActions: boolean;
+  kind: LookupKind;
 }) {
+  const { onSave, onCancel, saving } = actions;
+  const isColors = kind === 'colors';
+  const hexValid = draft.hex === '' || HEX_PATTERN.test(draft.hex);
+
   return (
     <tr className="bg-accent/5">
+      {isColors && (
+        <td className="px-4 py-2">
+          <div className="flex items-center gap-1.5">
+            <input
+              type="color"
+              value={hexValid && draft.hex ? draft.hex : '#94a3b8'}
+              onChange={(e) => onChange({ ...draft, hex: e.target.value })}
+              aria-label="Swatch color picker"
+              className="size-7 shrink-0 cursor-pointer rounded border border-stone-200 bg-white p-0.5"
+            />
+            <input
+              type="text"
+              value={draft.hex}
+              onChange={(e) => onChange({ ...draft, hex: e.target.value })}
+              placeholder="#A1B2C3"
+              aria-label="Swatch hex value"
+              aria-invalid={!hexValid}
+              className={`${fieldCls} w-24 font-mono`}
+            />
+          </div>
+        </td>
+      )}
       <td className="px-4 py-2">
-        <input type="text" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Name" className={fieldCls} aria-label="Name" autoFocus />
+        <input type="text" value={draft.name} onChange={(e) => onChange({ ...draft, name: e.target.value })} placeholder="Name" className={fieldCls} aria-label="Name" autoFocus />
       </td>
       <td className="px-4 py-2">
-        <input type="text" value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} placeholder="Code" className={fieldCls} aria-label="Code" />
+        <input type="text" value={draft.code} onChange={(e) => onChange({ ...draft, code: e.target.value })} placeholder="Code" className={fieldCls} aria-label="Code" />
       </td>
       <td className="px-4 py-2">
         <label className="flex items-center gap-1.5 text-xs text-stone-600">
-          <input type="checkbox" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} className="size-3.5 rounded border-stone-300 text-brand focus:ring-brand/30" />
+          <input type="checkbox" checked={draft.isActive} onChange={(e) => onChange({ ...draft, isActive: e.target.checked })} className="size-3.5 rounded border-stone-300 text-brand focus:ring-brand/30" />
           Active
         </label>
       </td>
       {colSpanActions && (
         <td className="px-4 py-2 text-right">
           <div className="flex items-center justify-end gap-1.5">
-            <button type="button" disabled={saving || !draft.name.trim() || !draft.code.trim()} onClick={onSave} aria-label="Save" className="inline-flex items-center justify-center rounded-lg bg-brand p-1.5 text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors">
+            <button type="button" disabled={saving || !draft.name.trim() || !draft.code.trim() || !hexValid} onClick={onSave} aria-label="Save" className="inline-flex items-center justify-center rounded-lg bg-brand p-1.5 text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors">
               {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
             </button>
             <button type="button" disabled={saving} onClick={onCancel} aria-label="Cancel" className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 hover:bg-stone-50 transition-colors">

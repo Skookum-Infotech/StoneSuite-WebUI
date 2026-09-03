@@ -8,6 +8,8 @@ import type {
   InventoryStockAlert,
   KpiMetric,
   KpiStripData,
+  MaterialConsumptionData,
+  MaterialConsumptionRow,
   PipelineMix,
   PipelineMixSegment,
   PurchasesAttentionRow,
@@ -76,6 +78,14 @@ interface PurchasesStatusWire {
   pending?: PurchasesTileValue | null;
   attention?: PurchasesAttentionRow[];
   attentionCount?: number;
+}
+
+interface MaterialConsumptionWire {
+  success: boolean;
+  range: DashboardRange;
+  materials?: MaterialConsumptionRow[];
+  materialCount?: number;
+  slabTotal?: number;
 }
 
 export const dashboardDataService = {
@@ -147,5 +157,15 @@ export const dashboardDataService = {
         pending: r.data.pending ?? null,
         attention: r.data.attention ?? [],
         attentionCount: r.data.attentionCount ?? 0,
+      })),
+
+  getMaterialConsumption: (range: DashboardRange): Promise<MaterialConsumptionData> =>
+    tenantClient
+      .get<MaterialConsumptionWire>('/tenant/dashboard/widgets/material-consumption/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        materials: r.data.materials ?? [],
+        materialCount: r.data.materialCount ?? 0,
+        slabTotal: r.data.slabTotal ?? 0,
       })),
 };

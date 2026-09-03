@@ -4,20 +4,9 @@
 // Pipeline mix now runs on real data — see dashboardDataService.getPipelineMix
 // and src/types/dashboardData.ts (PipelineMix/PipelineMixSegment).
 
-export interface MaterialUsage {
-  id: string;
-  name: string;
-  slabsCut: number;
-  swatch: string;
-}
-
-export const materialUsage: MaterialUsage[] = [
-  { id: '1', name: 'Carrara Marble', slabsCut: 42, swatch: 'linear-gradient(125deg,#e9e9e7,#d3d3cf 55%,#e9e9e7)' },
-  { id: '2', name: 'Calacatta Gold', slabsCut: 31, swatch: 'linear-gradient(120deg,#efeae1,#e0d8ca 60%,#efeae1)' },
-  { id: '3', name: 'Black Galaxy', slabsCut: 23, swatch: 'radial-gradient(circle at 30% 30%,#423f3a,#17140f 70%)' },
-  { id: '4', name: 'Crema Marfil', slabsCut: 17, swatch: 'linear-gradient(130deg,#d9cfc0,#bda98d 60%,#d9cfc0)' },
-  { id: '5', name: 'Verde Alpi', slabsCut: 11, swatch: 'linear-gradient(115deg,#4a5b52,#26332c 60%,#3d4c44)' },
-];
+// Material consumption now runs on real data — see
+// dashboardDataService.getMaterialConsumption and src/types/dashboardData.ts
+// (MaterialConsumptionRow/MaterialConsumptionData).
 
 // Recent records now runs on real data — see dashboardDataService.getRecentRecords
 // and src/types/dashboardData.ts (RecentRecord/RecentRecordsData).
