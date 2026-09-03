@@ -20,7 +20,7 @@ import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
-import { PurchaseOrderTransitionBar } from './components/PurchaseOrderTransitionBar';
+import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -376,12 +376,11 @@ export default function PurchaseOrderDetailPage() {
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <PurchaseOrderTransitionBar
-                statusCode={po.statusCode}
-                approvalStatus={po.approvalStatus}
-                gated={po.gated}
-                onTransition={(toCode) => transition.mutate(toCode)}
-                isPending={transition.isPending}
+              <PurchaseOrderStatusControl
+                order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, gated: po.gated }}
+                onChange={(toCode) => transition.mutate(toCode)}
+                disabled={transition.isPending}
+                variant="pill"
               />
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
