@@ -18,12 +18,14 @@ function mockHooks({
   permissionsLoading = false,
   disabledWorkflows = [],
   workflowsLoading = false,
+  kind,
 }: {
   grants?: Grant[];
   isPlatformAdmin?: boolean;
   permissionsLoading?: boolean;
   disabledWorkflows?: string[];
   workflowsLoading?: boolean;
+  kind?: 'portal';
 } = {}) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants,
@@ -42,7 +44,7 @@ function mockHooks({
   } as ReturnType<typeof useWorkflows>);
 
   vi.mocked(useAuthStore).mockImplementation((selector) =>
-    (selector as (s: unknown) => unknown)({ user: { id: 'u1', isPlatformAdmin } }),
+    (selector as (s: unknown) => unknown)({ user: { id: 'u1', isPlatformAdmin }, kind }),
   );
 }
 
@@ -138,5 +140,25 @@ describe('PermissionGuard', () => {
     );
 
     expect(screen.getByText('content')).toBeInTheDocument();
+  });
+
+  // Regression guard for the portal fail-open bug: PermissionGuard has no
+  // portal escape hatch of its own — it renders Form Disabled purely from
+  // isWorkflowEnabled's answer, whatever session kind supplied it. The real
+  // fix has to live in useWorkflows, not here.
+  it('shows Form Disabled for a portal session when the workflow is disabled', () => {
+    mockHooks({
+      kind: 'portal',
+      grants: [{ resource: 'invoice', action: 'read' }],
+      disabledWorkflows: ['invoice'],
+    });
+    render(
+      <PermissionGuard resource="invoice" action="read" workflowKey="invoice">
+        content
+      </PermissionGuard>,
+    );
+
+    expect(screen.queryByText('content')).toBeNull();
+    expect(screen.getByText('Form Disabled')).toBeInTheDocument();
   });
 });
