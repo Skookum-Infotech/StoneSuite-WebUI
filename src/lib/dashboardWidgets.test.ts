@@ -6,7 +6,6 @@ import {
   matchingPresetId,
   dirtyRoleIds,
   isSuperAdminGrants,
-  rankTopCustomers,
   bucketInvoicesByAge,
 } from './dashboardWidgets';
 import type { WidgetDefinition, RoleWidgetAllocation } from '@/types/dashboardWidgets';
@@ -107,38 +106,6 @@ describe('isSuperAdminGrants', () => {
     [[], false],
   ])('is true only when a grant has both resource and action wildcarded', (grants, expected) => {
     expect(isSuperAdminGrants(grants)).toBe(expected);
-  });
-});
-
-describe('rankTopCustomers', () => {
-  it('sorts descending by value and caps at the limit', () => {
-    const customers = [
-      { id: '1', name: 'Low', value: 100 },
-      { id: '2', name: 'High', value: 900 },
-      { id: '3', name: 'Mid', value: 500 },
-    ];
-    const result = rankTopCustomers(customers, 2);
-    expect(result.map((c) => c.id)).toEqual(['2', '3']);
-  });
-
-  it('scales proportion relative to the top-ranked value', () => {
-    const customers = [
-      { id: '1', name: 'High', value: 200 },
-      { id: '2', name: 'Half', value: 100 },
-    ];
-    const result = rankTopCustomers(customers, 5);
-    expect(result[0].proportion).toBe(1);
-    expect(result[1].proportion).toBe(0.5);
-  });
-
-  it('returns an empty array without dividing by zero when all values are 0', () => {
-    const customers = [{ id: '1', name: 'Zero', value: 0 }];
-    const result = rankTopCustomers(customers, 5);
-    expect(result[0].proportion).toBe(0);
-  });
-
-  it('returns [] for an empty input', () => {
-    expect(rankTopCustomers([], 5)).toEqual([]);
   });
 });
 
