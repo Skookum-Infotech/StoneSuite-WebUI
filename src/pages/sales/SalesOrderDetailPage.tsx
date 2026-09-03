@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
 import { attachmentService } from '@/services/attachmentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
@@ -82,6 +83,11 @@ export default function SalesOrderDetailPage() {
     enabled: Boolean(id),
   });
   const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+  });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -212,7 +218,44 @@ export default function SalesOrderDetailPage() {
         subtitle={order.customer.name}
         recordNumber={order.salesOrderNumber}
         statusBadge={<Badge color={color}>{order.status}</Badge>}
+        actions={(canConvert || canFabricate) && (
+          <>
+            {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+              <button
+                type="button"
+                onClick={() => convert.mutate()}
+                disabled={convert.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+                Convert to Invoice
+              </button>
+            )}
+            {canFabricate && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+              <button
+                type="button"
+                onClick={() => fabricate.mutate()}
+                disabled={fabricate.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                {fabricate.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Wrench className="size-3.5" />}
+                Create Fabrication Job
+              </button>
+            )}
+          </>
+        )}
       />
+
+      {convert.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(convert.error, 'Failed to convert sales order.')}
+        </p>
+      )}
+      {fabricate.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}
+        </p>
+      )}
 
       {order.gated && (
         <>
@@ -264,6 +307,15 @@ export default function SalesOrderDetailPage() {
                   <ReadonlyField label="PO Number" value={order.poNumber} />
                   <ReadonlyField label="Payment Due Date" value={order.paymentDueDate ? fmtDate(order.paymentDueDate) : undefined} />
                   <ReadonlyField label="Sales Tax %" value={`${order.salesTaxPercent}%`} />
+                  {order.currencyId && (
+                    <ReadonlyField label="Currency" value={lookups?.currencies.find((c) => c.id === order.currencyId)?.name ?? '—'} />
+                  )}
+                  {order.paymentTermsId && (
+                    <ReadonlyField label="Payment Terms" value={lookups?.paymentTerms.find((p) => p.id === order.paymentTermsId)?.name ?? '—'} />
+                  )}
+                  {order.priceLevelId && (
+                    <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === order.priceLevelId)?.name ?? '—'} />
+                  )}
                   {order.memo && <ReadonlyField label="Memo" value={order.memo} full />}
                 </div>
               </ModernSection>
@@ -379,28 +431,6 @@ export default function SalesOrderDetailPage() {
                   Send to Customer
                 </button>
               )}
-              {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => convert.mutate()}
-                  disabled={convert.isPending}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
-                >
-                  {convert.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />}
-                  Convert to Invoice
-                </button>
-              )}
-              {canFabricate && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => fabricate.mutate()}
-                  disabled={fabricate.isPending}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
-                >
-                  {fabricate.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <Wrench className="size-4 text-stone-400 shrink-0" />}
-                  Create Fabrication Job
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -412,12 +442,6 @@ export default function SalesOrderDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {convert.isError && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert sales order.')}</p>
-            )}
-            {fabricate.isError && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}</p>
-            )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}

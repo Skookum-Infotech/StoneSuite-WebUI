@@ -55,6 +55,31 @@ for (const name of ['localStorage', 'sessionStorage'] as const) {
   }
 }
 
+// jsdom ships no `matchMedia`. Provide a minimal stand-in so hooks that gate on
+// media queries run deterministically: `(prefers-reduced-motion: reduce)` reports
+// **true**, so animation hooks (useReducedMotion and everything built on it —
+// useCountUp, the sparkline draw-in, the dashboard card entrance) resolve to
+// their final state synchronously and assertions read steady values instead of
+// waiting out a tween. Hook-level tests that need the animating branch override
+// `window.matchMedia` themselves (see useCountUp.test.ts).
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string): MediaQueryList =>
+      ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList,
+  })
+}
+
 afterEach(() => {
   cleanup()
 })

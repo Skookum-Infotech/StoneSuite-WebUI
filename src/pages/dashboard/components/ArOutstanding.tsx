@@ -22,18 +22,18 @@ export function ArOutstanding({ invoices }: { invoices: OutstandingInvoice[] }) 
 
   return (
     <WidgetCard title="Accounts receivable" subtitle="outstanding invoices">
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="rounded-xl bg-stone-50 p-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Outstanding</div>
-          <div className="mt-1 text-lg font-bold text-stone-950 tabular-nums">{currency(total)}</div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
+          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Total</div>
+          <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{currency(total)}</div>
         </div>
-        <div className="rounded-xl bg-stone-50 p-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Overdue</div>
-          <div className="mt-1 text-lg font-bold text-warning tabular-nums">{currency(overdueTotal)}</div>
+        <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
+          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Overdue</div>
+          <div className="mt-1 text-sm font-bold text-warning tabular-nums sm:text-base lg:text-lg">{currency(overdueTotal)}</div>
         </div>
-        <div className="rounded-xl bg-stone-50 p-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500"># Overdue</div>
-          <div className="mt-1 text-lg font-bold text-stone-950 tabular-nums">{overdue.length}</div>
+        <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
+          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Count</div>
+          <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{overdue.length}</div>
         </div>
       </div>
 

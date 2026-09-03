@@ -3,7 +3,10 @@ import { WidgetCard } from './WidgetCard';
 import { MoreHint } from './MoreHint';
 import type { AccountingPeriodSummary, JournalEntrySummary } from '../mockData';
 
-const LIMIT = 3;
+// Matches the other half-size widgets' row count (inventoryAlertsLimit,
+// topCustomersLimit are both 5 server-side) now that this card is the same
+// width as they are.
+const LIMIT = 5;
 
 function currency(n: number): string {
   return n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
