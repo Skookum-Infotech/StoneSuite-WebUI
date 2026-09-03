@@ -104,9 +104,17 @@ cross-origin base URL there would silently drop the auth cookie, not merely warn
 `functions/api/[[path]].ts`. Every build must therefore be told where it lives:
 
 ```
-VITE_NOTIFY_BASE_URL=https://stonesuite-notify.fly.dev        # prod
-VITE_NOTIFY_BASE_URL=https://dev-stonesuite-notify.fly.dev    # Azure DevOps dev pipeline
+VITE_NOTIFY_BASE_URL=https://stonesuite-notify.fly.dev        # every pipeline, prod and dev alike
 ```
+
+`stonesuite-notify` is a single shared Fly app — unlike the backend API, it is **not** split into
+per-environment `dev-`/`uat-`/`prod-` instances. A `dev-stonesuite-notify.fly.dev` value (as this
+doc incorrectly suggested prior to 2026-09-03) points at a Fly app that has never existed and fails
+with `net::ERR_NAME_NOT_RESOLVED` in the browser, permanently — retrying or redeploying the frontend
+doesn't help, since the hostname itself doesn't resolve. If the Azure DevOps dev pipeline currently
+has `VITE_NOTIFY_BASE_URL` set to `dev-stonesuite-notify.fly.dev`, update that pipeline variable to
+`https://stonesuite-notify.fly.dev` and re-run the **build** stage (see below — a deploy-only rerun
+republishes the stale bundle).
 
 **It must be present in the environment of the `npm run build` step itself.** Vite inlines every
 `VITE_*` value into the bundle at build time, so setting it as a Cloudflare Pages project variable,
