@@ -31,6 +31,11 @@ export interface LookupInput {
   code: string;
   isActive?: boolean;
   extra?: Record<string, unknown>;
+  // Colors-only: a '#RRGGBB' swatch (see inventory/lookups_store.go's
+  // colorHex regex). Flat, not nested under `extra` — the Go LookupInput
+  // struct this maps to reads it as a top-level `hex` field. Ignored
+  // server-side for every other vocabulary.
+  hex?: string;
 }
 
 export interface Warehouse {
