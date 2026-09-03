@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildCsvFilename, buildCsvText, downloadCsv } from '@/lib/csvExport';
 import { recentRecordsToCsvRows } from '@/lib/recentRecordsCsv';
+import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { dashboardWidgetService } from '@/services/dashboardWidgetService';
 import { dashboardDataService } from '@/services/dashboardDataService';
@@ -29,6 +30,27 @@ const SIZE_CLASS: Record<WidgetSize, string> = {
   half: 'col-span-12 lg:col-span-6',
   third: 'col-span-12 lg:col-span-4',
 };
+
+// Widget data quietly refreshes on this cadence and on tab refocus, so the
+// console reflects "right now" without a manual reload. Overrides the app-wide
+// queryClient defaults (staleTime 2m, refetchOnWindowFocus off) for the
+// dashboard only.
+const DASHBOARD_REFRESH_MS = 90_000;
+const LIVE_QUERY_OPTIONS = { refetchInterval: DASHBOARD_REFRESH_MS, refetchOnWindowFocus: true } as const;
+
+// Widgets fade+rise in on load, lightly staggered by grid order. Capped so a
+// long widget list doesn't leave the last card visibly lagging.
+const ENTRANCE_ANIM =
+  'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-500 motion-safe:[animation-fill-mode:both]';
+const STAGGER_STEP_MS = 45;
+const MAX_STAGGER_STEPS = 6;
+
+// Dashboard data queries share the 'dashboard-' key prefix but not the
+// 'dashboard-widget-' one (allocation/preference/catalog), so a manual refresh
+// re-fetches the data without disturbing the layout config.
+function isDashboardDataKey(key: unknown): boolean {
+  return typeof key === 'string' && key.startsWith('dashboard-') && !key.startsWith('dashboard-widget-');
+}
 
 // Maps a catalog widget id to its rendered content. Add an entry here
 // whenever a widget is added to src/config/dashboardWidgets.ts. Real-data
@@ -94,47 +116,69 @@ export default function DashboardPage() {
   const allocatedWidgets = catalog.filter((w) => allocatedWidgetIds.includes(w.id));
 
   // Only fetched when the widget is actually visible — no work done for a
-  // user who doesn't have it allocated or has hidden it.
+  // user who doesn't have it allocated or has hidden it. All eight also
+  // background-refresh on the dashboard cadence (see LIVE_QUERY_OPTIONS).
   const pipelineMixQ = useQuery({
     queryKey: ['dashboard-pipeline-mix', range],
     queryFn: () => dashboardDataService.getPipelineMix(range),
     enabled: visibleWidgetIds.includes('pipeline-donut'),
+    ...LIVE_QUERY_OPTIONS,
   });
   const kpiStripQ = useQuery({
     queryKey: ['dashboard-kpi-strip', range],
     queryFn: () => dashboardDataService.getKpiStrip(range),
     enabled: visibleWidgetIds.includes('kpi-strip'),
+    ...LIVE_QUERY_OPTIONS,
   });
   const recentRecordsQ = useQuery({
     queryKey: ['dashboard-recent-records', range],
     queryFn: () => dashboardDataService.getRecentRecords(range),
     enabled: visibleWidgetIds.includes('recent-records'),
+    ...LIVE_QUERY_OPTIONS,
   });
   const salesOrdersSnapshotQ = useQuery({
     queryKey: ['dashboard-sales-orders-snapshot', range],
     queryFn: () => dashboardDataService.getSalesOrdersSnapshot(range),
     enabled: visibleWidgetIds.includes('sales-orders-snapshot'),
+    ...LIVE_QUERY_OPTIONS,
   });
   const topCustomersQ = useQuery({
     queryKey: ['dashboard-top-customers', range],
     queryFn: () => dashboardDataService.getTopCustomers(range),
     enabled: visibleWidgetIds.includes('top-customers'),
+    ...LIVE_QUERY_OPTIONS,
   });
   const inventoryAlertsQ = useQuery({
     queryKey: ['dashboard-inventory-alerts', range],
     queryFn: () => dashboardDataService.getInventoryAlerts(range),
     enabled: visibleWidgetIds.includes('inventory-alerts'),
+    ...LIVE_QUERY_OPTIONS,
   });
   const purchasesStatusQ = useQuery({
     queryKey: ['dashboard-purchases-status', range],
     queryFn: () => dashboardDataService.getPurchasesStatus(range),
     enabled: visibleWidgetIds.includes('purchases-status'),
+    ...LIVE_QUERY_OPTIONS,
   });
   const materialConsumptionQ = useQuery({
     queryKey: ['dashboard-material-consumption', range],
     queryFn: () => dashboardDataService.getMaterialConsumption(range),
     enabled: visibleWidgetIds.includes('material-consumption'),
+    ...LIVE_QUERY_OPTIONS,
   });
+
+  // Freshness + manual refresh for the console header. dataUpdatedAt is 0 for a
+  // query that hasn't resolved (or isn't enabled), so the max naturally tracks
+  // the most recently refreshed visible widget.
+  const dataQueries = [
+    pipelineMixQ, kpiStripQ, recentRecordsQ, salesOrdersSnapshotQ,
+    topCustomersQ, inventoryAlertsQ, purchasesStatusQ, materialConsumptionQ,
+  ];
+  const lastUpdatedAt = Math.max(0, ...dataQueries.map((q) => q.dataUpdatedAt)) || null;
+  const isRefreshing = dataQueries.some((q) => q.isFetching);
+  const handleRefresh = () => {
+    void queryClient.invalidateQueries({ predicate: (q) => isDashboardDataKey(q.queryKey[0]) });
+  };
 
   function renderWidget(w: WidgetDefinition): ReactNode {
     switch (w.id) {
@@ -200,6 +244,7 @@ export default function DashboardPage() {
           onRangeChange={setRange}
           onDownloadCsv={() => handleDownloadCsv(recentRecordsQ.data?.records ?? [])}
           onCustomize={() => setShowCustomize(true)}
+          refresh={{ updatedAt: lastUpdatedAt, isRefreshing, onRefresh: handleRefresh }}
         />
 
         {isLoading && <Spinner label="Loading dashboard…" />}
@@ -214,8 +259,12 @@ export default function DashboardPage() {
 
         {!isLoading && visibleWidgets.length > 0 && (
           <div className="grid grid-cols-12 gap-3.5">
-            {visibleWidgets.map((w) => (
-              <div key={w.id} className={SIZE_CLASS[w.size]}>
+            {visibleWidgets.map((w, i) => (
+              <div
+                key={w.id}
+                className={cn(SIZE_CLASS[w.size], ENTRANCE_ANIM)}
+                style={{ animationDelay: `${Math.min(i, MAX_STAGGER_STEPS) * STAGGER_STEP_MS}ms` }}
+              >
                 {renderWidget(w)}
               </div>
             ))}

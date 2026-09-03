@@ -1,6 +1,8 @@
-import { Download, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Download, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
+import { formatFreshness } from '@/lib/dashboardFreshness';
 import type { DashboardRange } from '@/types/dashboardData';
 
 // 'All time' first and default (see DashboardPage) so the console opens on
@@ -15,6 +17,7 @@ const RANGE_OPTIONS: { value: DashboardRange; label: string }[] = [
 
 const MORNING_HOUR_END = 12;
 const AFTERNOON_HOUR_END = 18;
+const FRESHNESS_TICK_MS = 30_000;
 
 function getGreeting(hour: number): string {
   if (hour < MORNING_HOUR_END) return 'Good morning';
@@ -28,20 +31,37 @@ const TODAY_LABEL = new Date().toLocaleDateString('en-US', {
   day: 'numeric',
 });
 
+export interface DashboardRefreshState {
+  updatedAt: number | null;
+  isRefreshing: boolean;
+  onRefresh: () => void;
+}
+
 export function ConsoleHeader({
   range,
   onRangeChange,
   onDownloadCsv,
   onCustomize,
+  refresh,
 }: {
   range: DashboardRange;
   onRangeChange: (range: DashboardRange) => void;
   onDownloadCsv: () => void;
   onCustomize: () => void;
+  refresh: DashboardRefreshState;
 }) {
   const fullName = useAuthStore((state) => state.user?.fullName);
   const firstName = fullName?.split(' ')[0];
   const greeting = getGreeting(new Date().getHours());
+
+  // Re-render on a slow cadence so "Updated 2m ago" keeps counting up between
+  // the 90s background refetches.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), FRESHNESS_TICK_MS);
+    return () => clearInterval(id);
+  }, []);
+  const freshnessLabel = formatFreshness(refresh.updatedAt, refresh.isRefreshing, now);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-300 pb-[18px]">
@@ -55,6 +75,17 @@ export function ConsoleHeader({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={refresh.onRefresh}
+          disabled={refresh.isRefreshing}
+          aria-label="Refresh dashboard data"
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-semibold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:cursor-default disabled:hover:bg-transparent"
+        >
+          <RefreshCw className={cn('size-3', refresh.isRefreshing && 'animate-spin motion-reduce:animate-none')} />
+          <span className="tabular-nums">{freshnessLabel}</span>
+        </button>
+
         <div role="group" aria-label="Time range" className="inline-flex gap-0.5 rounded-lg bg-stone-100 p-[3px]">
           {RANGE_OPTIONS.map((opt) => (
             <button
