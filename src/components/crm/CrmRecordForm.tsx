@@ -4,6 +4,7 @@ import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } fr
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
 import { fieldCls, fieldErrorCls, textareaCls, textareaErrorCls, readonlyCls, checkboxLabelCls } from './formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
 
 type CoreProps = {
@@ -249,7 +250,15 @@ function CrmFieldInput({
     );
   }
 
-  // text, email, tel, date, number
+  if (field.type === 'date') {
+    return (
+      <ModernFieldShell label={field.label} required={field.required}>
+        <DatePicker value={str} onChange={(iso) => onChange(field.key, iso)} label={field.label} required={field.required} />
+      </ModernFieldShell>
+    );
+  }
+
+  // text, email, tel, number
   return (
     <ModernFieldShell label={field.label} required={field.required}>
       <input

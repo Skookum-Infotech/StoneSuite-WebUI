@@ -1,5 +1,6 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { JournalEntryFormField } from '@/lib/journalEntryForm';
 
@@ -58,6 +59,14 @@ export function JournalEntryField({ field, value, set, lookups }: {
             <option key={row.id} value={row.id}>{row.name}</option>
           ))}
         </select>
+      </ModernFieldShell>
+    );
+  }
+
+  if (field.type === 'date') {
+    return (
+      <ModernFieldShell label={field.label} required={field.required}>
+        <DatePicker value={str} onChange={(iso) => set(field.key, iso)} label={field.label} required={field.required} />
       </ModernFieldShell>
     );
   }

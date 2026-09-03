@@ -1,5 +1,6 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { VendorFormField } from '@/lib/vendorForm';
 
@@ -55,6 +56,16 @@ export function VendorField({ field, value, set, lookups, showError }: {
               ? lookupRows.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)
               : field.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
           </select>
+        </ModernFieldShell>
+      </div>
+    );
+  }
+
+  if (field.type === 'date') {
+    return (
+      <div className={colClass}>
+        <ModernFieldShell label={field.label} required={field.required}>
+          <DatePicker value={str} onChange={(iso) => set(field.key, iso)} label={field.label} required={field.required} />
         </ModernFieldShell>
       </div>
     );
