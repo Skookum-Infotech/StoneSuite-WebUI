@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
   ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
@@ -10,12 +10,12 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type PurchaseOrderFilterState,
 } from '@/lib/purchaseOrderFilters';
 import { PurchaseOrderFilterDrawer } from './PurchaseOrderFilterDrawer';
+import { PurchaseOrderStatusControl } from './PurchaseOrderStatusControl';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -64,10 +64,21 @@ function fmtDate(iso?: string): string {
 
 export function PurchaseOrderTable() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
+
+  // Inline status change from the list row's status pill — mirrors the
+  // Detail page's transition mutation (see PurchaseOrderDetailPage.tsx).
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStatusCode: string }) => purchaseOrderService.transition(vars.id, vars.toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['purchase-order', updated.id], updated);
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    },
+  });
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -303,7 +314,6 @@ export function PurchaseOrderTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((po) => {
-                  const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
                   const approvalLabel = APPROVAL_LABELS[po.approvalStatus];
                   const ownerName = po.ownerEmployeeId ? employeeNames.get(String(po.ownerEmployeeId)) : undefined;
                   return (
@@ -321,13 +331,12 @@ export function PurchaseOrderTable() {
                         {po.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {po.status}
-                        </span>
+                        <PurchaseOrderStatusControl
+                          order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus }}
+                          onChange={(code) => transition.mutate({ id: po.id, toStatusCode: code })}
+                          disabled={transition.isPending && transition.variables?.id === po.id}
+                          variant="pill"
+                        />
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (
