@@ -97,6 +97,10 @@ Two separate, deliberately non-overlapping feedback mechanisms — don't conflat
    sessions (`useAuthStore().kind === 'portal'`) since that API has no notifications for
    them. This is for "what happened while I wasn't looking" — retries can take it up to
    ~30 min to land, so never use it for instant feedback.
+   `VITE_NOTIFY_BASE_URL` is inlined by Vite at **build time**, so it must be set in the
+   build step's own environment — never on the Pages project or an App Service, which are
+   read too late. `vite.config.ts`'s `assertNotifyBaseUrl` fails the build if it is missing
+   or same-origin; without it the bell silently 404s against the app's own host.
 2. **Instant "you just did this" → `sonner` toasts.** Every transition/approve/reject
    mutation on a document-module detail or edit page (`quote`, `estimate`, `salesorder`,
    `invoice`, `payment`, `refund`, `creditmemo`, `fabrication`, `purchaseorder`,

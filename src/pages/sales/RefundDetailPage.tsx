@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Undo2, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { refundService } from '@/services/refundService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -61,6 +62,11 @@ export default function RefundDetailPage() {
     queryFn: () => refundService.getRefund(id),
     enabled: Boolean(id),
     refetchInterval: DETAIL_POLL_MS,
+  });
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -206,6 +212,9 @@ export default function RefundDetailPage() {
                   <ReadonlyField label="Refund Method" value={refund.method} />
                   <ReadonlyField label="Reference #" value={refund.referenceNumber} />
                   <ReadonlyField label="Refund Date" value={fmtDate(refund.refundDate)} />
+                  {refund.currencyId && (
+                    <ReadonlyField label="Currency" value={lookups?.currencies.find((c) => c.id === refund.currencyId)?.name ?? '—'} />
+                  )}
                   {refund.reason && <ReadonlyField label="Reason" value={refund.reason} full />}
                   {refund.memo && <ReadonlyField label="Memo" value={refund.memo} full />}
                   {refund.internalNotes && <ReadonlyField label="Internal Notes" value={refund.internalNotes} full />}
