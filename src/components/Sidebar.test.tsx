@@ -74,6 +74,19 @@ describe('Sidebar permission gating', () => {
     setup({ grants: [] });
 
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
+  });
+
+  // Subscription has no catalog resource, so only the wildcard super_admin
+  // grant (the tenant's owner) can ever satisfy its permission check.
+  it('hides Subscription from a user with no grants', () => {
+    setup({ grants: [] });
+
+    expect(screen.queryByText('Subscription')).toBeNull();
+  });
+
+  it('shows Subscription to a user holding the super_admin wildcard grant', () => {
+    setup({ grants: [{ resource: '*', action: '*' }] });
+
     expect(screen.getByText('Subscription')).toBeInTheDocument();
   });
 
