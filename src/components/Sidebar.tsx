@@ -69,9 +69,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (item.workflowKey && !workflowsLoading && !isWorkflowEnabled(item.workflowKey)) return false;
     if (permissionsLoading) return true;
     if (item.permission) return hasPermission(item.permission.resource, item.permission.action);
-    // `alwaysVisible` means "every signed-in STAFF user" (Dashboard,
-    // Subscription) — neither has a /api/portal/* backing, so a customer
-    // session gets no catch-all here. Every link a customer may reach
+    // `alwaysVisible` means "every signed-in STAFF user" (currently just
+    // Dashboard) — it has no /api/portal/* backing, so a customer session
+    // gets no catch-all here. Every link a customer may reach
     // (Sales Orders/Invoices/Payments/Refunds) declares an explicit
     // `permission` and is handled by the branch above via useUserPermissions'
     // portal allowlist, never by this fallback.
