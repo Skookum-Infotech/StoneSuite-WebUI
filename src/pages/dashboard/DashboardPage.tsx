@@ -23,7 +23,6 @@ import { InventoryAlerts } from './components/InventoryAlerts';
 import { PurchasesStatus } from './components/PurchasesStatus';
 import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
-import { recentJournalEntries, currentAccountingPeriod, outstandingInvoices } from './mockData';
 
 // Widgets go full-width on phones, pair up from `md` (tablet / small laptop),
 // and thirds get their own row of three only once there's `xl` room for it.
@@ -53,18 +52,6 @@ const MAX_STAGGER_STEPS = 6;
 function isDashboardDataKey(key: unknown): boolean {
   return typeof key === 'string' && key.startsWith('dashboard-') && !key.startsWith('dashboard-widget-');
 }
-
-// Maps a catalog widget id to its rendered content. Add an entry here
-// whenever a widget is added to src/config/dashboardWidgets.ts. Real-data
-// widgets that need query state (pipeline-donut, kpi-strip) are rendered via
-// renderWidget below instead of from this table, since their content
-// depends on data resolved inside the component body.
-const WIDGET_RENDERERS: Record<string, () => ReactNode> = {
-  'ar-outstanding': () => <ArOutstanding invoices={outstandingInvoices} />,
-  'accounting-snapshot': () => (
-    <AccountingSnapshot period={currentAccountingPeriod} entries={recentJournalEntries} />
-  ),
-};
 
 // Exports the Recent records widget's currently-loaded rows -- the same
 // bounded feed shown on screen, not a full unpaginated history (that's what
@@ -168,6 +155,18 @@ export default function DashboardPage() {
     enabled: visibleWidgetIds.includes('material-consumption'),
     ...LIVE_QUERY_OPTIONS,
   });
+  const arOutstandingQ = useQuery({
+    queryKey: ['dashboard-ar-outstanding', range],
+    queryFn: () => dashboardDataService.getArOutstanding(range),
+    enabled: visibleWidgetIds.includes('ar-outstanding'),
+    ...LIVE_QUERY_OPTIONS,
+  });
+  const accountingSnapshotQ = useQuery({
+    queryKey: ['dashboard-accounting-snapshot', range],
+    queryFn: () => dashboardDataService.getAccountingSnapshot(range),
+    enabled: visibleWidgetIds.includes('accounting-snapshot'),
+    ...LIVE_QUERY_OPTIONS,
+  });
 
   // Freshness + manual refresh for the console header. dataUpdatedAt is 0 for a
   // query that hasn't resolved (or isn't enabled), so the max naturally tracks
@@ -175,6 +174,7 @@ export default function DashboardPage() {
   const dataQueries = [
     pipelineMixQ, kpiStripQ, recentRecordsQ, salesOrdersSnapshotQ,
     topCustomersQ, inventoryAlertsQ, purchasesStatusQ, materialConsumptionQ,
+    arOutstandingQ, accountingSnapshotQ,
   ];
   const lastUpdatedAt = Math.max(0, ...dataQueries.map((q) => q.dataUpdatedAt)) || null;
   const isRefreshing = dataQueries.some((q) => q.isFetching);
@@ -225,8 +225,20 @@ export default function DashboardPage() {
             isError={materialConsumptionQ.isError}
           />
         );
+      case 'ar-outstanding':
+        return (
+          <ArOutstanding data={arOutstandingQ.data} isLoading={arOutstandingQ.isLoading} isError={arOutstandingQ.isError} />
+        );
+      case 'accounting-snapshot':
+        return (
+          <AccountingSnapshot
+            data={accountingSnapshotQ.data}
+            isLoading={accountingSnapshotQ.isLoading}
+            isError={accountingSnapshotQ.isError}
+          />
+        );
       default:
-        return WIDGET_RENDERERS[w.id]?.();
+        return null;
     }
   }
 

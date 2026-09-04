@@ -3,13 +3,19 @@
 // dashboardWidgetService.ts, which covers widget allocation/preference.
 import { tenantClient } from '@/api/tenantClient';
 import type {
+  AccountingPeriodSummary,
+  AccountingSnapshotData,
+  ArAgingBucket,
+  ArOutstandingData,
   DashboardRange,
   InventoryAlertsData,
   InventoryStockAlert,
+  JournalEntryRow,
   KpiMetric,
   KpiStripData,
   MaterialConsumptionData,
   MaterialConsumptionRow,
+  OutstandingInvoiceRow,
   PipelineMix,
   PipelineMixSegment,
   PurchasesAttentionRow,
@@ -86,6 +92,25 @@ interface MaterialConsumptionWire {
   materials?: MaterialConsumptionRow[];
   materialCount?: number;
   slabTotal?: number;
+}
+
+interface ArOutstandingWire {
+  success: boolean;
+  range: DashboardRange;
+  outstanding?: number;
+  overdueTotal?: number;
+  overdueCount?: number;
+  buckets?: ArAgingBucket[];
+  oldest?: OutstandingInvoiceRow[];
+  oldestCount?: number;
+}
+
+interface AccountingSnapshotWire {
+  success: boolean;
+  range: DashboardRange;
+  period?: AccountingPeriodSummary | null;
+  entries?: JournalEntryRow[];
+  entryTotal?: number;
 }
 
 export const dashboardDataService = {
@@ -167,5 +192,28 @@ export const dashboardDataService = {
         materials: r.data.materials ?? [],
         materialCount: r.data.materialCount ?? 0,
         slabTotal: r.data.slabTotal ?? 0,
+      })),
+
+  getArOutstanding: (range: DashboardRange): Promise<ArOutstandingData> =>
+    tenantClient
+      .get<ArOutstandingWire>('/tenant/dashboard/widgets/ar-outstanding/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        outstanding: r.data.outstanding ?? 0,
+        overdueTotal: r.data.overdueTotal ?? 0,
+        overdueCount: r.data.overdueCount ?? 0,
+        buckets: r.data.buckets ?? [],
+        oldest: r.data.oldest ?? [],
+        oldestCount: r.data.oldestCount ?? 0,
+      })),
+
+  getAccountingSnapshot: (range: DashboardRange): Promise<AccountingSnapshotData> =>
+    tenantClient
+      .get<AccountingSnapshotWire>('/tenant/dashboard/widgets/accounting-snapshot/data', { params: { range } })
+      .then((r) => ({
+        range: r.data.range,
+        period: r.data.period ?? null,
+        entries: r.data.entries ?? [],
+        entryTotal: r.data.entryTotal ?? 0,
       })),
 };

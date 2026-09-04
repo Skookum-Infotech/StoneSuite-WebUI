@@ -58,19 +58,3 @@ export function isSuperAdminGrants(grants: { resource: string; action: string }[
   return grants.some((g) => g.resource === '*' && g.action === '*');
 }
 
-export interface AgingBucket {
-  label: '0-30' | '31-60' | '61-90' | '90+';
-  amount: number;
-}
-
-const AGING_BUCKET_LABELS: AgingBucket['label'][] = ['0-30', '31-60', '61-90', '90+'];
-
-export function bucketInvoicesByAge(invoices: { amount: number; daysPastDue: number }[]): AgingBucket[] {
-  const buckets = AGING_BUCKET_LABELS.map((label) => ({ label, amount: 0 }));
-  for (const invoice of invoices) {
-    const index =
-      invoice.daysPastDue <= 30 ? 0 : invoice.daysPastDue <= 60 ? 1 : invoice.daysPastDue <= 90 ? 2 : 3;
-    buckets[index].amount += invoice.amount;
-  }
-  return buckets;
-}
