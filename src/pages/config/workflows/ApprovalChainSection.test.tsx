@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -7,10 +7,12 @@ vi.mock('@/services/tenantServices', () => ({
   workflowService: { getApprovalChain: vi.fn(), setApprovalChain: vi.fn() },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn() } }));
 
 import { ApprovalChainSection } from './ApprovalChainSection';
 import { workflowService } from '@/services/tenantServices';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { toast } from 'sonner';
 import type { ApprovalGate, ApprovalChainEmployee } from '@/types/tenant';
 
 const WORKFLOW_ID = 'wf-fabrication-job';
@@ -89,8 +91,69 @@ describe('ApprovalChainSection', () => {
     const option = await within(qcPendingCard).findByRole('button', { name: 'Casey Approver' });
     await user.click(option);
 
-    expect(workflowService.setApprovalChain).toHaveBeenCalledWith(WORKFLOW_ID, 'QCPD', ['201']);
+    // Chip appears immediately, before the debounced save fires.
+    expect(await within(qcPendingCard).findByText('Casey Approver')).toBeInTheDocument();
+    expect(workflowService.setApprovalChain).not.toHaveBeenCalled();
+
+    await waitFor(() =>
+      expect(workflowService.setApprovalChain).toHaveBeenCalledWith(WORKFLOW_ID, 'QCPD', ['201']),
+    );
     expect(workflowService.setApprovalChain).not.toHaveBeenCalledWith(WORKFLOW_ID, 'TMPL', expect.anything());
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Approval chain updated.'));
+  });
+
+  it('batches two rapid adds into a single setApprovalChain call carrying both ids', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: [] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([
+        { id: '201', name: 'Casey Approver' },
+        { id: '202', name: 'Jordan Approver' },
+      ]),
+    });
+    vi.mocked(workflowService.setApprovalChain).mockResolvedValue(['201', '202']);
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    const searchInput = screen.getByLabelText('Search active users to add as an approver');
+
+    await user.click(searchInput);
+    await user.click(await screen.findByRole('button', { name: 'Casey Approver' }));
+    await user.click(searchInput);
+    await user.click(await screen.findByRole('button', { name: 'Jordan Approver' }));
+
+    await waitFor(() =>
+      expect(workflowService.setApprovalChain).toHaveBeenCalledWith(WORKFLOW_ID, 'PEND', ['201', '202']),
+    );
+    expect(workflowService.setApprovalChain).toHaveBeenCalledTimes(1);
+  });
+
+  it('reverts the optimistic chip and does not toast when the save fails', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: [] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+    vi.mocked(workflowService.setApprovalChain).mockRejectedValue(new Error('save failed'));
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    await user.click(screen.getByLabelText('Search active users to add as an approver'));
+    await user.click(await screen.findByRole('button', { name: 'Casey Approver' }));
+
+    await waitFor(() => expect(workflowService.setApprovalChain).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('Casey Approver')).not.toBeInTheDocument());
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it('removing an approver calls setApprovalChain with that id filtered out', async () => {
@@ -113,7 +176,9 @@ describe('ApprovalChainSection', () => {
     await screen.findByText('Pending Approval');
     await user.click(screen.getByRole('button', { name: 'Remove approver Casey Approver' }));
 
-    expect(workflowService.setApprovalChain).toHaveBeenCalledWith(WORKFLOW_ID, 'PEND', ['202']);
+    await waitFor(() =>
+      expect(workflowService.setApprovalChain).toHaveBeenCalledWith(WORKFLOW_ID, 'PEND', ['202']),
+    );
   });
 
   it('renders a read-only approver list and never calls setApprovalChain when configure permission is missing', async () => {
