@@ -211,3 +211,72 @@ export interface MaterialConsumptionData {
   materialCount: number;
   slabTotal: number;
 }
+
+// One aging band in the Accounts receivable widget's bar chart. All four
+// bands (0-30/31-60/61-90/90+) are always present and in this order, even
+// when a band is empty -- see controllers/dashboard_ar.go's mapAgingBuckets.
+export interface ArAgingBucket {
+  label: '0-30' | '31-60' | '61-90' | '90+';
+  amount: number;
+  count: number;
+}
+
+// One row in the Accounts receivable widget's oldest-outstanding worklist,
+// ranked most-overdue-first. daysPastDue is 0 for an invoice with no due
+// date set -- not a real "not overdue yet" reading, just the absence of
+// terms to be late against (see the backend's invoice.OutstandingAging doc
+// comment).
+export interface OutstandingInvoiceRow {
+  id: string;
+  invoiceNumber: string;
+  customer: string;
+  balanceDue: number;
+  daysPastDue: number;
+}
+
+// Accounts receivable widget payload. Ignores range like inventory-alerts --
+// an outstanding balance is current state, not a date window. overdueTotal/
+// overdueCount cover only the subset of `outstanding` actually past its due
+// date; oldestCount is every outstanding invoice, not just the ones listed
+// in `oldest`, so the widget's "N more" hint stays accurate.
+export interface ArOutstandingData {
+  range: DashboardRange;
+  outstanding: number;
+  overdueTotal: number;
+  overdueCount: number;
+  buckets: ArAgingBucket[];
+  oldest: OutstandingInvoiceRow[];
+  oldestCount: number;
+}
+
+// One row in the Accounting snapshot widget's recent-entries list. date is a
+// real ISO timestamp -- the widget formats it ("2h ago") itself via
+// lib/recentRecordRoute's relativeTime, same as Recent records.
+export interface JournalEntryRow {
+  id: string;
+  entryNumber: string;
+  description: string;
+  amount: number;
+  date: string;
+}
+
+// The Accounting snapshot widget's period pill. Mirrors PeriodStatus in
+// types/accountingPeriod.ts but is intentionally its own type -- this is a
+// read-only summary for the dashboard card, not the full Period record.
+export interface AccountingPeriodSummary {
+  name: string;
+  status: 'open' | 'closed';
+  entryCount: number;
+}
+
+// Accounting snapshot widget payload. period is null when the tenant has
+// never configured an accounting calendar (Config > Accounting Periods) --
+// the widget renders a setup empty state rather than inventing a month.
+// entryTotal falls back to entries.length in that case, so the widget's "N
+// entries" line still says something true even with no period to count over.
+export interface AccountingSnapshotData {
+  range: DashboardRange;
+  period: AccountingPeriodSummary | null;
+  entries: JournalEntryRow[];
+  entryTotal: number;
+}
