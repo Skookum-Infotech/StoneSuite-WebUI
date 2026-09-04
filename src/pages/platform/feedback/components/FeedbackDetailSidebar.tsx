@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileDown, Loader2, User, UserCheck, UserX } from 'lucide-react';
+import { FileDown, Loader2 } from 'lucide-react';
 import { feedbackAdminService } from '@/services/feedbackAdminService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { fieldCls, fieldLabelCls, textareaCls } from '@/components/crm/formUtils';
-import { useAuthStore } from '@/store/useAuthStore';
 import {
   FEEDBACK_PRIORITY_LABELS,
   FEEDBACK_STATUS_LABELS,
   MAX_DESCRIPTION_LENGTH,
+  type AssigneeCandidate,
 } from '@/lib/feedback';
 import { cn } from '@/lib/utils';
 import type { FeedbackAdminPatch, FeedbackPriority, FeedbackStatus, FeedbackTicket } from '@/types/feedback';
+import { FeedbackAssigneePicker } from './FeedbackAssigneePicker';
 
 interface Props {
   ticket: FeedbackTicket;
+  assigneeCandidates: AssigneeCandidate[];
   onExportPdf: () => void;
   exportingPdf: boolean;
   exportPdfError: string | null;
@@ -24,9 +26,8 @@ interface Props {
 // immediately on change — no separate Save step, matching how single-field
 // admin controls behave elsewhere in this app), the internal-notes
 // scratchpad, and Export PDF.
-export function FeedbackDetailSidebar({ ticket, onExportPdf, exportingPdf, exportPdfError }: Props) {
+export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf, exportingPdf, exportPdfError }: Props) {
   const queryClient = useQueryClient();
-  const currentUser = useAuthStore((s) => s.user);
   const [notes, setNotes] = useState(ticket.internalNotes ?? '');
   const [notesDirty, setNotesDirty] = useState(false);
 
@@ -40,8 +41,6 @@ export function FeedbackDetailSidebar({ ticket, onExportPdf, exportingPdf, expor
       void queryClient.invalidateQueries({ queryKey: ['platform-feedback-stats'] });
     },
   });
-
-  const isAssignedToMe = Boolean(currentUser?.id) && ticket.assignedAdminIdentityId === currentUser?.id;
 
   const handleSaveNotes = (): void => {
     patchMutation.mutate({ internalNotes: notes }, { onSuccess: () => setNotesDirty(false) });
@@ -84,33 +83,15 @@ export function FeedbackDetailSidebar({ ticket, onExportPdf, exportingPdf, expor
 
         <div>
           <p className={fieldLabelCls}>Assigned to</p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300">
-            <User className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-            {ticket.assignedAdminName || 'Unassigned'}
-          </div>
-          <div className="mt-2 flex gap-1.5">
-            {!isAssignedToMe && (
-              <button
-                type="button"
-                onClick={() => currentUser?.id && patchMutation.mutate({ assignedAdminIdentityId: currentUser.id })}
-                disabled={patchMutation.isPending}
-                className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-2xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50 dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]"
-              >
-                <UserCheck className="size-3" />
-                Assign to me
-              </button>
-            )}
-            {ticket.assignedAdminIdentityId && (
-              <button
-                type="button"
-                onClick={() => patchMutation.mutate({ assignedAdminIdentityId: '' })}
-                disabled={patchMutation.isPending}
-                className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-2xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50 dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]"
-              >
-                <UserX className="size-3" />
-                Unassign
-              </button>
-            )}
+          <div className="mt-1">
+            <FeedbackAssigneePicker
+              candidates={assigneeCandidates}
+              selectedId={ticket.assignedAdminIdentityId}
+              selectedName={ticket.assignedAdminName}
+              onSelect={(userId) => patchMutation.mutate({ assignedAdminIdentityId: userId })}
+              onUnassign={() => patchMutation.mutate({ assignedAdminIdentityId: '' })}
+              disabled={patchMutation.isPending}
+            />
           </div>
         </div>
 

@@ -10,12 +10,34 @@ import {
   validateFeedbackFile,
   formatFeedbackFileSize,
   formatFeedbackTime,
+  extractAssigneeCandidates,
   MAX_DESCRIPTION_LENGTH,
   MAX_COMMENT_LENGTH,
   MAX_FEEDBACK_FILE_SIZE_BYTES,
   FEEDBACK_CATEGORY_OPTIONS,
   FEEDBACK_AREA_OPTIONS,
 } from './feedback'
+import type { FeedbackTicket } from '@/types/feedback'
+
+function makeTicket(overrides: Partial<FeedbackTicket>): FeedbackTicket {
+  return {
+    id: 't1',
+    ticketSeq: 1,
+    ticketNumber: 'FB-1',
+    tenantId: 'tenant-1',
+    reporterKind: 'staff',
+    reporterEmail: 'reporter@example.com',
+    reporterName: 'Reporter',
+    category: 'bug',
+    description: 'Something broke',
+    status: 'new',
+    priority: 'normal',
+    reporterLastSeenAt: '2026-01-01T00:00:00Z',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    ...overrides,
+  }
+}
 
 function makeFile(name: string, type: string, size: number): File {
   return new File([new Uint8Array(size)], name, { type })
@@ -168,5 +190,52 @@ describe('formatFeedbackTime', () => {
     const result = formatFeedbackTime('2026-01-15T10:30:00Z')
     expect(result).not.toBe('2026-01-15T10:30:00Z')
     expect(result.length).toBeGreaterThan(0)
+  })
+})
+
+describe('extractAssigneeCandidates', () => {
+  it('returns an empty list with no tickets and no self', () => {
+    expect(extractAssigneeCandidates([])).toEqual([])
+  })
+
+  it('includes self first even with zero prior assignments', () => {
+    const result = extractAssigneeCandidates([], { id: 'me', name: 'Me' })
+    expect(result).toEqual([{ id: 'me', name: 'Me' }])
+  })
+
+  it('dedups repeated assignees across tickets', () => {
+    const tickets = [
+      makeTicket({ id: 't1', assignedAdminIdentityId: 'a1', assignedAdminName: 'Alice' }),
+      makeTicket({ id: 't2', assignedAdminIdentityId: 'a1', assignedAdminName: 'Alice' }),
+      makeTicket({ id: 't3', assignedAdminIdentityId: 'a2', assignedAdminName: 'Bob' }),
+    ]
+    expect(extractAssigneeCandidates(tickets)).toEqual([
+      { id: 'a1', name: 'Alice' },
+      { id: 'a2', name: 'Bob' },
+    ])
+  })
+
+  it('skips unassigned tickets', () => {
+    const tickets = [makeTicket({ id: 't1', assignedAdminIdentityId: undefined })]
+    expect(extractAssigneeCandidates(tickets)).toEqual([])
+  })
+
+  it('sorts non-self candidates alphabetically by name', () => {
+    const tickets = [
+      makeTicket({ id: 't1', assignedAdminIdentityId: 'a1', assignedAdminName: 'Zed' }),
+      makeTicket({ id: 't2', assignedAdminIdentityId: 'a2', assignedAdminName: 'Amy' }),
+    ]
+    expect(extractAssigneeCandidates(tickets).map((c) => c.name)).toEqual(['Amy', 'Zed'])
+  })
+
+  it('does not duplicate self when self already appears among tickets', () => {
+    const tickets = [makeTicket({ id: 't1', assignedAdminIdentityId: 'me', assignedAdminName: 'Me' })]
+    const result = extractAssigneeCandidates(tickets, { id: 'me', name: 'Me' })
+    expect(result).toEqual([{ id: 'me', name: 'Me' }])
+  })
+
+  it('falls back to the identity id when assignedAdminName is missing', () => {
+    const tickets = [makeTicket({ id: 't1', assignedAdminIdentityId: 'a1', assignedAdminName: undefined })]
+    expect(extractAssigneeCandidates(tickets)).toEqual([{ id: 'a1', name: 'a1' }])
   })
 })
