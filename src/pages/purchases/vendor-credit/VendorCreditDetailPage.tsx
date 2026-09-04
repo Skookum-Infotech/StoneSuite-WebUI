@@ -19,7 +19,7 @@ import { VC_STATUS_COLORS, VC_STATUS_CODES, VC_EDITABLE_STATUSES, VC_ALLOWED_TRA
 import { statusToastLabel } from '@/lib/statusToast';
 import { VendorCreditAuditTab } from './components/VendorCreditAuditTab';
 import { VendorCreditApplicationsTab } from './components/VendorCreditApplicationsTab';
-import { VendorCreditTransitionBar } from './components/VendorCreditTransitionBar';
+import { VendorCreditStatusControl } from './components/VendorCreditStatusControl';
 import { DeleteVendorCreditDialog } from './components/DeleteVendorCreditDialog';
 import type { VendorCredit } from '@/types/vendorCredit';
 
@@ -287,12 +287,11 @@ export default function VendorCreditDetailPage() {
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <VendorCreditTransitionBar
-                statusCode={credit.statusCode}
-                approvalStatus={credit.approvalStatus}
-                gated={credit.gated}
-                onTransition={(toCode) => transition.mutate(toCode)}
-                isPending={transition.isPending}
+              <VendorCreditStatusControl
+                order={{ statusCode: credit.statusCode, approvalStatus: credit.approvalStatus, gated: credit.gated }}
+                onChange={(toCode) => transition.mutate(toCode)}
+                disabled={transition.isPending}
+                variant="pill"
               />
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
   ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
@@ -10,12 +10,12 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { expenseService } from '@/services/expenseService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { EXPENSE_STATUS_COLORS } from '@/lib/expenseForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type ExpenseFilterState,
 } from '@/lib/expenseFilters';
 import { ExpenseFilterDrawer } from './ExpenseFilterDrawer';
+import { ExpenseStatusControl } from './ExpenseStatusControl';
 import type { ExpenseSearchRequest } from '@/types/expense';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -61,7 +61,18 @@ function currency(n: number | undefined): string {
 
 export function ExpenseTable() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Inline status change from the list row's status pill — mirrors the
+  // Detail page's transition mutation (see ExpenseDetailPage.tsx).
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStatusCode: string }) => expenseService.transition(vars.id, vars.toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['expense', updated.id], updated);
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('expense', 'update');
@@ -304,7 +315,6 @@ export function ExpenseTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((exp) => {
-                  const color = EXPENSE_STATUS_COLORS[exp.statusCode] ?? '#a8a29e';
                   const approvalLabel = APPROVAL_LABELS[exp.approvalStatus];
                   const claimantName = exp.claimantEmployeeId
                     ? employeeNames.get(String(exp.claimantEmployeeId))
@@ -328,13 +338,12 @@ export function ExpenseTable() {
                         {exp.department || '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {exp.status}
-                        </span>
+                        <ExpenseStatusControl
+                          order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus }}
+                          onChange={(code) => transition.mutate({ id: exp.id, toStatusCode: code })}
+                          disabled={transition.isPending && transition.variables?.id === exp.id}
+                          variant="pill"
+                        />
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (

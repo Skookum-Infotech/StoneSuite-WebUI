@@ -21,7 +21,7 @@ import {
 import { statusToastLabel } from '@/lib/statusToast';
 import { ExpenseAuditTab } from './components/ExpenseAuditTab';
 import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
-import { ExpenseTransitionBar } from './components/ExpenseTransitionBar';
+import { ExpenseStatusControl } from './components/ExpenseStatusControl';
 import { RejectExpenseDialog } from './components/RejectExpenseDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -330,12 +330,11 @@ export default function ExpenseDetailPage() {
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <ExpenseTransitionBar
-                statusCode={exp.statusCode}
-                approvalStatus={exp.approvalStatus}
-                gated={exp.gated}
-                onTransition={(toCode) => transition.mutate(toCode)}
-                isPending={transition.isPending}
+              <ExpenseStatusControl
+                order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, gated: exp.gated }}
+                onChange={(toCode) => transition.mutate(toCode)}
+                disabled={transition.isPending}
+                variant="pill"
               />
               {canReject && (
                 <RejectExpenseDialog

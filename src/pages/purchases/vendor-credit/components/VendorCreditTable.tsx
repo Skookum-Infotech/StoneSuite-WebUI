@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, FilePlus, Pencil, Filter,
   ChevronLeft, ChevronRight, Download, Loader2,
@@ -10,12 +10,13 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { vendorCreditService } from '@/services/vendorCreditService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { VC_STATUS_COLORS, VC_EDITABLE_STATUSES } from '@/lib/vendorCreditForm';
+import { VC_EDITABLE_STATUSES } from '@/lib/vendorCreditForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorCreditFilterState,
 } from '@/lib/vendorCreditFilters';
 import { VendorCreditFilterDrawer } from './VendorCreditFilterDrawer';
+import { VendorCreditStatusControl } from './VendorCreditStatusControl';
 import type { VendorCreditSearchRequest } from '@/types/vendorCredit';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -60,7 +61,18 @@ function fmtDate(iso?: string | null): string {
 
 export function VendorCreditTable() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Inline status change from the list row's status pill — mirrors the
+  // Detail page's transition mutation (see VendorCreditDetailPage.tsx).
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStatusCode: string }) => vendorCreditService.transition(vars.id, vars.toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['vendor-credit', updated.id], updated);
+      queryClient.invalidateQueries({ queryKey: ['vendor-credits'] });
+    },
+  });
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_credit', 'update');
@@ -307,7 +319,6 @@ export function VendorCreditTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((credit) => {
-                  const color = VC_STATUS_COLORS[credit.statusCode] ?? '#a8a29e';
                   const ownerName = credit.ownerEmployeeId ? employeeNames.get(String(credit.ownerEmployeeId)) : undefined;
                   return (
                     <tr key={credit.id} className="group hover:bg-accent/10 transition-colors duration-150">
@@ -324,13 +335,12 @@ export function VendorCreditTable() {
                         {credit.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {credit.status}
-                        </span>
+                        <VendorCreditStatusControl
+                          order={{ statusCode: credit.statusCode }}
+                          onChange={(code) => transition.mutate({ id: credit.id, toStatusCode: code })}
+                          disabled={transition.isPending && transition.variables?.id === credit.id}
+                          variant="pill"
+                        />
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[200px]">
                         {credit.reason || '—'}

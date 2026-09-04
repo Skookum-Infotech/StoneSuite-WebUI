@@ -20,7 +20,7 @@ const EXPORT_PAGE_SIZE = 200;
 // (/api/tenant/payments*) directly rather than reusing CrmRecordTable/
 // crmService. Mirrors InvoiceTable's search/sort/cursor-pagination UX.
 
-type SortField = 'payment_date' | 'amount' | 'unapplied_amount';
+type SortField = 'payment_date' | 'amount' | 'unapplied_amount' | 'record_number' | 'created_at';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
@@ -29,6 +29,8 @@ const SORT_LABELS: Record<SortField, string> = {
   payment_date: 'Payment Date',
   amount: 'Amount',
   unapplied_amount: 'Unapplied',
+  record_number: 'Payment #',
+  created_at: 'Payment Created',
 };
 
 function currency(n: number | undefined): string {

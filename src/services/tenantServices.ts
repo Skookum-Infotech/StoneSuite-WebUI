@@ -1,4 +1,6 @@
+import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
+import { isPortalSession } from '@/store/useAuthStore';
 import { normalizeScope, normalizeScopeList } from '@/lib/scope';
 import type {
   Tenant,
@@ -205,10 +207,27 @@ export const workflowService = {
   // Configuration-only permission), this is callable by any authenticated
   // tenant member — it exists so a user with e.g. only lead:read can still
   // learn whether the "lead" workflow is disabled, for UI-hiding purposes.
-  listEnabled: () =>
+  // A customer-portal session reads the same {key, enabled} shape from
+  // /api/portal/workflows/enabled instead — /api/tenant/* is structurally
+  // out of reach for a portal token (RequireAuth) and would 403.
+  listEnabled: (): Promise<WorkflowStatus[]> =>
     tenantClient
-      .get<{ success: boolean; workflows: WorkflowStatus[] }>('/tenant/workflows/enabled')
-      .then((r) => r.data.workflows ?? []),
+      .get<{ success: boolean; workflows: WorkflowStatus[] }>(
+        isPortalSession() ? '/portal/workflows/enabled' : '/tenant/workflows/enabled',
+      )
+      .then((r) => r.data.workflows ?? [])
+      .catch((err: unknown) => {
+        // Forward-compatibility for portal sessions only: the portal route
+        // may not be deployed on every backend yet. A 404 there means "no
+        // route", which is indistinguishable from "no data" for our
+        // purposes — both fail open via resolveWorkflowEnabled's
+        // unknown-key rule. Every other status, and every staff-side
+        // failure, still rejects.
+        if (isPortalSession() && err instanceof AxiosError && err.response?.status === 404) {
+          return [];
+        }
+        throw err;
+      }),
   get: (id: string) =>
     tenantClient
       .get<{ success: boolean; definition: WorkflowDefinition }>(`/tenant/workflows/${id}`)

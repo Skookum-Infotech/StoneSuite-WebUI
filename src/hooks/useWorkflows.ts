@@ -1,39 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
 import { workflowService } from '@/services/tenantServices';
 import { useAuthStore } from '@/store/useAuthStore';
+import { resolveWorkflowEnabled } from '@/lib/workflowEnabled';
 
 const WORKFLOWS_STALE_TIME_MS = 5 * 60 * 1000;
 
 export function useWorkflows() {
-  // /tenant/workflows/enabled is a staff-configuration concept — a
-  // customer-portal token is structurally confined away from /api/tenant/*
-  // (middleware.RequireAuth) and would 403. Skip the call entirely rather
-  // than let PermissionGuard's workflowKey check retry into a spurious
-  // security-log entry (portal_token_outside_portal) on every customer page
-  // load; isWorkflowEnabled below fails open the same way missing data
-  // already does.
+  // Cache-key scoping only — workflowService.listEnabled branches the
+  // request path itself (portal vs. tenant), so there is no portal
+  // special-case in the gating logic here: a workflow an admin disabled
+  // must block a customer exactly as it blocks staff.
   const isPortal = useAuthStore((s) => s.kind === 'portal');
 
   // Distinct from the ['workflows'] key used elsewhere for the full,
   // workflow:read-gated list (field definitions, approvers, etc.) — this
-  // hook uses the unrestricted /tenant/workflows/enabled endpoint instead,
-  // so a role with no Configuration access still gets a correct answer.
+  // hook uses the unrestricted .../workflows/enabled endpoint instead, so a
+  // role with no Configuration access still gets a correct answer.
   const { data = [], isLoading } = useQuery({
-    queryKey: ['workflows', 'enabled'],
+    queryKey: ['workflows', 'enabled', isPortal ? 'portal' : 'tenant'],
     queryFn: workflowService.listEnabled,
     staleTime: WORKFLOWS_STALE_TIME_MS,
-    enabled: !isPortal,
+    // One attempt: on a backend without the portal route this is a 404, and
+    // retrying only doubles the noise. Failure falls open via the empty list.
+    retry: false,
   });
 
-  // A key the server doesn't return (not yet seeded, an API hiccup, or a
-  // portal session that never asked) fails open — this only hides/blocks
-  // workflows an admin explicitly disabled, it never masks missing data as
-  // "disabled".
   function isWorkflowEnabled(key: string): boolean {
-    if (isPortal) return true;
-    const wf = data.find((w) => w.key.toLowerCase() === key.toLowerCase());
-    return wf ? wf.enabled : true;
+    return resolveWorkflowEnabled(data, key);
   }
 
-  return { workflows: data, isLoading: isPortal ? false : isLoading, isWorkflowEnabled };
+  return { workflows: data, isLoading, isWorkflowEnabled };
 }

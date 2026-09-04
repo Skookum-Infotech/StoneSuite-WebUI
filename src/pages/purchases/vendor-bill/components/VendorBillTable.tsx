@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, FileCheck, Pencil, Filter,
   ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
@@ -10,12 +10,12 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { vendorBillService } from '@/services/vendorBillService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorBillFilterState,
 } from '@/lib/vendorBillFilters';
 import { VendorBillFilterDrawer } from './VendorBillFilterDrawer';
+import { VendorBillStatusControl } from './VendorBillStatusControl';
 import type { VendorBillSearchRequest } from '@/types/vendorBill';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -68,7 +68,18 @@ function fmtDate(iso?: string): string {
 
 export function VendorBillTable() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Inline status change from the list row's status pill — mirrors the
+  // Detail page's transition mutation (see VendorBillDetailPage.tsx).
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStatusCode: string }) => vendorBillService.transition(vars.id, vars.toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['vendor-bill', updated.id], updated);
+      queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+    },
+  });
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
@@ -311,7 +322,6 @@ export function VendorBillTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((bill) => {
-                  const color = VB_STATUS_COLORS[bill.statusCode] ?? '#a8a29e';
                   const approvalStatus = bill.approvalStatus ?? 'none';
                   const approvalLabel = APPROVAL_LABELS[approvalStatus];
                   const ownerName = bill.ownerEmployeeId ? employeeNames.get(String(bill.ownerEmployeeId)) : undefined;
@@ -330,13 +340,12 @@ export function VendorBillTable() {
                         {bill.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {bill.status}
-                        </span>
+                        <VendorBillStatusControl
+                          order={{ statusCode: bill.statusCode, approvalStatus }}
+                          onChange={(code) => transition.mutate({ id: bill.id, toStatusCode: code })}
+                          disabled={transition.isPending && transition.variables?.id === bill.id}
+                          variant="pill"
+                        />
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (
