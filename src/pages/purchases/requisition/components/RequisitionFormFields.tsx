@@ -1,5 +1,6 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { RequisitionFormField } from '@/lib/requisitionForm';
 
@@ -73,6 +74,16 @@ export function RequisitionField({ field, value, set, lookups }: {
                 ))}
           </select>
           {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+        </ModernFieldShell>
+      </div>
+    );
+  }
+
+  if (field.type === 'date') {
+    return (
+      <div className={spanCls}>
+        <ModernFieldShell label={field.label} required={field.required}>
+          <DatePicker value={str} onChange={(iso) => set(field.key, iso)} label={field.label} required={field.required} />
         </ModernFieldShell>
       </div>
     );

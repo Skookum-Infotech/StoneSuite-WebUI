@@ -20,7 +20,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { VendorPaymentAuditTab } from './components/VendorPaymentAuditTab';
 import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicationsTab';
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
-import { VendorPaymentTransitionBar } from './components/VendorPaymentTransitionBar';
+import { VendorPaymentStatusControl } from './components/VendorPaymentStatusControl';
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
 import type { VendorPayment } from '@/types/vendorPayment';
 
@@ -296,13 +296,16 @@ export default function VendorPaymentDetailPage() {
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <VendorPaymentTransitionBar
-                statusCode={payment.statusCode}
-                approvalStatus={payment.approvalStatus}
-                gated={payment.gated}
-                scheduledDate={payment.scheduledDate}
-                onTransition={(toCode) => transition.mutate(toCode)}
-                isPending={transition.isPending}
+              <VendorPaymentStatusControl
+                order={{
+                  statusCode: payment.statusCode,
+                  approvalStatus: payment.approvalStatus,
+                  gated: payment.gated,
+                  scheduledDate: payment.scheduledDate,
+                }}
+                onChange={(toCode) => transition.mutate(toCode)}
+                disabled={transition.isPending}
+                variant="pill"
               />
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">

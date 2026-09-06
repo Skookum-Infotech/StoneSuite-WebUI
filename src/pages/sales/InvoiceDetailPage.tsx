@@ -5,6 +5,7 @@ import { Receipt, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
 import { attachmentService } from '@/services/attachmentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -74,6 +75,11 @@ export default function InvoiceDetailPage() {
     enabled: Boolean(id),
   });
   const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+  });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -244,6 +250,15 @@ export default function InvoiceDetailPage() {
                   <ReadonlyField label="PO Number" value={invoice.poNumber} />
                   <ReadonlyField label="Reference #" value={invoice.referenceNumber} />
                   <ReadonlyField label="Sales Tax %" value={`${invoice.salesTaxPercent}%`} />
+                  {invoice.currencyId && (
+                    <ReadonlyField label="Currency" value={lookups?.currencies.find((c) => c.id === invoice.currencyId)?.name ?? '—'} />
+                  )}
+                  {invoice.paymentTermsId && (
+                    <ReadonlyField label="Payment Terms" value={lookups?.paymentTerms.find((p) => p.id === invoice.paymentTermsId)?.name ?? '—'} />
+                  )}
+                  {invoice.priceLevelId && (
+                    <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === invoice.priceLevelId)?.name ?? '—'} />
+                  )}
                   {invoice.memo && <ReadonlyField label="Memo" value={invoice.memo} full />}
                 </div>
               </ModernSection>

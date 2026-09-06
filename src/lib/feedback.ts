@@ -4,7 +4,7 @@
 // adds a category/status/priority or changes a limit.
 import { Bug, Lightbulb, Sparkles, Zap, MessageCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { FeedbackArea, FeedbackCategory, FeedbackPriority, FeedbackStatus } from '@/types/feedback';
+import type { FeedbackArea, FeedbackCategory, FeedbackPriority, FeedbackStatus, FeedbackTicket } from '@/types/feedback';
 
 export const MAX_DESCRIPTION_LENGTH = 5000;
 export const MAX_COMMENT_LENGTH = 5000;
@@ -165,6 +165,38 @@ export function formatFeedbackFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** One admin selectable as a ticket assignee — derived client-side, see
+ *  extractAssigneeCandidates. Not part of the backend contract (unlike the
+ *  types in types/feedback.ts), so it lives here rather than there. */
+export interface AssigneeCandidate {
+  id: string;
+  name: string;
+}
+
+/** Builds the assignee picker's candidate list from tickets already fetched,
+ *  since there is no platform-admin user-list endpoint to query directly.
+ *  `self` (the signed-in admin) is always included first, even with zero
+ *  prior assignments, so "assign to me" stays available; the rest are the
+ *  distinct admins seen across `tickets`, sorted alphabetically. An admin
+ *  who has never been assigned a ticket won't appear until they are. */
+export function extractAssigneeCandidates(
+  tickets: FeedbackTicket[],
+  self?: AssigneeCandidate,
+): AssigneeCandidate[] {
+  const byId = new Map<string, AssigneeCandidate>();
+  if (self) byId.set(self.id, self);
+  for (const t of tickets) {
+    if (!t.assignedAdminIdentityId || byId.has(t.assignedAdminIdentityId)) continue;
+    byId.set(t.assignedAdminIdentityId, {
+      id: t.assignedAdminIdentityId,
+      name: t.assignedAdminName || t.assignedAdminIdentityId,
+    });
+  }
+  const rest = [...byId.values()].filter((c) => c.id !== self?.id);
+  rest.sort((a, b) => a.name.localeCompare(b.name));
+  return self ? [self, ...rest] : rest;
 }
 
 /** Human-readable local timestamp for ticket rows and timeline entries. */

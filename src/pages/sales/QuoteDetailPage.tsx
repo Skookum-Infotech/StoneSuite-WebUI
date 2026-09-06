@@ -5,6 +5,7 @@ import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, Fil
 import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { attachmentService } from '@/services/attachmentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
@@ -76,6 +77,11 @@ export default function QuoteDetailPage() {
     enabled: Boolean(id),
   });
   const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+  });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -204,7 +210,24 @@ export default function QuoteDetailPage() {
         subtitle={quote.customer.name}
         recordNumber={quote.quoteNumber}
         statusBadge={<Badge color={color}>{quote.status}</Badge>}
+        actions={canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
+          <button
+            type="button"
+            onClick={() => convert.mutate()}
+            disabled={convert.isPending}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+          >
+            {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+            Convert to Sales Order
+          </button>
+        )}
       />
+
+      {convert.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(convert.error, 'Failed to convert quote.')}
+        </p>
+      )}
 
       {quote.gated && (
         <>
@@ -257,6 +280,15 @@ export default function QuoteDetailPage() {
                   <ReadonlyField label="PO Number" value={quote.poNumber} />
                   <ReadonlyField label="Reference #" value={quote.referenceNumber} />
                   <ReadonlyField label="Sales Tax %" value={`${quote.salesTaxPercent}%`} />
+                  {quote.currencyId && (
+                    <ReadonlyField label="Currency" value={lookups?.currencies.find((c) => c.id === quote.currencyId)?.name ?? '—'} />
+                  )}
+                  {quote.paymentTermsId && (
+                    <ReadonlyField label="Payment Terms" value={lookups?.paymentTerms.find((p) => p.id === quote.paymentTermsId)?.name ?? '—'} />
+                  )}
+                  {quote.priceLevelId && (
+                    <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === quote.priceLevelId)?.name ?? '—'} />
+                  )}
                   {quote.estimate && (
                     <div className="space-y-1">
                       <label className={fieldLabelCls}>Source Estimate</label>
@@ -377,17 +409,6 @@ export default function QuoteDetailPage() {
                   Send to Customer
                 </button>
               )}
-              {canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => convert.mutate()}
-                  disabled={convert.isPending}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
-                >
-                  {convert.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />}
-                  Convert to Sales Order
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -399,9 +420,6 @@ export default function QuoteDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {convert.isError && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert quote.')}</p>
-            )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}

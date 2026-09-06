@@ -25,7 +25,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          # Keep in sync with ci-frontend.yml: Node 20 is past EOL (April
+          # 2026) and jsdom 30's undici dependency calls
+          # worker_threads.markAsUncloneable, which doesn't exist on Node 20.
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: package-lock.json
 

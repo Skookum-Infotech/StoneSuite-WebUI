@@ -19,7 +19,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
-import { VendorBillTransitionBar } from './components/VendorBillTransitionBar';
+import { VendorBillStatusControl } from './components/VendorBillStatusControl';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
 const TABS = [
@@ -364,12 +364,11 @@ export default function VendorBillDetailPage() {
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <VendorBillTransitionBar
-                statusCode={bill.statusCode}
-                approvalStatus={bill.approvalStatus}
-                gated={bill.gated}
-                onTransition={(toCode) => transition.mutate(toCode)}
-                isPending={transition.isPending}
+              <VendorBillStatusControl
+                order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated }}
+                onChange={(toCode) => transition.mutate(toCode)}
+                disabled={transition.isPending}
+                variant="pill"
               />
               {transition.error && (
                 <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>

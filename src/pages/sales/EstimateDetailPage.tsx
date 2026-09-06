@@ -5,6 +5,7 @@ import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Sen
 import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { attachmentService } from '@/services/attachmentService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
@@ -76,6 +77,11 @@ export default function EstimateDetailPage() {
     enabled: Boolean(id),
   });
   const hasAttachments = attachments ? attachments.length > 0 : undefined;
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+  });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -203,7 +209,24 @@ export default function EstimateDetailPage() {
         subtitle={estimate.customer.name}
         recordNumber={estimate.estimateNumber}
         statusBadge={<Badge color={color}>{estimate.status}</Badge>}
+        actions={canConvert && ESTIMATE_CONVERTIBLE_STATUSES.has(estimate.statusCode) && (
+          <button
+            type="button"
+            onClick={() => convert.mutate()}
+            disabled={convert.isPending}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+          >
+            {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+            Convert to Quote
+          </button>
+        )}
       />
+
+      {convert.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(convert.error, 'Failed to convert estimate.')}
+        </p>
+      )}
 
       {estimate.gated && (
         <>
@@ -256,6 +279,15 @@ export default function EstimateDetailPage() {
                   <ReadonlyField label="PO Number" value={estimate.poNumber} />
                   <ReadonlyField label="Reference #" value={estimate.referenceNumber} />
                   <ReadonlyField label="Sales Tax %" value={`${estimate.salesTaxPercent}%`} />
+                  {estimate.currencyId && (
+                    <ReadonlyField label="Currency" value={lookups?.currencies.find((c) => c.id === estimate.currencyId)?.name ?? '—'} />
+                  )}
+                  {estimate.paymentTermsId && (
+                    <ReadonlyField label="Payment Terms" value={lookups?.paymentTerms.find((p) => p.id === estimate.paymentTermsId)?.name ?? '—'} />
+                  )}
+                  {estimate.priceLevelId && (
+                    <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === estimate.priceLevelId)?.name ?? '—'} />
+                  )}
                   {estimate.memo && <ReadonlyField label="Memo" value={estimate.memo} full />}
                 </div>
               </ModernSection>
@@ -364,17 +396,6 @@ export default function EstimateDetailPage() {
                   Send to Customer
                 </button>
               )}
-              {canConvert && ESTIMATE_CONVERTIBLE_STATUSES.has(estimate.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => convert.mutate()}
-                  disabled={convert.isPending}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-50"
-                >
-                  {convert.isPending ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />}
-                  Convert to Quote
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -386,9 +407,6 @@ export default function EstimateDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {convert.isError && (
-              <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(convert.error, 'Failed to convert estimate.')}</p>
-            )}
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}

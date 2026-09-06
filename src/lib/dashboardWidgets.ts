@@ -58,35 +58,3 @@ export function isSuperAdminGrants(grants: { resource: string; action: string }[
   return grants.some((g) => g.resource === '*' && g.action === '*');
 }
 
-export interface RankedCustomer {
-  id: string;
-  name: string;
-  value: number;
-  proportion: number; // 0-1, relative to the top-ranked value in the result
-}
-
-export function rankTopCustomers(
-  customers: { id: string; name: string; value: number }[],
-  limit: number,
-): RankedCustomer[] {
-  const top = [...customers].sort((a, b) => b.value - a.value).slice(0, limit);
-  const max = top[0]?.value ?? 0;
-  return top.map((c) => ({ ...c, proportion: max > 0 ? c.value / max : 0 }));
-}
-
-export interface AgingBucket {
-  label: '0-30' | '31-60' | '61-90' | '90+';
-  amount: number;
-}
-
-const AGING_BUCKET_LABELS: AgingBucket['label'][] = ['0-30', '31-60', '61-90', '90+'];
-
-export function bucketInvoicesByAge(invoices: { amount: number; daysPastDue: number }[]): AgingBucket[] {
-  const buckets = AGING_BUCKET_LABELS.map((label) => ({ label, amount: 0 }));
-  for (const invoice of invoices) {
-    const index =
-      invoice.daysPastDue <= 30 ? 0 : invoice.daysPastDue <= 60 ? 1 : invoice.daysPastDue <= 90 ? 2 : 3;
-    buckets[index].amount += invoice.amount;
-  }
-  return buckets;
-}

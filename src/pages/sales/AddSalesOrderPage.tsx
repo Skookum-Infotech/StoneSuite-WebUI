@@ -2,8 +2,10 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ShoppingCart, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
+import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -12,9 +14,10 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields } from '@/lib/customerDefaults';
+import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import {
-  soDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, type PageTab,
   type SOLineItem, type SODrawing,
 } from '@/lib/salesOrderForm';
 
@@ -72,10 +75,29 @@ export default function AddSalesOrderPage() {
       return salesOrderService.createOrder(payload);
     },
     onSuccess: async (order) => {
-      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
-      if (panelRef.current?.hasStagedFiles()) {
-        try { await panelRef.current.uploadStagedTo(order.id); } catch { /* non-fatal */ }
+      const panel = panelRef.current;
+      const hadStagedFiles = panel?.hasStagedFiles() ?? false;
+      if (panel && hadStagedFiles) {
+        try { await panel.uploadStagedTo(order.id); } catch { /* non-fatal */ }
       }
+
+      // Submitting a new order should read as "Pending Approval", not sit in
+      // Draft — but only once it actually has an attachment (same rule the
+      // status pill enforces on a manual DRFT->PAPV move, see
+      // SalesOrderStatusControl.tsx). uploadStagedTo() never rejects even on
+      // a failed upload, so re-check via the attachments list rather than
+      // trusting that promise resolving.
+      if (hadStagedFiles) {
+        try {
+          const attachments = await attachmentService.listAttachments(order.id);
+          if (attachments.length > 0) {
+            await salesOrderService.transition(order.id, 'PAPV');
+            toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, 'PAPV')}.`);
+          }
+        } catch { /* non-fatal — order was created; it just stays in Draft */ }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       guard.markClean();
       navigate('/sales/sales_order');
     },

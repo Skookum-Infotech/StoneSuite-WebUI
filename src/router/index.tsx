@@ -383,7 +383,14 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: lazy_(<DashboardPage />) },
       { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
       { path: "transactions", element: lazy_(<TransactionsPage />) },
-      { path: "subscription", element: lazy_(<SubscriptionPage />) },
+      {
+        path: "subscription",
+        element: lazy_(
+          <PermissionGuard resource="subscription" action="read">
+            <SubscriptionPage />
+          </PermissionGuard>,
+        ),
+      },
 
       // CRM: Prospects
       {

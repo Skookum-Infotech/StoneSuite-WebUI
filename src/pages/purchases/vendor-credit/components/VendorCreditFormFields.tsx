@@ -1,5 +1,6 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { VendorCreditFormField } from '@/lib/vendorCreditForm';
 
@@ -61,6 +62,16 @@ export function VendorCreditField({ field, value, set, lookups }: {
               <option key={row.id} value={row.id}>{row.name}</option>
             ))}
           </select>
+        </ModernFieldShell>
+      </div>
+    );
+  }
+
+  if (field.type === 'date') {
+    return (
+      <div className={spanCls}>
+        <ModernFieldShell label={field.label} required={field.required}>
+          <DatePicker value={str} onChange={(iso) => set(field.key, iso)} label={field.label} required={field.required} />
         </ModernFieldShell>
       </div>
     );

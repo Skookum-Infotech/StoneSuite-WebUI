@@ -6,9 +6,11 @@ import { feedbackAdminService } from '@/services/feedbackAdminService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { FeedbackDetailSidebar } from './components/FeedbackDetailSidebar';
 import { FeedbackDetailTimeline } from './components/FeedbackDetailTimeline';
 import {
+  extractAssigneeCandidates,
   feedbackAreaLabel,
   feedbackCategoryLabel,
   feedbackStatusLabel,
@@ -29,6 +31,20 @@ export default function FeedbackDetailPage() {
     queryFn: () => feedbackAdminService.get(id),
     enabled: Boolean(id),
   });
+
+  // Sources the assignee picker's candidates — there is no platform-admin
+  // user-list endpoint, so this derives from admins already seen on
+  // existing tickets (see extractAssigneeCandidates).
+  const assigneesQ = useQuery({
+    queryKey: ['platform-feedback-assignees'],
+    queryFn: () => feedbackAdminService.list({ limit: 100 }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const currentUser = useAuthStore((s) => s.user);
+  const assigneeCandidates = extractAssigneeCandidates(
+    assigneesQ.data?.tickets ?? [],
+    currentUser ? { id: currentUser.id, name: currentUser.fullName } : undefined,
+  );
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -128,6 +144,7 @@ export default function FeedbackDetailPage() {
         <FeedbackDetailTimeline detail={detailQ.data} />
         <FeedbackDetailSidebar
           ticket={ticket}
+          assigneeCandidates={assigneeCandidates}
           onExportPdf={() => void handleExportPdf()}
           exportingPdf={exportingPdf}
           exportPdfError={exportPdfError}

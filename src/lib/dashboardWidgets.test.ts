@@ -6,8 +6,6 @@ import {
   matchingPresetId,
   dirtyRoleIds,
   isSuperAdminGrants,
-  rankTopCustomers,
-  bucketInvoicesByAge,
 } from './dashboardWidgets';
 import type { WidgetDefinition, RoleWidgetAllocation } from '@/types/dashboardWidgets';
 import type { WidgetPreset } from '@/config/dashboardWidgetPresets';
@@ -107,64 +105,5 @@ describe('isSuperAdminGrants', () => {
     [[], false],
   ])('is true only when a grant has both resource and action wildcarded', (grants, expected) => {
     expect(isSuperAdminGrants(grants)).toBe(expected);
-  });
-});
-
-describe('rankTopCustomers', () => {
-  it('sorts descending by value and caps at the limit', () => {
-    const customers = [
-      { id: '1', name: 'Low', value: 100 },
-      { id: '2', name: 'High', value: 900 },
-      { id: '3', name: 'Mid', value: 500 },
-    ];
-    const result = rankTopCustomers(customers, 2);
-    expect(result.map((c) => c.id)).toEqual(['2', '3']);
-  });
-
-  it('scales proportion relative to the top-ranked value', () => {
-    const customers = [
-      { id: '1', name: 'High', value: 200 },
-      { id: '2', name: 'Half', value: 100 },
-    ];
-    const result = rankTopCustomers(customers, 5);
-    expect(result[0].proportion).toBe(1);
-    expect(result[1].proportion).toBe(0.5);
-  });
-
-  it('returns an empty array without dividing by zero when all values are 0', () => {
-    const customers = [{ id: '1', name: 'Zero', value: 0 }];
-    const result = rankTopCustomers(customers, 5);
-    expect(result[0].proportion).toBe(0);
-  });
-
-  it('returns [] for an empty input', () => {
-    expect(rankTopCustomers([], 5)).toEqual([]);
-  });
-});
-
-describe('bucketInvoicesByAge', () => {
-  it('sums invoice amounts into the 0-30/31-60/61-90/90+ buckets', () => {
-    const invoices = [
-      { id: '1', invoiceNumber: 'INV-1', customer: 'A', amount: 100, daysPastDue: 0 },
-      { id: '2', invoiceNumber: 'INV-2', customer: 'B', amount: 200, daysPastDue: 30 },
-      { id: '3', invoiceNumber: 'INV-3', customer: 'C', amount: 300, daysPastDue: 45 },
-      { id: '4', invoiceNumber: 'INV-4', customer: 'D', amount: 400, daysPastDue: 75 },
-      { id: '5', invoiceNumber: 'INV-5', customer: 'E', amount: 500, daysPastDue: 120 },
-    ];
-    expect(bucketInvoicesByAge(invoices)).toEqual([
-      { label: '0-30', amount: 300 },
-      { label: '31-60', amount: 300 },
-      { label: '61-90', amount: 400 },
-      { label: '90+', amount: 500 },
-    ]);
-  });
-
-  it('returns zeroed buckets for an empty input', () => {
-    expect(bucketInvoicesByAge([])).toEqual([
-      { label: '0-30', amount: 0 },
-      { label: '31-60', amount: 0 },
-      { label: '61-90', amount: 0 },
-      { label: '90+', amount: 0 },
-    ]);
   });
 });

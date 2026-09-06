@@ -1,5 +1,6 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { RefundFormField } from '@/lib/refundForm';
 
@@ -66,6 +67,16 @@ export function RefundField({ field, value, set, lookups }: {
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
           </select>
+        </ModernFieldShell>
+      </div>
+    );
+  }
+
+  if (field.type === 'date') {
+    return (
+      <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
+        <ModernFieldShell label={field.label} required={field.required}>
+          <DatePicker value={str} onChange={(iso) => set(field.key, iso)} label={field.label} required={field.required} />
         </ModernFieldShell>
       </div>
     );
