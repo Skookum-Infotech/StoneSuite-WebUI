@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
 
 /**
@@ -31,6 +31,12 @@ const sections = [
     icon: ScrollText,
     title: 'Audit Log',
     description: 'Browse who did what across the workspace — every create, update, and status change, newest first.',
+  },
+  {
+    to: '/config/import',
+    icon: Upload,
+    title: 'Import Data',
+    description: 'Bulk-create records from a CSV, XLSX, DOCX, or PDF file — stage, review, and commit.',
   },
 ];
 

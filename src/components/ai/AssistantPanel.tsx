@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { Sparkles, X, Send, Loader2, FileText, BookOpen } from 'lucide-react';
 import { aiService } from '@/services/aiService';
 import { apiErrorMessage } from '@/api/tenantClient';
-import type { AskResult, Citation } from '@/types/ai';
+import type { AskResponse, AskResult, Citation } from '@/types/ai';
 import { cn } from '@/lib/utils';
 
 const MAX_QUESTION_LENGTH = 2000;
@@ -20,6 +21,21 @@ interface ChatTurn {
 function resolveWorkflowKeyFromPath(pathname: string): string | null {
   const match = /^\/crm\/([^/]+)/.exec(pathname);
   return match ? match[1] : null;
+}
+
+// Ask, transparently recovering from a stale/deleted conversationId: the
+// backend 404s an ask against a conversation that no longer exists (or isn't
+// the caller's), so retry once as a fresh, conversation-less ask rather than
+// surfacing that as an error the user did nothing to cause.
+async function askWithRetry(question: string, conversationId: string | undefined): Promise<AskResponse> {
+  try {
+    return await aiService.askAssistant(question, conversationId);
+  } catch (err) {
+    if (conversationId && err instanceof AxiosError && err.response?.status === 404) {
+      return aiService.askAssistant(question);
+    }
+    throw err;
+  }
 }
 
 function CitationChip({ citation, workflowKey }: { citation: Citation; workflowKey: string | null }) {
@@ -66,13 +82,17 @@ function CitationChip({ citation, workflowKey }: { citation: Citation; workflowK
 export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.Element {
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<ChatTurn[]>([]);
+  // Held across turns (not reset per-ask) so the backend threads this
+  // conversation's history into the prompt from the second question on —
+  // set once the first successful ask returns one.
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const workflowKey = resolveWorkflowKeyFromPath(location.pathname);
 
   const askMutation = useMutation({
-    mutationFn: (q: string) => aiService.askAssistant(q),
+    mutationFn: (q: string) => askWithRetry(q, conversationId),
   });
 
   useEffect(() => {
@@ -101,7 +121,8 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
     setQuestion('');
 
     askMutation.mutate(trimmed, {
-      onSuccess: (result) => {
+      onSuccess: ({ result, conversationId: newConversationId }) => {
+        setConversationId(newConversationId);
         setTurns((prev) => prev.map((t) => (t.id === turnId ? { ...t, result } : t)));
       },
       onError: (err) => {
