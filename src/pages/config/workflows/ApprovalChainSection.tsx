@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Badge, Spinner, ErrorNote } from '@/components/tenant/ui';
@@ -7,6 +9,11 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { ApprovalGate, ApprovalChainEmployee } from '@/types/tenant';
 
 type ApprovalChain = { gates: ApprovalGate[]; employees: ApprovalChainEmployee[] };
+
+// setApprovalChain always replaces the gate's full approver list (never
+// incremental), so rapid add/remove clicks are safe to collapse into a
+// single call -- only the state after this pause actually gets sent.
+const APPROVAL_CHAIN_SAVE_DEBOUNCE_MS = 500;
 
 // Approval chain for a relational document module (Estimate, Quote, Sales
 // Order, Purchase Order, Requisition, Vendor Bill, Vendor Payment, Expense,
@@ -89,6 +96,17 @@ function ApprovalGateEditor({
   const qc = useQueryClient();
   const byId = new Map(employees.map((e) => [e.id, e]));
 
+  // Sync localIds from the confirmed server state during render (not an
+  // effect) whenever gate.approverEmployeeIds changes underneath us --
+  // e.g. after this gate's own save lands, or another tab's edit surfaces
+  // through the query cache.
+  const [confirmedIds, setConfirmedIds] = useState(gate.approverEmployeeIds);
+  const [localIds, setLocalIds] = useState(gate.approverEmployeeIds);
+  if (gate.approverEmployeeIds !== confirmedIds) {
+    setConfirmedIds(gate.approverEmployeeIds);
+    setLocalIds(gate.approverEmployeeIds);
+  }
+
   const update = useMutation({
     mutationFn: (ids: string[]) => workflowService.setApprovalChain(workflowId, gate.statusCode, ids),
     onSuccess: (approverEmployeeIds) => {
@@ -98,8 +116,19 @@ function ApprovalGateEditor({
           gates: prev.gates.map((g) => (g.statusCode === gate.statusCode ? { ...g, approverEmployeeIds } : g)),
         },
       );
+      toast.success('Approval chain updated.');
     },
+    onError: () => setLocalIds(confirmedIds),
   });
+
+  // Batch rapid add/remove clicks into one save: fire only after localIds
+  // has settled for APPROVAL_CHAIN_SAVE_DEBOUNCE_MS, instead of one PUT per click.
+  useEffect(() => {
+    if (localIds === confirmedIds) return;
+    const timer = setTimeout(() => update.mutate(localIds), APPROVAL_CHAIN_SAVE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localIds]);
 
   return (
     <div>
@@ -118,12 +147,12 @@ function ApprovalGateEditor({
         <>
           <ApproverPicker
             users={employees}
-            selected={gate.approverEmployeeIds}
+            selected={localIds}
             onAdd={(id) => {
-              if (gate.approverEmployeeIds.length >= MAX_APPROVERS || gate.approverEmployeeIds.includes(id)) return;
-              update.mutate([...gate.approverEmployeeIds, id]);
+              if (localIds.length >= MAX_APPROVERS || localIds.includes(id)) return;
+              setLocalIds([...localIds, id]);
             }}
-            onRemove={(id) => update.mutate(gate.approverEmployeeIds.filter((x) => x !== id))}
+            onRemove={(id) => setLocalIds(localIds.filter((x) => x !== id))}
             disabled={update.isPending}
           />
           {update.error && (

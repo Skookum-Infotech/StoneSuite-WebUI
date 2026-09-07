@@ -6,7 +6,6 @@ import {
   matchingPresetId,
   dirtyRoleIds,
   isSuperAdminGrants,
-  bucketInvoicesByAge,
 } from './dashboardWidgets';
 import type { WidgetDefinition, RoleWidgetAllocation } from '@/types/dashboardWidgets';
 import type { WidgetPreset } from '@/config/dashboardWidgetPresets';
@@ -106,32 +105,5 @@ describe('isSuperAdminGrants', () => {
     [[], false],
   ])('is true only when a grant has both resource and action wildcarded', (grants, expected) => {
     expect(isSuperAdminGrants(grants)).toBe(expected);
-  });
-});
-
-describe('bucketInvoicesByAge', () => {
-  it('sums invoice amounts into the 0-30/31-60/61-90/90+ buckets', () => {
-    const invoices = [
-      { id: '1', invoiceNumber: 'INV-1', customer: 'A', amount: 100, daysPastDue: 0 },
-      { id: '2', invoiceNumber: 'INV-2', customer: 'B', amount: 200, daysPastDue: 30 },
-      { id: '3', invoiceNumber: 'INV-3', customer: 'C', amount: 300, daysPastDue: 45 },
-      { id: '4', invoiceNumber: 'INV-4', customer: 'D', amount: 400, daysPastDue: 75 },
-      { id: '5', invoiceNumber: 'INV-5', customer: 'E', amount: 500, daysPastDue: 120 },
-    ];
-    expect(bucketInvoicesByAge(invoices)).toEqual([
-      { label: '0-30', amount: 300 },
-      { label: '31-60', amount: 300 },
-      { label: '61-90', amount: 400 },
-      { label: '90+', amount: 500 },
-    ]);
-  });
-
-  it('returns zeroed buckets for an empty input', () => {
-    expect(bucketInvoicesByAge([])).toEqual([
-      { label: '0-30', amount: 0 },
-      { label: '31-60', amount: 0 },
-      { label: '61-90', amount: 0 },
-      { label: '90+', amount: 0 },
-    ]);
   });
 });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
   ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2, Link2,
@@ -10,12 +10,13 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { requisitionService } from '@/services/requisitionService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { REQUISITION_STATUS_COLORS, PRIORITY_COLORS, priorityLabel } from '@/lib/requisitionForm';
+import { PRIORITY_COLORS, priorityLabel } from '@/lib/requisitionForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type RequisitionFilterState,
 } from '@/lib/requisitionFilters';
 import { RequisitionFilterDrawer } from './RequisitionFilterDrawer';
+import { RequisitionStatusControl } from './RequisitionStatusControl';
 import type { RequisitionSearchRequest } from '@/types/requisition';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -68,7 +69,18 @@ function fmtDate(iso?: string): string {
 
 export function RequisitionTable() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Inline status change from the list row's status pill — mirrors the
+  // Detail page's transition mutation (see RequisitionDetailPage.tsx).
+  const transition = useMutation({
+    mutationFn: (vars: { id: string; toStatusCode: string }) => requisitionService.transition(vars.id, vars.toStatusCode),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['requisition', updated.id], updated);
+      queryClient.invalidateQueries({ queryKey: ['requisitions'] });
+    },
+  });
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('requisition', 'update');
@@ -316,7 +328,6 @@ export function RequisitionTable() {
                 ))
               ) : records.length > 0 ? (
                 records.map((reqn) => {
-                  const color = REQUISITION_STATUS_COLORS[reqn.statusCode] ?? '#a8a29e';
                   const approvalLabel = APPROVAL_LABELS[reqn.approvalStatus];
                   const requesterName = reqn.requestedByEmployeeId
                     ? employeeNames.get(String(reqn.requestedByEmployeeId))
@@ -344,13 +355,12 @@ export function RequisitionTable() {
                         {reqn.department || '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {reqn.status}
-                        </span>
+                        <RequisitionStatusControl
+                          order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus }}
+                          onChange={(code) => transition.mutate({ id: reqn.id, toStatusCode: code })}
+                          disabled={transition.isPending && transition.variables?.id === reqn.id}
+                          variant="pill"
+                        />
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (

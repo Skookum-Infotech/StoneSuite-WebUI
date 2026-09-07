@@ -26,6 +26,12 @@ interface Props {
   /** Per-status color for the pill's dot + background. Only used in 'pill'
    *  mode — the caller's existing `*_STATUS_COLORS` map, keyed by label. */
   colorFor?: (option: StatusOption) => string;
+  /** Per-option display text override, e.g. Purchases' action-verb phrasing
+   *  ("Submit for Approval" instead of "Pending Approval") — each target has
+   *  a distinct business meaning there, not just a peer option in a
+   *  picklist. Given the current status code and the option being rendered.
+   *  Defaults to the option's own label. */
+  labelFor?: (option: StatusOption, fromCode: string) => string;
 }
 
 const PANEL_WIDTH = 224; // w-56
@@ -49,7 +55,7 @@ const PANEL_WIDTH = 224; // w-56
 // clip the panel or force horizontal scrolling to see it. 'field' has no such
 // ancestor (it's in a normal form), so it keeps the simpler non-portal render.
 export function StatusSelect({
-  value, onChange, disabled, statuses, allowedTransitions, guard, variant = 'field', colorFor,
+  value, onChange, disabled, statuses, allowedTransitions, guard, variant = 'field', colorFor, labelFor,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [armedCode, setArmedCode] = useState<string | null>(null);
@@ -113,6 +119,7 @@ export function StatusSelect({
     const needsApprove = Boolean(verdict?.needsApprove);
     const terminalTarget = isPill && !isCurrent && isTerminalTarget(s.code, allowedTransitions);
     const armed = armedCode === s.code;
+    const label = labelFor ? labelFor(s, value) : s.label;
     return (
       // aria-disabled, not the `disabled` attribute: a disabled button
       // leaves the tab order, which would hide the very explanation this
@@ -139,7 +146,7 @@ export function StatusSelect({
                 : 'text-stone-400 cursor-not-allowed'
         }`}
       >
-        <span className="flex-1 text-left">{armed ? `Confirm: ${s.label}` : s.label}</span>
+        <span className="flex-1 text-left">{armed ? `Confirm: ${label}` : label}</span>
         {armed && <Check className="size-3.5 shrink-0" aria-hidden="true" />}
         {!armed && reason && (
           <span className="flex shrink-0 items-center gap-1 text-2xs text-stone-400">

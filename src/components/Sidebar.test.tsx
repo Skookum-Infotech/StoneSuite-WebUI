@@ -21,6 +21,7 @@ function setup({
   isLoading = false,
   disabledWorkflows = [],
   workflowsLoading = false,
+  kind,
 }: {
   grants?: Grant[];
   isPlatformAdmin?: boolean;
@@ -28,6 +29,7 @@ function setup({
   /** Workflow keys treated as disabled; every other key fails open (enabled). */
   disabledWorkflows?: string[];
   workflowsLoading?: boolean;
+  kind?: 'portal';
 } = {}) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants,
@@ -47,7 +49,7 @@ function setup({
   } as ReturnType<typeof useWorkflows>);
 
   vi.mocked(useAuthStore).mockImplementation((selector) =>
-    (selector as (s: unknown) => unknown)({ user: { id: 'u1', isPlatformAdmin } }),
+    (selector as (s: unknown) => unknown)({ user: { id: 'u1', isPlatformAdmin }, kind }),
   );
 
   render(
@@ -161,5 +163,22 @@ describe('Sidebar workflow-enabled gating', () => {
     setup({ grants: fullGrants, disabledWorkflows: ['lead'], workflowsLoading: true });
 
     expect(screen.getByText('Leads')).toBeInTheDocument();
+  });
+
+  // Regression guard for the portal fail-open bug: Sidebar.tsx must apply the
+  // same workflowKey check regardless of session kind — it has no portal
+  // escape hatch of its own, so the real fix has to live in useWorkflows.
+  it('hides a disabled workflow link for a portal session too', () => {
+    setup({
+      kind: 'portal',
+      grants: [
+        { resource: 'invoice', action: 'read' },
+        { resource: 'payment', action: 'read' },
+      ],
+      disabledWorkflows: ['invoice'],
+    });
+
+    expect(screen.queryByText('Invoices')).toBeNull();
+    expect(screen.getByText('Payments')).toBeInTheDocument();
   });
 });

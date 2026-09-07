@@ -44,6 +44,7 @@ import {
   LayoutGrid,
   KeyRound,
   MessageSquareText,
+  Upload,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -571,6 +572,22 @@ export const sidebarNav: SidebarNavConfig = {
               icon: ScrollText,
               iconColor: "text-stone-500 dark:text-stone-400",
               permission: { resource: "audit", action: "read" },
+            },
+            {
+              type: "link",
+              id: "import",
+              label: "Import Data",
+              path: "/config/import",
+              icon: Upload,
+              iconColor: "text-lime-600 dark:text-lime-400",
+              // The page itself supports importing into any workflow the
+              // caller can create records in (not just CRM), and filters its
+              // own workflow picker accordingly. NavPermission only checks
+              // one resource, so this gates the sidebar entry on the most
+              // common case (lead:create) — someone with only prospect/
+              // customer create can still reach the page from the
+              // Configuration hub card, which isn't permission-gated.
+              permission: { resource: "lead", action: "create" },
             },
           ],
         },

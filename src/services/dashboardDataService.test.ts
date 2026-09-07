@@ -344,3 +344,120 @@ describe('dashboardDataService.getPurchasesStatus', () => {
     expect(result.attentionCount).toBe(0)
   })
 })
+
+describe('dashboardDataService.getArOutstanding', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: 'all',
+        outstanding: 37200,
+        overdueTotal: 28800,
+        overdueCount: 4,
+        buckets: [
+          { label: '0-30', amount: 13600, count: 3 },
+          { label: '31-60', amount: 12900, count: 2 },
+          { label: '61-90', amount: 3100, count: 1 },
+          { label: '90+', amount: 7600, count: 2 },
+        ],
+        oldest: [
+          { id: 'inv-1', invoiceNumber: 'INV-3155', customer: 'Meridian Countertops', balanceDue: 7600, daysPastDue: 98 },
+        ],
+        oldestCount: 8,
+      },
+    })
+
+    const result = await dashboardDataService.getArOutstanding('all')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/ar-outstanding/data', {
+      params: { range: 'all' },
+    })
+    expect(result).toEqual({
+      range: 'all',
+      outstanding: 37200,
+      overdueTotal: 28800,
+      overdueCount: 4,
+      buckets: [
+        { label: '0-30', amount: 13600, count: 3 },
+        { label: '31-60', amount: 12900, count: 2 },
+        { label: '61-90', amount: 3100, count: 1 },
+        { label: '90+', amount: 7600, count: 2 },
+      ],
+      oldest: [
+        { id: 'inv-1', invoiceNumber: 'INV-3155', customer: 'Meridian Countertops', balanceDue: 7600, daysPastDue: 98 },
+      ],
+      oldestCount: 8,
+    })
+  })
+
+  it('defaults buckets/oldest to empty arrays and totals to 0 when the backend omits them', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getArOutstanding('all')
+
+    expect(result.outstanding).toBe(0)
+    expect(result.overdueTotal).toBe(0)
+    expect(result.overdueCount).toBe(0)
+    expect(result.buckets).toEqual([])
+    expect(result.oldest).toEqual([])
+    expect(result.oldestCount).toBe(0)
+  })
+})
+
+describe('dashboardDataService.getAccountingSnapshot', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('requests the range as a query param and returns the parsed payload', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        range: 'all',
+        period: { name: 'Aug 2026', status: 'open', entryCount: 47 },
+        entries: [
+          { id: 'je-1', entryNumber: 'JE-000231', description: 'Fabrication labor accrual', amount: 4200, date: '2026-09-04T08:12:00Z' },
+        ],
+        entryTotal: 47,
+      },
+    })
+
+    const result = await dashboardDataService.getAccountingSnapshot('all')
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/dashboard/widgets/accounting-snapshot/data', {
+      params: { range: 'all' },
+    })
+    expect(result).toEqual({
+      range: 'all',
+      period: { name: 'Aug 2026', status: 'open', entryCount: 47 },
+      entries: [
+        { id: 'je-1', entryNumber: 'JE-000231', description: 'Fabrication labor accrual', amount: 4200, date: '2026-09-04T08:12:00Z' },
+      ],
+      entryTotal: 47,
+    })
+  })
+
+  it('defaults period to null and entries to an empty array when the backend omits them', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all' },
+    })
+
+    const result = await dashboardDataService.getAccountingSnapshot('all')
+
+    expect(result.period).toBeNull()
+    expect(result.entries).toEqual([])
+    expect(result.entryTotal).toBe(0)
+  })
+
+  it('passes an explicit null period through unchanged (no accounting calendar configured)', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, range: 'all', period: null, entries: [], entryTotal: 0 },
+    })
+
+    const result = await dashboardDataService.getAccountingSnapshot('all')
+
+    expect(result.period).toBeNull()
+  })
+})
