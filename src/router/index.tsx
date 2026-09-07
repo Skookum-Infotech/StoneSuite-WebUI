@@ -92,6 +92,9 @@ const DashboardWidgetsPage = lazyWithRetry(
 const AuditLogPage = lazyWithRetry(
   () => import("@/pages/config/audit/AuditLogPage"),
 );
+const ImportDataPage = lazyWithRetry(
+  () => import("@/pages/config/import/ImportDataPage"),
+);
 const FeedbackListPage = lazyWithRetry(
   () => import("@/pages/platform/feedback/FeedbackListPage"),
 );
@@ -1381,6 +1384,14 @@ export const router = createBrowserRouter([
             <AuditLogPage />
           </PermissionGuard>,
         ),
+      },
+      {
+        // No single static PermissionGuard: importable workflows vary per
+        // caller (create permission on whichever workflow they pick), so the
+        // page itself filters the workflow picker to ones the caller can
+        // actually create records in and shows an empty state otherwise.
+        path: "config/import",
+        element: lazy_(<ImportDataPage />),
       },
       {
         path: "config/inventory-setup",
