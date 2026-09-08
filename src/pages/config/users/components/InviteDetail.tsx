@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Mail, Send, X, Loader2 } from "lucide-react";
+import { Mail, Send, X, Loader2, Copy, Check, MailWarning } from "lucide-react";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
@@ -13,6 +13,9 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
   const qc = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  // Set only when a resend created a fresh link but the email failed to send.
+  const [undeliveredLink, setUndeliveredLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [confirmRevoke, setConfirmRevoke] = useState(false);
 
   const resendMut = useMutation({
@@ -20,19 +23,34 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["invites"] });
       setActionError(null);
-      setActionSuccess(data.message ?? "Invitation resent.");
+      if (data.emailSent) {
+        setUndeliveredLink(null);
+        setActionSuccess("Invitation resent — email delivered.");
+      } else {
+        setActionSuccess(null);
+        setUndeliveredLink(data.inviteLink);
+      }
     },
     onError: (err) => {
       setActionError(apiErrorMessage(err));
       setActionSuccess(null);
+      setUndeliveredLink(null);
     },
   });
+
+  const copyLink = async () => {
+    if (!undeliveredLink) return;
+    await navigator.clipboard.writeText(undeliveredLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const revokeMut = useMutation({
     mutationFn: () => userService.revokeInvite(invite.ID),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["invites"] });
       setActionError(null);
+      setUndeliveredLink(null);
       setActionSuccess("Invitation revoked.");
     },
     onError: (err) => {
@@ -40,6 +58,12 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
       setActionSuccess(null);
     },
   });
+
+  const clearFeedback = () => {
+    setActionError(null);
+    setActionSuccess(null);
+    setUndeliveredLink(null);
+  };
 
   const busy = resendMut.isPending || revokeMut.isPending;
   const isExpired =
@@ -102,6 +126,32 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
           {actionSuccess}
         </div>
       )}
+      {undeliveredLink && (
+        <div className="mb-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <div className="flex items-start gap-2 text-xs text-amber-800">
+            <MailWarning className="size-4 shrink-0" />
+            <span>
+              Invite re-issued with a fresh link and expiry, but the email
+              could not be sent. Copy the link and send it to {invite.Email}{" "}
+              directly.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-white p-1.5">
+            <code className="flex-1 truncate px-1.5 text-2xs text-stone-700" title={undeliveredLink}>
+              {undeliveredLink}
+            </code>
+            <button
+              type="button"
+              onClick={copyLink}
+              aria-label="Copy invite link"
+              className="flex shrink-0 items-center gap-1.5 rounded bg-brand px-2 py-1 text-2xs font-semibold text-stone-950"
+            >
+              {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {(canResend || canRevoke) && (
         <div className="space-y-2">
@@ -113,8 +163,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
             <button
               type="button"
               onClick={() => {
-                setActionError(null);
-                setActionSuccess(null);
+                clearFeedback();
                 resendMut.mutate();
               }}
               disabled={busy}
@@ -154,8 +203,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setActionError(null);
-                    setActionSuccess(null);
+                    clearFeedback();
                     revokeMut.mutate();
                   }}
                   disabled={busy}

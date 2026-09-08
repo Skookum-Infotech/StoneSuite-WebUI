@@ -483,4 +483,19 @@ export interface UserInvite {
   ExpiresAt: string;
   AcceptedAt: string | null;
   CreatedAt: string;
+  // stonesuite-notify notification ids for the last invite email send, kept for
+  // delivery reconciliation. Empty when the send failed or predates the column.
+  NotifyNotificationIDs?: string[];
+}
+
+// Result of POST /tenant/users/invite and POST /tenant/invites/{id}/resend.
+// The send is best-effort: the endpoints return 201/200 even when the email
+// fails, so `emailSent` is the only signal, and `inviteLink` is always present
+// so an admin can share it manually when delivery is unavailable.
+export interface UserInviteActionResult {
+  success: boolean;
+  message: string;
+  inviteId?: string; // present on create, absent on resend
+  inviteLink: string;
+  emailSent: boolean;
 }

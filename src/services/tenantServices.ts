@@ -20,6 +20,7 @@ import type {
   OnboardingApplyDetails,
   WorkspaceUser,
   UserInvite,
+  UserInviteActionResult,
   ApprovalGate,
   ApprovalChainEmployee,
 } from '@/types/tenant';
@@ -348,10 +349,7 @@ export const userService = {
 
   inviteUser: (payload: { email: string; fullName?: string; initialRoleId?: string }) =>
     tenantClient
-      .post<{ success: boolean; message: string; inviteId: string; inviteLink: string }>(
-        '/tenant/users/invite',
-        payload,
-      )
+      .post<UserInviteActionResult>('/tenant/users/invite', payload)
       .then((r) => r.data),
 
   updateUser: (id: string, payload: { fullName?: string; status?: 'active' | 'suspended' }) =>
@@ -381,9 +379,7 @@ export const userService = {
 
   resendInvite: (id: string) =>
     tenantClient
-      .post<{ success: boolean; message: string; inviteLink: string }>(
-        `/tenant/invites/${id}/resend`,
-      )
+      .post<UserInviteActionResult>(`/tenant/invites/${id}/resend`)
       .then((r) => r.data),
 
   revokeInvite: (id: string) =>
