@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Send, X, Loader2 } from "lucide-react";
+import { Send, X, Loader2, Copy, Check, MailWarning } from "lucide-react";
 import { userService, rbacService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
@@ -26,6 +26,11 @@ type InviteFields = z.infer<typeof inviteSchema>;
 
 export function InviteModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
+  // Set only when the invite was created but the email could not be sent — the
+  // admin then needs the link to share manually. A successful send closes the
+  // modal straight away, as before.
+  const [undeliveredLink, setUndeliveredLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const rolesQ = useQuery({
     queryKey: ["roles"],
     queryFn: rbacService.listRoles,
@@ -40,18 +45,29 @@ export function InviteModal({ onClose }: { onClose: () => void }) {
 
   const onSubmit = async (data: InviteFields) => {
     try {
-      await userService.inviteUser({
+      const res = await userService.inviteUser({
         email: data.email,
         fullName: data.fullName || undefined,
         initialRoleId: data.initialRoleId || undefined,
       });
       qc.invalidateQueries({ queryKey: ["invites"] });
-      onClose();
+      if (res.emailSent) {
+        onClose();
+      } else {
+        setUndeliveredLink(res.inviteLink);
+      }
     } catch (err) {
       setError("root", {
         message: apiErrorMessage(err, "Failed to send invitation."),
       });
     }
+  };
+
+  const copyLink = async () => {
+    if (!undeliveredLink) return;
+    await navigator.clipboard.writeText(undeliveredLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // Close on Escape
@@ -77,7 +93,9 @@ export function InviteModal({ onClose }: { onClose: () => void }) {
               Invite team member
             </h2>
             <p className="mt-0.5 text-xs text-stone-500">
-              They'll receive an email to set up their account.
+              {undeliveredLink
+                ? "The invite was created, but the email could not be sent."
+                : "They'll receive an email to set up their account."}
             </p>
           </div>
           <button
@@ -90,6 +108,36 @@ export function InviteModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+        {undeliveredLink ? (
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              <MailWarning className="size-4 shrink-0" />
+              <span>
+                Email delivery is unavailable right now. Copy this link and send
+                it to the invitee directly — it stays valid.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
+              <code className="flex-1 truncate px-2 text-xs text-stone-700" title={undeliveredLink}>
+                {undeliveredLink}
+              </code>
+              <button
+                type="button"
+                onClick={copyLink}
+                aria-label="Copy invite link"
+                className="flex shrink-0 items-center gap-1.5 rounded-md bg-brand px-2.5 py-1.5 text-xs font-semibold text-stone-950"
+              >
+                {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <div className="flex justify-end">
+              <Button type="button" onClick={onClose} className="h-9">
+                Done
+              </Button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="invite-email">
@@ -161,6 +209,7 @@ export function InviteModal({ onClose }: { onClose: () => void }) {
             </Button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

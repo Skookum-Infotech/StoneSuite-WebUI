@@ -65,25 +65,41 @@ export default function AcceptInvitePage() {
     staleTime: Infinity,
   });
 
-  // Waterfall: only fires once the staff lookup has settled as an error, so
-  // a genuine staff invite never pays for a second round trip.
+  // A staff-invite lookup that fails with an explicit lifecycle `status`
+  // (accepted / expired / revoked — see controllers/user.go GetUserInvite) is a
+  // definitive answer about THIS token, not a "wrong namespace" miss. Capture it
+  // so the portal fallback below is skipped and its statusless error can't mask
+  // the staff status card.
+  type InviteLookupError = { response?: { data?: { status?: string; message?: string } } };
+  const staffLookupError = staffInviteQ.error as InviteLookupError | null;
+  const staffInviteStatus = staffLookupError?.response?.data?.status;
+
+  // Waterfall: only fires once the staff lookup has settled as a *namespace*
+  // miss (no status), so a genuine staff invite never pays for a second round
+  // trip and a terminal staff invite is not second-guessed by the portal probe.
   const portalInviteQ = useQuery({
     queryKey: ['portal-invite', token],
     queryFn: () => authService.getPortalInvite(token),
-    enabled: Boolean(token) && staffInviteQ.isError,
+    enabled: Boolean(token) && staffInviteQ.isError && !staffInviteStatus,
     retry: false,
     staleTime: Infinity,
   });
 
-  const isLoading = staffInviteQ.isLoading || (staffInviteQ.isError && portalInviteQ.isLoading);
+  const isLoading =
+    staffInviteQ.isLoading ||
+    (staffInviteQ.isError && !staffInviteStatus && portalInviteQ.isLoading);
   const kind: 'staff' | 'portal' | null = staffInviteQ.data ? 'staff' : portalInviteQ.data ? 'portal' : null;
   const invite = staffInviteQ.data ?? portalInviteQ.data;
-  // Once staff has failed, the portal attempt is authoritative for what the
-  // user sees — new invites minted by this codebase are portal-shaped by
-  // default (see controllers/portal_auth.go's portalInviteLink), so a token
-  // that resolves nowhere is far more likely to be an expired/consumed
-  // portal invite than a staff one.
-  const settledError = staffInviteQ.isError && portalInviteQ.isError ? portalInviteQ.error : null;
+  // A staff invite with an explicit lifecycle status is authoritative. Otherwise,
+  // once both lookups have failed, the portal error is what the user sees — new
+  // invites minted by this codebase are portal-shaped by default (see
+  // controllers/portal_auth.go's portalInviteLink), so a token that resolves
+  // nowhere is more likely an expired/consumed portal invite than a staff one.
+  const settledError = staffInviteStatus
+    ? staffLookupError
+    : staffInviteQ.isError && portalInviteQ.isError
+      ? portalInviteQ.error
+      : null;
 
   const schema = buildSchema(kind === 'staff');
   const {
