@@ -1,0 +1,77 @@
+name: Deploy Frontend (dev) to Cloudflare Pages
+
+# dev.stonesuite.app (Cloudflare Pages project "dev-stonesuite-webui") is the
+# one deployment that calls the backend cross-origin: dev-stonesuite-api.fly.dev
+# directly, no Pages Function proxy. See DEPLOY_FRONTEND.md, "Exception: the
+# Azure DevOps dev pipeline" — this workflow replaces that external Azure
+# pipeline so a merge to master ships dev and prod through the same mechanism.
+#
+# Build vars differ from the prod workflow on purpose and must stay that way:
+#   VITE_API_BASE_URL     absolute — the dev frontend talks straight to the API
+#   VITE_CROSS_ORIGIN_API  the only thing that lets vite.config's guard accept
+#                          an absolute VITE_API_BASE_URL (never set for prod)
+#   VITE_NOTIFY_BASE_URL   identical everywhere — one shared notify service
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'functions/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.*'
+      - '.github/workflows/deploy-frontend-dev.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build → Deploy → Verify
+    runs-on: ubuntu-latest
+    # Reuses the Prod environment purely for its CLOUDFLARE_API_TOKEN /
+    # CLOUDFLARE_ACCOUNT_ID — the target Pages project is the dev one.
+    environment: Prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          # Keep in sync with ci-frontend.yml / deploy-frontend.yml.
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (cross-origin dev)
+        env:
+          VITE_API_BASE_URL: https://dev-stonesuite-api.fly.dev/api
+          VITE_CROSS_ORIGIN_API: 'true'
+          VITE_NOTIFY_BASE_URL: https://stonesuite-notify.fly.dev
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: dev-stonesuite-webui
+          directory: dist
+          branch: master
+
+      - name: Health check
+        run: |
+          echo "Waiting for edge propagation..."
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://dev.stonesuite.app)
+          if [ "$STATUS" != "200" ]; then
+            echo "dev frontend health check failed — HTTP $STATUS"
+            echo "Roll back via: Cloudflare Pages dashboard → dev-stonesuite-webui → Deployments → previous deploy → Rollback"
+            exit 1
+          fi
+          echo "dev frontend health check passed — HTTP $STATUS"
