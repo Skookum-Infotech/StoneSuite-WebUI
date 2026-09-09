@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
 
-import { apiClient } from './client';
+import { apiClient, attemptRefresh } from './client';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const CSRF_COOKIE = 'csrf_token';
@@ -115,5 +115,44 @@ describe('apiClient request interceptor', () => {
     // withCredentials is what makes the httpOnly auth_token/refresh_token
     // cookies accompany the request the CSRF header is validated against.
     expect(apiClient.defaults.withCredentials).toBe(true);
+  });
+});
+
+describe('attemptRefresh (staff session)', () => {
+  const realAdapter = apiClient.defaults.adapter;
+
+  beforeEach(() => {
+    clearCookies();
+    useAuthStore.setState({ token: null, kind: undefined, sessionExpiresAt: null });
+  });
+
+  afterEach(() => {
+    apiClient.defaults.adapter = realAdapter;
+    clearCookies();
+    useAuthStore.setState({ token: null, sessionExpiresAt: null });
+  });
+
+  it('stores the re-issued access token, not just the new expiry', async () => {
+    // /auth/refresh (RefreshSession) returns a fresh token in the body — a
+    // cross-origin client (notifyClient) has no cookie fallback, so the
+    // in-memory token must be repopulated or it stays unauthenticated until
+    // the next full login.
+    const expiresAt = Date.now() + 60_000;
+    apiClient.defaults.adapter = async (config) => {
+      if (!config.url?.endsWith('/auth/refresh')) throw new Error(`unexpected call: ${config.url}`);
+      return {
+        data: { success: true, token: 'fresh-jwt', expiresAt },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      };
+    };
+
+    const ok = await attemptRefresh();
+
+    expect(ok).toBe(true);
+    expect(useAuthStore.getState().token).toBe('fresh-jwt');
+    expect(useAuthStore.getState().sessionExpiresAt).toBe(expiresAt);
   });
 });

@@ -40,7 +40,10 @@ let refreshPromise: Promise<boolean> | null = null;
 // each hitting the logout path don't each fire window.location redirects.
 let isLoggingOut = false;
 
-async function attemptRefresh(): Promise<boolean> {
+// Exported so notifyClient can reuse the exact same refresh (one shared
+// in-flight promise via refreshPromise) instead of racing it with a second
+// /auth/refresh of its own.
+export async function attemptRefresh(): Promise<boolean> {
   // Only one refresh at a time — share the promise across concurrent callers.
   if (!refreshPromise) {
     refreshPromise = (async () => {
@@ -76,7 +79,15 @@ async function attemptRefresh(): Promise<boolean> {
           '/auth/refresh',
         );
         if (res.data.success && res.data.expiresAt) {
-          useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
+          // /auth/refresh re-issues the access token (RefreshSession returns
+          // it in the body). Store it, not just the expiry — cross-origin
+          // clients (notifyClient) have no cookie to fall back on and would
+          // otherwise stay unauthenticated until the next full login.
+          if (res.data.token) {
+            useAuthStore.getState().setSession(res.data.token, res.data.expiresAt);
+          } else {
+            useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
+          }
           broadcastSessionExtended(res.data.expiresAt);
         }
         return res.data.success === true;
