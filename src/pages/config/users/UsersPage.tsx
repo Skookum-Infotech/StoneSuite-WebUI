@@ -302,7 +302,13 @@ export default function UsersPage() {
       </div>
 
       {showInviteModal && (
-        <InviteModal onClose={() => setShowInviteModal(false)} />
+        <InviteModal
+          onClose={() => setShowInviteModal(false)}
+          onViewInvites={() => {
+            setTab("invites");
+            setShowInviteModal(false);
+          }}
+        />
       )}
     </div>
   );
