@@ -3,9 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Send, X, Loader2, Copy, Check, MailWarning } from "lucide-react";
+import { Send, X, Loader2, Copy, Check, MailWarning, Users } from "lucide-react";
 import { userService, rbacService } from "@/services/tenantServices";
-import { apiErrorMessage } from "@/api/tenantClient";
+import { parseInviteError, type InviteErrorInfo } from "@/lib/inviteErrors";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,13 +24,23 @@ const inviteSchema = z.object({
 });
 type InviteFields = z.infer<typeof inviteSchema>;
 
-export function InviteModal({ onClose }: { onClose: () => void }) {
+export function InviteModal({
+  onClose,
+  onViewInvites,
+}: {
+  onClose: () => void;
+  /** Jump to the Invites list — offered when a conflict points the admin there. */
+  onViewInvites?: () => void;
+}) {
   const qc = useQueryClient();
   // Set only when the invite was created but the email could not be sent — the
   // admin then needs the link to share manually. A successful send closes the
   // modal straight away, as before.
   const [undeliveredLink, setUndeliveredLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // A submit rejection, sorted by parseInviteError: a 409 conflict ("already a
+  // member", "already invited") is shown as information, anything else as an error.
+  const [submitError, setSubmitError] = useState<InviteErrorInfo | null>(null);
   const rolesQ = useQuery({
     queryKey: ["roles"],
     queryFn: rbacService.listRoles,
@@ -39,11 +49,11 @@ export function InviteModal({ onClose }: { onClose: () => void }) {
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<InviteFields>({ resolver: zodResolver(inviteSchema) });
 
   const onSubmit = async (data: InviteFields) => {
+    setSubmitError(null);
     try {
       const res = await userService.inviteUser({
         email: data.email,
@@ -57,9 +67,7 @@ export function InviteModal({ onClose }: { onClose: () => void }) {
         setUndeliveredLink(res.inviteLink);
       }
     } catch (err) {
-      setError("root", {
-        message: apiErrorMessage(err, "Failed to send invitation."),
-      });
+      setSubmitError(parseInviteError(err, "Failed to send invitation."));
     }
   };
 
@@ -189,7 +197,26 @@ export function InviteModal({ onClose }: { onClose: () => void }) {
             </select>
           </div>
 
-          {errors.root && <ErrorNote>{errors.root.message}</ErrorNote>}
+          {submitError?.kind === "conflict" ? (
+            <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              <div className="flex items-start gap-2">
+                <MailWarning className="size-4 shrink-0" />
+                <span>{submitError.message}</span>
+              </div>
+              {onViewInvites && (
+                <button
+                  type="button"
+                  onClick={onViewInvites}
+                  className="ml-6 inline-flex items-center gap-1.5 font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-950"
+                >
+                  <Users className="size-3.5" />
+                  View invitations
+                </button>
+              )}
+            </div>
+          ) : (
+            submitError && <ErrorNote>{submitError.message}</ErrorNote>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <button
