@@ -1,30 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AxiosError } from 'axios';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('@/services/tenantServices', () => ({
   userService: { inviteUser: vi.fn() },
   rbacService: { listRoles: vi.fn().mockResolvedValue([]) },
 }));
-vi.mock('@/api/tenantClient', () => ({
-  apiErrorMessage: (_e: unknown, fallback: string) => fallback,
-}));
 
 import { InviteModal } from './InviteModal';
 import { userService } from '@/services/tenantServices';
 
-function renderModal() {
+function axiosError(status: number, data: unknown) {
+  return new AxiosError('Request failed', String(status), undefined, undefined, {
+    status,
+    data,
+  } as never);
+}
+
+function renderModal(props: Partial<React.ComponentProps<typeof InviteModal>> = {}) {
   const onClose = vi.fn();
+  const onViewInvites = vi.fn();
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <InviteModal onClose={onClose} />
+      <InviteModal onClose={onClose} onViewInvites={onViewInvites} {...props} />
     </QueryClientProvider>,
   );
-  return { onClose };
+  return { onClose, onViewInvites };
 }
 
 beforeEach(() => {
@@ -73,5 +79,38 @@ describe('InviteModal', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a 409 conflict as an informational note and keeps the modal open', async () => {
+    vi.mocked(userService.inviteUser).mockRejectedValue(
+      axiosError(409, {
+        message:
+          'This email already has a pending invitation. Use Resend from the Invites list to send it again.',
+      }),
+    );
+    const { onClose, onViewInvites } = renderModal();
+
+    await userEvent.type(screen.getByLabelText(/email address/i), 'dupe@colleague.com');
+    await userEvent.click(screen.getByRole('button', { name: /send invite/i }));
+
+    expect(await screen.findByText(/already has a pending invitation/i)).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: /view invitations/i }));
+    expect(onViewInvites).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a non-conflict failure as an error', async () => {
+    vi.mocked(userService.inviteUser).mockRejectedValue(
+      axiosError(500, { message: 'Failed to create invitation.' }),
+    );
+    const { onClose } = renderModal();
+
+    await userEvent.type(screen.getByLabelText(/email address/i), 'oops@colleague.com');
+    await userEvent.click(screen.getByRole('button', { name: /send invite/i }));
+
+    expect(await screen.findByText('Failed to create invitation.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /view invitations/i })).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
