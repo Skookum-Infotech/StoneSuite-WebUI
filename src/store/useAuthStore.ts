@@ -96,6 +96,13 @@ interface AuthState {
   // session — this always clears the query cache.
   applyWorkspaceSwitch: (tenantId: string, token: string, expiresAt: number) => void;
   setSessionExpiry: (expiresAt: number) => void;
+  // Restores the in-memory access token (and its expiry) after a silent
+  // /auth/refresh. Unlike setAuth it leaves the persisted user profile and
+  // session kind untouched — refresh only re-issues the token. Cross-origin
+  // clients that cannot use the httpOnly cookie (api/notifyClient.ts) depend
+  // on this: the in-memory token is null after every reload until a refresh
+  // (or a full login) repopulates it.
+  setSession: (token: string, expiresAt: number) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
   // Patches the signed-in user's own profile fields (e.g. after editing your
@@ -156,6 +163,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setSessionExpiry: (expiresAt) => {
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
     set({ sessionExpiresAt: expiresAt });
+  },
+  setSession: (token, expiresAt) => {
+    localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
+    set({ token, sessionExpiresAt: expiresAt });
   },
   updateProfile: (patch) =>
     set((state) => {
