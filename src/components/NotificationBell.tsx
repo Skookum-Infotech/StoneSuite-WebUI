@@ -25,15 +25,9 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isCustomer = useAuthStore((s) => s.kind === 'portal');
   const queryClient = useQueryClient();
 
-  // Customer-portal sessions have no StoneSuite users.id behind them for
-  // most flows (see docs/superpowers/specs/2026-08-28-notify-customer-...
-  // -design.md D1/D2) -- stonesuite-notify's user-facing API requires a real
-  // recipientUserId, so there is nothing this bell could ever show a
-  // customer. Hide it there rather than polling for an always-empty list.
-  const enabled = isAuthenticated && !isCustomer;
+  const enabled = isAuthenticated;
 
   const summaryQ = useQuery({
     queryKey: SUMMARY_KEY,
