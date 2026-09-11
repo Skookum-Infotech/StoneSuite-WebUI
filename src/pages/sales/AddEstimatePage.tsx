@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileSpreadsheet, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -69,6 +70,7 @@ export default function AddEstimatePage() {
       return estimateService.createEstimate(payload);
     },
     onSuccess: async (estimate) => {
+      toast.success('Estimate created.');
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(estimate.id); } catch { /* non-fatal */ }

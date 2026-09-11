@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Receipt, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -69,6 +70,7 @@ export default function AddInvoicePage() {
       return invoiceService.createInvoice(payload);
     },
     onSuccess: async (invoice) => {
+      toast.success('Invoice created.');
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(invoice.id); } catch { /* non-fatal */ }

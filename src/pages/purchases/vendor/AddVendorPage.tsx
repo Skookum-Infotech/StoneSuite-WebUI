@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorService } from '@/services/vendorService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -40,6 +41,7 @@ export default function AddVendorPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => vendorService.createVendor(toCreatePayload(data)),
     onSuccess: () => {
+      toast.success('Vendor created.');
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       navigate('/purchases/vendor');
     },

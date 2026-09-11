@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { inventoryService } from '@/services/inventoryService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -27,6 +28,7 @@ export default function AddItemPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => inventoryService.createItem(toItemPayload(data, warehouses)),
     onSuccess: () => {
+      toast.success('Item created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       guard.markClean();
       navigate('/inventory/item');

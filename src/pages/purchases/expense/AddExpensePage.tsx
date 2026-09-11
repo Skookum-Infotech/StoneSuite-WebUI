@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wallet, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { expenseService } from '@/services/expenseService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
@@ -50,6 +51,7 @@ export default function AddExpensePage() {
       return expenseService.createExpense(payload);
     },
     onSuccess: async (exp) => {
+      toast.success('Expense created.');
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(exp.id); } catch { /* non-fatal */ }

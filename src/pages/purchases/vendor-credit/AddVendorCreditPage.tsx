@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FilePlus, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorCreditService } from '@/services/vendorCreditService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -46,6 +47,7 @@ export default function AddVendorCreditPage() {
       return vendorCreditService.createVendorCredit(toCreatePayload(data, vendor.id, customFieldValues));
     },
     onSuccess: async (credit) => {
+      toast.success('Vendor credit created.');
       queryClient.invalidateQueries({ queryKey: ['vendor-credits'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(credit.id); } catch { /* non-fatal */ }

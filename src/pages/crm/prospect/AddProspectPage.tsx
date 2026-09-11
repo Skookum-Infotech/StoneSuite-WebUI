@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Users, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
@@ -65,6 +66,7 @@ export default function AddProspectPage() {
         crmStatusId: crmStatusId || undefined,
       }),
     onSuccess: async (record) => {
+      toast.success('Prospect created.');
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
       if (panelRef.current?.hasStagedFiles()) {
         setIsUploadingFiles(true);

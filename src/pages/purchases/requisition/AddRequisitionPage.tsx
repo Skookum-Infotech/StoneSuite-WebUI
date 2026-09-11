@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ClipboardList, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { requisitionService } from '@/services/requisitionService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -68,6 +69,7 @@ export default function AddRequisitionPage() {
       return requisitionService.createRequisition(payload);
     },
     onSuccess: async (reqn) => {
+      toast.success('Requisition created.');
       queryClient.invalidateQueries({ queryKey: ['requisitions'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(reqn.id); } catch { /* non-fatal */ }

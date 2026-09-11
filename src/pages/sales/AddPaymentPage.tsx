@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -101,6 +102,7 @@ export default function AddPaymentPage() {
       return paymentService.createPayment(payload);
     },
     onSuccess: async (payment) => {
+      toast.success('Payment created.');
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(payment.id); } catch { /* non-fatal */ }

@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -58,6 +59,7 @@ export default function AddPurchaseOrderPage() {
       return purchaseOrderService.createPurchaseOrder(payload);
     },
     onSuccess: async (po) => {
+      toast.success('Purchase order created.');
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(po.id); } catch { /* non-fatal */ }
