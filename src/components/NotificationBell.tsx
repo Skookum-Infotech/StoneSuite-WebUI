@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
@@ -22,16 +23,11 @@ const LIST_KEY = ['notifications-list'];
 // happened while I wasn't looking, and can I still find it later".
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isCustomer = useAuthStore((s) => s.kind === 'portal');
   const queryClient = useQueryClient();
 
-  // Customer-portal sessions have no StoneSuite users.id behind them for
-  // most flows (see docs/superpowers/specs/2026-08-28-notify-customer-...
-  // -design.md D1/D2) -- stonesuite-notify's user-facing API requires a real
-  // recipientUserId, so there is nothing this bell could ever show a
-  // customer. Hide it there rather than polling for an always-empty list.
-  const enabled = isAuthenticated && !isCustomer;
+  const enabled = isAuthenticated;
 
   const summaryQ = useQuery({
     queryKey: SUMMARY_KEY,
@@ -97,7 +93,12 @@ export function NotificationBell() {
       >
         <Bell className="size-4.5" />
         {unreadCount > 0 && (
-          <span className="absolute right-2 top-2 flex h-1.5 w-1.5 rounded-full bg-destructive" aria-hidden="true" />
+          <span
+            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-white"
+            aria-hidden="true"
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
         )}
       </button>
 
@@ -143,6 +144,8 @@ export function NotificationBell() {
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!n.readAt) markRead.mutate(n.id);
+                  setOpen(false);
+                  if (n.link) navigate(n.link);
                 }}
                 className={cn(
                   'flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] cursor-pointer',
