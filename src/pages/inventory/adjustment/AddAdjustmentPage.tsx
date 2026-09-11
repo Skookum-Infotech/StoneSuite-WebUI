@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ClipboardEdit, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { inventoryAdjustmentService } from '@/services/inventoryAdjustmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar, ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
@@ -52,6 +53,7 @@ export default function AddAdjustmentPage() {
       });
     },
     onSuccess: () => {
+      toast.success('Adjustment saved.');
       queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] });
       navigate('/inventory/adjustment');
     },

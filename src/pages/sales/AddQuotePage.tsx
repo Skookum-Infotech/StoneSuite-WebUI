@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileText, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { estimateService } from '@/services/estimateService';
 import { lookupService } from '@/services/lookupService';
@@ -99,6 +100,7 @@ export default function AddQuotePage() {
       return quoteService.createQuote(payload);
     },
     onSuccess: async (quote) => {
+      toast.success('Quote created.');
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(quote.id); } catch { /* non-fatal */ }

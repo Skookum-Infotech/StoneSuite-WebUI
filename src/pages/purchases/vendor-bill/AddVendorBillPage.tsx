@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileCheck, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -57,6 +58,7 @@ export default function AddVendorBillPage() {
       return vendorBillService.createVendorBill(payload);
     },
     onSuccess: async (bill) => {
+      toast.success('Vendor bill created.');
       queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(bill.id); } catch { /* non-fatal */ }

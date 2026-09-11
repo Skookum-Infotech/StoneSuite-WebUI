@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Wrench, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { fabricationService } from '@/services/fabricationService';
 import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
@@ -60,6 +61,7 @@ export default function AddFabricationJobPage() {
       });
     },
     onSuccess: async (job) => {
+      toast.success('Fabrication job created.');
       queryClient.invalidateQueries({ queryKey: ['fabrication-jobs'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(job.id); } catch { /* non-fatal */ }

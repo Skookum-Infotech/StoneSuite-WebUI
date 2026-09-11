@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle, ChevronRight, Loader2, Save  } from 'lucide-react';
+import { toast } from 'sonner';
 import { crmService } from '@/services/crmService';
 import { workflowService, userService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
@@ -66,6 +67,7 @@ export default function AddCustomerPage() {
         crmStatusId: crmStatusId || undefined,
       }),
     onSuccess: async (record) => {
+      toast.success('Customer created.');
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
       if (panelRef.current?.hasStagedFiles()) {
         setIsUploadingFiles(true);

@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileMinus, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { creditMemoService } from '@/services/creditMemoService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -79,6 +80,7 @@ export default function AddCreditMemoPage() {
       return creditMemoService.createCreditMemo(payload);
     },
     onSuccess: async (creditMemo) => {
+      toast.success('Credit memo created.');
       queryClient.invalidateQueries({ queryKey: ['creditMemos'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(creditMemo.id); } catch { /* non-fatal */ }

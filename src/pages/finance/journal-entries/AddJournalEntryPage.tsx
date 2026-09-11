@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { journalEntryService } from '@/services/journalEntryService';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
@@ -58,6 +59,7 @@ export default function AddJournalEntryPage() {
       return journalEntryService.createJournalEntry(payload);
     },
     onSuccess: async (je) => {
+      toast.success('Journal entry created.');
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(je.id); } catch { /* non-fatal */ }

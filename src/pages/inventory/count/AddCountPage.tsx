@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ClipboardCheck, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { inventoryCountService } from '@/services/inventoryCountService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar, ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
@@ -43,6 +44,7 @@ export default function AddCountPage() {
       date, notes,
     }),
     onSuccess: (count) => {
+      toast.success('Count created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-counts'] });
       navigate(`/inventory/count/${count.id}`);
     },
