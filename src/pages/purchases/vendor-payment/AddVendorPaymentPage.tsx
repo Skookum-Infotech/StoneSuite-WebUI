@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Wallet, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -78,6 +79,7 @@ export default function AddVendorPaymentPage() {
       return vendorPaymentService.createVendorPayment(payload);
     },
     onSuccess: async (payment) => {
+      toast.success('Vendor payment created.');
       queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(payment.id); } catch { /* non-fatal */ }

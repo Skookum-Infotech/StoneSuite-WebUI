@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Repeat, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { inventoryTransferService } from '@/services/inventoryTransferService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar, ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
@@ -70,6 +71,7 @@ export default function AddTransferPage() {
       });
     },
     onSuccess: () => {
+      toast.success('Transfer saved.');
       queryClient.invalidateQueries({ queryKey: ['inventory-transfers'] });
       navigate('/inventory/transfer');
     },

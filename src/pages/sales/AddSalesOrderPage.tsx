@@ -87,15 +87,18 @@ export default function AddSalesOrderPage() {
       // SalesOrderStatusControl.tsx). uploadStagedTo() never rejects even on
       // a failed upload, so re-check via the attachments list rather than
       // trusting that promise resolving.
+      let autoSubmitted = false;
       if (hadStagedFiles) {
         try {
           const attachments = await attachmentService.listAttachments(order.id);
           if (attachments.length > 0) {
             await salesOrderService.transition(order.id, 'PAPV');
             toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, 'PAPV')}.`);
+            autoSubmitted = true;
           }
         } catch { /* non-fatal — order was created; it just stays in Draft */ }
       }
+      if (!autoSubmitted) toast.success('Sales order created.');
 
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       guard.markClean();

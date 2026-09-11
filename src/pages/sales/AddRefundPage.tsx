@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Undo2, AlertCircle, Loader2, Save, Info } from 'lucide-react';
+import { toast } from 'sonner';
 import { refundService } from '@/services/refundService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -74,6 +75,7 @@ export default function AddRefundPage() {
       );
     },
     onSuccess: async (refund) => {
+      toast.success('Refund created.');
       queryClient.invalidateQueries({ queryKey: ['refunds'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(refund.id); } catch { /* non-fatal */ }

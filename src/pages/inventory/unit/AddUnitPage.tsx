@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Layers, AlertCircle, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar, ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
@@ -75,6 +76,7 @@ export default function AddUnitPage() {
       supplierCode: supplierCode || undefined,
     }),
     onSuccess: () => {
+      toast.success('Slab received.');
       queryClient.invalidateQueries({ queryKey: ['inventory-units'] });
       navigate('/inventory/unit');
     },
