@@ -75,8 +75,18 @@ export async function attemptRefresh(): Promise<boolean> {
         // Goes through apiClient so the request interceptor still attaches the
         // Authorization fallback and X-CSRF-Token. Safe from recursion: the
         // response interceptor below skips 401 handling for /auth/refresh.
+        //
+        // Re-sends the caller's selected role (if any) so a silent refresh
+        // doesn't quietly widen an intentionally-narrowed session back to
+        // the full aggregate of every role held — RefreshSession otherwise
+        // has no way to know a role was ever selected, since the old token
+        // isn't decoded client-side. selectedRoleId is the right source: set
+        // on login, updated on every switch-role, and persisted across a
+        // reload (unlike the in-memory token itself).
+        const { user } = useAuthStore.getState();
         const res = await apiClient.post<{ success: boolean; token?: string; expiresAt?: number }>(
           '/auth/refresh',
+          user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : undefined,
         );
         if (res.data.success && res.data.expiresAt) {
           // /auth/refresh re-issues the access token (RefreshSession returns
