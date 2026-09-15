@@ -11,6 +11,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields } from '@/lib/customerDefaults';
+import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { EstimateFormBody } from './components/EstimateFormBody';
 import {
   estimateDefaults, toCreatePayload, PAGE_TABS, type PageTab,
@@ -51,6 +52,19 @@ export default function AddEstimatePage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // New estimates default to United States / USD once the lookups load —
+  // derived rather than copied into state, so it never clobbers a value the
+  // user (or a picked customer's defaults) already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return {
+      ...data,
+      bill_country: data.bill_country || defaultCountryId(lookups.countries),
+      ship_country: data.ship_country || defaultCountryId(lookups.countries),
+      currency_id: data.currency_id || defaultCurrencyId(lookups.currencies),
+    };
+  }, [data, lookups]);
+
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -66,7 +80,7 @@ export default function AddEstimatePage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
-      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems, customFieldValues);
+      const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
       return estimateService.createEstimate(payload);
     },
     onSuccess: async (estimate) => {
@@ -112,7 +126,7 @@ export default function AddEstimatePage() {
         <EstimateFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={formData}
           set={set}
           lineItems={lineItems}
           setLineItems={setLineItems}

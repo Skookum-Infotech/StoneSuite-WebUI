@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Undo2, AlertCircle, Loader2, Save, Info } from 'lucide-react';
@@ -17,6 +17,7 @@ import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields } from '@/lib/customerDefaults';
+import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { RefundSourcePicker, type RefundSourceRef } from './components/RefundSourcePicker';
 import { RefundSectionGrid } from './components/RefundFormFields';
 import {
@@ -55,6 +56,14 @@ export default function AddRefundPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // New refunds default to USD once the lookups load — derived rather than
+  // copied into state, so it never clobbers a value the user (or a picked
+  // customer's defaults) already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
+  }, [data, lookups]);
+
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const refundWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'refund');
   const { data: refundDef } = useQuery({
@@ -68,7 +77,7 @@ export default function AddRefundPage() {
     mutationFn: () => {
       if (!customer) throw new Error('A customer is required.');
       return refundService.createRefund(
-        toCreatePayload(data, customer.id, {
+        toCreatePayload(formData, customer.id, {
           paymentUuid: lineagePayment?.id,
           creditMemoUuid: lineageCreditMemo?.id,
         }, customFieldValues),
@@ -161,7 +170,7 @@ export default function AddRefundPage() {
                 </ModernSection>
 
                 <ModernSection title="Refund Details" index={1}>
-                  <RefundSectionGrid fields={PRIMARY_INFO_FIELDS} data={data} set={set} lookups={lookups} />
+                  <RefundSectionGrid fields={PRIMARY_INFO_FIELDS} data={formData} set={set} lookups={lookups} />
                 </ModernSection>
 
                 {customFieldDefs.length > 0 && (

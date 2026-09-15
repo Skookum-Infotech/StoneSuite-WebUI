@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { inventoryService } from '@/services/inventoryService';
+import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { itemDefaults, toItemPayload, validateItem } from '@/lib/inventoryItemForm';
+import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { ItemFormBody } from './components/ItemFormBody';
 
@@ -23,10 +25,28 @@ export default function AddItemPage() {
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
 
+  const { data: crmLookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // New items default Origin Country / Currency to United States / USD once
+  // the lookups load — derived rather than copied into state, so it never
+  // clobbers a value the user already set.
+  const formData = useMemo(() => {
+    if (!crmLookups) return data;
+    return {
+      ...data,
+      origin_country_id: data.origin_country_id || defaultCountryId(crmLookups.countries),
+      currency_id: data.currency_id || defaultCurrencyId(crmLookups.currencies),
+    };
+  }, [data, crmLookups]);
+
   const guard = useUnsavedChangesGuard(data);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => inventoryService.createItem(toItemPayload(data, warehouses)),
+    mutationFn: () => inventoryService.createItem(toItemPayload(formData, warehouses)),
     onSuccess: () => {
       toast.success('Item created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
@@ -79,7 +99,7 @@ export default function AddItemPage() {
 
         <div className="flex-1 overflow-y-auto modal-scrollbar">
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
-            <ItemFormBody data={data} set={set} />
+            <ItemFormBody data={formData} set={set} />
           </div>
         </div>
 

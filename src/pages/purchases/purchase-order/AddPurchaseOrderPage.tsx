@@ -12,6 +12,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from './components/VendorPicker';
+import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import {
   purchaseOrderDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
@@ -41,6 +42,18 @@ export default function AddPurchaseOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // New purchase orders default to United States / USD once the lookups
+  // load — derived rather than copied into state, so it never clobbers a
+  // value the user already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return {
+      ...data,
+      ship_country: data.ship_country || defaultCountryId(lookups.countries),
+      currency_id: data.currency_id || defaultCurrencyId(lookups.currencies),
+    };
+  }, [data, lookups]);
+
   const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
@@ -55,7 +68,7 @@ export default function AddPurchaseOrderPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!vendor) throw new Error('A vendor is required.');
-      const payload = toCreatePayload({ ...data, vendor_uuid: vendor.id }, lineItems, customFieldValues);
+      const payload = toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues);
       return purchaseOrderService.createPurchaseOrder(payload);
     },
     onSuccess: async (po) => {
@@ -103,7 +116,7 @@ export default function AddPurchaseOrderPage() {
         <PurchaseOrderFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={formData}
           set={set}
           lineItems={lineItems}
           setLineItems={setLineItems}

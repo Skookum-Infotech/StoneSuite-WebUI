@@ -14,6 +14,7 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields } from '@/lib/customerDefaults';
+import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import {
@@ -56,6 +57,20 @@ export default function AddSalesOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // New orders default to United States / USD once the lookups load — derived
+  // rather than copied into state, so it never clobbers a value the user (or
+  // a picked customer's defaults) already set, and the guard below still
+  // tracks only actual edits to `data`.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return {
+      ...data,
+      bill_country: data.bill_country || defaultCountryId(lookups.countries),
+      ship_country: data.ship_country || defaultCountryId(lookups.countries),
+      currency_id: data.currency_id || defaultCurrencyId(lookups.currencies),
+    };
+  }, [data, lookups]);
+
   const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer, customFieldValues });
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -71,7 +86,7 @@ export default function AddSalesOrderPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
-      const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems, customFieldValues);
+      const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
       return salesOrderService.createOrder(payload);
     },
     onSuccess: async (order) => {
@@ -140,7 +155,7 @@ export default function AddSalesOrderPage() {
         <SalesOrderFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={formData}
           set={set}
           lineItems={lineItems}
           setLineItems={setLineItems}

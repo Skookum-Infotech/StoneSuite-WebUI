@@ -77,7 +77,13 @@ export function OnboardingForm({
   errorMessage?: string | null;
   onSubmit: (formData: Record<string, unknown>) => void;
 }) {
-  const [data, setData] = useState<Record<string, unknown>>(() => ({ ...(prefill ?? {}) }));
+  // New applications default to United States / USD — the spread order lets
+  // `prefill` (e.g. a saved draft) override these when present.
+  const [data, setData] = useState<Record<string, unknown>>(() => ({
+    country: 'United States',
+    currency: 'USD',
+    ...(prefill ?? {}),
+  }));
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
 
   const schemaQ = useQuery({ queryKey: ['onboarding-form-schema'], queryFn: onboardingService.formSchema });

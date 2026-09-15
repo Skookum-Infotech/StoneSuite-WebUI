@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Wallet, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
@@ -13,6 +13,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
+import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { VendorPaymentFormBody } from './components/VendorPaymentFormBody';
 import { VendorBillPicker, type VendorBillRef } from './components/VendorBillPicker';
 import {
@@ -51,6 +52,14 @@ export default function AddVendorPaymentPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // New vendor payments default to USD once the lookups load — derived
+  // rather than copied into state, so it never clobbers a value the user
+  // already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
+  }, [data, lookups]);
+
   const guard = useUnsavedChangesGuard({ data, vendor, customFieldValues, applications });
 
   function addApplication() {
@@ -75,7 +84,7 @@ export default function AddVendorPaymentPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!vendor) throw new Error('A vendor is required.');
-      const payload = { ...toCreatePayload(data, vendor.id, customFieldValues), applications };
+      const payload = { ...toCreatePayload(formData, vendor.id, customFieldValues), applications };
       return vendorPaymentService.createVendorPayment(payload);
     },
     onSuccess: async (payment) => {
@@ -123,7 +132,7 @@ export default function AddVendorPaymentPage() {
         <VendorPaymentFormBody
           shell={{ activeTab, setActiveTab }}
           form={{
-            fields: PRIMARY_INFO_FIELDS, data, set, lookups,
+            fields: PRIMARY_INFO_FIELDS, data: formData, set, lookups,
             customFieldValues, setCustomField,
           }}
           vendor={{ value: vendor, onChange: setVendor }}
