@@ -75,10 +75,17 @@ export default function MainLayout(): React.JSX.Element {
         setAuth({ ...user, selectedRoleId: roleId }, data.token, data.expiresAt);
       }
       // The active role changed server-side — every role/permission-scoped
-      // query (permissions, notifications, scoped lists, etc.) is stale, so
-      // clear the whole cache rather than hand-picking keys. Same pattern as
-      // applyWorkspaceSwitch/logout in useAuthStore.
-      queryClient.clear();
+      // query (permissions, notifications, scoped lists, Dashboard widget
+      // allocation, etc.) is stale. Use invalidateQueries(), not clear():
+      // clear() only deletes cached Query objects, it never calls a
+      // still-mounted query's queryFn again on its own, so a screen with no
+      // other reason to re-render right now (e.g. the Dashboard, sitting
+      // behind <Outlet/> and unaffected by the auth-store fields this
+      // mutation changes) would keep showing stale data until its own poll
+      // interval or a remount happened to notice. invalidateQueries()
+      // explicitly refetches every currently active query immediately,
+      // regardless of whether its owning component re-renders.
+      queryClient.invalidateQueries();
     },
   });
 
