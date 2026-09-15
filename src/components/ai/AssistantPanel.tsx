@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { Sparkles, X, Send, Loader2, FileText, BookOpen } from 'lucide-react';
-import { aiService } from '@/services/aiService';
+import { aiService, conversationService } from '@/services/aiService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { AskResponse, AskResult, Citation } from '@/types/ai';
 import { cn } from '@/lib/utils';
@@ -91,7 +91,7 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
   const workflowKey = resolveWorkflowKeyFromPath(location.pathname);
 
   const askMutation = useMutation({
-    mutationFn: (q: string) => askWithRetry(q, conversationId),
+    mutationFn: ({ q, convId }: { q: string; convId: string | undefined }) => askWithRetry(q, convId),
   });
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  const handleAsk = (e: React.FormEvent): void => {
+  const handleAsk = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     const trimmed = question.trim();
     if (!trimmed || askMutation.isPending) return;
@@ -119,17 +119,43 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
     setTurns((prev) => [...prev, { id: turnId, question: trimmed }]);
     setQuestion('');
 
-    askMutation.mutate(trimmed, {
-      onSuccess: ({ result, conversationId: newConversationId }) => {
-        setConversationId(newConversationId);
-        setTurns((prev) => prev.map((t) => (t.id === turnId ? { ...t, result } : t)));
+    // The backend only threads history into an ask that already carries a
+    // conversation_id — it never mints one on its own. Without this, every
+    // turn stayed stateless forever: conversationId's only writer was
+    // askMutation's own onSuccess below, which had nothing to set it FROM on
+    // that always-undefined first call. Create lazily, on the first question
+    // asked (not on panel open), so opening the panel and never asking
+    // anything doesn't litter an empty conversation. Read the freshly minted
+    // id from a local variable, not the conversationId state var: setState
+    // here wouldn't be visible to askMutation.mutate a few lines below in
+    // the same tick.
+    let activeConversationId = conversationId;
+    if (!activeConversationId) {
+      try {
+        const conversation = await conversationService.create();
+        activeConversationId = conversation.id;
+        setConversationId(activeConversationId);
+      } catch {
+        // A conversation-create failure must not block the user from
+        // getting an answer — fall through and ask statelessly, same as
+        // before this existed.
+      }
+    }
+
+    askMutation.mutate(
+      { q: trimmed, convId: activeConversationId },
+      {
+        onSuccess: ({ result, conversationId: newConversationId }) => {
+          setConversationId(newConversationId);
+          setTurns((prev) => prev.map((t) => (t.id === turnId ? { ...t, result } : t)));
+        },
+        onError: (err) => {
+          setTurns((prev) =>
+            prev.map((t) => (t.id === turnId ? { ...t, error: apiErrorMessage(err, 'The assistant could not answer that.') } : t)),
+          );
+        },
       },
-      onError: (err) => {
-        setTurns((prev) =>
-          prev.map((t) => (t.id === turnId ? { ...t, error: apiErrorMessage(err, 'The assistant could not answer that.') } : t)),
-        );
-      },
-    });
+    );
   };
 
   return (
