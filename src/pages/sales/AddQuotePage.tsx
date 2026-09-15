@@ -11,7 +11,9 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields } from '@/lib/customerDefaults';
+import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { shipSameAsBillFields } from '@/lib/shipToDefaults';
+import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import {
   quoteDefaults, toCreatePayload, fromSourceEstimate, PAGE_TABS, type PageTab,
@@ -33,17 +35,33 @@ export default function AddQuotePage() {
     enabled: Boolean(fromEstimateId),
   });
 
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Prefill is derived, not copied via an effect: once sourceEstimate loads,
   // `baseData`/`baseLineItems`/`baseCustomer` recompute automatically, and
   // `local*` (still null/unset) falls through to them. Once the user edits a
   // field, `local*` takes over and the prefill is no longer consulted — this
   // mirrors EditQuotePage's localData-shadows-server-state pattern instead of
-  // pushing setState calls into a useEffect body.
+  // pushing setState calls into a useEffect body. The same derivation defaults
+  // a still-empty country/currency to United States/USD once lookups load,
+  // without overriding a value carried over from the source estimate.
   const prefill = useMemo(
     () => (sourceEstimate ? fromSourceEstimate(sourceEstimate) : null),
     [sourceEstimate],
   );
-  const baseData = useMemo(() => ({ ...quoteDefaults(), ...(prefill?.data ?? {}) }), [prefill]);
+  const baseData = useMemo(() => {
+    const merged: Record<string, unknown> = { ...quoteDefaults(), ...(prefill?.data ?? {}) };
+    if (lookups) {
+      merged.bill_country = merged.bill_country || defaultCountryId(lookups.countries);
+      merged.ship_country = merged.ship_country || defaultCountryId(lookups.countries);
+      merged.currency_id = merged.currency_id || defaultCurrencyId(lookups.currencies);
+    }
+    return merged;
+  }, [prefill, lookups]);
 
   const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
   const [localLineItems, setLocalLineItems] = useState<QuoteLineItem[] | null>(null);
@@ -55,7 +73,15 @@ export default function AddQuotePage() {
   const lineItems = useMemo(() => localLineItems ?? prefill?.lineItems ?? [], [localLineItems, prefill]);
   const customer = customerTouched ? localCustomer : (prefill?.customer ?? null);
 
-  const set = useCallback((key: string, value: unknown) => setLocalData((d) => ({ ...(d ?? baseData), [key]: value })), [baseData]);
+  const set = useCallback((key: string, value: unknown) => {
+    setLocalData((d) => {
+      const current = d ?? baseData;
+      if (key === 'ship_same_as_bill' && value === true) {
+        return { ...current, ...shipSameAsBillFields(current, customer?.name), [key]: value };
+      }
+      return { ...current, [key]: value };
+    });
+  }, [baseData, customer]);
   const setCustomField = useCallback(
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
     [],
@@ -69,17 +95,11 @@ export default function AddQuotePage() {
         const current = d ?? baseData;
         return {
           ...current,
-          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !current[k])),
+          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !current[k] || BILL_ADDRESS_KEYS.has(k))),
         };
       });
     }
   }, [baseData]);
-
-  const { data: lookups } = useQuery({
-    queryKey: ['crm-lookups'],
-    queryFn: lookupService.getCrmLookups,
-    staleTime: 10 * 60 * 1000,
-  });
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 

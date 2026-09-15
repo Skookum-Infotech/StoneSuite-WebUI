@@ -26,6 +26,11 @@ export interface CrmCoreField {
   showIfFieldFalse?: string;
   /** Show this field only when the named checkbox field is checked (truthy). */
   showIfFieldTrue?: string;
+  /** Render this field disabled (visible, but not editable) when the named
+   *  checkbox field is checked (truthy) — used for a field that's currently
+   *  mirroring another field's value ("same as primary") rather than being
+   *  independently set. */
+  disabledIfFieldTrue?: string;
 }
 
 export interface CrmCoreSection {
@@ -54,46 +59,46 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
   {
     title: 'Contact Information',
     fields: [
-      { key: 'customer_primary_phonenum', label: 'Primary Phone', type: 'tel', placeholder: 'e.g. +1 (555) 123-4567' },
+      { key: 'customer_primary_phonenum', label: 'Primary Phone', type: 'tel', required: true, placeholder: 'e.g. +1 (555) 123-4567' },
       { key: 'customer_alt_phonenum', label: 'Alternate Phone', type: 'tel', placeholder: 'e.g. +1 (555) 987-6543' },
       { key: 'customer_faxnum', label: 'Fax', type: 'tel', placeholder: 'e.g. +1 (555) 111-2222' },
       { key: 'customer_cmpny_website', label: 'Website', type: 'text', placeholder: 'e.g. https://acme.com' },
       { key: 'customer_contact_email', label: 'Contact Email', type: 'email', required: true, placeholder: 'e.g. contact@acme.com' },
       { key: 'customer_accounts_email', label: 'Accounting Email', type: 'email', placeholder: 'e.g. accounts@acme.com' },
       { key: 'customer_addl_email', label: 'Additional Email', type: 'email', placeholder: 'e.g. info@acme.com' },
-      { key: 'customer_addr_line1', label: 'Address Line 1', type: 'address', placeholder: 'e.g. 123 Main Street' },
+      { key: 'customer_addr_line1', label: 'Address Line 1', type: 'address', required: true, placeholder: 'e.g. 123 Main Street' },
       { key: 'customer_addr_line2', label: 'Address Line 2', type: 'address', placeholder: 'e.g. Building B' },
       { key: 'customer_addr_suitenum', label: 'Suite / Unit #', type: 'text', placeholder: 'e.g. Suite 400' },
-      { key: 'customer_addr_city', label: 'City', type: 'text', placeholder: 'e.g. New York' },
-      { key: 'customer_addr_country', label: 'Country', type: 'lookup-select', lookupKey: 'countries' },
-      { key: 'customer_addr_state', label: 'State / Province', type: 'lookup-select', lookupKey: 'states', dependsOn: 'customer_addr_country' },
-      { key: 'customer_addr_zip', label: 'Zip / Postal Code', type: 'text', placeholder: 'e.g. 10001' },
+      { key: 'customer_addr_city', label: 'City', type: 'text', required: true, placeholder: 'e.g. New York' },
+      { key: 'customer_addr_country', label: 'Country', type: 'lookup-select', required: true, lookupKey: 'countries' },
+      { key: 'customer_addr_state', label: 'State / Province', type: 'lookup-select', required: true, lookupKey: 'states', dependsOn: 'customer_addr_country' },
+      { key: 'customer_addr_zip', label: 'Zip / Postal Code', type: 'text', required: true, placeholder: 'e.g. 10001' },
     ],
   },
   {
     title: 'Billing Address',
     fields: [
       { key: 'customer_is_bill_as_primary', label: 'Billing Same as Primary', type: 'checkbox' },
-      { key: 'customer_bill_addr_line1', label: 'Address Line 1', type: 'address', placeholder: 'e.g. 456 Commerce Blvd', showIfFieldFalse: 'customer_is_bill_as_primary' },
-      { key: 'customer_bill_addr_line2', label: 'Address Line 2', type: 'address', placeholder: 'e.g. Floor 2', showIfFieldFalse: 'customer_is_bill_as_primary' },
-      { key: 'customer_bill_addr_suitenum', label: 'Suite / Unit #', type: 'text', placeholder: 'e.g. Suite 200', showIfFieldFalse: 'customer_is_bill_as_primary' },
-      { key: 'customer_bill_addr_city', label: 'City', type: 'text', placeholder: 'e.g. Chicago', showIfFieldFalse: 'customer_is_bill_as_primary' },
-      { key: 'customer_bill_addr_country', label: 'Country', type: 'lookup-select', lookupKey: 'countries', showIfFieldFalse: 'customer_is_bill_as_primary' },
-      { key: 'customer_bill_addr_state', label: 'State / Province', type: 'lookup-select', lookupKey: 'states', dependsOn: 'customer_bill_addr_country', showIfFieldFalse: 'customer_is_bill_as_primary' },
-      { key: 'customer_bill_addr_zip', label: 'Zip / Postal Code', type: 'text', placeholder: 'e.g. 60601', showIfFieldFalse: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_line1', label: 'Address Line 1', type: 'address', required: true, placeholder: 'e.g. 456 Commerce Blvd', disabledIfFieldTrue: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_line2', label: 'Address Line 2', type: 'address', placeholder: 'e.g. Floor 2', disabledIfFieldTrue: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_suitenum', label: 'Suite / Unit #', type: 'text', placeholder: 'e.g. Suite 200', disabledIfFieldTrue: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_city', label: 'City', type: 'text', required: true, placeholder: 'e.g. Chicago', disabledIfFieldTrue: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_country', label: 'Country', type: 'lookup-select', required: true, lookupKey: 'countries', disabledIfFieldTrue: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_state', label: 'State / Province', type: 'lookup-select', required: true, lookupKey: 'states', dependsOn: 'customer_bill_addr_country', disabledIfFieldTrue: 'customer_is_bill_as_primary' },
+      { key: 'customer_bill_addr_zip', label: 'Zip / Postal Code', type: 'text', required: true, placeholder: 'e.g. 60601', disabledIfFieldTrue: 'customer_is_bill_as_primary' },
     ],
   },
   {
     title: 'Shipping Address',
     fields: [
       { key: 'customer_is_ship_as_primary', label: 'Shipping Same as Primary', type: 'checkbox' },
-      { key: 'customer_ship_addr_line1', label: 'Address Line 1', type: 'address', placeholder: 'e.g. 789 Warehouse Ave', showIfFieldFalse: 'customer_is_ship_as_primary' },
-      { key: 'customer_ship_addr_line2', label: 'Address Line 2', type: 'address', placeholder: 'e.g. Dock B', showIfFieldFalse: 'customer_is_ship_as_primary' },
-      { key: 'customer_ship_addr_suitenum', label: 'Suite / Unit #', type: 'text', placeholder: 'e.g. Unit 5', showIfFieldFalse: 'customer_is_ship_as_primary' },
-      { key: 'customer_ship_addr_city', label: 'City', type: 'text', placeholder: 'e.g. Los Angeles', showIfFieldFalse: 'customer_is_ship_as_primary' },
-      { key: 'customer_ship_addr_country', label: 'Country', type: 'lookup-select', lookupKey: 'countries', showIfFieldFalse: 'customer_is_ship_as_primary' },
-      { key: 'customer_ship_addr_state', label: 'State / Province', type: 'lookup-select', lookupKey: 'states', dependsOn: 'customer_ship_addr_country', showIfFieldFalse: 'customer_is_ship_as_primary' },
-      { key: 'customer_ship_addr_zip', label: 'Zip / Postal Code', type: 'text', placeholder: 'e.g. 90001', showIfFieldFalse: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_line1', label: 'Address Line 1', type: 'address', placeholder: 'e.g. 789 Warehouse Ave', disabledIfFieldTrue: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_line2', label: 'Address Line 2', type: 'address', placeholder: 'e.g. Dock B', disabledIfFieldTrue: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_suitenum', label: 'Suite / Unit #', type: 'text', placeholder: 'e.g. Unit 5', disabledIfFieldTrue: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_city', label: 'City', type: 'text', placeholder: 'e.g. Los Angeles', disabledIfFieldTrue: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_country', label: 'Country', type: 'lookup-select', lookupKey: 'countries', disabledIfFieldTrue: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_state', label: 'State / Province', type: 'lookup-select', lookupKey: 'states', dependsOn: 'customer_ship_addr_country', disabledIfFieldTrue: 'customer_is_ship_as_primary' },
+      { key: 'customer_ship_addr_zip', label: 'Zip / Postal Code', type: 'text', placeholder: 'e.g. 90001', disabledIfFieldTrue: 'customer_is_ship_as_primary' },
     ],
   },
   {
@@ -170,4 +175,40 @@ export function crmCoreDefaults(): Record<string, unknown> {
     }
   }
   return defaults;
+}
+
+const PRIMARY_TO_BILL_ADDR_KEYS: Record<string, string> = {
+  customer_addr_line1: 'customer_bill_addr_line1',
+  customer_addr_line2: 'customer_bill_addr_line2',
+  customer_addr_suitenum: 'customer_bill_addr_suitenum',
+  customer_addr_city: 'customer_bill_addr_city',
+  customer_addr_country: 'customer_bill_addr_country',
+  customer_addr_state: 'customer_bill_addr_state',
+  customer_addr_zip: 'customer_bill_addr_zip',
+};
+const PRIMARY_TO_SHIP_ADDR_KEYS: Record<string, string> = {
+  customer_addr_line1: 'customer_ship_addr_line1',
+  customer_addr_line2: 'customer_ship_addr_line2',
+  customer_addr_suitenum: 'customer_ship_addr_suitenum',
+  customer_addr_city: 'customer_ship_addr_city',
+  customer_addr_country: 'customer_ship_addr_country',
+  customer_addr_state: 'customer_ship_addr_state',
+  customer_addr_zip: 'customer_ship_addr_zip',
+};
+
+/** Copies the primary address onto the billing or shipping address fields —
+ *  a one-time snapshot taken when "Billing/Shipping Same as Primary" is
+ *  checked, so those fields stay visible and populated instead of hidden
+ *  (see disabledIfFieldTrue above). Unlike the document-form defaults in
+ *  customerDefaults.ts, there's no server-side recompute for the customer's
+ *  own record — whatever's stored in the billing/shipping address columns is
+ *  exactly what's saved — so this copy is what actually keeps the two
+ *  addresses in sync, not just a UI preview. */
+export function primaryAddressFields(coreFields: Record<string, unknown>, target: 'bill' | 'ship'): Record<string, unknown> {
+  const map = target === 'bill' ? PRIMARY_TO_BILL_ADDR_KEYS : PRIMARY_TO_SHIP_ADDR_KEYS;
+  const out: Record<string, unknown> = {};
+  for (const [from, to] of Object.entries(map)) {
+    out[to] = coreFields[from] ?? '';
+  }
+  return out;
 }

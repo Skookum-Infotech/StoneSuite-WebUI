@@ -81,6 +81,9 @@ const RolesPage = lazyWithRetry(() => import("@/pages/config/roles-access/RolesP
 const CreateRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/CreateRolePage"));
 const EditRolePage = lazyWithRetry(() => import("@/pages/config/roles-access/EditRolePage"));
 const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
+const CompanyProfilePage = lazyWithRetry(
+  () => import("@/pages/config/company-profile/CompanyProfilePage"),
+);
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
@@ -1360,6 +1363,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="portal_access" action="read">
             <PortalUsersPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/company-profile",
+        element: lazy_(
+          <PermissionGuard resource="company_profile" action="read">
+            <CompanyProfilePage />
           </PermissionGuard>,
         ),
       },

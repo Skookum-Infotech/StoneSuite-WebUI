@@ -5,13 +5,18 @@ import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
+import { companyProfileService } from '@/services/companyProfileService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from './components/VendorPicker';
+import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
+import { purchaseOrderShipToDefaults } from '@/lib/purchaseOrderShipToDefaults';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import {
   purchaseOrderDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
@@ -41,6 +46,41 @@ export default function AddPurchaseOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // Ship To prefill: the tenant's own default warehouse (matches Item
+  // Receipt's existing "defaults to the tenant's default warehouse"
+  // behavior) if one is configured, else the tenant's Company Info — see
+  // purchaseOrderShipToDefaults. Company Info is gated on the read
+  // permission so a user without it doesn't take a silent 403 on every
+  // load of this page.
+  const { hasPermission } = useUserPermissions();
+  const { lookups: inventoryLookups } = useInventoryLookups();
+  const { data: companyProfile } = useQuery({
+    queryKey: ['company-profile'],
+    queryFn: companyProfileService.get,
+    staleTime: 10 * 60 * 1000,
+    enabled: hasPermission('company_profile', 'read'),
+  });
+
+  // New purchase orders default to United States / USD, and Ship To from the
+  // warehouse/company defaults above, once each loads — derived rather than
+  // copied into state, so it never clobbers a value the user already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    const shipDefaults = purchaseOrderShipToDefaults(inventoryLookups?.warehouses, companyProfile);
+    return {
+      ...data,
+      ship_country: data.ship_country || defaultCountryId(lookups.countries),
+      currency_id: data.currency_id || defaultCurrencyId(lookups.currencies),
+      ship_name: data.ship_name || shipDefaults.ship_name || '',
+      ship_address1: data.ship_address1 || shipDefaults.ship_address1 || '',
+      ship_address2: data.ship_address2 || shipDefaults.ship_address2 || '',
+      ship_suite: data.ship_suite || shipDefaults.ship_suite || '',
+      ship_city: data.ship_city || shipDefaults.ship_city || '',
+      ship_state: data.ship_state || shipDefaults.ship_state || '',
+      ship_zip: data.ship_zip || shipDefaults.ship_zip || '',
+    };
+  }, [data, lookups, inventoryLookups, companyProfile]);
+
   const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
@@ -55,7 +95,7 @@ export default function AddPurchaseOrderPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!vendor) throw new Error('A vendor is required.');
-      const payload = toCreatePayload({ ...data, vendor_uuid: vendor.id }, lineItems, customFieldValues);
+      const payload = toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues);
       return purchaseOrderService.createPurchaseOrder(payload);
     },
     onSuccess: async (po) => {
@@ -103,7 +143,7 @@ export default function AddPurchaseOrderPage() {
         <PurchaseOrderFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={formData}
           set={set}
           lineItems={lineItems}
           setLineItems={setLineItems}

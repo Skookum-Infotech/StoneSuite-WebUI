@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertCircle, Building2, MapPin, ShieldCheck, Banknote, Plus, ArrowRight } from 'lucide-react';
+import { AlertCircle, Building2, MapPin, Truck, RotateCcw, ShieldCheck, Banknote, Plus, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { onboardingService } from '@/services/tenantServices';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
@@ -12,9 +12,25 @@ type BaseField = {
   label: string;
   required?: boolean;
   type?: string;
-  textarea?: boolean;
   full?: boolean;
 };
+
+// Same line1/line2/suite/city/country/state/zip shape as a CRM record's own
+// address fields (lib/crmFields.ts) and the tenant's own Company Info page
+// (CompanyProfilePage.tsx) — structured, not one free-text blob. Submitted
+// as flat prefix_line1/prefix_city/etc. keys (see OnboardingFormData),
+// matching what cmd/backfill-company-profile's metadata parser reads back.
+function addressFields(prefix: string): BaseField[] {
+  return [
+    { key: `${prefix}_line1`, label: 'Address Line 1', full: true },
+    { key: `${prefix}_line2`, label: 'Address Line 2' },
+    { key: `${prefix}_suite`, label: 'Suite / Unit #' },
+    { key: `${prefix}_city`, label: 'City' },
+    { key: `${prefix}_country`, label: 'Country' },
+    { key: `${prefix}_state`, label: 'State / Province' },
+    { key: `${prefix}_zip`, label: 'Zip / Postal Code' },
+  ];
+}
 
 const SECTIONS: { title: string; icon: React.ElementType; fields: BaseField[] }[] = [
   {
@@ -31,15 +47,9 @@ const SECTIONS: { title: string; icon: React.ElementType; fields: BaseField[] }[
       { key: 'tax_id',       label: 'Tax / VAT ID' },
     ],
   },
-  {
-    title: 'Address Information',
-    icon: MapPin,
-    fields: [
-      { key: 'billing_address',  label: 'Billing Address',  textarea: true, full: true },
-      { key: 'shipping_address', label: 'Shipping Address', textarea: true },
-      { key: 'return_address',   label: 'Return Address',   textarea: true },
-    ],
-  },
+  { title: 'Billing Address', icon: MapPin, fields: addressFields('billing_address') },
+  { title: 'Shipping Address', icon: Truck, fields: addressFields('shipping_address') },
+  { title: 'Return Address', icon: RotateCcw, fields: addressFields('return_address') },
   {
     title: 'Super Admin Contact',
     icon: ShieldCheck,
@@ -77,7 +87,13 @@ export function OnboardingForm({
   errorMessage?: string | null;
   onSubmit: (formData: Record<string, unknown>) => void;
 }) {
-  const [data, setData] = useState<Record<string, unknown>>(() => ({ ...(prefill ?? {}) }));
+  // New applications default to United States / USD — the spread order lets
+  // `prefill` (e.g. a saved draft) override these when present.
+  const [data, setData] = useState<Record<string, unknown>>(() => ({
+    country: 'United States',
+    currency: 'USD',
+    ...(prefill ?? {}),
+  }));
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
 
   const schemaQ = useQuery({ queryKey: ['onboarding-form-schema'], queryFn: onboardingService.formSchema });
@@ -128,25 +144,14 @@ export function OnboardingForm({
                       {f.label}
                       {f.required && <span className="ml-0.5 text-red-500">*</span>}
                     </label>
-                    {f.textarea ? (
-                      <textarea
-                        name={f.key}
-                        rows={f.full ? 3 : 4}
-                        required={f.required}
-                        value={str(f.key)}
-                        onChange={(e) => set(f.key, e.target.value)}
-                        className={cn(inputCls, 'resize-none')}
-                      />
-                    ) : (
-                      <input
-                        name={f.key}
-                        type={f.type ?? 'text'}
-                        required={f.required}
-                        value={str(f.key)}
-                        onChange={(e) => set(f.key, e.target.value)}
-                        className={inputCls}
-                      />
-                    )}
+                    <input
+                      name={f.key}
+                      type={f.type ?? 'text'}
+                      required={f.required}
+                      value={str(f.key)}
+                      onChange={(e) => set(f.key, e.target.value)}
+                      className={inputCls}
+                    />
                   </div>
                 ))}
               </div>

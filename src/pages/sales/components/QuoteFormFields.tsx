@@ -8,7 +8,7 @@ import type { QuoteFormField } from '@/lib/quoteForm';
 
 // Renders one QuoteFormField — shared by the Add and Edit Quote forms.
 // Mirrors EstimateFormFields' EstimateField/EstimateSectionGrid.
-export function QuoteField({ field, value, set, lookups, dependsOnValue }: {
+export function QuoteField({ field, value, set, lookups, dependsOnValue, disabled }: {
   field: QuoteFormField;
   value: unknown;
   set: (k: string, v: unknown) => void;
@@ -17,6 +17,9 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue }: {
    *  for parity with EstimateField's signature — no current Quote field uses
    *  dependsOn (Quote's address fields are plain text, not lookup-driven). */
   dependsOnValue?: unknown;
+  /** Render the control disabled — set when field.disabledIfFieldTrue names
+   *  a currently-checked field (this value is mirroring another one). */
+  disabled?: boolean;
 }) {
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
   const checked = value === true;
@@ -57,6 +60,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue }: {
           <textarea
             rows={field.rows ?? 3}
             required={field.required}
+            disabled={disabled}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
             className={textareaCls}
@@ -90,7 +94,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue }: {
             onChange={(e) => set(field.key, e.target.value)}
             className={fieldCls}
             aria-label={field.label}
-            disabled={dependsOnUnset}
+            disabled={dependsOnUnset || disabled}
           >
             <option value="">{dependsOnUnset ? '— Select a country first —' : '— Select —'}</option>
             {filteredRows
@@ -122,6 +126,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue }: {
         <input
           type={field.type ?? 'text'}
           required={field.required}
+          disabled={disabled}
           value={str}
           onChange={(e) => set(field.key, e.target.value)}
           className={fieldCls}
@@ -156,6 +161,7 @@ export function QuoteSectionGrid({ fields, data, set, lookups, maxCols = 3 }: {
           set={set}
           lookups={lookups}
           dependsOnValue={f.dependsOn ? data[f.dependsOn] : undefined}
+          disabled={f.disabledIfFieldTrue ? Boolean(data[f.disabledIfFieldTrue]) : false}
         />
       ))}
     </div>

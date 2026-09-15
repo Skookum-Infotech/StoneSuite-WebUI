@@ -14,6 +14,7 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { InvoiceFormBody } from './components/InvoiceFormBody';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
+import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import {
   fromInvoice, toCreatePayload, PAGE_TABS, type PageTab,
   type InvoiceLineItem, INVOICE_TERMINAL_STATUSES, INVOICE_STATUS_CODES,
@@ -76,8 +77,14 @@ export default function EditInvoicePage() {
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
   const set = useCallback(
-    (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
-    [mapped],
+    (key: string, value: unknown) => setLocalData((prev) => {
+      const current = prev ?? mapped?.data ?? {};
+      if (key === 'ship_same_as_bill' && value === true) {
+        return { ...current, ...shipSameAsBillFields(current, customer?.name), [key]: value };
+      }
+      return { ...current, [key]: value };
+    }),
+    [mapped, customer],
   );
   const setCustomField = useCallback(
     (key: string, value: unknown) =>

@@ -10,7 +10,8 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields } from '@/lib/customerDefaults';
+import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { defaultCountryId } from '@/lib/lookupDefaults';
 import { type InvoiceRef } from './components/InvoicePicker';
 import { type SalesOrderRef } from './components/SalesOrderPicker';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
@@ -44,7 +45,7 @@ export default function AddCreditMemoPage() {
       const defaults = customerDefaultFields(next);
       setData((d) => ({
         ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
       }));
     }
   }, []);
@@ -54,6 +55,14 @@ export default function AddCreditMemoPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  // New credit memos default their billing address to United States once the
+  // lookups load — derived rather than copied into state, so it never
+  // clobbers a value the user (or a picked customer's defaults) already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return { ...data, bill_country: data.bill_country || defaultCountryId(lookups.countries) };
+  }, [data, lookups]);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
@@ -73,7 +82,7 @@ export default function AddCreditMemoPage() {
       if (!customer) throw new Error('A customer is required.');
       if (lineItems.length === 0) throw new Error('At least one line item is required.');
       const payload = toCreatePayload(
-        { ...data, customer_uuid: customer.id, invoice_uuid: invoice?.id, sales_order_uuid: salesOrder?.id },
+        { ...formData, customer_uuid: customer.id, invoice_uuid: invoice?.id, sales_order_uuid: salesOrder?.id },
         lineItems,
         customFieldValues,
       );
@@ -122,7 +131,7 @@ export default function AddCreditMemoPage() {
         <CreditMemoFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={formData}
           set={set}
           lineItems={lineItems}
           setLineItems={setLineItems}

@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle, ChevronRight, Loader2, Save  } from 'lucide-react';
 import { toast } from 'sonner';
 import { crmService } from '@/services/crmService';
+import { lookupService } from '@/services/lookupService';
+import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { workflowService, userService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -13,7 +15,7 @@ import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
-import { crmCoreDefaults } from '@/lib/crmFields';
+import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
@@ -41,7 +43,15 @@ export default function AddCustomerPage() {
 
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
-    setCoreFields((d) => ({ ...d, [key]: value }));
+    setCoreFields((d) => {
+      if (key === 'customer_is_bill_as_primary' && value === true) {
+        return { ...d, ...primaryAddressFields(d, 'bill'), [key]: value };
+      }
+      if (key === 'customer_is_ship_as_primary' && value === true) {
+        return { ...d, ...primaryAddressFields(d, 'ship'), [key]: value };
+      }
+      return { ...d, [key]: value };
+    });
   };
   const handleStatusChange = useCallback((stateId: string) => setCrmStatusId(stateId), []);
 
@@ -56,12 +66,32 @@ export default function AddCustomerPage() {
 
   const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
 
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // New customers default their address country / currency fields to United
+  // States / USD once the lookups load — derived rather than copied into
+  // state, so it never clobbers a value the user already set.
+  const formCoreFields = useMemo(() => {
+    if (!lookups) return coreFields;
+    return {
+      ...coreFields,
+      customer_addr_country: coreFields.customer_addr_country || defaultCountryId(lookups.countries),
+      customer_bill_addr_country: coreFields.customer_bill_addr_country || defaultCountryId(lookups.countries),
+      customer_ship_addr_country: coreFields.customer_ship_addr_country || defaultCountryId(lookups.countries),
+      customer_currency: coreFields.customer_currency || defaultCurrencyId(lookups.currencies),
+    };
+  }, [coreFields, lookups]);
+
   const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId, crmStatusId });
 
   const { mutate: createCustomer, isPending, error: createError } = useMutation({
     mutationFn: () =>
       crmService.createRecord('customer', {
-        coreFields,
+        coreFields: formCoreFields,
         customFields: customFieldValues,
         ownerUserId: ownerUserId || undefined,
         crmStatusId: crmStatusId || undefined,
@@ -91,7 +121,7 @@ export default function AddCustomerPage() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          const errors = validateCrmRecord(coreFields, customFieldDefs, customFieldValues);
+          const errors = validateCrmRecord(formCoreFields, customFieldDefs, customFieldValues);
           if (errors.length > 0) { setValidationErrors(errors); setActiveTab('details'); return; }
           setValidationErrors([]);
           createCustomer();
@@ -185,7 +215,7 @@ export default function AddCustomerPage() {
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             {activeTab === 'details' && (
               <CrmRecordForm
-                core={{ fields: coreFields, onChange: set }}
+                core={{ fields: formCoreFields, onChange: set }}
                 custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => { if (validationErrors.length > 0) setValidationErrors([]); setCustomFieldValues((prev) => ({ ...prev, [key]: value })); } }}
                 owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
                 invalidKeys={validationErrors.length > 0 ? new Set(validationErrors.map((e) => e.key)) : undefined}

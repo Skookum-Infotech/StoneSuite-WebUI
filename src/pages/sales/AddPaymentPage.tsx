@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
@@ -16,7 +16,8 @@ import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields } from '@/lib/customerDefaults';
+import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
@@ -56,7 +57,7 @@ export default function AddPaymentPage() {
       const defaults = customerDefaultFields(next);
       setData((d) => ({
         ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
       }));
     }
   }, []);
@@ -66,6 +67,14 @@ export default function AddPaymentPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+
+  // New payments default to USD once the lookups load — derived rather than
+  // copied into state, so it never clobbers a value the user (or a picked
+  // customer's defaults) already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
+  }, [data, lookups]);
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const paymentWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'payment');
@@ -98,7 +107,7 @@ export default function AddPaymentPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A customer is required.');
-      const payload = { ...toCreatePayload(data, customer.id, customFieldValues), applications };
+      const payload = { ...toCreatePayload(formData, customer.id, customFieldValues), applications };
       return paymentService.createPayment(payload);
     },
     onSuccess: async (payment) => {
@@ -172,7 +181,7 @@ export default function AddPaymentPage() {
                 </ModernSection>
 
                 <ModernSection title="Payment Details" index={1}>
-                  <PaymentSectionGrid fields={PRIMARY_INFO_FIELDS} data={data} set={set} lookups={lookups} />
+                  <PaymentSectionGrid fields={PRIMARY_INFO_FIELDS} data={formData} set={set} lookups={lookups} />
                 </ModernSection>
 
                 {customFieldDefs.length > 0 && (

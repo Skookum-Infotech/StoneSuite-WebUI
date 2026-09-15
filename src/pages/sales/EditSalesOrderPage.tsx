@@ -16,6 +16,7 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
+import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import {
   fromOrder, toCreatePayload, PAGE_TABS, type PageTab,
   type SOLineItem, type SODrawing, SO_STATUS_CODES,
@@ -79,8 +80,14 @@ export default function EditSalesOrderPage() {
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? EMPTY_CUSTOM;
 
   const set = useCallback(
-    (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
-    [mapped],
+    (key: string, value: unknown) => setLocalData((prev) => {
+      const current = prev ?? mapped?.data ?? {};
+      if (key === 'ship_same_as_bill' && value === true) {
+        return { ...current, ...shipSameAsBillFields(current, customer?.name), [key]: value };
+      }
+      return { ...current, [key]: value };
+    }),
+    [mapped, customer],
   );
   const setCustomField = useCallback(
     (key: string, value: unknown) =>
