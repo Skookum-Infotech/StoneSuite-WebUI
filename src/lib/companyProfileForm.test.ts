@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { companyProfileSchema, MAX_SHORT_FIELD_LENGTH, MAX_ADDRESS_LENGTH } from './companyProfileForm';
+import { companyProfileSchema, MAX_FIELD_LENGTH } from './companyProfileForm';
 
 describe('companyProfileSchema', () => {
+  const address = {
+    line1: '123 Main St',
+    line2: 'Suite 400',
+    suite: '400',
+    city: 'Springfield',
+    country: 'United States',
+    state: 'IL',
+    zip: '62704',
+  };
+
   const valid = {
     companyName: 'Acme Stone Co.',
     legalName: 'Acme Stone Company LLC',
@@ -11,9 +21,9 @@ describe('companyProfileSchema', () => {
     currency: 'USD',
     timezone: 'America/Chicago',
     taxId: '12-3456789',
-    billingAddress: '123 Main St, Springfield, IL 62704',
-    shippingAddress: '456 Warehouse Ave, Springfield, IL 62704',
-    returnAddress: '789 Returns Dock, Springfield, IL 62704',
+    billingAddress: address,
+    shippingAddress: address,
+    returnAddress: address,
   };
 
   it('accepts a fully populated profile', () => {
@@ -23,6 +33,16 @@ describe('companyProfileSchema', () => {
   it('accepts a profile with only the required company name', () => {
     const result = companyProfileSchema.safeParse({ companyName: 'Acme Stone Co.' });
     expect(result.success).toBe(true);
+  });
+
+  it('defaults every address field to an empty string when omitted', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme Stone Co.' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.billingAddress).toEqual({
+        line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '',
+      });
+    }
   });
 
   it('rejects a missing company name', () => {
@@ -45,27 +65,32 @@ describe('companyProfileSchema', () => {
   });
 
   it('accepts a company name at the max length', () => {
-    const name = 'a'.repeat(MAX_SHORT_FIELD_LENGTH);
+    const name = 'a'.repeat(MAX_FIELD_LENGTH);
     expect(companyProfileSchema.safeParse({ ...valid, companyName: name }).success).toBe(true);
   });
 
   it('rejects a company name over the max length', () => {
-    const name = 'a'.repeat(MAX_SHORT_FIELD_LENGTH + 1);
+    const name = 'a'.repeat(MAX_FIELD_LENGTH + 1);
     expect(companyProfileSchema.safeParse({ ...valid, companyName: name }).success).toBe(false);
   });
 
   it('rejects a website over the max length', () => {
-    const website = 'a'.repeat(MAX_SHORT_FIELD_LENGTH + 1);
+    const website = 'a'.repeat(MAX_FIELD_LENGTH + 1);
     expect(companyProfileSchema.safeParse({ ...valid, website }).success).toBe(false);
   });
 
-  it('accepts a billing address at the max length', () => {
-    const billingAddress = 'a'.repeat(MAX_ADDRESS_LENGTH);
-    expect(companyProfileSchema.safeParse({ ...valid, billingAddress }).success).toBe(true);
+  it('accepts a billing address line1 at the max length', () => {
+    const line1 = 'a'.repeat(MAX_FIELD_LENGTH);
+    expect(companyProfileSchema.safeParse({ ...valid, billingAddress: { ...address, line1 } }).success).toBe(true);
   });
 
-  it('rejects a billing address over the max length', () => {
-    const billingAddress = 'a'.repeat(MAX_ADDRESS_LENGTH + 1);
-    expect(companyProfileSchema.safeParse({ ...valid, billingAddress }).success).toBe(false);
+  it('rejects a billing address line1 over the max length', () => {
+    const line1 = 'a'.repeat(MAX_FIELD_LENGTH + 1);
+    expect(companyProfileSchema.safeParse({ ...valid, billingAddress: { ...address, line1 } }).success).toBe(false);
+  });
+
+  it('rejects a shipping address city over the max length', () => {
+    const city = 'a'.repeat(MAX_FIELD_LENGTH + 1);
+    expect(companyProfileSchema.safeParse({ ...valid, shippingAddress: { ...address, city } }).success).toBe(false);
   });
 });

@@ -11,11 +11,14 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { companyProfileService } from '@/services/companyProfileService';
 import { companyProfileSchema, type CompanyProfileFormValues } from '@/lib/companyProfileForm';
+import type { Address } from '@/types/companyProfile';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
-import { fieldCls, fieldErrorCls, textareaCls, textareaErrorCls, fieldLabelCls } from '@/components/crm/formUtils';
+import { fieldCls, fieldErrorCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+
+const EMPTY_ADDRESS: Address = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' };
 
 const DEFAULT_VALUES: CompanyProfileFormValues = {
   companyName: '',
@@ -26,24 +29,30 @@ const DEFAULT_VALUES: CompanyProfileFormValues = {
   currency: '',
   timezone: '',
   taxId: '',
-  billingAddress: '',
-  shippingAddress: '',
-  returnAddress: '',
+  billingAddress: EMPTY_ADDRESS,
+  shippingAddress: EMPTY_ADDRESS,
+  returnAddress: EMPTY_ADDRESS,
 };
 
 // ── Field chrome — icon-prefixed inputs built on the app's actual CRM form
 // field classes (components/crm/formUtils, the same ones DynamicFieldInput
 // and every CRM/Sales form use) rather than the shadcn Input component, so
 // height (h-10) and font size (text-xs, no responsive size jump) match every
-// other form screen in the app instead of merely approximating it. ────────
+// other form screen in the app instead of merely approximating it. Icon is
+// optional: the top-level company fields get one, the address line1/line2/
+// suite/city/country/state/zip fields don't — matching how CRM's own address
+// fields (lib/crmFields.ts) render, plain labeled inputs with no icon. ────
 
 interface FieldSpec {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   placeholder: string;
   required?: boolean;
-  fullWidth?: boolean;
+  /** How many of the 3 grid columns this field spans on sm+ (default 1) —
+   *  for fields that genuinely hold more text (a full street address, a
+   *  legal entity name), not applied uniformly. */
+  colSpan?: 2 | 3;
 }
 
 function TextField({
@@ -55,19 +64,23 @@ function TextField({
 }) {
   const Icon = field.icon;
   return (
-    <div className={cn('space-y-1.5', field.fullWidth && 'sm:col-span-2')}>
+    <div className={cn(
+      'space-y-1.5',
+      field.colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
+      field.colSpan === 2 && 'lg:col-span-2',
+    )}>
       <label htmlFor={field.id} className={fieldLabelCls}>
         {field.label}
         {field.required && <span className="ml-0.5 text-red-400">*</span>}
       </label>
       <div className="relative">
-        <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+        {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />}
         <input
           id={field.id}
           type="text"
           placeholder={field.placeholder}
           aria-label={field.label}
-          className={cn(error ? fieldErrorCls : fieldCls, 'pl-9')}
+          className={cn(error ? fieldErrorCls : fieldCls, Icon && 'pl-9')}
           {...registration}
         />
       </div>
@@ -76,68 +89,40 @@ function TextField({
   );
 }
 
-function TextareaField({
-  field, registration, error, rows = 3,
-}: {
-  field: FieldSpec;
-  registration: UseFormRegisterReturn;
-  error?: string;
-  rows?: number;
-}) {
-  const Icon = field.icon;
-  return (
-    <div className={cn('space-y-1.5', field.fullWidth && 'sm:col-span-2')}>
-      <label htmlFor={field.id} className={fieldLabelCls}>
-        {field.label}
-      </label>
-      <div className="relative">
-        <Icon className="pointer-events-none absolute left-3 top-3 size-4 text-stone-400" />
-        <textarea
-          id={field.id}
-          rows={rows}
-          placeholder={field.placeholder}
-          aria-label={field.label}
-          className={cn(error ? textareaErrorCls : textareaCls, 'pl-9')}
-          {...registration}
-        />
-      </div>
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </div>
-  );
-}
-
-// Section card header band — matches BillingDetailsCard / AccountSettingsPage's
-// "Profile Information" card exactly (icon-in-box + title + subtitle on a
-// tinted band) rather than the plain border-only title this page used before.
-function SectionHeader({ icon: Icon, title, subtitle }: { icon: LucideIcon; title: string; subtitle: string }) {
-  return (
-    <div className="flex items-center gap-3 border-b border-stone-100 bg-stone-50/60 px-5 py-4 sm:px-6 sm:py-5">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
-        <Icon className="size-4.5" />
-      </div>
-      <div>
-        <h2 className="text-sm font-bold text-stone-900">{title}</h2>
-        <p className="mt-0.5 text-xs text-stone-500">{subtitle}</p>
-      </div>
-    </div>
-  );
-}
-
+// Spans chosen by how much text each field typically holds, not uniformly:
+// Company Name gets the full row, Legal Name/Website (often longer than
+// their neighbors) get 2 of 3 columns, everything else is a single column —
+// tiling into clean 3-wide rows (3, then 2+1, then 2+1, then 1+1+1).
 const COMPANY_FIELDS: FieldSpec[] = [
-  { id: 'cp-company-name', label: 'Company Name', icon: Building2, placeholder: 'e.g. Acme Stone Co.', required: true, fullWidth: true },
-  { id: 'cp-legal-name', label: 'Legal Name', icon: ScrollText, placeholder: 'e.g. Acme Stone Company LLC' },
+  { id: 'cp-company-name', label: 'Company Name', icon: Building2, placeholder: 'e.g. Acme Stone Co.', required: true, colSpan: 3 },
+  { id: 'cp-legal-name', label: 'Legal Name', icon: ScrollText, placeholder: 'e.g. Acme Stone Company LLC', colSpan: 2 },
   { id: 'cp-industry', label: 'Industry', icon: Briefcase, placeholder: 'e.g. Stone Fabrication' },
-  { id: 'cp-website', label: 'Website', icon: Globe, placeholder: 'e.g. https://acmestone.com' },
+  { id: 'cp-website', label: 'Website', icon: Globe, placeholder: 'e.g. https://acmestone.com', colSpan: 2 },
   { id: 'cp-country', label: 'Country', icon: Flag, placeholder: 'e.g. United States' },
   { id: 'cp-currency', label: 'Currency', icon: DollarSign, placeholder: 'e.g. USD' },
   { id: 'cp-timezone', label: 'Timezone', icon: Clock, placeholder: 'e.g. America/Chicago' },
-  { id: 'cp-tax-id', label: 'Tax / VAT ID', icon: Receipt, placeholder: 'e.g. 12-3456789', fullWidth: true },
+  { id: 'cp-tax-id', label: 'Tax / VAT ID', icon: Receipt, placeholder: 'e.g. 12-3456789' },
 ];
 
-const ADDRESS_FIELDS: FieldSpec[] = [
-  { id: 'cp-billing-address', label: 'Billing Address', icon: MapPin, placeholder: 'e.g. 123 Main Street, Springfield, IL 62704', fullWidth: true },
-  { id: 'cp-shipping-address', label: 'Shipping Address', icon: Truck, placeholder: 'e.g. 456 Warehouse Ave, Springfield, IL 62704' },
-  { id: 'cp-return-address', label: 'Return Address', icon: RotateCcw, placeholder: 'e.g. 789 Returns Dock, Springfield, IL 62704' },
+// Same line1/line2/suite/city/country/state/zip shape as a CRM record's own
+// Billing/Shipping address sections (lib/crmFields.ts) — one group per
+// address type, each rendered as its own labeled block within the card.
+const ADDRESS_GROUPS: { key: 'billingAddress' | 'shippingAddress' | 'returnAddress'; title: string; icon: LucideIcon }[] = [
+  { key: 'billingAddress', title: 'Billing Address', icon: MapPin },
+  { key: 'shippingAddress', title: 'Shipping Address', icon: Truck },
+  { key: 'returnAddress', title: 'Return Address', icon: RotateCcw },
+];
+
+// Line 1 gets the full row (a street address needs the room); line2/suite/
+// city then tile 3-across, and country/state/zip tile 3-across below that.
+const ADDRESS_SUBFIELDS: { key: keyof Address; label: string; placeholder: string; colSpan?: 2 | 3 }[] = [
+  { key: 'line1', label: 'Address Line 1', placeholder: 'e.g. 123 Main Street', colSpan: 3 },
+  { key: 'line2', label: 'Address Line 2', placeholder: 'e.g. Building B' },
+  { key: 'suite', label: 'Suite / Unit #', placeholder: 'e.g. Suite 400' },
+  { key: 'city', label: 'City', placeholder: 'e.g. Springfield' },
+  { key: 'country', label: 'Country', placeholder: 'e.g. United States' },
+  { key: 'state', label: 'State / Province', placeholder: 'e.g. IL' },
+  { key: 'zip', label: 'Zip / Postal Code', placeholder: 'e.g. 62704' },
 ];
 
 export default function CompanyProfilePage() {
@@ -186,9 +171,6 @@ export default function CompanyProfilePage() {
     'cp-currency': 'currency',
     'cp-timezone': 'timezone',
     'cp-tax-id': 'taxId',
-    'cp-billing-address': 'billingAddress',
-    'cp-shipping-address': 'shippingAddress',
-    'cp-return-address': 'returnAddress',
   };
 
   return (
@@ -243,41 +225,56 @@ export default function CompanyProfilePage() {
               )}
 
               <fieldset disabled={!canConfigure} className="space-y-4 sm:space-y-5">
-                {/* Side by side on lg+ so the wide page actually fills up,
-                    instead of two cards stacked in a narrow centered column. */}
-                {/* No items-start here (default align-items: stretch) so both
-                    cards match height on lg+, even though Address Information
-                    has fewer fields than Company Information. */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-                  <section className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-                    <SectionHeader icon={Building2} title="Company Information" subtitle="Your business's identity and details" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 px-5 py-4 sm:px-6 sm:py-5 sm:gap-y-5">
-                      {COMPANY_FIELDS.map((field) => (
-                        <TextField
-                          key={field.id}
-                          field={field}
-                          registration={register(registerKey[field.id])}
-                          error={errors[registerKey[field.id]]?.message}
-                        />
-                      ))}
+                {/* One full-width card (not two side by side) — every group
+                    (Company Information, then each address) is a labeled
+                    block inside it, each tiling its fields 3 across on sm+. */}
+                <section className="w-full rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+                  <div className="divide-y divide-stone-100">
+                    <div className="px-5 py-4 sm:px-6 sm:py-5">
+                      <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-400">
+                        <Building2 className="size-3.5" />
+                        Company Information
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
+                        {COMPANY_FIELDS.map((field) => (
+                          <TextField
+                            key={field.id}
+                            field={field}
+                            registration={register(registerKey[field.id])}
+                            error={errors[registerKey[field.id]]?.message}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </section>
 
-                  <section className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-                    <SectionHeader icon={MapPin} title="Address Information" subtitle="Where invoices, shipments, and returns are addressed" />
-                    <div className="grid flex-1 grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 px-5 py-4 sm:px-6 sm:py-5 sm:gap-y-5">
-                      {ADDRESS_FIELDS.map((field) => (
-                        <TextareaField
-                          key={field.id}
-                          field={field}
-                          registration={register(registerKey[field.id])}
-                          error={errors[registerKey[field.id]]?.message}
-                          rows={field.fullWidth ? 4 : 8}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                </div>
+                    {ADDRESS_GROUPS.map((group) => {
+                      const GroupIcon = group.icon;
+                      return (
+                        <div key={group.key} className="px-5 py-4 sm:px-6 sm:py-5">
+                          <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-400">
+                            <GroupIcon className="size-3.5" />
+                            {group.title}
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
+                            {ADDRESS_SUBFIELDS.map((sub) => (
+                              <TextField
+                                key={sub.key}
+                                field={{
+                                  id: `cp-${group.key}-${sub.key}`,
+                                  label: sub.label,
+                                  placeholder: sub.placeholder,
+                                  colSpan: sub.colSpan,
+                                }}
+                                registration={register(`${group.key}.${sub.key}`)}
+                                error={errors[group.key]?.[sub.key]?.message}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
 
                 <div className="flex justify-end pb-6">
                   <button
