@@ -12,6 +12,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
+import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { VendorBillFormBody } from './components/VendorBillFormBody';
 import {
   vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
@@ -41,6 +42,14 @@ export default function AddVendorBillPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // New vendor bills default to USD once the lookups load — derived rather
+  // than copied into state, so it never clobbers a value the user already
+  // set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
+  }, [data, lookups]);
+
   const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
@@ -54,7 +63,7 @@ export default function AddVendorBillPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!vendor) throw new Error('A vendor is required.');
-      const payload = toCreatePayload({ ...data, vendor_uuid: vendor.id }, lineItems, customFieldValues);
+      const payload = toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues);
       return vendorBillService.createVendorBill(payload);
     },
     onSuccess: async (bill) => {
@@ -102,7 +111,7 @@ export default function AddVendorBillPage() {
         <VendorBillFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={formData}
           set={set}
           lineItems={lineItems}
           setLineItems={setLineItems}

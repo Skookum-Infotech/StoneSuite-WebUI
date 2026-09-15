@@ -494,6 +494,15 @@ export const sidebarNav: SidebarNavConfig = {
           children: [
             {
               type: "link",
+              id: "company-profile",
+              label: "Company Info",
+              path: "/config/company-profile",
+              icon: Building2,
+              iconColor: "text-violet-600 dark:text-violet-400",
+              permission: { resource: "company_profile", action: "read" },
+            },
+            {
+              type: "link",
               id: "workflows",
               label: "Workflows",
               path: "/config/workflows",

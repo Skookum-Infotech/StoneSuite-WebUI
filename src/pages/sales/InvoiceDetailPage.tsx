@@ -143,7 +143,7 @@ export default function InvoiceDetailPage() {
             ],
           },
           { title: 'Bill To', rows: addressRows(invoice.billing) },
-          { title: 'Ship To', rows: invoice.shipSameAsBilling ? [] : addressRows(invoice.shipping) },
+          { title: 'Ship To', rows: addressRows(invoice.shipping) },
         ],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
@@ -266,11 +266,7 @@ export default function InvoiceDetailPage() {
                 <AddressBlock addr={invoice.billing} />
               </ModernSection>
               <ModernSection title="Ship To" index={2}>
-                {invoice.shipSameAsBilling ? (
-                  <p className="text-xs text-stone-400 italic">Same as billing customer.</p>
-                ) : (
-                  <AddressBlock addr={invoice.shipping} />
-                )}
+                <AddressBlock addr={invoice.shipping} />
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

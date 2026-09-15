@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
@@ -9,6 +9,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { vendorDefaults, validateVendorForm, toCreatePayload, type VendorFieldError } from '@/lib/vendorForm';
+import { defaultCountryId } from '@/lib/lookupDefaults';
 import type { VendorType } from '@/types/vendor';
 import { VendorTypeSwitcher } from './components/VendorTypeSwitcher';
 import { VendorFormBody } from './components/VendorFormBody';
@@ -38,8 +39,19 @@ export default function AddVendorPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // New vendors default Nationality to United States once the lookups
+  // load — derived rather than copied into state, so it never clobbers a
+  // value the user already set.
+  const formData = useMemo(() => {
+    if (!lookups) return data;
+    return {
+      ...data,
+      nationality_country_id: data.nationality_country_id || defaultCountryId(lookups.countries),
+    };
+  }, [data, lookups]);
+
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => vendorService.createVendor(toCreatePayload(data)),
+    mutationFn: () => vendorService.createVendor(toCreatePayload(formData)),
     onSuccess: () => {
       toast.success('Vendor created.');
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
@@ -119,7 +131,7 @@ export default function AddVendorPage() {
         <div className="flex-1 overflow-y-auto modal-scrollbar">
           <VendorFormBody
             vendorType={vendorType}
-            data={data}
+            data={formData}
             set={set}
             lookups={lookups}
             showErrors={validationErrors.length > 0}

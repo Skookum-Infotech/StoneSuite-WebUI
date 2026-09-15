@@ -36,6 +36,10 @@ export interface SOFormField {
   colSpanFull?: boolean;
   /** Only render when the referenced field is false/unchecked */
   showIfFieldFalse?: string;
+  /** Render disabled (visible, but not editable) when the named checkbox
+   *  field is checked — used for a field currently mirroring another one's
+   *  value ("same as billing") rather than being independently set. */
+  disabledIfFieldTrue?: string;
   /** Textarea row count (only used when type === 'textarea') */
   rows?: number;
   /** Small helper line rendered under the field (e.g. to explain a derived
@@ -188,14 +192,14 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     key: 'ship_customer',
     label: 'Shipping Customer',
     type: 'text',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     placeholder: 'Shipping customer name',
   },
   {
     key: 'ship_attn',
     label: 'Attn:',
     type: 'text',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     placeholder: 'Authorized contact person',
   },
   {
@@ -203,7 +207,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     label: 'Address Line 1',
     type: 'textarea',
     rows: 2,
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     colSpan2: true,
     required: true,
     placeholder: '123 Main Street',
@@ -213,7 +217,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     label: 'Address Line 2',
     type: 'textarea',
     rows: 2,
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     colSpan2: true,
     placeholder: 'Apt, suite, floor, etc.',
   },
@@ -221,14 +225,14 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     key: 'ship_suite',
     label: 'Suite / Unit #',
     type: 'text',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     placeholder: 'Suite 100',
   },
   {
     key: 'ship_city',
     label: 'City',
     type: 'text',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     required: true,
     placeholder: 'City',
   },
@@ -236,7 +240,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     key: 'ship_country',
     label: 'Country',
     type: 'select',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     required: true,
     lookupKey: 'countries',
   },
@@ -244,7 +248,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     key: 'ship_state',
     label: 'State',
     type: 'select',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     required: true,
     lookupKey: 'states',
     dependsOn: 'ship_country',
@@ -253,7 +257,7 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     key: 'ship_zip',
     label: 'Zip / Postal Code',
     type: 'text',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     required: true,
     placeholder: '12345',
   },
@@ -261,21 +265,21 @@ export const SHIP_TO_FIELDS: SOFormField[] = [
     key: 'ship_phone',
     label: 'Phone',
     type: 'tel',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     placeholder: '+1 (555) 000-0000',
   },
   {
     key: 'ship_fax',
     label: 'Fax',
     type: 'tel',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     placeholder: '+1 (555) 000-0000',
   },
   {
     key: 'ship_email',
     label: 'Email',
     type: 'email',
-    showIfFieldFalse: 'ship_same_as_bill',
+    disabledIfFieldTrue: 'ship_same_as_bill',
     placeholder: 'shipping@company.com',
   },
 ];
