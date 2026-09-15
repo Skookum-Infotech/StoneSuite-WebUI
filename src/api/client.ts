@@ -11,7 +11,10 @@ export const apiClient = axios.create({
 // Reads a cookie by name. Only useful for non-httpOnly cookies — csrf_token
 // is deliberately not httpOnly so this can read it (see backend
 // middleware/csrf.go for why the header must echo the cookie's value).
-function readCookie(name: string): string | null {
+// Exported so a `fetch`-based caller that bypasses apiClient entirely (e.g.
+// aiService's streaming ask, which axios's buffering XHR adapter can't do)
+// can still echo the same CSRF header without reimplementing cookie parsing.
+export function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }

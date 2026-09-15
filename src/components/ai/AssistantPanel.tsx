@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
-import { Sparkles, X, Send, Loader2, FileText, BookOpen } from 'lucide-react';
-import { aiService, conversationService } from '@/services/aiService';
+import { Sparkles, X, Send, Square, Loader2, FileText, BookOpen } from 'lucide-react';
+import { AskStreamHTTPError, askAssistantStream, conversationService } from '@/services/aiService';
+import type { AskStreamHandlers } from '@/services/aiService';
 import { apiErrorMessage } from '@/api/tenantClient';
-import type { AskResponse, AskResult, Citation } from '@/types/ai';
+import type { Citation } from '@/types/ai';
 import { cn } from '@/lib/utils';
 
 const MAX_QUESTION_LENGTH = 2000;
@@ -13,7 +12,21 @@ const MAX_QUESTION_LENGTH = 2000;
 interface ChatTurn {
   id: string;
   question: string;
-  result?: AskResult;
+  // Accumulated streamed text — grows token by token while `streaming` is
+  // true, and holds the final answer once it settles false. undefined until
+  // the first token (or the synthetic single-shot token a count-route
+  // answer arrives as) lands.
+  answer?: string;
+  // The cited subset, set only once the stream reaches "done" — never
+  // populated while streaming, since which citations were actually
+  // referenced isn't known until the full answer can be checked for [n]
+  // markers.
+  citations?: Citation[];
+  // The raw retrieved set from the "sources" event, before generation
+  // starts — rendered as a dimmed "found N sources" line, distinct from
+  // (and generally a superset of) `citations`.
+  sources?: Citation[];
+  streaming?: boolean;
   error?: string;
 }
 
@@ -23,16 +36,22 @@ function resolveWorkflowKeyFromPath(pathname: string): string | null {
   return match ? match[1] : null;
 }
 
-// Ask, transparently recovering from a stale/deleted conversationId: the
-// backend 404s an ask against a conversation that no longer exists (or isn't
-// the caller's), so retry once as a fresh, conversation-less ask rather than
-// surfacing that as an error the user did nothing to cause.
-async function askWithRetry(question: string, conversationId: string | undefined): Promise<AskResponse> {
+// Streams, transparently recovering from a stale/deleted conversationId: the
+// backend 404s a stream against a conversation that no longer exists (or
+// isn't the caller's) before writing any SSE byte, so retry once as a
+// fresh, conversation-less stream rather than surfacing that as an error the
+// user did nothing to cause. Mirrors askWithRetry's non-streaming version.
+async function streamAskWithRetry(
+  question: string,
+  conversationId: string | undefined,
+  handlers: AskStreamHandlers,
+  signal: AbortSignal,
+): Promise<void> {
   try {
-    return await aiService.askAssistant(question, conversationId);
+    await askAssistantStream(question, conversationId, handlers, signal);
   } catch (err) {
-    if (conversationId && err instanceof AxiosError && err.response?.status === 404) {
-      return aiService.askAssistant(question);
+    if (conversationId && err instanceof AskStreamHTTPError && err.status === 404) {
+      return askAssistantStream(question, undefined, handlers, signal);
     }
     throw err;
   }
@@ -85,14 +104,15 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
   // conversation's history into the prompt from the second question on —
   // set once the first successful ask returns one.
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+  const [isStreaming, setIsStreaming] = useState(false);
+  // The in-flight stream's abort handle — Stop calls this directly rather
+  // than going through React state, since it must take effect immediately
+  // on click, not on the next render.
+  const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const workflowKey = resolveWorkflowKeyFromPath(location.pathname);
-
-  const askMutation = useMutation({
-    mutationFn: ({ q, convId }: { q: string; convId: string | undefined }) => askWithRetry(q, convId),
-  });
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -110,25 +130,30 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
+  // Unmounting mid-stream (panel closed while the assistant is still
+  // generating) must not leak the fetch or its reader — the panel is
+  // `{open && <AssistantPanel/>}`, so closing genuinely unmounts this
+  // component rather than just hiding it.
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
+
   const handleAsk = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     const trimmed = question.trim();
-    if (!trimmed || askMutation.isPending) return;
+    if (!trimmed || isStreaming) return;
 
     const turnId = `${Date.now()}`;
     setTurns((prev) => [...prev, { id: turnId, question: trimmed }]);
     setQuestion('');
 
     // The backend only threads history into an ask that already carries a
-    // conversation_id — it never mints one on its own. Without this, every
-    // turn stayed stateless forever: conversationId's only writer was
-    // askMutation's own onSuccess below, which had nothing to set it FROM on
-    // that always-undefined first call. Create lazily, on the first question
-    // asked (not on panel open), so opening the panel and never asking
-    // anything doesn't litter an empty conversation. Read the freshly minted
-    // id from a local variable, not the conversationId state var: setState
-    // here wouldn't be visible to askMutation.mutate a few lines below in
-    // the same tick.
+    // conversation_id — it never mints one on its own. Create lazily, on
+    // the first question asked (not on panel open), so opening the panel
+    // and never asking anything doesn't litter an empty conversation. Read
+    // the freshly minted id from a local variable, not the conversationId
+    // state var: setState here wouldn't be visible to the stream call below
+    // in the same tick.
     let activeConversationId = conversationId;
     if (!activeConversationId) {
       try {
@@ -142,19 +167,50 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
       }
     }
 
-    askMutation.mutate(
-      { q: trimmed, convId: activeConversationId },
-      {
-        onSuccess: ({ result, conversationId: newConversationId }) => {
-          setConversationId(newConversationId);
-          setTurns((prev) => prev.map((t) => (t.id === turnId ? { ...t, result } : t)));
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setIsStreaming(true);
+
+    const patchTurn = (patch: Partial<ChatTurn>): void => {
+      setTurns((prev) => prev.map((t) => (t.id === turnId ? { ...t, ...patch } : t)));
+    };
+
+    try {
+      await streamAskWithRetry(
+        trimmed,
+        activeConversationId,
+        {
+          onSources: (sources) => patchTurn({ sources }),
+          onToken: (token) => {
+            setTurns((prev) =>
+              prev.map((t) => (t.id === turnId ? { ...t, answer: (t.answer ?? '') + token, streaming: true } : t)),
+            );
+          },
+          onDone: ({ result, conversationId: newConversationId }) => {
+            setConversationId(newConversationId);
+            patchTurn({ answer: result.answer, citations: result.citations, streaming: false });
+          },
+          onError: (message) => patchTurn({ error: message, streaming: false }),
         },
-        onError: (err) => {
-          setTurns((prev) =>
-            prev.map((t) => (t.id === turnId ? { ...t, error: apiErrorMessage(err, 'The assistant could not answer that.') } : t)),
-          );
-        },
-      },
+        controller.signal,
+      );
+    } catch (err) {
+      patchTurn({ error: apiErrorMessage(err, 'The assistant could not answer that.'), streaming: false });
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
+      setIsStreaming(false);
+    }
+  };
+
+  const handleStop = (): void => {
+    abortRef.current?.abort();
+    // askAssistantStream resolves silently on an intentional abort (calls
+    // neither onDone nor onError), so the in-flight turn is patched here
+    // instead — leave whatever partial answer already streamed in place
+    // rather than discarding it, since a truncated-but-real answer is more
+    // useful than nothing.
+    setTurns((prev) =>
+      prev.map((t) => (t.streaming ? { ...t, streaming: false, error: t.answer ? undefined : 'Stopped.' } : t)),
     );
   };
 
@@ -199,14 +255,22 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
                 {turn.error}
               </p>
             )}
-            {turn.result && (
+            {!turn.error && turn.answer === undefined && turn.sources && turn.sources.length > 0 && (
+              <p className="text-2xs italic text-stone-400 dark:text-stone-500">
+                Found {turn.sources.length} source{turn.sources.length === 1 ? '' : 's'}…
+              </p>
+            )}
+            {turn.answer !== undefined && (
               <div className="max-w-[95%] space-y-2">
                 <p className="rounded-2xl bg-stone-100 px-3 py-2 text-xs text-stone-700 dark:bg-white/[0.06] dark:text-stone-200">
-                  {turn.result.answer}
+                  {turn.answer}
+                  {turn.streaming && (
+                    <span className="ml-0.5 inline-block h-3 w-1 animate-pulse bg-current align-middle" aria-hidden="true" />
+                  )}
                 </p>
-                {turn.result.citations.length > 0 && (
+                {turn.citations && turn.citations.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {turn.result.citations.map((citation, idx) => (
+                    {turn.citations.map((citation, idx) => (
                       <CitationChip
                         key={`${citation.source_type}-${citation.source_id}-${idx}`}
                         citation={citation}
@@ -217,7 +281,7 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
                 )}
               </div>
             )}
-            {!turn.result && !turn.error && (
+            {!turn.error && turn.answer === undefined && !turn.sources && (
               <div className="flex items-center gap-2 rounded-2xl bg-stone-100 px-3 py-2 text-xs text-stone-500 dark:bg-white/[0.06] dark:text-stone-400">
                 <Loader2 className="size-3.5 animate-spin" />
                 Thinking…
@@ -236,16 +300,28 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
           maxLength={MAX_QUESTION_LENGTH}
           placeholder="Ask a question…"
           aria-label="Ask the AI assistant a question"
-          className="flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-700 outline-none focus:border-brand dark:border-white/10 dark:bg-white/[0.04] dark:text-stone-200"
+          disabled={isStreaming}
+          className="flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-700 outline-none focus:border-brand disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.04] dark:text-stone-200"
         />
-        <button
-          type="submit"
-          disabled={!question.trim() || askMutation.isPending}
-          aria-label="Send question"
-          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand text-stone-950 disabled:opacity-40 hover:bg-brand-dark transition-colors cursor-pointer disabled:cursor-not-allowed"
-        >
-          <Send className="size-4" />
-        </button>
+        {isStreaming ? (
+          <button
+            type="button"
+            onClick={handleStop}
+            aria-label="Stop generating"
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-stone-200 text-stone-700 transition-colors hover:bg-stone-300 cursor-pointer dark:bg-white/10 dark:text-stone-200 dark:hover:bg-white/20"
+          >
+            <Square className="size-3.5 fill-current" />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!question.trim()}
+            aria-label="Send question"
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand text-stone-950 disabled:opacity-40 hover:bg-brand-dark transition-colors cursor-pointer disabled:cursor-not-allowed"
+          >
+            <Send className="size-4" />
+          </button>
+        )}
       </form>
     </div>
   );
