@@ -308,8 +308,11 @@ export default function AccountSettingsPage() {
       if (user) {
         setAuth({ ...user, selectedRoleId: roleId }, data.token, data.expiresAt)
       }
-      // The active role changed server-side — the cached grant set is stale.
-      queryClient.invalidateQueries({ queryKey: ['user-permissions', user?.id] })
+      // The active role changed server-side — every role/permission-scoped
+      // query (permissions, notifications, scoped lists, etc.) is stale, so
+      // clear the whole cache rather than hand-picking keys. Same pattern as
+      // applyWorkspaceSwitch/logout in useAuthStore.
+      queryClient.clear()
     },
   })
 

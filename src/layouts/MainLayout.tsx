@@ -72,7 +72,11 @@ export default function MainLayout(): React.JSX.Element {
       if (user) {
         setAuth({ ...user, selectedRoleId: roleId }, data.token, data.expiresAt);
       }
-      queryClient.invalidateQueries({ queryKey: ['user-permissions', user?.id] });
+      // The active role changed server-side — every role/permission-scoped
+      // query (permissions, notifications, scoped lists, etc.) is stale, so
+      // clear the whole cache rather than hand-picking keys. Same pattern as
+      // applyWorkspaceSwitch/logout in useAuthStore.
+      queryClient.clear();
     },
   });
 
