@@ -11,6 +11,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { EstimateFormBody } from './components/EstimateFormBody';
 import {
@@ -29,7 +30,14 @@ export default function AddEstimatePage() {
   const [customer, setCustomer] = useState<CustomerRef | null>(null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
 
-  const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const set = useCallback((key: string, value: unknown) => {
+    setData((d) => {
+      if (key === 'ship_same_as_bill' && value === true) {
+        return { ...d, ...shipSameAsBillFields(d, customer?.name), [key]: value };
+      }
+      return { ...d, [key]: value };
+    });
+  }, [customer]);
   const setCustomField = useCallback(
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
     [],

@@ -15,7 +15,7 @@ import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
-import { crmCoreDefaults } from '@/lib/crmFields';
+import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,15 @@ export default function AddCustomerPage() {
 
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
-    setCoreFields((d) => ({ ...d, [key]: value }));
+    setCoreFields((d) => {
+      if (key === 'customer_is_bill_as_primary' && value === true) {
+        return { ...d, ...primaryAddressFields(d, 'bill'), [key]: value };
+      }
+      if (key === 'customer_is_ship_as_primary' && value === true) {
+        return { ...d, ...primaryAddressFields(d, 'ship'), [key]: value };
+      }
+      return { ...d, [key]: value };
+    });
   };
   const handleStatusChange = useCallback((stateId: string) => setCrmStatusId(stateId), []);
 

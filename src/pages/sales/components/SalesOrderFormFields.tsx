@@ -7,7 +7,7 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { SOFormField } from '@/lib/salesOrderForm';
 
 // Renders one SOFormField — shared by the Add and Edit Sales Order forms.
-export function SOField({ field, value, set, lookups, dependsOnValue }: {
+export function SOField({ field, value, set, lookups, dependsOnValue, disabled }: {
   field: SOFormField;
   value: unknown;
   set: (k: string, v: unknown) => void;
@@ -15,6 +15,9 @@ export function SOField({ field, value, set, lookups, dependsOnValue }: {
   /** Current value of the field named by `field.dependsOn`, when set (e.g.
    *  the country id a state select filters by). */
   dependsOnValue?: unknown;
+  /** Render the control disabled — set when field.disabledIfFieldTrue names
+   *  a currently-checked field (this value is mirroring another one). */
+  disabled?: boolean;
 }) {
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
   const checked = value === true;
@@ -55,6 +58,7 @@ export function SOField({ field, value, set, lookups, dependsOnValue }: {
           <textarea
             rows={field.rows ?? 3}
             required={field.required}
+            disabled={disabled}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
             className={textareaCls}
@@ -88,7 +92,7 @@ export function SOField({ field, value, set, lookups, dependsOnValue }: {
             onChange={(e) => set(field.key, e.target.value)}
             className={fieldCls}
             aria-label={field.label}
-            disabled={dependsOnUnset}
+            disabled={dependsOnUnset || disabled}
           >
             <option value="">{dependsOnUnset ? '— Select a country first —' : '— Select —'}</option>
             {filteredRows
@@ -120,6 +124,7 @@ export function SOField({ field, value, set, lookups, dependsOnValue }: {
         <input
           type={field.type ?? 'text'}
           required={field.required}
+          disabled={disabled}
           value={str}
           onChange={(e) => set(field.key, e.target.value)}
           className={fieldCls}
@@ -154,6 +159,7 @@ export function SOSectionGrid({ fields, data, set, lookups, maxCols = 3 }: {
           set={set}
           lookups={lookups}
           dependsOnValue={f.dependsOn ? data[f.dependsOn] : undefined}
+          disabled={f.disabledIfFieldTrue ? Boolean(data[f.disabledIfFieldTrue]) : false}
         />
       ))}
     </div>

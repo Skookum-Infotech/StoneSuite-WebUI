@@ -157,7 +157,7 @@ export default function QuoteDetailPage() {
             ],
           },
           { title: 'Bill To', rows: addressRows(quote.billing) },
-          { title: 'Ship To', rows: quote.shipSameAsBilling ? [] : addressRows(quote.shipping) },
+          { title: 'Ship To', rows: addressRows(quote.shipping) },
         ],
         itemsTable: {
           head: ['#', 'Item', 'Description', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
@@ -308,11 +308,7 @@ export default function QuoteDetailPage() {
                 <AddressBlock addr={quote.billing} />
               </ModernSection>
               <ModernSection title="Ship To" index={2}>
-                {quote.shipSameAsBilling ? (
-                  <p className="text-xs text-stone-400 italic">Same as billing customer.</p>
-                ) : (
-                  <AddressBlock addr={quote.shipping} />
-                )}
+                <AddressBlock addr={quote.shipping} />
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

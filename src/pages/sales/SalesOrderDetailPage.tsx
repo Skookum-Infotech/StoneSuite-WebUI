@@ -166,7 +166,7 @@ export default function SalesOrderDetailPage() {
             ],
           },
           { title: 'Bill To', rows: addressRows(order.billing) },
-          { title: 'Ship To', rows: order.shipSameAsBilling ? [] : addressRows(order.shipping) },
+          { title: 'Ship To', rows: addressRows(order.shipping) },
         ],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
@@ -323,11 +323,7 @@ export default function SalesOrderDetailPage() {
                 <AddressBlock addr={order.billing} />
               </ModernSection>
               <ModernSection title="Ship To" index={2}>
-                {order.shipSameAsBilling ? (
-                  <p className="text-xs text-stone-400 italic">Same as billing customer.</p>
-                ) : (
-                  <AddressBlock addr={order.shipping} />
-                )}
+                <AddressBlock addr={order.shipping} />
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -60,10 +60,15 @@ describe('validateCrmRecord — customer core address/contact requirements', () 
     ]))
   })
 
-  it('does not flag billing address fields when billing is same as primary', () => {
+  // Billing address fields are unconditionally required now (no more
+  // showIfFieldFalse-driven exemption) — the fields stay visible when
+  // "Billing Same as Primary" is checked (disabledIfFieldTrue) and the app
+  // populates them via primaryAddressFields(), rather than the old
+  // hide-and-skip-validation behavior.
+  it('flags missing billing address fields even when billing is same as primary', () => {
     const coreFields = { ...withPrimaryAddress, customer_is_bill_as_primary: true }
     const keys = validateCrmRecord(coreFields, [], {}).map((e) => e.key)
-    expect(keys).not.toEqual(expect.arrayContaining(['customer_bill_addr_line1', 'customer_bill_addr_city']))
+    expect(keys).toEqual(expect.arrayContaining(['customer_bill_addr_line1', 'customer_bill_addr_city']))
   })
 
   it('flags missing billing address fields when billing is not same as primary', () => {
@@ -75,8 +80,16 @@ describe('validateCrmRecord — customer core address/contact requirements', () 
     ]))
   })
 
-  it('passes with no errors once every required core field is filled', () => {
-    const coreFields = { ...withPrimaryAddress, customer_is_bill_as_primary: true }
+  it('passes with no errors once every required core field is filled, including a mirrored billing address', () => {
+    const coreFields = {
+      ...withPrimaryAddress,
+      customer_is_bill_as_primary: true,
+      customer_bill_addr_line1: withPrimaryAddress.customer_addr_line1,
+      customer_bill_addr_city: withPrimaryAddress.customer_addr_city,
+      customer_bill_addr_country: withPrimaryAddress.customer_addr_country,
+      customer_bill_addr_state: withPrimaryAddress.customer_addr_state,
+      customer_bill_addr_zip: withPrimaryAddress.customer_addr_zip,
+    }
     expect(validateCrmRecord(coreFields, [], {})).toEqual([])
   })
 })

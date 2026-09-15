@@ -14,7 +14,7 @@ import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
-import { crmCoreDefaults } from '@/lib/crmFields';
+import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -111,7 +111,16 @@ export default function EditLeadPage() {
 
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
-    setLocalCoreFields((prev) => ({ ...(prev ?? { ...crmCoreDefaults(), ...record?.coreFields }), [key]: value }));
+    setLocalCoreFields((prev) => {
+      const current = prev ?? { ...crmCoreDefaults(), ...record?.coreFields };
+      if (key === 'customer_is_bill_as_primary' && value === true) {
+        return { ...current, ...primaryAddressFields(current, 'bill'), [key]: value };
+      }
+      if (key === 'customer_is_ship_as_primary' && value === true) {
+        return { ...current, ...primaryAddressFields(current, 'ship'), [key]: value };
+      }
+      return { ...current, [key]: value };
+    });
   };
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);

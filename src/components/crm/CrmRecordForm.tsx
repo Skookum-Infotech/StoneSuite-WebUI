@@ -49,6 +49,10 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
     return true;
   }
 
+  function isFieldDisabled(field: CrmCoreField): boolean {
+    return field.disabledIfFieldTrue ? Boolean(core.fields[field.disabledIfFieldTrue]) : false;
+  }
+
   function lookupOptions(field: CrmCoreField): LookupItem[] {
     if (!lookups || !field.lookupKey) return [];
     const items = lookups[field.lookupKey] as Array<LookupItem & { countryId?: number }>;
@@ -101,6 +105,7 @@ export function CrmRecordForm({ core, custom, statusNode, owner, showCustomerBal
                   onChange={core.onChange}
                   options={lookupOptions(field)}
                   invalid={invalidKeys?.has(field.key)}
+                  disabled={isFieldDisabled(field)}
                 />
               );
             })}
@@ -149,12 +154,16 @@ function CrmFieldInput({
   onChange,
   options,
   invalid,
+  disabled,
 }: {
   field: CrmCoreField;
   value: unknown;
   onChange: (key: string, value: unknown) => void;
   options: LookupItem[];
   invalid?: boolean;
+  /** Render the control disabled — set when field.disabledIfFieldTrue names
+   *  a currently-checked field (this value is mirroring another one). */
+  disabled?: boolean;
 }) {
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
   const checked = value === true || value === 'true';
@@ -200,6 +209,7 @@ function CrmFieldInput({
           <textarea
             rows={4}
             required={field.required}
+            disabled={disabled}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}
             className={areaCls}
@@ -218,6 +228,7 @@ function CrmFieldInput({
           <textarea
             rows={2}
             required={field.required}
+            disabled={disabled}
             value={str}
             onChange={(e) => onChange(field.key, e.target.value)}
             className={areaCls}
@@ -234,6 +245,7 @@ function CrmFieldInput({
       <ModernFieldShell label={field.label} required={field.required}>
         <select
           required={field.required}
+          disabled={disabled}
           value={str}
           onChange={(e) => onChange(field.key, e.target.value)}
           className={inputCls}
@@ -264,6 +276,7 @@ function CrmFieldInput({
       <input
         type={field.type}
         required={field.required}
+        disabled={disabled}
         value={str}
         onChange={(e) => onChange(field.key, e.target.value)}
         className={inputCls}

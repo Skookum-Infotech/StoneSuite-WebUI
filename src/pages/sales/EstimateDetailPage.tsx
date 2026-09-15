@@ -156,7 +156,7 @@ export default function EstimateDetailPage() {
             ],
           },
           { title: 'Bill To', rows: addressRows(estimate.billing) },
-          { title: 'Ship To', rows: estimate.shipSameAsBilling ? [] : addressRows(estimate.shipping) },
+          { title: 'Ship To', rows: addressRows(estimate.shipping) },
         ],
         itemsTable: {
           head: ['#', 'Item', 'Description', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
@@ -295,11 +295,7 @@ export default function EstimateDetailPage() {
                 <AddressBlock addr={estimate.billing} />
               </ModernSection>
               <ModernSection title="Ship To" index={2}>
-                {estimate.shipSameAsBilling ? (
-                  <p className="text-xs text-stone-400 italic">Same as billing customer.</p>
-                ) : (
-                  <AddressBlock addr={estimate.shipping} />
-                )}
+                <AddressBlock addr={estimate.shipping} />
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

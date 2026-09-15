@@ -12,6 +12,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import {
@@ -72,7 +73,15 @@ export default function AddQuotePage() {
   const lineItems = useMemo(() => localLineItems ?? prefill?.lineItems ?? [], [localLineItems, prefill]);
   const customer = customerTouched ? localCustomer : (prefill?.customer ?? null);
 
-  const set = useCallback((key: string, value: unknown) => setLocalData((d) => ({ ...(d ?? baseData), [key]: value })), [baseData]);
+  const set = useCallback((key: string, value: unknown) => {
+    setLocalData((d) => {
+      const current = d ?? baseData;
+      if (key === 'ship_same_as_bill' && value === true) {
+        return { ...current, ...shipSameAsBillFields(current, customer?.name), [key]: value };
+      }
+      return { ...current, [key]: value };
+    });
+  }, [baseData, customer]);
   const setCustomField = useCallback(
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
     [],
