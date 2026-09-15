@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
 
 // Poll interval for the unread badge — same cadence as HelpMenu's own
@@ -22,7 +23,8 @@ const LIST_KEY = ['notifications-list'];
 // looking at the screen, here's instant feedback"; this bell is for "what
 // happened while I wasn't looking, and can I still find it later".
 export function NotificationBell() {
-  const [open, setOpen] = useState(false);
+  const open = useHeaderMenuStore((s) => s.openMenu === 'notifications');
+  const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const queryClient = useQueryClient();
@@ -65,19 +67,19 @@ export function NotificationBell() {
   // own profile menu.
   useEffect(() => {
     if (!open) return;
-    const close = (): void => setOpen(false);
+    const close = (): void => setOpenMenu(null);
     window.addEventListener('click', close);
     return () => window.removeEventListener('click', close);
-  }, [open]);
+  }, [open, setOpenMenu]);
 
   useEffect(() => {
     if (!open) return;
     const handleKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') setOpenMenu(null);
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [open]);
+  }, [open, setOpenMenu]);
 
   if (!enabled) return null;
 
@@ -85,7 +87,7 @@ export function NotificationBell() {
     <div className="relative">
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        onClick={(e) => { e.stopPropagation(); setOpenMenu(open ? null : 'notifications'); }}
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -144,7 +146,7 @@ export function NotificationBell() {
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!n.readAt) markRead.mutate(n.id);
-                  setOpen(false);
+                  setOpenMenu(null);
                   if (n.link) navigate(n.link);
                 }}
                 className={cn(
