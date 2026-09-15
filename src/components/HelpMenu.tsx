@@ -5,6 +5,7 @@ import { feedbackService } from '@/services/feedbackService';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
 import { FeedbackPanel } from '@/components/feedback/FeedbackPanel';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
 
 // Poll interval for the unread-reply badge — cheap enough to run continuously
@@ -18,7 +19,8 @@ const UNREAD_POLL_MS = 60_000;
 // Rendered for both tenant staff and customer-portal sessions, same as the
 // two things it replaces were.
 export function HelpMenu() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menuOpen = useHeaderMenuStore((s) => s.openMenu === 'help');
+  const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -35,25 +37,25 @@ export function HelpMenu() {
   // Same click-outside-closes convention as MainLayout's own profile menu.
   useEffect(() => {
     if (!menuOpen) return;
-    const close = (): void => setMenuOpen(false);
+    const close = (): void => setOpenMenu(null);
     window.addEventListener('click', close);
     return () => window.removeEventListener('click', close);
-  }, [menuOpen]);
+  }, [menuOpen, setOpenMenu]);
 
   useEffect(() => {
     if (!menuOpen) return;
     const handleKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setMenuOpen(false);
+      if (e.key === 'Escape') setOpenMenu(null);
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [menuOpen]);
+  }, [menuOpen, setOpenMenu]);
 
   return (
     <div className="relative">
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+        onClick={(e) => { e.stopPropagation(); setOpenMenu(menuOpen ? null : 'help'); }}
         aria-label={unreadCount > 0 ? `Help (${unreadCount} unread)` : 'Help'}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
@@ -82,7 +84,7 @@ export function HelpMenu() {
           <button
             type="button"
             role="menuitem"
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setAssistantOpen(true); }}
+            onClick={(e) => { e.stopPropagation(); setOpenMenu(null); setAssistantOpen(true); }}
             className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] cursor-pointer"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand">
@@ -99,7 +101,7 @@ export function HelpMenu() {
           <button
             type="button"
             role="menuitem"
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setFeedbackOpen(true); }}
+            onClick={(e) => { e.stopPropagation(); setOpenMenu(null); setFeedbackOpen(true); }}
             className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] cursor-pointer"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-500/15 text-teal-400">

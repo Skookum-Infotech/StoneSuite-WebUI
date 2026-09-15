@@ -4,6 +4,7 @@ import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-route
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useExitConfirmation } from '@/hooks/useExitConfirmation';
@@ -58,7 +59,8 @@ export default function MainLayout(): React.JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const isProfileOpen = useHeaderMenuStore((s) => s.openMenu === 'profile');
+  const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
@@ -96,7 +98,7 @@ export default function MainLayout(): React.JSX.Element {
     mutationFn: (tenantId: string) => authService.switchWorkspace(tenantId),
     onSuccess: (data) => {
       applyWorkspaceSwitch(data.tenantId, data.token, data.expiresAt);
-      setIsProfileOpen(false);
+      setOpenMenu(null);
     },
   });
 
@@ -117,10 +119,10 @@ export default function MainLayout(): React.JSX.Element {
 
   useEffect(() => {
     if (!isProfileOpen) return;
-    const handleClose = (): void => setIsProfileOpen(false);
+    const handleClose = (): void => setOpenMenu(null);
     window.addEventListener('click', handleClose);
     return () => window.removeEventListener('click', handleClose);
-  }, [isProfileOpen]);
+  }, [isProfileOpen, setOpenMenu]);
 
   // Close mobile search when navigating
   useEffect(() => {
@@ -308,7 +310,7 @@ export default function MainLayout(): React.JSX.Element {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsProfileOpen(!isProfileOpen);
+                  setOpenMenu(isProfileOpen ? null : 'profile');
                 }}
                 className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] p-1.5 pr-3 text-left hover:bg-white/10 transition-all cursor-pointer select-none"
               >
@@ -334,7 +336,7 @@ export default function MainLayout(): React.JSX.Element {
                   </div>
                   <div className="py-1">
                     <button
-                      onClick={() => { setIsProfileOpen(false); navigate('/account/settings'); }}
+                      onClick={() => { setOpenMenu(null); navigate('/account/settings'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
                       <Settings className="size-4 text-stone-500" />
@@ -344,7 +346,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   <div className="py-1">
                     <button
-                      onClick={() => { setIsProfileOpen(false); navigate('/transactions'); }}
+                      onClick={() => { setOpenMenu(null); navigate('/transactions'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
                       <CreditCard className="size-4 text-stone-500" />
