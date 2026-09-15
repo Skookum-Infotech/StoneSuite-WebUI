@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2 } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
 
 /**
@@ -8,6 +8,12 @@ import { PageHeader } from '@/components/tenant/ui';
  * builders come online.
  */
 const sections = [
+  {
+    to: '/config/company-profile',
+    icon: Building2,
+    title: 'Company Info',
+    description: "Your own company's name and address — not a customer's or vendor's.",
+  },
   {
     to: '/config/workflows',
     icon: Workflow,
