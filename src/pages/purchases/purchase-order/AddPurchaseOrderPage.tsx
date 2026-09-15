@@ -11,7 +11,6 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
-import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from './components/VendorPicker';
@@ -46,14 +45,11 @@ export default function AddPurchaseOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  // Ship To prefill: the tenant's own default warehouse (matches Item
-  // Receipt's existing "defaults to the tenant's default warehouse"
-  // behavior) if one is configured, else the tenant's Company Info — see
+  // Ship To prefill: always the tenant's own Company Info address — see
   // purchaseOrderShipToDefaults. Company Info is gated on the read
   // permission so a user without it doesn't take a silent 403 on every
   // load of this page.
   const { hasPermission } = useUserPermissions();
-  const { lookups: inventoryLookups } = useInventoryLookups();
   const { data: companyProfile } = useQuery({
     queryKey: ['company-profile'],
     queryFn: companyProfileService.get,
@@ -62,11 +58,11 @@ export default function AddPurchaseOrderPage() {
   });
 
   // New purchase orders default to United States / USD, and Ship To from the
-  // warehouse/company defaults above, once each loads — derived rather than
-  // copied into state, so it never clobbers a value the user already set.
+  // company defaults above, once each loads — derived rather than copied
+  // into state, so it never clobbers a value the user already set.
   const formData = useMemo(() => {
     if (!lookups) return data;
-    const shipDefaults = purchaseOrderShipToDefaults(inventoryLookups?.warehouses, companyProfile);
+    const shipDefaults = purchaseOrderShipToDefaults(companyProfile);
     return {
       ...data,
       ship_country: data.ship_country || defaultCountryId(lookups.countries),
@@ -79,7 +75,7 @@ export default function AddPurchaseOrderPage() {
       ship_state: data.ship_state || shipDefaults.ship_state || '',
       ship_zip: data.ship_zip || shipDefaults.ship_zip || '',
     };
-  }, [data, lookups, inventoryLookups, companyProfile]);
+  }, [data, lookups, companyProfile]);
 
   const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
 

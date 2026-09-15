@@ -149,13 +149,15 @@ export const PRIMARY_INFO_FIELDS: PurchaseOrderFormField[] = [
 
 // A purchase order carries a single ship-to (deliver-to) address — no
 // billing block (the bill-to is the tenant itself) and no "same as billing"
-// toggle, unlike Estimate/Quote/Invoice/SalesOrder.
+// toggle, unlike Estimate/Quote/Invoice/SalesOrder. It always defaults to
+// the tenant's own Company Info address (see purchaseOrderShipToDefaults) —
+// `ship_name` is shown read-only here as a label for that, not a
+// user-editable "deliver to a different place" field.
 export const SHIP_TO_FIELDS: PurchaseOrderFormField[] = [
   {
     key: 'ship_name',
-    label: 'Deliver To',
-    type: 'text',
-    placeholder: 'Receiving location name',
+    label: 'Company',
+    type: 'readonly',
   },
   {
     key: 'ship_attn',
