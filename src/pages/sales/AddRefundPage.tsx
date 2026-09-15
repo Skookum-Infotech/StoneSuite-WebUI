@@ -16,7 +16,7 @@ import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields } from '@/lib/customerDefaults';
+import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { RefundSourcePicker, type RefundSourceRef } from './components/RefundSourcePicker';
 import { RefundSectionGrid } from './components/RefundFormFields';
@@ -104,7 +104,7 @@ export default function AddRefundPage() {
       const defaults = customerDefaultFields(next);
       setData((d) => ({
         ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
       }));
     }
   }, []);

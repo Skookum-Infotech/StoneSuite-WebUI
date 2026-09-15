@@ -11,7 +11,7 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields } from '@/lib/customerDefaults';
+import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import {
@@ -86,7 +86,7 @@ export default function AddQuotePage() {
         const current = d ?? baseData;
         return {
           ...current,
-          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !current[k])),
+          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !current[k] || BILL_ADDRESS_KEYS.has(k))),
         };
       });
     }

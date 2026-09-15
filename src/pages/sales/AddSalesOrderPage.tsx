@@ -13,7 +13,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields } from '@/lib/customerDefaults';
+import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
@@ -46,7 +46,7 @@ export default function AddSalesOrderPage() {
       const defaults = customerDefaultFields(next);
       setData((d) => ({
         ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k])),
+        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
       }));
     }
   }, []);

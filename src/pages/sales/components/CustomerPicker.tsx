@@ -27,6 +27,22 @@ export interface CustomerRef {
   salesTaxPercent?: string;
   paymentTermsId?: string;
   priceLevelId?: string;
+  /** The customer's effective Bill To address (its Billing Address block, or
+   *  its primary Address when billing is flagged same-as-primary), plus
+   *  contact info — lets create forms auto-populate their own Bill To
+   *  section. See BILL_ADDRESS_KEYS (lib/customerDefaults.ts) for how these
+   *  are merged into form state. */
+  billAttn?: string;
+  billAddress1?: string;
+  billAddress2?: string;
+  billSuite?: string;
+  billCity?: string;
+  billStateId?: string;
+  billCountryId?: string;
+  billZip?: string;
+  billPhone?: string;
+  billFax?: string;
+  billEmail?: string;
 }
 
 // Billing-customer picker for the Sales Order create form. Opens showing the
