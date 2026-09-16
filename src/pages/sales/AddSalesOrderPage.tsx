@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ShoppingCart, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -18,6 +18,7 @@ import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import {
   soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, type PageTab,
@@ -39,7 +40,10 @@ export default function AddSalesOrderPage() {
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const inventoryReturn = useInventoryItemReturn<SalesOrderDraft>();
-  const restored = inventoryReturn.restored;
+  const customerReturn = useRecordCreateReturn<SalesOrderDraft, CustomerRef>(
+    'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? customerReturn.restored;
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? soDefaults());
@@ -72,6 +76,16 @@ export default function AddSalesOrderPage() {
     }
   }, []);
 
+  // Applies the customer created via the round trip exactly as if it had
+  // been picked from the list — same Bill To/currency/tax defaulting.
+  useEffect(() => {
+    if (customerReturn.createdRef) {
+      handleCustomerChange(customerReturn.createdRef);
+      customerReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerReturn.createdRef]);
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -92,7 +106,11 @@ export default function AddSalesOrderPage() {
     };
   }, [data, lookups]);
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer, customFieldValues }, true, inventoryReturn.isRestored);
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, drawings, customer, customFieldValues },
+    true,
+    inventoryReturn.isRestored || customerReturn.isRestored,
+  );
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
     const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
@@ -103,6 +121,10 @@ export default function AddSalesOrderPage() {
     const taxTotal = lineItems.reduce((s, r) => s + (parseFloat(r.total) || 0) - (parseFloat(r.amount) || 0), 0);
     return { subtotal, discountAmt, taxTotal, total: subtotal - discountAmt + taxTotal };
   }, [lineItems]);
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: SalesOrderDraft = { activeTab, data, lineItems, drawings, customer, customFieldValues };
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -173,9 +195,7 @@ export default function AddSalesOrderPage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide({ activeTab, data, lineItems, drawings, customer, customFieldValues }, guard.markClean)}
-        >
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <SalesOrderFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -187,6 +207,7 @@ export default function AddSalesOrderPage() {
             setDrawings={setDrawings}
             customer={customer}
             setCustomer={handleCustomerChange}
+            onCreateCustomer={startCreateCustomer}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

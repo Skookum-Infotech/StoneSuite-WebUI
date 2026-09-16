@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileCheck, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -14,6 +14,7 @@ import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel'
 import { type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { VendorBillFormBody } from './components/VendorBillFormBody';
 import {
   vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
@@ -34,7 +35,10 @@ export default function AddVendorBillPage() {
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const inventoryReturn = useInventoryItemReturn<VendorBillDraft>();
-  const restored = inventoryReturn.restored;
+  const vendorReturn = useRecordCreateReturn<VendorBillDraft, VendorRef>(
+    'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? vendorReturn.restored;
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? vendorBillDefaults());
@@ -47,6 +51,16 @@ export default function AddVendorBillPage() {
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
     [],
   );
+
+  // Applies the vendor created via the round trip exactly as if it had been
+  // picked from the list.
+  useEffect(() => {
+    if (vendorReturn.createdRef) {
+      setVendor(vendorReturn.createdRef);
+      vendorReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorReturn.createdRef]);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -62,7 +76,11 @@ export default function AddVendorBillPage() {
     return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
   }, [data, lookups]);
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues }, true, inventoryReturn.isRestored);
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, vendor, customFieldValues },
+    true,
+    inventoryReturn.isRestored || vendorReturn.isRestored,
+  );
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
@@ -71,6 +89,10 @@ export default function AddVendorBillPage() {
     () => calcHeaderTotals(lineItems, headerTaxPercent, adjustment),
     [lineItems, headerTaxPercent, adjustment],
   );
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, customFieldValues };
+  const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -120,9 +142,7 @@ export default function AddVendorBillPage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide({ activeTab, data, lineItems, vendor, customFieldValues }, guard.markClean)}
-        >
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <VendorBillFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -132,6 +152,7 @@ export default function AddVendorBillPage() {
             setLineItems={setLineItems}
             vendor={vendor}
             setVendor={setVendor}
+            onCreateVendor={startCreateVendor}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

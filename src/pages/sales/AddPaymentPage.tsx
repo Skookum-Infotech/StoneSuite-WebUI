@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
@@ -21,6 +21,7 @@ import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import {
   PRIMARY_INFO_FIELDS, paymentDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/paymentForm';
@@ -30,18 +31,32 @@ function currency(n: number): string {
   return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
+/** Unsaved form state carried across a "Create Customer" round trip. */
+interface PaymentDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  customer: CustomerRef | null;
+  customFieldValues: Record<string, unknown>;
+  applications: ApplicationInput[];
+  appliedInvoiceNumbers: Record<string, string>;
+}
+
 export default function AddPaymentPage() {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
   const panelRef    = useRef<EditableFilesPanelHandle>(null);
+  const customerReturn = useRecordCreateReturn<PaymentDraft, CustomerRef>(
+    'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
+  );
+  const restored = customerReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>('details');
-  const [data, setData]           = useState<Record<string, unknown>>(paymentDefaults);
-  const [customer, setCustomer]   = useState<CustomerRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? 'details');
+  const [data, setData]           = useState<Record<string, unknown>>(() => restored?.data ?? paymentDefaults());
+  const [customer, setCustomer]   = useState<CustomerRef | null>(restored?.customer ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
-  const [applications, setApplications] = useState<ApplicationInput[]>([]);
-  const [appliedInvoiceNumbers, setAppliedInvoiceNumbers] = useState<Record<string, string>>({});
+  const [applications, setApplications] = useState<ApplicationInput[]>(restored?.applications ?? []);
+  const [appliedInvoiceNumbers, setAppliedInvoiceNumbers] = useState<Record<string, string>>(restored?.appliedInvoiceNumbers ?? {});
   const [pendingInvoice, setPendingInvoice] = useState<InvoiceRef | null>(null);
   const [pendingAmount, setPendingAmount] = useState('');
 
@@ -62,6 +77,16 @@ export default function AddPaymentPage() {
     }
   }, []);
 
+  // Applies the customer created via the round trip exactly as if it had
+  // been picked from the list — same Bill To/currency/tax defaulting.
+  useEffect(() => {
+    if (customerReturn.createdRef) {
+      handleCustomerChange(customerReturn.createdRef);
+      customerReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerReturn.createdRef]);
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -75,6 +100,11 @@ export default function AddPaymentPage() {
     if (!lookups) return data;
     return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
   }, [data, lookups]);
+
+  // Shared with the return-trip hook — it may stash and restore this.
+  const { startCreate: startCreateCustomer } = customerReturn.provide(
+    { activeTab, data, customer, customFieldValues, applications, appliedInvoiceNumbers },
+  );
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const paymentWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'payment');
@@ -177,7 +207,7 @@ export default function AddPaymentPage() {
             {activeTab === 'details' && (
               <>
                 <ModernSection title="Customer" index={0}>
-                  <CustomerPicker value={customer} onChange={handleCustomerChange} required />
+                  <CustomerPicker value={customer} onChange={handleCustomerChange} required onCreateNew={startCreateCustomer} />
                 </ModernSection>
 
                 <ModernSection title="Payment Details" index={1}>

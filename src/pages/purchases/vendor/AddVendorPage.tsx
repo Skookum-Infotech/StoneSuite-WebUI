@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building, AlertCircle, ChevronRight, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,15 +10,34 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { vendorDefaults, validateVendorForm, toCreatePayload, type VendorFieldError } from '@/lib/vendorForm';
 import { defaultCountryId } from '@/lib/lookupDefaults';
-import type { VendorType } from '@/types/vendor';
+import {
+  NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
+} from '@/lib/recordCreateReturn';
+import type { VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
+import type { Vendor, VendorType } from '@/types/vendor';
 import { VendorTypeSwitcher } from './components/VendorTypeSwitcher';
 import { VendorFormBody } from './components/VendorFormBody';
+
+const VENDOR_LIST_PATH = '/purchases/vendor';
 
 export default function AddVendorPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [data, setData] = useState<Record<string, unknown>>(vendorDefaults);
+  // Opened from a document's Vendor picker ("Create Vendor" for a typed name
+  // the list doesn't have): the typed name is prefilled as the Organization
+  // legal name (Organization is vendorDefaults()'s own default type — a
+  // typed search term rarely splits cleanly into a Person's first/last name,
+  // so that prefill is left blank if the user switches to Person), and
+  // saving or cancelling returns to that document, which restores its
+  // unsaved form (see lib/recordCreateReturn.ts).
+  const [searchParams] = useSearchParams();
+  const returnParam = searchParams.get(RETURN_TO_PARAM);
+  const returnTo = isSafeReturnPath(returnParam) ? returnParam : null;
+
+  const [data, setData] = useState<Record<string, unknown>>(
+    () => ({ ...vendorDefaults(), legal_name: searchParams.get(NAME_PARAM) ?? '' }),
+  );
   const [validationErrors, setValidationErrors] = useState<VendorFieldError[]>([]);
 
   const vendorType = (data.vendor_type as VendorType) ?? 'Organization';
@@ -50,12 +69,18 @@ export default function AddVendorPage() {
     };
   }, [data, lookups]);
 
+  function leave(createdVendor: Vendor | null) {
+    const ref: VendorRef | null = createdVendor ? { id: createdVendor.id, name: createdVendor.displayName } : null;
+    if (returnTo) navigate(returnTo, { state: returnRouterState(ref) });
+    else navigate(VENDOR_LIST_PATH);
+  }
+
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => vendorService.createVendor(toCreatePayload(formData)),
-    onSuccess: () => {
-      toast.success('Vendor created.');
+    onSuccess: (vendor) => {
+      toast.success(returnTo ? 'Vendor created and added to your document.' : 'Vendor created.');
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
-      navigate('/purchases/vendor');
+      leave(vendor);
     },
   });
 
@@ -75,11 +100,13 @@ export default function AddVendorPage() {
         className="flex flex-col flex-1 min-h-0"
       >
         <CrmPageHeader
-          backLabel="Vendors"
-          onBack={() => navigate('/purchases/vendor')}
+          backLabel={returnTo ? 'Back' : 'Vendors'}
+          onBack={() => leave(null)}
           icon={Building}
           title="New Vendor"
-          subtitle="Fields marked * are required."
+          subtitle={returnTo
+            ? "Fields marked * are required. You'll go back to your document after saving."
+            : 'Fields marked * are required.'}
           actions={(
             <button
               type="submit"
@@ -139,7 +166,7 @@ export default function AddVendorPage() {
         </div>
 
         <FormActionBar
-          onCancel={() => navigate('/purchases/vendor')}
+          onCancel={() => leave(null)}
           isPending={isPending}
           submitLabel="Save Vendor"
         />

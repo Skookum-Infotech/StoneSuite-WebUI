@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -17,6 +17,7 @@ import { type VendorRef } from './components/VendorPicker';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { purchaseOrderShipToDefaults } from '@/lib/purchaseOrderShipToDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import {
   purchaseOrderDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
@@ -37,7 +38,10 @@ export default function AddPurchaseOrderPage() {
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const inventoryReturn = useInventoryItemReturn<PurchaseOrderDraft>();
-  const restored = inventoryReturn.restored;
+  const vendorReturn = useRecordCreateReturn<PurchaseOrderDraft, VendorRef>(
+    'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? vendorReturn.restored;
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? purchaseOrderDefaults());
@@ -50,6 +54,16 @@ export default function AddPurchaseOrderPage() {
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
     [],
   );
+
+  // Applies the vendor created via the round trip exactly as if it had been
+  // picked from the list.
+  useEffect(() => {
+    if (vendorReturn.createdRef) {
+      setVendor(vendorReturn.createdRef);
+      vendorReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorReturn.createdRef]);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -89,7 +103,11 @@ export default function AddPurchaseOrderPage() {
     };
   }, [data, lookups, companyProfile]);
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues }, true, inventoryReturn.isRestored);
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, vendor, customFieldValues },
+    true,
+    inventoryReturn.isRestored || vendorReturn.isRestored,
+  );
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const shippingCharge = parseFloat(String(data.shipping_charge ?? '')) || 0;
@@ -99,6 +117,10 @@ export default function AddPurchaseOrderPage() {
     () => calcHeaderTotals(lineItems, headerTaxPercent, shippingCharge, adjustment),
     [lineItems, headerTaxPercent, shippingCharge, adjustment],
   );
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: PurchaseOrderDraft = { activeTab, data, lineItems, vendor, customFieldValues };
+  const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -148,9 +170,7 @@ export default function AddPurchaseOrderPage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide({ activeTab, data, lineItems, vendor, customFieldValues }, guard.markClean)}
-        >
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <PurchaseOrderFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -160,6 +180,7 @@ export default function AddPurchaseOrderPage() {
             setLineItems={setLineItems}
             vendor={vendor}
             setVendor={setVendor}
+            onCreateVendor={startCreateVendor}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

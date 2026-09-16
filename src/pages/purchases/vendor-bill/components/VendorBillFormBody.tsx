@@ -24,7 +24,7 @@ import {
 export function VendorBillFormBody({
   activeTab, setActiveTab, vendorBillId,
   data, set, lineItems, setLineItems,
-  vendor, setVendor, vendorLocked = false,
+  vendor, setVendor, vendorLocked = false, onCreateVendor,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, adjustment, total, filesPanelRef,
 }: {
@@ -42,6 +42,10 @@ export function VendorBillFormBody({
   /** The vendor is fixed after creation (UpdateVendorBillPayload has no
    *  vendorUuid) — edit mode shows it read-only instead of the picker. */
   vendorLocked?: boolean;
+  /** Sends the user to create a new Vendor record for a typed name the list
+   *  doesn't have (see useRecordCreateReturn). Omitted on Edit (the vendor is
+   *  locked there anyway) or when the user can't create vendors. */
+  onCreateVendor?: (name: string) => void;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -97,7 +101,7 @@ export function VendorBillFormBody({
                             {vendor?.name || <span className="text-stone-400">—</span>}
                           </div>
                         ) : (
-                          <VendorPicker value={vendor} onChange={setVendor} required />
+                          <VendorPicker value={vendor} onChange={setVendor} required onCreateNew={onCreateVendor} />
                         )}
                       </ModernFieldShell>
                       <ModernFieldShell label="Vendor Bill Status">

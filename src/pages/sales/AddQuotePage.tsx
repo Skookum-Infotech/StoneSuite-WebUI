@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileText, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -15,6 +15,7 @@ import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import {
   quoteDefaults, toCreatePayload, fromSourceEstimate, PAGE_TABS, type PageTab,
@@ -38,7 +39,10 @@ export default function AddQuotePage() {
   const [searchParams] = useSearchParams();
   const fromEstimateId = searchParams.get('fromEstimate') ?? '';
   const inventoryReturn = useInventoryItemReturn<QuoteDraft>();
-  const restored = inventoryReturn.restored;
+  const customerReturn = useRecordCreateReturn<QuoteDraft, CustomerRef>(
+    'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? customerReturn.restored;
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
@@ -114,6 +118,20 @@ export default function AddQuotePage() {
     }
   }, [baseData]);
 
+  // Applies the customer created via the round trip exactly as if it had
+  // been picked from the list — same Bill To/currency/tax defaulting.
+  useEffect(() => {
+    if (customerReturn.createdRef) {
+      setCustomer(customerReturn.createdRef);
+      customerReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerReturn.createdRef]);
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: QuoteDraft = { activeTab, localData, localLineItems, localCustomer, customerTouched, customFieldValues };
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
+
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -172,9 +190,7 @@ export default function AddQuotePage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localCustomer, customerTouched, customFieldValues })}
-        >
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
           <QuoteFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -184,6 +200,7 @@ export default function AddQuotePage() {
             setLineItems={setLocalLineItems}
             customer={customer}
             setCustomer={setCustomer}
+            onCreateCustomer={startCreateCustomer}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

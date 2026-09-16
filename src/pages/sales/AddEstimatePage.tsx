@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileSpreadsheet, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -14,6 +14,7 @@ import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { EstimateFormBody } from './components/EstimateFormBody';
 import {
   estimateDefaults, toCreatePayload, PAGE_TABS, type PageTab,
@@ -34,7 +35,10 @@ export default function AddEstimatePage() {
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const inventoryReturn = useInventoryItemReturn<EstimateDraft>();
-  const restored = inventoryReturn.restored;
+  const customerReturn = useRecordCreateReturn<EstimateDraft, CustomerRef>(
+    'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? customerReturn.restored;
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? estimateDefaults());
@@ -66,6 +70,16 @@ export default function AddEstimatePage() {
     }
   }, []);
 
+  // Applies the customer created via the round trip exactly as if it had
+  // been picked from the list — same Bill To/currency/tax defaulting.
+  useEffect(() => {
+    if (customerReturn.createdRef) {
+      handleCustomerChange(customerReturn.createdRef);
+      customerReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerReturn.createdRef]);
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -84,6 +98,10 @@ export default function AddEstimatePage() {
       currency_id: data.currency_id || defaultCurrencyId(lookups.currencies),
     };
   }, [data, lookups]);
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: EstimateDraft = { activeTab, data, lineItems, customer, customFieldValues };
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
@@ -143,9 +161,7 @@ export default function AddEstimatePage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide({ activeTab, data, lineItems, customer, customFieldValues })}
-        >
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
           <EstimateFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -155,6 +171,7 @@ export default function AddEstimatePage() {
             setLineItems={setLineItems}
             customer={customer}
             setCustomer={handleCustomerChange}
+            onCreateCustomer={startCreateCustomer}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

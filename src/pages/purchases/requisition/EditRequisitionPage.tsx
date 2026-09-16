@@ -18,6 +18,7 @@ import {
   PAGE_TABS, type PageTab, type RequisitionLineItem, REQN_NON_DRAFT_LOCKED,
 } from '@/lib/requisitionForm';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 
 // Stable references so the fallbacks don't create a new identity every render
 // (which would defeat the totals useMemo below).
@@ -42,7 +43,10 @@ export default function EditRequisitionPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const inventoryReturn = useInventoryItemReturn<RequisitionEditDraft>();
-  const restored = inventoryReturn.restored;
+  const vendorReturn = useRecordCreateReturn<RequisitionEditDraft, VendorRef>(
+    'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? vendorReturn.restored;
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
@@ -91,13 +95,23 @@ export default function EditRequisitionPage() {
     setLocalVendor(v);
   }, []);
 
+  // Applies the vendor created via the round trip exactly as if it had been
+  // picked from the list.
+  useEffect(() => {
+    if (vendorReturn.createdRef) {
+      setVendor(vendorReturn.createdRef);
+      vendorReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorReturn.createdRef]);
+
   // Baseline against the loaded record, not the empty defaults, so simply
   // opening the page never counts as an edit. A locked requisition is
   // read-only — nothing to lose.
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     Boolean(mapped) && !isLocked,
-    inventoryReturn.isRestored,
+    inventoryReturn.isRestored || vendorReturn.isRestored,
   );
 
   const set = useCallback(
@@ -115,6 +129,10 @@ export default function EditRequisitionPage() {
     () => calcHeaderTotals(lineItems, headerTaxPercent),
     [lineItems, headerTaxPercent],
   );
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: RequisitionEditDraft = { activeTab, localData, localLineItems, localVendor, vendorTouched, localCustomFields };
+  const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const save = useMutation({
     mutationFn: () => {
@@ -203,12 +221,7 @@ export default function EditRequisitionPage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide(
-            { activeTab, localData, localLineItems, localVendor, vendorTouched, localCustomFields },
-            guard.markClean,
-          )}
-        >
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <RequisitionFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -219,6 +232,7 @@ export default function EditRequisitionPage() {
             setLineItems={setLocalLineItems}
             vendor={vendor}
             setVendor={setVendor}
+            onCreateVendor={startCreateVendor}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

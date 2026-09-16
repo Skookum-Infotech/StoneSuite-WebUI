@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileMinus, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -15,6 +15,7 @@ import { defaultCountryId } from '@/lib/lookupDefaults';
 import { type InvoiceRef } from './components/InvoicePicker';
 import { type SalesOrderRef } from './components/SalesOrderPicker';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
 import {
   creditMemoDefaults, toCreatePayload, PAGE_TABS, type PageTab,
@@ -37,7 +38,10 @@ export default function AddCreditMemoPage() {
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const inventoryReturn = useInventoryItemReturn<CreditMemoDraft>();
-  const restored = inventoryReturn.restored;
+  const customerReturn = useRecordCreateReturn<CreditMemoDraft, CustomerRef>(
+    'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? customerReturn.restored;
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? creditMemoDefaults());
@@ -63,6 +67,16 @@ export default function AddCreditMemoPage() {
       }));
     }
   }, []);
+
+  // Applies the customer created via the round trip exactly as if it had
+  // been picked from the list — same Bill To/currency/tax defaulting.
+  useEffect(() => {
+    if (customerReturn.createdRef) {
+      handleCustomerChange(customerReturn.createdRef);
+      customerReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerReturn.createdRef]);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -90,6 +104,10 @@ export default function AddCreditMemoPage() {
     const taxTotal = subtotal * (headerTaxPercent / 100);
     return { subtotal, discountAmt, taxTotal, total: subtotal - discountAmt + taxTotal + adjustment };
   }, [lineItems, headerTaxPercent, adjustment]);
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: CreditMemoDraft = { activeTab, data, lineItems, customer, invoice, salesOrder, customFieldValues };
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -142,9 +160,7 @@ export default function AddCreditMemoPage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide({ activeTab, data, lineItems, customer, invoice, salesOrder, customFieldValues })}
-        >
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
           <CreditMemoFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -154,6 +170,7 @@ export default function AddCreditMemoPage() {
             setLineItems={setLineItems}
             customer={customer}
             setCustomer={handleCustomerChange}
+            onCreateCustomer={startCreateCustomer}
             invoice={invoice}
             setInvoice={setInvoice}
             salesOrder={salesOrder}

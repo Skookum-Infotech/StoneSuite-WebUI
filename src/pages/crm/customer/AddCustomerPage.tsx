@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle, ChevronRight, Loader2, Save  } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,10 +16,29 @@ import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
+import { customerCoreDefaults } from '@/lib/customerDefaults';
+import type { CustomerRef } from '@/pages/sales/components/CustomerPicker';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
-import type { FieldDefinition } from '@/types/tenant';
+import {
+  NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
+} from '@/lib/recordCreateReturn';
+import type { FieldDefinition, WorkflowRecord } from '@/types/tenant';
+
+const CUSTOMER_LIST_PATH = '/crm/customer';
+
+/** Maps a just-created (or already-loaded) customer record into the same
+ *  CustomerRef shape CustomerPicker's search results produce — so a customer
+ *  created via the "Create Customer" round trip auto-fills Bill To/currency/
+ *  tax/terms exactly like one picked from the list would. */
+function toCustomerRef(record: WorkflowRecord): CustomerRef {
+  return {
+    id: record.id,
+    name: String(record.coreFields.customer_name ?? '(unnamed)'),
+    ...customerCoreDefaults(record.coreFields),
+  };
+}
 
 const TABS = [
   { key: 'details', label: 'Details' },
@@ -32,8 +51,19 @@ export default function AddCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+
+  // Opened from a document's Customer picker ("Create Customer" for a typed
+  // name the list doesn't have): the typed name is prefilled, and saving or
+  // cancelling returns to that document, which restores its unsaved form
+  // (see lib/recordCreateReturn.ts).
+  const [searchParams] = useSearchParams();
+  const returnParam = searchParams.get(RETURN_TO_PARAM);
+  const returnTo = isSafeReturnPath(returnParam) ? returnParam : null;
+
   const [activeTab, setActiveTab] = useState<Tab>('details');
-  const [coreFields, setCoreFields] = useState<Record<string, unknown>>(() => crmCoreDefaults());
+  const [coreFields, setCoreFields] = useState<Record<string, unknown>>(
+    () => ({ ...crmCoreDefaults(), customer_name: searchParams.get(NAME_PARAM) ?? '' }),
+  );
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
   const [ownerUserId, setOwnerUserId] = useState('');
   const [crmStatusId, setCrmStatusId] = useState('');
@@ -88,6 +118,11 @@ export default function AddCustomerPage() {
 
   const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId, crmStatusId });
 
+  function leave(createdRecord: WorkflowRecord | null) {
+    if (returnTo) navigate(returnTo, { state: returnRouterState(createdRecord ? toCustomerRef(createdRecord) : null) });
+    else navigate(CUSTOMER_LIST_PATH);
+  }
+
   const { mutate: createCustomer, isPending, error: createError } = useMutation({
     mutationFn: () =>
       crmService.createRecord('customer', {
@@ -97,7 +132,7 @@ export default function AddCustomerPage() {
         crmStatusId: crmStatusId || undefined,
       }),
     onSuccess: async (record) => {
-      toast.success('Customer created.');
+      toast.success(returnTo ? 'Customer created and added to your document.' : 'Customer created.');
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'customer'] });
       if (panelRef.current?.hasStagedFiles()) {
         setIsUploadingFiles(true);
@@ -111,7 +146,7 @@ export default function AddCustomerPage() {
         }
       }
       guard.markClean();
-      navigate('/crm/customer');
+      leave(record);
     },
   });
 
@@ -129,13 +164,15 @@ export default function AddCustomerPage() {
         className="flex flex-col flex-1 min-h-0"
       >
         <CrmPageHeader
-          backLabel="Customers"
-          onBack={() => navigate('/crm/customer')}
+          backLabel={returnTo ? 'Back' : 'Customers'}
+          onBack={() => leave(null)}
           icon={Building2}
           iconBg="bg-emerald-100"
           iconColor="text-emerald-600"
           title="New Customer"
-          subtitle="Fields marked * are required."
+          subtitle={returnTo
+            ? "Fields marked * are required. You'll go back to your document after saving."
+            : 'Fields marked * are required.'}
           actions={(
             <>
               <button
@@ -237,7 +274,7 @@ export default function AddCustomerPage() {
         </div>
 
         <FormActionBar
-          onCancel={() => navigate('/crm/customer')}
+          onCancel={() => leave(null)}
           isPending={isPending}
           isUploadingFiles={isUploadingFiles}
           submitLabel="Save Customer"

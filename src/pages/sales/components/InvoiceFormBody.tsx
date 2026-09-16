@@ -24,7 +24,7 @@ import {
 export function InvoiceFormBody({
   activeTab, setActiveTab, invoiceId,
   data, set, lineItems, setLineItems,
-  customer, setCustomer, customerLocked = false,
+  customer, setCustomer, customerLocked = false, onCreateCustomer,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, total, amountPaid, filesPanelRef, statusControl,
 }: {
@@ -42,6 +42,10 @@ export function InvoiceFormBody({
   /** The customer is fixed after creation (UpdateInvoiceInput has no
    *  customerUuid) — edit mode shows it read-only instead of the picker. */
   customerLocked?: boolean;
+  /** Sends the user to create a new Customer CRM record for a typed name the
+   *  list doesn't have (see useRecordCreateReturn). Omitted on Edit (the
+   *  customer is locked there anyway) or when the user can't create customers. */
+  onCreateCustomer?: (name: string) => void;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -119,7 +123,7 @@ export function InvoiceFormBody({
                         {customer?.name || <span className="text-stone-400">—</span>}
                       </div>
                     ) : (
-                      <CustomerPicker value={customer} onChange={setCustomer} required />
+                      <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />
                     )}
                   </ModernFieldShell>
                   <InvoiceSectionGrid fields={BILL_TO_FIELDS} data={data} set={set} lookups={lookups} />
