@@ -45,4 +45,22 @@ describe('useValueFlash', () => {
 
     expect(() => act(() => vi.advanceTimersByTime(2000))).not.toThrow();
   });
+
+  // Comparison is by ===, so a string id works identically to a number — the
+  // "a row I just created" use case (AccountTreeView), not just "a figure
+  // that moved".
+  it('flashes for a string value too, e.g. a just-created row id', () => {
+    vi.useFakeTimers();
+    const { result, rerender } = renderHook(
+      ({ value }: { value: string | null }) => useValueFlash(value, 1000),
+      { initialProps: { value: null as string | null } },
+    );
+
+    expect(result.current).toBe(false);
+    rerender({ value: 'account-123' });
+    expect(result.current).toBe(true);
+
+    act(() => vi.advanceTimersByTime(1000));
+    expect(result.current).toBe(false);
+  });
 });

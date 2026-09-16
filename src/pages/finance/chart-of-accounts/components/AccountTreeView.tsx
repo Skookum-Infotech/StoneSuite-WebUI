@@ -3,10 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, ChevronRight, ChevronDown, ChevronsDown, ChevronsUp, FolderPlus, Plus, X } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useHighlightOnCreate } from '@/hooks/useHighlightOnCreate';
 import { Switch } from '@/components/ui/switch';
 import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { placementLabel, placementOf, type Placement } from '@/lib/coaPlacement';
+import { accountRowDomId, HighlightedAccountContext } from '@/lib/coaAccountHighlight';
 import type { Account, TreeSection } from '@/types/chartOfAccounts';
 import { AccountTreeRow, type TreeRowActions, type TreeRowPerms } from './AccountTreeRow';
 import { BulkActionBar } from './BulkActionBar';
@@ -33,6 +35,17 @@ function toParentRef(a: Account): AccountParentRef {
     placement: placementOf(a),
     placementLabel: placementLabel(a),
   };
+}
+
+// The collapse keys standing between a freshly created account and actually
+// being visible — its section, its category, and (unless it was placed
+// directly on the category) its sub-category. Built from the account itself
+// rather than looked up in `sections`, so it's available the instant create
+// succeeds, before the invalidated query has refetched.
+function ancestorKeysFor(account: Account): string[] {
+  const keys = [`sec-${account.bsPnl}`, `cat-${account.categoryId}-${account.bsPnl}`];
+  if (account.subCategoryId) keys.push(`sub-${account.subCategoryId}-${account.bsPnl}`);
+  return keys;
 }
 
 // Every section/category/sub-category group key — the full expand/collapse
@@ -77,6 +90,7 @@ export function AccountTreeView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<DrawerState>(null);
   const [taxonomy, setTaxonomy] = useState<TaxonomyIntent | null>(null);
+  const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(term.trim()), 300);
@@ -90,6 +104,34 @@ export function AccountTreeView() {
     queryFn: () => chartOfAccountsService.getTree({ includeInactive, includeHidden }),
     enabled: !debounced,
   });
+
+  // `sections` is the watch target: it's a fresh array reference every time
+  // the tree refetches, which is exactly the signal the hook needs to know
+  // the just-created row might exist now. The row usually isn't there yet on
+  // the render right after create — the mutation's invalidateQueries only
+  // just kicked off the background refetch.
+  const { highlightedId, markCreated } = useHighlightOnCreate(accountRowDomId, sections);
+
+  // Fires for both a top-level create and a sub-account create, never edit —
+  // an edited account is already visible wherever the user opened it from.
+  function handleAccountCreated(account: Account) {
+    setDrawer(null);
+    // A create can be opened while a search is active (the row-level "add
+    // sub-account" button renders in search results too). Clearing it here
+    // guarantees the new account is reachable: the search query isn't part of
+    // the ['coa-tree', ...] invalidation the create mutation fires, so it
+    // wouldn't pick up the new row on its own, and there'd be nothing to
+    // scroll to.
+    setTerm('');
+    setDebounced('');
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      for (const key of ancestorKeysFor(account)) next.delete(key);
+      return next;
+    });
+    markCreated(account.id);
+    setAnnouncement(`${account.code} ${account.name} created.`);
+  }
 
   const {
     data: searchPage, isLoading: searchLoading, isError: searchIsError, error: searchError,
@@ -147,6 +189,8 @@ export function AccountTreeView() {
 
   return (
     <div className="flex flex-col gap-3">
+      <p role="status" className="sr-only">{announcement}</p>
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
@@ -236,16 +280,18 @@ export function AccountTreeView() {
           <EmptyState>No accounts match &ldquo;{debounced}&rdquo;.</EmptyState>
         ) : (
           <div className="divide-y divide-stone-50 rounded-xl border border-stone-200 bg-white px-2 py-2 shadow-sm">
-            {searchPage?.records.map((a) => (
-              <AccountTreeRow
-                key={a.id}
-                account={{ ...a, children: [] }}
-                depth={a.depth}
-                perms={perms}
-                actions={rowActions}
-                selectedIds={selectedIds}
-              />
-            ))}
+            <HighlightedAccountContext.Provider value={highlightedId}>
+              {searchPage?.records.map((a) => (
+                <AccountTreeRow
+                  key={a.id}
+                  account={{ ...a, children: [] }}
+                  depth={a.depth}
+                  perms={perms}
+                  actions={rowActions}
+                  selectedIds={selectedIds}
+                />
+              ))}
+            </HighlightedAccountContext.Provider>
             {searchPage?.hasMore && (
               <p className="px-2 py-2 text-2xs text-stone-400">
                 Showing the first {SEARCH_RESULT_LIMIT} matches. Refine your search or use the table view for full pagination.
@@ -260,7 +306,8 @@ export function AccountTreeView() {
       ) : sections.length === 0 ? (
         <EmptyState>No accounts to show with the current filters.</EmptyState>
       ) : (
-        sections.map((section) => {
+        <HighlightedAccountContext.Provider value={highlightedId}>
+        {sections.map((section) => {
           const secKey = `sec-${section.bsPnl}`;
           const secCollapsed = collapsed.has(secKey);
           const headerActions = groupActions(section.bsPnl);
@@ -358,19 +405,20 @@ export function AccountTreeView() {
               )}
             </div>
           );
-        })
+        })}
+        </HighlightedAccountContext.Provider>
       )}
 
       {drawer?.mode === 'create' && (
         <AccountFormDrawer
           onClose={() => setDrawer(null)}
-          onSaved={() => setDrawer(null)}
+          onSaved={handleAccountCreated}
           initialPlacement={drawer.initialPlacement}
           initialPlacementLabel={drawer.initialPlacementLabel}
         />
       )}
       {drawer?.mode === 'create-child' && (
-        <AccountFormDrawer onClose={() => setDrawer(null)} onSaved={() => setDrawer(null)} parent={drawer.parent} />
+        <AccountFormDrawer onClose={() => setDrawer(null)} onSaved={handleAccountCreated} parent={drawer.parent} />
       )}
       {drawer?.mode === 'edit' && (
         <AccountFormDrawer onClose={() => setDrawer(null)} onSaved={() => setDrawer(null)} account={drawer.account} />

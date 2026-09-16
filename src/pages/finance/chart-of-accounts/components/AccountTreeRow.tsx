@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, CheckCircle2, XCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import {
   visibilityPayload, applicableVisibilityActions, VISIBILITY_ACTION_LABELS, type VisibilityAction,
 } from '@/lib/coaVisibility';
 import { ACCOUNT_TYPE_LABELS, type TreeAccount } from '@/types/chartOfAccounts';
+import { accountRowDomId, HighlightedAccountContext } from '@/lib/coaAccountHighlight';
 import { BlockingSlotsDialog } from './BlockingSlotsDialog';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { cn } from '@/lib/utils';
@@ -57,6 +58,7 @@ export function AccountTreeRow({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isHighlighted = useContext(HighlightedAccountContext) === account.id;
   const [blocked, setBlocked] = useState<{ message: string; slots: string[] } | null>(null);
   const [pendingAction, setPendingAction] = useState<VisibilityAction | null>(null);
   // The action buttons rendered below are conditional on account state, so a
@@ -91,9 +93,11 @@ export function AccountTreeRow({
   return (
     <>
       <div
+        id={accountRowDomId(account.id)}
         className={cn(
-          'flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-stone-50 transition-colors group',
+          'flex items-center gap-2 py-2 px-2 rounded-lg transition-colors duration-700 group',
           depth > 0 && 'pl-8',
+          isHighlighted ? 'bg-brand/20' : 'hover:bg-stone-50',
         )}
       >
         {perms.canUpdate && (
