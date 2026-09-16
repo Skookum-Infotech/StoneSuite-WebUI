@@ -25,6 +25,7 @@ function DocumentPage() {
 
   useEffect(() => {
     if (customerReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCustomer(customerReturn.createdRef);
       customerReturn.consumeCreated();
     }

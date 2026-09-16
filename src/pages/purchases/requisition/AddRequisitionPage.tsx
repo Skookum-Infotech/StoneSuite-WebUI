@@ -55,6 +55,7 @@ export default function AddRequisitionPage() {
   // picked from the list.
   useEffect(() => {
     if (vendorReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVendor(vendorReturn.createdRef);
       vendorReturn.consumeCreated();
     }

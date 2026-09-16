@@ -74,6 +74,7 @@ export default function AddInvoicePage() {
   // been picked from the list — same Bill To/currency/tax defaulting.
   useEffect(() => {
     if (customerReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       handleCustomerChange(customerReturn.createdRef);
       customerReturn.consumeCreated();
     }

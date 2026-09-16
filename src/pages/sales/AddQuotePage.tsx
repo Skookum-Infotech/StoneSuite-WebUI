@@ -119,9 +119,14 @@ export default function AddQuotePage() {
   }, [baseData]);
 
   // Applies the customer created via the round trip exactly as if it had
-  // been picked from the list — same Bill To/currency/tax defaulting.
+  // been picked from the list — same Bill To/currency/tax defaulting. An
+  // effect, not a render-time computation, because the source is router
+  // state delivered once by the navigation back from Create Customer, not a
+  // prop or state this component already owns — there's nothing to derive it
+  // from during render.
   useEffect(() => {
     if (customerReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCustomer(customerReturn.createdRef);
       customerReturn.consumeCreated();
     }
