@@ -42,6 +42,10 @@ export interface VendorPaymentVendorState {
   value: VendorRef | null;
   onChange: (v: VendorRef | null) => void;
   locked?: boolean;
+  /** Sends the user to create a new Vendor record for a typed name the list
+   *  doesn't have (see useRecordCreateReturn). Omitted on Edit (the vendor is
+   *  locked there anyway) or when the user can't create vendors. */
+  onCreateNew?: (name: string) => void;
 }
 
 // Shared tab bar + tab content for both the Add and Edit Vendor Payment pages
@@ -102,7 +106,7 @@ export function VendorPaymentFormBody({ shell, form, vendor, filesPanelRef, chil
                           {vendor.value?.name || <span className="text-stone-400">—</span>}
                         </div>
                       ) : (
-                        <VendorPicker value={vendor.value} onChange={vendor.onChange} required />
+                        <VendorPicker value={vendor.value} onChange={vendor.onChange} required onCreateNew={vendor.onCreateNew} />
                       )}
                     </ModernFieldShell>
                     {form.lockedAmount !== undefined && (

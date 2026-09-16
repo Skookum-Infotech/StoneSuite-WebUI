@@ -17,11 +17,23 @@ import {
   fromRequisition, toCreatePayload, calcHeaderTotals, invalidLinePositions,
   PAGE_TABS, type PageTab, type RequisitionLineItem, REQN_NON_DRAFT_LOCKED,
 } from '@/lib/requisitionForm';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 
 // Stable references so the fallbacks don't create a new identity every render
 // (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: RequisitionLineItem[] = [];
 const EMPTY_CUSTOM: Record<string, unknown> = {};
+
+/** Unsaved edits carried across an "Add to Inventory" round trip. */
+interface RequisitionEditDraft {
+  activeTab: PageTab;
+  localData: Record<string, unknown> | null;
+  localLineItems: RequisitionLineItem[] | null;
+  localVendor: VendorRef | null;
+  vendorTouched: boolean;
+  localCustomFields: Record<string, unknown> | null;
+}
 
 // Editing a requisition is DRFT-only (backend enforces with 400) — once
 // submitted it is awaiting someone's sign-off, so any other status renders
@@ -30,14 +42,19 @@ export default function EditRequisitionPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const inventoryReturn = useInventoryItemReturn<RequisitionEditDraft>();
+  const vendorReturn = useRecordCreateReturn<RequisitionEditDraft, VendorRef>(
+    'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? vendorReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<RequisitionLineItem[] | null>(null);
-  const [localVendor, setLocalVendor] = useState<VendorRef | null>(null);
-  const [vendorTouched, setVendorTouched] = useState(false);
-  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<RequisitionLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localVendor, setLocalVendor] = useState<VendorRef | null>(restored?.localVendor ?? null);
+  const [vendorTouched, setVendorTouched] = useState(restored?.vendorTouched ?? false);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(restored?.localCustomFields ?? null);
 
   const { data: reqn, isLoading, error: loadError } = useQuery({
     queryKey: ['requisition', id],
@@ -78,12 +95,24 @@ export default function EditRequisitionPage() {
     setLocalVendor(v);
   }, []);
 
+  // Applies the vendor created via the round trip exactly as if it had been
+  // picked from the list.
+  useEffect(() => {
+    if (vendorReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVendor(vendorReturn.createdRef);
+      vendorReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorReturn.createdRef]);
+
   // Baseline against the loaded record, not the empty defaults, so simply
   // opening the page never counts as an edit. A locked requisition is
   // read-only — nothing to lose.
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     Boolean(mapped) && !isLocked,
+    inventoryReturn.isRestored || vendorReturn.isRestored,
   );
 
   const set = useCallback(
@@ -101,6 +130,10 @@ export default function EditRequisitionPage() {
     () => calcHeaderTotals(lineItems, headerTaxPercent),
     [lineItems, headerTaxPercent],
   );
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: RequisitionEditDraft = { activeTab, localData, localLineItems, localVendor, vendorTouched, localCustomFields };
+  const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const save = useMutation({
     mutationFn: () => {
@@ -189,23 +222,26 @@ export default function EditRequisitionPage() {
           </div>
         )}
 
-        <RequisitionFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          requisitionId={id}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          vendor={vendor}
-          setVendor={setVendor}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          taxTotal={taxTotal}
-          estimatedTotal={estimatedTotal}
-        />
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
+          <RequisitionFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            requisitionId={id}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            vendor={vendor}
+            setVendor={setVendor}
+            onCreateVendor={startCreateVendor}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            taxTotal={taxTotal}
+            estimatedTotal={estimatedTotal}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate(`/purchases/requisition/${id}`)}

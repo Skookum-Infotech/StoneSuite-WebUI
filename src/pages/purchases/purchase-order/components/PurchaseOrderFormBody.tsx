@@ -26,7 +26,7 @@ import {
 export function PurchaseOrderFormBody({
   activeTab, setActiveTab, purchaseOrderId,
   data, set, lineItems, setLineItems,
-  vendor, setVendor, vendorLocked = false,
+  vendor, setVendor, vendorLocked = false, onCreateVendor,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, shippingCharge, adjustment, total, filesPanelRef,
 }: {
@@ -44,6 +44,10 @@ export function PurchaseOrderFormBody({
   /** The vendor is fixed after creation (UpdatePurchaseOrderInput has no
    *  vendorUuid) — edit mode shows it read-only instead of the picker. */
   vendorLocked?: boolean;
+  /** Sends the user to create a new Vendor record for a typed name the list
+   *  doesn't have (see useRecordCreateReturn). Omitted on Edit (the vendor is
+   *  locked there anyway) or when the user can't create vendors. */
+  onCreateVendor?: (name: string) => void;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -99,7 +103,7 @@ export function PurchaseOrderFormBody({
                             {vendor?.name || <span className="text-stone-400">—</span>}
                           </div>
                         ) : (
-                          <VendorPicker value={vendor} onChange={setVendor} required />
+                          <VendorPicker value={vendor} onChange={setVendor} required onCreateNew={onCreateVendor} />
                         )}
                       </ModernFieldShell>
                       <ModernFieldShell label="Purchase Order Status">

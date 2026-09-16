@@ -8,9 +8,9 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt'
 
 // A stand-in for the add/edit pages: local form state, a guard over it, and a
 // route change that the guard is expected to intercept.
-function FormPage({ isReady = true }: { isReady?: boolean }) {
+function FormPage({ isReady = true, startDirty = false }: { isReady?: boolean; startDirty?: boolean }) {
   const [name, setName] = useState('')
-  const guard = useUnsavedChangesGuard({ name }, isReady)
+  const guard = useUnsavedChangesGuard({ name }, isReady, startDirty)
   return (
     <div>
       <UnsavedChangesPrompt guard={guard} />
@@ -21,10 +21,10 @@ function FormPage({ isReady = true }: { isReady?: boolean }) {
   )
 }
 
-function renderPage(isReady = true) {
+function renderPage(isReady = true, startDirty = false) {
   const router = createMemoryRouter(
     [
-      { path: '/form', element: <FormPage isReady={isReady} /> },
+      { path: '/form', element: <FormPage isReady={isReady} startDirty={startDirty} /> },
       { path: '/elsewhere', element: <div>Elsewhere</div> },
     ],
     { initialEntries: ['/form'] },
@@ -99,5 +99,15 @@ describe('useUnsavedChangesGuard', () => {
     await user.click(screen.getByRole('link', { name: 'Leave' }))
 
     expect(screen.getByText('Elsewhere')).toBeInTheDocument()
+  })
+
+  it('prompts without any edits when the page opened with restored unsaved work', async () => {
+    const user = userEvent.setup()
+    renderPage(true, true)
+
+    await user.click(screen.getByRole('link', { name: 'Leave' }))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument()
   })
 })

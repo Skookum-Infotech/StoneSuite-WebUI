@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { InventoryItemPicker } from './InventoryItemPicker';
+import { InventoryItemPicker, type InventoryItemPickerHandlers } from './InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
+import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { Badge } from '@/components/tenant/ui';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
@@ -35,9 +35,24 @@ const ITEM_COLS = [
 ];
 
 export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; onUpdate: (v: SOLineItem[]) => void }) {
-  const [draft, setDraft] = useState<Omit<SOLineItem, 'id' | 'lineNo'>>(EMPTY_LINE_ITEM);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
+  // Picking an inventory item snapshots its display fields into the draft;
+  // the server re-snapshots authoritatively from inventoryItemUuid at save time.
+  const applyCatalogItem = (prev: Omit<SOLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
+    const next = {
+      ...prev,
+      itemName: item.name,
+      itemSku: item.sku,
+      itemDescription: item.description,
+      unitPrice: String(item.unitPrice),
+      inventoryItemUuid: item.id,
+    };
+    const { amount, total } = calcLineItem(next);
+    return { ...next, amount, total };
+  };
+
+  const {
+    draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+  } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
 
   const updateDraft = (key: keyof typeof draft, val: string) => {
     const nextVal = key === 'discount' || key === 'tax' ? clampPercent(val) : val;
@@ -49,7 +64,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
   };
 
   // Typing the item name manually detaches the line from any previously
-  // picked catalog item — it becomes (or stays) a free-text line.
+  // picked inventory item — a fresh pick is required before the line can be saved.
   const onItemNameText = (text: string) => {
     setDraft((prev) => {
       const next = { ...prev, itemName: text, inventoryItemUuid: undefined };
@@ -58,32 +73,21 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
     });
   };
 
-  // Picking a catalog suggestion snapshots its display fields into the draft;
-  // the server re-snapshots authoritatively from inventoryItemUuid at save time.
-  const pickCatalogItem = (item: InventoryItem) => {
-    setDraft((prev) => {
-      const next = {
-        ...prev,
-        itemName: item.name,
-        itemSku: item.sku,
-        itemDescription: item.description,
-        unitPrice: String(item.unitPrice),
-        inventoryItemUuid: item.id,
-      };
-      const { amount, total } = calcLineItem(next);
-      return { ...next, amount, total };
-    });
+  const picker: InventoryItemPickerHandlers = {
+    onTextChange: onItemNameText,
+    onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
+    onAddToInventory: addToInventory,
   };
 
   const commitAdd = () => {
-    if (!draft.itemName) return;
+    if (!requireCatalogItem()) return;
     onUpdate([...items, { ...draft, id: genId(), lineNo: items.length + 1 }]);
     setDraft(EMPTY_LINE_ITEM);
     setIsAdding(false);
   };
 
   const commitEdit = () => {
-    if (!editId) return;
+    if (!editId || !requireCatalogItem()) return;
     onUpdate(items.map((r) => r.id === editId ? { ...draft, id: editId, lineNo: r.lineNo } : r));
     setEditId(null);
     setDraft(EMPTY_LINE_ITEM);
@@ -131,7 +135,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
             {items.map((row) =>
               editId === row.id ? (
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
-                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className="px-2 py-1.5">
                     <FulfillmentBadge status={row.status} />
                   </td>
@@ -170,7 +174,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
             )}
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
-                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
                 <td className="px-2 py-1.5"><FulfillmentBadge status={draft.status} /></td>
                 <td className="px-2 py-1.5" />
               </tr>
@@ -215,6 +219,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
           className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
           <Trash2 className="size-3" /> Remove Last
         </button>
+        {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
       </div>
     </div>
   );
@@ -230,18 +235,17 @@ function FulfillmentBadge({ status = 'open' }: { status?: 'open' | 'partial' | '
   );
 }
 
-function InlineItemRow({ lineNo, draft, onChange, onItemNameText, onPickItem }: {
+function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
   draft: Omit<SOLineItem, 'id' | 'lineNo'>;
   onChange: (key: keyof typeof draft, val: string) => void;
-  onItemNameText: (text: string) => void;
-  onPickItem: (item: InventoryItem) => void;
+  picker: InventoryItemPickerHandlers;
 }) {
   return (
     <>
       <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
-        <InventoryItemPicker value={draft.itemName} onTextChange={onItemNameText} onPick={onPickItem} className="min-w-[130px]" />
+        <InventoryItemPicker {...picker} value={draft.itemName} className="min-w-[130px]" />
       </td>
       <td className="px-2 py-1.5"><input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" /></td>
       <td className="px-2 py-1.5"><input type="text" value={draft.itemSku} onChange={(e) => onChange('itemSku', e.target.value)} placeholder="SKU-0000" className={cn(inlineCls, 'w-24 font-mono')} aria-label="SKU" /></td>
