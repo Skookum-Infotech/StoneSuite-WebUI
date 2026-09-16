@@ -17,23 +17,36 @@ import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { statusToastLabel } from '@/lib/statusToast';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import {
   soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, type PageTab,
   type SOLineItem, type SODrawing,
 } from '@/lib/salesOrderForm';
 
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface SalesOrderDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  lineItems: SOLineItem[];
+  drawings: SODrawing[];
+  customer: CustomerRef | null;
+  customFieldValues: Record<string, unknown>;
+}
+
 export default function AddSalesOrderPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const inventoryReturn = useInventoryItemReturn<SalesOrderDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(soDefaults);
-  const [lineItems, setLineItems] = useState<SOLineItem[]>([]);
-  const [drawings, setDrawings] = useState<SODrawing[]>([]);
-  const [customer, setCustomer] = useState<CustomerRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? soDefaults());
+  const [lineItems, setLineItems] = useState<SOLineItem[]>(restored?.lineItems ?? []);
+  const [drawings, setDrawings] = useState<SODrawing[]>(restored?.drawings ?? []);
+  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => {
     setData((d) => {
@@ -79,7 +92,7 @@ export default function AddSalesOrderPage() {
     };
   }, [data, lookups]);
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer, customFieldValues });
+  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer, customFieldValues }, true, inventoryReturn.isRestored);
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
     const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
@@ -160,26 +173,30 @@ export default function AddSalesOrderPage() {
           </div>
         )}
 
-        <SalesOrderFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={formData}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLineItems}
-          drawings={drawings}
-          setDrawings={setDrawings}
-          customer={customer}
-          setCustomer={handleCustomerChange}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          total={total}
-          filesPanelRef={panelRef}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, data, lineItems, drawings, customer, customFieldValues }, guard.markClean)}
+        >
+          <SalesOrderFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={formData}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLineItems}
+            drawings={drawings}
+            setDrawings={setDrawings}
+            customer={customer}
+            setCustomer={handleCustomerChange}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            total={total}
+            filesPanelRef={panelRef}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/sales/sales_order')}

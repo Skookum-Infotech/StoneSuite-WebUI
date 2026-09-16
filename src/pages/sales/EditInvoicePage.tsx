@@ -20,23 +20,36 @@ import {
   type InvoiceLineItem, INVOICE_TERMINAL_STATUSES, INVOICE_STATUS_CODES,
 } from '@/lib/invoiceForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: InvoiceLineItem[] = [];
 
+/** Unsaved edits carried across an "Add to Inventory" round trip. Status is
+ *  excluded — a transition is saved the moment it's picked. */
+interface InvoiceEditDraft {
+  activeTab: PageTab;
+  localData: Record<string, unknown> | null;
+  localLineItems: InvoiceLineItem[] | null;
+  localCustomer: CustomerRef | null;
+  localCustomFields: Record<string, unknown> | null;
+}
+
 export default function EditInvoicePage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const inventoryReturn = useInventoryItemReturn<InvoiceEditDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<InvoiceLineItem[] | null>(null);
-  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<InvoiceLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(restored?.localCustomer ?? null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
-  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(restored?.localCustomFields ?? null);
 
   const { data: invoice, isLoading, error: loadError } = useQuery({
     queryKey: ['invoice', id],
@@ -202,33 +215,37 @@ export default function EditInvoicePage() {
           </div>
         )}
 
-        <InvoiceFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          invoiceId={id}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          customer={customer}
-          setCustomer={setLocalCustomer}
-          customerLocked
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          total={total}
-          amountPaid={invoice.amountPaid}
-          statusControl={(
-            <InvoiceStatusControl
-              invoice={{ statusCode, approvalStatus, gated, hasAttachments }}
-              onChange={handleStatusChange}
-              disabled={transition.isPending}
-            />
-          )}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localCustomer, localCustomFields })}
+        >
+          <InvoiceFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            invoiceId={id}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            customer={customer}
+            setCustomer={setLocalCustomer}
+            customerLocked
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            total={total}
+            amountPaid={invoice.amountPaid}
+            statusControl={(
+              <InvoiceStatusControl
+                invoice={{ statusCode, approvalStatus, gated, hasAttachments }}
+                onChange={handleStatusChange}
+                disabled={transition.isPending}
+              />
+            )}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate(`/sales/invoice/${id}`)}

@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { InventoryItemPicker } from './InventoryItemPicker';
+import { InventoryItemPicker, type InventoryItemPickerHandlers } from './InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
+import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type CreditMemoLineItem,
 } from '@/lib/creditMemoForm';
@@ -35,14 +35,22 @@ export function CreditMemoItemsTab({ items, onUpdate, headerTaxPercent, disabled
   headerTaxPercent: number;
   disabled?: boolean;
 }) {
-  const [draft, setDraft] = useState<Omit<CreditMemoLineItem, 'id' | 'lineNo'>>(EMPTY_LINE_ITEM);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
-
   const recalc = (next: Omit<CreditMemoLineItem, 'id' | 'lineNo'>) => {
     const { amount, total } = calcLineItem(next, headerTaxPercent);
     return { ...next, amount, total };
   };
+
+  const applyCatalogItem = (prev: Omit<CreditMemoLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
+    ...prev,
+    itemName: item.name,
+    itemSku: item.sku,
+    unitPrice: String(item.unitPrice),
+    inventoryItemUuid: item.id,
+  });
+
+  const {
+    draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+  } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
 
   const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount', val: string) => {
     const nextVal = key === 'discount' ? clampPercent(val) : val;
@@ -53,25 +61,21 @@ export function CreditMemoItemsTab({ items, onUpdate, headerTaxPercent, disabled
     setDraft((prev) => recalc({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' }));
   };
 
-  const pickCatalogItem = (item: InventoryItem) => {
-    setDraft((prev) => recalc({
-      ...prev,
-      itemName: item.name,
-      itemSku: item.sku,
-      unitPrice: String(item.unitPrice),
-      inventoryItemUuid: item.id,
-    }));
+  const picker: InventoryItemPickerHandlers = {
+    onTextChange: onItemNameText,
+    onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
+    onAddToInventory: addToInventory,
   };
 
   const commitAdd = () => {
-    if (!draft.itemName) return;
+    if (!requireCatalogItem()) return;
     onUpdate([...items, { ...draft, id: genId(), lineNo: items.length + 1 }]);
     setDraft(EMPTY_LINE_ITEM);
     setIsAdding(false);
   };
 
   const commitEdit = () => {
-    if (!editId) return;
+    if (!editId || !requireCatalogItem()) return;
     onUpdate(items.map((r) => r.id === editId ? { ...draft, id: editId, lineNo: r.lineNo } : r));
     setEditId(null);
     setDraft(EMPTY_LINE_ITEM);
@@ -120,7 +124,7 @@ export function CreditMemoItemsTab({ items, onUpdate, headerTaxPercent, disabled
             {items.map((row) =>
               editId === row.id ? (
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
-                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
@@ -159,7 +163,7 @@ export function CreditMemoItemsTab({ items, onUpdate, headerTaxPercent, disabled
             )}
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
-                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
                 <td className="px-2 py-1.5" />
               </tr>
             )}
@@ -205,24 +209,24 @@ export function CreditMemoItemsTab({ items, onUpdate, headerTaxPercent, disabled
             className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
             <Trash2 className="size-3" /> Remove Last
           </button>
+          {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
         </div>
       )}
     </div>
   );
 }
 
-function InlineItemRow({ lineNo, draft, onChange, onItemNameText, onPickItem }: {
+function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
   draft: Omit<CreditMemoLineItem, 'id' | 'lineNo'>;
   onChange: (key: 'quantity' | 'unitPrice' | 'discount', val: string) => void;
-  onItemNameText: (text: string) => void;
-  onPickItem: (item: InventoryItem) => void;
+  picker: InventoryItemPickerHandlers;
 }) {
   return (
     <>
       <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
-        <InventoryItemPicker value={draft.itemName} onTextChange={onItemNameText} onPick={onPickItem} className="min-w-[150px]" />
+        <InventoryItemPicker {...picker} value={draft.itemName} className="min-w-[150px]" />
       </td>
       <td className="px-2 py-1.5 text-stone-400 font-mono text-2xs">{draft.itemSku || '—'}</td>
       <td className="px-2 py-1.5 text-stone-400 text-2xs">{draft.units || '—'}</td>

@@ -16,22 +16,34 @@ import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel'
 import { type VendorRef } from './components/VendorPicker';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { purchaseOrderShipToDefaults } from '@/lib/purchaseOrderShipToDefaults';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import {
   purchaseOrderDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
   type PurchaseOrderLineItem,
 } from '@/lib/purchaseOrderForm';
 
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface PurchaseOrderDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  lineItems: PurchaseOrderLineItem[];
+  vendor: VendorRef | null;
+  customFieldValues: Record<string, unknown>;
+}
+
 export default function AddPurchaseOrderPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const inventoryReturn = useInventoryItemReturn<PurchaseOrderDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(purchaseOrderDefaults);
-  const [lineItems, setLineItems] = useState<PurchaseOrderLineItem[]>([]);
-  const [vendor, setVendor] = useState<VendorRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? purchaseOrderDefaults());
+  const [lineItems, setLineItems] = useState<PurchaseOrderLineItem[]>(restored?.lineItems ?? []);
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -77,7 +89,7 @@ export default function AddPurchaseOrderPage() {
     };
   }, [data, lookups, companyProfile]);
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
+  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues }, true, inventoryReturn.isRestored);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const shippingCharge = parseFloat(String(data.shipping_charge ?? '')) || 0;
@@ -136,26 +148,30 @@ export default function AddPurchaseOrderPage() {
           </div>
         )}
 
-        <PurchaseOrderFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={formData}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLineItems}
-          vendor={vendor}
-          setVendor={setVendor}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          shippingCharge={shippingCharge}
-          adjustment={adjustment}
-          total={total}
-          filesPanelRef={panelRef}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, data, lineItems, vendor, customFieldValues }, guard.markClean)}
+        >
+          <PurchaseOrderFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={formData}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLineItems}
+            vendor={vendor}
+            setVendor={setVendor}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            shippingCharge={shippingCharge}
+            adjustment={adjustment}
+            total={total}
+            filesPanelRef={panelRef}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/purchases/purchase_order')}

@@ -17,11 +17,21 @@ import {
   fromVendorBill, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
   type VendorBillLineItem, VB_NON_DRAFT_LOCKED,
 } from '@/lib/vendorBillForm';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: VendorBillLineItem[] = [];
 const EMPTY_CUSTOM: Record<string, unknown> = {};
+
+/** Unsaved edits carried across an "Add to Inventory" round trip. */
+interface VendorBillEditDraft {
+  activeTab: PageTab;
+  localData: Record<string, unknown> | null;
+  localLineItems: VendorBillLineItem[] | null;
+  localVendor: VendorRef | null;
+  localCustomFields: Record<string, unknown> | null;
+}
 
 // Editing a vendor bill is DRFT-only (backend enforces with 400) — mirrors
 // EditPurchaseOrderPage's terminal-status lock, but VB's lock covers every
@@ -30,13 +40,15 @@ export default function EditVendorBillPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const inventoryReturn = useInventoryItemReturn<VendorBillEditDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<VendorBillLineItem[] | null>(null);
-  const [localVendor, setLocalVendor] = useState<VendorRef | null>(null);
-  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<VendorBillLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localVendor, setLocalVendor] = useState<VendorRef | null>(restored?.localVendor ?? null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(restored?.localCustomFields ?? null);
 
   const { data: bill, isLoading, error: loadError } = useQuery({
     queryKey: ['vendor-bill', id],
@@ -71,6 +83,7 @@ export default function EditVendorBillPage() {
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     Boolean(mapped) && !isLocked,
+    inventoryReturn.isRestored,
   );
 
   const set = useCallback(
@@ -166,26 +179,30 @@ export default function EditVendorBillPage() {
           </div>
         )}
 
-        <VendorBillFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          vendorBillId={id}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          vendor={vendor}
-          setVendor={setLocalVendor}
-          vendorLocked
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          adjustment={adjustment}
-          total={total}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localVendor, localCustomFields }, guard.markClean)}
+        >
+          <VendorBillFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            vendorBillId={id}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            vendor={vendor}
+            setVendor={setLocalVendor}
+            vendorLocked
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            adjustment={adjustment}
+            total={total}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate(`/purchases/vendor_bill/${id}`)}

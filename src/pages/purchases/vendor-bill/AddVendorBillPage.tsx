@@ -13,22 +13,34 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { VendorBillFormBody } from './components/VendorBillFormBody';
 import {
   vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
   type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
 
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface VendorBillDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  lineItems: VendorBillLineItem[];
+  vendor: VendorRef | null;
+  customFieldValues: Record<string, unknown>;
+}
+
 export default function AddVendorBillPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const inventoryReturn = useInventoryItemReturn<VendorBillDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(vendorBillDefaults);
-  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>([]);
-  const [vendor, setVendor] = useState<VendorRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? vendorBillDefaults());
+  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? []);
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -50,7 +62,7 @@ export default function AddVendorBillPage() {
     return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
   }, [data, lookups]);
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
+  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues }, true, inventoryReturn.isRestored);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
@@ -108,25 +120,29 @@ export default function AddVendorBillPage() {
           </div>
         )}
 
-        <VendorBillFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={formData}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLineItems}
-          vendor={vendor}
-          setVendor={setVendor}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          adjustment={adjustment}
-          total={total}
-          filesPanelRef={panelRef}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, data, lineItems, vendor, customFieldValues }, guard.markClean)}
+        >
+          <VendorBillFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={formData}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLineItems}
+            vendor={vendor}
+            setVendor={setVendor}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            adjustment={adjustment}
+            total={total}
+            filesPanelRef={panelRef}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/purchases/vendor_bill')}

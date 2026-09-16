@@ -12,22 +12,34 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from '../purchase-order/components/VendorPicker';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { RequisitionFormBody } from './components/RequisitionFormBody';
 import {
   requisitionDefaults, toCreatePayload, calcHeaderTotals, invalidLinePositions,
   PAGE_TABS, type PageTab, type RequisitionLineItem,
 } from '@/lib/requisitionForm';
 
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface RequisitionDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  lineItems: RequisitionLineItem[];
+  vendor: VendorRef | null;
+  customFieldValues: Record<string, unknown>;
+}
+
 export default function AddRequisitionPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const inventoryReturn = useInventoryItemReturn<RequisitionDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(requisitionDefaults);
-  const [lineItems, setLineItems] = useState<RequisitionLineItem[]>([]);
-  const [vendor, setVendor] = useState<VendorRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? requisitionDefaults());
+  const [lineItems, setLineItems] = useState<RequisitionLineItem[]>(restored?.lineItems ?? []);
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -41,7 +53,7 @@ export default function AddRequisitionPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
+  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues }, true, inventoryReturn.isRestored);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
@@ -110,23 +122,27 @@ export default function AddRequisitionPage() {
           </div>
         )}
 
-        <RequisitionFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLineItems}
-          vendor={vendor}
-          setVendor={setVendor}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          taxTotal={taxTotal}
-          estimatedTotal={estimatedTotal}
-          filesPanelRef={panelRef}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, data, lineItems, vendor, customFieldValues }, guard.markClean)}
+        >
+          <RequisitionFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLineItems}
+            vendor={vendor}
+            setVendor={setVendor}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            taxTotal={taxTotal}
+            estimatedTotal={estimatedTotal}
+            filesPanelRef={panelRef}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/purchases/requisition')}

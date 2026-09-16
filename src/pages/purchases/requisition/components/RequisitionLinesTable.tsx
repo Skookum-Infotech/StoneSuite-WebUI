@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // Inventory catalog picker is tenant-wide, not sales-specific — reused as-is
 // from its current home rather than duplicated (mirrors
 // PurchaseOrderItemsTab's usage one folder over).
-import { InventoryItemPicker } from '@/pages/sales/components/InventoryItemPicker';
+import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
+import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { EMPTY_LINE_ITEM, calcLineItem, type RequisitionLineItem } from '@/lib/requisitionForm';
 
 const inlineCls =
@@ -39,50 +39,54 @@ export function RequisitionLinesTable({ items, onUpdate }: {
   items: RequisitionLineItem[];
   onUpdate: (v: RequisitionLineItem[]) => void;
 }) {
-  const [draft, setDraft] = useState<Omit<RequisitionLineItem, 'id' | 'lineNo'>>(EMPTY_LINE_ITEM);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
-
   const recalc = (next: Omit<RequisitionLineItem, 'id' | 'lineNo'>) => ({
     ...next,
     ...calcLineItem(next),
   });
 
+  // Picking an inventory item snapshots its display fields into the draft;
+  // the server re-snapshots authoritatively from inventoryItemUuid at save
+  // time. The item's unit price seeds the *estimate* — the requester is
+  // free to overwrite it, since a requisition predates any vendor quote.
+  const applyCatalogItem = (prev: Omit<RequisitionLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
+    ...prev,
+    itemName: item.name,
+    itemDescription: item.description,
+    itemSku: item.sku,
+    estimatedUnitPrice: String(item.unitPrice),
+    inventoryItemUuid: item.id,
+  });
+
+  const {
+    draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+  } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
+
   const updateDraft = (key: 'quantity' | 'estimatedUnitPrice' | 'itemDescription', val: string) => {
     setDraft((prev) => recalc({ ...prev, [key]: val }));
   };
 
-  // Typing the item name manually detaches the line from any previously
-  // picked catalog item — it becomes (or stays) a free-text line. The
-  // description is left untouched — it's independent of the item name.
+  // Typing the item name detaches the line from any previously picked
+  // inventory item — a fresh pick is required before the line can be saved.
+  // The description is left untouched — it's independent of the item name.
   const onItemNameText = (text: string) => {
     setDraft((prev) => recalc({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' }));
   };
 
-  // Picking a catalog suggestion snapshots its display fields into the draft;
-  // the server re-snapshots authoritatively from inventoryItemUuid at save
-  // time. The catalog's unit price seeds the *estimate* — the requester is
-  // free to overwrite it, since a requisition predates any vendor quote.
-  const pickCatalogItem = (item: InventoryItem) => {
-    setDraft((prev) => recalc({
-      ...prev,
-      itemName: item.name,
-      itemDescription: item.description,
-      itemSku: item.sku,
-      estimatedUnitPrice: String(item.unitPrice),
-      inventoryItemUuid: item.id,
-    }));
+  const picker: InventoryItemPickerHandlers = {
+    onTextChange: onItemNameText,
+    onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
+    onAddToInventory: addToInventory,
   };
 
   const commitAdd = () => {
-    if (!draft.itemName) return;
+    if (!requireCatalogItem()) return;
     onUpdate([...items, { ...draft, id: genId(), lineNo: items.length + 1 }]);
     setDraft(EMPTY_LINE_ITEM);
     setIsAdding(false);
   };
 
   const commitEdit = () => {
-    if (!editId) return;
+    if (!editId || !requireCatalogItem()) return;
     onUpdate(items.map((r) => r.id === editId ? { ...draft, id: editId, lineNo: r.lineNo } : r));
     setEditId(null);
     setDraft(EMPTY_LINE_ITEM);
@@ -130,7 +134,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
             {items.map((row) =>
               editId === row.id ? (
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
-                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
                       <Trash2 className="size-3.5" />
@@ -162,7 +166,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
             )}
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
-                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} onItemNameText={onItemNameText} onPickItem={pickCatalogItem} />
+                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
                 <td className="px-2 py-1.5" />
               </tr>
             )}
@@ -206,23 +210,23 @@ export function RequisitionLinesTable({ items, onUpdate }: {
           className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
           <Trash2 className="size-3" /> Remove Last
         </button>
+        {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
       </div>
     </div>
   );
 }
 
-function InlineItemRow({ lineNo, draft, onChange, onItemNameText, onPickItem }: {
+function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
   draft: Omit<RequisitionLineItem, 'id' | 'lineNo'>;
   onChange: (key: 'quantity' | 'estimatedUnitPrice' | 'itemDescription', val: string) => void;
-  onItemNameText: (text: string) => void;
-  onPickItem: (item: InventoryItem) => void;
+  picker: InventoryItemPickerHandlers;
 }) {
   return (
     <>
       <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
-        <InventoryItemPicker value={draft.itemName} onTextChange={onItemNameText} onPick={onPickItem} className="min-w-[150px]" />
+        <InventoryItemPicker {...picker} value={draft.itemName} className="min-w-[150px]" />
       </td>
       <td className="px-2 py-1.5">
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />

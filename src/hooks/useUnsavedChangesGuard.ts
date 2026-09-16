@@ -22,7 +22,9 @@ export interface UnsavedChangesGuard {
  *
  * Dirtiness is a JSON comparison against the first snapshot committed once
  * `isReady` turns true, which lets edit pages baseline against the loaded record
- * rather than against empty defaults.
+ * rather than against empty defaults. `startDirty` is for a page that opened
+ * with unsaved work restored into it (see useInventoryItemReturn): that
+ * baseline is itself unsaved, so leaving must still prompt.
  *
  * Dirtiness lives in refs rather than state deliberately: nothing in this hook
  * renders from it. Both consumers — the blocker predicate and the unload
@@ -31,7 +33,7 @@ export interface UnsavedChangesGuard {
  * drop the pending block. The only rendered value, `isPrompting`, comes from
  * React Router's own blocker state.
  */
-export function useUnsavedChangesGuard(snapshot: unknown, isReady = true): UnsavedChangesGuard {
+export function useUnsavedChangesGuard(snapshot: unknown, isReady = true, startDirty = false): UnsavedChangesGuard {
   const serialized = useMemo(() => JSON.stringify(snapshot), [snapshot]);
 
   const baselineRef = useRef<string | undefined>(undefined);
@@ -41,8 +43,8 @@ export function useUnsavedChangesGuard(snapshot: unknown, isReady = true): Unsav
   useEffect(() => {
     if (!isReady) return;
     if (baselineRef.current === undefined) baselineRef.current = serialized;
-    isDirtyRef.current = baselineRef.current !== serialized;
-  }, [isReady, serialized]);
+    isDirtyRef.current = startDirty || baselineRef.current !== serialized;
+  }, [isReady, serialized, startDirty]);
 
   const shouldBlock = useCallback<BlockerFunction>(
     ({ currentLocation, nextLocation }) =>

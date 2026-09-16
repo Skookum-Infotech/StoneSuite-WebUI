@@ -13,22 +13,34 @@ import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { EstimateFormBody } from './components/EstimateFormBody';
 import {
   estimateDefaults, toCreatePayload, PAGE_TABS, type PageTab,
   type EstimateLineItem,
 } from '@/lib/estimateForm';
 
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface EstimateDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  lineItems: EstimateLineItem[];
+  customer: CustomerRef | null;
+  customFieldValues: Record<string, unknown>;
+}
+
 export default function AddEstimatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const inventoryReturn = useInventoryItemReturn<EstimateDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(estimateDefaults);
-  const [lineItems, setLineItems] = useState<EstimateLineItem[]>([]);
-  const [customer, setCustomer] = useState<CustomerRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? estimateDefaults());
+  const [lineItems, setLineItems] = useState<EstimateLineItem[]>(restored?.lineItems ?? []);
+  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => {
     setData((d) => {
@@ -131,24 +143,28 @@ export default function AddEstimatePage() {
           </div>
         )}
 
-        <EstimateFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={formData}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLineItems}
-          customer={customer}
-          setCustomer={handleCustomerChange}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          total={total}
-          filesPanelRef={panelRef}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, data, lineItems, customer, customFieldValues })}
+        >
+          <EstimateFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={formData}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLineItems}
+            customer={customer}
+            setCustomer={handleCustomerChange}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            total={total}
+            filesPanelRef={panelRef}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/sales/estimate')}

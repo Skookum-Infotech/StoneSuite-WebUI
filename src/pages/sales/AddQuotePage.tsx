@@ -14,11 +14,22 @@ import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import {
   quoteDefaults, toCreatePayload, fromSourceEstimate, PAGE_TABS, type PageTab,
   type QuoteLineItem,
 } from '@/lib/quoteForm';
+
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface QuoteDraft {
+  activeTab: PageTab;
+  localData: Record<string, unknown> | null;
+  localLineItems: QuoteLineItem[] | null;
+  localCustomer: CustomerRef | null;
+  customerTouched: boolean;
+  customFieldValues: Record<string, unknown>;
+}
 
 export default function AddQuotePage() {
   const navigate = useNavigate();
@@ -26,8 +37,10 @@ export default function AddQuotePage() {
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const [searchParams] = useSearchParams();
   const fromEstimateId = searchParams.get('fromEstimate') ?? '';
+  const inventoryReturn = useInventoryItemReturn<QuoteDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
   const { data: sourceEstimate } = useQuery({
     queryKey: ['estimate', fromEstimateId],
@@ -63,11 +76,11 @@ export default function AddQuotePage() {
     return merged;
   }, [prefill, lookups]);
 
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<QuoteLineItem[] | null>(null);
-  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
-  const [customerTouched, setCustomerTouched] = useState(false);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<QuoteLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(restored?.localCustomer ?? null);
+  const [customerTouched, setCustomerTouched] = useState(restored?.customerTouched ?? false);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const data = localData ?? baseData;
   const lineItems = useMemo(() => localLineItems ?? prefill?.lineItems ?? [], [localLineItems, prefill]);
@@ -159,25 +172,29 @@ export default function AddQuotePage() {
           </div>
         )}
 
-        <QuoteFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          customer={customer}
-          setCustomer={setCustomer}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          total={total}
-          filesPanelRef={panelRef}
-          sourceEstimate={sourceEstimate ? { id: sourceEstimate.id, number: sourceEstimate.estimateNumber } : null}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localCustomer, customerTouched, customFieldValues })}
+        >
+          <QuoteFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            customer={customer}
+            setCustomer={setCustomer}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            total={total}
+            filesPanelRef={panelRef}
+            sourceEstimate={sourceEstimate ? { id: sourceEstimate.id, number: sourceEstimate.estimateNumber } : null}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/sales/quote')}

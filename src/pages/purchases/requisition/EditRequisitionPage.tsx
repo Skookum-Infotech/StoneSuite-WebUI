@@ -17,11 +17,22 @@ import {
   fromRequisition, toCreatePayload, calcHeaderTotals, invalidLinePositions,
   PAGE_TABS, type PageTab, type RequisitionLineItem, REQN_NON_DRAFT_LOCKED,
 } from '@/lib/requisitionForm';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 
 // Stable references so the fallbacks don't create a new identity every render
 // (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: RequisitionLineItem[] = [];
 const EMPTY_CUSTOM: Record<string, unknown> = {};
+
+/** Unsaved edits carried across an "Add to Inventory" round trip. */
+interface RequisitionEditDraft {
+  activeTab: PageTab;
+  localData: Record<string, unknown> | null;
+  localLineItems: RequisitionLineItem[] | null;
+  localVendor: VendorRef | null;
+  vendorTouched: boolean;
+  localCustomFields: Record<string, unknown> | null;
+}
 
 // Editing a requisition is DRFT-only (backend enforces with 400) — once
 // submitted it is awaiting someone's sign-off, so any other status renders
@@ -30,14 +41,16 @@ export default function EditRequisitionPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const inventoryReturn = useInventoryItemReturn<RequisitionEditDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<RequisitionLineItem[] | null>(null);
-  const [localVendor, setLocalVendor] = useState<VendorRef | null>(null);
-  const [vendorTouched, setVendorTouched] = useState(false);
-  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<RequisitionLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localVendor, setLocalVendor] = useState<VendorRef | null>(restored?.localVendor ?? null);
+  const [vendorTouched, setVendorTouched] = useState(restored?.vendorTouched ?? false);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(restored?.localCustomFields ?? null);
 
   const { data: reqn, isLoading, error: loadError } = useQuery({
     queryKey: ['requisition', id],
@@ -84,6 +97,7 @@ export default function EditRequisitionPage() {
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     Boolean(mapped) && !isLocked,
+    inventoryReturn.isRestored,
   );
 
   const set = useCallback(
@@ -189,23 +203,30 @@ export default function EditRequisitionPage() {
           </div>
         )}
 
-        <RequisitionFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          requisitionId={id}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          vendor={vendor}
-          setVendor={setVendor}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          taxTotal={taxTotal}
-          estimatedTotal={estimatedTotal}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide(
+            { activeTab, localData, localLineItems, localVendor, vendorTouched, localCustomFields },
+            guard.markClean,
+          )}
+        >
+          <RequisitionFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            requisitionId={id}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            vendor={vendor}
+            setVendor={setVendor}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            taxTotal={taxTotal}
+            estimatedTotal={estimatedTotal}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate(`/purchases/requisition/${id}`)}
