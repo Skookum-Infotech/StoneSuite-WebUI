@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, CheckCircle2, XCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -9,7 +9,9 @@ import {
   visibilityPayload, applicableVisibilityActions, VISIBILITY_ACTION_LABELS, type VisibilityAction,
 } from '@/lib/coaVisibility';
 import { ACCOUNT_TYPE_LABELS, type TreeAccount } from '@/types/chartOfAccounts';
+import { accountRowDomId, HighlightedAccountContext } from '@/lib/coaAccountHighlight';
 import { BlockingSlotsDialog } from './BlockingSlotsDialog';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { cn } from '@/lib/utils';
 
 const ACTION_ICONS: Record<VisibilityAction, LucideIcon> = {
@@ -19,6 +21,23 @@ const ACTION_ICONS: Record<VisibilityAction, LucideIcon> = {
   hide: EyeOff,
 };
 
+/** The row's RBAC grants, bundled so the recursive call site passes one prop
+ *  rather than three — and so adding a fourth grant later does not widen every
+ *  signature between here and AccountTreeView. */
+export interface TreeRowPerms {
+  canUpdate: boolean;
+  canCreate: boolean;
+  canDelete: boolean;
+}
+
+/** Everything the row hands back up. Bundled for the same reason as
+ *  TreeRowPerms. */
+export interface TreeRowActions {
+  onToggleSelect: (id: string) => void;
+  onEdit: (account: TreeAccount) => void;
+  onAddSubAccount: (account: TreeAccount) => void;
+}
+
 // One row in the grouped tree report, rendered recursively for its children.
 // The tree is capped at two levels (AD-4) so recursion only ever runs once in
 // practice, but nothing here assumes that — it just renders what the server
@@ -26,25 +45,20 @@ const ACTION_ICONS: Record<VisibilityAction, LucideIcon> = {
 // array is always empty).
 export function AccountTreeRow({
   account,
-  canUpdate,
-  canCreate,
+  perms,
+  actions,
   selectedIds,
-  onToggleSelect,
-  onEdit,
-  onAddSubAccount,
   depth = 0,
 }: {
   account: TreeAccount;
-  canUpdate: boolean;
-  canCreate: boolean;
+  perms: TreeRowPerms;
+  actions: TreeRowActions;
   selectedIds: Set<string>;
-  onToggleSelect: (id: string) => void;
-  onEdit: (account: TreeAccount) => void;
-  onAddSubAccount: (account: TreeAccount) => void;
   depth?: number;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isHighlighted = useContext(HighlightedAccountContext) === account.id;
   const [blocked, setBlocked] = useState<{ message: string; slots: string[] } | null>(null);
   const [pendingAction, setPendingAction] = useState<VisibilityAction | null>(null);
   // The action buttons rendered below are conditional on account state, so a
@@ -73,22 +87,24 @@ export function AccountTreeRow({
     onSettled: () => setPendingAction(null),
   });
 
-  const actions = applicableVisibilityActions(account);
+  const visibilityActions = applicableVisibilityActions(account);
   const rowError = toggle.isError && !blocked ? parseCoaError(toggle.error, 'Failed to update account.') : null;
 
   return (
     <>
       <div
+        id={accountRowDomId(account.id)}
         className={cn(
-          'flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-stone-50 transition-colors group',
+          'flex items-center gap-2 py-2 px-2 rounded-lg transition-colors duration-700 group',
           depth > 0 && 'pl-8',
+          isHighlighted ? 'bg-brand/20' : 'hover:bg-stone-50',
         )}
       >
-        {canUpdate && (
+        {perms.canUpdate && (
           <input
             type="checkbox"
             checked={selectedIds.has(account.id)}
-            onChange={() => onToggleSelect(account.id)}
+            onChange={() => actions.onToggleSelect(account.id)}
             aria-label={`Select ${account.code} ${account.name}`}
             className="size-3.5 shrink-0 rounded border-stone-300"
           />
@@ -119,7 +135,7 @@ export function AccountTreeRow({
         {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-400">Hidden</span>}
 
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-          {canUpdate && actions.map((action) => {
+          {perms.canUpdate && visibilityActions.map((action) => {
             const Icon = ACTION_ICONS[action];
             return (
               <button
@@ -135,10 +151,10 @@ export function AccountTreeRow({
               </button>
             );
           })}
-          {canCreate && depth === 0 && (
+          {perms.canCreate && depth === 0 && (
             <button
               type="button"
-              onClick={() => onAddSubAccount(account)}
+              onClick={() => actions.onAddSubAccount(account)}
               aria-label={`Add sub-account under ${account.code} ${account.name}`}
               title="Add sub-account"
               className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
@@ -146,16 +162,31 @@ export function AccountTreeRow({
               <Plus className="size-3.5" />
             </button>
           )}
-          {canUpdate && (
+          {perms.canUpdate && (
             <button
               type="button"
-              onClick={() => onEdit(account)}
+              onClick={() => actions.onEdit(account)}
               aria-label={`Edit ${account.code} ${account.name}`}
               title="Edit"
               className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
             >
               <Pencil className="size-3.5" />
             </button>
+          )}
+          {/* Seeded accounts are undeletable server-side (the store 409s and
+              chk_coa_system_undeletable backs it), so the affordance is hidden
+              rather than offered and then refused — same rule the detail page's
+              Quick Actions card follows. */}
+          {perms.canDelete && !account.isSystem && (
+            <DeleteAccountDialog
+              accountId={account.id}
+              label={`${account.code} ${account.name}`}
+              variant="icon"
+              onDeleted={() => {
+                queryClient.invalidateQueries({ queryKey: ['coa-tree'] });
+                queryClient.invalidateQueries({ queryKey: ['coa-accounts'] });
+              }}
+            />
           )}
         </div>
       </div>
@@ -170,12 +201,9 @@ export function AccountTreeRow({
         <AccountTreeRow
           key={child.id}
           account={child}
-          canUpdate={canUpdate}
-          canCreate={canCreate}
+          perms={perms}
+          actions={actions}
           selectedIds={selectedIds}
-          onToggleSelect={onToggleSelect}
-          onEdit={onEdit}
-          onAddSubAccount={onAddSubAccount}
           depth={depth + 1}
         />
       ))}
