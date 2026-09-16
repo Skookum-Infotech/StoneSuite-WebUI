@@ -1,28 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, ChevronRight, ChevronDown, ChevronsDown, ChevronsUp, Plus, X } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, ChevronsDown, ChevronsUp, FolderPlus, Plus, X } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Switch } from '@/components/ui/switch';
 import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { placementLabel, placementOf, type Placement } from '@/lib/coaPlacement';
 import type { Account, TreeSection } from '@/types/chartOfAccounts';
-import { AccountTreeRow } from './AccountTreeRow';
+import { AccountTreeRow, type TreeRowActions, type TreeRowPerms } from './AccountTreeRow';
 import { BulkActionBar } from './BulkActionBar';
 import { AccountFormDrawer, type AccountParentRef } from './AccountFormDrawer';
+import { TaxonomyFormDialog, type TaxonomyIntent } from './TaxonomyFormDialog';
+import { TaxonomyGroupHeader, type TaxonomyGroup } from './TaxonomyGroupHeader';
 
 const SEARCH_RESULT_LIMIT = 100;
 
 type DrawerState =
-  | { mode: 'create' }
+  // initialPlacement is set when opened from a category/sub-category's own
+  // inline "+" — the click already said where the account goes, so the
+  // picker opens pre-selected instead of forcing the user to choose again.
+  | { mode: 'create'; initialPlacement?: Placement; initialPlacementLabel?: string }
   | { mode: 'create-child'; parent: AccountParentRef }
   | { mode: 'edit'; account: Account }
   | null;
 
 function toParentRef(a: Account): AccountParentRef {
   return {
-    id: a.id, code: a.code, name: a.name,
-    subCategoryId: a.subCategoryId, subCategoryCode: a.subCategoryCode, subCategoryName: a.subCategoryName,
+    id: a.id,
+    code: a.code,
+    name: a.name,
+    placement: placementOf(a),
+    placementLabel: placementLabel(a),
   };
 }
 
@@ -43,14 +52,22 @@ function allGroupKeys(sections: TreeSection[]): string[] {
 }
 
 // The primary Chart of Accounts screen: the grouped report exactly as
-// /accounts/tree returns it (BS/PNL -> category -> sub-category -> account ->
-// children) — the frontend renders, it does not group. Typing a search term
-// switches to a flat filtered list via /accounts/search instead of trying to
-// reconstruct a partial tree from a subset of matches.
+// /accounts/tree returns it (BS/PNL -> category -> direct accounts ->
+// sub-category -> account -> children) — the frontend renders, it does not
+// group. Typing a search term switches to a flat filtered list via
+// /accounts/search instead of trying to reconstruct a partial tree from a
+// subset of matches.
 export function AccountTreeView() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canUpdate = permissionsLoading || hasPermission('chart_of_account', 'update');
-  const canCreate = permissionsLoading || hasPermission('chart_of_account', 'create');
+  const perms: TreeRowPerms = {
+    canUpdate: permissionsLoading || hasPermission('chart_of_account', 'update'),
+    canCreate: permissionsLoading || hasPermission('chart_of_account', 'create'),
+    canDelete: permissionsLoading || hasPermission('chart_of_account', 'delete'),
+  };
+  // Reshaping the chart itself (adding or renaming a category / sub-category)
+  // is :configure, the same grant account-defaults uses — not :update, which
+  // governs the accounts filed inside it.
+  const canConfigure = permissionsLoading || hasPermission('chart_of_account', 'configure');
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -59,6 +76,7 @@ export function AccountTreeView() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<DrawerState>(null);
+  const [taxonomy, setTaxonomy] = useState<TaxonomyIntent | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(term.trim()), 300);
@@ -100,8 +118,32 @@ export function AccountTreeView() {
     });
   }
 
-  const openEdit = (account: Account) => setDrawer({ mode: 'edit', account });
-  const openAddSubAccount = (account: Account) => setDrawer({ mode: 'create-child', parent: toParentRef(account) });
+  const rowActions: TreeRowActions = {
+    onToggleSelect: toggleSelect,
+    onEdit: (account) => setDrawer({ mode: 'edit', account }),
+    onAddSubAccount: (account) => setDrawer({ mode: 'create-child', parent: toParentRef(account) }),
+  };
+
+  // groupKey is recomputed rather than carried on TaxonomyGroup: the same
+  // category can legitimately appear under both sections (a MIXED one), so a
+  // collapse key has to include the section it was rendered in.
+  const groupActions = (sectionKey: string) => ({
+    onToggle: (g: TaxonomyGroup) => toggleCollapse(groupKey(g, sectionKey)),
+    onRename: (g: TaxonomyGroup) => setTaxonomy({
+      kind: 'rename', target: g.level, id: g.id, code: g.code, currentName: g.name,
+    }),
+    onAddSubCategory: (g: TaxonomyGroup) => setTaxonomy({
+      kind: 'create-subcategory', parentId: g.id, parentLabel: `${g.code} — ${g.name}`,
+    }),
+    // Opening from a group header is a shortcut into the same create form,
+    // not a separate flow — but it pre-selects the placement the user just
+    // clicked on rather than handing back the same empty dropdown.
+    onAddAccount: (g: TaxonomyGroup) => setDrawer({
+      mode: 'create',
+      initialPlacement: { kind: g.level, id: g.id },
+      initialPlacementLabel: `${g.code} — ${g.name}`,
+    }),
+  });
 
   return (
     <div className="flex flex-col gap-3">
@@ -159,16 +201,28 @@ export function AccountTreeView() {
           </>
         )}
 
-        {canCreate && (
-          <button
-            type="button"
-            onClick={() => setDrawer({ mode: 'create' })}
-            className="ml-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-1.5 px-3 text-xs font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
-          >
-            <Plus className="size-3.5" />
-            New Account
-          </button>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {canConfigure && (
+            <button
+              type="button"
+              onClick={() => setTaxonomy({ kind: 'create-category' })}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white py-1.5 px-3 text-xs font-semibold text-stone-600 shadow-sm transition hover:bg-stone-50 active:scale-95"
+            >
+              <FolderPlus className="size-3.5" />
+              New Category
+            </button>
+          )}
+          {perms.canCreate && (
+            <button
+              type="button"
+              onClick={() => setDrawer({ mode: 'create' })}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-1.5 px-3 text-xs font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+            >
+              <Plus className="size-3.5" />
+              New Account
+            </button>
+          )}
+        </div>
       </div>
 
       <BulkActionBar selectedIds={[...selectedIds]} onClear={() => setSelectedIds(new Set())} />
@@ -187,12 +241,9 @@ export function AccountTreeView() {
                 key={a.id}
                 account={{ ...a, children: [] }}
                 depth={a.depth}
-                canUpdate={canUpdate}
-                canCreate={canCreate}
+                perms={perms}
+                actions={rowActions}
                 selectedIds={selectedIds}
-                onToggleSelect={toggleSelect}
-                onEdit={openEdit}
-                onAddSubAccount={openAddSubAccount}
               />
             ))}
             {searchPage?.hasMore && (
@@ -212,6 +263,7 @@ export function AccountTreeView() {
         sections.map((section) => {
           const secKey = `sec-${section.bsPnl}`;
           const secCollapsed = collapsed.has(secKey);
+          const headerActions = groupActions(section.bsPnl);
           return (
             <div key={section.bsPnl} className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
               <button
@@ -227,38 +279,49 @@ export function AccountTreeView() {
               {!secCollapsed && (
                 <div className="px-2 py-2">
                   {section.categories.map((cat) => {
-                    const catKey = `cat-${cat.id}-${section.bsPnl}`;
+                    const catGroup: TaxonomyGroup = {
+                      level: 'category', id: cat.id, code: cat.code, name: cat.name,
+                    };
+                    const catKey = groupKey(catGroup, section.bsPnl);
                     const catCollapsed = collapsed.has(catKey);
                     return (
                       <div key={catKey} className="py-1">
-                        <button
-                          type="button"
-                          onClick={() => toggleCollapse(catKey)}
-                          aria-expanded={!catCollapsed}
-                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-stone-50"
-                        >
-                          {catCollapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
-                          <span className="text-xs font-semibold text-stone-700">{cat.code} · {cat.name}</span>
-                        </button>
+                        <TaxonomyGroupHeader
+                          group={catGroup}
+                          collapsed={catCollapsed}
+                          perms={{ canConfigure, canCreate: perms.canCreate }}
+                          actions={headerActions}
+                        />
 
                         {!catCollapsed && (
                           <div className="ml-4 space-y-1">
+                            {/* Accounts filed on the category itself, above its
+                                sub-categories — the placement that used to be
+                                unreachable. */}
+                            {cat.accounts.map((acct) => (
+                              <AccountTreeRow
+                                key={acct.id}
+                                account={acct}
+                                perms={perms}
+                                actions={rowActions}
+                                selectedIds={selectedIds}
+                              />
+                            ))}
+
                             {cat.subCategories.map((sub) => {
-                              const subKey = `sub-${sub.id}-${section.bsPnl}`;
+                              const subGroup: TaxonomyGroup = {
+                                level: 'subcategory', id: sub.id, code: sub.code, name: sub.name,
+                              };
+                              const subKey = groupKey(subGroup, section.bsPnl);
                               const subCollapsed = collapsed.has(subKey);
                               return (
                                 <div key={subKey}>
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleCollapse(subKey)}
-                                    aria-expanded={!subCollapsed}
-                                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left hover:bg-stone-50"
-                                  >
-                                    {subCollapsed ? <ChevronRight className="size-3.5 text-stone-400" /> : <ChevronDown className="size-3.5 text-stone-400" />}
-                                    <span className="text-2xs font-semibold uppercase tracking-wide text-stone-400">
-                                      {sub.code} — {sub.name}
-                                    </span>
-                                  </button>
+                                  <TaxonomyGroupHeader
+                                    group={subGroup}
+                                    collapsed={subCollapsed}
+                                    perms={{ canConfigure, canCreate: perms.canCreate }}
+                                    actions={headerActions}
+                                  />
 
                                   {!subCollapsed && (
                                     sub.accounts.length === 0 ? (
@@ -269,12 +332,9 @@ export function AccountTreeView() {
                                           <AccountTreeRow
                                             key={acct.id}
                                             account={acct}
-                                            canUpdate={canUpdate}
-                                            canCreate={canCreate}
+                                            perms={perms}
+                                            actions={rowActions}
                                             selectedIds={selectedIds}
-                                            onToggleSelect={toggleSelect}
-                                            onEdit={openEdit}
-                                            onAddSubAccount={openAddSubAccount}
                                           />
                                         ))}
                                       </div>
@@ -283,6 +343,12 @@ export function AccountTreeView() {
                                 </div>
                               );
                             })}
+
+                            {cat.accounts.length === 0 && cat.subCategories.length === 0 && (
+                              <p className="pl-2 py-1 text-2xs italic text-stone-300">
+                                Nothing under this category yet.
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -296,7 +362,12 @@ export function AccountTreeView() {
       )}
 
       {drawer?.mode === 'create' && (
-        <AccountFormDrawer onClose={() => setDrawer(null)} onSaved={() => setDrawer(null)} />
+        <AccountFormDrawer
+          onClose={() => setDrawer(null)}
+          onSaved={() => setDrawer(null)}
+          initialPlacement={drawer.initialPlacement}
+          initialPlacementLabel={drawer.initialPlacementLabel}
+        />
       )}
       {drawer?.mode === 'create-child' && (
         <AccountFormDrawer onClose={() => setDrawer(null)} onSaved={() => setDrawer(null)} parent={drawer.parent} />
@@ -304,6 +375,16 @@ export function AccountTreeView() {
       {drawer?.mode === 'edit' && (
         <AccountFormDrawer onClose={() => setDrawer(null)} onSaved={() => setDrawer(null)} account={drawer.account} />
       )}
+
+      {taxonomy && (
+        <TaxonomyFormDialog intent={taxonomy} onClose={() => setTaxonomy(null)} />
+      )}
     </div>
   );
+}
+
+// The collapse key for one group as rendered inside one section. Must stay in
+// step with allGroupKeys, which builds the same keys for "Collapse All".
+function groupKey(group: TaxonomyGroup, sectionKey: string): string {
+  return `${group.level === 'category' ? 'cat' : 'sub'}-${group.id}-${sectionKey}`;
 }

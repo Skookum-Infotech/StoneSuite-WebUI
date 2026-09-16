@@ -30,14 +30,20 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   credit_card: 'Credit Card',
 };
 
-/** "BS" | "PNL" — matches chk_coa_bs_pnl. Derived server-side for every
- *  sub-category except 9100 (see MixedSubCategoryCode below). */
+/** "BS" | "PNL" — matches chk_coa_bs_pnl. Derived server-side from the
+ *  account's category, except under a MIXED one (see CategorySide). */
 export type BSPNL = 'BS' | 'PNL';
 
-/** Sub-category 9100 (System & Control Accounts) is the only sub-category
- *  mixing balance-sheet and P&L accounts — every other sub-category derives
- *  its side automatically and bsPnl must be omitted for it (AD-2). */
-export const MIXED_SUBCATEGORY_CODE = 9100;
+/** The side a category declares. 'MIXED' means its accounts each carry their
+ *  own — 9000 System & Control is the only seeded one, holding both
+ *  balance-sheet (9101, 9102) and P&L (9103–9107) accounts (AD-2). A create
+ *  under a MIXED category must supply `bsPnl`; anywhere else it is ignored. */
+export type CategorySide = BSPNL | 'MIXED';
+export const MIXED_SIDE = 'MIXED';
+
+/** matches chk_coa_category_balance. */
+export const NORMAL_BALANCES = ['debit', 'credit'] as const;
+export type NormalBalance = (typeof NORMAL_BALANCES)[number];
 
 // ── Core records ───────────────────────────────────────────────────────────────
 
@@ -46,9 +52,13 @@ export interface Account {
   code: string; // server-assigned; never sent by the client
   name: string;
   description: string;
-  subCategoryId: number;
-  subCategoryCode: number;
-  subCategoryName: string;
+  /** An account is placed under EITHER a sub-category or a category directly
+   *  (chk_coa_placement server-side). The three subCategory* fields are absent
+   *  for a category-placed account; category* is always present. */
+  subCategoryId?: number;
+  subCategoryCode?: number;
+  subCategoryName?: string;
+  categoryId: number;
   categoryCode: number;
   categoryName: string;
   parentId?: string | null;
@@ -68,18 +78,23 @@ export interface Account {
   updatedAt: string;
 }
 
-/** Fixed top-level classification (1000 Assets ... 9000 System). Not user-editable. */
+/** Top-level classification (1000 Assets ... 9000 System). Nine are seeded;
+ *  tenants may rename any of them and append their own. Code, range, side and
+ *  normal balance are server-assigned and immutable after create — re-coding a
+ *  category would strand every account code already allocated in its range. */
 export interface Category {
   id: number;
   code: number;
   name: string;
   rangeLow: number;
   rangeHigh: number;
-  normalBalance: 'debit' | 'credit';
+  normalBalance: NormalBalance;
+  bsPnl: CategorySide;
   sortOrder: number;
 }
 
-/** Fixed second-level classification (1100 Current Assets ...). Not user-editable. */
+/** Second-level classification (1100 Current Assets ...). Seventeen are seeded;
+ *  same rename-only rule as Category. Inherits its category's side. */
 export interface SubCategory {
   id: number;
   categoryId: number;
@@ -139,7 +154,10 @@ export interface TreeCategory {
   id: number;
   code: number;
   name: string;
-  normalBalance: 'debit' | 'credit';
+  normalBalance: NormalBalance;
+  /** Accounts placed directly on the category, rendered above its
+   *  sub-categories. Empty for every seeded category until a tenant adds one. */
+  accounts: TreeAccount[];
   subCategories: TreeSubCategory[];
 }
 
@@ -151,18 +169,41 @@ export interface TreeSection {
 
 // ── Create / update inputs (client → server) ──────────────────────────────────
 
-/** Code, depth and bsPnl are server-assigned; bsPnl is accepted only under
- *  sub-category 9100 (AD-2). Either subCategoryId (top-level) or parentId
- *  (child, inherits the parent's sub-category — AD-5) must be set. */
+/** Code, depth and bsPnl are server-assigned; bsPnl is accepted only under a
+ *  MIXED category (AD-2). Placement is exactly one of subCategoryId (under a
+ *  sub-category), categoryId (directly under a category), or parentId (a
+ *  sub-account, which inherits its parent's placement — AD-5). */
 export interface AccountCreatePayload {
   name: string;
   description?: string;
   subCategoryId?: number;
+  categoryId?: number;
   parentId?: string;
   bsPnl?: BSPNL;
   type: AccountType;
   attributes?: Record<string, string>;
   isPostable?: boolean;
+}
+
+/** Appends a category. Code, range and sort order are server-assigned.
+ *  `normalBalance` is asked for rather than derived because the side does not
+ *  imply it — 1000 Assets and 6000 Operating Expenses are both debit. */
+export interface CategoryCreatePayload {
+  name: string;
+  bsPnl: CategorySide;
+  normalBalance: NormalBalance;
+}
+
+/** Appends a sub-category under an existing category. Its code and range come
+ *  from the parent's free blocks; its side is inherited. */
+export interface SubCategoryCreatePayload {
+  categoryId: number;
+  name: string;
+}
+
+/** Renames a category or a sub-category — the only mutable field on either. */
+export interface TaxonomyRenamePayload {
+  name: string;
 }
 
 /** Partial update. Code, sub-category and parent are immutable after create.

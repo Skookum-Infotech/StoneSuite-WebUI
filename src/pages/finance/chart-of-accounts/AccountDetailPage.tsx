@@ -11,6 +11,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { parseCoaError } from '@/lib/coaErrors';
 import { attrFieldsFor, ACCOUNT_NUMBER_LAST4_KEY } from '@/lib/coaAttributes';
+import { placementLabel, placementOf } from '@/lib/coaPlacement';
 import {
   visibilityPayload, applicableVisibilityActions, VISIBILITY_ACTION_LABELS, type VisibilityAction,
 } from '@/lib/coaVisibility';
@@ -115,7 +116,9 @@ export default function AccountDetailPage() {
             title: 'Classification',
             rows: [
               ['Category', `${account.categoryCode} — ${account.categoryName}`],
-              ['Sub-category', `${account.subCategoryCode} — ${account.subCategoryName}`],
+              ['Sub-category', account.subCategoryCode
+                ? `${account.subCategoryCode} — ${account.subCategoryName}`
+                : 'None — filed at category level'],
               ['Balance Sheet / P&L', account.bsPnl === 'BS' ? 'Balance Sheet' : 'Profit & Loss'],
               ['Type', ACCOUNT_TYPE_LABELS[account.type]],
               ['Depth', account.depth === 0 ? 'Top-level account' : 'Sub-account'],
@@ -191,7 +194,12 @@ export default function AccountDetailPage() {
             >
               <OverviewRow label="Description" value={account.description || '—'} />
               <OverviewRow label="Category" value={`${account.categoryCode} — ${account.categoryName}`} />
-              <OverviewRow label="Sub-category" value={`${account.subCategoryCode} — ${account.subCategoryName}`} />
+              <OverviewRow
+                label="Sub-category"
+                value={account.subCategoryCode
+                  ? `${account.subCategoryCode} — ${account.subCategoryName}`
+                  : 'None — filed at category level'}
+              />
               <OverviewRow label="Balance Sheet / P&L" value={account.bsPnl === 'BS' ? 'Balance Sheet' : 'Profit & Loss'} />
               <OverviewRow label="Depth" value={account.depth === 0 ? 'Top-level account' : 'Sub-account'} />
               {attributeFields.length > 0 && (
@@ -317,8 +325,7 @@ export default function AccountDetailPage() {
         <AccountFormDrawer
           parent={{
             id: account.id, code: account.code, name: account.name,
-            subCategoryId: account.subCategoryId, subCategoryCode: account.subCategoryCode,
-            subCategoryName: account.subCategoryName,
+            placement: placementOf(account), placementLabel: placementLabel(account),
           }}
           onClose={() => setAddingChild(false)}
           onSaved={() => setAddingChild(false)}

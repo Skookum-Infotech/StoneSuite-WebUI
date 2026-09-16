@@ -7,6 +7,18 @@ import { parseCoaError } from '@/lib/coaErrors';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { BlockingSlotsDialog } from './BlockingSlotsDialog';
 
+/** How the trigger renders. 'menu' is the full-width row in the detail page's
+ *  Quick Actions card; 'icon' is the hover action in a tree row, which sits in
+ *  a strip of same-sized icon buttons. Only the trigger differs — the dialog,
+ *  the mutation and the blocking-slot handling are shared, which is the point
+ *  of a variant rather than a second component. */
+type TriggerVariant = 'menu' | 'icon';
+
+const TRIGGER_CLASSES: Record<TriggerVariant, string> = {
+  menu: 'flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left',
+  icon: 'rounded p-1 text-stone-400 transition-colors hover:bg-destructive/10 hover:text-destructive',
+};
+
 // Mirrors DeleteVendorDialog's look, but — unlike it — wires up
 // useModalDialog: every other dialog/drawer in this module traps focus and
 // closes on Escape, and an irreversible delete confirmation is the last
@@ -14,10 +26,11 @@ import { BlockingSlotsDialog } from './BlockingSlotsDialog';
 // isSystem account — seeded accounts can be renamed, retyped and toggled but
 // never deleted, and the store 409s rather than accepting the request; the
 // UI hides the affordance instead of letting that happen.
-export function DeleteAccountDialog({ accountId, label, onDeleted }: {
+export function DeleteAccountDialog({ accountId, label, onDeleted, variant = 'menu' }: {
   accountId: string;
   label: string;
   onDeleted: () => void;
+  variant?: TriggerVariant;
 }) {
   const [open, setOpen] = useState(false);
   const [blocked, setBlocked] = useState<{ message: string; slots: string[] } | null>(null);
@@ -43,10 +56,11 @@ export function DeleteAccountDialog({ accountId, label, onDeleted }: {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
+        title={variant === 'icon' ? 'Delete account' : undefined}
+        className={TRIGGER_CLASSES[variant]}
       >
-        <Trash2 className="size-4 shrink-0" />
-        Delete account
+        <Trash2 className={variant === 'icon' ? 'size-3.5' : 'size-4 shrink-0'} />
+        {variant === 'menu' && 'Delete account'}
       </button>
 
       {/* Mounted only while open, so useModalDialog's focus-trap/Escape/focus-restore

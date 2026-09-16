@@ -8,19 +8,24 @@ import { fieldCls, fieldErrorCls, textareaCls, readonlyCls } from '@/components/
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { parseCoaError } from '@/lib/coaErrors';
 import { attrFieldsFor, missingRequiredAttrs, ACCOUNT_NUMBER_LAST4_KEY } from '@/lib/coaAttributes';
+import {
+  decodePlacement, encodePlacement, placementPayload, requiresExplicitSide, sideForPlacement,
+  type Placement,
+} from '@/lib/coaPlacement';
 import { AccountAttributeFields } from './AccountAttributeFields';
 import {
-  ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS, MIXED_SUBCATEGORY_CODE,
+  ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS,
   type Account, type AccountType, type BSPNL,
 } from '@/types/chartOfAccounts';
 
+/** Where a sub-account's parent sits, so the drawer can show the inherited
+ *  placement and resolve the category side without refetching the parent. */
 export interface AccountParentRef {
   id: string;
   code: string;
   name: string;
-  subCategoryId: number;
-  subCategoryCode: number;
-  subCategoryName: string;
+  placement: Placement;
+  placementLabel: string;
 }
 
 interface AccountFormDrawerProps {
@@ -31,6 +36,15 @@ interface AccountFormDrawerProps {
   /** Present when creating a sub-account under a depth-0 row — the child
    *  inherits the parent's sub-category and gets no selector of its own (AD-5). */
   parent?: AccountParentRef;
+  /** Pre-selects the placement picker when the drawer is opened from a
+   *  category/sub-category's own inline "+" — the user already told us where
+   *  the account goes by clicking there, so making them pick it again from an
+   *  empty dropdown is a redundant, annoying step. Still changeable; ignored
+   *  once `parent` or `account` is set (both have their own placement).
+   *  `initialPlacementLabel` only feeds the drawer title, matching how
+   *  `parent.placementLabel` is used for the sub-account title below. */
+  initialPlacement?: Placement;
+  initialPlacementLabel?: string;
 }
 
 function initialAttrDraft(type: AccountType, attrs: Record<string, string>): Record<string, string> {
@@ -46,7 +60,9 @@ function initialAttrDraft(type: AccountType, attrs: Record<string, string>): Rec
 // those go through the dedicated visibility actions (coaVisibility.ts) on
 // each row, which is the only place that can guarantee chk_coa_visibility is
 // never violated; folding them into a generic form would reopen that risk.
-export function AccountFormDrawer({ onClose, onSaved, account, parent }: AccountFormDrawerProps) {
+export function AccountFormDrawer({
+  onClose, onSaved, account, parent, initialPlacement, initialPlacementLabel,
+}: AccountFormDrawerProps) {
   const isEdit = Boolean(account);
   const contentRef = useModalDialog(onClose);
   const queryClient = useQueryClient();
@@ -55,7 +71,7 @@ export function AccountFormDrawer({ onClose, onSaved, account, parent }: Account
   const [description, setDescription] = useState(account?.description ?? '');
   const [type, setType] = useState<AccountType>(account?.type ?? 'general');
   const [isPostable, setIsPostable] = useState(account?.isPostable ?? true);
-  const [subCategoryId, setSubCategoryId] = useState<number | ''>('');
+  const [placement, setPlacement] = useState<Placement | null>(initialPlacement ?? null);
   const [bsPnl, setBsPnl] = useState<BSPNL | ''>('');
   const [attrs, setAttrs] = useState<Record<string, string>>(
     account ? initialAttrDraft(account.type, account.attributes) : {},
@@ -63,16 +79,21 @@ export function AccountFormDrawer({ onClose, onSaved, account, parent }: Account
   const [attrsTouched, setAttrsTouched] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
 
+  // Every create needs the reference tree: a top-level one to render the
+  // placement picker, a sub-account one to resolve whether its inherited
+  // category is MIXED and therefore needs an explicit side.
   const { data: categoryData } = useQuery({
     queryKey: ['coa-categories'],
     queryFn: chartOfAccountsService.getCategories,
     staleTime: 10 * 60 * 1000,
-    enabled: !isEdit && !parent, // only a top-level create needs the sub-category picker
+    enabled: !isEdit,
   });
 
-  const selectedSubCategory = categoryData?.subCategories.find((s) => s.id === subCategoryId);
-  const effectiveSubCategoryCode = parent?.subCategoryCode ?? selectedSubCategory?.code;
-  const needsBsPnl = !isEdit && effectiveSubCategoryCode === MIXED_SUBCATEGORY_CODE;
+  const effectivePlacement = parent?.placement ?? placement;
+  const side = sideForPlacement(
+    effectivePlacement, categoryData?.categories ?? [], categoryData?.subCategories ?? [],
+  );
+  const needsBsPnl = !isEdit && requiresExplicitSide(side);
 
   function handleTypeChange(next: AccountType) {
     setType(next);
@@ -102,7 +123,9 @@ export function AccountFormDrawer({ onClose, onSaved, account, parent }: Account
       return chartOfAccountsService.createAccount({
         name: name.trim(),
         description: description.trim(),
-        ...(parent ? { parentId: parent.id } : { subCategoryId: subCategoryId || undefined }),
+        // A sub-account sends only parentId: the server copies the parent's
+        // placement, and echoing a placement that disagrees with it is a 400.
+        ...(parent ? { parentId: parent.id } : placement ? placementPayload(placement) : {}),
         ...(needsBsPnl && bsPnl ? { bsPnl } : {}),
         type,
         attributes: attrs,
@@ -121,11 +144,11 @@ export function AccountFormDrawer({ onClose, onSaved, account, parent }: Account
     ? parseCoaError(save.error, isEdit ? 'Failed to save account.' : 'Failed to create account.')
     : null;
   const missingAttrs = missingRequiredAttrs(type, attrs);
-  const missingSubCategory = !isEdit && !parent && !subCategoryId;
+  const missingPlacement = !isEdit && !parent && !placement;
   const missingBsPnl = needsBsPnl && !bsPnl;
 
   function handleSubmit() {
-    if (!name.trim() || missingSubCategory || missingBsPnl || missingAttrs.length > 0) {
+    if (!name.trim() || missingPlacement || missingBsPnl || missingAttrs.length > 0) {
       setShowErrors(true);
       return;
     }
@@ -145,7 +168,13 @@ export function AccountFormDrawer({ onClose, onSaved, account, parent }: Account
         <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3.5 shrink-0">
           <div>
             <h2 id="account-form-drawer-title" className="text-sm font-bold text-stone-900">
-              {isEdit ? 'Edit Account' : parent ? `Add Sub-account under ${parent.code}` : 'New Account'}
+              {isEdit
+                ? 'Edit Account'
+                : parent
+                  ? `Add Sub-account under ${parent.code}`
+                  : initialPlacementLabel
+                    ? `New Account under ${initialPlacementLabel}`
+                    : 'New Account'}
             </h2>
             {isEdit && account && <p className="text-2xs text-stone-400 font-mono mt-0.5">{account.code}</p>}
           </div>
@@ -188,40 +217,55 @@ export function AccountFormDrawer({ onClose, onSaved, account, parent }: Account
           )}
 
           {parent && (
-            <ModernFieldShell label="Sub-category">
+            <ModernFieldShell label="Placement">
               <div className={readonlyCls}>
-                {parent.subCategoryCode} — {parent.subCategoryName} (inherited from {parent.code})
+                {parent.placementLabel} (inherited from {parent.code})
               </div>
             </ModernFieldShell>
           )}
 
           {!isEdit && !parent && (
-            <ModernFieldShell label="Sub-category" required>
+            <ModernFieldShell label="Placement" required>
+              {/* Both levels are selectable. A category is listed as the first
+                  option of its own group rather than relying on the <optgroup>
+                  label, which browsers render as an un-clickable heading —
+                  that is exactly why category-level placement was unreachable
+                  before. */}
               <select
-                value={subCategoryId}
+                value={placement ? encodePlacement(placement) : ''}
                 onChange={(e) => {
-                  setSubCategoryId(e.target.value ? Number(e.target.value) : '');
+                  setPlacement(decodePlacement(e.target.value));
                   setBsPnl('');
                 }}
-                className={showErrors && missingSubCategory ? fieldErrorCls : fieldCls}
-                aria-label="Sub-category"
+                className={showErrors && missingPlacement ? fieldErrorCls : fieldCls}
+                aria-label="Placement"
                 aria-required="true"
-                aria-invalid={(showErrors && missingSubCategory) || undefined}
-                aria-describedby={showErrors && missingSubCategory ? 'subcategory-error' : undefined}
+                aria-invalid={(showErrors && missingPlacement) || undefined}
+                aria-describedby={showErrors && missingPlacement ? 'placement-error' : undefined}
               >
                 <option value="">— Select —</option>
                 {categoryData?.categories.map((cat) => (
                   <optgroup key={cat.id} label={`${cat.code} ${cat.name}`}>
+                    <option value={encodePlacement({ kind: 'category', id: cat.id })}>
+                      {cat.code} — {cat.name} (category level)
+                    </option>
                     {categoryData.subCategories
                       .filter((s) => s.categoryId === cat.id)
                       .map((s) => (
-                        <option key={s.id} value={s.id}>{s.code} — {s.name}</option>
+                        <option
+                          key={s.id}
+                          value={encodePlacement({ kind: 'subcategory', id: s.id })}
+                        >
+                          {s.code} — {s.name}
+                        </option>
                       ))}
                   </optgroup>
                 ))}
               </select>
-              {showErrors && missingSubCategory && (
-                <p id="subcategory-error" className="text-2xs text-destructive">A sub-category is required.</p>
+              {showErrors && missingPlacement && (
+                <p id="placement-error" className="text-2xs text-destructive">
+                  A category or sub-category is required.
+                </p>
               )}
             </ModernFieldShell>
           )}
@@ -245,7 +289,7 @@ export function AccountFormDrawer({ onClose, onSaved, account, parent }: Account
               </div>
               {showErrors && missingBsPnl && (
                 <p id="bspnl-error" className="text-2xs text-destructive">
-                  Sub-category {MIXED_SUBCATEGORY_CODE} holds both balance-sheet and P&L accounts — pick one.
+                  This category holds both balance-sheet and P&L accounts — pick one.
                 </p>
               )}
             </ModernFieldShell>
