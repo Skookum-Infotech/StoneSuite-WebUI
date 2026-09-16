@@ -2,7 +2,8 @@ import { tenantClient } from '@/api/tenantClient';
 import type {
   Account, AccountCreatePayload, AccountUpdatePayload, AccountBulkPayload, AccountBulkResult,
   AccountSearchRequest, AccountQueryFilters, AccountPage, AccountHistoryEntry,
-  Category, SubCategory, DefaultSlot, TreeSection,
+  Category, CategoryCreatePayload, SubCategory, SubCategoryCreatePayload,
+  TaxonomyRenamePayload, DefaultSlot, TreeSection,
 } from '@/types/chartOfAccounts';
 
 // Chart of Accounts module API wrapper. Talks to the dedicated relational
@@ -55,14 +56,40 @@ export const chartOfAccountsService = {
       .get<{ success: boolean; sections: TreeSection[] | null }>(`${BASE}/accounts/tree`, { params: opts })
       .then((r) => r.data.sections ?? []),
 
-  // GET /accounts/categories — the fixed 9-category / 17-sub-category
-  // reference tree. Read-only; never user-editable.
+  // GET /accounts/categories — the reference tree: 9 seeded categories and 17
+  // seeded sub-categories plus whatever the tenant has appended.
   getCategories: (): Promise<{ categories: Category[]; subCategories: SubCategory[] }> =>
     tenantClient
       .get<{ success: boolean; categories: Category[] | null; subCategories: SubCategory[] | null }>(
         `${BASE}/accounts/categories`,
       )
       .then((r) => ({ categories: r.data.categories ?? [], subCategories: r.data.subCategories ?? [] })),
+
+  // The four taxonomy writes below are guarded by chart_of_account:configure,
+  // not :create/:update — changing the shape of the chart is a different
+  // privilege from adding an account to it, and it is the same grant
+  // account-defaults uses. Codes and ranges are never sent: the server
+  // allocates the next free thousand-block (category) or hundred-block
+  // (sub-category), so there is no client-side numbering to keep in sync.
+  createCategory: (payload: CategoryCreatePayload): Promise<Category> =>
+    tenantClient
+      .post<{ success: boolean; category: Category }>(`${BASE}/accounts/categories`, payload)
+      .then((r) => r.data.category),
+
+  renameCategory: (id: number, payload: TaxonomyRenamePayload): Promise<Category> =>
+    tenantClient
+      .patch<{ success: boolean; category: Category }>(`${BASE}/accounts/categories/${id}`, payload)
+      .then((r) => r.data.category),
+
+  createSubCategory: (payload: SubCategoryCreatePayload): Promise<SubCategory> =>
+    tenantClient
+      .post<{ success: boolean; subCategory: SubCategory }>(`${BASE}/accounts/subcategories`, payload)
+      .then((r) => r.data.subCategory),
+
+  renameSubCategory: (id: number, payload: TaxonomyRenamePayload): Promise<SubCategory> =>
+    tenantClient
+      .patch<{ success: boolean; subCategory: SubCategory }>(`${BASE}/accounts/subcategories/${id}`, payload)
+      .then((r) => r.data.subCategory),
 
   createAccount: (payload: AccountCreatePayload): Promise<Account> =>
     tenantClient

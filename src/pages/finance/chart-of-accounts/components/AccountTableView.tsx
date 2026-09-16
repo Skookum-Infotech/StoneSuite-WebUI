@@ -10,6 +10,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv } from '@/lib/csvExport';
+import { placementLabel } from '@/lib/coaPlacement';
 import {
   EMPTY_ACCOUNT_TABLE_FILTER_STATE, hasActiveAccountFilters, toAccountFilterClauses,
   type AccountTableFilterState,
@@ -178,7 +179,7 @@ export function AccountTableView() {
         ['Code', 'Name', 'Type', 'Category', 'Sub-category', 'BS/PNL', 'Postable', 'Active', 'Visible'],
         (a) => [
           a.code, a.name, ACCOUNT_TYPE_LABELS[a.type],
-          a.categoryName, a.subCategoryName, a.bsPnl,
+          a.categoryName, a.subCategoryName ?? '', a.bsPnl,
           a.isPostable ? 'Yes' : 'No', a.isActive ? 'Yes' : 'No', a.isVisible ? 'Yes' : 'No',
         ],
         'Chart of Accounts',
@@ -292,7 +293,7 @@ export function AccountTableView() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Code</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Type</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Sub-category</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Placement</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">BS/PNL</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Updated</th>
@@ -350,7 +351,7 @@ export function AccountTableView() {
                     </td>
                     <td className="px-4 py-3.5 text-xs text-stone-500 whitespace-nowrap">{ACCOUNT_TYPE_LABELS[a.type]}</td>
                     <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">
-                      {a.subCategoryCode} — {a.subCategoryName}
+                      {placementLabel(a)}
                     </td>
                     <td className="px-4 py-3.5 text-xs text-stone-500">{a.bsPnl}</td>
                     <td className="px-4 py-3.5">
