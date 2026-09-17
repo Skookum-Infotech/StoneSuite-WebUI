@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Save, Loader2, AlertCircle } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 import { useModalDialog } from '@/hooks/useModalDialog';
+import { useScrollToError } from '@/hooks/useScrollToError';
 import { fieldCls, fieldErrorCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { parseCoaError } from '@/lib/coaErrors';
@@ -139,6 +140,7 @@ export function AccountFormDrawer({
       onSaved(saved);
     },
   });
+  const errorRef = useScrollToError<HTMLDivElement>(save.error);
 
   const errorInfo = save.error
     ? parseCoaError(save.error, isEdit ? 'Failed to save account.' : 'Failed to create account.')
@@ -189,7 +191,12 @@ export function AccountFormDrawer({
         </div>
 
         {errorInfo && (
-          <div role="alert" className="shrink-0 flex items-start gap-2.5 border-b border-red-200 bg-red-50 px-4 py-2.5">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="shrink-0 flex items-start gap-2.5 border-b border-red-200 bg-red-50 px-4 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+          >
             <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-600" />
             <div className="text-xs text-red-700">
               <p>{errorInfo.message}</p>

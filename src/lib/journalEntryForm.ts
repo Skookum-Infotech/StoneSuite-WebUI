@@ -26,6 +26,9 @@ export interface JournalEntryFormField {
   colSpanFull?: boolean;
   rows?: number;
   hint?: string;
+  /** Native min/max for type: 'number' fields. */
+  min?: number;
+  max?: number;
 }
 
 // ── Header field definitions (everything except From/To account) ────────────
@@ -33,7 +36,7 @@ export interface JournalEntryFormField {
 export const JOURNAL_ENTRY_FIELDS: JournalEntryFormField[] = [
   { key: 'je_status', label: 'Status', type: 'readonly', placeholder: 'Draft' },
   { key: 'je_doc_num', label: 'Journal Entry #', type: 'readonly', placeholder: 'Auto-generated' },
-  { key: 'amount', label: 'Amount', type: 'number', required: true, placeholder: '0.00' },
+  { key: 'amount', label: 'Amount', type: 'number', required: true, placeholder: '0.00', min: 0.01 },
   { key: 'transfer_date', label: 'Date', type: 'date', required: true },
   { key: 'reference', label: 'Reference', type: 'text', placeholder: 'e.g. a bank memo or check number' },
   { key: 'owner_employee', label: 'Owner', type: 'select', lookupKey: 'employees' },

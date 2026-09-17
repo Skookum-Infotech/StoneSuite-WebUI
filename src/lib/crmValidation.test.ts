@@ -93,3 +93,45 @@ describe('validateCrmRecord — customer core address/contact requirements', () 
     expect(validateCrmRecord(coreFields, [], {})).toEqual([])
   })
 })
+
+// customer_sales_tax_percent (min 0, max 100), customer_lead_score (min 0,
+// max 100), customer_expected_deal_value / customer_credit_limit (min 0, no
+// max) are the four `type: 'number'` core fields declared in crmFields.ts —
+// none of them are `required`, so these cases isolate the range check from
+// the missing-value check above.
+describe('validateCrmRecord — numeric core field ranges', () => {
+  it('flags a percent field below its minimum', () => {
+    const errors = validateCrmRecord({ customer_sales_tax_percent: -5 }, [], {})
+    expect(errors).toContainEqual({ key: 'customer_sales_tax_percent', label: 'Sales Tax %' })
+  })
+
+  it('flags a percent field above its maximum', () => {
+    const errors = validateCrmRecord({ customer_sales_tax_percent: 150 }, [], {})
+    expect(errors).toContainEqual({ key: 'customer_sales_tax_percent', label: 'Sales Tax %' })
+  })
+
+  it('does not flag a percent field within range', () => {
+    const errors = validateCrmRecord({ customer_sales_tax_percent: 8.25 }, [], {})
+    expect(errors.find((e) => e.key === 'customer_sales_tax_percent')).toBeUndefined()
+  })
+
+  it('does not flag an empty, non-required number field', () => {
+    const errors = validateCrmRecord({ customer_sales_tax_percent: '' }, [], {})
+    expect(errors.find((e) => e.key === 'customer_sales_tax_percent')).toBeUndefined()
+  })
+
+  it('flags a negative value on a min-only field (no declared max)', () => {
+    const errors = validateCrmRecord({ customer_credit_limit: -100 }, [], {})
+    expect(errors).toContainEqual({ key: 'customer_credit_limit', label: 'Credit Limit' })
+  })
+
+  it('does not flag a large positive value on a min-only field', () => {
+    const errors = validateCrmRecord({ customer_credit_limit: 5_000_000 }, [], {})
+    expect(errors.find((e) => e.key === 'customer_credit_limit')).toBeUndefined()
+  })
+
+  it('flags a non-numeric string that reached a number field', () => {
+    const errors = validateCrmRecord({ customer_lead_score: 'abc' }, [], {})
+    expect(errors).toContainEqual({ key: 'customer_lead_score', label: 'Lead Score' })
+  })
+})

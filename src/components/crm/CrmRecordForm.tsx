@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
 import { ModernSection, ModernFieldShell } from './FormPrimitives';
-import { fieldCls, fieldErrorCls, textareaCls, textareaErrorCls, readonlyCls, checkboxLabelCls } from './formUtils';
+import { fieldCls, fieldErrorCls, textareaCls, textareaErrorCls, readonlyCls, checkboxLabelCls, parseNumberFieldValue, sanitizePhoneInput } from './formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
@@ -278,10 +278,18 @@ function CrmFieldInput({
         required={field.required}
         disabled={disabled}
         value={str}
-        onChange={(e) => onChange(field.key, e.target.value)}
+        onChange={(e) => onChange(
+          field.key,
+          field.type === 'number' ? parseNumberFieldValue(e.target.value)
+            : field.type === 'tel' ? sanitizePhoneInput(e.target.value)
+            : e.target.value,
+        )}
         className={inputCls}
         aria-label={field.label}
         placeholder={field.placeholder}
+        step={field.type === 'number' ? '0.01' : undefined}
+        min={field.type === 'number' ? field.min : undefined}
+        max={field.type === 'number' ? field.max : undefined}
       />
     </ModernFieldShell>
   );

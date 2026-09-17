@@ -3,6 +3,7 @@ import { AlertCircle, Building2, MapPin, Truck, RotateCcw, ShieldCheck, Banknote
 import { useQuery } from '@tanstack/react-query';
 import { onboardingService } from '@/services/tenantServices';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
+import { sanitizePhoneInput } from '@/components/crm/formUtils';
 import type { FieldDefinition } from '@/types/tenant';
 import { cn } from '@/lib/utils';
 
@@ -149,7 +150,7 @@ export function OnboardingForm({
                       type={f.type ?? 'text'}
                       required={f.required}
                       value={str(f.key)}
-                      onChange={(e) => set(f.key, e.target.value)}
+                      onChange={(e) => set(f.key, f.type === 'tel' ? sanitizePhoneInput(e.target.value) : e.target.value)}
                       className={inputCls}
                     />
                   </div>

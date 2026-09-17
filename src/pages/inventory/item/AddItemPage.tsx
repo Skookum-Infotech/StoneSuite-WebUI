@@ -11,11 +11,12 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { itemDefaults, toItemPayload, validateItem } from '@/lib/inventoryItemForm';
-import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
+import { defaultCountryId, defaultCurrencyId, defaultUnitId } from '@/lib/lookupDefaults';
 import {
   ITEM_NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
 } from '@/lib/inventoryItemReturn';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import { useScrollToError } from '@/hooks/useScrollToError';
 import type { InventoryItem } from '@/types/inventory';
 import { ItemFormBody } from './components/ItemFormBody';
 
@@ -46,17 +47,15 @@ export default function AddItemPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  // New items default Origin Country / Currency to United States / USD once
-  // the lookups load — derived rather than copied into state, so it never
-  // clobbers a value the user already set.
-  const formData = useMemo(() => {
-    if (!crmLookups) return data;
-    return {
-      ...data,
-      origin_country_id: data.origin_country_id || defaultCountryId(crmLookups.countries),
-      currency_id: data.currency_id || defaultCurrencyId(crmLookups.currencies),
-    };
-  }, [data, crmLookups]);
+  // New items default Origin Country / Currency / Unit to United States / USD /
+  // Square Foot once the lookups load — derived rather than copied into state, so
+  // it never clobbers a value the user already set.
+  const formData = useMemo(() => ({
+    ...data,
+    origin_country_id: data.origin_country_id || (crmLookups ? defaultCountryId(crmLookups.countries) : ''),
+    currency_id: data.currency_id || (crmLookups ? defaultCurrencyId(crmLookups.currencies) : ''),
+    unit_id: data.unit_id || (lookups ? defaultUnitId(lookups.units) : ''),
+  }), [data, crmLookups, lookups]);
 
   const guard = useUnsavedChangesGuard(data);
 
@@ -75,6 +74,7 @@ export default function AddItemPage() {
       leave(item);
     },
   });
+  const errorRef = useScrollToError<HTMLDivElement>(saveError || fieldErrors.length > 0);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -109,7 +109,12 @@ export default function AddItemPage() {
         />
 
         {(saveError || fieldErrors.length > 0) && (
-          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+          >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>

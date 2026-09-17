@@ -1,5 +1,5 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
-import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils';
+import { fieldCls, fieldErrorCls, textareaCls, sanitizePhoneInput } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { VendorFormField } from '@/lib/vendorForm';
@@ -78,7 +78,7 @@ export function VendorField({ field, value, set, lookups, showError }: {
           type={field.type}
           required={field.required}
           value={str}
-          onChange={(e) => set(field.key, e.target.value)}
+          onChange={(e) => set(field.key, field.type === 'tel' ? sanitizePhoneInput(e.target.value) : e.target.value)}
           className={invalid ? fieldErrorCls : fieldCls}
           placeholder={field.placeholder}
           aria-label={field.label}

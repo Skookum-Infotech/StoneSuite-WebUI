@@ -111,7 +111,7 @@ export function PurchaseOrderFormBody({
                       </ModernFieldShell>
                     </div>
                     <PurchaseOrderSectionGrid
-                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'po_status')}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'po_status' && (f.key !== 'po_doc_num' || Boolean(purchaseOrderId)))}
                       data={data} set={set} lookups={lookups} maxCols={2}
                     />
                   </div>

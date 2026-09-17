@@ -18,6 +18,7 @@ import {
   type VendorBillLineItem, VB_NON_DRAFT_LOCKED,
 } from '@/lib/vendorBillForm';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useScrollToError } from '@/hooks/useScrollToError';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -112,6 +113,7 @@ export default function EditVendorBillPage() {
       navigate(`/purchases/vendor_bill/${id}`);
     },
   });
+  const errorRef = useScrollToError<HTMLDivElement>(save.error);
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor bill…" /></div>;
   if (loadError || !bill)
@@ -168,7 +170,12 @@ export default function EditVendorBillPage() {
         />
 
         {save.error && (
-          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+          >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>

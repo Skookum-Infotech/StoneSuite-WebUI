@@ -143,7 +143,7 @@ export function CreditMemoFormBody({
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
                   <div className="flex-1 min-w-0 space-y-4">
                     <CreditMemoSectionGrid
-                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'credit_memo_status')}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'credit_memo_status' && (f.key !== 'credit_memo_doc_num' || Boolean(creditMemoId)))}
                       data={data} set={set} lookups={lookups} maxCols={2}
                       moneyFieldsDisabled={moneyFieldsDisabled}
                     />
