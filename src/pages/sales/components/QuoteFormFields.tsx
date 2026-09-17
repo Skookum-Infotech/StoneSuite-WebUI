@@ -1,6 +1,6 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import {
-  fieldCls, textareaCls, readonlyCls, checkboxLabelCls,
+  fieldCls, textareaCls, readonlyCls, checkboxLabelCls, sanitizePhoneInput,
 } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
@@ -128,7 +128,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
           required={field.required}
           disabled={disabled}
           value={str}
-          onChange={(e) => set(field.key, e.target.value)}
+          onChange={(e) => set(field.key, field.type === 'tel' ? sanitizePhoneInput(e.target.value) : e.target.value)}
           className={fieldCls}
           placeholder={field.placeholder}
           min={field.min}

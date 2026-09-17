@@ -31,6 +31,11 @@ export interface CrmCoreField {
    *  mirroring another field's value ("same as primary") rather than being
    *  independently set. */
   disabledIfFieldTrue?: string;
+  /** Native min/max for type: 'number' fields — also enforced by
+   *  validateCrmRecord so an out-of-range value is caught even when the
+   *  field's tab isn't the one currently mounted at submit time. */
+  min?: number;
+  max?: number;
 }
 
 export interface CrmCoreSection {
@@ -105,9 +110,9 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
     title: 'CRM Fields',
     fields: [
       { key: 'customer_lead_source', label: 'Lead Source', type: 'lookup-select', lookupKey: 'leadSources' },
-      { key: 'customer_lead_score', label: 'Lead Score', type: 'number', placeholder: 'e.g. 75' },
+      { key: 'customer_lead_score', label: 'Lead Score', type: 'number', placeholder: 'e.g. 75', min: 0, max: 100 },
       { key: 'customer_expected_close_date', label: 'Expected Close Date', type: 'date' },
-      { key: 'customer_expected_deal_value', label: 'Estimated Deal Value', type: 'number', placeholder: 'e.g. 25000' },
+      { key: 'customer_expected_deal_value', label: 'Estimated Deal Value', type: 'number', placeholder: 'e.g. 25000', min: 0 },
       { key: 'customer_last_contacted_date', label: 'Last Contact Date', type: 'date' },
       { key: 'customer_preferred_contact_method', label: 'Preferred Contact Method', type: 'lookup-select', lookupKey: 'contactMethods' },
       { key: 'customer_do_not_contact', label: 'Is Do Not Contact', type: 'checkbox' },
@@ -124,14 +129,14 @@ export const CRM_CORE_SECTIONS: CrmCoreSection[] = [
       { key: 'customer_tax_exempt_cert_num', label: 'Tax Exempt Certificate #', type: 'text', placeholder: 'e.g. TE-2024-00123', showIfFieldTrue: 'customer_is_tax_exempt' },
       { key: 'customer_tax_exempt_cert_file_id', label: 'Tax Exempt Certificate File', type: 'text', placeholder: 'e.g. doc-ref-id or file name', showIfFieldTrue: 'customer_is_tax_exempt' },
       { key: 'customer_tax_exempt_expiry_date', label: 'Tax Exempt Expiry Date', type: 'date', showIfFieldTrue: 'customer_is_tax_exempt' },
-      { key: 'customer_sales_tax_percent', label: 'Sales Tax %', type: 'number', placeholder: 'e.g. 8.25' },
+      { key: 'customer_sales_tax_percent', label: 'Sales Tax %', type: 'number', placeholder: 'e.g. 8.25', min: 0, max: 100 },
       { key: 'customer_payment_terms', label: 'Payment Terms', type: 'lookup-select', lookupKey: 'paymentTerms' },
     ],
   },
   {
     title: 'Credit Fields',
     fields: [
-      { key: 'customer_credit_limit', label: 'Credit Limit', type: 'number', placeholder: 'e.g. 10000' },
+      { key: 'customer_credit_limit', label: 'Credit Limit', type: 'number', placeholder: 'e.g. 10000', min: 0 },
       { key: 'customer_is_credit_lock', label: 'Credit Lock', type: 'checkbox' },
       { key: 'customer_credit_lock_reason', label: 'Credit Lock Reason', type: 'textarea', placeholder: 'Describe the reason for placing a credit lock…', showIfFieldTrue: 'customer_is_credit_lock' },
     ],

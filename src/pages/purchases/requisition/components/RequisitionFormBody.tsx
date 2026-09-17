@@ -103,7 +103,7 @@ export function RequisitionFormBody({
                       </ModernFieldShell>
                     </div>
                     <RequisitionSectionGrid
-                      fields={PRIMARY_INFO_FIELDS}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'reqn_doc_num' || Boolean(requisitionId))}
                       data={data} set={set} lookups={lookups} maxCols={2}
                     />
                   </div>

@@ -109,7 +109,7 @@ export function VendorBillFormBody({
                       </ModernFieldShell>
                     </div>
                     <VendorBillSectionGrid
-                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'vb_status')}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'vb_status' && (f.key !== 'vb_doc_num' || Boolean(vendorBillId)))}
                       data={data} set={set} lookups={lookups}
                     />
                   </div>

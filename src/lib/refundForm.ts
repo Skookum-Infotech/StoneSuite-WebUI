@@ -27,6 +27,9 @@ export interface RefundFormField {
   colSpan2?: boolean;
   colSpanFull?: boolean;
   rows?: number;
+  /** Native min/max for type: 'number' fields. */
+  min?: number;
+  max?: number;
 }
 
 // ── Form section field definitions ───────────────────────────────────────────
@@ -42,7 +45,7 @@ export const PRIMARY_INFO_FIELDS: RefundFormField[] = [
   { key: 'refund_method', label: 'Refund Method', type: 'select', required: true, idOptions: PAYMENT_METHODS },
   { key: 'refund_date', label: 'Refund Date', type: 'date', required: true },
   { key: 'reference_num', label: 'Reference / Check #', type: 'text', placeholder: 'Enter reference or check number' },
-  { key: 'amount', label: 'Amount', type: 'number', required: true, placeholder: '0.00' },
+  { key: 'amount', label: 'Amount', type: 'number', required: true, placeholder: '0.00', min: 0.01 },
   { key: 'currency_id', label: 'Currency', type: 'select', lookupKey: 'currencies' },
   { key: 'reason', label: 'Reason', type: 'text', placeholder: 'Why is this refund being issued?', colSpan2: true },
   { key: 'memo', label: 'Memo', type: 'textarea', placeholder: 'Notes related to this refund…', colSpanFull: true },

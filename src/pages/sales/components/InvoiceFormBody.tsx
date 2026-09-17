@@ -106,7 +106,7 @@ export function InvoiceFormBody({
                       </ModernFieldShell>
                     </div>
                     <InvoiceSectionGrid
-                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'invoice_status')}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'invoice_status' && (f.key !== 'invoice_doc_num' || Boolean(invoiceId)))}
                       data={data} set={set} lookups={lookups} maxCols={2}
                     />
                   </div>

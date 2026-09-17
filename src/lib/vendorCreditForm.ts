@@ -27,6 +27,9 @@ export interface VendorCreditFormField {
   colSpan2?: boolean;
   colSpanFull?: boolean;
   rows?: number;
+  /** Native min/max for type: 'number' fields. */
+  min?: number;
+  max?: number;
 }
 
 // ── Form section field definitions ───────────────────────────────────────────
@@ -36,7 +39,7 @@ export interface VendorCreditFormField {
 export const PRIMARY_INFO_FIELDS: VendorCreditFormField[] = [
   { key: 'credit_date', label: 'Credit Date', type: 'date', required: true },
   { key: 'reference_num', label: 'Reference #', type: 'text', placeholder: 'e.g. RMA-4471' },
-  { key: 'amount', label: 'Amount', type: 'number', required: true, placeholder: '0.00' },
+  { key: 'amount', label: 'Amount', type: 'number', required: true, placeholder: '0.00', min: 0.01 },
   { key: 'reason', label: 'Reason', type: 'text', placeholder: 'Why is this credit being issued?', colSpan2: true },
   { key: 'owner_employee', label: 'Owner', type: 'select', lookupKey: 'employees' },
   { key: 'memo', label: 'Memo', type: 'textarea', placeholder: 'Notes related to this credit…', colSpanFull: true },

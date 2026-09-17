@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Phone, MapPin } from 'lucide-react';
 import { companyLocationSchema, type CompanyLocationFormValues } from '@/lib/companyLocationForm';
+import { sanitizePhoneInput } from '@/components/crm/formUtils';
 import type { Address } from '@/types/companyProfile';
 import { lookupService } from '@/services/lookupService';
 import { countryOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupOptions';
@@ -69,7 +70,18 @@ export function LocationFormCard({
           />
           <CompanyInfoTextField
             field={{ id: 'loc-phone', label: 'Phone', icon: Phone, placeholder: 'e.g. (555) 010-0100' }}
-            registration={register('phone')}
+            registration={{
+              ...register('phone'),
+              // CompanyInfoTextField is a plain type="text" input shared by every
+              // field on this form (name, address lines, phone) — register()'s
+              // own onChange has no character filtering, so unlike a type="tel"
+              // field elsewhere in the app, phone here would otherwise accept
+              // any text. Sanitize in place before RHF reads the event value.
+              onChange: (e) => {
+                e.target.value = sanitizePhoneInput(e.target.value);
+                return register('phone').onChange(e);
+              },
+            }}
             error={errors.phone?.message}
           />
         </div>

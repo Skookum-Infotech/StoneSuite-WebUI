@@ -1,5 +1,5 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
-import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
+import { fieldCls, textareaCls, readonlyCls, parseNumberFieldValue } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { PaymentFormField } from '@/lib/paymentForm';
@@ -91,10 +91,13 @@ export function PaymentField({ field, value, set, lookups }: {
           type={field.type ?? 'text'}
           required={field.required}
           value={str}
-          onChange={(e) => set(field.key, e.target.value)}
+          onChange={(e) => set(field.key, field.type === 'number' ? parseNumberFieldValue(e.target.value) : e.target.value)}
           className={fieldCls}
           placeholder={field.placeholder}
           aria-label={field.label}
+          step={field.type === 'number' ? '0.01' : undefined}
+          min={field.type === 'number' ? field.min : undefined}
+          max={field.type === 'number' ? field.max : undefined}
         />
       </ModernFieldShell>
     </div>

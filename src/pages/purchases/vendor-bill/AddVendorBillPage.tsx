@@ -15,6 +15,7 @@ import { type VendorRef } from '@/pages/purchases/purchase-order/components/Vend
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
+import { useScrollToError } from '@/hooks/useScrollToError';
 import { VendorBillFormBody } from './components/VendorBillFormBody';
 import {
   vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
@@ -111,6 +112,7 @@ export default function AddVendorBillPage() {
       navigate('/purchases/vendor_bill');
     },
   });
+  const errorRef = useScrollToError<HTMLDivElement>(saveError);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -132,7 +134,12 @@ export default function AddVendorBillPage() {
         />
 
         {saveError && (
-          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+          >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>

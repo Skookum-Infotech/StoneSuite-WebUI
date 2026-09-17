@@ -16,6 +16,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
   // Set only when a resend created a fresh link but the email failed to send.
   const [undeliveredLink, setUndeliveredLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [confirmResend, setConfirmResend] = useState(false);
   const [confirmRevoke, setConfirmRevoke] = useState(false);
 
   const resendMut = useMutation({
@@ -23,6 +24,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["invites"] });
       setActionError(null);
+      setConfirmResend(false);
       if (data.emailSent) {
         setUndeliveredLink(null);
         setActionSuccess("Invitation resent — email delivered.");
@@ -159,13 +161,10 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
             Actions
           </h3>
 
-          {canResend && (
+          {canResend && !confirmResend && (
             <button
               type="button"
-              onClick={() => {
-                clearFeedback();
-                resendMut.mutate();
-              }}
+              onClick={() => setConfirmResend(true)}
               disabled={busy}
               className={cn(
                 "flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-50",
@@ -174,10 +173,37 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
             >
               <Send className="size-4 text-stone-400" />
               Resend invitation
-              {resendMut.isPending && (
-                <Loader2 className="size-4 animate-spin ml-auto" />
-              )}
             </button>
+          )}
+          {canResend && confirmResend && (
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 space-y-2">
+              <p className="text-xs text-stone-700 font-medium">
+                Resend invitation to {invite.Email}?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearFeedback();
+                    resendMut.mutate();
+                  }}
+                  disabled={busy}
+                  className="flex items-center gap-1.5 rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-stone-900 disabled:opacity-50"
+                >
+                  {resendMut.isPending && (
+                    <Loader2 className="size-3 animate-spin" />
+                  )}
+                  Yes, resend
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmResend(false)}
+                  className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           )}
 
           {canRevoke && !confirmRevoke && (
