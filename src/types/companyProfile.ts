@@ -27,3 +27,18 @@ export interface CompanyProfile {
   shippingAddress: Address;
   returnAddress: Address;
 }
+
+// A physical address a tenant operates from (office, warehouse, showroom) —
+// Configuration -> Company Info -> Locations tab. Distinct from
+// CompanyProfile's billing/shipping/return addresses, which describe how
+// documents route rather than where the business physically is. A tenant may
+// have zero of these (the Locations tab then falls back to displaying
+// CompanyProfile's billing address as a read-only default); at most one
+// live location has isDefault true at a time.
+export interface CompanyLocation {
+  id: string;
+  name: string;
+  phone: string;
+  address: Address;
+  isDefault: boolean;
+}
