@@ -13,13 +13,13 @@ import {
   AlertTriangle,
   ChevronLeft,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { rbacService, userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Badge, ErrorNote, EmptyState } from "@/components/tenant/ui";
-import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
 import { SCOPE_LABELS } from "@/lib/scope";
+import { buildPermModules } from "@/lib/permissionMatrix";
+import type { PermModule, ResourceRow } from "@/lib/permissionMatrix";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { Role, Scope, WorkspaceUser } from "@/types/tenant";
 import { AssignUsersModal } from "./components/AssignUsersModal";
@@ -45,55 +45,6 @@ const ACTION_LABELS: Record<string, string> = {
   approve: "Approve",
   configure: "Configure",
 };
-
-interface ResourceRow {
-  id: string;
-  resource: string;
-  label: string;
-}
-interface PermModule {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  rows: ResourceRow[];
-}
-
-function buildPermModules(): PermModule[] {
-  const out: PermModule[] = [];
-  for (const section of sidebarNav.sections) {
-    if (section.platformAdminOnly) continue;
-    for (const entry of section.entries) {
-      if (entry.type === "link") {
-        if (!entry.permission || entry.platformAdminOnly) continue;
-        out.push({
-          id: entry.id,
-          label: entry.label,
-          icon: entry.icon,
-          rows: [
-            {
-              id: entry.id,
-              resource: entry.permission.resource,
-              label: entry.label,
-            },
-          ],
-        });
-        continue;
-      }
-      const rows: ResourceRow[] = [];
-      for (const child of entry.children) {
-        if (!child.permission || child.platformAdminOnly) continue;
-        rows.push({
-          id: child.id,
-          resource: child.permission.resource,
-          label: child.label,
-        });
-      }
-      if (rows.length)
-        out.push({ id: entry.id, label: entry.label, icon: entry.icon, rows });
-    }
-  }
-  return out;
-}
 
 // ---------------------------------------------------------------------------
 
