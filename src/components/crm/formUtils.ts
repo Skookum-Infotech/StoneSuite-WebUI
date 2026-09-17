@@ -47,6 +47,29 @@ export function sanitizePhoneInput(raw: string): string {
   return raw.replace(/[^\d+\-() .]/g, '');
 }
 
+/** Merges a selected dial code into a phone field's sanitized value, for
+ *  PhoneNumberInput's country-code selector. Skips prepending when the
+ *  sanitized text already starts with '+' (already-coded data, or a value
+ *  mid-edit) so editing an existing number never doubles up a code — only
+ *  a fresh, code-less value gets one added. */
+export function applyCountryCode(code: string, raw: string): string {
+  const sanitized = sanitizePhoneInput(raw);
+  if (sanitized === '') return '';
+  if (sanitized.startsWith('+')) return sanitized;
+  return `${code} ${sanitized}`;
+}
+
+/** Inverse of applyCountryCode, for display: strips a leading `code` (and
+ *  the space applyCountryCode joins it with) off a phone field's stored
+ *  value, so PhoneNumberInput's text box never shows the code its own
+ *  selector already displays. Only strips an exact match on the given code —
+ *  a value that doesn't start with it (untouched legacy data, or one just
+ *  re-coded via the dropdown before the value catches up) is returned as-is
+ *  rather than guessed at. */
+export function stripCountryCode(code: string, value: string): string {
+  return value.startsWith(code) ? value.slice(code.length).trimStart() : value;
+}
+
 // Fallback colors by state key for tenants where the backend returns no color.
 const STATUS_COLOR_MAP: Record<string, string> = {
   // Lead

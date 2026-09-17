@@ -2,9 +2,10 @@ import { useForm } from 'react-hook-form';
 import type { Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Phone, MapPin } from 'lucide-react';
+import { Building2, MapPin } from 'lucide-react';
 import { companyLocationSchema, type CompanyLocationFormValues } from '@/lib/companyLocationForm';
-import { sanitizePhoneInput } from '@/components/crm/formUtils';
+import { fieldCls, fieldErrorCls, fieldLabelCls } from '@/components/crm/formUtils';
+import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import type { Address } from '@/types/companyProfile';
 import { lookupService } from '@/services/lookupService';
 import { countryOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupOptions';
@@ -40,6 +41,7 @@ export function LocationFormCard({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CompanyLocationFormValues>({
     resolver: zodResolver(companyLocationSchema) as unknown as Resolver<CompanyLocationFormValues>,
@@ -68,22 +70,22 @@ export function LocationFormCard({
             registration={register('name')}
             error={errors.name?.message}
           />
-          <CompanyInfoTextField
-            field={{ id: 'loc-phone', label: 'Phone', icon: Phone, placeholder: 'e.g. (555) 010-0100' }}
-            registration={{
-              ...register('phone'),
-              // CompanyInfoTextField is a plain type="text" input shared by every
-              // field on this form (name, address lines, phone) — register()'s
-              // own onChange has no character filtering, so unlike a type="tel"
-              // field elsewhere in the app, phone here would otherwise accept
-              // any text. Sanitize in place before RHF reads the event value.
-              onChange: (e) => {
-                e.target.value = sanitizePhoneInput(e.target.value);
-                return register('phone').onChange(e);
-              },
-            }}
-            error={errors.phone?.message}
-          />
+          <div className="space-y-1.5">
+            <label htmlFor="loc-phone" className={fieldLabelCls}>Phone</label>
+            <PhoneNumberInput
+              id="loc-phone"
+              value={values.phone ?? ''}
+              onChange={(v) => setValue('phone', v, { shouldValidate: true, shouldDirty: true })}
+              placeholder="e.g. (555) 010-0100"
+              aria-label="Phone"
+              aria-invalid={Boolean(errors.phone?.message)}
+              aria-describedby={errors.phone?.message ? 'loc-phone-error' : undefined}
+              className={errors.phone?.message ? fieldErrorCls : fieldCls}
+            />
+            {errors.phone?.message && (
+              <p id="loc-phone-error" className="mt-1 text-xs text-red-600">{errors.phone.message}</p>
+            )}
+          </div>
         </div>
 
         <div>
