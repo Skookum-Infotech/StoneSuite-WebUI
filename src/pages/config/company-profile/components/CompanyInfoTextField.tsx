@@ -1,6 +1,6 @@
 import type { UseFormRegisterReturn } from 'react-hook-form';
 import type { LucideIcon } from 'lucide-react';
-import { fieldCls, fieldErrorCls, fieldLabelCls } from '@/components/crm/formUtils';
+import { fieldCls, fieldErrorCls, fieldLabelCls, readonlyCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
 
 // Icon-prefixed inputs built on the app's actual CRM form field classes
@@ -55,6 +55,25 @@ export function CompanyInfoTextField({
         />
       </div>
       {error && <p id={errorId} className="mt-1 text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+// Read-only counterpart, view mode only — matches VendorOverviewTab's own
+// ReadonlyField exactly (readonlyCls: plain bordered box, normal text color,
+// no disabled/cursor-not-allowed styling) rather than a disabled input, so
+// "viewing" doesn't look or behave like "editing but blocked".
+export function CompanyInfoReadonlyField({ field, value }: { field: CompanyInfoFieldSpec; value: string }) {
+  return (
+    <div className={cn(
+      'space-y-1.5',
+      field.colSpan === 3 && 'sm:col-span-2 lg:col-span-3',
+      field.colSpan === 2 && 'lg:col-span-2',
+    )}>
+      <label className={fieldLabelCls}>{field.label}</label>
+      <div className={readonlyCls}>
+        {value || <span className="text-stone-400">—</span>}
+      </div>
     </div>
   );
 }

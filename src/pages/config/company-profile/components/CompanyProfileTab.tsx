@@ -6,10 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  Building2, MapPin, ScrollText, Briefcase, Globe, Flag, DollarSign, Clock,
-  Receipt, Truck, RotateCcw, AlertCircle, Pencil,
+  Building2, ScrollText, Briefcase, Globe, Flag, DollarSign, Clock, Receipt, AlertCircle, Pencil,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ModernSection } from '@/components/crm/FormPrimitives';
 import { companyProfileService } from '@/services/companyProfileService';
 import { companyProfileSchema, type CompanyProfileFormValues } from '@/lib/companyProfileForm';
 import type { Address } from '@/types/companyProfile';
@@ -18,7 +17,7 @@ import { countryOptions, currencyOptions, stateOptionsForCountry } from '@/lib/c
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { CompanyInfoTextField, type CompanyInfoFieldSpec } from './CompanyInfoTextField';
+import { CompanyInfoTextField, CompanyInfoReadonlyField, type CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import { CompanyInfoSelectField } from './CompanyInfoSelectField';
 
 const EMPTY_ADDRESS: Address = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' };
@@ -56,12 +55,13 @@ const COMPANY_FIELDS: CompanyInfoFieldSpec[] = [
 ];
 
 // Same line1/line2/suite/city/country/state/zip shape as a CRM record's own
-// Billing/Shipping address sections (lib/crmFields.ts) — one group per
-// address type, each rendered as its own labeled block within the card.
-const ADDRESS_GROUPS: { key: 'billingAddress' | 'shippingAddress' | 'returnAddress'; title: string; icon: LucideIcon }[] = [
-  { key: 'billingAddress', title: 'Billing Address', icon: MapPin },
-  { key: 'shippingAddress', title: 'Shipping Address', icon: Truck },
-  { key: 'returnAddress', title: 'Return Address', icon: RotateCcw },
+// Billing/Shipping address sections (lib/crmFields.ts) — one ModernSection
+// per address type, matching VendorFormBody/VendorOverviewTab's own section
+// layout (a separate bordered card per section, not one big card).
+const ADDRESS_GROUPS: { key: 'billingAddress' | 'shippingAddress' | 'returnAddress'; title: string }[] = [
+  { key: 'billingAddress', title: 'Billing Address' },
+  { key: 'shippingAddress', title: 'Shipping Address' },
+  { key: 'returnAddress', title: 'Return Address' },
 ];
 
 // Line 1 gets the full row (a street address needs the room); line2/suite/
@@ -76,6 +76,11 @@ const ADDRESS_SUBFIELDS: { key: keyof Address; label: string; placeholder: strin
   { key: 'state', label: 'State / Province', placeholder: 'Select a state' },
   { key: 'zip', label: 'Zip / Postal Code', placeholder: 'e.g. 62704' },
 ];
+
+// The COMPANY_FIELDS's plain string fields, as opposed to the *Address
+// object fields — narrows registerKey/renderCompanyField's value lookup to
+// `string` instead of `string | Address`.
+type StringFieldKey = 'companyName' | 'legalName' | 'industry' | 'website' | 'country' | 'currency' | 'timezone' | 'taxId';
 
 const FORM_ID = 'company-profile-form';
 
@@ -133,7 +138,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
     setIsEditing(false);
   }
 
-  const registerKey: Record<string, keyof CompanyProfileFormValues> = {
+  const registerKey: Record<string, StringFieldKey> = {
     'cp-company-name': 'companyName',
     'cp-legal-name': 'legalName',
     'cp-industry': 'industry',
@@ -143,6 +148,87 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
     'cp-timezone': 'timezone',
     'cp-tax-id': 'taxId',
   };
+
+  // Renders one Company Information field — a read-only box (view mode) or
+  // the matching editable input/dropdown (edit mode). Kept as one dispatch
+  // point so read/edit mode never drift into two separately-maintained
+  // field lists.
+  function renderCompanyField(field: CompanyInfoFieldSpec) {
+    const key = registerKey[field.id];
+    if (!isEditing) {
+      return <CompanyInfoReadonlyField key={field.id} field={field} value={values[key] ?? ''} />;
+    }
+    if (field.id === 'cp-country') {
+      return (
+        <CompanyInfoSelectField
+          key={field.id}
+          field={field}
+          registration={register('country')}
+          error={errors.country?.message}
+          options={countryOptions(lookupsQ.data, values.country ?? '')}
+        />
+      );
+    }
+    if (field.id === 'cp-currency') {
+      return (
+        <CompanyInfoSelectField
+          key={field.id}
+          field={field}
+          registration={register('currency')}
+          error={errors.currency?.message}
+          options={currencyOptions(lookupsQ.data, values.currency ?? '')}
+        />
+      );
+    }
+    return (
+      <CompanyInfoTextField
+        key={field.id}
+        field={field}
+        registration={register(key)}
+        error={errors[key]?.message}
+      />
+    );
+  }
+
+  // Same dispatch, for one address group's line1/line2/suite/city/country/
+  // state/zip sub-fields.
+  function renderAddressField(group: (typeof ADDRESS_GROUPS)[number], sub: (typeof ADDRESS_SUBFIELDS)[number]) {
+    const fieldSpec = { id: `cp-${group.key}-${sub.key}`, label: sub.label, placeholder: sub.placeholder, colSpan: sub.colSpan };
+    const groupValues = values[group.key];
+    if (!isEditing) {
+      return <CompanyInfoReadonlyField key={sub.key} field={fieldSpec} value={groupValues?.[sub.key] ?? ''} />;
+    }
+    if (sub.key === 'country') {
+      return (
+        <CompanyInfoSelectField
+          key={sub.key}
+          field={fieldSpec}
+          registration={register(`${group.key}.country`)}
+          error={errors[group.key]?.country?.message}
+          options={countryOptions(lookupsQ.data, groupValues?.country ?? '')}
+        />
+      );
+    }
+    if (sub.key === 'state') {
+      return (
+        <CompanyInfoSelectField
+          key={sub.key}
+          field={fieldSpec}
+          registration={register(`${group.key}.state`)}
+          error={errors[group.key]?.state?.message}
+          options={stateOptionsForCountry(lookupsQ.data, groupValues?.country ?? '', groupValues?.state ?? '')}
+        />
+      );
+    }
+    return (
+      <CompanyInfoTextField
+        key={sub.key}
+        field={fieldSpec}
+        registration={register(`${group.key}.${sub.key}`)}
+        error={errors[group.key]?.[sub.key]?.message}
+      />
+    );
+  }
 
   if (profileQ.isLoading) {
     return (
@@ -204,7 +290,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
   return (
     <>
       {actionsSlot && createPortal(actions, actionsSlot)}
-      <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} noValidate className="w-full space-y-4 sm:space-y-5">
+      <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} noValidate className="w-full space-y-2">
         {save.isError && (
           <ErrorNote>{apiErrorMessage(save.error, 'Could not save company info.')}</ErrorNote>
         )}
@@ -221,111 +307,23 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           </div>
         )}
 
-      <fieldset disabled={!canConfigure || !isEditing} className="space-y-4 sm:space-y-5">
-        {/* One full-width card (not two side by side) — every group
-            (Company Information, then each address) is a labeled
-            block inside it, each tiling its fields 3 across on sm+. */}
-        <section className="w-full rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-          <div className="divide-y divide-stone-100">
-            <div className="px-5 py-4 sm:px-6 sm:py-5">
-              <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-400">
-                <Building2 className="size-3.5" />
-                Company Information
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
-                {COMPANY_FIELDS.map((field) => {
-                  if (field.id === 'cp-country') {
-                    return (
-                      <CompanyInfoSelectField
-                        key={field.id}
-                        field={field}
-                        registration={register('country')}
-                        error={errors.country?.message}
-                        options={countryOptions(lookupsQ.data, values.country ?? '')}
-                      />
-                    );
-                  }
-                  if (field.id === 'cp-currency') {
-                    return (
-                      <CompanyInfoSelectField
-                        key={field.id}
-                        field={field}
-                        registration={register('currency')}
-                        error={errors.currency?.message}
-                        options={currencyOptions(lookupsQ.data, values.currency ?? '')}
-                      />
-                    );
-                  }
-                  return (
-                    <CompanyInfoTextField
-                      key={field.id}
-                      field={field}
-                      registration={register(registerKey[field.id])}
-                      error={errors[registerKey[field.id]]?.message}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {ADDRESS_GROUPS.map((group) => {
-              const GroupIcon = group.icon;
-              return (
-                <div key={group.key} className="px-5 py-4 sm:px-6 sm:py-5">
-                  <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-400">
-                    <GroupIcon className="size-3.5" />
-                    {group.title}
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
-                    {ADDRESS_SUBFIELDS.map((sub) => {
-                      const fieldSpec = {
-                        id: `cp-${group.key}-${sub.key}`,
-                        label: sub.label,
-                        placeholder: sub.placeholder,
-                        colSpan: sub.colSpan,
-                      };
-                      if (sub.key === 'country') {
-                        return (
-                          <CompanyInfoSelectField
-                            key={sub.key}
-                            field={fieldSpec}
-                            registration={register(`${group.key}.country`)}
-                            error={errors[group.key]?.country?.message}
-                            options={countryOptions(lookupsQ.data, values[group.key]?.country ?? '')}
-                          />
-                        );
-                      }
-                      if (sub.key === 'state') {
-                        return (
-                          <CompanyInfoSelectField
-                            key={sub.key}
-                            field={fieldSpec}
-                            registration={register(`${group.key}.state`)}
-                            error={errors[group.key]?.state?.message}
-                            options={stateOptionsForCountry(
-                              lookupsQ.data,
-                              values[group.key]?.country ?? '',
-                              values[group.key]?.state ?? '',
-                            )}
-                          />
-                        );
-                      }
-                      return (
-                        <CompanyInfoTextField
-                          key={sub.key}
-                          field={fieldSpec}
-                          registration={register(`${group.key}.${sub.key}`)}
-                          error={errors[group.key]?.[sub.key]?.message}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+        {/* Separate ModernSection per group (Company Information, then each
+            address) with minimal space between them — same pattern as
+            VendorFormBody's edit form / VendorOverviewTab's read-only view,
+            rather than one big card. */}
+        <ModernSection title="Company Information" index={0}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
+            {COMPANY_FIELDS.map(renderCompanyField)}
           </div>
-        </section>
-      </fieldset>
+        </ModernSection>
+
+        {ADDRESS_GROUPS.map((group, i) => (
+          <ModernSection key={group.key} title={group.title} index={i + 1}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
+              {ADDRESS_SUBFIELDS.map((sub) => renderAddressField(group, sub))}
+            </div>
+          </ModernSection>
+        ))}
       </form>
     </>
   );
