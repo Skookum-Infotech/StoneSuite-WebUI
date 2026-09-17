@@ -11,7 +11,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { itemDefaults, toItemPayload, validateItem } from '@/lib/inventoryItemForm';
-import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
+import { defaultCountryId, defaultCurrencyId, defaultUnitId } from '@/lib/lookupDefaults';
 import {
   ITEM_NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
 } from '@/lib/inventoryItemReturn';
@@ -47,17 +47,15 @@ export default function AddItemPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  // New items default Origin Country / Currency to United States / USD once
-  // the lookups load — derived rather than copied into state, so it never
-  // clobbers a value the user already set.
-  const formData = useMemo(() => {
-    if (!crmLookups) return data;
-    return {
-      ...data,
-      origin_country_id: data.origin_country_id || defaultCountryId(crmLookups.countries),
-      currency_id: data.currency_id || defaultCurrencyId(crmLookups.currencies),
-    };
-  }, [data, crmLookups]);
+  // New items default Origin Country / Currency / Unit to United States / USD /
+  // Square Foot once the lookups load — derived rather than copied into state, so
+  // it never clobbers a value the user already set.
+  const formData = useMemo(() => ({
+    ...data,
+    origin_country_id: data.origin_country_id || (crmLookups ? defaultCountryId(crmLookups.countries) : ''),
+    currency_id: data.currency_id || (crmLookups ? defaultCurrencyId(crmLookups.currencies) : ''),
+    unit_id: data.unit_id || (lookups ? defaultUnitId(lookups.units) : ''),
+  }), [data, crmLookups, lookups]);
 
   const guard = useUnsavedChangesGuard(data);
 
