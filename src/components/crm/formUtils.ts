@@ -36,6 +36,17 @@ export function parseNumberFieldValue(raw: string): number | '' {
   return Number.isFinite(n) ? n : '';
 }
 
+/** Strips a phone-type field's raw input down to phone-like characters —
+ *  digits, a leading '+', spaces, dashes, dots and parentheses. Unlike
+ *  `type="number"`, the browser's native `type="tel"` applies no keystroke
+ *  filtering at all (by design, since phone formats vary by locale), so
+ *  without this a phone/fax field accepts arbitrary text. Applied on every
+ *  keystroke rather than only at submit so letters never appear in the
+ *  field, matching how a real phone keypad behaves. */
+export function sanitizePhoneInput(raw: string): string {
+  return raw.replace(/[^\d+\-() .]/g, '');
+}
+
 // Fallback colors by state key for tenants where the backend returns no color.
 const STATUS_COLOR_MAP: Record<string, string> = {
   // Lead
