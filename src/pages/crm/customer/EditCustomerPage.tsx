@@ -14,6 +14,7 @@ import { EditableFilesPanel } from '@/components/crm/CrmSubTabsPanel';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { useScrollToError } from '@/hooks/useScrollToError';
 import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
@@ -108,6 +109,7 @@ export default function EditCustomerPage() {
       navigate('/crm/customer');
     },
   });
+  const errorRef = useScrollToError<HTMLDivElement>(save.error ?? transition.error);
 
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
@@ -201,7 +203,12 @@ export default function EditCustomerPage() {
         )}
 
         {saveError && (
-          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+          >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>

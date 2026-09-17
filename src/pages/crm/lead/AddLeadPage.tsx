@@ -15,6 +15,7 @@ import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { useScrollToError } from '@/hooks/useScrollToError';
 import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -114,6 +115,7 @@ export default function AddLeadPage() {
       navigate('/crm/lead');
     },
   });
+  const errorRef = useScrollToError<HTMLDivElement>(createError);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -152,7 +154,12 @@ export default function AddLeadPage() {
 
         {/* Error / upload-error banners */}
         {createError && (
-          <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+          >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
