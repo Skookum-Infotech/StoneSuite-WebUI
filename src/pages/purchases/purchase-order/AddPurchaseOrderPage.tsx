@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
 import { companyProfileService } from '@/services/companyProfileService';
+import { companyLocationService } from '@/services/companyLocationService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -72,24 +73,33 @@ export default function AddPurchaseOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  // Ship To prefill: always the tenant's own Company Info address — see
-  // purchaseOrderShipToDefaults. Company Info is gated on the read
-  // permission so a user without it doesn't take a silent 403 on every
-  // load of this page.
+  // Ship To prefill: the tenant's default Location when one is set, else
+  // their Company Info address — see purchaseOrderShipToDefaults. Both are
+  // gated on the company_profile read permission so a user without it
+  // doesn't take a silent 403 on every load of this page (Locations reuses
+  // that same permission — see companylocation's controller doc comment).
   const { hasPermission } = useUserPermissions();
+  const canReadCompanyInfo = hasPermission('company_profile', 'read');
   const { data: companyProfile } = useQuery({
     queryKey: ['company-profile'],
     queryFn: companyProfileService.get,
     staleTime: 10 * 60 * 1000,
-    enabled: hasPermission('company_profile', 'read'),
+    enabled: canReadCompanyInfo,
   });
+  const { data: companyLocations } = useQuery({
+    queryKey: ['company-locations'],
+    queryFn: companyLocationService.list,
+    staleTime: 10 * 60 * 1000,
+    enabled: canReadCompanyInfo,
+  });
+  const defaultLocation = companyLocations?.find((l) => l.isDefault);
 
   // New purchase orders default to United States / USD, and Ship To from the
   // company defaults above, once each loads — derived rather than copied
   // into state, so it never clobbers a value the user already set.
   const formData = useMemo(() => {
     if (!lookups) return data;
-    const shipDefaults = purchaseOrderShipToDefaults(companyProfile);
+    const shipDefaults = purchaseOrderShipToDefaults(companyProfile, defaultLocation);
     return {
       ...data,
       ship_country: data.ship_country || defaultCountryId(lookups.countries),
@@ -101,8 +111,9 @@ export default function AddPurchaseOrderPage() {
       ship_city: data.ship_city || shipDefaults.ship_city || '',
       ship_state: data.ship_state || shipDefaults.ship_state || '',
       ship_zip: data.ship_zip || shipDefaults.ship_zip || '',
+      ship_phone: data.ship_phone || shipDefaults.ship_phone || '',
     };
-  }, [data, lookups, companyProfile]);
+  }, [data, lookups, companyProfile, defaultLocation]);
 
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
