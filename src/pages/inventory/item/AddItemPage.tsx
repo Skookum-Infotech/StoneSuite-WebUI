@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,8 +12,14 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { itemDefaults, toItemPayload, validateItem } from '@/lib/inventoryItemForm';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
+import {
+  ITEM_NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
+} from '@/lib/inventoryItemReturn';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
+import type { InventoryItem } from '@/types/inventory';
 import { ItemFormBody } from './components/ItemFormBody';
+
+const ITEM_LIST_PATH = '/inventory/item';
 
 export default function AddItemPage() {
   const navigate = useNavigate();
@@ -21,7 +27,16 @@ export default function AddItemPage() {
   const { lookups } = useInventoryLookups();
   const warehouses = lookups?.warehouses ?? [];
 
-  const [data, setData] = useState<Record<string, unknown>>(itemDefaults);
+  // Opened from a document's item picker ("Add to Inventory"): the typed name
+  // is prefilled, and saving or cancelling returns to that document, which
+  // restores its unsaved form (see lib/inventoryItemReturn.ts).
+  const [searchParams] = useSearchParams();
+  const returnParam = searchParams.get(RETURN_TO_PARAM);
+  const returnTo = isSafeReturnPath(returnParam) ? returnParam : null;
+
+  const [data, setData] = useState<Record<string, unknown>>(
+    () => ({ ...itemDefaults(), name: searchParams.get(ITEM_NAME_PARAM) ?? '' }),
+  );
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
 
@@ -45,13 +60,19 @@ export default function AddItemPage() {
 
   const guard = useUnsavedChangesGuard(data);
 
+  const leave = (createdItem: InventoryItem | null) => {
+    if (returnTo) navigate(returnTo, { state: returnRouterState(createdItem) });
+    else navigate(ITEM_LIST_PATH);
+  };
+
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => inventoryService.createItem(toItemPayload(formData, warehouses)),
-    onSuccess: () => {
-      toast.success('Item created.');
+    onSuccess: (item) => {
+      toast.success(returnTo ? 'Item created and added to your line. Click Save Line to keep it.' : 'Item created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-item-picker'] });
       guard.markClean();
-      navigate('/inventory/item');
+      leave(item);
     },
   });
 
@@ -71,11 +92,13 @@ export default function AddItemPage() {
       <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
-          backLabel="Items"
-          onBack={() => navigate('/inventory/item')}
+          backLabel={returnTo ? 'Back' : 'Items'}
+          onBack={() => leave(null)}
           icon={Package}
           title="New Inventory Item"
-          subtitle="Fields marked * are required."
+          subtitle={returnTo
+            ? "Fields marked * are required. You'll go back to your document after saving."
+            : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
@@ -103,7 +126,7 @@ export default function AddItemPage() {
           </div>
         </div>
 
-        <FormActionBar onCancel={() => navigate('/inventory/item')} isPending={isPending} submitLabel="Save Item" />
+        <FormActionBar onCancel={() => leave(null)} isPending={isPending} submitLabel="Save Item" />
       </form>
     </div>
   );

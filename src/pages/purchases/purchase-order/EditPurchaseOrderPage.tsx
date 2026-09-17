@@ -17,11 +17,21 @@ import {
   fromPurchaseOrder, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
   type PurchaseOrderLineItem, PO_NON_DRAFT_LOCKED,
 } from '@/lib/purchaseOrderForm';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: PurchaseOrderLineItem[] = [];
 const EMPTY_CUSTOM: Record<string, unknown> = {};
+
+/** Unsaved edits carried across an "Add to Inventory" round trip. */
+interface PurchaseOrderEditDraft {
+  activeTab: PageTab;
+  localData: Record<string, unknown> | null;
+  localLineItems: PurchaseOrderLineItem[] | null;
+  localVendor: VendorRef | null;
+  localCustomFields: Record<string, unknown> | null;
+}
 
 // Editing a purchase order is DRFT-only (backend enforces with 400) — a PO is
 // an outward commitment once submitted, so any other status renders read-only
@@ -31,13 +41,15 @@ export default function EditPurchaseOrderPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const inventoryReturn = useInventoryItemReturn<PurchaseOrderEditDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
 
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<PurchaseOrderLineItem[] | null>(null);
-  const [localVendor, setLocalVendor] = useState<VendorRef | null>(null);
-  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<PurchaseOrderLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localVendor, setLocalVendor] = useState<VendorRef | null>(restored?.localVendor ?? null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(restored?.localCustomFields ?? null);
 
   const { data: po, isLoading, error: loadError } = useQuery({
     queryKey: ['purchase-order', id],
@@ -72,6 +84,7 @@ export default function EditPurchaseOrderPage() {
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     Boolean(mapped) && !isLocked,
+    inventoryReturn.isRestored,
   );
 
   const set = useCallback(
@@ -168,27 +181,31 @@ export default function EditPurchaseOrderPage() {
           </div>
         )}
 
-        <PurchaseOrderFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          purchaseOrderId={id}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          vendor={vendor}
-          setVendor={setLocalVendor}
-          vendorLocked
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          shippingCharge={shippingCharge}
-          adjustment={adjustment}
-          total={total}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localVendor, localCustomFields }, guard.markClean)}
+        >
+          <PurchaseOrderFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            purchaseOrderId={id}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            vendor={vendor}
+            setVendor={setLocalVendor}
+            vendorLocked
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            shippingCharge={shippingCharge}
+            adjustment={adjustment}
+            total={total}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate(`/purchases/purchase_order/${id}`)}

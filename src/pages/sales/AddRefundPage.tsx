@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Undo2, AlertCircle, Loader2, Save, Info } from 'lucide-react';
@@ -20,18 +20,33 @@ import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { RefundSourcePicker, type RefundSourceRef } from './components/RefundSourcePicker';
 import { RefundSectionGrid } from './components/RefundFormFields';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import {
   PRIMARY_INFO_FIELDS, refundDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/refundForm';
+
+/** Unsaved form state carried across a "Create Customer" round trip. */
+interface RefundDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  customer: CustomerRef | null;
+  lineagePayment: RefundSourceRef | null;
+  lineageCreditMemo: RefundSourceRef | null;
+  customFieldValues: Record<string, unknown>;
+}
 
 export default function AddRefundPage() {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
   const panelRef    = useRef<EditableFilesPanelHandle>(null);
+  const customerReturn = useRecordCreateReturn<RefundDraft, CustomerRef>(
+    'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
+  );
+  const restored = customerReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>('details');
-  const [data, setData]           = useState<Record<string, unknown>>(refundDefaults);
-  const [customer, setCustomer]   = useState<CustomerRef | null>(null);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? 'details');
+  const [data, setData]           = useState<Record<string, unknown>>(() => restored?.data ?? refundDefaults());
+  const [customer, setCustomer]   = useState<CustomerRef | null>(restored?.customer ?? null);
 
   // Lineage, not money (spec AD-12). Unlike AddPaymentPage — which composes an
   // inline `applications` array at create time — a refund's ledger cannot be
@@ -40,9 +55,9 @@ export default function AddRefundPage() {
   // the create contract entirely rather than always rejecting one (spec §11).
   // These two pickers only record "this refund arose from that document"; the
   // money is drawn afterwards from the detail page's Applications tab.
-  const [lineagePayment, setLineagePayment] = useState<RefundSourceRef | null>(null);
-  const [lineageCreditMemo, setLineageCreditMemo] = useState<RefundSourceRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [lineagePayment, setLineagePayment] = useState<RefundSourceRef | null>(restored?.lineagePayment ?? null);
+  const [lineageCreditMemo, setLineageCreditMemo] = useState<RefundSourceRef | null>(restored?.lineageCreditMemo ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -109,6 +124,22 @@ export default function AddRefundPage() {
     }
   }, []);
 
+  // Applies the customer created via the round trip exactly as if it had
+  // been picked from the list — same Bill To/currency/tax defaulting.
+  useEffect(() => {
+    if (customerReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleCustomerChange(customerReturn.createdRef);
+      customerReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerReturn.createdRef]);
+
+  // Shared with the return-trip hook — it may stash and restore this.
+  const { startCreate: startCreateCustomer } = customerReturn.provide(
+    { activeTab, data, customer, lineagePayment, lineageCreditMemo, customFieldValues },
+  );
+
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
@@ -166,7 +197,7 @@ export default function AddRefundPage() {
             {activeTab === 'details' && (
               <>
                 <ModernSection title="Customer" index={0}>
-                  <CustomerPicker value={customer} onChange={handleCustomerChange} required />
+                  <CustomerPicker value={customer} onChange={handleCustomerChange} required onCreateNew={startCreateCustomer} />
                 </ModernSection>
 
                 <ModernSection title="Refund Details" index={1}>

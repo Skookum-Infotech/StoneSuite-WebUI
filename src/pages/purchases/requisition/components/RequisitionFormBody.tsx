@@ -29,7 +29,7 @@ import {
 export function RequisitionFormBody({
   activeTab, setActiveTab, requisitionId,
   data, set, lineItems, setLineItems,
-  vendor, setVendor,
+  vendor, setVendor, onCreateVendor,
   customFieldValues, setCustomField,
   lookups, subtotal, taxTotal, estimatedTotal, filesPanelRef,
 }: {
@@ -44,6 +44,10 @@ export function RequisitionFormBody({
   setLineItems: (v: RequisitionLineItem[]) => void;
   vendor: VendorRef | null;
   setVendor: (v: VendorRef | null) => void;
+  /** Sends the user to create a new Vendor record for a typed name the list
+   *  doesn't have (see useRecordCreateReturn). Omitted when the user can't
+   *  create vendors — the picker then only shows its "not found" warning. */
+  onCreateVendor?: (name: string) => void;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -92,7 +96,7 @@ export function RequisitionFormBody({
                   <div className="flex-1 min-w-0 space-y-4">
                     <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
                       <ModernFieldShell label="Suggested Vendor">
-                        <VendorPicker value={vendor} onChange={setVendor} />
+                        <VendorPicker value={vendor} onChange={setVendor} onCreateNew={onCreateVendor} />
                         <p className="text-2xs text-stone-400">
                           A suggestion only — the vendor is confirmed when this becomes a purchase order.
                         </p>

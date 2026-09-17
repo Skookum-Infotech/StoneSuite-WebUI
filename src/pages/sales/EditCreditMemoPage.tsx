@@ -17,20 +17,31 @@ import {
   fromCreditMemo, toUpdatePayload, PAGE_TABS, type PageTab,
   type CreditMemoLineItem, CREDIT_MEMO_DRAFT_STATUS,
 } from '@/lib/creditMemoForm';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: CreditMemoLineItem[] = [];
 
+/** Unsaved edits carried across an "Add to Inventory" round trip. */
+interface CreditMemoEditDraft {
+  activeTab: PageTab;
+  localData: Record<string, unknown> | null;
+  localLineItems: CreditMemoLineItem[] | null;
+  localCustomFields: Record<string, unknown> | null;
+}
+
 export default function EditCreditMemoPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const inventoryReturn = useInventoryItemReturn<CreditMemoEditDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<CreditMemoLineItem[] | null>(null);
-  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<CreditMemoLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(restored?.localCustomFields ?? null);
 
   const { data: creditMemo, isLoading, error: loadError } = useQuery({
     queryKey: ['creditMemo', id],
@@ -140,34 +151,38 @@ export default function EditCreditMemoPage() {
           </div>
         )}
 
-        <CreditMemoFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          creditMemoId={id}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          customer={customer}
-          setCustomer={() => { /* immutable after creation */ }}
-          customerLocked
-          invoice={invoice}
-          setInvoice={() => { /* immutable after creation */ }}
-          invoiceLocked
-          salesOrder={salesOrder}
-          setSalesOrder={() => { /* immutable after creation */ }}
-          salesOrderLocked
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          adjustment={adjustment}
-          total={total}
-          appliedTotal={creditMemo.appliedTotal}
-          moneyFieldsDisabled={moneyFieldsDisabled}
-        />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localCustomFields })}
+        >
+          <CreditMemoFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            creditMemoId={id}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            customer={customer}
+            setCustomer={() => { /* immutable after creation */ }}
+            customerLocked
+            invoice={invoice}
+            setInvoice={() => { /* immutable after creation */ }}
+            invoiceLocked
+            salesOrder={salesOrder}
+            setSalesOrder={() => { /* immutable after creation */ }}
+            salesOrderLocked
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            adjustment={adjustment}
+            total={total}
+            appliedTotal={creditMemo.appliedTotal}
+            moneyFieldsDisabled={moneyFieldsDisabled}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate(`/sales/credit_memo/${id}`)}

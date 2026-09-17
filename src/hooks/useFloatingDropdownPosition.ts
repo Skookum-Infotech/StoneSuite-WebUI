@@ -15,13 +15,16 @@ export interface FloatingPosition {
  * Recomputes on open. Rather than tracking the trigger's position continuously
  * (which would need a scroll/resize listener on every ancestor scroller), this
  * just closes the dropdown on scroll or resize — the trigger has moved, so a
- * stale-positioned panel would be worse than no panel.
+ * stale-positioned panel would be worse than no panel. Scrolls that start
+ * inside the trigger (a text input scrolling its own overflowing value) or
+ * inside `panelRef` (a long result list) don't move anything, so they're ignored.
  */
 export function useFloatingDropdownPosition(
   open: boolean,
   triggerRef: RefObject<HTMLElement | null>,
   onClose: () => void,
   panelWidth = 224,
+  panelRef?: RefObject<HTMLElement | null>,
 ): FloatingPosition | null {
   const [position, setPosition] = useState<FloatingPosition | null>(null);
 
@@ -46,15 +49,22 @@ export function useFloatingDropdownPosition(
 
   useEffect(() => {
     if (!open) return;
+    const handleScroll = (e: Event) => {
+      const target = e.target;
+      if (target instanceof Node && (triggerRef.current?.contains(target) || panelRef?.current?.contains(target))) {
+        return;
+      }
+      onClose();
+    };
     // capture: true so this also catches scroll on the table's own
     // overflow-x-auto wrapper, not just window-level scroll.
-    window.addEventListener('scroll', onClose, true);
+    window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('resize', onClose);
     return () => {
-      window.removeEventListener('scroll', onClose, true);
+      window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', onClose);
     };
-  }, [open, onClose]);
+  }, [open, onClose, triggerRef, panelRef]);
 
   return position;
 }

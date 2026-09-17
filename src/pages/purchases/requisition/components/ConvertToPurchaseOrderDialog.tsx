@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowRightLeft, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModalDialog } from '@/hooks/useModalDialog';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { requisitionService } from '@/services/requisitionService';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
+import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
+import { NAME_PARAM } from '@/lib/recordCreateReturn';
 import { VendorPicker, type VendorRef } from '../../purchase-order/components/VendorPicker';
 import type { RequisitionConvertResult, RequisitionVendorRef } from '@/types/requisition';
+
+const VENDOR_NEW_PATH = '/purchases/vendor/new';
 
 // Vendor-selection modal for converting an approved requisition into a
 // purchase order (POST /requisitions/{id}/convert).
@@ -24,6 +30,15 @@ import type { RequisitionConvertResult, RequisitionVendorRef } from '@/types/req
 // requisition returns the existing purchase order with `created: false`
 // instead of making a duplicate. That is a success, not an error, so it
 // navigates to the purchase order exactly like a fresh conversion.
+//
+// Unlike every other Vendor picker, a typed name the list doesn't have here
+// gets the *lite* version of "Create Vendor": a plain navigate to New Vendor
+// with no stash/restore, guarded by a confirm step warning that it closes
+// this dialog and abandons the conversion (see ConfirmLeaveDialog's
+// 'create-vendor' variant). Reopening a modal on the way back would need this
+// component's own open/vendor state stashed and the detail page taught to
+// restore it — real plumbing for one picker, when "come back and pick it
+// again from the list" already works once the vendor exists.
 export function ConvertToPurchaseOrderDialog({
   requisitionId, requisitionNumber, suggestedVendor, onClose, onConverted,
 }: {
@@ -33,10 +48,13 @@ export function ConvertToPurchaseOrderDialog({
   onClose: () => void;
   onConverted: (result: RequisitionConvertResult) => void;
 }) {
+  const navigate = useNavigate();
+  const { hasPermission } = useUserPermissions();
   const contentRef = useModalDialog(onClose);
   const [vendor, setVendor] = useState<VendorRef | null>(
     suggestedVendor ? { id: suggestedVendor.id, name: suggestedVendor.name } : null,
   );
+  const [pendingVendorName, setPendingVendorName] = useState<string | null>(null);
 
   const convert = useMutation({
     mutationFn: () => {
@@ -52,79 +70,103 @@ export function ConvertToPurchaseOrderDialog({
     suggestedVendor && vendor && vendor.id !== suggestedVendor.id,
   );
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="reqn-convert-title"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-2xl outline-none">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent">
-            <ArrowRightLeft className="size-4 text-accent-foreground" />
-          </div>
-          <div>
-            <h3 id="reqn-convert-title" className="text-sm font-bold text-stone-900">
-              Convert to Purchase Order
-            </h3>
-            <p className="text-xs text-stone-400 mt-0.5">{requisitionNumber}</p>
-          </div>
-        </div>
+  function leaveToCreateVendor() {
+    const name = pendingVendorName ?? '';
+    setPendingVendorName(null);
+    onClose();
+    const params = name.trim() ? `?${NAME_PARAM}=${encodeURIComponent(name.trim())}` : '';
+    navigate(`${VENDOR_NEW_PATH}${params}`);
+  }
 
-        <p className="text-xs text-stone-600 mb-4">
-          This creates a draft purchase order from the requisition&rsquo;s lines. Confirm the
-          vendor to order from — a purchase order always needs one.
-        </p>
+  return (
+    <>
+      {createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reqn-convert-title"
+          onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+          <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-2xl outline-none">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent">
+                <ArrowRightLeft className="size-4 text-accent-foreground" />
+              </div>
+              <div>
+                <h3 id="reqn-convert-title" className="text-sm font-bold text-stone-900">
+                  Convert to Purchase Order
+                </h3>
+                <p className="text-xs text-stone-400 mt-0.5">{requisitionNumber}</p>
+              </div>
+            </div>
 
-        <ModernFieldShell label="Vendor" required>
-          <VendorPicker value={vendor} onChange={setVendor} required />
-        </ModernFieldShell>
+            <p className="text-xs text-stone-600 mb-4">
+              This creates a draft purchase order from the requisition&rsquo;s lines. Confirm the
+              vendor to order from — a purchase order always needs one.
+            </p>
 
-        {suggestedVendor ? (
-          <p className="mt-1.5 text-2xs text-stone-400">
-            {changedFromSuggestion
-              ? `Requisition suggested ${suggestedVendor.name}.`
-              : `Pre-filled from the requisition’s suggested vendor.`}
-          </p>
-        ) : (
-          <p className="mt-1.5 text-2xs text-stone-400">
-            This requisition didn&rsquo;t suggest a vendor — pick the one to order from.
-          </p>
-        )}
+            <ModernFieldShell label="Vendor" required>
+              <VendorPicker
+                value={vendor}
+                onChange={setVendor}
+                required
+                onCreateNew={hasPermission('vendor', 'create') ? setPendingVendorName : undefined}
+              />
+            </ModernFieldShell>
 
-        {convert.error && (
-          <p className="mt-3 text-2xs text-destructive">
-            {apiErrorMessage(convert.error, 'Failed to convert requisition.')}
-          </p>
-        )}
-
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={convert.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => convert.mutate()}
-            disabled={!vendor || convert.isPending}
-            aria-label="Create purchase order from this requisition"
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition-all',
-              'hover:bg-brand-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+            {suggestedVendor ? (
+              <p className="mt-1.5 text-2xs text-stone-400">
+                {changedFromSuggestion
+                  ? `Requisition suggested ${suggestedVendor.name}.`
+                  : `Pre-filled from the requisition’s suggested vendor.`}
+              </p>
+            ) : (
+              <p className="mt-1.5 text-2xs text-stone-400">
+                This requisition didn&rsquo;t suggest a vendor — pick the one to order from.
+              </p>
             )}
-          >
-            {convert.isPending && <Loader2 className="size-3 animate-spin" />}
-            {convert.isPending ? 'Converting…' : 'Create Purchase Order'}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+
+            {convert.error && (
+              <p className="mt-3 text-2xs text-destructive">
+                {apiErrorMessage(convert.error, 'Failed to convert requisition.')}
+              </p>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={convert.isPending}
+                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => convert.mutate()}
+                disabled={!vendor || convert.isPending}
+                aria-label="Create purchase order from this requisition"
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition-all',
+                  'hover:bg-brand-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+                )}
+              >
+                {convert.isPending && <Loader2 className="size-3 animate-spin" />}
+                {convert.isPending ? 'Converting…' : 'Create Purchase Order'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+      {pendingVendorName !== null && (
+        <ConfirmLeaveDialog
+          variant="create-vendor"
+          onConfirm={leaveToCreateVendor}
+          onCancel={() => setPendingVendorName(null)}
+        />
+      )}
+    </>
   );
 }

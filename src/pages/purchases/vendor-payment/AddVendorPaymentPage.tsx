@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Wallet, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
@@ -16,6 +16,7 @@ import { type VendorRef } from '@/pages/purchases/purchase-order/components/Vend
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { VendorPaymentFormBody } from './components/VendorPaymentFormBody';
 import { VendorBillPicker, type VendorBillRef } from './components/VendorBillPicker';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import {
   PRIMARY_INFO_FIELDS, vendorPaymentDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/vendorPaymentForm';
@@ -25,20 +26,45 @@ function currency(n: number): string {
   return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
+/** Unsaved form state carried across a "Create Vendor" round trip. */
+interface VendorPaymentDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  vendor: VendorRef | null;
+  customFieldValues: Record<string, unknown>;
+  applications: VendorPaymentApplicationInput[];
+  appliedBillNumbers: Record<string, string>;
+}
+
 export default function AddVendorPaymentPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const vendorReturn = useRecordCreateReturn<VendorPaymentDraft, VendorRef>(
+    'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
+  );
+  const restored = vendorReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(vendorPaymentDefaults);
-  const [vendor, setVendor] = useState<VendorRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? vendorPaymentDefaults());
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
-  const [applications, setApplications] = useState<VendorPaymentApplicationInput[]>([]);
-  const [appliedBillNumbers, setAppliedBillNumbers] = useState<Record<string, string>>({});
+  const [applications, setApplications] = useState<VendorPaymentApplicationInput[]>(restored?.applications ?? []);
+  const [appliedBillNumbers, setAppliedBillNumbers] = useState<Record<string, string>>(restored?.appliedBillNumbers ?? {});
   const [pendingBill, setPendingBill] = useState<VendorBillRef | null>(null);
   const [pendingAmount, setPendingAmount] = useState('');
+
+  // Applies the vendor created via the round trip exactly as if it had been
+  // picked from the list.
+  useEffect(() => {
+    if (vendorReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVendor(vendorReturn.createdRef);
+      vendorReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorReturn.createdRef]);
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -60,7 +86,13 @@ export default function AddVendorPaymentPage() {
     return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
   }, [data, lookups]);
 
-  const guard = useUnsavedChangesGuard({ data, vendor, customFieldValues, applications });
+  const guard = useUnsavedChangesGuard({ data, vendor, customFieldValues, applications }, true, vendorReturn.isRestored);
+
+  // Shared with the return-trip hook — it may stash and restore this.
+  const { startCreate: startCreateVendor } = vendorReturn.provide(
+    { activeTab, data, vendor, customFieldValues, applications, appliedBillNumbers },
+    guard.markClean,
+  );
 
   function addApplication() {
     if (!pendingBill) return;
@@ -135,7 +167,7 @@ export default function AddVendorPaymentPage() {
             fields: PRIMARY_INFO_FIELDS, data: formData, set, lookups,
             customFieldValues, setCustomField,
           }}
-          vendor={{ value: vendor, onChange: setVendor }}
+          vendor={{ value: vendor, onChange: setVendor, onCreateNew: startCreateVendor }}
           filesPanelRef={panelRef}
         >
           <ModernSection title="Apply to Bills (optional)" index={2}>

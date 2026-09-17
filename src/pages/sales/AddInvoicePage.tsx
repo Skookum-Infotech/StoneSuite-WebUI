@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Receipt, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -13,22 +13,38 @@ import { type CustomerRef } from './components/CustomerPicker';
 import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { InvoiceFormBody } from './components/InvoiceFormBody';
 import {
   invoiceDefaults, toCreatePayload, PAGE_TABS, type PageTab,
   type InvoiceLineItem,
 } from '@/lib/invoiceForm';
 
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface InvoiceDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  lineItems: InvoiceLineItem[];
+  customer: CustomerRef | null;
+  customFieldValues: Record<string, unknown>;
+}
+
 export default function AddInvoicePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const inventoryReturn = useInventoryItemReturn<InvoiceDraft>();
+  const customerReturn = useRecordCreateReturn<InvoiceDraft, CustomerRef>(
+    'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? customerReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(invoiceDefaults);
-  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
-  const [customer, setCustomer] = useState<CustomerRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? invoiceDefaults());
+  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>(restored?.lineItems ?? []);
+  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => {
     setData((d) => {
@@ -54,6 +70,17 @@ export default function AddInvoicePage() {
     }
   }, []);
 
+  // Applies the customer created via the round trip exactly as if it had
+  // been picked from the list — same Bill To/currency/tax defaulting.
+  useEffect(() => {
+    if (customerReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleCustomerChange(customerReturn.createdRef);
+      customerReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerReturn.createdRef]);
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -72,6 +99,10 @@ export default function AddInvoicePage() {
       currency_id: data.currency_id || defaultCurrencyId(lookups.currencies),
     };
   }, [data, lookups]);
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: InvoiceDraft = { activeTab, data, lineItems, customer, customFieldValues };
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
@@ -131,25 +162,28 @@ export default function AddInvoicePage() {
           </div>
         )}
 
-        <InvoiceFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={formData}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLineItems}
-          customer={customer}
-          setCustomer={handleCustomerChange}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          total={total}
-          amountPaid={0}
-          filesPanelRef={panelRef}
-        />
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
+          <InvoiceFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={formData}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLineItems}
+            customer={customer}
+            setCustomer={handleCustomerChange}
+            onCreateCustomer={startCreateCustomer}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            total={total}
+            amountPaid={0}
+            filesPanelRef={panelRef}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/sales/invoice')}

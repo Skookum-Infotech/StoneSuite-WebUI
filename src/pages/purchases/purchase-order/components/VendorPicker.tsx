@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, X, Loader2, Building } from 'lucide-react';
+import { Search, X, Loader2, Building, AlertTriangle, UserPlus } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
+import { hasExactName } from '@/lib/recordCreateReturn';
 
 const RESULT_LIMIT = 8;
 
@@ -22,10 +23,16 @@ export function VendorPicker({
   value,
   onChange,
   required,
+  onCreateNew,
 }: {
   value: VendorRef | null;
   onChange: (vendor: VendorRef | null) => void;
   required?: boolean;
+  /** Sends the user to create a new Vendor record for a typed name the list
+   *  doesn't have (see useRecordCreateReturn). Omitted when the user can't
+   *  create vendors, or when the caller wants to handle it differently (see
+   *  ConvertToPurchaseOrderDialog) — the picker then only shows the warning. */
+  onCreateNew?: (name: string) => void;
 }) {
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -66,6 +73,15 @@ export function VendorPicker({
     setTerm('');
     setDebounced('');
   }
+
+  function createNew() {
+    setOpen(false);
+    onCreateNew?.(debounced);
+  }
+
+  const notFound = open && !isFetching && debounced.length > 0 && results.length === 0;
+  const showCreateNew = Boolean(onCreateNew) && open && !isFetching && debounced.length > 0
+    && !hasExactName(results, debounced);
 
   if (value) {
     return (
@@ -121,6 +137,29 @@ export function VendorPicker({
               <span className="truncate">{v.name}</span>
             </button>
           ))}
+          {notFound && (
+            <div role="status" className="px-3 py-2">
+              <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                <span className="min-w-0 break-words">“{debounced}” isn't an existing vendor.</span>
+              </p>
+              {!onCreateNew && (
+                <p className="mt-0.5 pl-5 text-2xs text-stone-500">
+                  Ask someone with vendor access to add them first.
+                </p>
+              )}
+            </div>
+          )}
+          {showCreateNew && (
+            <button
+              type="button"
+              onClick={createNew}
+              className="flex w-full items-center gap-2 border-t border-stone-100 px-3 py-2 text-left text-xs font-semibold text-stone-800 hover:bg-accent/10 transition-colors"
+            >
+              <UserPlus className="size-3.5 shrink-0 text-stone-500" aria-hidden="true" />
+              <span className="truncate">Create “{debounced}” as a new vendor</span>
+            </button>
+          )}
         </div>
       )}
     </div>

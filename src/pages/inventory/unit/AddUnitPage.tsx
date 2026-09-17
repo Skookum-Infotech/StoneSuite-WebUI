@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Layers, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -15,9 +15,18 @@ import { BinPicker } from '@/components/inventory/BinPicker';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { isAreaUnit, findUnit } from '@/lib/inventoryUnits';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import type { InventoryItem } from '@/types/inventory';
+
+/** Unsaved form state carried across a "Create Vendor" round trip — every
+ *  field on this page, since none of it is worth losing over one lookup. */
+interface UnitDraft {
+  item: InventoryItem | null; serial: string; barcode: string; warehouseId: string; binId: string;
+  lengthMm: string; widthMm: string; thicknessMm: string; grade: string;
+  finishId: string; vendor: VendorRef | null; supplierCode: string; blockId: string; lot: string;
+}
 
 // Receives one physical piece — a slab, whole. Offcuts are never created
 // here (spec §3): they are minted by a cut, which derives lineage and area
@@ -27,22 +36,43 @@ export default function AddUnitPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
+  const vendorReturn = useRecordCreateReturn<UnitDraft, VendorRef>(
+    'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
+  );
+  const restored = vendorReturn.restored;
 
-  const [item, setItem] = useState<InventoryItem | null>(null);
-  const [serial, setSerial] = useState('');
-  const [barcode, setBarcode] = useState('');
-  const [warehouseId, setWarehouseId] = useState('');
-  const [binId, setBinId] = useState('');
-  const [lengthMm, setLengthMm] = useState('');
-  const [widthMm, setWidthMm] = useState('');
-  const [thicknessMm, setThicknessMm] = useState('');
-  const [grade, setGrade] = useState('');
-  const [finishId, setFinishId] = useState('');
-  const [vendor, setVendor] = useState<VendorRef | null>(null);
-  const [supplierCode, setSupplierCode] = useState('');
-  const [blockId, setBlockId] = useState('');
-  const [lot, setLot] = useState('');
+  const [item, setItem] = useState<InventoryItem | null>(restored?.item ?? null);
+  const [serial, setSerial] = useState(restored?.serial ?? '');
+  const [barcode, setBarcode] = useState(restored?.barcode ?? '');
+  const [warehouseId, setWarehouseId] = useState(restored?.warehouseId ?? '');
+  const [binId, setBinId] = useState(restored?.binId ?? '');
+  const [lengthMm, setLengthMm] = useState(restored?.lengthMm ?? '');
+  const [widthMm, setWidthMm] = useState(restored?.widthMm ?? '');
+  const [thicknessMm, setThicknessMm] = useState(restored?.thicknessMm ?? '');
+  const [grade, setGrade] = useState(restored?.grade ?? '');
+  const [finishId, setFinishId] = useState(restored?.finishId ?? '');
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [supplierCode, setSupplierCode] = useState(restored?.supplierCode ?? '');
+  const [blockId, setBlockId] = useState(restored?.blockId ?? '');
+  const [lot, setLot] = useState(restored?.lot ?? '');
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  // Applies the vendor created via the round trip exactly as if it had been
+  // picked from the list.
+  useEffect(() => {
+    if (vendorReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVendor(vendorReturn.createdRef);
+      vendorReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorReturn.createdRef]);
+
+  // Shared with the return-trip hook — it may stash and restore this.
+  const { startCreate: startCreateVendor } = vendorReturn.provide({
+    item, serial, barcode, warehouseId, binId, lengthMm, widthMm, thicknessMm,
+    grade, finishId, vendor, supplierCode, blockId, lot,
+  });
 
   const { data: bins = [] } = useQuery({
     queryKey: ['inventory-bins-tree', warehouseId],
@@ -185,7 +215,7 @@ export default function AddUnitPage() {
                   <input type="text" value={supplierCode} onChange={(e) => setSupplierCode(e.target.value)} className={fieldCls} aria-label="Supplier code" />
                 </ModernFieldShell>
                 <ModernFieldShell label="Vendor">
-                  <VendorPicker value={vendor} onChange={setVendor} />
+                  <VendorPicker value={vendor} onChange={setVendor} onCreateNew={startCreateVendor} />
                 </ModernFieldShell>
               </div>
             </ModernSection>

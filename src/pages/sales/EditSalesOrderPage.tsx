@@ -22,25 +22,39 @@ import {
   type SOLineItem, type SODrawing, SO_STATUS_CODES,
 } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 
 // Stable references so the fallbacks don't create a new identity every render
 // (which would defeat the totals useMemo below).
 const EMPTY_ITEMS: SOLineItem[] = [];
 const EMPTY_CUSTOM: Record<string, unknown> = {};
 
+/** Unsaved edits carried across an "Add to Inventory" round trip. Status is
+ *  excluded — a transition is saved the moment it's picked. */
+interface SalesOrderEditDraft {
+  activeTab: PageTab;
+  drawings: SODrawing[];
+  localData: Record<string, unknown> | null;
+  localLineItems: SOLineItem[] | null;
+  localCustomer: CustomerRef | null;
+  localCustomFields: Record<string, unknown> | null;
+}
+
 export default function EditSalesOrderPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const inventoryReturn = useInventoryItemReturn<SalesOrderEditDraft>();
+  const restored = inventoryReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [drawings, setDrawings] = useState<SODrawing[]>([]);
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [drawings, setDrawings] = useState<SODrawing[]>(restored?.drawings ?? []);
 
-  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
-  const [localLineItems, setLocalLineItems] = useState<SOLineItem[] | null>(null);
-  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(null);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localLineItems, setLocalLineItems] = useState<SOLineItem[] | null>(restored?.localLineItems ?? null);
+  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(restored?.localCustomer ?? null);
   const [localStatusCode, setLocalStatusCode] = useState<string | null>(null);
-  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(null);
+  const [localCustomFields, setLocalCustomFields] = useState<Record<string, unknown> | null>(restored?.localCustomFields ?? null);
 
   const { data: order, isLoading, error: loadError } = useQuery({
     queryKey: ['sales-order', id],
@@ -97,7 +111,11 @@ export default function EditSalesOrderPage() {
 
   // Status changes are saved by their own transition mutation the moment they are
   // picked, so they are excluded from the snapshot — only unsaved form edits count.
-  const guard = useUnsavedChangesGuard({ data, lineItems, drawings, customer, customFieldValues }, Boolean(mapped));
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, drawings, customer, customFieldValues },
+    Boolean(mapped),
+    inventoryReturn.isRestored,
+  );
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
     const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
@@ -181,34 +199,41 @@ export default function EditSalesOrderPage() {
           </div>
         )}
 
-        <SalesOrderFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          orderId={id}
-          data={data}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLocalLineItems}
-          drawings={drawings}
-          setDrawings={setDrawings}
-          customer={customer}
-          setCustomer={setLocalCustomer}
-          customerLocked
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          total={total}
-          statusControl={(
-            <SalesOrderStatusControl
-              order={{ statusCode, approvalStatus, gated, hasAttachments }}
-              onChange={handleStatusChange}
-              disabled={transition.isPending}
-            />
+        <InventoryItemReturnContext.Provider
+          value={inventoryReturn.provide(
+            { activeTab, drawings, localData, localLineItems, localCustomer, localCustomFields },
+            guard.markClean,
           )}
-        />
+        >
+          <SalesOrderFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            orderId={id}
+            data={data}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLocalLineItems}
+            drawings={drawings}
+            setDrawings={setDrawings}
+            customer={customer}
+            setCustomer={setLocalCustomer}
+            customerLocked
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            total={total}
+            statusControl={(
+              <SalesOrderStatusControl
+                order={{ statusCode, approvalStatus, gated, hasAttachments }}
+                onChange={handleStatusChange}
+                disabled={transition.isPending}
+              />
+            )}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/sales/sales_order')}

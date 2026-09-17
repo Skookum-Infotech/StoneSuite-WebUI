@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileCheck, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -13,28 +13,55 @@ import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
+import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
+import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { VendorBillFormBody } from './components/VendorBillFormBody';
 import {
   vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
   type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
 
+/** Unsaved form state carried across an "Add to Inventory" round trip. */
+interface VendorBillDraft {
+  activeTab: PageTab;
+  data: Record<string, unknown>;
+  lineItems: VendorBillLineItem[];
+  vendor: VendorRef | null;
+  customFieldValues: Record<string, unknown>;
+}
+
 export default function AddVendorBillPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
+  const inventoryReturn = useInventoryItemReturn<VendorBillDraft>();
+  const vendorReturn = useRecordCreateReturn<VendorBillDraft, VendorRef>(
+    'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
+  );
+  const restored = inventoryReturn.restored ?? vendorReturn.restored;
 
-  const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(vendorBillDefaults);
-  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>([]);
-  const [vendor, setVendor] = useState<VendorRef | null>(null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? vendorBillDefaults());
+  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? []);
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
     [],
   );
+
+  // Applies the vendor created via the round trip exactly as if it had been
+  // picked from the list.
+  useEffect(() => {
+    if (vendorReturn.createdRef) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVendor(vendorReturn.createdRef);
+      vendorReturn.consumeCreated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorReturn.createdRef]);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -50,7 +77,11 @@ export default function AddVendorBillPage() {
     return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
   }, [data, lookups]);
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, vendor, customFieldValues });
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, vendor, customFieldValues },
+    true,
+    inventoryReturn.isRestored || vendorReturn.isRestored,
+  );
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
@@ -59,6 +90,10 @@ export default function AddVendorBillPage() {
     () => calcHeaderTotals(lineItems, headerTaxPercent, adjustment),
     [lineItems, headerTaxPercent, adjustment],
   );
+
+  // Shared by both return-trip hooks — either one may stash and restore it.
+  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, customFieldValues };
+  const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -108,25 +143,28 @@ export default function AddVendorBillPage() {
           </div>
         )}
 
-        <VendorBillFormBody
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          data={formData}
-          set={set}
-          lineItems={lineItems}
-          setLineItems={setLineItems}
-          vendor={vendor}
-          setVendor={setVendor}
-          customFieldValues={customFieldValues}
-          setCustomField={setCustomField}
-          lookups={lookups}
-          subtotal={subtotal}
-          discountAmt={discountAmt}
-          taxTotal={taxTotal}
-          adjustment={adjustment}
-          total={total}
-          filesPanelRef={panelRef}
-        />
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
+          <VendorBillFormBody
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            data={formData}
+            set={set}
+            lineItems={lineItems}
+            setLineItems={setLineItems}
+            vendor={vendor}
+            setVendor={setVendor}
+            onCreateVendor={startCreateVendor}
+            customFieldValues={customFieldValues}
+            setCustomField={setCustomField}
+            lookups={lookups}
+            subtotal={subtotal}
+            discountAmt={discountAmt}
+            taxTotal={taxTotal}
+            adjustment={adjustment}
+            total={total}
+            filesPanelRef={panelRef}
+          />
+        </InventoryItemReturnContext.Provider>
 
         <FormActionBar
           onCancel={() => navigate('/purchases/vendor_bill')}

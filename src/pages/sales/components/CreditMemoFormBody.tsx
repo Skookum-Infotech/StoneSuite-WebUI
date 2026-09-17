@@ -26,7 +26,7 @@ import {
 export function CreditMemoFormBody({
   activeTab, setActiveTab, creditMemoId,
   data, set, lineItems, setLineItems,
-  customer, setCustomer, customerLocked = false,
+  customer, setCustomer, customerLocked = false, onCreateCustomer,
   invoice, setInvoice, invoiceLocked = false,
   salesOrder, setSalesOrder, salesOrderLocked = false,
   customFieldValues, setCustomField,
@@ -46,6 +46,10 @@ export function CreditMemoFormBody({
   setCustomer: (c: CustomerRef | null) => void;
   /** The customer is fixed after creation — edit mode shows it read-only. */
   customerLocked?: boolean;
+  /** Sends the user to create a new Customer CRM record for a typed name the
+   *  list doesn't have (see useRecordCreateReturn). Omitted on Edit (the
+   *  customer is locked there anyway) or when the user can't create customers. */
+  onCreateCustomer?: (name: string) => void;
   invoice: InvoiceRef | null;
   setInvoice: (i: InvoiceRef | null) => void;
   invoiceLocked?: boolean;
@@ -107,7 +111,7 @@ export function CreditMemoFormBody({
                       {customer?.name || <span className="text-stone-400">—</span>}
                     </div>
                   ) : (
-                    <CustomerPicker value={customer} onChange={setCustomer} required />
+                    <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />
                   )}
                 </ModernFieldShell>
               </ModernSection>
