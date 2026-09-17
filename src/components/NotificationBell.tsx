@@ -45,6 +45,13 @@ export function NotificationBell() {
     queryFn: () => notificationService.list(false, LIST_LIMIT),
     enabled: enabled && open,
     refetchInterval: UNREAD_POLL_MS,
+    // Override the app-wide 2-minute staleTime default (queryClient.ts):
+    // this query is also gated by `open`, so it stops polling the instant
+    // the dropdown closes. Without staleTime: 0, re-opening it within that
+    // 2-minute window would just show the stale cached list instead of
+    // refetching -- exactly the "doesn't show a new notification until I
+    // reload the page" bug this fixes.
+    staleTime: 0,
   });
 
   const markRead = useMutation({
