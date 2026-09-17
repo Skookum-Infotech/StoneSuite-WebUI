@@ -100,7 +100,10 @@ export function ItemReceiptFormBody({
               </ModernSection>
 
               <ModernSection title="Receipt Information" index={1}>
-                <ItemReceiptSectionGrid fields={RECEIPT_HEADER_FIELDS} data={data} set={set} lookups={lookups} />
+                <ItemReceiptSectionGrid
+                  fields={RECEIPT_HEADER_FIELDS.filter((f) => Boolean(itemReceiptId) || (f.key !== 'ir_doc_num' && f.key !== 'warehouse_name'))}
+                  data={data} set={set} lookups={lookups}
+                />
               </ModernSection>
 
               {customFieldDefs.length > 0 && (

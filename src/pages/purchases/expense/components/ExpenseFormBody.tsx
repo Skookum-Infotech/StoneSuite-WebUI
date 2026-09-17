@@ -79,7 +79,10 @@ export function ExpenseFormBody({
               <ModernSection title="Primary Information" index={0}>
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
                   <div className="flex-1 min-w-0 space-y-4">
-                    <ExpenseSectionGrid fields={PRIMARY_INFO_FIELDS} data={data} set={set} />
+                    <ExpenseSectionGrid
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'exp_doc_num' || Boolean(expenseId))}
+                      data={data} set={set}
+                    />
                   </div>
                   <div className="w-full lg:w-56 shrink-0">
                     <ExpenseSummaryCard total={total} />

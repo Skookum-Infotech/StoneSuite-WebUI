@@ -104,7 +104,7 @@ export function EstimateFormBody({
                       </ModernFieldShell>
                     </div>
                     <EstimateSectionGrid
-                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'estimate_status')}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'estimate_status' && (f.key !== 'estimate_doc_num' || Boolean(estimateId)))}
                       data={data} set={set} lookups={lookups} maxCols={2}
                     />
                   </div>

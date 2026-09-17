@@ -112,7 +112,7 @@ export function SalesOrderFormBody({
                       </ModernFieldShell>
                     </div>
                     <SOSectionGrid
-                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'sales_order_status')}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'sales_order_status' && (f.key !== 'sales_doc_num' || Boolean(orderId)))}
                       data={data} set={set} lookups={lookups} maxCols={2}
                     />
                   </div>

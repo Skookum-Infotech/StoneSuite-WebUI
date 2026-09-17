@@ -126,7 +126,7 @@ export function QuoteFormBody({
                     </div>
                     {approvalControl && <div className="pt-1">{approvalControl}</div>}
                     <QuoteSectionGrid
-                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'quote_status')}
+                      fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'quote_status' && (f.key !== 'quote_doc_num' || Boolean(quoteId)))}
                       data={data} set={set} lookups={lookups} maxCols={2}
                     />
                   </div>
