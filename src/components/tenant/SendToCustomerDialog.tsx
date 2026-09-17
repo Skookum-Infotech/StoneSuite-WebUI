@@ -14,14 +14,25 @@ interface SendToCustomerDialogProps {
   recipientEmail: string;
   label: string;
   onSent: (result: DocumentSendResult) => void;
+  /** Who the document is being sent to — switches the dialog's copy between
+   *  customer-facing (sales side) and vendor-facing (purchase side) wording.
+   *  Defaults to 'customer' so existing sales-page callers need no changes. */
+  recipientKind?: 'customer' | 'vendor';
 }
 
-// Shared across every document detail page that gates a "Send to Customer"
-// quick action behind its own required-field validation (Sales Order, Quote,
-// Estimate, Invoice) — the backend's document/send route is generic and
-// record-keyed (see documentService), so this dialog is too. Controlled: the
-// caller runs its own field validation on click and only flips `open` once
-// the record is actually sendable.
+const RECIPIENT_COPY = {
+  customer: { title: 'Send to customer?', confirm: 'Send to Customer', verb: 'customer' },
+  vendor: { title: 'Send to vendor?', confirm: 'Send to Vendor', verb: 'vendor' },
+} as const;
+
+// Shared across every document detail page that gates a "Send to
+// Customer"/"Send to Vendor" quick action behind its own required-field
+// validation (sales side: Sales Order, Quote, Estimate, Invoice; purchase
+// side: Purchase Order, Vendor Bill, Vendor Credit, Vendor Payment) — the
+// backend's document/send route is generic and record-keyed (see
+// documentService), so this dialog is too. Controlled: the caller runs its
+// own field validation on click and only flips `open` once the record is
+// actually sendable.
 export function SendToCustomerDialog({
   recordId,
   open,
@@ -29,7 +40,9 @@ export function SendToCustomerDialog({
   recipientEmail,
   label,
   onSent,
+  recipientKind = 'customer',
 }: SendToCustomerDialogProps) {
+  const copy = RECIPIENT_COPY[recipientKind];
   const send = useMutation({
     mutationFn: () => documentService.sendToCustomer(recordId),
     onSuccess: (result) => {
@@ -85,7 +98,7 @@ export function SendToCustomerDialog({
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="send-to-customer-dialog-title"
+      aria-labelledby="send-to-recipient-dialog-title"
       onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
       onKeyDown={handleKeyDown}
     >
@@ -95,16 +108,24 @@ export function SendToCustomerDialog({
             <Send className="size-4 text-stone-700" />
           </div>
           <div>
-            <h3 id="send-to-customer-dialog-title" className="text-sm font-bold text-stone-900">
-              Send to customer?
+            <h3 id="send-to-recipient-dialog-title" className="text-sm font-bold text-stone-900">
+              {copy.title}
             </h3>
             <p className="text-xs text-stone-400 mt-0.5">An email with this order will be sent.</p>
           </div>
         </div>
 
         <p className="text-xs text-stone-600 mb-4">
-          <span className="font-semibold">{label}</span> will be emailed to{' '}
-          <span className="font-semibold">{recipientEmail}</span>.
+          {recipientEmail ? (
+            <>
+              <span className="font-semibold">{label}</span> will be emailed to{' '}
+              <span className="font-semibold">{recipientEmail}</span>.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold">{label}</span> will be emailed to the {copy.verb}'s email on file.
+            </>
+          )}
         </p>
 
         {send.error && (
@@ -119,7 +140,7 @@ export function SendToCustomerDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={send.isPending}
-            aria-label="Cancel sending to customer"
+            aria-label={`Cancel sending to ${copy.verb}`}
             className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
           >
             Cancel
@@ -129,10 +150,10 @@ export function SendToCustomerDialog({
             type="button"
             onClick={() => send.mutate()}
             disabled={send.isPending}
-            aria-label="Confirm send to customer"
+            aria-label={`Confirm send to ${copy.verb}`}
             className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
           >
-            {send.isPending ? 'Sending…' : 'Send to Customer'}
+            {send.isPending ? 'Sending…' : copy.confirm}
           </button>
         </div>
       </div>
