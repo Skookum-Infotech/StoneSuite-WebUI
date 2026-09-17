@@ -590,13 +590,14 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Upload,
               iconColor: "text-lime-600 dark:text-lime-400",
               // The page itself supports importing into any workflow the
-              // caller can create records in (not just CRM), and filters its
-              // own workflow picker accordingly. NavPermission only checks
-              // one resource, so this gates the sidebar entry on the most
-              // common case (lead:create) — someone with only prospect/
-              // customer create can still reach the page from the
-              // Configuration hub card, which isn't permission-gated.
-              permission: { resource: "lead", action: "create" },
+              // caller can create records in, and filters its own workflow
+              // picker accordingly (the real authorization on each import
+              // write is per-workflow create, not this permission). `import`
+              // exists purely to gate this sidebar entry's own visibility —
+              // it used to reuse lead:create for that, which made the role
+              // editor's Leads row read as fully granted whenever this one
+              // was checked, since both mapped to the same resource.
+              permission: { resource: "import", action: "read" },
             },
           ],
         },

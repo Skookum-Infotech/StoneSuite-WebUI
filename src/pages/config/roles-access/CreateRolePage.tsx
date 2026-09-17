@@ -2,16 +2,16 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ShieldCheck, ChevronDown, Save } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { rbacService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner, ErrorNote } from "@/components/tenant/ui";
-import { sidebarNav } from "@/config/sidebarNav";
 import { cn } from "@/lib/utils";
 import { SCOPES, SCOPE_LABELS, normalizeScope } from "@/lib/scope";
+import { buildPermModules } from "@/lib/permissionMatrix";
+import type { PermModule, ResourceRow } from "@/lib/permissionMatrix";
 import type { Grant, Scope } from "@/types/tenant";
 
 // ---------------------------------------------------------------------------
@@ -37,55 +37,6 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const DRAFT_KEY = "stonesuite:role-draft";
-
-interface ResourceRow {
-  id: string;
-  resource: string;
-  label: string;
-}
-interface PermModule {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  rows: ResourceRow[];
-}
-
-function buildPermModules(): PermModule[] {
-  const out: PermModule[] = [];
-  for (const section of sidebarNav.sections) {
-    if (section.platformAdminOnly) continue;
-    for (const entry of section.entries) {
-      if (entry.type === "link") {
-        if (!entry.permission || entry.platformAdminOnly) continue;
-        out.push({
-          id: entry.id,
-          label: entry.label,
-          icon: entry.icon,
-          rows: [
-            {
-              id: entry.id,
-              resource: entry.permission.resource,
-              label: entry.label,
-            },
-          ],
-        });
-        continue;
-      }
-      const rows: ResourceRow[] = [];
-      for (const child of entry.children) {
-        if (!child.permission || child.platformAdminOnly) continue;
-        rows.push({
-          id: child.id,
-          resource: child.permission.resource,
-          label: child.label,
-        });
-      }
-      if (rows.length)
-        out.push({ id: entry.id, label: entry.label, icon: entry.icon, rows });
-    }
-  }
-  return out;
-}
 
 function slugify(v: string) {
   return v
