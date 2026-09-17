@@ -45,6 +45,26 @@ beforeEach(() => {
 });
 
 describe('InviteDetail resend', () => {
+  it('asks for confirmation instead of calling the API immediately', async () => {
+    renderDetail();
+
+    await userEvent.click(screen.getByRole('button', { name: /resend invitation/i }));
+
+    expect(userService.resendInvite).not.toHaveBeenCalled();
+    expect(screen.getByText(/resend invitation to colleague@acme\.com\?/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /yes, resend/i })).toBeInTheDocument();
+  });
+
+  it('does not call the API when the confirmation is cancelled', async () => {
+    renderDetail();
+
+    await userEvent.click(screen.getByRole('button', { name: /resend invitation/i }));
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+    expect(userService.resendInvite).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /resend invitation/i })).toBeInTheDocument();
+  });
+
   it('confirms delivery when emailSent is true', async () => {
     vi.mocked(userService.resendInvite).mockResolvedValue({
       success: true,
@@ -55,6 +75,7 @@ describe('InviteDetail resend', () => {
     renderDetail();
 
     await userEvent.click(screen.getByRole('button', { name: /resend invitation/i }));
+    await userEvent.click(screen.getByRole('button', { name: /yes, resend/i }));
 
     expect(await screen.findByText(/email delivered/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /copy invite link/i })).not.toBeInTheDocument();
@@ -71,11 +92,40 @@ describe('InviteDetail resend', () => {
     renderDetail();
 
     await userEvent.click(screen.getByRole('button', { name: /resend invitation/i }));
+    await userEvent.click(screen.getByRole('button', { name: /yes, resend/i }));
 
     expect(await screen.findByText(link)).toBeInTheDocument();
     expect(screen.getByText(/could not be sent/i)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /copy invite link/i }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(link);
+  });
+
+  it('collapses the confirmation back to the trigger after a successful resend', async () => {
+    vi.mocked(userService.resendInvite).mockResolvedValue({
+      success: true,
+      message: 'Invitation resent.',
+      inviteLink: 'https://app.example/accept-invite?token=new',
+      emailSent: true,
+    });
+    renderDetail();
+
+    await userEvent.click(screen.getByRole('button', { name: /resend invitation/i }));
+    await userEvent.click(screen.getByRole('button', { name: /yes, resend/i }));
+    await screen.findByText(/email delivered/i);
+
+    expect(screen.getByRole('button', { name: /resend invitation/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /yes, resend/i })).not.toBeInTheDocument();
+  });
+
+  it('keeps the confirmation open after a failed resend so the user can retry', async () => {
+    vi.mocked(userService.resendInvite).mockRejectedValue(new Error('boom'));
+    renderDetail();
+
+    await userEvent.click(screen.getByRole('button', { name: /resend invitation/i }));
+    await userEvent.click(screen.getByRole('button', { name: /yes, resend/i }));
+
+    expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /yes, resend/i })).toBeInTheDocument();
   });
 });
