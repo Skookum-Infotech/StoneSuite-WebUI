@@ -216,7 +216,7 @@ export default function AddCustomerPage() {
               <AlertCircle className="size-3 text-red-600" />
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-red-700 mb-1.5">Please fill in the required fields before saving:</p>
+              <p className="text-xs font-semibold text-red-700 mb-1.5">Please review the highlighted fields before saving:</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {validationErrors.map((e) => (
                   <span key={e.key} className="inline-flex items-center gap-1 text-xs text-red-600">

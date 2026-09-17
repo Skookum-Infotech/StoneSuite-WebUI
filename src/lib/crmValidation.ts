@@ -12,6 +12,19 @@ function isVisible(field: CrmCoreField, values: Record<string, unknown>): boolea
   return true;
 }
 
+/** True when a `type: 'number'` field's value is present but invalid: not a
+ *  finite number, or outside the field's declared min/max. Checked
+ *  independently of `required` — an optional field like Credit Limit must
+ *  still be a sane number when the user does fill it in. */
+function isOutOfRange(field: CrmCoreField, val: unknown): boolean {
+  if (field.type !== 'number' || val === undefined || val === null || val === '') return false;
+  const n = typeof val === 'number' ? val : Number(val);
+  if (!Number.isFinite(n)) return true;
+  if (field.min !== undefined && n < field.min) return true;
+  if (field.max !== undefined && n > field.max) return true;
+  return false;
+}
+
 export function validateCrmRecord(
   coreFields: Record<string, unknown>,
   customDefs: FieldDefinition[],
@@ -20,9 +33,10 @@ export function validateCrmRecord(
   const errors: CrmFieldError[] = [];
   for (const section of CRM_CORE_SECTIONS) {
     for (const field of section.fields) {
-      if (!field.required || !isVisible(field, coreFields)) continue;
+      if (!isVisible(field, coreFields)) continue;
       const val = coreFields[field.key];
-      if (val === undefined || val === null || val === '') {
+      const missingRequired = field.required && (val === undefined || val === null || val === '');
+      if (missingRequired || isOutOfRange(field, val)) {
         errors.push({ key: field.key, label: field.label });
       }
     }

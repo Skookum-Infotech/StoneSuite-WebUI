@@ -24,6 +24,18 @@ export function sectionId(title: string): string {
   return `form-section-${title.toLowerCase().replace(/[\s/]+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
 }
 
+/** Parses a number-type field's raw input string into the value it should be
+ *  stored as: '' when empty, the parsed number otherwise. Never returns NaN —
+ *  an unparseable value (e.g. a bare "-" mid-type, or text a paste slipped
+ *  past the native `<input type="number">` filter) falls back to '' instead,
+ *  so a stray invalid keystroke can't silently reach a payload as `null`
+ *  (JSON.stringify(NaN) === 'null'). */
+export function parseNumberFieldValue(raw: string): number | '' {
+  if (raw === '') return '';
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : '';
+}
+
 // Fallback colors by state key for tenants where the backend returns no color.
 const STATUS_COLOR_MAP: Record<string, string> = {
   // Lead
