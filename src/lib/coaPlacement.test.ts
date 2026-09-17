@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  decodePlacement, encodePlacement, placementLabel, placementOf, placementPayload,
+  placementFromSelection, placementLabel, placementOf, placementPayload,
   requiresExplicitSide, sideForPlacement, type Placement,
 } from './coaPlacement';
 import type { Category, SubCategory } from '@/types/chartOfAccounts';
@@ -17,35 +17,19 @@ const subCategories: SubCategory[] = [
   { id: 17, categoryId: 9, categoryCode: 9000, code: 9100, name: 'System & Control Accounts', rangeLow: 9100, rangeHigh: 9199, sortOrder: 1 },
 ];
 
-describe('encodePlacement / decodePlacement', () => {
-  const cases: [string, Placement][] = [
-    ['category', { kind: 'category', id: 9 }],
-    ['sub-category', { kind: 'subcategory', id: 9 }],
+describe('placementFromSelection', () => {
+  const cases: [string, number | null, number | null, Placement | null][] = [
+    ['nothing picked', null, null, null],
+    ['category only', 4, null, { kind: 'category', id: 4 }],
+    ['category and sub-category', 1, 7, { kind: 'subcategory', id: 7 }],
+    // A sub-category without a category shouldn't happen from the UI (the
+    // sub-category dropdown is empty until a category is picked), but the
+    // function must still have a defined answer: no category, no placement.
+    ['sub-category without a category', null, 7, null],
   ];
 
-  it.each(cases)('round-trips a %s', (_name, placement) => {
-    expect(decodePlacement(encodePlacement(placement))).toEqual(placement);
-  });
-
-  // The whole reason for the prefix: category 9 and sub-category 9 are
-  // different rows in different tables and must not collide in one <select>.
-  it('keeps the two id spaces apart', () => {
-    expect(encodePlacement({ kind: 'category', id: 9 }))
-      .not.toBe(encodePlacement({ kind: 'subcategory', id: 9 }));
-  });
-
-  const rejected: [string, string][] = [
-    ['the empty "— Select —" value', ''],
-    ['an unprefixed id', '3'],
-    ['an unknown prefix', 'grp:3'],
-    ['a non-numeric id', 'cat:abc'],
-    ['a zero id', 'cat:0'],
-    ['a negative id', 'sub:-1'],
-    ['a fractional id', 'sub:1.5'],
-  ];
-
-  it.each(rejected)('rejects %s', (_name, value) => {
-    expect(decodePlacement(value)).toBeNull();
+  it.each(cases)('%s', (_name, categoryId, subCategoryId, want) => {
+    expect(placementFromSelection(categoryId, subCategoryId)).toEqual(want);
   });
 });
 
