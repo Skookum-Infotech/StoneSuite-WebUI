@@ -5,7 +5,6 @@ import { ShoppingCart, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
-import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -69,13 +68,6 @@ export default function EditSalesOrderPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: attachments } = useQuery({
-    queryKey: ['record-attachments', id],
-    queryFn: () => attachmentService.listAttachments(id),
-    enabled: Boolean(id),
-  });
-  const hasAttachments = attachments ? attachments.length > 0 : undefined;
-
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -92,6 +84,10 @@ export default function EditSalesOrderPage() {
   const statusCode = localStatusCode ?? order?.statusCode ?? '';
   const approvalStatus = order?.approvalStatus ?? 'none';
   const gated = order?.gated ?? false;
+  // The loaded record's next-moves only describe the status it was loaded
+  // at; right after a transition (until the refetch lands) fall back to the
+  // static map for the new status rather than offer stale options.
+  const nextStatusCodes = statusCode === order?.statusCode ? order?.nextStatusCodes : undefined;
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? EMPTY_CUSTOM;
 
   const set = useCallback(
@@ -234,7 +230,7 @@ export default function EditSalesOrderPage() {
             total={total}
             statusControl={(
               <SalesOrderStatusControl
-                order={{ statusCode, approvalStatus, gated, hasAttachments }}
+                order={{ statusCode, approvalStatus, gated, nextStatusCodes }}
                 onChange={handleStatusChange}
                 disabled={transition.isPending}
               />

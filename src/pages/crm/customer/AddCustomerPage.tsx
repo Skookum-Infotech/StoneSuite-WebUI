@@ -95,7 +95,7 @@ export default function AddCustomerPage() {
   });
   const customFieldDefs: FieldDefinition[] = activeCustomFields(customerDef);
 
-  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+  const { data: users = [] } = useQuery({ queryKey: ['assignable-users'], queryFn: userService.listAssignableUsers });
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],

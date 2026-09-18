@@ -4,7 +4,6 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
-import { attachmentService } from '@/services/attachmentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -71,13 +70,6 @@ export default function EstimateDetailPage() {
     refetchInterval: DETAIL_POLL_MS,
   });
 
-  const { data: attachments } = useQuery({
-    queryKey: ['record-attachments', id],
-    queryFn: () => attachmentService.listAttachments(id),
-    enabled: Boolean(id),
-  });
-  const hasAttachments = attachments ? attachments.length > 0 : undefined;
-
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -103,10 +95,13 @@ export default function EstimateDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => estimateService.transition(id, toStatusCode),
-    onSuccess: (_data, toStatusCode) => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });
-      toast.success(`Moved to ${statusToastLabel(ESTIMATE_STATUS_CODES, toStatusCode)}.`);
+      // Label the actual resulting status, not the one requested -- a move
+      // onto an unconfigured approval gate auto-skips server-side (see
+      // estimate/store_transition.go), so the two can differ.
+      toast.success(`Moved to ${statusToastLabel(ESTIMATE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -423,7 +418,7 @@ export default function EstimateDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <EstimateStatusControl
-                estimate={{ ...estimate, hasAttachments }}
+                estimate={estimate}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

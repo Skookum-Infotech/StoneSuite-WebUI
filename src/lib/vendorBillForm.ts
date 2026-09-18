@@ -292,6 +292,7 @@ export const VB_ALLOWED_TRANSITIONS: Record<string, string[]> = {
  *  `${from}:${to}` (mirrors PO_TRANSITION_LABELS). */
 export const VB_TRANSITION_LABELS: Record<string, string> = {
   'DRFT:PAPV': 'Submit for Approval',
+  'DRFT:APPV': 'Approve', // offered directly when nobody is configured to approve (backend nextStatusCodes)
   'DRFT:VOID': 'Void',
   'PAPV:APPV': 'Approve & Advance',
   'PAPV:DRFT': 'Recall to Draft',
@@ -309,7 +310,7 @@ export const VB_TRANSITION_LABELS: Record<string, string> = {
 };
 
 export function vbTransitionLabel(from: string, to: string): string {
-  return VB_TRANSITION_LABELS[`${from}:${to}`] ?? to;
+  return VB_TRANSITION_LABELS[`${from}:${to}`] ?? vbStatusLabel(to);
 }
 
 /** Human label for a status code (e.g. "PAPV" -> "Pending Approval") — used

@@ -8,9 +8,13 @@ import { StatusSelect } from '@/pages/sales/components/StatusSelect';
 // mirrors PurchaseOrderStatusControl.tsx, replacing VendorBillTransitionBar's
 // always-modal-confirm button row with the same 1-click pill Sales/CRM
 // already use (confirm only for a move that lands on a terminal status —
-// VB_ALLOWED_TRANSITIONS marks PAID/VOID that way).
+// VB_ALLOWED_TRANSITIONS marks PAID/VOID that way). The record's own
+// `nextStatusCodes` (when loaded) wins over the static map: with nobody
+// configured to approve, the backend collapses the PAPV checkpoint out of
+// Draft's moves and offers Approved in one step ("Approve") -- a bill must
+// be Approved before anything can be paid against it, so it is never skipped.
 export function VendorBillStatusControl({ order, onChange, disabled, variant }: {
-  order: { statusCode: string; approvalStatus: string; gated?: boolean };
+  order: { statusCode: string; approvalStatus: string; gated?: boolean; nextStatusCodes?: string[] };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
@@ -33,6 +37,7 @@ export function VendorBillStatusControl({ order, onChange, disabled, variant }: 
       disabled={disabled}
       statuses={VB_STATUS_CODES}
       allowedTransitions={VB_ALLOWED_TRANSITIONS}
+      nextCodes={order.nextStatusCodes}
       guard={guard}
       variant={variant}
       colorFor={(s) => VB_STATUS_COLORS[s.code] ?? '#a8a29e'}

@@ -142,8 +142,10 @@ export default function EditProspectPage() {
   // A record awaiting approval is locked server-side (UpdateRecord returns
   // 409) — the Save button is disabled here too so the click never round-
   // trips. Editing a REJECTED record is how its owner resubmits it, so that
-  // stays fully editable; only 'pending' locks.
-  const locked = approval?.status === 'pending';
+  // stays fully editable; only 'pending' locks. `gated` requires a live
+  // active-approver count server-side, so removing the last configured
+  // approver unlocks an already-pending record instead of stranding it.
+  const locked = approval?.gated && approval?.status === 'pending';
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">

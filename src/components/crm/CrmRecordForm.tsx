@@ -6,7 +6,7 @@ import { fieldCls, fieldErrorCls, textareaCls, textareaErrorCls, readonlyCls, ch
 import { PhoneNumberInput } from './PhoneNumberInput';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { DatePicker } from '@/components/ui/date-picker';
-import type { FieldDefinition, WorkspaceUser } from '@/types/tenant';
+import type { FieldDefinition, AssignableUser } from '@/types/tenant';
 
 type CoreProps = {
   fields: Record<string, unknown>;
@@ -22,7 +22,7 @@ type CustomProps = {
 type OwnerProps = {
   userId: string;
   onChange: (userId: string) => void;
-  users: WorkspaceUser[]; // used for the CRM Account Owner select (not core field registry)
+  users: AssignableUser[]; // used for the CRM Account Owner select (not core field registry)
 };
 
 type Props = {

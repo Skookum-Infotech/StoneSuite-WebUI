@@ -84,9 +84,12 @@ export default function EditFabricationJobPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => fabricationService.transition(id, toStatusCode),
-    onSuccess: (updated, toStatusCode) => {
+    onSuccess: (updated) => {
       applyUpdatedJob(updated);
-      toast.success(`Moved to ${statusToastLabel(FJ_STATUS_CODES, toStatusCode)}.`);
+      // Label the actual resulting status, not the one requested -- a move
+      // onto an unconfigured approval gate auto-skips server-side (see
+      // fabrication/store_transition.go), so the two can differ.
+      toast.success(`Moved to ${statusToastLabel(FJ_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 

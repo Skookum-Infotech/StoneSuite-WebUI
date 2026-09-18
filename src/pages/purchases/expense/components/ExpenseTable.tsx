@@ -339,7 +339,7 @@ export function ExpenseTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <ExpenseStatusControl
-                          order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus }}
+                          order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, nextStatusCodes: exp.nextStatusCodes }}
                           onChange={(code) => transition.mutate({ id: exp.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === exp.id}
                           variant="pill"

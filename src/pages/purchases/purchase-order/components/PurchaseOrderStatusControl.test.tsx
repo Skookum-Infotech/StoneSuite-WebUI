@@ -101,4 +101,28 @@ describe('PurchaseOrderStatusControl', () => {
     await user.click(option);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('offers "Send to Vendor" directly from Draft when the backend collapsed the checkpoint', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    const onChange = vi.fn();
+    render(
+      <PurchaseOrderStatusControl
+        // nextStatusCodes is what the backend sends for a Draft with nobody
+        // configured to approve: the PAPV checkpoint and Approved are gone.
+        order={{ statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['CANC', 'SENT'] }}
+        onChange={onChange}
+        variant="pill"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Draft' }));
+
+    expect(screen.queryByRole('option', { name: 'Submit for Approval' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Approve/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: 'Send to Vendor' }));
+
+    expect(onChange).toHaveBeenCalledOnce();
+    expect(onChange).toHaveBeenCalledWith('SENT');
+  });
 });

@@ -4,7 +4,6 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Receipt, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
-import { attachmentService } from '@/services/attachmentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -69,13 +68,6 @@ export default function InvoiceDetailPage() {
     refetchInterval: DETAIL_POLL_MS,
   });
 
-  const { data: attachments } = useQuery({
-    queryKey: ['record-attachments', id],
-    queryFn: () => attachmentService.listAttachments(id),
-    enabled: Boolean(id),
-  });
-  const hasAttachments = attachments ? attachments.length > 0 : undefined;
-
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -94,10 +86,13 @@ export default function InvoiceDetailPage() {
   // page's transition mutation.
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => invoiceService.transition(id, toStatusCode),
-    onSuccess: (_data, toStatusCode) => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success(`Moved to ${statusToastLabel(INVOICE_STATUS_CODES, toStatusCode)}.`);
+      // Label the actual resulting status, not the one requested -- a move
+      // onto an unconfigured approval gate auto-skips server-side (see
+      // invoice/store_transition.go), so the two can differ.
+      toast.success(`Moved to ${statusToastLabel(INVOICE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -404,7 +399,7 @@ export default function InvoiceDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <InvoiceStatusControl
-                invoice={{ ...invoice, hasAttachments }}
+                invoice={invoice}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

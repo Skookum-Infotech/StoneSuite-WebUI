@@ -332,7 +332,7 @@ export function PurchaseOrderTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <PurchaseOrderStatusControl
-                          order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus }}
+                          order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, nextStatusCodes: po.nextStatusCodes }}
                           onChange={(code) => transition.mutate({ id: po.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === po.id}
                           variant="pill"

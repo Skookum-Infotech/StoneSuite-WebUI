@@ -279,7 +279,7 @@ export function InvoiceTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <InvoiceStatusControl
-                          invoice={{ statusCode: inv.statusCode, approvalStatus: inv.approvalStatus ?? 'none' }}
+                          invoice={{ statusCode: inv.statusCode, approvalStatus: inv.approvalStatus ?? 'none', nextStatusCodes: inv.nextStatusCodes }}
                           onChange={(code) => transition.mutate({ id: inv.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === inv.id}
                           variant="pill"

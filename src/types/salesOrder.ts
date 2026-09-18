@@ -121,6 +121,7 @@ export interface SalesOrder {
   status: string;             // human label, e.g. "Draft"
   statusCode: string;         // lkp_record_status code, e.g. "DRFT" — drives transitions
   approvalStatus: string;     // none | pending | approved (AD-10) -- display only, can go stale; use `gated` to decide UI behavior
+  nextStatusCodes?: string[]; // legal next-moves right now, with an approval checkpoint nobody is configured to approve collapsed out (the status control's option list)
   gated: boolean;              // authoritative: true iff a live approval gate is currently blocking transitions out of this status
   approvers: RecordApprover[]; // configured approvers for the current status; only populated while gated
   requiredApprovals: number;  // how many sign-offs the current status's quorum needs (e.g. 2)
@@ -168,6 +169,7 @@ export interface SalesOrderSummary {
   status: string;
   statusCode?: string;
   approvalStatus?: string;
+  nextStatusCodes?: string[];
   customer?: SalesOrderCustomerRef;
   orderDate?: string;
   grandTotal?: number;

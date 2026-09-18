@@ -92,10 +92,13 @@ export default function RequisitionDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => requisitionService.transition(id, toStatusCode),
-    onSuccess: (updated, toStatusCode) => {
+    onSuccess: (updated) => {
       queryClient.setQueryData(['requisition', id], updated);
       queryClient.invalidateQueries({ queryKey: ['requisitions'] });
-      toast.success(`Moved to ${statusToastLabel(REQUISITION_STATUS_CODES, toStatusCode)}.`);
+      // Label the actual resulting status, not the one requested -- a move
+      // onto an unconfigured approval gate auto-skips server-side (see
+      // requisition/store_transition.go), so the two can differ.
+      toast.success(`Moved to ${statusToastLabel(REQUISITION_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -366,7 +369,7 @@ export default function RequisitionDetailPage() {
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
               <RequisitionStatusControl
-                order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, gated: reqn.gated }}
+                order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, gated: reqn.gated, nextStatusCodes: reqn.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
                 disabled={transition.isPending}
                 variant="pill"

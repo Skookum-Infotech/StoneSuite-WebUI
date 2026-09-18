@@ -130,6 +130,7 @@ export interface VendorBill {
   status: string;                     // human label, e.g. "Draft"
   statusCode: VendorBillStatusCode;   // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved'; // AD-6
+  nextStatusCodes?: string[]; // legal next-moves right now, with an approval checkpoint nobody is configured to approve collapsed out (the status control's option list)
   gated: boolean;
   approvers: RecordApprover[];
   requiredApprovals: number;
@@ -180,7 +181,7 @@ export interface VendorBill {
  *  the table actually renders. */
 export type VendorBillSummary = Pick<
   VendorBill,
-  | 'id' | 'vendorBillNumber' | 'status' | 'statusCode' | 'approvalStatus'
+  | 'id' | 'vendorBillNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'vendor' | 'purchaseOrder' | 'vendorInvoiceNumber' | 'billDate' | 'dueDate'
   | 'grandTotal' | 'amountPaid' | 'balanceDue' | 'ownerEmployeeId'
   | 'createdAt' | 'updatedAt'

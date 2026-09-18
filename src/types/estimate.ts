@@ -109,6 +109,7 @@ export interface Estimate {
   status: string;              // human label, e.g. "Draft"
   statusCode: string;          // lkp_record_status code, e.g. "DRFT" — drives transitions
   approvalStatus: string;      // none | pending | approved (AD-8) -- display only, can go stale; use `gated` to decide UI behavior
+  nextStatusCodes?: string[];  // legal next-moves right now, with an approval checkpoint nobody is configured to approve collapsed out (the status control's option list)
   gated: boolean;              // authoritative: true iff a live approval gate is currently blocking transitions out of this status
   approvers: RecordApprover[]; // configured approvers for the current status; only populated while gated
   requiredApprovals: number;   // how many sign-offs the current status's quorum needs (e.g. 2)
@@ -151,7 +152,7 @@ export interface Estimate {
  *  subset the table actually renders. */
 export type EstimateSummary = Pick<
   Estimate,
-  'id' | 'estimateNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer' | 'estimateDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
+  'id' | 'estimateNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes' | 'customer' | 'estimateDate' | 'validUntil' | 'grandTotal' | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search

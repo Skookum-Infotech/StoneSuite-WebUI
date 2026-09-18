@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 
-import { RequisitionStatusControl } from './RequisitionStatusControl';
+import { EstimateStatusControl } from './EstimateStatusControl';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 function mockPermissions(canTransition = true) {
@@ -13,7 +13,7 @@ function mockPermissions(canTransition = true) {
     isLoading: false,
     activeRoleId: '',
     hasPermission: (resource: string, action: string) =>
-      resource === 'requisition' && action === 'transition' ? canTransition : false,
+      resource === 'estimate' && action === 'transition' ? canTransition : false,
   } as ReturnType<typeof useUserPermissions>);
 }
 
@@ -21,13 +21,13 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('RequisitionStatusControl', () => {
-  it('shows action-verb transition labels, not bare status names', async () => {
+describe('EstimateStatusControl', () => {
+  it('offers "Submit for Approval" instead of the bare "Pending Approval" status label', async () => {
     const user = userEvent.setup();
     mockPermissions();
     render(
-      <RequisitionStatusControl
-        order={{ statusCode: 'DRFT', approvalStatus: 'none' }}
+      <EstimateStatusControl
+        estimate={{ statusCode: 'DRFT', approvalStatus: 'none' }}
         onChange={vi.fn()}
         variant="pill"
       />,
@@ -39,13 +39,13 @@ describe('RequisitionStatusControl', () => {
     expect(screen.queryByRole('option', { name: 'Pending Approval' })).not.toBeInTheDocument();
   });
 
-  it('fires onChange once for a permitted, non-terminal move', async () => {
+  it('still fires onChange with the real PAPV code — only the label changes', async () => {
     const user = userEvent.setup();
     mockPermissions();
     const onChange = vi.fn();
     render(
-      <RequisitionStatusControl
-        order={{ statusCode: 'DRFT', approvalStatus: 'none' }}
+      <EstimateStatusControl
+        estimate={{ statusCode: 'DRFT', approvalStatus: 'none' }}
         onChange={onChange}
         variant="pill"
       />,
@@ -58,40 +58,15 @@ describe('RequisitionStatusControl', () => {
     expect(onChange).toHaveBeenCalledWith('PAPV');
   });
 
-  it('requires a second click to confirm a terminal move (Cancel)', async () => {
+  it('offers Sent directly, with no approval step at all, when the backend collapsed the checkpoint', async () => {
     const user = userEvent.setup();
     mockPermissions();
     const onChange = vi.fn();
     render(
-      <RequisitionStatusControl
-        order={{ statusCode: 'DRFT', approvalStatus: 'none' }}
-        onChange={onChange}
-        variant="pill"
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Draft' }));
-    await user.click(screen.getByRole('option', { name: 'Cancel' }));
-
-    expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole('option', { name: 'Confirm: Cancel' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('option', { name: 'Confirm: Cancel' }));
-
-    expect(onChange).toHaveBeenCalledOnce();
-    expect(onChange).toHaveBeenCalledWith('CANC');
-  });
-
-  it('offers a one-click "Approve" instead of "Submit for Approval" when the backend collapsed the checkpoint', async () => {
-    const user = userEvent.setup();
-    mockPermissions();
-    const onChange = vi.fn();
-    render(
-      <RequisitionStatusControl
+      <EstimateStatusControl
         // nextStatusCodes is what the backend sends for a Draft with nobody
-        // configured to approve: Approved itself is offered (a requisition
-        // rests there until it becomes a PO), the PAPV checkpoint is not.
-        order={{ statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['APPV', 'CANC'] }}
+        // configured to approve: the PAPV checkpoint and Approved are gone.
+        estimate={{ statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['CANC', 'SENT'] }}
         onChange={onChange}
         variant="pill"
       />,
@@ -100,9 +75,11 @@ describe('RequisitionStatusControl', () => {
     await user.click(screen.getByRole('button', { name: 'Draft' }));
 
     expect(screen.queryByRole('option', { name: 'Submit for Approval' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('option', { name: 'Approve' }));
+    expect(screen.queryByRole('option', { name: 'Approved' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: 'Sent' }));
 
     expect(onChange).toHaveBeenCalledOnce();
-    expect(onChange).toHaveBeenCalledWith('APPV');
+    expect(onChange).toHaveBeenCalledWith('SENT');
   });
+
 });
