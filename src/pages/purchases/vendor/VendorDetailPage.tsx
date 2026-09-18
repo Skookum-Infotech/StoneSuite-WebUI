@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { Building, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
@@ -37,8 +36,6 @@ export default function VendorDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendSuccess, setSendSuccess] = useState<string>();
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor', 'update');
@@ -217,17 +214,6 @@ export default function VendorDetailPage() {
                   Edit vendor
                 </button>
               )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => setSendDialogOpen(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send vendor profile by email"
-                >
-                  <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Vendor
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -241,9 +227,6 @@ export default function VendorDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -282,20 +265,6 @@ export default function VendorDetailPage() {
           )}
         </div>
       </div>
-
-      <SendToCustomerDialog
-        recordId={id}
-        open={sendDialogOpen}
-        onOpenChange={setSendDialogOpen}
-        recipientEmail=""
-        recipientKind="vendor"
-        label={vendor.displayName || 'Vendor'}
-        onSent={(result) =>
-          setSendSuccess(
-            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
-      />
     </div>
   );
 }
