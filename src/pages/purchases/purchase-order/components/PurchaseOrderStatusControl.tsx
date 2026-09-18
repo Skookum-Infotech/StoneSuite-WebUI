@@ -10,9 +10,13 @@ import { StatusSelect } from '@/pages/sales/components/StatusSelect';
 // already use (confirm only for a move that lands on a terminal status —
 // PO_ALLOWED_TRANSITIONS marks CLSD/CANC that way). `labelFor` keeps the
 // Purchase Order spec's action-verb phrasing ("Submit for Approval") instead
-// of StatusSelect's default bare destination-status label.
+// of StatusSelect's default bare destination-status label. The record's own
+// `nextStatusCodes` (when loaded) wins over the static map: with nobody
+// configured to approve, the backend collapses the PAPV checkpoint and
+// Approved out of Draft's moves, so Draft is offered "Send to Vendor"
+// directly.
 export function PurchaseOrderStatusControl({ order, onChange, disabled, variant }: {
-  order: { statusCode: string; approvalStatus: string; gated?: boolean };
+  order: { statusCode: string; approvalStatus: string; gated?: boolean; nextStatusCodes?: string[] };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
@@ -35,6 +39,7 @@ export function PurchaseOrderStatusControl({ order, onChange, disabled, variant 
       disabled={disabled}
       statuses={PO_STATUS_CODES}
       allowedTransitions={PO_ALLOWED_TRANSITIONS}
+      nextCodes={order.nextStatusCodes}
       guard={guard}
       variant={variant}
       colorFor={(s) => PO_STATUS_COLORS[s.code] ?? '#a8a29e'}

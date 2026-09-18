@@ -114,6 +114,7 @@ export interface PurchaseOrder {
   status: string;                       // human label, e.g. "Draft"
   statusCode: PurchaseOrderStatusCode;   // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved'; // AD-6
+  nextStatusCodes?: string[]; // legal next-moves right now, with an approval checkpoint nobody is configured to approve collapsed out (the status control's option list)
   gated: boolean;
   approvers: RecordApprover[];
   requiredApprovals: number;
@@ -151,7 +152,7 @@ export interface PurchaseOrder {
  *  renders. */
 export type PurchaseOrderSummary = Pick<
   PurchaseOrder,
-  | 'id' | 'purchaseOrderNumber' | 'status' | 'statusCode' | 'approvalStatus'
+  | 'id' | 'purchaseOrderNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'vendor' | 'orderDate' | 'expectedDate' | 'grandTotal' | 'ownerEmployeeId'
   | 'createdAt' | 'updatedAt'
 >;

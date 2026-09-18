@@ -92,9 +92,12 @@ export default function VendorPaymentDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => vendorPaymentService.transition(id, toStatusCode),
-    onSuccess: (updated, toStatusCode) => {
+    onSuccess: (updated) => {
       absorb(updated);
-      toast.success(`Moved to ${statusToastLabel(VP_STATUS_CODES, toStatusCode)}.`);
+      // Label the actual resulting status, not the one requested -- a move
+      // onto an unconfigured approval gate auto-skips server-side (see
+      // vendorpayment/store_transition.go), so the two can differ.
+      toast.success(`Moved to ${statusToastLabel(VP_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -319,6 +322,7 @@ export default function VendorPaymentDetailPage() {
                   approvalStatus: payment.approvalStatus,
                   gated: payment.gated,
                   scheduledDate: payment.scheduledDate,
+                  nextStatusCodes: payment.nextStatusCodes,
                 }}
                 onChange={(toCode) => transition.mutate(toCode)}
                 disabled={transition.isPending}

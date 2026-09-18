@@ -71,8 +71,8 @@ export default function CustomerDetailPage() {
   });
 
   const { data: users = [] } = useQuery({
-    queryKey: ["workspace-users"],
-    queryFn: userService.listUsers,
+    queryKey: ["assignable-users"],
+    queryFn: userService.listAssignableUsers,
   });
 
   const { data: lookups } = useQuery({
@@ -149,11 +149,18 @@ export default function CustomerDetailPage() {
   // The approval overlay is authoritative from the server — see
   // crmService.getRecord / types/tenant.ts's CrmApproval. `gated` (pending or
   // rejected) drives the banner; `approvalStatus` drives the sidebar card,
-  // portal-eligibility gate, and list-style badges via the plain
-  // approval_status core field.
+  // portal-eligibility gate, and list-style badges. Falls back to
+  // "not_required" whenever there are no active approvers configured
+  // (approval.requiredApprovals === 0), even if the stored approval_status
+  // core field is still "pending" — the backend never clears that column
+  // when the last approver is removed, only the live requiredApprovals/gated
+  // signals do (see relational_approval.go).
   const approval = record.approval;
   const recordApproval = recordApprovalState(record);
-  const approvalStatus: ApprovalStatus = recordApproval === "none" ? "not_required" : recordApproval;
+  const approvalStatus: ApprovalStatus =
+    recordApproval === "none" || !approval || approval.requiredApprovals === 0
+      ? "not_required"
+      : recordApproval;
   // Mirrors the backend's CustomerEligible gate on portal access grants:
   // customer_is_approved is only ever true for 'approved' or 'not_required'
   // (a record with no configured approver auto-approves on entry) — both

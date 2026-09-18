@@ -16,6 +16,13 @@ interface Props {
    *  status plus its legal moves and disables entirely at a terminal status.
    *  When omitted, the whole catalog is offered and it is never terminal. */
   allowedTransitions?: Record<string, string[]>;
+  /** The record's own legal next-moves as the backend computed them
+   *  (`nextStatusCodes`): the static map with any approval checkpoint nobody
+   *  is configured to approve collapsed out. Takes precedence over
+   *  `allowedTransitions[value]` for the option list; `allowedTransitions`
+   *  still decides which targets are terminal. Omit (e.g. a row from an
+   *  older cache) to fall back to the static map. */
+  nextCodes?: string[];
   /** Per-target permission check. When omitted, every move is permitted (the
    *  backend still enforces its own RBAC — a 403 surfaces as a save error). */
   guard?: (code: string) => TransitionGuardResult;
@@ -55,7 +62,7 @@ const PANEL_WIDTH = 224; // w-56
 // clip the panel or force horizontal scrolling to see it. 'field' has no such
 // ancestor (it's in a normal form), so it keeps the simpler non-portal render.
 export function StatusSelect({
-  value, onChange, disabled, statuses, allowedTransitions, guard, variant = 'field', colorFor, labelFor,
+  value, onChange, disabled, statuses, allowedTransitions, nextCodes, guard, variant = 'field', colorFor, labelFor,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [armedCode, setArmedCode] = useState<string | null>(null);
@@ -104,7 +111,7 @@ export function StatusSelect({
   }, [open, close, closeAndReturnFocus]);
 
   const selected = statuses.find((s) => s.code === value);
-  const { options, isTerminal } = resolveStatusOptions(statuses, value, allowedTransitions);
+  const { options, isTerminal } = resolveStatusOptions(statuses, value, allowedTransitions, nextCodes);
   const color = isPill ? (colorFor?.(selected ?? { code: value, label: value }) ?? '#a8a29e') : undefined;
 
   const triggerCls = isPill

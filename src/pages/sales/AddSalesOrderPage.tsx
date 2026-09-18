@@ -141,19 +141,22 @@ export default function AddSalesOrderPage() {
         try { await panel.uploadStagedTo(order.id); } catch { /* non-fatal */ }
       }
 
-      // Submitting a new order should read as "Pending Approval", not sit in
-      // Draft — but only once it actually has an attachment (same rule the
-      // status pill enforces on a manual DRFT->PAPV move, see
-      // SalesOrderStatusControl.tsx). uploadStagedTo() never rejects even on
-      // a failed upload, so re-check via the attachments list rather than
-      // trusting that promise resolving.
+      // An order created with files attached is submitted straight away rather
+      // than left in Draft (one created without any stays in Draft; a file is
+      // not required to submit it from the status pill later).
+      // uploadStagedTo() never rejects even on a failed upload, so re-check
+      // via the attachments list rather than trusting that promise resolving.
       let autoSubmitted = false;
       if (hadStagedFiles) {
         try {
           const attachments = await attachmentService.listAttachments(order.id);
           if (attachments.length > 0) {
-            await salesOrderService.transition(order.id, 'PAPV');
-            toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, 'PAPV')}.`);
+            // Label the actual resulting status, not the requested 'PAPV' --
+            // a move onto an unconfigured approval gate auto-skips
+            // server-side (salesorder/store_transition.go), landing on
+            // Approved instead.
+            const submitted = await salesOrderService.transition(order.id, 'PAPV');
+            toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, submitted.statusCode)}.`);
             autoSubmitted = true;
           }
         } catch { /* non-fatal — order was created; it just stays in Draft */ }

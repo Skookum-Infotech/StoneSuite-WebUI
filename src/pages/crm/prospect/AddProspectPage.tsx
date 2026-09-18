@@ -64,7 +64,7 @@ export default function AddProspectPage() {
   });
   const customFieldDefs: FieldDefinition[] = activeCustomFields(prospectDef);
 
-  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+  const { data: users = [] } = useQuery({ queryKey: ['assignable-users'], queryFn: userService.listAssignableUsers });
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],

@@ -1,6 +1,6 @@
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import {
-  VP_STATUS_CODES, VP_ALLOWED_TRANSITIONS, VP_STATUS_COLORS,
+  VP_STATUS_CODES, VP_ALLOWED_TRANSITIONS, VP_STATUS_COLORS, VP_APPROVAL_ONLY_EDGES,
   isVpTransitionBlocked, isScheduleBlocked, vpTransitionLabel, vpTransitionTargets,
 } from '@/lib/vendorPaymentForm';
 import { StatusSelect } from '@/pages/sales/components/StatusSelect';
@@ -18,9 +18,14 @@ const VP_PILL_TRANSITIONS: Record<string, string[]> = Object.fromEntries(
 // mirrors PurchaseOrderStatusControl.tsx, replacing VendorPaymentTransitionBar's
 // always-modal-confirm button row with the same 1-click pill Sales/CRM
 // already use (confirm only for a move that lands on a terminal status —
-// VP_ALLOWED_TRANSITIONS marks VOID that way).
+// VP_ALLOWED_TRANSITIONS marks VOID that way). The record's own
+// `nextStatusCodes` (when loaded) wins over the static map -- with nobody
+// configured to approve, the backend collapses the PAPV checkpoint and
+// Approved out of Draft's moves, so Draft is offered "Schedule Payment" /
+// "Mark Sent" directly -- filtered through the same approval-only exclusion
+// the static map gets, since the backend lists PAPV->APPV as a static move.
 export function VendorPaymentStatusControl({ order, onChange, disabled, variant }: {
-  order: { statusCode: string; approvalStatus: string; gated?: boolean; scheduledDate?: string | null };
+  order: { statusCode: string; approvalStatus: string; gated?: boolean; scheduledDate?: string | null; nextStatusCodes?: string[] };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
@@ -46,6 +51,7 @@ export function VendorPaymentStatusControl({ order, onChange, disabled, variant 
       disabled={disabled}
       statuses={VP_STATUS_CODES}
       allowedTransitions={VP_PILL_TRANSITIONS}
+      nextCodes={order.nextStatusCodes?.filter((to) => !VP_APPROVAL_ONLY_EDGES.has(`${order.statusCode}:${to}`))}
       guard={guard}
       variant={variant}
       colorFor={(s) => VP_STATUS_COLORS[s.code] ?? '#a8a29e'}

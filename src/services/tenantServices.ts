@@ -19,6 +19,7 @@ import type {
   FieldDefinition,
   OnboardingApplyDetails,
   WorkspaceUser,
+  AssignableUser,
   UserInvite,
   UserInviteActionResult,
   ApprovalGate,
@@ -340,6 +341,15 @@ export const userService = {
   listUsers: () =>
     tenantClient
       .get<{ success: boolean; users: WorkspaceUser[] }>('/tenant/users')
+      .then((r) => r.data.users ?? []),
+
+  // Minimal owner-picker options (id/fullName/email only) — usable by any
+  // authenticated tenant member, unlike listUsers above, which needs
+  // user:read. Use this for "who owns this record" pickers/display (CRM
+  // Add pages, detail sidebars, list tables), not listUsers.
+  listAssignableUsers: () =>
+    tenantClient
+      .get<{ success: boolean; users: AssignableUser[] }>('/tenant/users/assignable')
       .then((r) => r.data.users ?? []),
 
   getUser: (id: string) =>

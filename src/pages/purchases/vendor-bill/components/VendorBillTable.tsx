@@ -341,7 +341,7 @@ export function VendorBillTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <VendorBillStatusControl
-                          order={{ statusCode: bill.statusCode, approvalStatus }}
+                          order={{ statusCode: bill.statusCode, approvalStatus, nextStatusCodes: bill.nextStatusCodes }}
                           onChange={(code) => transition.mutate({ id: bill.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === bill.id}
                           variant="pill"

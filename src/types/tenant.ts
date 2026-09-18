@@ -470,6 +470,16 @@ export interface WorkspaceUser {
   roles: RoleSummary[];
 }
 
+// Minimal, non-admin-sensitive projection of a workspace user for "who owns
+// this record" pickers (e.g. the CRM Account Owner field) — no status or
+// roles, unlike WorkspaceUser. Backed by GET /tenant/users/assignable, which
+// (unlike GET /tenant/users) any authenticated tenant member can call.
+export interface AssignableUser {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
 // Serialized from tenancy.UserInvite (no json tags → Go default PascalCase keys).
 export interface UserInvite {
   ID: string;

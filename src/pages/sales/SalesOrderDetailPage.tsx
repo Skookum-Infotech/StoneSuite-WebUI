@@ -5,7 +5,6 @@ import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { fabricationService } from '@/services/fabricationService';
-import { attachmentService } from '@/services/attachmentService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -77,13 +76,6 @@ export default function SalesOrderDetailPage() {
     refetchInterval: DETAIL_POLL_MS,
   });
 
-  const { data: attachments } = useQuery({
-    queryKey: ['record-attachments', id],
-    queryFn: () => attachmentService.listAttachments(id),
-    enabled: Boolean(id),
-  });
-  const hasAttachments = attachments ? attachments.length > 0 : undefined;
-
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -114,10 +106,13 @@ export default function SalesOrderDetailPage() {
   // page's transition mutation (see EditSalesOrderPage.tsx).
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => salesOrderService.transition(id, toStatusCode),
-    onSuccess: (_data, toStatusCode) => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
-      toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, toStatusCode)}.`);
+      // Label the actual resulting status, not the one requested -- a move
+      // onto an unconfigured approval gate auto-skips server-side (see
+      // salesorder/store_transition.go), so the two can differ.
+      toast.success(`Moved to ${statusToastLabel(SO_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -458,7 +453,7 @@ export default function SalesOrderDetailPage() {
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <SalesOrderStatusControl
-                order={{ ...order, hasAttachments }}
+                order={order}
                 onChange={(code) => transition.mutate(code)}
                 disabled={transition.isPending}
                 variant="pill"

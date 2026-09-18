@@ -87,6 +87,7 @@ export interface Requisition {
   status: string;                  // human label, e.g. "Draft"
   statusCode: RequisitionStatusCode; // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved';
+  nextStatusCodes?: string[]; // legal next-moves right now, with an approval checkpoint nobody is configured to approve collapsed out (the status control's option list)
   gated: boolean;
   approvers: RecordApprover[];
   requiredApprovals: number;
@@ -125,7 +126,7 @@ export interface Requisition {
  *  this type names the subset the table actually renders. */
 export type RequisitionSummary = Pick<
   Requisition,
-  | 'id' | 'requisitionNumber' | 'status' | 'statusCode' | 'approvalStatus'
+  | 'id' | 'requisitionNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'vendor' | 'department' | 'neededByDate' | 'priority' | 'estimatedTotal'
   | 'requestedByEmployeeId' | 'convertedPurchaseOrderId' | 'createdAt' | 'updatedAt'
 >;

@@ -352,6 +352,7 @@ export function VendorPaymentTable() {
                             statusCode: payment.statusCode,
                             approvalStatus: payment.approvalStatus,
                             scheduledDate: payment.scheduledDate,
+                            nextStatusCodes: payment.nextStatusCodes,
                           }}
                           onChange={(code) => transition.mutate({ id: payment.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === payment.id}

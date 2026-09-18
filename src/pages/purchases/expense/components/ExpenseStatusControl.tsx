@@ -12,9 +12,13 @@ import { StatusSelect } from '@/pages/sales/components/StatusSelect';
 // EXPENSE_ALLOWED_TRANSITIONS marks REIM that way). RJCT never appears in
 // EXPENSE_ALLOWED_TRANSITIONS as a SUBM target, so — same as
 // ExpenseTransitionBar — this never offers it; rejection stays a dedicated
-// action (RejectExpenseDialog) that captures a reason.
+// action (RejectExpenseDialog) that captures a reason. The record's own
+// `nextStatusCodes` (when loaded) wins over the static map: with nobody
+// configured to approve, the backend collapses the SUBM checkpoint and
+// Approved out of Draft's moves, so Draft is offered "Mark Reimbursed"
+// directly.
 export function ExpenseStatusControl({ order, onChange, disabled, variant }: {
-  order: { statusCode: string; approvalStatus: string; gated?: boolean };
+  order: { statusCode: string; approvalStatus: string; gated?: boolean; nextStatusCodes?: string[] };
   onChange: (code: string) => void;
   disabled?: boolean;
   variant?: 'field' | 'pill';
@@ -37,6 +41,7 @@ export function ExpenseStatusControl({ order, onChange, disabled, variant }: {
       disabled={disabled}
       statuses={EXPENSE_STATUS_CODES}
       allowedTransitions={EXPENSE_ALLOWED_TRANSITIONS}
+      nextCodes={order.nextStatusCodes}
       guard={guard}
       variant={variant}
       colorFor={(s) => EXPENSE_STATUS_COLORS[s.code] ?? '#a8a29e'}

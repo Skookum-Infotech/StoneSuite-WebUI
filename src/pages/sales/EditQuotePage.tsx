@@ -5,7 +5,6 @@ import { FileText, AlertCircle, Loader2, Save, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { lookupService } from '@/services/lookupService';
-import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -64,13 +63,6 @@ export default function EditQuotePage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: attachments } = useQuery({
-    queryKey: ['record-attachments', id],
-    queryFn: () => attachmentService.listAttachments(id),
-    enabled: Boolean(id),
-  });
-  const hasAttachments = attachments ? attachments.length > 0 : undefined;
-
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -87,6 +79,10 @@ export default function EditQuotePage() {
   const statusCode = localStatusCode ?? quote?.statusCode ?? '';
   const approvalStatus = quote?.approvalStatus ?? 'none';
   const gated = quote?.gated ?? false;
+  // The loaded record's next-moves only describe the status it was loaded
+  // at; right after a transition (until the refetch lands) fall back to the
+  // static map for the new status rather than offer stale options.
+  const nextStatusCodes = statusCode === quote?.statusCode ? quote?.nextStatusCodes : undefined;
   const isTerminal = QUOTE_TERMINAL_STATUSES.has(statusCode);
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
@@ -245,7 +241,7 @@ export default function EditQuotePage() {
             total={total}
             statusControl={(
               <QuoteStatusControl
-                quote={{ statusCode, approvalStatus, gated, hasAttachments }}
+                quote={{ statusCode, approvalStatus, gated, nextStatusCodes }}
                 onChange={handleStatusChange}
                 disabled={transition.isPending}
               />

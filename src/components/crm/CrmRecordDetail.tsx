@@ -7,12 +7,12 @@ import {
 } from "@/lib/crmFields";
 import { ModernSection, ModernFieldShell } from "./FormPrimitives";
 import { checkboxLabelCls, readonlyCls } from "./formUtils";
-import type { WorkspaceUser } from "@/types/tenant";
+import type { AssignableUser } from "@/types/tenant";
 
 type Props = {
   coreFields: Record<string, unknown>;
   showCustomerBalances?: boolean;
-  users?: WorkspaceUser[];
+  users?: AssignableUser[];
 };
 
 /** Read-only renderer for the unified CRM core fields, used by Lead, Prospect, and Customer detail pages. */
