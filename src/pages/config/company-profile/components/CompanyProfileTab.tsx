@@ -19,6 +19,7 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CompanyInfoTextField, CompanyInfoReadonlyField, type CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import { CompanyInfoSelectField } from './CompanyInfoSelectField';
+import { CompanyLogoCard } from './CompanyLogoCard';
 
 const EMPTY_ADDRESS: Address = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' };
 
@@ -93,6 +94,10 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
   const profileQ = useQuery({
     queryKey: ['company-profile'],
     queryFn: companyProfileService.get,
+  });
+  const logoQ = useQuery({
+    queryKey: ['company-profile-logo'],
+    queryFn: companyProfileService.getLogoUrl,
   });
   // Same lookup list Purchase Order's Ship To uses (lib/purchaseOrderForm.ts)
   // — here only for curated dropdown values, not FK ids (see
@@ -307,18 +312,25 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           </div>
         )}
 
-        {/* Separate ModernSection per group (Company Information, then each
-            address) with minimal space between them — same pattern as
+        {/* Separate ModernSection per group (Logo, Company Information, then
+            each address) with minimal space between them — same pattern as
             VendorFormBody's edit form / VendorOverviewTab's read-only view,
-            rather than one big card. */}
-        <ModernSection title="Company Information" index={0}>
+            rather than one big card. Logo is its own section (not a
+            COMPANY_FIELDS entry) because it isn't part of the RHF form --
+            upload/remove call their own endpoints immediately, independent
+            of this form's Edit/Save cycle. */}
+        <ModernSection title="Logo" index={0}>
+          <CompanyLogoCard logoUrl={logoQ.data ?? ''} canConfigure={canConfigure} />
+        </ModernSection>
+
+        <ModernSection title="Company Information" index={1}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
             {COMPANY_FIELDS.map(renderCompanyField)}
           </div>
         </ModernSection>
 
         {ADDRESS_GROUPS.map((group, i) => (
-          <ModernSection key={group.key} title={group.title} index={i + 1}>
+          <ModernSection key={group.key} title={group.title} index={i + 2}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
               {ADDRESS_SUBFIELDS.map((sub) => renderAddressField(group, sub))}
             </div>
