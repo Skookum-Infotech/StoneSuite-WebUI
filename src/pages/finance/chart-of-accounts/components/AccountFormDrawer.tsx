@@ -10,7 +10,7 @@ import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { parseCoaError } from '@/lib/coaErrors';
 import { attrFieldsFor, missingRequiredAttrs, ACCOUNT_NUMBER_LAST4_KEY } from '@/lib/coaAttributes';
 import {
-  decodePlacement, encodePlacement, placementPayload, requiresExplicitSide, sideForPlacement,
+  placementFromSelection, placementPayload, requiresExplicitSide, sideForPlacement,
   type Placement,
 } from '@/lib/coaPlacement';
 import { AccountAttributeFields } from './AccountAttributeFields';
@@ -72,7 +72,16 @@ export function AccountFormDrawer({
   const [description, setDescription] = useState(account?.description ?? '');
   const [type, setType] = useState<AccountType>(account?.type ?? 'general');
   const [isPostable, setIsPostable] = useState(account?.isPostable ?? true);
-  const [placement, setPlacement] = useState<Placement | null>(initialPlacement ?? null);
+  // Split into two selects instead of one combined "Placement" dropdown. A
+  // sub-category-level initialPlacement (from the tree's "+" on a
+  // sub-category row) only carries a sub-category id — its category id gets
+  // filled in by the hydration effect below once the reference tree loads.
+  const [categoryId, setCategoryId] = useState<number | null>(
+    initialPlacement?.kind === 'category' ? initialPlacement.id : null,
+  );
+  const [subCategoryId, setSubCategoryId] = useState<number | null>(
+    initialPlacement?.kind === 'subcategory' ? initialPlacement.id : null,
+  );
   const [bsPnl, setBsPnl] = useState<BSPNL | ''>('');
   const [attrs, setAttrs] = useState<Record<string, string>>(
     account ? initialAttrDraft(account.type, account.attributes) : {},
@@ -90,11 +99,24 @@ export function AccountFormDrawer({
     enabled: !isEdit,
   });
 
+  // Resolves the sub-category-only initialPlacement case above: derived at
+  // render time from whichever sub-category is currently picked, rather than
+  // synced into state via an effect, so it's correct on the very first paint
+  // once the reference tree arrives (and stays correct if the user picks a
+  // different sub-category under the same category without ever touching
+  // the Category select directly).
+  const inferredCategoryId = subCategoryId === null
+    ? null
+    : categoryData?.subCategories.find((s) => s.id === subCategoryId)?.categoryId ?? null;
+  const effectiveCategoryId = categoryId ?? inferredCategoryId;
+
+  const placement = placementFromSelection(effectiveCategoryId, subCategoryId);
   const effectivePlacement = parent?.placement ?? placement;
   const side = sideForPlacement(
     effectivePlacement, categoryData?.categories ?? [], categoryData?.subCategories ?? [],
   );
   const needsBsPnl = !isEdit && requiresExplicitSide(side);
+  const subCategoryOptions = categoryData?.subCategories.filter((s) => s.categoryId === effectiveCategoryId) ?? [];
 
   function handleTypeChange(next: AccountType) {
     setType(next);
@@ -232,49 +254,55 @@ export function AccountFormDrawer({
           )}
 
           {!isEdit && !parent && (
-            <ModernFieldShell label="Placement" required>
-              {/* Both levels are selectable. A category is listed as the first
-                  option of its own group rather than relying on the <optgroup>
-                  label, which browsers render as an un-clickable heading —
-                  that is exactly why category-level placement was unreachable
-                  before. */}
-              <select
-                value={placement ? encodePlacement(placement) : ''}
-                onChange={(e) => {
-                  setPlacement(decodePlacement(e.target.value));
-                  setBsPnl('');
-                }}
-                className={showErrors && missingPlacement ? fieldErrorCls : fieldCls}
-                aria-label="Placement"
-                aria-required="true"
-                aria-invalid={(showErrors && missingPlacement) || undefined}
-                aria-describedby={showErrors && missingPlacement ? 'placement-error' : undefined}
-              >
-                <option value="">— Select —</option>
-                {categoryData?.categories.map((cat) => (
-                  <optgroup key={cat.id} label={`${cat.code} ${cat.name}`}>
-                    <option value={encodePlacement({ kind: 'category', id: cat.id })}>
-                      {cat.code} — {cat.name} (category level)
-                    </option>
-                    {categoryData.subCategories
-                      .filter((s) => s.categoryId === cat.id)
-                      .map((s) => (
-                        <option
-                          key={s.id}
-                          value={encodePlacement({ kind: 'subcategory', id: s.id })}
-                        >
-                          {s.code} — {s.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))}
-              </select>
-              {showErrors && missingPlacement && (
-                <p id="placement-error" className="text-2xs text-destructive">
-                  A category or sub-category is required.
-                </p>
-              )}
-            </ModernFieldShell>
+            <>
+              <ModernFieldShell label="Category" required>
+                <select
+                  value={effectiveCategoryId ?? ''}
+                  onChange={(e) => {
+                    const next = e.target.value ? Number(e.target.value) : null;
+                    setCategoryId(next);
+                    setSubCategoryId(null);
+                    setBsPnl('');
+                  }}
+                  className={showErrors && missingPlacement ? fieldErrorCls : fieldCls}
+                  aria-label="Category"
+                  aria-required="true"
+                  aria-invalid={(showErrors && missingPlacement) || undefined}
+                  aria-describedby={showErrors && missingPlacement ? 'category-error' : undefined}
+                >
+                  <option value="">— Select —</option>
+                  {categoryData?.categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.code} — {cat.name}</option>
+                  ))}
+                </select>
+                {showErrors && missingPlacement && (
+                  <p id="category-error" className="text-2xs text-destructive">
+                    A category is required.
+                  </p>
+                )}
+              </ModernFieldShell>
+
+              <ModernFieldShell label="Sub-category">
+                {/* Placing an account directly under a category (no
+                    sub-category) is a deliberate, supported choice, not a
+                    lesser default — it's the first option, not an
+                    afterthought once sub-categories are listed. */}
+                <select
+                  value={subCategoryId ?? ''}
+                  onChange={(e) => setSubCategoryId(e.target.value ? Number(e.target.value) : null)}
+                  disabled={effectiveCategoryId === null}
+                  className={fieldCls}
+                  aria-label="Sub-category"
+                >
+                  <option value="">
+                    {effectiveCategoryId === null ? '— Select a category first —' : '— None (place directly under category) —'}
+                  </option>
+                  {subCategoryOptions.map((s) => (
+                    <option key={s.id} value={s.id}>{s.code} — {s.name}</option>
+                  ))}
+                </select>
+              </ModernFieldShell>
+            </>
           )}
 
           {needsBsPnl && (

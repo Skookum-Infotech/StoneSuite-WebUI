@@ -1,5 +1,6 @@
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
-import { fieldCls, textareaCls, readonlyCls, sanitizePhoneInput } from '@/components/crm/formUtils';
+import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
+import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { PurchaseOrderFormField } from '@/lib/purchaseOrderForm';
@@ -94,6 +95,24 @@ export function PurchaseOrderField({ field, value, set, lookups, dependsOnValue 
     );
   }
 
+  if (field.type === 'tel') {
+    return (
+      <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
+        <ModernFieldShell label={field.label} required={field.required}>
+          <PhoneNumberInput
+            value={str}
+            onChange={(v) => set(field.key, v)}
+            required={field.required}
+            className={fieldCls}
+            placeholder={field.placeholder}
+            aria-label={field.label}
+          />
+          {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+        </ModernFieldShell>
+      </div>
+    );
+  }
+
   return (
     <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
       <ModernFieldShell label={field.label} required={field.required}>
@@ -101,7 +120,7 @@ export function PurchaseOrderField({ field, value, set, lookups, dependsOnValue 
           type={field.type ?? 'text'}
           required={field.required}
           value={str}
-          onChange={(e) => set(field.key, field.type === 'tel' ? sanitizePhoneInput(e.target.value) : e.target.value)}
+          onChange={(e) => set(field.key, e.target.value)}
           className={fieldCls}
           placeholder={field.placeholder}
           min={field.min}

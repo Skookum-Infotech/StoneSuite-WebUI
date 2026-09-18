@@ -13,31 +13,19 @@ export type Placement =
   | { kind: 'category'; id: number }
   | { kind: 'subcategory'; id: number };
 
-/** Prefix used to keep the two id spaces apart in a single <select> value —
- *  category 3 and sub-category 3 are different rows in different tables. */
-const CATEGORY_PREFIX = 'cat:';
-const SUBCATEGORY_PREFIX = 'sub:';
-
-export function encodePlacement(placement: Placement): string {
-  return placement.kind === 'category'
-    ? `${CATEGORY_PREFIX}${placement.id}`
-    : `${SUBCATEGORY_PREFIX}${placement.id}`;
-}
-
-/** Parses a <select> value back into a Placement, or null for the empty
- *  "— Select —" option and anything malformed. */
-export function decodePlacement(value: string): Placement | null {
-  const parse = (raw: string, kind: Placement['kind']): Placement | null => {
-    const id = Number(raw);
-    return Number.isInteger(id) && id > 0 ? { kind, id } : null;
-  };
-  if (value.startsWith(CATEGORY_PREFIX)) {
-    return parse(value.slice(CATEGORY_PREFIX.length), 'category');
-  }
-  if (value.startsWith(SUBCATEGORY_PREFIX)) {
-    return parse(value.slice(SUBCATEGORY_PREFIX.length), 'subcategory');
-  }
-  return null;
+/** Builds a Placement from the category/sub-category dropdown pair — null
+ *  (no category picked) is the only unrepresentable-placement case the form
+ *  needs, since the sub-category select stays empty until a category is
+ *  chosen. A sub-category id without a category id falls back to null rather
+ *  than guessing, for the same reason. */
+export function placementFromSelection(
+  categoryId: number | null,
+  subCategoryId: number | null,
+): Placement | null {
+  if (categoryId === null) return null;
+  return subCategoryId === null
+    ? { kind: 'category', id: categoryId }
+    : { kind: 'subcategory', id: subCategoryId };
 }
 
 /** The create-payload fragment for a placement — exactly one id, matching what
