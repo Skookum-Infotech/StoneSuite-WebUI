@@ -140,6 +140,7 @@ export const EXPENSE_ALLOWED_TRANSITIONS: Record<string, string[]> = {
  *  so the key is `${from}:${to}`. */
 export const EXPENSE_TRANSITION_LABELS: Record<string, string> = {
   'DRFT:SUBM': 'Submit for Approval',
+  'DRFT:REIM': 'Mark Reimbursed', // offered directly when nobody is configured to approve (backend nextStatusCodes)
   'SUBM:APPV': 'Approve & Advance',
   'SUBM:DRFT': 'Recall to Draft',
   'APPV:REIM': 'Mark Reimbursed',
@@ -147,7 +148,7 @@ export const EXPENSE_TRANSITION_LABELS: Record<string, string> = {
 };
 
 export function expTransitionLabel(from: string, to: string): string {
-  return EXPENSE_TRANSITION_LABELS[`${from}:${to}`] ?? to;
+  return EXPENSE_TRANSITION_LABELS[`${from}:${to}`] ?? expStatusLabel(to);
 }
 
 /** Human label for a status code (e.g. "SUBM" -> "Submitted") — used by the

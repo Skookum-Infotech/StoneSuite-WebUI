@@ -459,6 +459,16 @@ export const SO_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   CANC: [],
 };
 
+/** Button label for the DRFT->PAPV edge — action-verb phrasing ("Submit for
+ *  Approval") instead of the bare destination-status label, since picking it
+ *  doesn't necessarily land on Pending Approval: with no approver configured
+ *  for PAPV, the backend (salesorder/store_transition.go) auto-skips straight
+ *  to Approved. Every other pair keeps its plain status label. */
+export function soTransitionLabel(from: string, to: string): string {
+  if (from === 'DRFT' && to === 'PAPV') return 'Submit for Approval';
+  return SO_STATUS_CODES.find((s) => s.code === to)?.label ?? to;
+}
+
 /** Status badge color, keyed by the human label (matches SO_STATUS_CODES'
  *  labels) — shared by the list table and the detail page. */
 export const SO_STATUS_COLORS: Record<string, string> = {

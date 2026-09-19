@@ -86,10 +86,13 @@ export default function ExpenseDetailPage() {
 
   const transition = useMutation({
     mutationFn: (toStatusCode: string) => expenseService.transition(id, toStatusCode),
-    onSuccess: (updated, toStatusCode) => {
+    onSuccess: (updated) => {
       queryClient.setQueryData(['expense', id], updated);
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      toast.success(`Moved to ${statusToastLabel(EXPENSE_STATUS_CODES, toStatusCode)}.`);
+      // Label the actual resulting status, not the one requested -- a move
+      // onto an unconfigured approval gate auto-skips server-side (see
+      // expense/store_transition.go), so the two can differ.
+      toast.success(`Moved to ${statusToastLabel(EXPENSE_STATUS_CODES, updated.statusCode)}.`);
     },
   });
 
@@ -331,7 +334,7 @@ export default function ExpenseDetailPage() {
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
               <ExpenseStatusControl
-                order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, gated: exp.gated }}
+                order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, gated: exp.gated, nextStatusCodes: exp.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
                 disabled={transition.isPending}
                 variant="pill"

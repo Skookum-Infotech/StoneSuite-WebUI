@@ -439,6 +439,16 @@ export function validateForSend(
   return errors;
 }
 
+/** Button label for the DRFT->PAPV edge — action-verb phrasing ("Submit for
+ *  Approval") instead of the bare destination-status label, since picking it
+ *  doesn't necessarily land on Pending Approval: with no approver configured
+ *  for PAPV, the backend (invoice/store_transition.go) auto-skips straight to
+ *  Approved. Every other pair keeps its plain status label. */
+export function invoiceTransitionLabel(from: string, to: string): string {
+  if (from === 'DRFT' && to === 'PAPV') return 'Submit for Approval';
+  return INVOICE_STATUS_CODES.find((s) => s.code === to)?.label ?? to;
+}
+
 /** Status badge color, keyed by the human label (matches INVOICE_STATUS_CODES'
  *  labels) — shared by the list table, detail page, and status control. */
 export const INVOICE_STATUS_COLORS: Record<string, string> = {

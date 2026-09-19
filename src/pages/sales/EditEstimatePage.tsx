@@ -5,7 +5,6 @@ import { FileSpreadsheet, AlertCircle, Loader2, Save, Lock } from 'lucide-react'
 import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { lookupService } from '@/services/lookupService';
-import { attachmentService } from '@/services/attachmentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -64,13 +63,6 @@ export default function EditEstimatePage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: attachments } = useQuery({
-    queryKey: ['record-attachments', id],
-    queryFn: () => attachmentService.listAttachments(id),
-    enabled: Boolean(id),
-  });
-  const hasAttachments = attachments ? attachments.length > 0 : undefined;
-
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -87,6 +79,10 @@ export default function EditEstimatePage() {
   const statusCode = localStatusCode ?? estimate?.statusCode ?? '';
   const approvalStatus = estimate?.approvalStatus ?? 'none';
   const gated = estimate?.gated ?? false;
+  // The loaded record's next-moves only describe the status it was loaded
+  // at; right after a transition (until the refetch lands) fall back to the
+  // static map for the new status rather than offer stale options.
+  const nextStatusCodes = statusCode === estimate?.statusCode ? estimate?.nextStatusCodes : undefined;
   const isTerminal = ESTIMATE_TERMINAL_STATUSES.has(statusCode);
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? {};
 
@@ -245,7 +241,7 @@ export default function EditEstimatePage() {
             total={total}
             statusControl={(
               <EstimateStatusControl
-                estimate={{ statusCode, approvalStatus, gated, hasAttachments }}
+                estimate={{ statusCode, approvalStatus, gated, nextStatusCodes }}
                 onChange={handleStatusChange}
                 disabled={transition.isPending}
               />

@@ -61,7 +61,7 @@ export default function ProspectViewPage() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: users = [] } = useQuery({ queryKey: ['workspace-users'], queryFn: userService.listUsers });
+  const { data: users = [] } = useQuery({ queryKey: ['assignable-users'], queryFn: userService.listAssignableUsers });
 
   const { data: lookups } = useQuery({
     queryKey: ["crm-lookups"],
@@ -127,10 +127,17 @@ export default function ProspectViewPage() {
   // The approval overlay is authoritative from the server — see
   // crmService.getRecord / types/tenant.ts's CrmApproval. `gated` (pending or
   // rejected) drives the banner; `approvalStatus` drives the sidebar card and
-  // list-style badges via the plain approval_status core field.
+  // list-style badges. Falls back to "not_required" whenever there are no
+  // active approvers configured (approval.requiredApprovals === 0), even if
+  // the stored approval_status core field is still "pending" — the backend
+  // never clears that column when the last approver is removed, only the
+  // live requiredApprovals/gated signals do (see relational_approval.go).
   const approval = record.approval;
   const recordApproval = recordApprovalState(record);
-  const approvalStatus: ApprovalStatus = recordApproval === "none" ? "not_required" : recordApproval;
+  const approvalStatus: ApprovalStatus =
+    recordApproval === "none" || !approval || approval.requiredApprovals === 0
+      ? "not_required"
+      : recordApproval;
   const approverNames = (approval?.approvers ?? []).map((a) => a.name);
 
   async function handleExportPdf() {

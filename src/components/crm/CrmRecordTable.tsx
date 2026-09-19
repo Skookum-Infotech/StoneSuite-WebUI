@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { crmService } from '@/services/crmService';
+import { userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { Badge } from '@/components/tenant/ui';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
@@ -17,12 +17,6 @@ import {
   recordApprovalState,
   type StatusInfo, type FilterRequest, type FilterClause, type WorkflowRecord,
 } from '@/types/tenant';
-
-const APPROVAL_BADGE: Record<'pending' | 'approved' | 'rejected', { label: string; color: string }> = {
-  pending: { label: 'Pending', color: '#f59e0b' },
-  approved: { label: 'Approved', color: '#22c55e' },
-  rejected: { label: 'Rejected', color: '#ef4444' },
-};
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
@@ -147,6 +141,13 @@ export function CrmRecordTable({ config }: Props) {
   const statusMap = useMemo(
     () => new Map<string, StatusInfo>(statuses.map((s) => [s.stateId, s])),
     [statuses],
+  );
+
+  // ── owners ─────────────────────────────────────────────────────────────────
+  const { data: users = [] } = useQuery({ queryKey: ['assignable-users'], queryFn: userService.listAssignableUsers });
+  const userMap = useMemo(
+    () => new Map(users.map((u) => [u.id, u.fullName])),
+    [users],
   );
 
   // ── build request ──────────────────────────────────────────────────────────
@@ -361,7 +362,7 @@ export function CrmRecordTable({ config }: Props) {
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
                 {config.showEmail && (
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
                 )}
@@ -439,13 +440,9 @@ export function CrmRecordTable({ config }: Props) {
                           <span className="text-xs text-stone-400">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5">
-                        {approvalState === 'none' ? (
-                          <span className="text-xs text-stone-400">—</span>
-                        ) : (
-                          <Badge size="sm" color={APPROVAL_BADGE[approvalState].color}>
-                            {APPROVAL_BADGE[approvalState].label}
-                          </Badge>
+                      <td className="px-4 py-3.5 text-xs text-stone-600 truncate max-w-[160px]">
+                        {(record.ownerUserId && userMap.get(record.ownerUserId)) || (
+                          <span className="text-stone-400">—</span>
                         )}
                       </td>
                       {config.showEmail && (

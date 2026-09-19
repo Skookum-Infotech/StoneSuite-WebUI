@@ -17,19 +17,25 @@ export interface TransitionGuardResult {
 }
 
 /** Resolve which options to render and whether the current status is terminal.
- *  With `allowedTransitions` (mirrors the backend `<doc>/transitions.go`), only
- *  the current status plus its legal next-moves are offered and a status with
- *  no legal moves is terminal. Without it, the whole catalog is offered and it
- *  is never terminal. */
+ *  `nextCodes`, when the record carries one (the backend's `nextStatusCodes`),
+ *  is authoritative: it is the static transition map with any approval
+ *  checkpoint nobody is configured to approve already collapsed out, so a
+ *  Draft with no approver is offered Sent directly instead of "Submit for
+ *  Approval". Otherwise, with `allowedTransitions` (mirrors the backend
+ *  `<doc>/transitions.go`), only the current status plus its legal next-moves
+ *  are offered and a status with no legal moves is terminal. Without either,
+ *  the whole catalog is offered and it is never terminal. Options always come
+ *  out in catalog order. */
 export function resolveStatusOptions(
   statuses: StatusOption[],
   value: string,
   allowedTransitions?: Record<string, string[]>,
+  nextCodes?: string[],
 ): { options: StatusOption[]; isTerminal: boolean } {
-  if (!allowedTransitions) return { options: statuses, isTerminal: false };
-  const nextCodes = allowedTransitions[value] ?? [];
-  const options = statuses.filter((s) => s.code === value || nextCodes.includes(s.code));
-  return { options, isTerminal: nextCodes.length === 0 };
+  if (!nextCodes && !allowedTransitions) return { options: statuses, isTerminal: false };
+  const next = nextCodes ?? allowedTransitions?.[value] ?? [];
+  const options = statuses.filter((s) => s.code === value || next.includes(s.code));
+  return { options, isTerminal: next.length === 0 };
 }
 
 /** Whether picking `code` would land on a status with no further legal moves

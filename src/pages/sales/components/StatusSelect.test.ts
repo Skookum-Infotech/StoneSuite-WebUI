@@ -34,6 +34,26 @@ describe('resolveStatusOptions', () => {
     expect(options).toEqual([]);
     expect(isTerminal).toBe(true);
   });
+
+  it("prefers the record's own nextCodes over the static map, still in catalog order", () => {
+    // The backend collapsed the unconfigured PAPV checkpoint out of Draft's
+    // moves: Open (Approved's own onward move) is offered directly, and
+    // neither Pending Approval nor Approved appears.
+    const { options, isTerminal } = resolveStatusOptions(SO_STATUS_CODES, 'DRFT', SO_ALLOWED_TRANSITIONS, ['CANC', 'OPEN']);
+    expect(codes(options)).toEqual(['DRFT', 'OPEN', 'CANC']);
+    expect(isTerminal).toBe(false);
+  });
+
+  it('marks the status terminal when nextCodes is empty, whatever the static map says', () => {
+    const { options, isTerminal } = resolveStatusOptions(SO_STATUS_CODES, 'DRFT', SO_ALLOWED_TRANSITIONS, []);
+    expect(codes(options)).toEqual(['DRFT']);
+    expect(isTerminal).toBe(true);
+  });
+
+  it('falls back to the static map when nextCodes is absent (e.g. an older cached row)', () => {
+    const { options } = resolveStatusOptions(SO_STATUS_CODES, 'DRFT', SO_ALLOWED_TRANSITIONS, undefined);
+    expect(codes(options)).toEqual(['DRFT', 'PAPV', 'CANC']);
+  });
 });
 
 // Drift guard: every transition map mirrors a backend `<doc>/transitions.go`,

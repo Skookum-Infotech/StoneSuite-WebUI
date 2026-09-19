@@ -67,6 +67,7 @@ export interface Expense {
   status: string;              // human label, e.g. "Draft"
   statusCode: ExpenseStatusCode; // drives the transition button map
   approvalStatus: 'none' | 'pending' | 'approved';
+  nextStatusCodes?: string[]; // legal next-moves right now, with an approval checkpoint nobody is configured to approve collapsed out (the status control's option list)
   gated: boolean;
   approvers: RecordApprover[];
   requiredApprovals: number;
@@ -97,7 +98,7 @@ export interface Expense {
  *  this type names the subset the table actually renders. */
 export type ExpenseSummary = Pick<
   Expense,
-  | 'id' | 'expenseNumber' | 'status' | 'statusCode' | 'approvalStatus'
+  | 'id' | 'expenseNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'claimantEmployeeId' | 'department' | 'total' | 'createdAt' | 'updatedAt'
 >;
 

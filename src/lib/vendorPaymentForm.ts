@@ -106,6 +106,9 @@ export const VP_APPROVAL_ONLY_EDGES = new Set(['PAPV:APPV']);
  *  distinguish contexts that share a target code (mirrors VB_TRANSITION_LABELS). */
 export const VP_TRANSITION_LABELS: Record<string, string> = {
   'DRFT:PAPV': 'Submit for Approval',
+  // Offered directly when nobody is configured to approve (backend nextStatusCodes).
+  'DRFT:SCHD': 'Schedule Payment',
+  'DRFT:SENT': 'Mark Sent',
   'DRFT:VOID': 'Void',
   'PAPV:DRFT': 'Recall to Draft',
   'PAPV:VOID': 'Void',
@@ -118,7 +121,7 @@ export const VP_TRANSITION_LABELS: Record<string, string> = {
 };
 
 export function vpTransitionLabel(from: string, to: string): string {
-  return VP_TRANSITION_LABELS[`${from}:${to}`] ?? to;
+  return VP_TRANSITION_LABELS[`${from}:${to}`] ?? vpStatusLabel(to);
 }
 
 /** Human label for a status code (e.g. "SCHD" -> "Scheduled") — used by the

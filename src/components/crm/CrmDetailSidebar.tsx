@@ -3,7 +3,7 @@ import { Upload, Plus, Pencil, X, LayoutList, FileDown, Loader2 } from "lucide-r
 import { Badge, ErrorNote } from "@/components/tenant/ui";
 import { resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
-import type { StatusInfo, WorkspaceUser } from "@/types/tenant";
+import type { StatusInfo, AssignableUser } from "@/types/tenant";
 
 type Props = {
   statusInfo?: StatusInfo;
@@ -12,7 +12,7 @@ type Props = {
    *  back to the static badge derived from `statusInfo` when omitted. */
   statusControl?: ReactNode;
   ownerUserId?: string;
-  users: WorkspaceUser[];
+  users: AssignableUser[];
   createdAt: string;
   updatedAt: string;
   onUploadFile?: () => void;

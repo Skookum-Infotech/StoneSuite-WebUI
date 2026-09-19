@@ -252,6 +252,7 @@ export const REQUISITION_ALLOWED_TRANSITIONS: Record<string, string[]> = {
  *  so the key is `${from}:${to}`. */
 export const REQUISITION_TRANSITION_LABELS: Record<string, string> = {
   'DRFT:PAPV': 'Submit for Approval',
+  'DRFT:APPV': 'Approve', // offered directly when nobody is configured to approve (backend nextStatusCodes)
   'DRFT:CANC': 'Cancel',
   'PAPV:APPV': 'Approve & Advance',
   'PAPV:DRFT': 'Recall to Draft',
@@ -261,7 +262,7 @@ export const REQUISITION_TRANSITION_LABELS: Record<string, string> = {
 };
 
 export function reqnTransitionLabel(from: string, to: string): string {
-  return REQUISITION_TRANSITION_LABELS[`${from}:${to}`] ?? to;
+  return REQUISITION_TRANSITION_LABELS[`${from}:${to}`] ?? reqnStatusLabel(to);
 }
 
 /** Human label for a status code (e.g. "PAPV" -> "Pending Approval") — used

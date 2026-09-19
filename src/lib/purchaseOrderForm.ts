@@ -379,6 +379,7 @@ export const PO_ALLOWED_TRANSITIONS: Record<string, string[]> = {
  *  "Revise" (APPV→DRFT), so the key is `${from}:${to}`. */
 export const PO_TRANSITION_LABELS: Record<string, string> = {
   'DRFT:PAPV': 'Submit for Approval',
+  'DRFT:SENT': 'Send to Vendor', // offered directly when nobody is configured to approve (backend nextStatusCodes)
   'DRFT:CANC': 'Cancel',
   'PAPV:APPV': 'Approve & Advance',
   'PAPV:DRFT': 'Recall to Draft',
@@ -396,7 +397,7 @@ export const PO_TRANSITION_LABELS: Record<string, string> = {
 };
 
 export function poTransitionLabel(from: string, to: string): string {
-  return PO_TRANSITION_LABELS[`${from}:${to}`] ?? to;
+  return PO_TRANSITION_LABELS[`${from}:${to}`] ?? poStatusLabel(to);
 }
 
 /** Human label for a status code (e.g. "PAPV" -> "Pending Approval") — used

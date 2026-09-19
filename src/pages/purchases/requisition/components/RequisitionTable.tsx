@@ -356,7 +356,7 @@ export function RequisitionTable() {
                       </td>
                       <td className="px-4 py-3.5">
                         <RequisitionStatusControl
-                          order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus }}
+                          order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, nextStatusCodes: reqn.nextStatusCodes }}
                           onChange={(code) => transition.mutate({ id: reqn.id, toStatusCode: code })}
                           disabled={transition.isPending && transition.variables?.id === reqn.id}
                           variant="pill"
