@@ -1,4 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
+import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
 import type {
   PurchaseOrder,
@@ -37,7 +38,7 @@ export const purchaseOrderService = {
       .get<{
         success: boolean; purchaseOrder: PurchaseOrder; approval?: {
           gated?: boolean; approvers?: PurchaseOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
-          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
+          canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
       }>(`${BASE}/${uuid}`)
       .then((r) => {
@@ -51,6 +52,8 @@ export const purchaseOrderService = {
           canApprove: a?.canApprove ?? false,
           isOverride: a?.isOverride ?? false,
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
+          canReject: a?.canReject ?? false,
+          rejection: a?.rejection,
         };
       }),
 
@@ -85,6 +88,16 @@ export const purchaseOrderService = {
   approve: (uuid: string): Promise<PurchaseOrder> =>
     tenantClient
       .post<{ success: boolean; purchaseOrder: PurchaseOrder }>(`${BASE}/${uuid}/approve`, {})
+      .then((r) => r.data.purchaseOrder),
+
+  // An approver's veto: rejects the purchase order while it awaits approval (a reason
+  // is required) and sends it back to Draft. Rejected with 403 if the caller isn't a
+  // configured approver (and isn't a super admin), 409 if it isn't awaiting
+  // approval, 400 without a reason. The POST response has no approval overlay, so
+  // callers invalidate the record's query to pick up the rejection banner.
+  reject: (uuid: string, reason: string): Promise<PurchaseOrder> =>
+    tenantClient
+      .post<{ success: boolean; purchaseOrder: PurchaseOrder }>(`${BASE}/${uuid}/reject`, { reason })
       .then((r) => r.data.purchaseOrder),
 
   getAudit: (uuid: string): Promise<AuditEntry[]> =>

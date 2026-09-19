@@ -11,7 +11,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -98,6 +98,14 @@ export default function RefundDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['refund', id] });
+    queryClient.invalidateQueries({ queryKey: ['refunds'] });
+    toast.success('Rejected — edit it to resubmit for approval.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading refund…" /></div>;
   if (!refund)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load refund.')}</ErrorNote></div>;
@@ -163,24 +171,16 @@ export default function RefundDetailPage() {
         statusBadge={<Badge color={color}>{refund.status}</Badge>}
       />
 
-      {refund.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={refund.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={refund.canApprove}
-            isOverride={refund.isOverride}
-            requiredApprovals={refund.requiredApprovals}
-            approvedCount={refund.approvedCount}
-            callerAlreadyApproved={refund.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve refund.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={refund}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'refund', run: (reason) => refundService.reject(id, reason), onRejected: handleRejected }}
+      />
+      {refund.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve refund.')}
+        </p>
       )}
 
       {/* Tab bar */}

@@ -6,7 +6,7 @@
 // v1 JSONB CRM router — Invoices are a relational sibling of `sales_order` with
 // ordered line items, snapshots, and stored money totals (incl. amountPaid/
 // balanceDue), served from `/api/tenant/invoices*`.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -128,6 +128,8 @@ export interface Invoice {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   customer: InvoiceCustomerRef;
   salesOrder?: InvoiceSalesOrderRef | null;
   ownerEmployeeId?: number | null;
