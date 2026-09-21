@@ -84,6 +84,40 @@ export function resolveFeedbackArea(pathname: string): FeedbackArea {
   return match ? match[1] : 'other';
 }
 
+/** Route of the dedicated Support page — the reporter-facing surface for
+ *  filing and tracking tickets. */
+export const SUPPORT_PATH = '/support';
+
+/** Sections of the Support page. Kept out of types/feedback.ts, like
+ *  AssigneeCandidate below, because it is UI state rather than backend contract. */
+export type SupportTab = 'new' | 'tickets';
+
+export const SUPPORT_TAB_PARAM = 'tab';
+
+/** `?ticket=<id>` — which ticket the My Tickets inbox has open. */
+export const SUPPORT_TICKET_PARAM = 'ticket';
+
+const SUPPORT_TABS: readonly SupportTab[] = ['new', 'tickets'];
+const DEFAULT_SUPPORT_TAB: SupportTab = 'tickets';
+
+/** Reads the active Support tab from its `?tab=` value. The value comes from a
+ *  user-editable URL, so anything missing or unrecognised falls back to the
+ *  ticket list instead of leaving the page with no panel. */
+export function resolveSupportTab(param: string | null): SupportTab {
+  return SUPPORT_TABS.find((tab) => tab === param) ?? DEFAULT_SUPPORT_TAB;
+}
+
+/** URL of the Support page, optionally deep-linking one of its tabs. */
+export function supportPath(tab?: SupportTab): string {
+  return tab ? `${SUPPORT_PATH}?${SUPPORT_TAB_PARAM}=${tab}` : SUPPORT_PATH;
+}
+
+/** True on the Support page itself. Matches whole path segments so a sibling
+ *  route such as `/supportive` does not count. */
+export function isSupportPath(pathname: string): boolean {
+  return pathname === SUPPORT_PATH || pathname.startsWith(`${SUPPORT_PATH}/`);
+}
+
 // Returns the whole option (never just the bare icon component) — callers
 // render it as `<option.icon />`, a member expression. Assigning the icon
 // itself to a capitalized local (`const Icon = feedbackCategoryIcon(...)`)

@@ -126,6 +126,7 @@ const AccountSettingsPage = lazyWithRetry(
 const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
+const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
 const SubscriptionPage = lazyWithRetry(
   () => import("@/pages/subscription/SubscriptionPage"),
 );
@@ -391,6 +392,9 @@ export const router = createBrowserRouter([
       { path: "search", element: lazy_(<SearchResultsPage />) },
       { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
       { path: "transactions", element: lazy_(<TransactionsPage />) },
+      // Open to every signed-in user, customer-portal sessions included (see
+      // CUSTOMER_ALLOWED_PATH_PREFIXES), so deliberately no PermissionGuard.
+      { path: "support", element: lazy_(<SupportPage />) },
       {
         path: "subscription",
         element: lazy_(
