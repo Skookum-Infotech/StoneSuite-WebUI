@@ -103,6 +103,7 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   PIDM: '#3b82f6',
   PPUR: '#a855f7',
   PCLL: '#ef4444',
+  PPCV: '#14b8a6',
   CCLW: '#22c55e',
   CCLL: '#ef4444',
   CREN: '#3b82f6',

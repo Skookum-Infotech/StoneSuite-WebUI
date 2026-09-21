@@ -11,7 +11,7 @@ import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
 import { StatusDropdown } from "@/components/crm/StatusDropdown";
-import { ConvertToProspectButton } from "@/components/crm/ConvertToProspectButton";
+import { ConvertRecordButton } from "@/components/crm/ConvertRecordButton";
 import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
@@ -80,9 +80,10 @@ export default function LeadDetailPage() {
   });
 
   // Inline status change from the sidebar's Status row — mirrors the Edit
-  // page's transition mutation (see EditLeadPage.tsx). A converting
-  // transition (e.g. Lead -> Prospect) navigates to the new record, same as
-  // the Edit page does today.
+  // page's transition mutation (see EditLeadPage.tsx). The server no longer
+  // moves a lead into another stage this way (a prospect comes from Convert to
+  // Prospect), so the stage-change branch below only guards a response that
+  // says otherwise.
   const transition = useMutation({
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "lead"),
     onSuccess: (updated) => {
@@ -194,7 +195,7 @@ export default function LeadDetailPage() {
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
         actions={canConvert && canConvertCrmRecord("lead", statusInfo?.stateKey, approval?.gated) && (
-          <ConvertToProspectButton recordId={id} onConverted={handleConverted} />
+          <ConvertRecordButton recordId={id} sourceKey="lead" onConverted={handleConverted} />
         )}
       />
 

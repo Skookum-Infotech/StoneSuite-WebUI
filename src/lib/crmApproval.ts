@@ -6,7 +6,7 @@
 /** CRM status codes (lkp_crm_status.crm_status_code) a gated record may still
  *  move to without approval — marking a dead deal dead is a way OUT of the
  *  approval process, not a way past it. One per stage: Lead Unqualified,
- *  Prospect Closed Lost, Customer Closed Lost. */
+ *  Prospect Lost, Customer Closed Lost. */
 export const CRM_ALWAYS_ALLOWED_EXIT_CODES = new Set(['LUNQ', 'PCLL', 'CCLL']);
 
 /** Whether a transition to targetStatusCode is blocked while the record's
