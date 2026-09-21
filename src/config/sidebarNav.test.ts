@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { sidebarNav } from './sidebarNav';
+import { CUSTOMER_ALLOWED_PATH_PREFIXES } from './customerPortal';
+import { SUPPORT_PATH } from '@/lib/feedback';
 import type { NavEntry, NavLink } from './sidebarNav';
 
 /** Every leaf link in the tree, with a readable trail for failure messages. */
@@ -47,6 +49,38 @@ describe('sidebarNav access declarations', () => {
       .map(({ trail }) => trail);
 
     expect(both, `Contradictory declarations:\n  ${both.join('\n  ')}`).toEqual([]);
+  });
+
+  // `customerVisible` opts an ungated link into customer-portal sessions. A
+  // permission-gated link reaches a customer only through PORTAL_GRANTS, so the
+  // flag next to a `permission` (or without alwaysVisible) would be dead config
+  // that reads as if it works.
+  it('customerVisible is only set on ungated alwaysVisible links', () => {
+    const misuse = allLinks()
+      .filter(({ link }) => link.customerVisible && (!link.alwaysVisible || link.permission))
+      .map(({ trail }) => trail);
+
+    expect(misuse, `customerVisible without alwaysVisible, or beside a permission:\n  ${misuse.join('\n  ')}`).toEqual([]);
+  });
+
+  // MainLayout redirects a customer session away from any path outside its
+  // allowlist, so a link shown to customers must land inside it — otherwise
+  // clicking it silently bounces them to Sales Orders.
+  it('every customerVisible link points at a path customers may reach', () => {
+    const unreachable = allLinks()
+      .filter(({ link }) => link.customerVisible)
+      .filter(({ link }) => !CUSTOMER_ALLOWED_PATH_PREFIXES.some((prefix) => link.path.startsWith(prefix)))
+      .map(({ trail }) => trail);
+
+    expect(unreachable, `customerVisible links outside the customer allowlist:\n  ${unreachable.join('\n  ')}`).toEqual([]);
+  });
+
+  // The nav literal, the router entry and the Help menu shortcut all name the
+  // Support page; this catches the nav copy drifting from the shared constant.
+  it('My Tickets points at the Support page route', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'my-tickets');
+
+    expect(entry?.link.path).toBe(SUPPORT_PATH);
   });
 
   it('ids are unique so React keys and open-state tracking stay stable', () => {

@@ -77,8 +77,7 @@ function CitationChip({ citation, workflowKey }: { citation: Citation; workflowK
 
 // Controlled: the trigger lives in HelpMenu now (a "StoneSuite Assistant"
 // item in its dropdown, alongside "Support"), so this component is only
-// ever mounted while open — `{open && <AssistantPanel onClose />}` — the
-// same pattern FeedbackPanel already uses.
+// ever mounted while open — `{open && <AssistantPanel onClose />}`.
 export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.Element {
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<ChatTurn[]>([]);

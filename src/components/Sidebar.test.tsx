@@ -4,11 +4,13 @@ import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/hooks/useWorkflows', () => ({ useWorkflows: vi.fn() }));
+vi.mock('@/hooks/useFeedbackUnreadCount', () => ({ useFeedbackUnreadCount: vi.fn() }));
 vi.mock('@/store/useAuthStore', () => ({ useAuthStore: vi.fn() }));
 
 import Sidebar from './Sidebar';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
+import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
 import { useAuthStore } from '@/store/useAuthStore';
 
 type Grant = { resource: string; action: string };
@@ -22,6 +24,7 @@ function setup({
   disabledWorkflows = [],
   workflowsLoading = false,
   kind,
+  unreadTickets = 0,
 }: {
   grants?: Grant[];
   isPlatformAdmin?: boolean;
@@ -30,7 +33,11 @@ function setup({
   disabledWorkflows?: string[];
   workflowsLoading?: boolean;
   kind?: 'portal';
+  /** Tickets with unread replies, as the shared polling hook would report. */
+  unreadTickets?: number;
 } = {}) {
+  vi.mocked(useFeedbackUnreadCount).mockReturnValue(unreadTickets);
+
   vi.mocked(useUserPermissions).mockReturnValue({
     grants,
     isLoading,
@@ -121,6 +128,44 @@ describe('Sidebar permission gating', () => {
     for (const group of ['CRM', 'Sales', 'Purchases', 'Configuration']) {
       expect(screen.getByText(group), `${group} should be visible`).toBeInTheDocument();
     }
+  });
+});
+
+describe('Sidebar Support > My Tickets link', () => {
+  // Support is open to every signed-in user — the whole reason it lives in its
+  // own section rather than under the RBAC-gated Configuration group.
+  it('shows My Tickets to a staff user holding no grants', () => {
+    setup({ grants: [] });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toHaveAttribute('href', '/support');
+  });
+
+  // Customers could file tickets from the old header popup; the sidebar entry
+  // must not take that away from them.
+  it('shows My Tickets to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: [] });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toBeInTheDocument();
+  });
+
+  // Guards the customer branch of canShowLink: opting one link in must not
+  // widen every alwaysVisible link (Dashboard is staff-only) to customers.
+  it('still hides staff-only alwaysVisible links from a customer-portal session', () => {
+    setup({ kind: 'portal', grants: [] });
+
+    expect(screen.queryByText('Dashboard')).toBeNull();
+  });
+
+  it('shows how many tickets have unread replies', () => {
+    setup({ unreadTickets: 3 });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toHaveTextContent('3');
+  });
+
+  it('shows no count when nothing is unread', () => {
+    setup({ unreadTickets: 0 });
+
+    expect(screen.getByRole('link', { name: /My Tickets/ })).toHaveTextContent(/^My Tickets$/);
   });
 });
 
