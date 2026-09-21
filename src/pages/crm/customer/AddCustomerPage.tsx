@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Building2, AlertCircle, ChevronRight, Loader2, Save  } from 'lucide-react';
@@ -11,7 +11,7 @@ import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { CrmRecordForm } from '@/components/crm/CrmRecordForm';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
-import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { InitialStatusField } from '@/components/crm/InitialStatusField';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
@@ -67,7 +67,6 @@ export default function AddCustomerPage() {
   );
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
   const [ownerUserId, setOwnerUserId] = useState('');
-  const [crmStatusId, setCrmStatusId] = useState('');
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<CrmFieldError[]>([]);
@@ -84,7 +83,6 @@ export default function AddCustomerPage() {
       return { ...d, [key]: value };
     });
   };
-  const handleStatusChange = useCallback((stateId: string) => setCrmStatusId(stateId), []);
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const customerWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'customer');
@@ -117,7 +115,7 @@ export default function AddCustomerPage() {
     };
   }, [coreFields, lookups]);
 
-  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId, crmStatusId });
+  const guard = useUnsavedChangesGuard({ coreFields, customFieldValues, ownerUserId });
 
   function leave(createdRecord: WorkflowRecord | null) {
     if (returnTo) navigate(returnTo, { state: returnRouterState(createdRecord ? toCustomerRef(createdRecord) : null) });
@@ -130,7 +128,6 @@ export default function AddCustomerPage() {
         coreFields: formCoreFields,
         customFields: customFieldValues,
         ownerUserId: ownerUserId || undefined,
-        crmStatusId: crmStatusId || undefined,
       }),
     onSuccess: async (record) => {
       toast.success(returnTo ? 'Customer created and added to your document.' : 'Customer created.');
@@ -263,14 +260,7 @@ export default function AddCustomerPage() {
                 custom={{ defs: customFieldDefs, values: customFieldValues, onChange: (key, value) => { if (validationErrors.length > 0) setValidationErrors([]); setCustomFieldValues((prev) => ({ ...prev, [key]: value })); } }}
                 owner={{ userId: ownerUserId, onChange: setOwnerUserId, users }}
                 invalidKeys={validationErrors.length > 0 ? new Set(validationErrors.map((e) => e.key)) : undefined}
-                statusNode={(
-                  <StatusDropdown
-                    workflowKey="customer"
-                    mode="all"
-                    value={crmStatusId}
-                    onChange={handleStatusChange}
-                  />
-                )}
+                statusNode={<InitialStatusField workflowKey="customer" />}
               />
             )}
             {/* Always mounted so staged files survive tab switches and are available in onSuccess */}

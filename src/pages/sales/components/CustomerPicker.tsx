@@ -7,16 +7,17 @@ import { cn } from '@/lib/utils';
 import { customerCoreDefaults } from '@/lib/customerDefaults';
 import { fieldCls } from '@/components/crm/formUtils';
 import { hasExactName } from '@/lib/recordCreateReturn';
+import { CUSTOMER_USABLE_STATUS } from '@/lib/crmStatusFlow';
 import type { FilterClause } from '@/types/tenant';
 
 const RESULT_LIMIT = 8;
 
-// A customer's "status" is a CRM pipeline stage (lkp_crm_status), not a plain
-// active/inactive flag — only these two stages count as billable for a new
-// Sales Order (matches the "status" filter contract used by CrmRecordTable:
-// value is the numeric crm_status_id, resolved server-side against
-// customer_crm_status).
-const BILLABLE_STATUS_NAMES = ['Customer Closed Won', 'Customer Renewal'];
+// A customer's "status" is a CRM status (lkp_crm_status): Draft, Active, Inactive
+// or Credit Hold. Only an Active customer can be used on other records, so it is
+// the only one listed here — the backend refuses to create a document for any
+// other (workflow/customer_usable.go). Matches the "status" filter contract used
+// by CrmRecordTable: value is the numeric crm_status_id, resolved server-side
+// against customer_crm_status.
 
 export interface CustomerRef {
   id: string;
@@ -91,23 +92,23 @@ export function CustomerPicker({
     staleTime: 10 * 60 * 1000,
   });
 
-  const billableStatusIds = useMemo(
+  const usableStatusIds = useMemo(
     () => (lookups?.crmStatuses ?? [])
-      .filter((s) => BILLABLE_STATUS_NAMES.includes(s.name))
+      .filter((s) => s.code === CUSTOMER_USABLE_STATUS)
       .map((s) => String(s.id)),
     [lookups],
   );
 
   // Wait for the status lookup before querying, so we never briefly show an
-  // unfiltered (all-statuses) list before narrowing to billable ones.
-  const enabled = open && billableStatusIds.length > 0;
+  // unfiltered (all-statuses) list before narrowing to Active ones.
+  const enabled = open && usableStatusIds.length > 0;
 
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ['customer-picker', debounced, billableStatusIds],
+    queryKey: ['customer-picker', debounced, usableStatusIds],
     enabled,
     staleTime: 30 * 1000,
     queryFn: async (): Promise<CustomerRef[]> => {
-      const filters: FilterClause[] = [{ field: 'status', op: 'in', value: billableStatusIds }];
+      const filters: FilterClause[] = [{ field: 'status', op: 'in', value: usableStatusIds }];
       if (debounced) filters.push({ field: 'core:customer_name', op: 'contains', value: debounced });
       const page = await crmService.searchRecords('customer', {
         filters,
@@ -180,7 +181,7 @@ export function CustomerPicker({
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {results.length === 0 && !isFetching && (
             <p className="px-3 py-2 text-xs text-stone-400">
-              {debounced ? 'No matching customers.' : 'No billable customers available.'}
+              {debounced ? 'No matching customers.' : 'No active customers available.'}
             </p>
           )}
           {results.map((c) => (

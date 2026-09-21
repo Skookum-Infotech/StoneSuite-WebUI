@@ -77,6 +77,9 @@ export default function EditLeadPage() {
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
+      // The status is applied optimistically (localStateId), so the dropdown may
+      // already have fetched its moves before this commit landed — refetch them.
+      queryClient.invalidateQueries({ queryKey: ['crm-transitions', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'lead'] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== 'lead' && routeMap[newType]) {
@@ -276,7 +279,6 @@ export default function EditLeadPage() {
                 statusNode={(
                   <StatusDropdown
                     workflowKey="lead"
-                    mode="transitions"
                     recordId={id}
                     value={currentStateId}
                     onChange={handleStatusChange}
