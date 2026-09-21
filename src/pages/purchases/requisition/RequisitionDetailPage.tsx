@@ -11,7 +11,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -111,6 +111,14 @@ export default function RequisitionDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['requisition', id] });
+    queryClient.invalidateQueries({ queryKey: ['requisitions'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading requisition…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
@@ -199,24 +207,17 @@ export default function RequisitionDetailPage() {
         statusBadge={<Badge color={color}>{reqn.status}</Badge>}
       />
 
-      {reqn.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={reqn.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={reqn.canApprove}
-            isOverride={reqn.isOverride}
-            requiredApprovals={reqn.requiredApprovals}
-            approvedCount={reqn.approvedCount}
-            callerAlreadyApproved={reqn.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={reqn}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'requisition', run: (reason) => requisitionService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {reqn.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
+        </p>
       )}
 
       {/* Tab bar */}

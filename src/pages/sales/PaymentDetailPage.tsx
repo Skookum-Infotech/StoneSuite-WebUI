@@ -12,7 +12,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls, fieldCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -107,6 +107,14 @@ export default function PaymentDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['payment', id] });
+    queryClient.invalidateQueries({ queryKey: ['payments'] });
+    toast.success('Rejected — edit it to resubmit for approval.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading payment…" /></div>;
   if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load payment.')}</ErrorNote></div>;
@@ -169,24 +177,16 @@ export default function PaymentDetailPage() {
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
       />
 
-      {payment.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={payment.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={payment.canApprove}
-            isOverride={payment.isOverride}
-            requiredApprovals={payment.requiredApprovals}
-            approvedCount={payment.approvedCount}
-            callerAlreadyApproved={payment.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve payment.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={payment}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'payment', run: (reason) => paymentService.reject(id, reason), onRejected: handleRejected }}
+      />
+      {payment.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve payment.')}
+        </p>
       )}
 
       {/* Tab bar */}

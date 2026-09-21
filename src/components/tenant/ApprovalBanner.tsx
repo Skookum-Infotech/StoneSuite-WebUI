@@ -6,12 +6,11 @@ import { CheckCircle2, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
  *  approver(s) and the Approve action without needing to scroll to the
  *  sidebar. Renders nothing once the record is approved or approval isn't
  *  required. Shared across CRM (Lead/Prospect/Customer) and the relational
- *  Sales modules (Estimate/Quote/Sales Order) — `rejection`/`status` are
- *  CRM-only (Sales has no reject action) and default to the plain
- *  pending-approval banner Sales already renders. CRM's own Reject control is
- *  a separate {@link RejectRecordDialog}, rendered by the detail page
- *  alongside this banner rather than inside it, mirroring how Expense's
- *  reject action is a standalone dialog next to its transition bar.
+ *  Sales/Purchases modules, which reach it through {@link RecordApprovalBanner}.
+ *  `status`/`rejection` show a rejected record's red banner; the Reject
+ *  control itself is a separate dialog ({@link RejectRecordDialog} for CRM,
+ *  {@link RejectApprovalDialog} for the relational modules) handed in through
+ *  `actions` and rendered alongside Approve inside this bar.
  *
  *  Messaging and the Approve control differ by who's looking and how far
  *  along quorum is (a status can require more than one approver -- e.g. 2 --
@@ -47,6 +46,7 @@ export function ApprovalBanner({
   approving,
   rejection,
   actions,
+  resubmitVia = 'edit',
 }: {
   /** 'pending' (default) is Sales' only state. CRM also passes 'rejected'. */
   status?: 'pending' | 'rejected';
@@ -69,10 +69,15 @@ export function ApprovalBanner({
   /** CRM only: who rejected the record and why — set together with
    *  status="rejected". */
   rejection?: { byName?: string; reason?: string };
-  /** CRM only: extra controls rendered alongside Approve, inside this same
-   *  full-width bar — the record's {@link RejectRecordDialog} trigger. Omit
-   *  for Sales, which has no reject action. */
+  /** Extra controls rendered alongside Approve, inside this same full-width
+   *  bar — a record's Reject trigger ({@link RejectRecordDialog} for CRM,
+   *  {@link RejectApprovalDialog} for Sales/Purchases). */
   actions?: ReactNode;
+  /** How a rejected record gets back to its approvers, for the rejected
+   *  banner's wording: 'edit' (CRM, and the Sales/Purchases modules whose
+   *  approval gate is their first status -- saving an edit resubmits it) or
+   *  'submit' (a record sent back to Draft is submitted for approval again). */
+  resubmitVia?: 'edit' | 'submit';
 }) {
   if (status === 'rejected') {
     const who = rejection?.byName || 'an approver';
@@ -84,7 +89,9 @@ export function ApprovalBanner({
             <span className="font-semibold">Rejected</span>
             {' — '}
             {rejection?.reason ? `${who}: "${rejection.reason}"` : `Rejected by ${who}.`}
-            {' Edit the record to resubmit it for approval.'}
+            {resubmitVia === 'submit'
+              ? ' Make your changes, then submit it for approval again.'
+              : ' Edit the record to resubmit it for approval.'}
           </p>
         </div>
       </div>

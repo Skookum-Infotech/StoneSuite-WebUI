@@ -8,7 +8,7 @@
 // served from `/api/tenant/vendor-bills*`. Unlike Purchase Order, a vendor
 // bill has no shipping/address block and carries its own settlement ledger
 // (payments) plus optional Purchase Order lineage.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -138,6 +138,8 @@ export interface VendorBill {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
 
   vendor: VendorBillVendorRef;
   purchaseOrder?: VendorBillPurchaseOrderRef; // nullable lineage (AD-8)

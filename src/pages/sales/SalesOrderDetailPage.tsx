@@ -8,7 +8,7 @@ import { fabricationService } from '@/services/fabricationService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -128,6 +128,14 @@ export default function SalesOrderDetailPage() {
       toast.success('Approved.');
     },
   });
+
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+    queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
   if (!order)
@@ -252,24 +260,17 @@ export default function SalesOrderDetailPage() {
         </p>
       )}
 
-      {order.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={order.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={order.canApprove}
-            isOverride={order.isOverride}
-            requiredApprovals={order.requiredApprovals}
-            approvedCount={order.approvedCount}
-            callerAlreadyApproved={order.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={order}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'sales order', run: (reason) => salesOrderService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {order.gated && approve.isError && (
+        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
+        </p>
       )}
 
       {/* Tab bar */}
