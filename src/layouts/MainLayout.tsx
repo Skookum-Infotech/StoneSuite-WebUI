@@ -8,6 +8,8 @@ import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useExitConfirmation } from '@/hooks/useExitConfirmation';
+import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
+import { CUSTOMER_ALLOWED_PATH_PREFIXES } from '@/config/customerPortal';
 import { formatBreadcrumbSegment } from '@/lib/breadcrumb';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
@@ -37,16 +39,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// See the isCustomer guard below for why this exists as an explicit allowlist
-// rather than per-route PermissionGuard coverage alone.
-const CUSTOMER_ALLOWED_PATH_PREFIXES = [
-  '/sales/sales_order',
-  '/sales/invoice',
-  '/sales/payment',
-  '/sales/refund',
-  '/account/settings',
-];
-
 export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, setAuth, logout } = useAuthStore();
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
@@ -64,6 +56,10 @@ export default function MainLayout(): React.JSX.Element {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
+
+  // Tickets are filed from /support; remember the page the user was on before
+  // that so the ticket can still say where the problem happened.
+  useTrackLastAppPath();
 
   // Same switch-role round-trip as the Account Settings > Roles & Access tab —
   // re-signs the JWT server-side so the active-role claim actually narrows
@@ -176,13 +172,11 @@ export default function MainLayout(): React.JSX.Element {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // A customer-portal session may only reach its four document types (List
-  // and Detail — Add/Edit already render "Access Denied" via PermissionGuard,
-  // so there is no need to redirect away from those specifically) plus its
-  // own account settings. Everything else under this shell is staff-only.
-  // This is a single allowlisted choke point rather than relying on every
-  // route remembering its own PermissionGuard — /dashboard, /transactions and
-  // /subscription, for instance, declare none at all.
+  // A customer-portal session may only reach the paths in
+  // CUSTOMER_ALLOWED_PATH_PREFIXES (its document types, account settings and
+  // Support). Everything else under this shell is staff-only. See that list
+  // for why this is one allowlisted choke point rather than relying on every
+  // route remembering its own PermissionGuard.
   if (isCustomer && !CUSTOMER_ALLOWED_PATH_PREFIXES.some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/sales/sales_order" replace />;
   }

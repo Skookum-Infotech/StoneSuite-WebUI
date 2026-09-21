@@ -1,38 +1,24 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { CircleHelp, LifeBuoy, Sparkles } from 'lucide-react';
-import { feedbackService } from '@/services/feedbackService';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
-import { FeedbackPanel } from '@/components/feedback/FeedbackPanel';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
+import { supportPath } from '@/lib/feedback';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
 
-// Poll interval for the unread-reply badge — cheap enough to run continuously
-// while a session is open, and gives an admin's reply a reasonably prompt
-// notification without a websocket.
-const UNREAD_POLL_MS = 60_000;
-
 // Single "Help" entry point in the header (replaces the separate floating AI
 // assistant button and the standalone feedback icon): opens a small dropdown
-// with "StoneSuite Assistant" and "Support", each opening its own panel.
-// Rendered for both tenant staff and customer-portal sessions, same as the
-// two things it replaces were.
+// with "StoneSuite Assistant" (a floating panel) and "Support" (a shortcut to
+// the Support page, which also has its own sidebar entry). Rendered for both
+// tenant staff and customer-portal sessions, same as the two things it
+// replaces were.
 export function HelpMenu() {
   const menuOpen = useHeaderMenuStore((s) => s.openMenu === 'help');
   const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  const unreadQ = useQuery({
-    queryKey: ['feedback-unread-count'],
-    queryFn: feedbackService.unreadCount,
-    enabled: isAuthenticated,
-    refetchInterval: UNREAD_POLL_MS,
-    staleTime: UNREAD_POLL_MS,
-  });
-  const unreadCount = unreadQ.data ?? 0;
+  const navigate = useNavigate();
+  const unreadCount = useFeedbackUnreadCount();
 
   // Same click-outside-closes convention as MainLayout's own profile menu.
   useEffect(() => {
@@ -101,7 +87,12 @@ export function HelpMenu() {
           <button
             type="button"
             role="menuitem"
-            onClick={(e) => { e.stopPropagation(); setOpenMenu(null); setFeedbackOpen(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenMenu(null);
+              // The header dot announces an unread reply, so land where it is.
+              navigate(supportPath(unreadCount > 0 ? 'tickets' : 'new'));
+            }}
             className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] cursor-pointer"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-500/15 text-teal-400">
@@ -125,7 +116,6 @@ export function HelpMenu() {
       )}
 
       {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} />}
-      {feedbackOpen && <FeedbackPanel onClose={() => setFeedbackOpen(false)} />}
     </div>
   );
 }

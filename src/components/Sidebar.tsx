@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
+import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
 import { sidebarNav } from '@/config/sidebarNav';
-import type { NavLink as NavLinkItem, NavGroup, NavEntry, NavSection } from '@/config/sidebarNav';
+import type { NavLink as NavLinkItem, NavGroup, NavEntry, NavSection, NavBadge } from '@/config/sidebarNav';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -54,7 +55,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
+  const unreadTickets = useFeedbackUnreadCount();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(buildInitialOpenState);
+
+  // The numbers behind each `badge` a nav link can name (see NavBadge).
+  const badgeCounts: Record<NavBadge, number> = { 'support-unread': unreadTickets };
 
   function toggleGroup(id: string) {
     setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -69,13 +74,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (item.workflowKey && !workflowsLoading && !isWorkflowEnabled(item.workflowKey)) return false;
     if (permissionsLoading) return true;
     if (item.permission) return hasPermission(item.permission.resource, item.permission.action);
-    // `alwaysVisible` means "every signed-in STAFF user" (currently just
-    // Dashboard) — it has no /api/portal/* backing, so a customer session
-    // gets no catch-all here. Every link a customer may reach
-    // (Sales Orders/Invoices/Payments/Refunds) declares an explicit
-    // `permission` and is handled by the branch above via useUserPermissions'
-    // portal allowlist, never by this fallback.
-    if (isCustomer) return false;
+    // `alwaysVisible` means "every signed-in STAFF user" (Dashboard, Support)
+    // — most have no /api/portal/* backing, so a customer session gets no
+    // catch-all here. The document links a customer may reach
+    // (Sales Orders/Invoices/Payments/Refunds) declare an explicit
+    // `permission` and are handled by the branch above via useUserPermissions'
+    // portal allowlist. The one ungated exception is a link that opts in with
+    // `customerVisible` (Support, which has a /api/portal/feedback* backing).
+    if (isCustomer) return item.customerVisible === true;
     // Fail closed. A link that declares no access rule at all is a config
     // oversight, and the safe reading of an oversight is "hide it" — the
     // previous default showed it, which is how fourteen Sales and Purchases
@@ -112,6 +118,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   function renderLink(item: NavLinkItem, isChild = false) {
     const Icon = item.icon;
+    const badgeCount = item.badge ? badgeCounts[item.badge] : 0;
     return (
       <NavLink
         key={item.id}
@@ -127,6 +134,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
         />
         <span>{item.label}</span>
+        {badgeCount > 0 && (
+          <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+            {badgeCount}
+            <span className="sr-only"> unread</span>
+          </span>
+        )}
       </NavLink>
     );
   }
