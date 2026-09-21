@@ -125,18 +125,25 @@ export const crmService = {
       )
       .then((r) => r.data.record),
 
+  // Idempotent: `created` is false when the source had already been converted,
+  // in which case `record` is the one an earlier conversion made (a Qualified
+  // lead's prospect, possibly since advanced to a customer) — not a new copy.
   convertRecord: (
     id: string,
     targetWorkflowKey: string,
     payload?: Partial<CRMCreatePayload>,
     workflowKey = '_',
-  ): Promise<{ record: WorkflowRecord; sourceRecordId: string }> =>
+  ): Promise<{ record: WorkflowRecord; sourceRecordId: string; created: boolean }> =>
     tenantClient
-      .post<{ success: boolean; record: WorkflowRecord; sourceRecordId: string }>(
+      .post<{ success: boolean; record: WorkflowRecord; sourceRecordId: string; created?: boolean }>(
         `/tenant/crm/${workflowKey}/records/${id}/convert`,
         { targetWorkflowKey, ...payload },
       )
-      .then((r) => ({ record: r.data.record, sourceRecordId: r.data.sourceRecordId })),
+      .then((r) => ({
+        record: r.data.record,
+        sourceRecordId: r.data.sourceRecordId,
+        created: r.data.created ?? true,
+      })),
 
   getRecordAudit: (id: string, workflowKey = '_'): Promise<AuditEntry[]> =>
     tenantClient

@@ -6,10 +6,12 @@ import {
   ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { crmService } from '@/services/crmService';
+import { crmService, CRM_WORKFLOW_KEYS } from '@/services/crmService';
 import { userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { StatusDropdown } from '@/components/crm/StatusDropdown';
+import { Badge } from '@/components/tenant/ui';
+import { resolveStatusColor } from '@/components/crm/formUtils';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { buildCrmCsvFilename, buildCrmRecordsCsv, downloadCsv } from '@/lib/crmCsvExport';
 import { CRM_WORKFLOW_ROUTES } from '@/components/crm/crmWorkflowRoutes';
@@ -97,6 +99,8 @@ export function CrmRecordTable({ config }: Props) {
       crmService.transitionRecord(vars.id, vars.toStateId, config.workflowKey),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', updated.id] });
+      // The dropdown's legal next moves depend on the status just set.
+      queryClient.invalidateQueries({ queryKey: ['crm-transitions', updated.id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', config.workflowKey] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== config.workflowKey && CRM_WORKFLOW_ROUTES[newType]) {
@@ -424,10 +428,14 @@ export function CrmRecordTable({ config }: Props) {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        {statusInfo ? (
+                        {statusInfo && config.workflowKey === CRM_WORKFLOW_KEYS.CUSTOMER ? (
+                          // A customer's status is changed with the Quick Action
+                          // buttons on its detail page, never from a dropdown, so
+                          // the list shows it as a plain badge.
+                          <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
+                        ) : statusInfo ? (
                           <StatusDropdown
                             workflowKey={config.workflowKey}
-                            mode="transitions"
                             recordId={record.id}
                             value={record.currentStateId}
                             onChange={(toStateId) => transition.mutate({ id: record.id, toStateId })}
