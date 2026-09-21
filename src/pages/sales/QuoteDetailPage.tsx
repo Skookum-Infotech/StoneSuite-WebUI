@@ -7,7 +7,7 @@ import { quoteService } from '@/services/quoteService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
@@ -118,6 +118,14 @@ export default function QuoteDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['quote', id] });
+    queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading quote…" /></div>;
   if (!quote)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load quote.')}</ErrorNote></div>;
@@ -224,24 +232,17 @@ export default function QuoteDetailPage() {
         </p>
       )}
 
-      {quote.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={quote.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={quote.canApprove}
-            isOverride={quote.isOverride}
-            requiredApprovals={quote.requiredApprovals}
-            approvedCount={quote.approvedCount}
-            callerAlreadyApproved={quote.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve quote.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={quote}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'quote', run: (reason) => quoteService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {quote.gated && approve.isError && (
+        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve quote.')}
+        </p>
       )}
 
       {/* Tab bar */}

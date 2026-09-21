@@ -6,7 +6,7 @@
 // v1 JSONB CRM router — Estimates are a relational sibling of `sales_order`/
 // `invoice` with ordered line items, snapshots, and stored money totals,
 // served from `/api/tenant/estimates*`.
-import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
+import type { FilterClause, SortKey, RecordApprover, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -117,6 +117,8 @@ export interface Estimate {
   canApprove: boolean;         // whether the requesting user can approve (configured approver OR super admin)
   isOverride: boolean;         // true when canApprove is only true because the user is a super admin, not a configured approver
   callerAlreadyApproved: boolean; // true if the requesting user already signed off this round (quorum may still need others)
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   customer: EstimateCustomerRef;
   estimateDate: string;
   validUntil?: string;

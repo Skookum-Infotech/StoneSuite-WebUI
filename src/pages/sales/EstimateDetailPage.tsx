@@ -7,7 +7,7 @@ import { estimateService } from '@/services/estimateService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
@@ -118,6 +118,14 @@ export default function EstimateDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['estimate', id] });
+    queryClient.invalidateQueries({ queryKey: ['estimates'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading estimate…" /></div>;
   if (!estimate)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load estimate.')}</ErrorNote></div>;
@@ -223,24 +231,17 @@ export default function EstimateDetailPage() {
         </p>
       )}
 
-      {estimate.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={estimate.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={estimate.canApprove}
-            isOverride={estimate.isOverride}
-            requiredApprovals={estimate.requiredApprovals}
-            approvedCount={estimate.approvedCount}
-            callerAlreadyApproved={estimate.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve estimate.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={estimate}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'estimate', run: (reason) => estimateService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {estimate.gated && approve.isError && (
+        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve estimate.')}
+        </p>
       )}
 
       {/* Tab bar */}

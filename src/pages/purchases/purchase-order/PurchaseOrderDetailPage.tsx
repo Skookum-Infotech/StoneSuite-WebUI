@@ -10,7 +10,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -104,6 +104,14 @@ export default function PurchaseOrderDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['purchase-order', id] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
   if (!po)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load purchase order.')}</ErrorNote></div>;
@@ -189,24 +197,17 @@ export default function PurchaseOrderDetailPage() {
         statusBadge={<Badge color={color}>{po.status}</Badge>}
       />
 
-      {po.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={po.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={po.canApprove}
-            isOverride={po.isOverride}
-            requiredApprovals={po.requiredApprovals}
-            approvedCount={po.approvedCount}
-            callerAlreadyApproved={po.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve purchase order.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={po}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'purchase order', run: (reason) => purchaseOrderService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {po.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve purchase order.')}
+        </p>
       )}
 
       {/* Tab bar */}
