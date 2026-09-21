@@ -13,6 +13,10 @@ export const textareaErrorCls =
 export const readonlyCls =
   'w-full min-h-10 px-3.5 py-2.5 text-xs text-stone-900 bg-stone-50 border border-stone-300 rounded-[10px]';
 
+/** A row in a CRM detail page's Quick Actions card. */
+export const quickActionRowCls =
+  'flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left';
+
 export const fieldLabelCls =
   'block text-xs font-semibold text-stone-900';
 
@@ -104,9 +108,9 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   PPUR: '#a855f7',
   PCLL: '#ef4444',
   PPCV: '#14b8a6',
-  CCLW: '#22c55e',
-  CCLL: '#ef4444',
-  CREN: '#3b82f6',
+  CACT: '#22c55e',
+  CINA: '#6b7280',
+  CCHD: '#f59e0b',
 };
 
 /** Returns the color for a status — uses backend value when present, falls back to the local map. */

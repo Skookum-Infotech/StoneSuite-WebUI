@@ -10,8 +10,7 @@ import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { CustomerDeleteButton } from "@/pages/crm/customer/components/CustomerDeleteButton";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
-import { StatusDropdown } from "@/components/crm/StatusDropdown";
-import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
+import { CustomerStatusActions } from "@/components/crm/CustomerStatusActions";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
 import { RejectRecordDialog } from "@/components/crm/RejectRecordDialog";
@@ -51,6 +50,7 @@ export default function CustomerDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission("customer", "update");
+  const canChangeStatus = permissionsLoading || hasPermission("customer", "transition");
   const canViewPortalAccess = permissionsLoading || hasPermission("portal_access", "read");
   const visibleTabs = TABS.filter((tab) => tab.key !== "portal" || canViewPortalAccess);
 
@@ -81,26 +81,19 @@ export default function CustomerDetailPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // The customer's status changes with the Quick Action buttons, and approval
+  // settles it too (approved -> Active, rejected -> Draft). Either way it decides
+  // whether the customer can be used on other records, so besides the record
+  // itself the customer list and the Sales customer picker must refetch.
+  function refreshCustomer() {
+    queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+    queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
+    queryClient.invalidateQueries({ queryKey: ["customer-picker"] });
+  }
+
   const approve = useMutation({
     mutationFn: () => crmService.approveRecord(id, "customer"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
-  });
-
-  // Inline status change from the sidebar's Status row — mirrors the Edit
-  // page's transition mutation.
-  const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "customer"),
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
-      // The dropdown's legal next moves depend on the status just set.
-      queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
-      queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
-      const newType = updated.workflowId?.toLowerCase();
-      if (newType && newType !== "customer" && CRM_WORKFLOW_ROUTES[newType]) {
-        queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
-        navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
-      }
-    },
+    onSuccess: refreshCustomer,
   });
 
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -225,7 +218,7 @@ export default function CustomerDetailPage() {
             <RejectRecordDialog
               recordId={id}
               workflowKey="customer"
-              onRejected={() => queryClient.invalidateQueries({ queryKey: ["crm-record", id] })}
+              onRejected={refreshCustomer}
             />
           )}
         />
@@ -308,15 +301,13 @@ export default function CustomerDetailPage() {
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <CrmDetailSidebar
             statusInfo={statusInfo}
-            statusControl={statusInfo && (
-              <StatusDropdown
-                workflowKey="customer"
+            quickActionsSlot={canChangeStatus && (
+              <CustomerStatusActions
                 recordId={id}
-                value={record.currentStateId}
-                onChange={(toStateId) => transition.mutate(toStateId)}
-                disabled={transition.isPending}
-                variant="pill"
+                statusCode={statusInfo?.stateKey}
                 gated={approval?.gated}
+                statuses={statusData?.statuses ?? []}
+                onChanged={refreshCustomer}
               />
             )}
             ownerUserId={record.ownerUserId}
