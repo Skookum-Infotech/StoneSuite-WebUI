@@ -11,6 +11,7 @@ import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
 import { StatusDropdown } from "@/components/crm/StatusDropdown";
+import { ConvertToProspectButton } from "@/components/crm/ConvertToProspectButton";
 import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
@@ -26,7 +27,8 @@ import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
-import { recordApprovalState, type StatusInfo } from "@/types/tenant";
+import { canConvertCrmRecord } from "@/lib/crmStatusFlow";
+import { recordApprovalState, type StatusInfo, type WorkflowRecord } from "@/types/tenant";
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -44,6 +46,9 @@ export default function LeadDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission("lead", "update");
+  // Convert mints a Prospect, so the backend checks lead:create on this lead
+  // and prospect:create on the target — gate the button on both.
+  const canConvert = permissionsLoading || (hasPermission("lead", "create") && hasPermission("prospect", "create"));
 
   const {
     data: record,
@@ -82,6 +87,8 @@ export default function LeadDetailPage() {
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "lead"),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+      // The dropdown's legal next moves depend on the status just set.
+      queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
       queryClient.invalidateQueries({ queryKey: ["crm-records", "lead"] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== "lead" && CRM_WORKFLOW_ROUTES[newType]) {
@@ -90,6 +97,14 @@ export default function LeadDetailPage() {
       }
     },
   });
+
+  // Lands on the record the conversion made — or, when the lead had already
+  // been converted, the one an earlier conversion made (see crmService.convertRecord).
+  const handleConverted = (converted: WorkflowRecord) => {
+    const type = converted.workflowId.toLowerCase();
+    queryClient.invalidateQueries({ queryKey: ["crm-records", type] });
+    navigate(`${CRM_WORKFLOW_ROUTES[type] || CRM_WORKFLOW_ROUTES.prospect}/${converted.id}`);
+  };
 
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
@@ -178,6 +193,9 @@ export default function LeadDetailPage() {
         subtitle="Lead"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
+        actions={canConvert && canConvertCrmRecord("lead", statusInfo?.stateKey, approval?.gated) && (
+          <ConvertToProspectButton recordId={id} onConverted={handleConverted} />
+        )}
       />
 
       {approval?.gated && (
@@ -268,7 +286,6 @@ export default function LeadDetailPage() {
             statusControl={statusInfo && (
               <StatusDropdown
                 workflowKey="lead"
-                mode="transitions"
                 recordId={id}
                 value={record.currentStateId}
                 onChange={(toStateId) => transition.mutate(toStateId)}

@@ -97,6 +97,8 @@ export function CrmRecordTable({ config }: Props) {
       crmService.transitionRecord(vars.id, vars.toStateId, config.workflowKey),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['crm-record', updated.id] });
+      // The dropdown's legal next moves depend on the status just set.
+      queryClient.invalidateQueries({ queryKey: ['crm-transitions', updated.id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', config.workflowKey] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== config.workflowKey && CRM_WORKFLOW_ROUTES[newType]) {
@@ -427,7 +429,6 @@ export function CrmRecordTable({ config }: Props) {
                         {statusInfo ? (
                           <StatusDropdown
                             workflowKey={config.workflowKey}
-                            mode="transitions"
                             recordId={record.id}
                             value={record.currentStateId}
                             onChange={(toStateId) => transition.mutate({ id: record.id, toStateId })}

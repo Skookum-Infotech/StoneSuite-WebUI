@@ -92,6 +92,8 @@ export default function CustomerDetailPage() {
     mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "customer"),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+      // The dropdown's legal next moves depend on the status just set.
+      queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
       queryClient.invalidateQueries({ queryKey: ["crm-records", "customer"] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== "customer" && CRM_WORKFLOW_ROUTES[newType]) {
@@ -309,7 +311,6 @@ export default function CustomerDetailPage() {
             statusControl={statusInfo && (
               <StatusDropdown
                 workflowKey="customer"
-                mode="transitions"
                 recordId={id}
                 value={record.currentStateId}
                 onChange={(toStateId) => transition.mutate(toStateId)}

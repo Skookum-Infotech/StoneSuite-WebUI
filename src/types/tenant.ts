@@ -471,7 +471,6 @@ export interface StatusInfo {
 export interface CRMCreatePayload {
   ownerUserId?: string;
   teamId?: string;
-  crmStatusId?: string;
   coreFields: Record<string, unknown>;
   customFields?: Record<string, unknown>;
 }

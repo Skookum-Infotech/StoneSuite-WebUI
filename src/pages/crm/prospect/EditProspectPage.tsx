@@ -77,6 +77,9 @@ export default function EditProspectPage() {
     onSuccess: (updated) => {
       setLocalStateId(updated.currentStateId);
       queryClient.invalidateQueries({ queryKey: ['crm-record', id] });
+      // The status is applied optimistically (localStateId), so the dropdown may
+      // already have fetched its moves before this commit landed — refetch them.
+      queryClient.invalidateQueries({ queryKey: ['crm-transitions', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-records', 'prospect'] });
       const newType = updated.workflowId?.toLowerCase();
       if (newType && newType !== 'prospect' && routeMap[newType]) {
@@ -273,7 +276,6 @@ export default function EditProspectPage() {
                 statusNode={(
                   <StatusDropdown
                     workflowKey="prospect"
-                    mode="transitions"
                     recordId={id}
                     value={currentStateId}
                     onChange={handleStatusChange}

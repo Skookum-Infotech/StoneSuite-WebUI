@@ -10,8 +10,8 @@ import type { StatusInfo } from '@/types/tenant';
 
 type Props = {
   workflowKey: string;
-  mode: 'all' | 'transitions';
-  recordId?: string;
+  /** The record whose legal next moves are listed. */
+  recordId: string;
   value: string;
   onChange: (stateId: string, label: string) => void;
   disabled?: boolean;
@@ -19,10 +19,10 @@ type Props = {
    *  Edit page's control, unchanged. 'pill' renders a compact colored
    *  badge-button sized for a table cell or a Detail page sidebar row. */
   variant?: 'field' | 'pill';
-  /** In 'transitions' mode, defer the /transitions fetch until the dropdown is
-   *  actually opened, instead of on mount — avoids firing one request per row
-   *  when this control sits in a list table. The Edit page (one record on
-   *  screen) omits this so its dropdown preloads instantly. */
+  /** Defer the /transitions fetch until the dropdown is actually opened, instead
+   *  of on mount — avoids firing one request per row when this control sits in
+   *  a list table. The Edit page (one record on screen) omits this so its
+   *  dropdown preloads instantly. */
   lazy?: boolean;
   /** True while the record's stage is awaiting or rejected from approval
    *  (record.approval.gated) — every option except the stage's own lost/
@@ -32,11 +32,16 @@ type Props = {
 };
 
 const PANEL_WIDTH = 224; // w-56
+const CATALOG_STALE_MS = 10 * 60 * 1000;
+const NO_MOVES_MESSAGE = 'No further status changes.';
 
 // CRM's parallel to StatusSelect (pages/sales/components/StatusSelect.tsx) —
-// same trigger/listbox mechanics, but statuses come from the live per-record
-// /transitions endpoint (workflows are tenant-configurable, so there's no
-// static allowedTransitions map to mirror) rather than a fixed catalog.
+// same trigger/listbox mechanics, but the options come from the live per-record
+// /transitions endpoint rather than a fixed catalog: they depend on the
+// record's stage AND current status (a New lead is offered only Qualified and
+// Unqualified; those two are final). A record with nothing left to move to
+// renders as a plain status — no chevron, nothing to open — like StatusSelect's
+// terminal state.
 //
 // The 'pill' variant arms a two-step confirm for any option whose target
 // state is terminal (server-reported via StatusInfo.isTerminal): one click
@@ -46,7 +51,7 @@ const PANEL_WIDTH = 224; // w-56
 // to document.body with fixed positioning, since a pill lives in a table
 // cell whose overflow-x-auto scroll wrapper would otherwise clip it.
 export function StatusDropdown({
-  workflowKey, mode, recordId, value, onChange, disabled, variant = 'field', lazy = false, gated = false,
+  workflowKey, recordId, value, onChange, disabled, variant = 'field', lazy = false, gated = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [armedStateId, setArmedStateId] = useState<string | null>(null);
@@ -70,52 +75,49 @@ export function StatusDropdown({
 
   const floatingPosition = useFloatingDropdownPosition(isPill && open, containerRef, close, PANEL_WIDTH);
 
-  // The workflow's full status catalog (id/label/color per status) — always
-  // fetched, not just in mode="all". This is what resolves the *closed*
-  // trigger's own label + color for mode="transitions", independent of
-  // `lazy`: the /transitions fetch below is deferred until the dropdown
-  // opens, so it has no data yet to describe the current status while
-  // closed. The table already fetches this same query key once for its
-  // status filter, so this is a cache hit, not an extra request.
+  // The workflow's full status catalog (id/label/color per status). This is
+  // what resolves the *closed* trigger's own label + color, independent of
+  // `lazy`: the /transitions fetch below is deferred until the dropdown opens,
+  // and only lists where the record can go — it never describes the status
+  // it is already in. The table already fetches this same query key once for
+  // its status filter, so this is a cache hit, not an extra request.
   const catalogQuery = useQuery({
     queryKey: ['crm-statuses-workflow', workflowKey],
     queryFn: () => crmService.getWorkflowStatuses(workflowKey),
-    staleTime: 10 * 60 * 1000,
+    staleTime: CATALOG_STALE_MS,
   });
   const catalogStatuses = useMemo(() => catalogQuery.data?.statuses ?? [], [catalogQuery.data]);
 
+  // Keyed on the current status as well as the record: the legal moves change
+  // every time the status does, so a new `value` is a new key and a list built
+  // for the old status is never reused. The pages' transition mutations also
+  // invalidate ['crm-transitions', id] on success — the Edit pages apply the new
+  // status optimistically, so the fetch under the new key can race the commit.
+  //
   // With `lazy`, this only starts fetching once `open` flips true — so
   // isLoading only ever becomes true *after* the panel is already open.
   // Nothing here may key off isLoading to hide the panel or disable the
   // trigger, or the panel would open and immediately vanish out from under
   // the click that opened it.
   const transitionsQuery = useQuery({
-    queryKey: ['crm-transitions', recordId],
-    queryFn: () => crmService.getAvailableTransitions(recordId!, workflowKey),
-    enabled: mode === 'transitions' && Boolean(recordId) && (!lazy || open),
+    queryKey: ['crm-transitions', recordId, value],
+    queryFn: () => crmService.getAvailableTransitions(recordId, workflowKey),
+    enabled: Boolean(recordId) && (!lazy || open),
   });
 
-  // Options shown when the panel is open: the full catalog in "all" mode,
-  // this record's legal next moves in "transitions" mode.
-  const statuses: StatusInfo[] = useMemo(
-    () => (mode === 'all' ? catalogStatuses : (transitionsQuery.data ?? [])),
-    [mode, catalogStatuses, transitionsQuery.data],
-  );
+  // Options shown when the panel is open: this record's legal next moves.
+  const statuses: StatusInfo[] = useMemo(() => transitionsQuery.data ?? [], [transitionsQuery.data]);
 
   // Two distinct loading concerns: the trigger's own placeholder depends on
-  // the catalog (it resolves `selected` regardless of mode); the panel's
-  // empty-state message depends on whichever source is feeding its options.
+  // the catalog (it resolves `selected`); the panel's empty-state message
+  // depends on the transitions fetch.
   const catalogLoading = catalogQuery.isLoading;
-  const optionsLoading = mode === 'all' ? catalogQuery.isLoading : transitionsQuery.isLoading;
+  const optionsLoading = transitionsQuery.isLoading;
 
-  // Auto-select initial state when statuses first load and no value is set.
-  // Callers must wrap onChange in useCallback to prevent unnecessary effect runs.
-  useEffect(() => {
-    if (mode === 'all' && !value && statuses.length > 0) {
-      const initial = statuses.find((s) => s.isInitial) ?? statuses[0];
-      onChange(initial.stateId, initial.statusLabel);
-    }
-  }, [mode, value, statuses, onChange]);
+  // No moves left (a Qualified/Unqualified lead): show a static status. Not
+  // applied to a `lazy` pill — its options aren't fetched until opened, so it
+  // can't know yet; its panel says so instead (NO_MOVES_MESSAGE).
+  const isFinal = !lazy && transitionsQuery.isSuccess && statuses.length === 0;
 
   // Close on outside click / Escape
   useEffect(() => {
@@ -187,10 +189,10 @@ export function StatusDropdown({
       </button>
     );
   }) : (
-    <p className="px-3.5 py-2.5 text-sm text-stone-400">{optionsLoading ? 'Loading…' : 'No statuses available.'}</p>
+    <p className="px-3.5 py-2.5 text-sm text-stone-400">{optionsLoading ? 'Loading…' : NO_MOVES_MESSAGE}</p>
   );
 
-  const panelOpen = open && !disabled;
+  const panelOpen = open && !disabled && !isFinal;
 
   return (
     <div ref={containerRef} className={isPill ? 'relative inline-block' : 'relative w-full'}>
@@ -202,8 +204,9 @@ export function StatusDropdown({
         type="button"
         aria-expanded={open}
         aria-haspopup="listbox"
-        onClick={() => { if (!disabled) { if (open) close(); else setOpen(true); } }}
-        disabled={disabled}
+        title={isFinal ? NO_MOVES_MESSAGE : undefined}
+        onClick={() => { if (!disabled && !isFinal) { if (open) close(); else setOpen(true); } }}
+        disabled={disabled || isFinal}
         className={triggerCls}
         style={isPill ? { backgroundColor: `${color}18` } : undefined}
       >
@@ -217,7 +220,9 @@ export function StatusDropdown({
             {catalogLoading ? 'Loading…' : 'Select status…'}
           </span>
         )}
-        <ChevronDown className={isPill ? 'size-3 shrink-0' : 'size-3 shrink-0 text-stone-400'} aria-hidden="true" />
+        {!isFinal && (
+          <ChevronDown className={isPill ? 'size-3 shrink-0' : 'size-3 shrink-0 text-stone-400'} aria-hidden="true" />
+        )}
       </button>
 
       {panelOpen && !isPill && (

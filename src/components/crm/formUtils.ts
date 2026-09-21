@@ -92,6 +92,9 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   customer_renewal:            '#3b82f6',
   customer_closed_lost:        '#ef4444',
   // DesignV2 relational codes
+  LNEW: '#64748b',
+  PNEW: '#64748b',
+  CDRF: '#a8a29e',
   LQUA: '#8b5cf6',
   LUNQ: '#ef4444',
   PDIS: '#64748b',
