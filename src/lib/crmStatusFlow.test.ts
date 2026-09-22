@@ -8,9 +8,12 @@ import {
   CUSTOMER_STATUS,
   CUSTOMER_STATUS_ACTIONS,
   CUSTOMER_USABLE_STATUS,
+  customerActiveStateId,
   customerEditNotice,
+  customerRecordIsUsable,
   customerStatusActions,
 } from './crmStatusFlow';
+import type { StatusInfo } from '@/types/tenant';
 
 interface Case {
   name: string;
@@ -147,5 +150,41 @@ describe('customerEditNotice', () => {
 
   it('gives no warning while the status has not loaded', () => {
     expect(customerEditNotice(undefined, true)).toBeNull();
+  });
+});
+
+function statusInfo(stateId: string, stateKey: string): StatusInfo {
+  return {
+    stateId, stateKey, statusLabel: stateKey, workflowKey: 'customer', workflowName: 'Customer',
+    isInitial: false, isTerminal: false, sortOrder: 0, color: '#000',
+  };
+}
+
+const CUSTOMER_STATUSES: StatusInfo[] = [
+  statusInfo('s-draft', CUSTOMER_STATUS.DRAFT),
+  statusInfo('s-active', CUSTOMER_STATUS.ACTIVE),
+  statusInfo('s-inactive', CUSTOMER_STATUS.INACTIVE),
+  statusInfo('s-hold', CUSTOMER_STATUS.CREDIT_HOLD),
+];
+
+describe('customerRecordIsUsable', () => {
+  it.each([
+    ['s-active', true],
+    ['s-draft', false],
+    ['s-inactive', false],
+    ['s-hold', false],
+    ['unknown-state-id', false],
+  ])('%s -> %s', (stateId, want) => {
+    expect(customerRecordIsUsable(stateId, CUSTOMER_STATUSES)).toBe(want);
+  });
+});
+
+describe('customerActiveStateId', () => {
+  it("returns Active's stateId", () => {
+    expect(customerActiveStateId(CUSTOMER_STATUSES)).toBe('s-active');
+  });
+
+  it('returns undefined when Active is missing from the list', () => {
+    expect(customerActiveStateId(CUSTOMER_STATUSES.filter((s) => s.stateKey !== CUSTOMER_STATUS.ACTIVE))).toBeUndefined();
   });
 });
