@@ -16,6 +16,41 @@ export const CRM_CONVERT_FROM_STATUS: Record<string, string> = { lead: 'LQUA', p
 /** The status the Pending Conversion header button sets. */
 export const CRM_PENDING_CONVERSION_STATUS = 'PPCV';
 
+/** Codes of the three Lead statuses relevant to its status buttons
+ *  (lkp_crm_status.crm_status_code). */
+export const LEAD_STATUS = {
+  NEW: 'LNEW',
+  QUALIFIED: 'LQUA',
+  UNQUALIFIED: 'LUNQ',
+} as const;
+
+/** Identifies a Lead status button, for its icon and its mutation's pending check. */
+export type LeadStatusActionKey = 'qualify' | 'unqualify';
+
+/** A Lead header status button: the status it sets, its label, and the toast
+ *  shown once it has. */
+export interface LeadStatusAction {
+  key: LeadStatusActionKey;
+  toStatus: string;
+  label: string;
+  success: string;
+}
+
+const MARK_QUALIFIED: LeadStatusAction = {
+  key: 'qualify', toStatus: LEAD_STATUS.QUALIFIED, label: 'Mark Qualified', success: 'Lead marked Qualified.',
+};
+const MARK_UNQUALIFIED: LeadStatusAction = {
+  key: 'unqualify', toStatus: LEAD_STATUS.UNQUALIFIED, label: 'Mark Unqualified', success: 'Lead marked Unqualified.',
+};
+
+/** The status buttons to show for a Lead — only while it is New. Qualified and
+ *  Unqualified are both terminal for the Lead workflow itself: a Qualified
+ *  lead moves on via the header's Convert to Prospect button instead of
+ *  another status button. Mirrors CUSTOMER_STATUS_ACTIONS below. */
+export function leadStatusActions(statusCode: string | undefined): readonly LeadStatusAction[] {
+  return statusCode === LEAD_STATUS.NEW ? [MARK_QUALIFIED, MARK_UNQUALIFIED] : [];
+}
+
 /** Statuses a record of each workflow can be marked Pending Conversion from: a
  *  prospect's working statuses (In Discussion, In Negotiation, Proposal Sent,
  *  Decision Pending, Contacted) — not New, not Lost. */
