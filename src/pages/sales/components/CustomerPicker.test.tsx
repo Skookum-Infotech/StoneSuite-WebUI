@@ -144,4 +144,34 @@ describe('CustomerPicker', () => {
     expect(await screen.findByRole('button', { name: /Acme Corp/ })).toBeInTheDocument();
     expect(screen.queryByText(/isn't an existing customer/)).not.toBeInTheDocument();
   });
+
+  it('links straight to the existing customer instead of Create when the name belongs to a non-Active customer', async () => {
+    // The Active-only list (status:in filter) has no match, but a second,
+    // unfiltered search finds one — e.g. a Draft/Inactive/Credit Hold customer,
+    // which CUSTOMER_USABLE_STATUS excludes from the first query entirely.
+    vi.mocked(crmService.searchRecords).mockImplementation(async (_workflowKey, req) => {
+      const isActiveOnlyQuery = req.filters?.some((f) => f.field === 'status');
+      const records: WorkflowRecord[] = isActiveOnlyQuery ? [] : [{
+        id: 'cust-9', workflowId: '', currentStateId: 's-draft', coreFields: { customer_name: 'Wayne Enterprises' },
+        customFields: {}, createdAt: '', updatedAt: '',
+      }];
+      return { records, nextCursor: '', hasMore: false, scope: 'all' };
+    });
+    const onCreateNew = vi.fn();
+    const user = userEvent.setup();
+    renderPicker({ onCreateNew });
+
+    const input = screen.getByRole('textbox', { name: 'Search billing customer' });
+    await user.click(input);
+    await user.type(input, 'Wayne Enterprises');
+
+    expect(await screen.findByText(/already exists but isn't Active/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /as a new customer/ })).not.toBeInTheDocument();
+    expect(onCreateNew).not.toHaveBeenCalled();
+
+    const link = await screen.findByRole('link', { name: /reactivate/i });
+    expect(link).toHaveAttribute('href', '/crm/customer/cust-9');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
 });

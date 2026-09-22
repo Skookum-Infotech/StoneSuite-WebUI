@@ -9,17 +9,28 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { vendorDefaults, validateVendorForm, toCreatePayload, type VendorFieldError } from '@/lib/vendorForm';
+import { DuplicateRecordDialog } from '@/components/DuplicateRecordDialog';
+import {
+  vendorDefaults, validateVendorForm, toCreatePayload, vendorNameForDuplicateCheck, type VendorFieldError,
+} from '@/lib/vendorForm';
 import { defaultCountryId } from '@/lib/lookupDefaults';
 import {
   NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
 } from '@/lib/recordCreateReturn';
+import { findDuplicateMatch, type DuplicateCandidate, type DuplicateMatchStatus } from '@/lib/duplicateRecordCheck';
 import type { VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
-import type { Vendor, VendorType } from '@/types/vendor';
+import { VENDOR_USABLE_STATUS_CODE, type Vendor, type VendorType } from '@/types/vendor';
 import { VendorTypeSwitcher } from './components/VendorTypeSwitcher';
 import { VendorFormBody } from './components/VendorFormBody';
 
 const VENDOR_LIST_PATH = '/purchases/vendor';
+
+interface VendorDuplicate {
+  id: string;
+  name: string;
+  status: DuplicateMatchStatus;
+  statusLabel: string;
+}
 
 export default function AddVendorPage() {
   const navigate = useNavigate();
@@ -40,6 +51,9 @@ export default function AddVendorPage() {
     () => ({ ...vendorDefaults(), legal_name: searchParams.get(NAME_PARAM) ?? '' }),
   );
   const [validationErrors, setValidationErrors] = useState<VendorFieldError[]>([]);
+  const [duplicate, setDuplicate] = useState<VendorDuplicate | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [duplicateCheckError, setDuplicateCheckError] = useState<string | null>(null);
 
   const vendorType = (data.vendor_type as VendorType) ?? 'Organization';
 
@@ -84,7 +98,49 @@ export default function AddVendorPage() {
       leave(vendor);
     },
   });
-  const errorRef = useScrollToError<HTMLDivElement>(saveError);
+
+  const { mutate: activateVendor, isPending: isActivating } = useMutation({
+    mutationFn: (id: string) => vendorService.transition(id, VENDOR_USABLE_STATUS_CODE),
+    onSuccess: (vendor) => {
+      toast.success(returnTo ? 'Vendor activated and added to your document.' : 'Vendor activated.');
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      setDuplicate(null);
+      leave(vendor);
+    },
+  });
+
+  // Runs after field validation passes and before the create call, so a
+  // vendor already in the system — active or not — is reused instead of
+  // duplicated (see lib/duplicateRecordCheck.ts).
+  async function checkDuplicateThenCreate() {
+    const name = vendorNameForDuplicateCheck(formData);
+    setDuplicateCheckError(null);
+    setIsCheckingDuplicate(true);
+    try {
+      const { records } = await vendorService.searchVendors({ search: name, limit: 25 });
+      const candidates: (DuplicateCandidate & { statusLabel: string })[] = records.map((v) => ({
+        id: v.id,
+        name: v.displayName,
+        isUsable: v.statusCode === VENDOR_USABLE_STATUS_CODE,
+        statusLabel: v.status,
+      }));
+      const match = findDuplicateMatch(candidates, name);
+      if (match) {
+        setDuplicate({
+          id: match.candidate.id, name: match.candidate.name, status: match.status, statusLabel: match.candidate.statusLabel,
+        });
+        return;
+      }
+    } catch (err) {
+      setDuplicateCheckError(apiErrorMessage(err, "Couldn't check for an existing vendor with this name. Please try again."));
+      return;
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+    save();
+  }
+
+  const errorRef = useScrollToError<HTMLDivElement>(saveError || duplicateCheckError);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -97,7 +153,7 @@ export default function AddVendorPage() {
             return;
           }
           setValidationErrors([]);
-          save();
+          void checkDuplicateThenCreate();
         }}
         className="flex flex-col flex-1 min-h-0"
       >
@@ -112,11 +168,11 @@ export default function AddVendorPage() {
           actions={(
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isCheckingDuplicate}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
             >
-              {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-              {isPending ? 'Saving…' : 'Save Vendor'}
+              {(isPending || isCheckingDuplicate) ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {isPending ? 'Saving…' : isCheckingDuplicate ? 'Checking…' : 'Save Vendor'}
             </button>
           )}
         />
@@ -134,6 +190,22 @@ export default function AddVendorPage() {
             <p className="text-xs text-red-700">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save vendor.')}
+            </p>
+          </div>
+        )}
+        {!saveError && duplicateCheckError && (
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+          >
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertCircle className="size-3 text-red-600" />
+            </span>
+            <p className="text-xs text-red-700">
+              <span className="font-bold">Error: </span>
+              {duplicateCheckError}
             </p>
           </div>
         )}
@@ -174,10 +246,19 @@ export default function AddVendorPage() {
 
         <FormActionBar
           onCancel={() => leave(null)}
-          isPending={isPending}
+          isPending={isPending || isCheckingDuplicate || isActivating}
           submitLabel="Save Vendor"
         />
       </form>
+      {duplicate && (
+        <DuplicateRecordDialog
+          entity="vendor"
+          match={duplicate}
+          isActivating={isActivating}
+          onCancel={() => setDuplicate(null)}
+          onActivate={() => activateVendor(duplicate.id)}
+        />
+      )}
     </div>
   );
 }

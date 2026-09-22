@@ -1,3 +1,5 @@
+import type { StatusInfo } from '@/types/tenant';
+
 // CRM (Lead/Prospect/Customer) status-flow helpers shared by the detail pages.
 // Mirrors crmConvertRules, the prospect's working statuses (prospectWorking) and the
 // customer status flow in the backend's crmstore/relational_status.go — keep them
@@ -155,6 +157,20 @@ export function customerStatusActions(
  *  usable on other records the moment the edit is saved. A customer already in
  *  Draft has nothing to lose, and one whose status hasn't loaded yet gets no
  *  warning rather than a wrong one. */
+/** Whether the customer record at `currentStateId` is already Active — used by
+ *  the Add Customer page's duplicate-name check (AddCustomerPage.tsx) to tell
+ *  an already-usable duplicate from one that would need reactivating first. */
+export function customerRecordIsUsable(currentStateId: string, statuses: StatusInfo[]): boolean {
+  return statuses.find((s) => s.stateId === currentStateId)?.stateKey === CUSTOMER_USABLE_STATUS;
+}
+
+/** The stateId to pass to `crmService.transitionRecord` to make a customer
+ *  Active — resolved from the workflow's status catalog since `transitionRecord`
+ *  takes a stateId, not the `CACT` status code. */
+export function customerActiveStateId(statuses: StatusInfo[]): string | undefined {
+  return statuses.find((s) => s.stateKey === CUSTOMER_STATUS.ACTIVE)?.stateId;
+}
+
 export function customerEditNotice(
   statusCode: string | undefined,
   requiresApproval: boolean,
