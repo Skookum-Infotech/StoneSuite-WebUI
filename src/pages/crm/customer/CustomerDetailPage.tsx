@@ -200,6 +200,15 @@ export default function CustomerDetailPage() {
         subtitle="Customer"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
+        actions={canChangeStatus && (
+          <CustomerStatusActions
+            recordId={id}
+            statusCode={statusInfo?.stateKey}
+            gated={approval?.gated}
+            statuses={statusData?.statuses ?? []}
+            onChanged={refreshCustomer}
+          />
+        )}
       />
 
       {approval?.gated && (
@@ -301,15 +310,6 @@ export default function CustomerDetailPage() {
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <CrmDetailSidebar
             statusInfo={statusInfo}
-            quickActionsSlot={canChangeStatus && (
-              <CustomerStatusActions
-                recordId={id}
-                statusCode={statusInfo?.stateKey}
-                gated={approval?.gated}
-                statuses={statusData?.statuses ?? []}
-                onChanged={refreshCustomer}
-              />
-            )}
             ownerUserId={record.ownerUserId}
             users={users}
             createdAt={record.createdAt}

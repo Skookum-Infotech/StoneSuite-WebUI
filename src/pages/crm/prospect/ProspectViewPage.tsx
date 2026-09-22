@@ -10,7 +10,7 @@ import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
-import { StatusDropdown } from "@/components/crm/StatusDropdown";
+import { MoveStageButton } from "@/components/crm/MoveStageButton";
 import { ConvertRecordButton } from "@/components/crm/ConvertRecordButton";
 import { PendingConversionButton } from "@/components/crm/PendingConversionButton";
 import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
@@ -87,24 +87,22 @@ export default function ProspectViewPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
   });
 
-  // Inline status change from the sidebar's Status row — mirrors the Edit
-  // page's transition mutation. The server no longer moves a prospect into
-  // another stage this way (a customer comes from Convert to Customer), so the
-  // stage-change branch below only guards a response that says otherwise.
-  const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "prospect"),
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
-      // The dropdown's legal next moves depend on the status just set.
-      queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
-      queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
-      const newType = updated.workflowId?.toLowerCase();
-      if (newType && newType !== "prospect" && CRM_WORKFLOW_ROUTES[newType]) {
-        queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
-        navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
-      }
-    },
-  });
+  // Header status change (MoveStageButton runs its own mutation) — mirrors the
+  // Edit page's transition handling. The server no longer moves a prospect
+  // into another stage this way (a customer comes from Convert to Customer),
+  // so the stage-change branch below only guards a response that says
+  // otherwise.
+  const handleStatusChanged = (updated: WorkflowRecord) => {
+    queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+    // The Edit page's dropdown's legal next moves depend on the status just set.
+    queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
+    queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
+    const newType = updated.workflowId?.toLowerCase();
+    if (newType && newType !== "prospect" && CRM_WORKFLOW_ROUTES[newType]) {
+      queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
+      navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
+    }
+  };
 
   // Marking Pending Conversion changes the status, so refresh the record, the
   // dropdown's options (they depend on the status) and the list.
@@ -227,7 +225,20 @@ export default function ProspectViewPage() {
         subtitle="Prospect"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
-        actions={headerAction}
+        actions={(
+          <>
+            {canMarkPending && (
+              <MoveStageButton
+                workflowKey="prospect"
+                recordId={id}
+                currentStateId={record.currentStateId}
+                gated={approval?.gated}
+                onChanged={handleStatusChanged}
+              />
+            )}
+            {headerAction}
+          </>
+        )}
       />
 
       {approval?.gated && (
@@ -315,17 +326,6 @@ export default function ProspectViewPage() {
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <CrmDetailSidebar
             statusInfo={statusInfo}
-            statusControl={statusInfo && (
-              <StatusDropdown
-                workflowKey="prospect"
-                recordId={id}
-                value={record.currentStateId}
-                onChange={(toStateId) => transition.mutate(toStateId)}
-                disabled={transition.isPending}
-                variant="pill"
-                gated={approval?.gated}
-              />
-            )}
             ownerUserId={record.ownerUserId}
             users={users}
             createdAt={record.createdAt}
