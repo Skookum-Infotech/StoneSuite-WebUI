@@ -131,6 +131,21 @@ export function validateVendorForm(data: Record<string, unknown>): VendorFieldEr
   return errors;
 }
 
+/** The name AddVendorPage's duplicate-name check searches/matches against —
+ *  there's no client-side displayName like Vendor.displayName until the
+ *  record exists, so this derives the same value from the in-progress form:
+ *  legal name for an Organization, "first last" for a Person. */
+export function vendorNameForDuplicateCheck(data: Record<string, unknown>): string {
+  const vendorType = (data.vendor_type as VendorType) ?? 'Organization';
+  if (vendorType === 'Person') {
+    return [data.given_name, data.family_name]
+      .map((v) => String(v ?? '').trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+  return String(data.legal_name ?? '').trim();
+}
+
 // ── Payload mapping (UI form state -> create contract) ───────────────────────
 
 function toStr(v: unknown): string {

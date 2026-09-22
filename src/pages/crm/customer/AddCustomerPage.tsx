@@ -14,6 +14,7 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { InitialStatusField } from '@/components/crm/InitialStatusField';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { DuplicateRecordDialog } from '@/components/DuplicateRecordDialog';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
@@ -25,6 +26,7 @@ import { cn } from '@/lib/utils';
 import {
   NAME_PARAM, RETURN_TO_PARAM, isSafeReturnPath, returnRouterState,
 } from '@/lib/recordCreateReturn';
+import { useCustomerDuplicateCheck } from '@/hooks/useCustomerDuplicateCheck';
 import type { FieldDefinition, WorkflowRecord } from '@/types/tenant';
 
 const CUSTOMER_LIST_PATH = '/crm/customer';
@@ -147,7 +149,26 @@ export default function AddCustomerPage() {
       leave(record);
     },
   });
-  const errorRef = useScrollToError<HTMLDivElement>(createError);
+
+  const {
+    duplicate, dismissDuplicate, activateDuplicate, isActivating, check: checkDuplicate, isChecking: isCheckingDuplicate, checkError: duplicateCheckError,
+  } = useCustomerDuplicateCheck({
+    onActivated: (record) => {
+      toast.success(returnTo ? 'Customer activated and added to your document.' : 'Customer activated.');
+      guard.markClean();
+      leave(record);
+    },
+  });
+
+  async function checkDuplicateThenCreate() {
+    const name = String(formCoreFields.customer_name ?? '').trim();
+    const canProceed = await checkDuplicate(name);
+    if (canProceed) createCustomer();
+  }
+
+  const errorRef = useScrollToError<HTMLDivElement>(createError || duplicateCheckError);
+  const busy = isPending || isUploadingFiles || isCheckingDuplicate;
+  const saveLabel = isPending ? 'Saving…' : isUploadingFiles ? 'Uploading…' : isCheckingDuplicate ? 'Checking…' : 'Save Customer';
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
@@ -158,7 +179,7 @@ export default function AddCustomerPage() {
           const errors = validateCrmRecord(formCoreFields, customFieldDefs, customFieldValues);
           if (errors.length > 0) { setValidationErrors(errors); setActiveTab('details'); return; }
           setValidationErrors([]);
-          createCustomer();
+          void checkDuplicateThenCreate();
         }}
         className="flex flex-col flex-1 min-h-0"
       >
@@ -173,21 +194,19 @@ export default function AddCustomerPage() {
             ? "Fields marked * are required. You'll go back to your document after saving."
             : 'Fields marked * are required.'}
           actions={(
-            <>
-              <button
-                type="submit"
-                disabled={isPending || isUploadingFiles}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
-              >
-                {(isPending || isUploadingFiles) ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-                {isPending ? 'Saving…' : isUploadingFiles ? 'Uploading…' : 'Save Customer'}
-              </button>
-            </>
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
+            >
+              {busy ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {saveLabel}
+            </button>
           )}
         />
 
         {/* Error / upload-error banners */}
-        {createError && (
+        {(createError || duplicateCheckError) && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -199,7 +218,7 @@ export default function AddCustomerPage() {
             </span>
             <p className="text-xs text-red-700">
               <span className="font-bold">Error: </span>
-              {apiErrorMessage(createError, 'Failed to save customer.')}
+              {createError ? apiErrorMessage(createError, 'Failed to save customer.') : duplicateCheckError}
             </p>
           </div>
         )}
@@ -272,11 +291,20 @@ export default function AddCustomerPage() {
 
         <FormActionBar
           onCancel={() => leave(null)}
-          isPending={isPending}
+          isPending={busy || isActivating}
           isUploadingFiles={isUploadingFiles}
           submitLabel="Save Customer"
         />
       </form>
+      {duplicate && (
+        <DuplicateRecordDialog
+          entity="customer"
+          match={duplicate}
+          isActivating={isActivating}
+          onCancel={dismissDuplicate}
+          onActivate={activateDuplicate}
+        />
+      )}
     </div>
   );
 }
