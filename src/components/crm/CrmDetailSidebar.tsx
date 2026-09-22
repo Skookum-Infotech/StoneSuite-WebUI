@@ -20,10 +20,6 @@ type Props = {
   onExportPdf?: () => void;
   exportingPdf?: boolean;
   exportPdfError?: string;
-  /** Extra Quick Action rows shown right after Edit record — a customer's
-   *  status buttons (Make Active, Credit Hold, …). Render each as a button styled
-   *  with `quickActionRowCls`. */
-  quickActionsSlot?: ReactNode;
   approvalSlot?: ReactNode;
   /** Customer-only: portal-login status card, shown just below Approval. */
   portalAccessSlot?: ReactNode;
@@ -60,7 +56,6 @@ export function CrmDetailSidebar({
   onExportPdf,
   exportingPdf,
   exportPdfError,
-  quickActionsSlot,
   approvalSlot,
   portalAccessSlot,
   deleteSlot,
@@ -97,7 +92,6 @@ export function CrmDetailSidebar({
               Edit record
             </button>
           )}
-          {quickActionsSlot}
           {onExportPdf && (
             <button
               type="button"

@@ -46,7 +46,8 @@ const CONVERT_ACTIONS: Record<ConvertibleWorkflow, ConvertAction> = {
 // source untouched. Idempotent server-side: clicking again on an
 // already-converted record resolves to the existing one instead of a
 // duplicate, so a repeat click is just navigation. Render it as the direct
-// child of CrmPageHeader's `actions` slot.
+// child of CrmPageHeader's `actions` slot. Styled as the header's primary
+// action (solid brand button) — it's the one move that advances the record.
 export function ConvertRecordButton({ recordId, sourceKey, onConverted }: Props) {
   const action = CONVERT_ACTIONS[sourceKey];
   const convert = useMutation({
@@ -65,7 +66,7 @@ export function ConvertRecordButton({ recordId, sourceKey, onConverted }: Props)
       type="button"
       onClick={() => convert.mutate()}
       disabled={convert.isPending}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover disabled:opacity-50"
     >
       {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
       {action.label}

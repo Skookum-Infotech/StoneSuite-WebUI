@@ -20,7 +20,11 @@ type Props = {
 // transition endpoint as the dropdown, so the approval gate applies as usual
 // (the page hides the button while the prospect is gated). No confirm dialog:
 // the move can be undone from the status dropdown. Render it as the direct
-// child of CrmPageHeader's `actions` slot.
+// child of CrmPageHeader's `actions` slot. Solid brand — same treatment as
+// Lead's Mark Qualified / Convert buttons (LeadStatusActions.tsx,
+// ConvertRecordButton.tsx): the CRM's header status buttons use one shared
+// color language (solid brand for a forward move, red only for an exit like
+// Closed Lost), not a color per button.
 export function PendingConversionButton({ recordId, toStateId, onMarked }: Props) {
   const mark = useMutation({
     mutationFn: () => crmService.transitionRecord(recordId, toStateId, CRM_WORKFLOW_KEYS.PROSPECT),
@@ -36,7 +40,7 @@ export function PendingConversionButton({ recordId, toStateId, onMarked }: Props
       type="button"
       onClick={() => mark.mutate()}
       disabled={mark.isPending}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
     >
       {mark.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Hourglass className="size-3.5" />}
       Pending Conversion
