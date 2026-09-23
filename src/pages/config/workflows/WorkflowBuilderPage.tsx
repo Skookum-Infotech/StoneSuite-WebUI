@@ -178,7 +178,7 @@ export default function WorkflowBuilderPage() {
           content use the full available width rather than centering in a
           narrow column. */}
       <div className="flex-1 overflow-y-auto modal-scrollbar">
-        <div className="space-y-6 px-4 py-8 sm:px-8">
+        <div className="space-y-4 px-4 py-4 sm:px-8">
           {crmKey && (
             <Section title="Approval chain" action={<Badge size="sm">Whole stage</Badge>}>
               <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
