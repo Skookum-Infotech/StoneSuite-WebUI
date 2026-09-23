@@ -23,6 +23,7 @@ import { PostJournalEntryDialog } from './components/PostJournalEntryDialog';
 import { ReverseJournalEntryDialog } from './components/ReverseJournalEntryDialog';
 import { CancelJournalEntryDialog } from './components/CancelJournalEntryDialog';
 import { DeleteJournalEntryDialog } from './components/DeleteJournalEntryDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { JournalEntry } from '@/types/journalEntry';
 
 const TABS = [
@@ -286,8 +287,7 @@ export default function JournalEntryDetailPage() {
           </div>
 
           {(canDeleteHere || canCancelHere) && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               {canCancelHere && (
                 <CancelJournalEntryDialog journalEntryId={id} onCancelled={refresh} />
               )}
@@ -301,7 +301,7 @@ export default function JournalEntryDetailPage() {
                   }}
                 />
               )}
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

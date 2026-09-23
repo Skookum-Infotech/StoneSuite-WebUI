@@ -1,9 +1,33 @@
 import { describe, it, expect } from 'vitest';
-import { defaultCountryId, defaultCurrencyId, defaultUnitId } from './lookupDefaults';
+import {
+  DEFAULT_COUNTRY_NAME, defaultCountryId, defaultCountryName, defaultCurrencyId, defaultUnitId,
+} from './lookupDefaults';
 
-function item(id: number, code: string) {
-  return { id, code };
+function item(id: number, code: string, name = '') {
+  return { id, code, name };
 }
+
+describe('DEFAULT_COUNTRY_NAME', () => {
+  it('matches the lkp_country seed row name for DEFAULT_COUNTRY_CODE', () => {
+    expect(DEFAULT_COUNTRY_NAME).toBe('United States of America');
+  });
+});
+
+describe('defaultCountryName', () => {
+  it('finds the name for code US', () => {
+    expect(defaultCountryName([item(7, 'CA', 'Canada'), item(3, 'US', 'United States of America')])).toBe(
+      'United States of America',
+    );
+  });
+
+  it.each([undefined, []])('falls back to DEFAULT_COUNTRY_NAME when lookups are %p', (countries) => {
+    expect(defaultCountryName(countries)).toBe(DEFAULT_COUNTRY_NAME);
+  });
+
+  it('falls back to DEFAULT_COUNTRY_NAME when US is missing/deactivated', () => {
+    expect(defaultCountryName([item(7, 'CA', 'Canada')])).toBe(DEFAULT_COUNTRY_NAME);
+  });
+});
 
 describe('defaultCountryId', () => {
   it('finds the id for code US', () => {

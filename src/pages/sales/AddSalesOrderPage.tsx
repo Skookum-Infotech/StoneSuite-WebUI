@@ -22,9 +22,10 @@ import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import {
-  soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, type PageTab,
+  soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type SOLineItem, type SODrawing,
 } from '@/lib/salesOrderForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface SalesOrderDraft {
@@ -131,6 +132,8 @@ export default function AddSalesOrderPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], formData);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
       return salesOrderService.createOrder(payload);
     },

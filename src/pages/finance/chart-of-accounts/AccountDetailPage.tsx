@@ -20,6 +20,7 @@ import { AccountFormDrawer } from './components/AccountFormDrawer';
 import { AccountHistoryTab } from './components/AccountHistoryTab';
 import { BlockingSlotsDialog } from './components/BlockingSlotsDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -302,8 +303,7 @@ export default function AccountDetailPage() {
           </div>
 
           {canDelete && !account.isSystem && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteAccountDialog
                 accountId={id}
                 label={`${account.code} ${account.name}`}
@@ -313,7 +313,7 @@ export default function AccountDetailPage() {
                   navigate('/finance/chart-of-accounts');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </div>
       </div>

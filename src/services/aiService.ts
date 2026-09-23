@@ -2,9 +2,11 @@ import { tenantClient } from '@/api/tenantClient';
 import type { AiConversation, AiMessage, AskResponse, AskResult } from '@/types/ai';
 
 // The full-RAG path (embed -> retrieve -> optional rerank -> generate) can
-// run long on a cold Ollama model — matches the backend's write timeout for
-// /ai/ask (see docs/ai-assistant.md).
-const ASK_TIMEOUT_MS = 90_000;
+// run long on a cold Ollama model. Must clear the backend's own
+// http.Server.WriteTimeout with margin, not just match it: 90_000 here was
+// exactly equal to that 90s server value, so a completion landing at 89.9s
+// still surfaced as a client-side timeout instead of the real response.
+const ASK_TIMEOUT_MS = 120_000;
 
 export const aiService = {
   // conversationId is optional: omit for a stateless single-turn ask

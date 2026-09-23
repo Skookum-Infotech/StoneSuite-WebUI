@@ -45,23 +45,25 @@ describe("exportSalesDocToPdf", () => {
     vi.unstubAllGlobals();
   });
 
-  it("builds and saves a PDF with sections, an items table, and totals", async () => {
+  it("builds and saves a PDF with a hero amount, bill/ship addresses, an items table, and totals", async () => {
     await expect(
       exportSalesDocToPdf({
-        docType: "sales_order",
-        title: "SO-0001",
-        recordNumber: "SO-0001",
-        statusLabel: "Open",
+        docType: "invoice",
+        title: "INV-0001",
+        recordNumber: "INV-0001",
+        statusLabel: "Sent",
         customerName: "Acme Corp",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-02T00:00:00Z",
-        sections: [
-          { title: "Primary Information", rows: [["Order Date", "Jan 1, 2026"], ["PO Number", ""]] },
-          { title: "Bill To", rows: [["Address", "123 Main St"]] },
-        ],
+        issueDate: "Jan 1, 2026",
+        dueDate: "Jan 31, 2026",
+        keyAmount: { label: "Amount Due", value: "$400.00" },
+        billTo: { customerName: "Acme Corp", addrLine1: "123 Main St", city: "Austin", zip: "78701" },
+        shipTo: { customerName: "Acme Warehouse", addrLine1: "456 Oak Ave" },
+        notesText: "Thank you for your business.",
+        sections: [{ title: "Primary Information", rows: [["PO Number", "PO-9"], ["Reference #", ""]] }],
         itemsTable: {
           head: ["#", "Item", "Qty", "Total"],
           rows: [["1", "Granite Slab", "2", "$400.00"]],
+          descriptions: ["3cm polished, book-matched"],
           numericFrom: 2,
         },
         totals: [
@@ -72,7 +74,7 @@ describe("exportSalesDocToPdf", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("builds and saves a PDF for a scalar doc type with no line items", async () => {
+  it("builds and saves a PDF for a scalar doc type with no address data (customer fallback line)", async () => {
     await expect(
       exportSalesDocToPdf({
         docType: "payment",
@@ -80,19 +82,15 @@ describe("exportSalesDocToPdf", () => {
         recordNumber: "PMT-0001",
         statusLabel: "Applied",
         customerName: "Acme Corp",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-02T00:00:00Z",
+        issueDate: "Jan 1, 2026",
+        keyAmount: { label: "Unapplied", value: "$0.00" },
         sections: [{ title: "Primary Information", rows: [["Payment Method", "Check"]] }],
-        totals: [
-          { label: "Amount", value: "$100.00", bold: true },
-          { label: "Applied", value: "$100.00" },
-          { label: "Unapplied", value: "$0.00", bold: true },
-        ],
+        totals: [{ label: "Amount", value: "$100.00", bold: true }],
       }),
     ).resolves.toBeUndefined();
   });
 
-  it("builds and saves a PDF with sections only (no items table, no totals)", async () => {
+  it("builds and saves a PDF with sections only (no items table, no totals, no key amount)", async () => {
     await expect(
       exportSalesDocToPdf({
         docType: "fabrication_job",
@@ -100,8 +98,6 @@ describe("exportSalesDocToPdf", () => {
         recordNumber: "FJ-0001",
         statusLabel: "In Progress",
         customerName: "Acme Corp",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-02T00:00:00Z",
         sections: [{ title: "Job Site", rows: [["Address", "456 Oak Ave"]] }],
       }),
     ).resolves.toBeUndefined();

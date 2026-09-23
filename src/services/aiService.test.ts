@@ -10,7 +10,7 @@ import { aiService, conversationService } from './aiService';
 describe('aiService.askAssistant', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('sends conversation_id and a >=90s timeout, and returns the conversationId back', async () => {
+  it('sends conversation_id and a >=120s timeout, and returns the conversationId back', async () => {
     vi.mocked(tenantClient.post).mockResolvedValue({
       data: { success: true, data: { answer: 'hi', citations: [] }, conversation_id: 'conv-1' },
     });
@@ -23,7 +23,11 @@ describe('aiService.askAssistant', () => {
       expect.objectContaining({ timeout: expect.any(Number) }),
     );
     const [, , config] = vi.mocked(tenantClient.post).mock.calls[0];
-    expect((config as { timeout: number }).timeout).toBeGreaterThanOrEqual(90_000);
+    // Must clear the backend's WriteTimeout (120s) with margin, not just
+    // match it -- 90_000 used to be exactly equal to the server's OLD 90s
+    // value, so a completion landing at 89.9s still surfaced as a client
+    // timeout instead of the real response.
+    expect((config as { timeout: number }).timeout).toBeGreaterThanOrEqual(120_000);
     expect(res).toEqual({ result: { answer: 'hi', citations: [] }, conversationId: 'conv-1' });
   });
 

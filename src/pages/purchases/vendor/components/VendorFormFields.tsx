@@ -2,6 +2,7 @@ import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { DatePicker } from '@/components/ui/date-picker';
+import { isInvalidPhoneValue } from '@/lib/phoneValidation';
 import type { CrmLookups } from '@/services/lookupService';
 import type { VendorFormField } from '@/lib/vendorForm';
 
@@ -16,7 +17,12 @@ export function VendorField({ field, value, set, lookups, showError }: {
   showError?: boolean;
 }) {
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
-  const invalid = Boolean(showError && field.required && !str.trim());
+  const invalid = Boolean(
+    showError && (
+      (field.required && !str.trim())
+      || (field.type === 'tel' && isInvalidPhoneValue(str))
+    ),
+  );
   const colClass = field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : '';
 
   if (field.type === 'textarea') {

@@ -5,6 +5,7 @@ import { Ban } from 'lucide-react';
 import { journalEntryService } from '@/services/journalEntryService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { JournalEntry } from '@/types/journalEntry';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Cancel is legal from Draft/Approved only (cashtransfer/transitions.go) —
 // the generic transition endpoint, terminal (CANC never moves anywhere
@@ -49,16 +50,13 @@ export function CancelJournalEntryDialog({ journalEntryId, onCancelled }: {
 
   return (
     <>
-      <button
+      <DangerZoneAction
         ref={triggerRef}
-        type="button"
+        description="Cancel this journal entry."
+        buttonLabel="Cancel journal entry"
+        icon={Ban}
         onClick={() => setOpen(true)}
-        aria-label="Cancel journal entry"
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Ban className="size-4 shrink-0" />
-        Cancel journal entry
-      </button>
+      />
 
       {open && createPortal(
         <div

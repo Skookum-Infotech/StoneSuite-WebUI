@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { SCOPES, SCOPE_LABELS, normalizeScope } from "@/lib/scope";
 import { buildPermModules } from "@/lib/permissionMatrix";
 import type { PermModule, ResourceRow } from "@/lib/permissionMatrix";
+import { isDuplicateRoleName } from "@/lib/roleValidation";
 import type { Grant, Scope } from "@/types/tenant";
 
 // ---------------------------------------------------------------------------
@@ -57,6 +58,11 @@ export default function CreateRolePage() {
     queryKey: ["catalog"],
     queryFn: rbacService.catalog,
     staleTime: 15 * 60 * 1000,
+  });
+  const rolesQ = useQuery({
+    queryKey: ["roles"],
+    queryFn: rbacService.listRoles,
+    staleTime: 5 * 60 * 1000,
   });
 
   const [name, setName] = useState<string>(() => {
@@ -143,6 +149,9 @@ export default function CreateRolePage() {
   }, [actionsByResource, catalogQ.data, rowResourceById, selected]);
 
   const scopes = catalogQ.data?.scopes ?? SCOPES;
+
+  const trimmedName = name.trim();
+  const isDuplicateName = isDuplicateRoleName(trimmedName, rolesQ.data ?? []);
 
   function getAvailable(resource: string) {
     return ACTION_ORDER.filter((a) =>
@@ -298,7 +307,10 @@ export default function CreateRolePage() {
   });
 
   const canSubmit =
-    Boolean(key.trim()) && Boolean(name.trim()) && !create.isPending;
+    Boolean(key.trim()) &&
+    Boolean(name.trim()) &&
+    !isDuplicateName &&
+    !create.isPending;
   const totalGrants = Object.values(effectiveSelected).reduce(
     (n, r) => n + r.actions.length,
     0,
@@ -366,7 +378,14 @@ export default function CreateRolePage() {
                       onChange={(e) => onNameChange(e.target.value)}
                       placeholder="e.g. Sales Rep"
                       className="h-9 text-xs"
+                      aria-invalid={isDuplicateName}
+                      aria-describedby={isDuplicateName ? "rname-error" : undefined}
                     />
+                    {isDuplicateName && (
+                      <p id="rname-error" className="text-2xs text-red-500">
+                        A role named "{trimmedName}" already exists.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

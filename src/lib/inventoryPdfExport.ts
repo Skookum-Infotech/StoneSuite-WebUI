@@ -4,10 +4,7 @@ import {
   MARGIN_X,
   PAGE_BOTTOM_SAFE,
   BRAND_LIME,
-  BRAND_DARK_ACCENT,
   INK,
-  STONE_200,
-  STONE_400,
   STONE_600,
   HEADER_BAND_HEIGHT,
   HEADER_ACCENT_HEIGHT,
@@ -16,12 +13,16 @@ import {
   fmtDate,
   type DocWithAutoTable,
 } from "@/lib/pdfBranding";
+import { drawRecordTitle, drawDateAmountHeader, CARD_FILL } from "@/lib/pdfDocumentBlocks";
+import { makeItemDescriptionHooks } from "@/lib/pdfTextBlocks";
 
 // Inventory-domain PDF exporter — a sibling of purchasesPdfExport.ts/
-// salesPdfExport.ts (same masthead/section/table/footer shape via
-// pdfBranding.ts), scoped to Inventory: Item/Unit/Bundle are profile-shaped
-// (no line items), Adjustment/Transfer/Count are document-shaped (header +
-// lines) per the module's PDF Export Convention.
+// salesPdfExport.ts (same masthead/header/section/table/footer shape via
+// pdfBranding.ts + pdfDocumentBlocks.ts + pdfTextBlocks.ts), scoped to
+// Inventory: Item/Unit/Bundle are profile-shaped (no line items, no
+// counterparty, no money) — Adjustment/Transfer/Count are document-shaped
+// (header + lines) per the module's PDF Export Convention, though no calling
+// page exists for them yet; `linesTable` stays ready for when one does.
 
 export type InventoryRecordType =
   | "inventory_item" | "inventory_unit" | "bundle"
@@ -37,6 +38,9 @@ export interface InventoryPdfTable {
   head: string[];
   rows: string[][];
   numericFrom?: number;
+  /** Row-aligned with `rows` — an optional line rendered under the item name
+   *  (column index 1) instead of its own column. */
+  descriptions?: Array<string | undefined>;
 }
 
 const RECORD_TYPE_LABEL: Record<InventoryRecordType, string> = {
@@ -75,55 +79,17 @@ export async function buildInventoryRecordPdf(params: InventoryExportParams): Pr
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  await drawMasthead(doc, pageWidth);
+  await drawMasthead(doc, pageWidth, RECORD_TYPE_LABEL[recordType], recordNumber, statusLabel);
 
-  let cursorY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 34;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...BRAND_DARK_ACCENT);
-  doc.text("INVENTORY DOCUMENT SUMMARY", MARGIN_X, cursorY, { charSpace: 1.4 });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...STONE_400);
-  doc.text(`Generated ${new Date().toLocaleString()}`, pageWidth - MARGIN_X, cursorY, { align: "right" });
-
-  cursorY += 24;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(...INK);
-  doc.text(title || "(unnamed)", MARGIN_X, cursorY);
-
-  cursorY += 18;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...STONE_600);
-  const subtitleParts = [RECORD_TYPE_LABEL[recordType], recordNumber].filter(Boolean);
-  doc.text(subtitleParts.join("  ·  "), MARGIN_X, cursorY);
-
-  cursorY += 16;
-  doc.setDrawColor(...STONE_200);
-  doc.setLineWidth(0.75);
-  doc.line(MARGIN_X, cursorY, pageWidth - MARGIN_X, cursorY);
-  cursorY += 20;
-
-  autoTable(doc, {
-    startY: cursorY,
-    margin: { left: MARGIN_X, right: MARGIN_X },
-    theme: "plain",
-    styles: { fontSize: 9, textColor: STONE_600, cellPadding: 2 },
-    body: [
-      ["Status", statusLabel || "—", "Created", fmtDate(createdAt || "")],
-      ["Updated", fmtDate(updatedAt || ""), "", ""],
-    ],
-    columnStyles: {
-      0: { fontStyle: "bold", textColor: INK, cellWidth: 90 },
-      2: { fontStyle: "bold", textColor: INK, cellWidth: 90 },
-    },
+  const headerStartY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 30;
+  const titleBottom = drawRecordTitle(doc, headerStartY, title || "(unnamed)");
+  const dateBottom = drawDateAmountHeader(doc, pageWidth, headerStartY, {
+    issueDate: createdAt ? fmtDate(createdAt) : undefined,
+    issueDateLabel: "Created",
+    dueDate: updatedAt ? fmtDate(updatedAt) : undefined,
+    dueDateLabel: "Updated",
   });
-
-  cursorY = doc.lastAutoTable.finalY + 20;
+  let cursorY = Math.max(titleBottom, dateBottom) + 20;
 
   function ensureSpace() {
     if (cursorY > pageHeight - PAGE_BOTTOM_SAFE) {
@@ -168,17 +134,20 @@ export async function buildInventoryRecordPdf(params: InventoryExportParams): Pr
     cursorY += 8;
 
     const numericFrom = linesTable.numericFrom ?? linesTable.head.length;
+    const descriptionHooks = linesTable.descriptions ? makeItemDescriptionHooks(doc, linesTable.descriptions) : {};
     autoTable(doc, {
       startY: cursorY + 4,
       margin: { left: MARGIN_X, right: MARGIN_X },
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 4, textColor: STONE_600 },
-      headStyles: { fillColor: BRAND_LIME, textColor: INK },
+      headStyles: { fillColor: INK, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: CARD_FILL },
       head: [linesTable.head],
       body: linesTable.rows,
       columnStyles: Object.fromEntries(
         linesTable.head.map((_, i) => [i, i >= numericFrom ? { halign: "right" as const } : {}]),
       ),
+      ...descriptionHooks,
     });
 
     cursorY = doc.lastAutoTable.finalY + 20;

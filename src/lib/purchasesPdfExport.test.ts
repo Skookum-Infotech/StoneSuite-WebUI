@@ -47,23 +47,24 @@ describe("exportPurchasesRecordToPdf", () => {
     vi.unstubAllGlobals()
   })
 
-  it("builds and saves a Purchase Order PDF with sections, an items table, and totals", async () => {
+  it("builds and saves a Purchase Order PDF with a vendor/ship-to address row, an items table, and totals", async () => {
     await expect(
       exportPurchasesRecordToPdf({
         recordType: "purchase_order",
         title: "PORD-000001",
         recordNumber: "PORD-000001",
         statusLabel: "Sent",
+        issueDate: "Jan 1, 2026",
+        dueDate: "Jan 10, 2026",
+        dueDateLabel: "Expected Date",
         counterpartyName: "Acme Supply Co",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-02T00:00:00Z",
-        sections: [
-          { title: "Primary Information", rows: [["Order Date", "Jan 1, 2026"], ["Reference #", ""]] },
-          { title: "Ship To", rows: [["Address", "123 Main St"]] },
-        ],
+        shipTo: { customerName: "Main Warehouse", addrLine1: "123 Main St", city: "Austin", zip: "78701" },
+        termsText: "Net 30 from delivery.",
+        sections: [{ title: "Primary Information", rows: [["Reference #", ""]] }],
         itemsTable: {
           head: ["#", "Item", "Qty", "Total"],
           rows: [["1", "Granite Slab", "2", "$400.00"]],
+          descriptions: ["3cm polished, book-matched"],
           numericFrom: 2,
         },
         totals: [
@@ -81,12 +82,12 @@ describe("exportPurchasesRecordToPdf", () => {
         title: "IRCT-000001",
         recordNumber: "IRCT-000001",
         statusLabel: "Received",
+        issueDate: "Jan 2, 2026",
+        issueDateLabel: "Receipt Date",
         counterpartyName: "Acme Supply Co",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-02T00:00:00Z",
         sections: [
           { title: "Source Purchase Order", rows: [["Purchase Order #", "PORD-000001"]] },
-          { title: "Receipt Information", rows: [["Receipt Date", "Jan 2, 2026"]] },
+          { title: "Receipt Information", rows: [["Warehouse", "Main"]] },
         ],
         itemsTable: {
           head: ["#", "Item", "Ordered", "Received"],
@@ -97,35 +98,37 @@ describe("exportPurchasesRecordToPdf", () => {
     ).resolves.toBeUndefined()
   })
 
-  it("builds and saves a Vendor profile PDF with sections only (no items table, no totals)", async () => {
+  it("builds and saves a Vendor profile PDF with sections only (no items/totals/footer cards)", async () => {
     await expect(
       exportPurchasesRecordToPdf({
         recordType: "vendor",
         title: "Acme Supply Co",
         recordNumber: "VEND-000001",
         statusLabel: "Active",
-        counterpartyLabel: "Vendor Type",
-        counterpartyName: "Organization",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-02T00:00:00Z",
+        issueDate: "Jan 1, 2026",
+        issueDateLabel: "Created",
+        dueDate: "Jan 2, 2026",
+        dueDateLabel: "Updated",
         sections: [
-          { title: "Company Details", rows: [["Legal Business Name", "Acme Supply Co LLC"]] },
+          { title: "Company Details", rows: [["Vendor Type", "Organization"], ["Legal Business Name", "Acme Supply Co LLC"]] },
           { title: "Contact & Location", rows: [["Email Address", "hello@acme.test"]] },
         ],
       }),
     ).resolves.toBeUndefined()
   })
 
-  it("builds and saves a Vendor Credit PDF with an applications table and totals", async () => {
+  it("builds and saves a Vendor Credit PDF with an applications table, totals, and a key amount", async () => {
     await expect(
       exportPurchasesRecordToPdf({
         recordType: "vendor_credit",
         title: "VCR-000001",
         recordNumber: "VCR-000001",
         statusLabel: "Approved",
+        issueDate: "Jan 2, 2026",
+        issueDateLabel: "Credit Date",
+        keyAmount: { label: "Unapplied", value: "$650.00" },
         counterpartyName: "Acme Supply Co",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-02T00:00:00Z",
+        notesText: "Restocking fee waived.",
         sections: [
           { title: "Primary Information", rows: [["Reference #", "RMA-4471"], ["Reason", "Returned defective slab"]] },
         ],
@@ -138,7 +141,6 @@ describe("exportPurchasesRecordToPdf", () => {
         totals: [
           { label: "Amount", value: "$850.00", bold: true },
           { label: "Applied", value: "$200.00" },
-          { label: "Unapplied", value: "$650.00", bold: true },
         ],
       }),
     ).resolves.toBeUndefined()

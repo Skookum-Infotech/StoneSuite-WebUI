@@ -21,6 +21,7 @@ import {
 import { statusToastLabel } from '@/lib/statusToast';
 import { ExpenseAuditTab } from './components/ExpenseAuditTab';
 import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { ExpenseStatusControl } from './components/ExpenseStatusControl';
 import { RejectExpenseDialog } from './components/RejectExpenseDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
@@ -137,17 +138,16 @@ export default function ExpenseDetailPage() {
         title: exp.expenseNumber || 'Expense',
         recordNumber: exp.expenseNumber,
         statusLabel: exp.status,
+        issueDate: fmtDate(exp.createdAt),
+        keyAmount: { label: 'Total', value: currency(exp.total) },
         counterpartyLabel: 'Claimant',
         counterpartyName: claimantName,
-        createdAt: exp.createdAt,
-        updatedAt: exp.updatedAt,
+        notesText: exp.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
-              ['Claimant', claimantName ?? ''],
               ['Department', exp.department || ''],
-              ['Memo', exp.memo || ''],
               ...(exp.rejectionReason ? [['Rejection Reason', exp.rejectionReason] as [string, string]] : []),
             ],
           },
@@ -163,9 +163,6 @@ export default function ExpenseDetailPage() {
           ]),
           numericFrom: 4,
         },
-        totals: [
-          { label: 'Total', value: currency(exp.total), bold: true },
-        ],
       });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
@@ -371,8 +368,7 @@ export default function ExpenseDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteExpenseDialog
                 expenseId={id}
                 label={`Expense ${exp.expenseNumber}`}
@@ -381,7 +377,7 @@ export default function ExpenseDetailPage() {
                   navigate('/purchases/expense');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

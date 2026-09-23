@@ -6,18 +6,16 @@ import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 import { parseCoaError } from '@/lib/coaErrors';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { BlockingSlotsDialog } from './BlockingSlotsDialog';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
-/** How the trigger renders. 'menu' is the full-width row in the detail page's
- *  Quick Actions card; 'icon' is the hover action in a tree row, which sits in
- *  a strip of same-sized icon buttons. Only the trigger differs — the dialog,
- *  the mutation and the blocking-slot handling are shared, which is the point
- *  of a variant rather than a second component. */
+/** How the trigger renders. 'menu' is the Danger Zone card row in the detail
+ *  page; 'icon' is the hover action in a tree row, which sits in a strip of
+ *  same-sized icon buttons. Only the trigger differs — the dialog, the
+ *  mutation and the blocking-slot handling are shared, which is the point of
+ *  a variant rather than a second component. */
 type TriggerVariant = 'menu' | 'icon';
 
-const TRIGGER_CLASSES: Record<TriggerVariant, string> = {
-  menu: 'flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left',
-  icon: 'rounded p-1 text-stone-400 transition-colors hover:bg-destructive/10 hover:text-destructive',
-};
+const ICON_TRIGGER_CLASSES = 'rounded p-1 text-stone-400 transition-colors hover:bg-destructive/10 hover:text-destructive';
 
 // Mirrors DeleteVendorDialog's look, but — unlike it — wires up
 // useModalDialog: every other dialog/drawer in this module traps focus and
@@ -52,16 +50,24 @@ export function DeleteAccountDialog({ accountId, label, onDeleted, variant = 'me
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        title={variant === 'icon' ? 'Delete account' : undefined}
-        className={TRIGGER_CLASSES[variant]}
-      >
-        <Trash2 className={variant === 'icon' ? 'size-3.5' : 'size-4 shrink-0'} />
-        {variant === 'menu' && 'Delete account'}
-      </button>
+      {variant === 'menu' ? (
+        <DangerZoneAction
+          description="Delete this account permanently."
+          buttonLabel="Delete account"
+          ariaLabel={`Delete ${label}`}
+          onClick={() => setOpen(true)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={`Delete ${label}`}
+          title="Delete account"
+          className={ICON_TRIGGER_CLASSES}
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      )}
 
       {/* Mounted only while open, so useModalDialog's focus-trap/Escape/focus-restore
           effects run for exactly the dialog's open lifetime, not this trigger's. */}

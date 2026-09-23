@@ -14,9 +14,10 @@ import type { CustomerRef } from './components/CustomerPicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import type { SalesOrderRef } from './components/SalesOrderPicker';
 import {
-  fromCreditMemo, toUpdatePayload, PAGE_TABS, type PageTab,
+  fromCreditMemo, toUpdatePayload, PAGE_TABS, BILLING_FIELDS, type PageTab,
   type CreditMemoLineItem, CREDIT_MEMO_DRAFT_STATUS,
 } from '@/lib/creditMemoForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 
@@ -103,6 +104,8 @@ export default function EditCreditMemoPage() {
   const save = useMutation({
     mutationFn: () => {
       if (!creditMemo) throw new Error('Credit memo not loaded.');
+      const badPhone = firstInvalidPhoneLabel(BILLING_FIELDS, data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       return creditMemoService.updateCreditMemo(
         id,
         toUpdatePayload(data, lineItems, creditMemo.recordVersion ?? 0, customFieldValues),

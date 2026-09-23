@@ -23,6 +23,7 @@ import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicat
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
 import { VendorPaymentStatusControl } from './components/VendorPaymentStatusControl';
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { VendorPayment } from '@/types/vendorPayment';
 
 const TABS = [
@@ -140,18 +141,19 @@ export default function VendorPaymentDetailPage() {
         title: payment.vendorPaymentNumber || 'Vendor Payment',
         recordNumber: payment.vendorPaymentNumber,
         statusLabel: payment.status,
+        issueDate: fmtDate(payment.paymentDate),
+        issueDateLabel: 'Payment Date',
+        dueDate: payment.scheduledDate ? fmtDate(payment.scheduledDate) : undefined,
+        dueDateLabel: 'Scheduled Date',
+        keyAmount: { label: 'Unapplied', value: currency(payment.unappliedAmount) },
         counterpartyName: payment.vendor.name,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt,
+        notesText: payment.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Payment Method', payment.method || ''],
               ['Reference #', payment.referenceNumber || ''],
-              ['Payment Date', fmtDate(payment.paymentDate)],
-              ['Scheduled Date', payment.scheduledDate ? fmtDate(payment.scheduledDate) : ''],
-              ['Memo', payment.memo || ''],
               ['Internal Notes', payment.internalNotes || ''],
             ],
           },
@@ -169,7 +171,6 @@ export default function VendorPaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
-          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -378,8 +379,7 @@ export default function VendorPaymentDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorPaymentDialog
                 vendorPaymentId={id}
                 label={`Vendor Payment ${payment.vendorPaymentNumber}`}
@@ -388,7 +388,7 @@ export default function VendorPaymentDetailPage() {
                   navigate('/purchases/vendor_payment');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

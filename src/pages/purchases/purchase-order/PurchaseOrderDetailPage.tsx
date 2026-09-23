@@ -20,6 +20,7 @@ import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
@@ -136,23 +137,32 @@ export default function PurchaseOrderDetailPage() {
         title: po.purchaseOrderNumber || 'Purchase Order',
         recordNumber: po.purchaseOrderNumber,
         statusLabel: po.status,
+        issueDate: fmtDate(po.orderDate),
+        dueDate: po.expectedDate ? fmtDate(po.expectedDate) : undefined,
+        dueDateLabel: 'Expected Date',
         counterpartyName: po.vendor.name,
-        createdAt: po.createdAt,
-        updatedAt: po.updatedAt,
+        shipTo: {
+          customerName: po.shipTo.name,
+          attention: po.shipTo.attention,
+          addrLine1: po.shipTo.addrLine1,
+          addrLine2: po.shipTo.addrLine2,
+          suiteUnit: po.shipTo.suiteUnit,
+          city: po.shipTo.city,
+          zip: po.shipTo.zip,
+          phone: po.shipTo.phone,
+          email: po.shipTo.email,
+        },
+        notesText: po.notes || undefined,
+        termsText: po.termsConditions || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
-              ['Order Date', fmtDate(po.orderDate)],
-              ['Expected Date', po.expectedDate ? fmtDate(po.expectedDate) : ''],
               ['Reference #', po.referenceNumber || ''],
               ['Sales Tax %', `${po.salesTaxPercent}%`],
               ['Memo', po.memo || ''],
-              ['Notes', po.notes || ''],
-              ['Terms & Conditions', po.termsConditions || ''],
             ],
           },
-          { title: 'Ship To', rows: addressRows(po.shipTo) },
         ],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
@@ -167,6 +177,7 @@ export default function PurchaseOrderDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: po.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -419,8 +430,7 @@ export default function PurchaseOrderDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeletePurchaseOrderDialog
                 purchaseOrderId={id}
                 label={`Purchase Order ${po.purchaseOrderNumber}`}
@@ -429,7 +439,7 @@ export default function PurchaseOrderDetailPage() {
                   navigate('/purchases/purchase_order');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -475,17 +485,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.name || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

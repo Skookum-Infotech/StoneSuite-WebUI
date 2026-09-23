@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { expenseService } from '@/services/expenseService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Mirrors DeleteRequisitionDialog's focus management (moves focus into the
 // panel on open, restores it to the trigger on close, closes on Escape) — a
@@ -51,16 +52,13 @@ export function DeleteExpenseDialog({ expenseId, label, onDeleted }: {
 
   return (
     <>
-      <button
+      <DangerZoneAction
         ref={triggerRef}
-        type="button"
+        description="Delete this expense claim permanently."
+        buttonLabel="Delete expense claim"
+        ariaLabel={`Delete ${label}`}
         onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Trash2 className="size-4 shrink-0" />
-        Delete expense claim
-      </button>
+      />
 
       {open && createPortal(
         <div

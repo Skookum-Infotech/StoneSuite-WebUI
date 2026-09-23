@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Mirrors DeletePurchaseOrderDialog. The backend only accepts delete at
 // PEND/VOID (itemreceipt/store_update.go SoftDelete); callers gate the
@@ -49,16 +50,13 @@ export function DeleteItemReceiptDialog({ itemReceiptId, label, onDeleted }: {
 
   return (
     <>
-      <button
+      <DangerZoneAction
         ref={triggerRef}
-        type="button"
+        description="Delete this item receipt permanently."
+        buttonLabel="Delete item receipt"
+        ariaLabel={`Delete ${label}`}
         onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Trash2 className="size-4 shrink-0" />
-        Delete item receipt
-      </button>
+      />
 
       {open && createPortal(
         <div

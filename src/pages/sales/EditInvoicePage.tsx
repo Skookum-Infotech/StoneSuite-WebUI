@@ -15,9 +15,10 @@ import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import {
-  fromInvoice, toCreatePayload, PAGE_TABS, type PageTab,
+  fromInvoice, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type InvoiceLineItem, INVOICE_TERMINAL_STATUSES, INVOICE_STATUS_CODES,
 } from '@/lib/invoiceForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
@@ -137,7 +138,11 @@ export default function EditInvoicePage() {
   );
 
   const save = useMutation({
-    mutationFn: () => invoiceService.updateInvoice(id, toCreatePayload(data, lineItems, customFieldValues)),
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      return invoiceService.updateInvoice(id, toCreatePayload(data, lineItems, customFieldValues));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoice', id] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });

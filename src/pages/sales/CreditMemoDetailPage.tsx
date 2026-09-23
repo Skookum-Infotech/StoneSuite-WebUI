@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { CREDIT_MEMO_STATUS_COLORS, CREDIT_MEMO_READONLY_STATUSES, CREDIT_MEMO_DRAFT_STATUS } from '@/lib/creditMemoForm';
 import { CreditMemoAuditTab } from './components/CreditMemoAuditTab';
 import { DeleteCreditMemoDialog } from './components/DeleteCreditMemoDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { VoidCreditMemoDialog } from './components/VoidCreditMemoDialog';
 import { ApplyCreditMemoDialog } from './components/ApplyCreditMemoDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -123,25 +124,11 @@ export default function CreditMemoDetailPage() {
         recordNumber: creditMemo.creditMemoNumber,
         statusLabel: creditMemo.status,
         customerName: creditMemo.customer.name,
-        createdAt: creditMemo.createdAt,
-        updatedAt: creditMemo.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Credit Memo Date', fmtDate(creditMemo.creditMemoDate)],
-              ['Reference #', creditMemo.referenceNumber || ''],
-              ['Reason', creditMemo.reason || ''],
-              ['Invoice', creditMemo.invoice?.number || ''],
-              ['Sales Order', creditMemo.salesOrder?.number || ''],
-              ['Sales Tax %', `${creditMemo.salesTaxPercent}%`],
-              ['Memo', creditMemo.memo || ''],
-              ['Notes', creditMemo.notes || ''],
-              ['Internal Notes', creditMemo.internalNotes || ''],
-            ],
-          },
-          { title: 'Billing Address', rows: addressRows(creditMemo.billing ?? {}) },
-        ],
+        issueDate: fmtDate(creditMemo.creditMemoDate),
+        keyAmount: { label: 'Unapplied Amount', value: currency(creditMemo.unappliedAmount) },
+        billTo: creditMemo.billing,
+        notesText: creditMemo.notes || undefined,
+        sections: [],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: creditMemo.lines.map((line) => [
@@ -154,6 +141,7 @@ export default function CreditMemoDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: creditMemo.lines.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -163,7 +151,6 @@ export default function CreditMemoDetailPage() {
           { label: 'Adjustment', value: currency(creditMemo.adjustment) },
           { label: 'Grand Total', value: currency(creditMemo.grandTotal), bold: true },
           { label: 'Applied Total', value: currency(creditMemo.appliedTotal) },
-          { label: 'Unapplied Amount', value: currency(creditMemo.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -444,8 +431,7 @@ export default function CreditMemoDetailPage() {
           </div>
 
           {isDraft && canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteCreditMemoDialog
                 creditMemoId={id}
                 label={`Credit Memo ${creditMemo.creditMemoNumber}`}
@@ -454,7 +440,7 @@ export default function CreditMemoDetailPage() {
                   navigate('/sales/credit_memo');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -483,17 +469,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

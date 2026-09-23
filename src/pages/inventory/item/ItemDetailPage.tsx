@@ -16,6 +16,7 @@ import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { cn } from '@/lib/utils';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { DeleteItemDialog } from './components/DeleteItemDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -245,8 +246,7 @@ export default function ItemDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteItemDialog
                 itemId={id}
                 label={item.name}
@@ -255,7 +255,7 @@ export default function ItemDetailPage() {
                   navigate('/inventory/item');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
