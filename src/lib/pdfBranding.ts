@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import type { ImageCompression } from "jspdf";
 
 /** Shared StoneSuite masthead/footer branding for exported PDFs (CRM records,
  *  Sales documents). One source of truth so every exported PDF looks the same. */
@@ -18,6 +19,11 @@ export const STONE_600: [number, number, number] = [87, 83, 78];
 
 export const HEADER_BAND_HEIGHT = 78;
 export const HEADER_ACCENT_HEIGHT = 3;
+
+// jsPDF's addImage() defaults to no compression, embedding raster images as raw
+// bitmaps — "SLOW" makes it DEFLATE-compress them (still fully lossless) before
+// embedding, which is the difference between a ~260KB and a ~14KB logo in the PDF.
+const IMAGE_COMPRESSION: ImageCompression = "SLOW";
 
 // Fixed crop window (in the source SVG's native 3000x3000 canvas) isolating the
 // Elevation Stone wordmark — the rest of the canvas is empty padding.
@@ -119,6 +125,8 @@ export async function drawMasthead(doc: DocWithAutoTable, pageWidth: number): Pr
       (HEADER_BAND_HEIGHT - logoH) / 2,
       logoW,
       logoH,
+      undefined,
+      IMAGE_COMPRESSION,
     );
   }
 
@@ -145,6 +153,8 @@ export async function drawMasthead(doc: DocWithAutoTable, pageWidth: number): Pr
       plateY + (plateH - logoH) / 2,
       logoW,
       logoH,
+      undefined,
+      IMAGE_COMPRESSION,
     );
   }
 }
