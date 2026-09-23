@@ -1,53 +1,27 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type * as ApiClientModule from '@/api/client';
 
 vi.mock('@/api/tenantClient', () => ({
   tenantClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
 }));
+vi.mock('@/api/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof ApiClientModule>()),
+  attemptRefresh: vi.fn(),
+  forceLogout: vi.fn(),
+}));
 
+import { attemptRefresh, forceLogout } from '@/api/client';
 import { tenantClient } from '@/api/tenantClient';
 import { useAuthStore } from '@/store/useAuthStore';
-import { aiService, askAssistantStream, AskStreamHTTPError, conversationService } from './aiService';
+import {
+  ASSISTANT_BUSY,
+  RATE_LIMITED,
+  askAssistantStream,
+  AskStreamHTTPError,
+  conversationService,
+  friendlyAskError,
+} from './aiService';
 import type { AskStreamHandlers } from './aiService';
-
-describe('aiService.askAssistant', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('sends conversation_id and a >=120s timeout, and returns the conversationId back', async () => {
-    vi.mocked(tenantClient.post).mockResolvedValue({
-      data: { success: true, data: { answer: 'hi', citations: [] }, conversation_id: 'conv-1' },
-    });
-
-    const res = await aiService.askAssistant('how many leads?', 'conv-1');
-
-    expect(tenantClient.post).toHaveBeenCalledWith(
-      '/tenant/ai/ask',
-      { question: 'how many leads?', conversation_id: 'conv-1' },
-      expect.objectContaining({ timeout: expect.any(Number) }),
-    );
-    const [, , config] = vi.mocked(tenantClient.post).mock.calls[0];
-    // Must clear the backend's WriteTimeout (120s) with margin, not just
-    // match it -- 90_000 used to be exactly equal to the server's OLD 90s
-    // value, so a completion landing at 89.9s still surfaced as a client
-    // timeout instead of the real response.
-    expect((config as { timeout: number }).timeout).toBeGreaterThanOrEqual(120_000);
-    expect(res).toEqual({ result: { answer: 'hi', citations: [] }, conversationId: 'conv-1' });
-  });
-
-  it('omits conversationId from the response when the backend omits it (stateless ask)', async () => {
-    vi.mocked(tenantClient.post).mockResolvedValue({
-      data: { success: true, data: { answer: 'hi', citations: [] } },
-    });
-
-    const res = await aiService.askAssistant('how many leads?');
-
-    expect(tenantClient.post).toHaveBeenCalledWith(
-      '/tenant/ai/ask',
-      { question: 'how many leads?', conversation_id: undefined },
-      expect.anything(),
-    );
-    expect(res.conversationId).toBeUndefined();
-  });
-});
 
 /** Builds a Response whose body streams `frames` (already newline-joined
  *  SSE text) in one chunk — enough to exercise the frame parser without
@@ -96,6 +70,7 @@ describe('askAssistantStream', () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     global.fetch = vi.fn();
     useAuthStore.setState({ token: null });
   });
@@ -148,7 +123,7 @@ describe('askAssistantStream', () => {
     expect(handlers.sources).toEqual([{ source_type: 'record', source_id: 'r1', snippet: 'Acme' }]);
     expect(handlers.tokens).toEqual(['The ', 'answer.']);
     expect(handlers.done).toEqual({
-      result: { answer: 'The answer.', citations: [] },
+      result: { answer: 'The answer.', citations: [], truncated: false },
       conversationId: 'conv-9',
     });
     expect(handlers.error).toBeUndefined();
@@ -251,7 +226,7 @@ describe('askAssistantStream', () => {
     await askAssistantStream('q', undefined, handlers, new AbortController().signal);
 
     expect(handlers.tokens).toEqual(['good-1', 'good-2']);
-    expect(handlers.done).toEqual({ result: { answer: 'good-1good-2', citations: [] }, conversationId: undefined });
+    expect(handlers.done).toEqual({ result: { answer: 'good-1good-2', citations: [], truncated: false }, conversationId: undefined });
     expect(handlers.error).toBeUndefined();
   });
 
@@ -287,7 +262,7 @@ describe('askAssistantStream', () => {
     await askAssistantStream('q', undefined, handlers, new AbortController().signal);
 
     expect(handlers.tokens).toEqual(['hello']);
-    expect(handlers.done).toEqual({ result: { answer: 'hello', citations: [] }, conversationId: undefined });
+    expect(handlers.done).toEqual({ result: { answer: 'hello', citations: [], truncated: false }, conversationId: undefined });
   });
 
   it('tolerates CRLF-framed SSE (a proxy that rewrites line endings in transit)', async () => {
@@ -299,8 +274,94 @@ describe('askAssistantStream', () => {
     await askAssistantStream('q', undefined, handlers, new AbortController().signal);
 
     expect(handlers.tokens).toEqual(['x']);
-    expect(handlers.done).toEqual({ result: { answer: 'x', citations: [] }, conversationId: undefined });
+    expect(handlers.done).toEqual({ result: { answer: 'x', citations: [], truncated: false }, conversationId: undefined });
     expect(handlers.error).toBeUndefined();
+  });
+
+  it('sends the CSRF header echoed from the csrf_token cookie', async () => {
+    document.cookie = 'csrf_token=csrf-abc';
+    vi.mocked(global.fetch).mockResolvedValue(sseResponse('event: done\ndata: {"answer":"x","citations":[]}\n\n'));
+
+    await askAssistantStream('q', undefined, collect(), new AbortController().signal);
+
+    const [, init] = vi.mocked(global.fetch).mock.calls[0];
+    expect((init?.headers as Record<string, string>)['X-CSRF-Token']).toBe('csrf-abc');
+    document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  });
+
+  it('refreshes the session once on a 401 and retries the stream', async () => {
+    vi.mocked(attemptRefresh).mockResolvedValue(true);
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(new Response('{}', { status: 401 }))
+      .mockResolvedValueOnce(sseResponse('event: done\ndata: {"answer":"ok","citations":[]}\n\n'));
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(attemptRefresh).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect((handlers.done as { result: { answer: string } }).result.answer).toBe('ok');
+    expect(forceLogout).not.toHaveBeenCalled();
+  });
+
+  it('ends the session when the 401 survives a failed refresh', async () => {
+    vi.mocked(attemptRefresh).mockResolvedValue(false);
+    vi.mocked(global.fetch).mockResolvedValue(new Response('{}', { status: 401 }));
+
+    await expect(askAssistantStream('q', undefined, collect(), new AbortController().signal)).rejects.toMatchObject({ status: 401 });
+    expect(forceLogout).toHaveBeenCalledTimes(1);
+  });
+
+  it('carries the error code and Retry-After of a busy 429', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      new Response(JSON.stringify({ success: false, code: 'assistant_busy', message: 'busy' }), {
+        status: 429,
+        headers: { 'Retry-After': '5' },
+      }),
+    );
+
+    await expect(askAssistantStream('q', undefined, collect(), new AbortController().signal)).rejects.toMatchObject({
+      status: 429,
+      code: ASSISTANT_BUSY,
+      retryAfter: 5,
+    });
+  });
+
+  it('reports a network failure in plain words, not the raw TypeError', async () => {
+    vi.mocked(global.fetch).mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.error).toBe("Couldn't reach the assistant. Check your connection and try again.");
+  });
+
+  it('passes truncated and persisted through from the done payload', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      sseResponse('event: done\ndata: {"answer":"x","citations":[],"truncated":true,"conversation_id":"c1","persisted":false}\n\n'),
+    );
+
+    const handlers = collect();
+    await askAssistantStream('q', 'c1', handlers, new AbortController().signal);
+
+    expect(handlers.done).toEqual({ result: { answer: 'x', citations: [], truncated: true }, conversationId: 'c1', persisted: false });
+  });
+
+  it('gives up with an error when the stream goes silent past the inactivity window', async () => {
+    vi.useFakeTimers();
+    try {
+      const stream = new ReadableStream<Uint8Array>({ start() {} }); // never sends a byte
+      vi.mocked(global.fetch).mockResolvedValue(new Response(stream, { status: 200 }));
+
+      const handlers = collect();
+      const done = askAssistantStream('q', undefined, handlers, new AbortController().signal);
+      await vi.advanceTimersByTimeAsync(46_000);
+      await done;
+
+      expect(handlers.error).toBe('The assistant stopped responding.');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('a "done" payload with no conversation_id delivers conversationId: undefined, not a clobbered value', async () => {
@@ -310,6 +371,21 @@ describe('askAssistantStream', () => {
     await askAssistantStream('q', 'conv-should-not-leak-in', handlers, new AbortController().signal);
 
     expect((handlers.done as { conversationId?: string }).conversationId).toBeUndefined();
+  });
+});
+
+describe('friendlyAskError', () => {
+  it.each([
+    [new AskStreamHTTPError(429, 'x', RATE_LIMITED), "You're asking questions too quickly — please wait a moment and try again."],
+    [new AskStreamHTTPError(429, 'x', ASSISTANT_BUSY), 'The assistant is busy with other questions — please try again in a few seconds.'],
+    [new AskStreamHTTPError(401, 'raw'), 'Your session has expired. Please sign in again.'],
+    [new AskStreamHTTPError(400, 'question is too long, please shorten it.'), 'question is too long, please shorten it.'],
+    [new AskStreamHTTPError(503, 'The assistant is starting up.'), 'The assistant is starting up.'],
+    [new AskStreamHTTPError(418, 'teapot internals'), 'The assistant could not answer that. Please try again.'],
+    [new TypeError('Failed to fetch'), "Couldn't reach the assistant. Check your connection and try again."],
+    [new Error('some library detail'), 'The assistant could not answer that. Please try again.'],
+  ])('%s -> %s', (err, want) => {
+    expect(friendlyAskError(err)).toBe(want);
   });
 });
 

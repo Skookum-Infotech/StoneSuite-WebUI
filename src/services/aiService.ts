@@ -1,42 +1,49 @@
-import { readCookie } from '@/api/client';
+import { API_BASE_URL, attemptRefresh, authHeaders, forceLogout } from '@/api/client';
 import { tenantClient } from '@/api/tenantClient';
-import { useAuthStore } from '@/store/useAuthStore';
 import type { AiConversation, AiMessage, AskResponse, AskResult, Citation } from '@/types/ai';
 
-// The full-RAG path (embed -> retrieve -> optional rerank -> generate) can
-// run long on a cold Ollama model. Must clear the backend's own
-// http.Server.WriteTimeout with margin, not just match it: 90_000 here was
-// exactly equal to that 90s server value, so a completion landing at 89.9s
-// still surfaced as a client-side timeout instead of the real response.
-const ASK_TIMEOUT_MS = 120_000;
-
-export const aiService = {
-  // conversationId is optional: omit for a stateless single-turn ask
-  // (unchanged behavior), or pass one returned by a prior askAssistant/
-  // conversationService.create call to continue that conversation's history.
-  askAssistant: (question: string, conversationId?: string): Promise<AskResponse> =>
-    tenantClient
-      .post<{ success: boolean; data: AskResult; conversation_id?: string }>(
-        '/tenant/ai/ask',
-        { question, conversation_id: conversationId },
-        { timeout: ASK_TIMEOUT_MS },
-      )
-      .then((r) => ({ result: r.data.data, conversationId: r.data.conversation_id })),
-};
+/** Error codes the backend puts on a 429 so the two kinds can be told apart:
+ *  the model is busy (retry shortly) vs. the caller is asking too fast. */
+export const ASSISTANT_BUSY = 'assistant_busy';
+export const RATE_LIMITED = 'rate_limited';
 
 /** Thrown by askAssistantStream when the server rejects the request before
- *  any SSE byte is written (auth, validation, an unknown conversation_id).
- *  Carries the HTTP status so a caller can apply the same "stale
- *  conversation_id -> retry statelessly" logic askWithRetry already applies
- *  to the non-streaming AxiosError shape — see apiErrorMessage, which reads
- *  this via its plain Error.message fallback. */
+ *  any SSE byte is written (auth, validation, an unknown conversation_id, a
+ *  busy or rate-limited 429). Carries what a caller needs to decide between
+ *  retrying, recovering, and showing a message. */
 export class AskStreamHTTPError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  code?: string;
+  /** Seconds, from the Retry-After header, when the server sent one. */
+  retryAfter?: number;
+  constructor(status: number, message: string, code?: string, retryAfter?: number) {
     super(message);
     this.name = 'AskStreamHTTPError';
     this.status = status;
+    this.code = code;
+    this.retryAfter = retryAfter;
   }
+}
+
+const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again.';
+const UNREACHABLE_MESSAGE = "Couldn't reach the assistant. Check your connection and try again.";
+const GENERIC_MESSAGE = 'The assistant could not answer that. Please try again.';
+
+/** The text to show a user for anything askAssistantStream or the
+ *  conversation calls throw. Server messages are used only where the backend
+ *  writes them for users (validation, busy, unavailable); transport and
+ *  library errors never leak raw ("TypeError: Failed to fetch"). */
+export function friendlyAskError(err: unknown): string {
+  if (err instanceof AskStreamHTTPError) {
+    if (err.code === RATE_LIMITED) return "You're asking questions too quickly — please wait a moment and try again.";
+    if (err.code === ASSISTANT_BUSY) return 'The assistant is busy with other questions — please try again in a few seconds.';
+    if (err.status === 401) return SESSION_EXPIRED_MESSAGE;
+    if (err.status === 403) return "You don't have access to the assistant.";
+    if (err.status === 400 || err.status === 413 || err.status >= 500) return err.message;
+    return GENERIC_MESSAGE;
+  }
+  if (err instanceof TypeError) return UNREACHABLE_MESSAGE;
+  return GENERIC_MESSAGE;
 }
 
 export interface AskStreamHandlers {
@@ -76,23 +83,18 @@ function parseSSEFrame(raw: string): { event: string; data: string } | null {
 // only escape.
 const streamInactivityTimeoutMs = 45_000;
 
-/** Streaming twin of askAssistant: POST /tenant/ai/ask/stream, delivered via
- *  `fetch` + ReadableStream instead of axios — EventSource can't POST or set
- *  auth headers, and axios's XHR adapter buffers the whole response instead
- *  of yielding chunks as they arrive. Bypasses tenantClient entirely, so it
- *  reimplements just the two things that interceptor chain provides: the
- *  Authorization fallback and the CSRF header (see api/client.ts) — cookie
- *  auth (withCredentials) comes from `credentials: 'include'` below.
+/** POST /tenant/ai/ask/stream, delivered via `fetch` + ReadableStream rather
+ *  than axios — EventSource can't POST or set auth headers, and axios's XHR
+ *  adapter buffers the whole response instead of yielding chunks. It reuses
+ *  apiClient's pieces instead of its interceptors: the same base URL and
+ *  auth/CSRF headers, and on a 401 the same shared token refresh, retrying
+ *  once and ending the session (forceLogout) if the refresh fails.
  *
  * Resolves once the stream ends, however it ends (onDone or onError already
- * fired by then) — never throws for anything past the initial response,
- * since by that point the caller has already committed to a streaming UI
- * and there's no request left to retry. Throws AskStreamHTTPError only for
- * a non-2xx initial response, which happens before any UI commitment and is
- * exactly the shape callers already know how to retry on (see
- * AssistantPanel's askWithRetry). Resolves silently (calls neither handler)
- * on an intentional abort via signal — the caller already knows it stopped
- * the request and updates its own UI at the point it calls abort().
+ * fired by then) — never throws for anything past the initial response.
+ * Throws AskStreamHTTPError only for a non-2xx initial response, before any
+ * UI commitment. Resolves silently (calls neither handler) on an intentional
+ * abort via signal — the caller updates its own UI when it calls abort().
  */
 export async function askAssistantStream(
   question: string,
@@ -100,39 +102,49 @@ export async function askAssistantStream(
   handlers: AskStreamHandlers,
   signal: AbortSignal,
 ): Promise<void> {
-  const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api';
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token = useAuthStore.getState().token;
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const csrfToken = readCookie('csrf_token');
-  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
-
-  let res: Response;
-  try {
-    res = await fetch(`${baseURL}/tenant/ai/ask/stream`, {
+  const send = (): Promise<Response> =>
+    fetch(`${API_BASE_URL}/tenant/ai/ask/stream`, {
       method: 'POST',
-      headers,
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       credentials: 'include',
       body: JSON.stringify({ question, conversation_id: conversationId }),
       signal,
     });
+
+  let res: Response;
+  try {
+    res = await send();
+    if (res.status === 401) {
+      // The access token expired mid-session: refresh once (sharing any
+      // refresh already in flight) and retry, exactly like apiClient does.
+      if (!(await attemptRefresh())) {
+        forceLogout();
+        throw new AskStreamHTTPError(401, SESSION_EXPIRED_MESSAGE);
+      }
+      res = await send();
+    }
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') return;
-    handlers.onError(err instanceof Error ? err.message : 'Could not reach the assistant.');
+    if (err instanceof AskStreamHTTPError) throw err;
+    handlers.onError(UNREACHABLE_MESSAGE);
     return;
   }
 
   if (!res.ok) {
-    let message = 'The assistant could not answer that.';
+    let message = GENERIC_MESSAGE;
+    let code: string | undefined;
     try {
       const data: unknown = await res.json();
-      if (data && typeof data === 'object' && 'message' in data && typeof data.message === 'string') {
-        message = data.message;
+      if (data && typeof data === 'object') {
+        if ('message' in data && typeof data.message === 'string') message = data.message;
+        if ('code' in data && typeof data.code === 'string') code = data.code;
       }
     } catch {
       // Non-JSON error body (e.g. a proxy's own error page) — keep the default.
     }
-    throw new AskStreamHTTPError(res.status, message);
+    const retryAfter = Number(res.headers.get('Retry-After'));
+    if (res.status === 401) forceLogout();
+    throw new AskStreamHTTPError(res.status, message, code, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined);
   }
   if (!res.body) {
     handlers.onError('Streaming is not supported by this browser.');
@@ -205,8 +217,12 @@ export async function askAssistantStream(
           case 'done': {
             settled = true;
             try {
-              const parsed = JSON.parse(frame.data) as AskResult & { conversation_id?: string };
-              handlers.onDone({ result: { answer: parsed.answer, citations: parsed.citations }, conversationId: parsed.conversation_id });
+              const parsed = JSON.parse(frame.data) as AskResult & { conversation_id?: string; persisted?: boolean };
+              handlers.onDone({
+                result: { answer: parsed.answer, citations: parsed.citations ?? [], truncated: parsed.truncated === true },
+                conversationId: parsed.conversation_id,
+                persisted: parsed.persisted,
+              });
             } catch {
               handlers.onError('The assistant sent an invalid response.');
             }
@@ -216,9 +232,9 @@ export async function askAssistantStream(
             settled = true;
             try {
               const parsed = JSON.parse(frame.data) as { message?: string };
-              handlers.onError(parsed.message ?? 'The assistant could not answer that.');
+              handlers.onError(parsed.message ?? GENERIC_MESSAGE);
             } catch {
-              handlers.onError('The assistant could not answer that.');
+              handlers.onError(GENERIC_MESSAGE);
             }
             return;
           }
@@ -228,7 +244,7 @@ export async function askAssistantStream(
     }
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') return;
-    handlers.onError(err instanceof Error ? err.message : 'Lost connection to the assistant.');
+    handlers.onError('Lost connection to the assistant. Please try again.');
     return;
   } finally {
     if (inactivityTimer) clearTimeout(inactivityTimer);

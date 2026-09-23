@@ -1,286 +1,399 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import type * as AiServiceModule from '@/services/aiService';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import type { AskStreamHandlers } from '@/services/aiService';
+import type { AiConversation, Citation } from '@/types/ai';
 
-// jsdom doesn't implement Element.scrollTo — AssistantPanel's auto-scroll
-// effect calls it on every turns[] change, which would otherwise throw and
-// fail every test here regardless of what's actually under test.
+// jsdom doesn't implement Element.scrollTo, which the follow-the-stream
+// effect calls on every turns change.
 Element.prototype.scrollTo = vi.fn();
 
-vi.mock('@/services/aiService', () => ({
+vi.mock('@/services/aiService', async (importOriginal) => ({
+  ...(await importOriginal<typeof AiServiceModule>()),
   askAssistantStream: vi.fn(),
-  aiService: { askAssistant: vi.fn() },
-  AskStreamHTTPError: class AskStreamHTTPError extends Error {
-    status: number;
-    constructor(status: number, message: string) {
-      super(message);
-      this.status = status;
-    }
-  },
   conversationService: { create: vi.fn(), list: vi.fn(), get: vi.fn(), remove: vi.fn() },
 }));
 
-import { AssistantPanel } from './AssistantPanel';
-import { aiService, askAssistantStream, AskStreamHTTPError, conversationService } from '@/services/aiService';
+const hasPermission = vi.fn<(resource: string, action: string) => boolean>();
+vi.mock('@/hooks/useUserPermissions', () => ({
+  useUserPermissions: () => ({ hasPermission, grants: [], isLoading: false, activeRoleId: '' }),
+}));
 
-function renderPanel() {
-  const wrapper = ({ children }: { children: ReactNode }) => <MemoryRouter>{children}</MemoryRouter>;
-  return render(<AssistantPanel onClose={vi.fn()} />, { wrapper });
+import { AssistantPanel } from './AssistantPanel';
+import { askAssistantStream, AskStreamHTTPError, conversationService } from '@/services/aiService';
+import { useAuthStore } from '@/store/useAuthStore';
+
+const STORAGE_KEY = 'ai-conversation:t1:u1';
+
+function conv(id: string, title = ''): AiConversation {
+  return { id, ownerUserId: 'u1', title, createdAt: '', updatedAt: new Date().toISOString() };
+}
+
+function LocationProbe() {
+  return <div data-testid="location">{useLocation().pathname}</div>;
+}
+
+function renderPanel(onClose = vi.fn(), initialPath = '/crm/prospect/p-1') {
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <MemoryRouter initialEntries={[initialPath]}>
+      {children}
+      <LocationProbe />
+    </MemoryRouter>
+  );
+  return { onClose, ...render(<AssistantPanel onClose={onClose} />, { wrapper }) };
+}
+
+function input(): HTMLElement {
+  return screen.getByRole('textbox', { name: /ask the ai assistant/i });
 }
 
 async function ask(question: string): Promise<void> {
   const user = userEvent.setup();
-  await user.type(screen.getByRole('textbox', { name: /ask the ai assistant/i }), question);
+  await user.type(input(), question);
   await user.click(screen.getByRole('button', { name: /send question/i }));
 }
 
-/** A one-shot stream mock: immediately delivers `answer` via onDone (no
- *  intermediate tokens), the shape most of these tests only care about. */
-function resolveWith(answer: string, conversationId?: string) {
+/** A stream that emits sources, then the answer as one token, then done. */
+function streamWith(answer: string, opts: { sources?: Citation[]; citations?: Citation[]; truncated?: boolean; persisted?: boolean } = {}) {
   return async (_q: string, convId: string | undefined, handlers: AskStreamHandlers) => {
-    handlers.onDone({ result: { answer, citations: [] }, conversationId: conversationId ?? convId });
+    handlers.onSources?.(opts.sources ?? []);
+    handlers.onToken(answer);
+    handlers.onDone({
+      result: { answer, citations: opts.citations ?? [], truncated: opts.truncated },
+      conversationId: convId,
+      persisted: opts.persisted ?? true,
+    });
   };
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  localStorage.clear();
+  useAuthStore.setState({ user: { id: 'u1', email: 'a@b.c', fullName: 'A', tenantId: 't1' } });
+  hasPermission.mockReturnValue(true);
+  vi.mocked(conversationService.create).mockResolvedValue(conv('conv-1'));
+  vi.mocked(conversationService.list).mockResolvedValue([]);
+});
 
-describe('AssistantPanel conversation wiring', () => {
-  // Regression test for the AI assistant's multi-turn history never
-  // activating: the backend only threads history into an ask that already
-  // carries a conversation_id, and never mints one on its own. Before this
-  // fix, conversationId's only writer was the stream's own "done" event,
-  // which is always undefined on a stateless first call -- so it stayed
-  // undefined forever and every turn (however many the user sent) went out
-  // stateless.
+describe('conversation wiring', () => {
   it('creates a conversation before the first ask and reuses it for every later ask', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-1',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
-    });
-    vi.mocked(askAssistantStream).mockImplementation(resolveWith('first answer'));
-
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('first answer'));
     renderPanel();
 
     await ask('how many leads do we have?');
-    await waitFor(() => expect(askAssistantStream).toHaveBeenCalledTimes(1));
-    expect(conversationService.create).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(askAssistantStream).mock.calls[0][0]).toBe('how many leads do we have?');
-    expect(vi.mocked(askAssistantStream).mock.calls[0][1]).toBe('conv-1');
     await screen.findByText('first answer');
-
     await ask('what about last month?');
     await waitFor(() => expect(askAssistantStream).toHaveBeenCalledTimes(2));
-    expect(conversationService.create).toHaveBeenCalledTimes(1); // not called again
-    expect(vi.mocked(askAssistantStream).mock.calls[1][0]).toBe('what about last month?');
-    expect(vi.mocked(askAssistantStream).mock.calls[1][1]).toBe('conv-1');
+
+    expect(conversationService.create).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(askAssistantStream).mock.calls.map((c) => c[1])).toEqual(['conv-1', 'conv-1']);
   });
 
-  it('still asks (statelessly) if conversation creation itself fails', async () => {
+  it('still asks (statelessly) if conversation creation fails', async () => {
     vi.mocked(conversationService.create).mockRejectedValue(new Error('boom'));
-    vi.mocked(askAssistantStream).mockImplementation(resolveWith('answered anyway'));
-
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('answered anyway'));
     renderPanel();
+
     await ask('quick question');
 
-    await waitFor(() => expect(askAssistantStream).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(askAssistantStream).mock.calls[0][1]).toBeUndefined();
     await screen.findByText('answered anyway');
+    expect(vi.mocked(askAssistantStream).mock.calls[0][1]).toBeUndefined();
   });
 
-  it('does not re-create a conversation if the backend already returned one for this turn', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-2',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
+  it('remembers the conversation across close/reopen and restores its transcript', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('an answer'));
+    const first = renderPanel();
+    await ask('remember me');
+    await screen.findByText('an answer');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('conv-1');
+    first.unmount();
+
+    vi.mocked(conversationService.get).mockResolvedValue({
+      conversation: conv('conv-1'),
+      messages: [
+        { role: 'user', content: 'remember me', createdAt: '' },
+        { role: 'assistant', content: 'an answer', createdAt: '' },
+      ],
     });
-    vi.mocked(askAssistantStream).mockImplementation(resolveWith('ok', 'conv-2'));
-
     renderPanel();
-    await ask('one');
-    await waitFor(() => expect(askAssistantStream).toHaveBeenCalledTimes(1));
-    await screen.findByText('ok');
 
-    await ask('two');
-    await waitFor(() => expect(askAssistantStream).toHaveBeenCalledTimes(2));
-    expect(conversationService.create).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(askAssistantStream).mock.calls[1][1]).toBe('conv-2');
+    expect(await screen.findByText('remember me')).toBeInTheDocument();
+    expect(screen.getByText('an answer')).toBeInTheDocument();
+    expect(conversationService.get).toHaveBeenCalledWith('conv-1');
+  });
+
+  it('forgets a remembered conversation that no longer exists', async () => {
+    localStorage.setItem(STORAGE_KEY, 'gone');
+    vi.mocked(conversationService.get).mockRejectedValue({ isAxiosError: true, response: { status: 404 } });
+    renderPanel();
+
+    await waitFor(() => expect(localStorage.getItem(STORAGE_KEY)).toBeNull());
+  });
+
+  it('recovers from a deleted conversation by starting a new one and retrying', async () => {
+    localStorage.setItem(STORAGE_KEY, 'stale');
+    vi.mocked(conversationService.get).mockResolvedValue({ conversation: conv('stale'), messages: [] });
+    vi.mocked(conversationService.create).mockResolvedValue(conv('fresh'));
+    vi.mocked(askAssistantStream)
+      .mockRejectedValueOnce(new AskStreamHTTPError(404, 'Conversation not found.'))
+      .mockImplementationOnce(streamWith('recovered'));
+    renderPanel();
+    await waitFor(() => expect(conversationService.get).toHaveBeenCalled());
+
+    await ask('hello');
+
+    await screen.findByText('recovered');
+    expect(vi.mocked(askAssistantStream).mock.calls.map((c) => c[1])).toEqual(['stale', 'fresh']);
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('fresh');
+  });
+
+  it('New chat starts over', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('old answer'));
+    renderPanel();
+    await ask('old question');
+    await screen.findByText('old answer');
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'New chat' }));
+
+    expect(screen.queryByText('old answer')).not.toBeInTheDocument();
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });
 
-describe('AssistantPanel streaming', () => {
-  it('renders tokens as they arrive, before the stream settles', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-3',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
+describe('streaming', () => {
+  it('renders tokens as they arrive, with a source count before the first token', async () => {
+    let handlers!: AskStreamHandlers;
+    let finish!: () => void;
+    vi.mocked(askAssistantStream).mockImplementation((_q, _c, h) => {
+      handlers = h;
+      return new Promise<void>((resolve) => {
+        finish = resolve;
+      });
     });
-    let deliverToken: ((t: string) => void) | undefined;
-    vi.mocked(askAssistantStream).mockImplementation(
-      (_q, _convId, handlers: AskStreamHandlers) =>
-        new Promise<void>((resolve) => {
-          deliverToken = (t: string) => handlers.onToken(t);
-          // never resolves in this test — the point is to inspect the
-          // partial state while streaming is still in progress.
-          void resolve;
-        }),
-    );
-
     renderPanel();
-    await ask('stream this');
+    await ask('q');
+    await waitFor(() => expect(handlers).toBeDefined());
 
-    await waitFor(() => expect(deliverToken).toBeDefined());
-    deliverToken?.('The ');
-    deliverToken?.('answer');
+    act(() => handlers.onSources?.([{ source_type: 'record', source_id: 'r1', snippet: 'Acme' }]));
+    expect(await screen.findByText(/Found 1 source/)).toBeInTheDocument();
 
-    await screen.findByText('The answer');
-    // The Send button becomes a Stop button while a stream is in flight —
-    // proof the panel knows generation hasn't finished yet.
-    expect(screen.getByRole('button', { name: /stop generating/i })).toBeInTheDocument();
+    act(() => handlers.onToken('Partial '));
+    expect(await screen.findByText(/Partial/)).toBeInTheDocument();
+
+    act(() => {
+      handlers.onDone({ result: { answer: 'Partial answer.', citations: [] }, conversationId: 'conv-1', persisted: true });
+      finish();
+    });
+    expect(await screen.findByText('Partial answer.')).toBeInTheDocument();
   });
 
-  it('shows a dimmed source count once "sources" arrives, before any token', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-4',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
-    });
+  // Regression: Stop before the first token used to leave "Thinking…" forever,
+  // because only turns already marked streaming were patched.
+  it('Stop before the first token settles the turn and offers Retry', async () => {
     vi.mocked(askAssistantStream).mockImplementation(
-      (_q, _convId, handlers: AskStreamHandlers) =>
-        new Promise<void>(() => {
-          handlers.onSources?.([{ source_type: 'record', source_id: 'r1', snippet: 'Acme deal' }]);
-        }),
+      (_q, _c, _h, signal) => new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve())),
     );
-
     renderPanel();
-    await ask('who is acme?');
+    await ask('slow question');
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /stop generating/i }));
 
-    await screen.findByText(/found 1 source/i);
-  });
-
-  it('Stop aborts the in-flight stream and leaves the panel usable again', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-5',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
-    });
-    let capturedSignal: AbortSignal | undefined;
-    vi.mocked(askAssistantStream).mockImplementation(
-      (_q, _convId, _handlers, signal: AbortSignal) =>
-        new Promise<void>((resolve) => {
-          capturedSignal = signal;
-          signal.addEventListener('abort', () => resolve());
-        }),
-    );
-
-    renderPanel();
-    await ask('long question');
-
-    const stopButton = await screen.findByRole('button', { name: /stop generating/i });
-    await userEvent.click(stopButton);
-
-    await waitFor(() => expect(capturedSignal?.aborted).toBe(true));
-    // The input is usable again — no longer stuck disabled behind a stream
-    // that will now never resolve on its own.
-    await waitFor(() => expect(screen.getByRole('textbox', { name: /ask the ai assistant/i })).not.toBeDisabled());
-  });
-
-  // Regression test for the process-global maxConcurrentStreams=2 semaphore
-  // (shared across every tenant): the third concurrent streaming user
-  // anywhere gets a 429 with no queuing. Rather than surfacing that as a
-  // dead end, the panel falls back to the plain non-streaming ask so the
-  // user still gets an answer.
-  it('falls back to the non-streaming ask and still renders an answer on a 429', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-429',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
-    });
-    vi.mocked(askAssistantStream).mockRejectedValue(
-      new AskStreamHTTPError(429, 'The assistant is handling too many conversations right now.'),
-    );
-    vi.mocked(aiService.askAssistant).mockResolvedValue({
-      result: { answer: 'fallback answer', citations: [] },
-      conversationId: 'conv-429',
-    });
-
-    renderPanel();
-    await ask('busy question');
-
-    await screen.findByText('fallback answer');
-    expect(aiService.askAssistant).toHaveBeenCalledWith('busy question', 'conv-429');
-    // No error bubble, no stuck Stop button — this must read as a normal
-    // completed turn, not a failure the user has to notice and route around.
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(await screen.findByText('Stopped.')).toBeInTheDocument();
+    expect(screen.queryByText('Thinking…')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /send question/i })).toBeInTheDocument();
   });
 
-  it('surfaces an error if the 429 fallback ask itself fails', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-429b',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
-    });
-    vi.mocked(askAssistantStream).mockRejectedValue(new AskStreamHTTPError(429, 'busy'));
-    vi.mocked(aiService.askAssistant).mockRejectedValue(new Error('network down'));
-
+  it('ignores a second submit while the conversation is still being created', async () => {
+    let createDone!: (c: AiConversation) => void;
+    vi.mocked(conversationService.create).mockReturnValue(new Promise((r) => { createDone = r; }));
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('once'));
     renderPanel();
-    await ask('busy question');
+    const user = userEvent.setup();
 
-    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    await user.type(input(), 'first{Enter}');
+    await user.type(input(), 'second{Enter}');
+    act(() => createDone(conv('conv-1')));
+
+    await screen.findByText('once');
+    expect(askAssistantStream).toHaveBeenCalledTimes(1);
+    expect(conversationService.create).toHaveBeenCalledTimes(1);
   });
 
-  // Regression test for P1-5: a later "done" payload that omits
-  // conversation_id (the backend never does this once a conversation
-  // exists, but nothing before this asserted it) must not silently drop
-  // multi-turn context by overwriting a good id with undefined.
-  it('does not clobber a held conversationId when a later done payload omits it', async () => {
-    vi.mocked(conversationService.create).mockResolvedValue({
-      id: 'conv-keep',
-      ownerUserId: 'u1',
-      title: '',
-      createdAt: '',
-      updatedAt: '',
-    });
-    vi.mocked(askAssistantStream)
-      .mockImplementationOnce(resolveWith('first answer', 'conv-keep'))
-      // Explicitly omits conversation_id in the "done" payload, unlike
-      // resolveWith's default of echoing back whatever convId it was
-      // called with -- that echo would mask exactly the bug this test
-      // exists to catch.
-      .mockImplementationOnce(async (_q, _convId, handlers: AskStreamHandlers) => {
-        handlers.onDone({ result: { answer: 'second answer', citations: [] }, conversationId: undefined });
-      });
+  it('waits and retries once when the assistant is busy', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(askAssistantStream)
+        .mockRejectedValueOnce(new AskStreamHTTPError(429, 'busy', 'assistant_busy', 1))
+        .mockImplementationOnce(streamWith('worth the wait'));
+      renderPanel();
+      await ask('q');
 
+      expect(await screen.findByText(/busy — retrying/)).toBeInTheDocument();
+      await act(() => vi.advanceTimersByTimeAsync(1_100));
+      expect(await screen.findByText('worth the wait')).toBeInTheDocument();
+      expect(askAssistantStream).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not retry a rate-limit 429, and says why', async () => {
+    vi.mocked(askAssistantStream).mockRejectedValue(new AskStreamHTTPError(429, 'raw', 'rate_limited'));
+    renderPanel();
+    await ask('q');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/asking questions too quickly/);
+    expect(askAssistantStream).toHaveBeenCalledTimes(1);
+  });
+
+  it('Retry re-asks an errored turn in place', async () => {
+    vi.mocked(askAssistantStream)
+      .mockImplementationOnce(async (_q, _c, h) => h.onError('The assistant is temporarily unavailable. Please try again.'))
+      .mockImplementationOnce(streamWith('second time lucky'));
+    renderPanel();
+    await ask('flaky');
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /retry/i }));
+
+    expect(await screen.findByText('second time lucky')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getAllByText('flaky')).toHaveLength(1);
+  });
+
+  it('marks truncated and unsaved answers', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('cut', { truncated: true, persisted: false }));
+    renderPanel();
+    await ask('q');
+
+    expect(await screen.findByText(/cut short/)).toBeInTheDocument();
+    expect(screen.getByText(/Not saved to this conversation/)).toBeInTheDocument();
+  });
+});
+
+describe('rendering and citations', () => {
+  it('renders markdown lists and never renders raw HTML from the answer', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(
+      streamWith('Top leads:\n\n- Acme\n- Globex\n\n<img src=x onerror="alert(1)">'),
+    );
+    renderPanel();
+    await ask('q');
+
+    expect(await screen.findAllByRole('listitem')).toHaveLength(2);
+    expect(document.querySelector('img')).toBeNull();
+  });
+
+  // Regression: chips used to build /crm/<type-of-current-page>/<id>, so a
+  // lead cited from a prospect page opened /crm/prospect/<leadId>.
+  it('a record chip links by its own record_type, not the current page', async () => {
+    const lead: Citation = { source_type: 'record', source_id: 'lead-9', snippet: 'Acme lead', record_type: 'lead' };
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('See [1].', { sources: [lead], citations: [lead] }));
+    renderPanel(vi.fn(), '/crm/prospect/p-1');
+    await ask('q');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Open lead: Acme lead' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/crm/lead/lead-9');
+  });
+
+  it('an [n] marker opens source n', async () => {
+    const help: Citation = { source_type: 'help', source_id: 'leads › Overview', snippet: 'About leads' };
+    const customer: Citation = { source_type: 'record', source_id: 'c-4', snippet: 'Globex', record_type: 'customer' };
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('Globex is active [2].', { sources: [help, customer], citations: [customer] }));
+    renderPanel();
+    await ask('q');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Open source 2' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/crm/customer/c-4');
+  });
+
+  it('a help chip expands to show its passage', async () => {
+    const help: Citation = { source_type: 'help', source_id: 'leads › Overview', snippet: 'Leads are new contacts.' };
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('See [1].', { sources: [help], citations: [help] }));
+    renderPanel();
+    await ask('q');
+    const user = userEvent.setup();
+
+    const chip = await screen.findByRole('button', { name: 'Help reference: leads › Overview' });
+    expect(chip).toHaveAttribute('aria-expanded', 'false');
+    await user.click(chip);
+    expect(chip).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Leads are new contacts.')).toBeInTheDocument();
+  });
+});
+
+describe('history view', () => {
+  it('lists past conversations, opens one, and deletes with a confirm step', async () => {
+    vi.mocked(conversationService.list).mockResolvedValue([conv('c-a', 'Pipeline review'), conv('c-b', 'Q3 leads')]);
+    vi.mocked(conversationService.get).mockResolvedValue({
+      conversation: conv('c-b'),
+      messages: [{ role: 'user', content: 'q3 question', createdAt: '' }],
+    });
+    vi.mocked(conversationService.remove).mockResolvedValue(undefined);
+    renderPanel();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Recent conversations' }));
+    const list = await screen.findByRole('list', { name: 'Recent conversations' });
+    await user.click(within(list).getByRole('button', { name: 'Delete conversation Pipeline review' }));
+    await user.click(within(list).getByRole('button', { name: 'Confirm delete Pipeline review' }));
+    await waitFor(() => expect(conversationService.remove).toHaveBeenCalledWith('c-a'));
+    expect(within(list).queryByText('Pipeline review')).not.toBeInTheDocument();
+
+    await user.click(within(list).getByText('Q3 leads'));
+    expect(await screen.findByText('q3 question')).toBeInTheDocument();
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('c-b');
+  });
+});
+
+describe('panel behavior', () => {
+  it('Escape closes only when focus is inside the panel', () => {
+    const { onClose } = renderPanel();
+
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(input(), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a help-only hint to a user who cannot read any CRM records', () => {
+    hasPermission.mockReturnValue(false);
     renderPanel();
 
-    await ask('one');
-    await screen.findByText('first answer');
+    expect(screen.getByText(/I can answer questions about using the app/)).toBeInTheDocument();
+  });
 
-    await ask('two');
-    await screen.findByText('second answer');
+  it('blocks a question over the byte limit and says so', async () => {
+    renderPanel();
+    // 700 three-byte characters = 2100 bytes, though only 700 characters.
+    fireEvent.change(input(), { target: { value: '€'.repeat(700) } });
 
-    await ask('three');
-    await waitFor(() => expect(askAssistantStream).toHaveBeenCalledTimes(3));
-    // Still 'conv-keep', not undefined -- the second turn's omitted
-    // conversation_id must not have wiped it.
-    expect(vi.mocked(askAssistantStream).mock.calls[2][1]).toBe('conv-keep');
+    expect(screen.getByText(/Too long/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /send question/i })).toBeDisabled();
+  });
+
+  it('Shift+Enter adds a line instead of sending', async () => {
+    renderPanel();
+    const user = userEvent.setup();
+    await user.type(input(), 'line one{Shift>}{Enter}{/Shift}line two');
+
+    expect(input()).toHaveValue('line one\nline two');
+    expect(askAssistantStream).not.toHaveBeenCalled();
+  });
+
+  it('keeps focus in the input after an answer arrives', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('done'));
+    renderPanel();
+    await ask('q');
+    await screen.findByText('done');
+
+    await waitFor(() => expect(input()).toHaveFocus());
   });
 });

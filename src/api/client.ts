@@ -1,8 +1,12 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
+/** Base URL every API call goes to — shared by apiClient and by `fetch`-based
+ *  callers that can't go through axios (aiService's streaming ask). */
+export const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api';
+
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   // Send httpOnly cookies (auth_token + refresh_token) automatically on every request.
   withCredentials: true,
@@ -23,14 +27,20 @@ export function readCookie(name: string): string | null {
 // that do not support cookies (e.g. React Native, some CORS configurations),
 // and echo the csrf_token cookie back as a header (double-submit CSRF check —
 // a no-op on the backend unless it's running with SameSite=None cookies).
-apiClient.interceptors.request.use((config) => {
+/** The Authorization fallback and CSRF echo every request carries — the same
+ *  headers for apiClient's interceptor and for `fetch`-based callers. */
+export function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
   const token = useAuthStore.getState().token;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) headers.Authorization = `Bearer ${token}`;
   const csrfToken = readCookie('csrf_token');
-  if (csrfToken) {
-    config.headers['X-CSRF-Token'] = csrfToken;
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  return headers;
+}
+
+apiClient.interceptors.request.use((config) => {
+  for (const [name, value] of Object.entries(authHeaders())) {
+    config.headers[name] = value;
   }
   return config;
 });
@@ -127,7 +137,9 @@ function broadcastSessionExtended(expiresAt: number): void {
   }
 }
 
-function forceLogout(): void {
+// Exported so a `fetch`-based caller (aiService's stream) whose 401 survives a
+// refresh ends the session exactly the way apiClient does.
+export function forceLogout(): void {
   // Guard: only one logout in flight — multiple concurrent 401s must not each
   // fire a redirect. isLoggingOut resets on hard navigation (page reload).
   if (isLoggingOut) return;

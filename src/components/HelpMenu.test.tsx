@@ -19,9 +19,9 @@ function LocationProbe() {
   return <div data-testid="location">{pathname + search}</div>;
 }
 
-function renderHelpMenu(unreadTickets: number) {
+function renderHelpMenu(unreadTickets: number, kind?: 'portal') {
   vi.mocked(useAuthStore).mockImplementation((selector) =>
-    (selector as (s: unknown) => unknown)({ isAuthenticated: true, kind: undefined }),
+    (selector as (s: unknown) => unknown)({ isAuthenticated: true, kind }),
   );
   vi.mocked(feedbackService.unreadCount).mockResolvedValue(unreadTickets);
 
@@ -86,5 +86,28 @@ describe('HelpMenu Support shortcut', () => {
     await user.click(await screen.findByRole('button', { name: 'Help (2 unread)' }));
 
     expect(screen.getByRole('menuitem', { name: /Support/ })).toHaveTextContent('2');
+  });
+});
+
+// The assistant lives under /api/tenant/*, which a customer-portal token can
+// never reach — offering it there only produced a 403 on the first question.
+describe('HelpMenu assistant entry', () => {
+  it('offers the assistant to staff', async () => {
+    const user = userEvent.setup();
+    renderHelpMenu(0);
+
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+
+    expect(screen.getByRole('menuitem', { name: /StoneSuite Assistant/ })).toBeInTheDocument();
+  });
+
+  it('hides the assistant from customer-portal sessions', async () => {
+    const user = userEvent.setup();
+    renderHelpMenu(0, 'portal');
+
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+
+    expect(screen.queryByRole('menuitem', { name: /StoneSuite Assistant/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /Support/ })).toBeInTheDocument();
   });
 });
