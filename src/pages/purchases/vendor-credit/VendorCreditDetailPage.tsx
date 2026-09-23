@@ -135,17 +135,17 @@ export default function VendorCreditDetailPage() {
         title: credit.vendorCreditNumber || 'Vendor Credit',
         recordNumber: credit.vendorCreditNumber,
         statusLabel: credit.status,
+        issueDate: fmtDate(credit.creditDate),
+        issueDateLabel: 'Credit Date',
+        keyAmount: { label: 'Unapplied', value: currency(credit.unappliedAmount) },
         counterpartyName: credit.vendor.name,
-        createdAt: credit.createdAt,
-        updatedAt: credit.updatedAt,
+        notesText: credit.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Reference #', credit.referenceNumber || ''],
-              ['Credit Date', fmtDate(credit.creditDate)],
               ['Reason', credit.reason || ''],
-              ['Memo', credit.memo || ''],
               ['Internal Notes', credit.internalNotes || ''],
             ],
           },
@@ -163,7 +163,6 @@ export default function VendorCreditDetailPage() {
         totals: [
           { label: 'Amount', value: currency(credit.grandTotal), bold: true },
           { label: 'Applied', value: currency(credit.appliedTotal) },
-          { label: 'Unapplied', value: currency(credit.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {

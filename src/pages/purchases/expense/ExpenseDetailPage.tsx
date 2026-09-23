@@ -138,17 +138,16 @@ export default function ExpenseDetailPage() {
         title: exp.expenseNumber || 'Expense',
         recordNumber: exp.expenseNumber,
         statusLabel: exp.status,
+        issueDate: fmtDate(exp.createdAt),
+        keyAmount: { label: 'Total', value: currency(exp.total) },
         counterpartyLabel: 'Claimant',
         counterpartyName: claimantName,
-        createdAt: exp.createdAt,
-        updatedAt: exp.updatedAt,
+        notesText: exp.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
-              ['Claimant', claimantName ?? ''],
               ['Department', exp.department || ''],
-              ['Memo', exp.memo || ''],
               ...(exp.rejectionReason ? [['Rejection Reason', exp.rejectionReason] as [string, string]] : []),
             ],
           },
@@ -164,9 +163,6 @@ export default function ExpenseDetailPage() {
           ]),
           numericFrom: 4,
         },
-        totals: [
-          { label: 'Total', value: currency(exp.total), bold: true },
-        ],
       });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));

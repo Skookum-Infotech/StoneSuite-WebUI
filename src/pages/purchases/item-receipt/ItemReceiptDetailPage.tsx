@@ -95,9 +95,10 @@ export default function ItemReceiptDetailPage() {
         title: ir.itemReceiptNumber || 'Item Receipt',
         recordNumber: ir.itemReceiptNumber,
         statusLabel: ir.status,
+        issueDate: fmtDate(ir.receiptDate),
+        issueDateLabel: 'Receipt Date',
         counterpartyName: ir.vendor.name,
-        createdAt: ir.createdAt,
-        updatedAt: ir.updatedAt,
+        notesText: ir.notes || undefined,
         sections: [
           {
             title: 'Source Purchase Order',
@@ -106,13 +107,11 @@ export default function ItemReceiptDetailPage() {
           {
             title: 'Receipt Information',
             rows: [
-              ['Receipt Date', fmtDate(ir.receiptDate)],
               ['Warehouse', ir.warehouseName || ''],
               ['Packing Slip #', ir.packingSlip || ''],
               ['Carrier', ir.carrier || ''],
               ['Tracking #', ir.trackingNumber || ''],
               ['Bill of Lading #', ir.billOfLading || ''],
-              ['Notes', ir.notes || ''],
               ['Internal Notes', ir.internalNotes || ''],
               ['Over-Receipt Reason', ir.overReceiptReason || ''],
               ['Void Reason', ir.voidReason || ''],
@@ -130,6 +129,7 @@ export default function ItemReceiptDetailPage() {
             String(line.qtyRejected),
             line.lineNotes || '—',
           ]),
+          descriptions: items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
       });

@@ -154,20 +154,20 @@ export default function RequisitionDetailPage() {
         title: reqn.requisitionNumber || 'Requisition',
         recordNumber: reqn.requisitionNumber,
         statusLabel: reqn.status,
+        issueDate: fmtDate(reqn.createdAt),
+        dueDate: reqn.neededByDate ? fmtDate(reqn.neededByDate) : undefined,
+        dueDateLabel: 'Needed By',
         counterpartyLabel: 'Suggested Vendor',
         counterpartyName: reqn.vendor?.name,
-        createdAt: reqn.createdAt,
-        updatedAt: reqn.updatedAt,
+        notesText: reqn.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Requested By', requesterName ?? ''],
               ['Department', reqn.department || ''],
-              ['Needed By', reqn.neededByDate ? fmtDate(reqn.neededByDate) : ''],
               ['Priority', priorityLabel(reqn.priority)],
               ['Sales Tax %', `${reqn.salesTaxPercent}%`],
-              ['Memo', reqn.memo || ''],
             ],
           },
         ],
@@ -181,6 +181,7 @@ export default function RequisitionDetailPage() {
             currency(line.estimatedUnitPrice),
             currency(line.estimatedAmount),
           ]),
+          descriptions: reqn.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [

@@ -137,22 +137,22 @@ export default function VendorBillDetailPage() {
         title: bill.vendorBillNumber || 'Vendor Bill',
         recordNumber: bill.vendorBillNumber,
         statusLabel: bill.status,
+        issueDate: fmtDate(bill.billDate),
+        issueDateLabel: 'Bill Date',
+        dueDate: bill.dueDate ? fmtDate(bill.dueDate) : undefined,
+        keyAmount: { label: 'Balance Due', value: currency(bill.balanceDue) },
         counterpartyName: bill.vendor.name,
-        createdAt: bill.createdAt,
-        updatedAt: bill.updatedAt,
+        notesText: bill.notes || undefined,
+        termsText: bill.termsConditions || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ["Vendor's Invoice #", bill.vendorInvoiceNumber || ''],
               ['Reference #', bill.referenceNumber || ''],
-              ['Bill Date', fmtDate(bill.billDate)],
-              ['Due Date', bill.dueDate ? fmtDate(bill.dueDate) : ''],
               ['Sales Tax %', `${bill.salesTaxPercent}%`],
               ['Purchase Order', bill.purchaseOrder?.number || ''],
               ['Memo', bill.memo || ''],
-              ['Notes', bill.notes || ''],
-              ['Terms & Conditions', bill.termsConditions || ''],
             ],
           },
         ],
@@ -168,6 +168,7 @@ export default function VendorBillDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: bill.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -178,7 +179,6 @@ export default function VendorBillDetailPage() {
           { label: 'Grand Total', value: currency(bill.grandTotal), bold: true },
           { label: 'Amount Paid', value: currency(bill.amountPaid) },
           { label: 'Credits Applied', value: currency(creditsApplied) },
-          { label: 'Balance Due', value: currency(bill.balanceDue), bold: true },
         ],
       });
     } catch (err) {

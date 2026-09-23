@@ -84,14 +84,15 @@ export default function VendorDetailPage() {
         title: vendor.displayName || 'Vendor',
         recordNumber: vendor.vendorNumber,
         statusLabel: vendor.status,
-        counterpartyLabel: 'Vendor Type',
-        counterpartyName: vendor.vendorType,
-        createdAt: vendor.createdAt,
-        updatedAt: vendor.updatedAt,
+        issueDate: fmtDate(vendor.createdAt),
+        issueDateLabel: 'Created',
+        dueDate: fmtDate(vendor.updatedAt),
+        dueDateLabel: 'Updated',
         sections: isPerson ? [
           {
             title: 'Personal Identity',
             rows: [
+              ['Vendor Type', vendor.vendorType],
               ['Honorific Prefix', vendor.honorificPrefix || ''],
               ['First Name', vendor.givenName || ''],
               ['Middle Name', vendor.additionalName || ''],
@@ -114,6 +115,7 @@ export default function VendorDetailPage() {
           {
             title: 'Company Details',
             rows: [
+              ['Vendor Type', vendor.vendorType],
               ['Legal Business Name', vendor.legalName || ''],
               ['Company Registration Info / Certification', vendor.registrationInfo || ''],
               ['DUNS Number', vendor.dunsNumber || ''],

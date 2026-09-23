@@ -141,18 +141,19 @@ export default function VendorPaymentDetailPage() {
         title: payment.vendorPaymentNumber || 'Vendor Payment',
         recordNumber: payment.vendorPaymentNumber,
         statusLabel: payment.status,
+        issueDate: fmtDate(payment.paymentDate),
+        issueDateLabel: 'Payment Date',
+        dueDate: payment.scheduledDate ? fmtDate(payment.scheduledDate) : undefined,
+        dueDateLabel: 'Scheduled Date',
+        keyAmount: { label: 'Unapplied', value: currency(payment.unappliedAmount) },
         counterpartyName: payment.vendor.name,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt,
+        notesText: payment.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Payment Method', payment.method || ''],
               ['Reference #', payment.referenceNumber || ''],
-              ['Payment Date', fmtDate(payment.paymentDate)],
-              ['Scheduled Date', payment.scheduledDate ? fmtDate(payment.scheduledDate) : ''],
-              ['Memo', payment.memo || ''],
               ['Internal Notes', payment.internalNotes || ''],
             ],
           },
@@ -170,7 +171,6 @@ export default function VendorPaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
-          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {

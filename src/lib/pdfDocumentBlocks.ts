@@ -28,6 +28,10 @@ export interface PdfAddressBlock {
   suiteUnit?: string;
   city?: string;
   zip?: string;
+  /** Only worth passing for a record that can be outside the tenant's home
+   *  country (e.g. a CRM record's own country picker) — Sales/Purchases
+   *  addresses don't currently collect one. */
+  country?: string;
   phone?: string;
   fax?: string;
   email?: string;
@@ -63,44 +67,67 @@ function companyAddressLines(addr: Address): string[] {
 
 function customerAddressLines(addr: PdfAddressBlock): string[] {
   const cityLine = [addr.city, addr.zip].filter(Boolean).join(" ");
-  return [[addr.addrLine1, addr.suiteUnit].filter(Boolean).join(", "), addr.addrLine2, cityLine].filter(
+  return [[addr.addrLine1, addr.suiteUnit].filter(Boolean).join(", "), addr.addrLine2, cityLine, addr.country].filter(
     (line): line is string => Boolean(line),
   );
 }
 
-/** Draws the "from" company block (top-left) and, to its right, Issue/Due date
- *  and an optional lime key-amount badge (e.g. Amount Due). Fetches the tenant's
- *  Company Info itself — same self-contained pattern pdfBranding's logo loaders
- *  use — and silently omits the company block if it isn't configured yet.
- *  Returns the cursorY to continue drawing from. */
-export async function drawDocumentHeader(
+/** Draws the "from" company block (top-left): the tenant's own name and
+ *  billing address. Fetches Company Info itself — same self-contained pattern
+ *  pdfBranding's logo loaders use — and silently no-ops if it isn't
+ *  configured for this tenant yet. Appropriate for a document going out to a
+ *  counterparty (Sales, Purchases); a profile-shaped record (CRM, Inventory)
+ *  should show its own identity in this spot instead — see drawRecordTitle. */
+export async function drawCompanyBlock(doc: DocWithAutoTable, cursorY: number): Promise<number> {
+  try {
+    const company = await companyProfileService.get();
+    if (!company?.companyName) return cursorY;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...INK);
+    doc.text(company.companyName, MARGIN_X, cursorY);
+    let y = cursorY + 17;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...STONE_600);
+    for (const line of companyAddressLines(company.billingAddress)) {
+      doc.text(line, MARGIN_X, y);
+      y += ROW_GAP;
+    }
+    return y;
+  } catch {
+    // Company Info may not be configured for this tenant yet — omit the block.
+    return cursorY;
+  }
+}
+
+/** Draws a record's own name (top-left) — the CRM/Inventory-style counterpart
+ *  to drawCompanyBlock, for records that don't have a "from" party because
+ *  they aren't a document exchanged with one. */
+export function drawRecordTitle(doc: DocWithAutoTable, cursorY: number, name: string): number {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...INK);
+  doc.text(name, MARGIN_X, cursorY);
+  return cursorY + 17;
+}
+
+/** Draws, right-aligned, an Issue/Due-style date pair and an optional lime
+ *  key-amount badge (e.g. Amount Due). Pair with drawCompanyBlock or
+ *  drawRecordTitle on the left and take Math.max of both return values to
+ *  get the row's true bottom. */
+export function drawDateAmountHeader(
   doc: DocWithAutoTable,
   pageWidth: number,
   cursorY: number,
-  opts: { issueDate?: string; dueDate?: string; dueDateLabel?: string; keyAmount?: PdfKeyAmount },
-): Promise<number> {
-  let leftBottom = cursorY;
-  try {
-    const company = await companyProfileService.get();
-    if (company?.companyName) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.setTextColor(...INK);
-      doc.text(company.companyName, MARGIN_X, cursorY);
-      let y = cursorY + 17;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...STONE_600);
-      for (const line of companyAddressLines(company.billingAddress)) {
-        doc.text(line, MARGIN_X, y);
-        y += ROW_GAP;
-      }
-      leftBottom = y;
-    }
-  } catch {
-    // Company Info may not be configured for this tenant yet — omit the block.
-  }
-
+  opts: {
+    issueDate?: string;
+    issueDateLabel?: string;
+    dueDate?: string;
+    dueDateLabel?: string;
+    keyAmount?: PdfKeyAmount;
+  },
+): number {
   const valueX = pageWidth - MARGIN_X;
   const labelX = valueX - 92;
   let rightY = cursorY;
@@ -115,7 +142,7 @@ export async function drawDocumentHeader(
     doc.text(value, valueX, rightY, { align: "right" });
     rightY += 18;
   }
-  if (opts.issueDate) dateRow("Issue Date", opts.issueDate);
+  if (opts.issueDate) dateRow(opts.issueDateLabel || "Issue Date", opts.issueDate);
   if (opts.dueDate) dateRow(opts.dueDateLabel || "Due Date", opts.dueDate);
 
   if (opts.keyAmount) {
@@ -141,7 +168,7 @@ export async function drawDocumentHeader(
     rightY += badgeH;
   }
 
-  return Math.max(leftBottom, rightY) + 20;
+  return rightY;
 }
 
 function drawAddressBlock(doc: DocWithAutoTable, x: number, cursorY: number, label: string, addr: PdfAddressBlock): number {
@@ -170,33 +197,25 @@ function drawAddressBlock(doc: DocWithAutoTable, x: number, cursorY: number, lab
   return y;
 }
 
-/** Fallback for doc types with a customer but no address data of their own
- *  (Payment, Refund, Fabrication Job) — a single labeled name line instead of
- *  a full Bill To / Ship To row. */
-export function drawCustomerLine(doc: DocWithAutoTable, x: number, cursorY: number, name: string): number {
-  drawLabelWithUnderline(doc, x, cursorY, "Customer");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
-  doc.setTextColor(...INK);
-  doc.text(name, x, cursorY + 20);
-  return cursorY + 20 + 15;
-}
-
-/** Draws Bill To / Ship To as two labeled address cards side by side. Either
- *  (or both) may be omitted — a doc type with no address data (e.g. Payment)
- *  should skip this row entirely rather than call it with empty blocks. */
-export function drawBillShipRow(
+/** Draws up to two labeled address cards side by side (e.g. Bill To/Ship To,
+ *  a CRM record's Billing/Shipping Address, or a Purchases Vendor/Ship To).
+ *  Either (or both) may be omitted — a record with no address data at all
+ *  should skip this row entirely rather than call it with empty blocks. A
+ *  counterparty with only a name and no address (e.g. a Sales Payment, a
+ *  CRM record's Account Owner) still uses this — pass `{ customerName }`
+ *  with no other fields as `left`, which renders as a single labeled line. */
+export function drawAddressRow(
   doc: DocWithAutoTable,
   pageWidth: number,
   cursorY: number,
-  billTo?: PdfAddressBlock,
-  shipTo?: PdfAddressBlock,
+  left?: { label: string; addr: PdfAddressBlock },
+  right?: { label: string; addr: PdfAddressBlock },
 ): number {
-  if (!billTo && !shipTo) return cursorY;
+  if (!left && !right) return cursorY;
   const colWidth = (pageWidth - MARGIN_X * 2) / 2;
   let bottom = cursorY;
-  if (billTo) bottom = Math.max(bottom, drawAddressBlock(doc, MARGIN_X, cursorY, "Bill To", billTo));
-  if (shipTo) bottom = Math.max(bottom, drawAddressBlock(doc, MARGIN_X + colWidth + 20, cursorY, "Ship To", shipTo));
+  if (left) bottom = Math.max(bottom, drawAddressBlock(doc, MARGIN_X, cursorY, left.label, left.addr));
+  if (right) bottom = Math.max(bottom, drawAddressBlock(doc, MARGIN_X + colWidth + 20, cursorY, right.label, right.addr));
   return bottom + 16;
 }
 

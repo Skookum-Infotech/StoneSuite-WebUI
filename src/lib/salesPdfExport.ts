@@ -14,9 +14,9 @@ import {
 } from "@/lib/pdfBranding";
 import {
   CARD_FILL,
-  drawDocumentHeader,
-  drawBillShipRow,
-  drawCustomerLine,
+  drawCompanyBlock,
+  drawDateAmountHeader,
+  drawAddressRow,
   drawTotalsCard,
   drawEmphasisBar,
   type PdfAddressBlock,
@@ -130,13 +130,21 @@ export async function buildSalesDocPdf(params: SalesExportParams): Promise<DocWi
 
   await drawMasthead(doc, pageWidth, DOC_TYPE_LABEL[docType], recordNumber, statusLabel);
 
-  let cursorY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 30;
-  cursorY = await drawDocumentHeader(doc, pageWidth, cursorY, { issueDate, dueDate, dueDateLabel, keyAmount });
+  const headerStartY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 30;
+  const companyBottom = await drawCompanyBlock(doc, headerStartY);
+  const dateAmountBottom = drawDateAmountHeader(doc, pageWidth, headerStartY, { issueDate, dueDate, dueDateLabel, keyAmount });
+  let cursorY = Math.max(companyBottom, dateAmountBottom) + 20;
 
   if (billTo || shipTo) {
-    cursorY = drawBillShipRow(doc, pageWidth, cursorY, billTo, shipTo);
+    cursorY = drawAddressRow(
+      doc,
+      pageWidth,
+      cursorY,
+      billTo && { label: "Bill To", addr: billTo },
+      shipTo && { label: "Ship To", addr: shipTo },
+    );
   } else if (customerName) {
-    cursorY = drawCustomerLine(doc, MARGIN_X, cursorY, customerName) + 16;
+    cursorY = drawAddressRow(doc, pageWidth, cursorY, { label: "Customer", addr: { customerName } });
   }
 
   function ensureSpace(minHeight = 0) {

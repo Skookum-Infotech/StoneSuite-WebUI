@@ -151,4 +151,47 @@ describe("exportCrmRecordToPdf", () => {
       }),
     ).resolves.toBeUndefined();
   });
+
+  it("builds a Customer PDF with billing/shipping addresses and a balance badge", async () => {
+    await expect(
+      exportCrmRecordToPdf({
+        recordType: "customer",
+        title: "Acme Corp",
+        recordNumber: "CUS-0001",
+        statusLabel: "Active",
+        ownerName: "Jane Smith",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-02T00:00:00Z",
+        coreFields: {
+          customer_name: "Acme Corp",
+          customer_bill_addr_line1: "123 Main St",
+          customer_bill_addr_city: "Austin",
+          customer_bill_addr_zip: "78701",
+          customer_ship_addr_line1: "456 Warehouse Ave",
+          customer_ship_addr_city: "Dallas",
+          customer_ship_addr_zip: "75201",
+          customer_internal_notes: "VIP account — handle with care.",
+          customer_total_balance: "$1,250.00",
+          customer_deposit_balance: "$0.00",
+        },
+        customFields: {},
+        showCustomerBalances: true,
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("builds a Prospect PDF with no addresses and no balances (both rows optional)", async () => {
+    await expect(
+      exportCrmRecordToPdf({
+        recordType: "prospect",
+        title: "Acme Corp",
+        recordNumber: "PR-0001",
+        statusLabel: "Qualified",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-02T00:00:00Z",
+        coreFields: { customer_name: "Acme Corp" },
+        customFields: {},
+      }),
+    ).resolves.toBeUndefined();
+  });
 });
