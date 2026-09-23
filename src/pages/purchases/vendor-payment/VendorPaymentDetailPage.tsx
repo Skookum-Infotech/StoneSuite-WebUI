@@ -23,6 +23,7 @@ import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicat
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
 import { VendorPaymentStatusControl } from './components/VendorPaymentStatusControl';
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { VendorPayment } from '@/types/vendorPayment';
 
 const TABS = [
@@ -378,8 +379,7 @@ export default function VendorPaymentDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorPaymentDialog
                 vendorPaymentId={id}
                 label={`Vendor Payment ${payment.vendorPaymentNumber}`}
@@ -388,7 +388,7 @@ export default function VendorPaymentDetailPage() {
                   navigate('/purchases/vendor_payment');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

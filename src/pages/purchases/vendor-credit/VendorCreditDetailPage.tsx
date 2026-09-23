@@ -22,6 +22,7 @@ import { VendorCreditAuditTab } from './components/VendorCreditAuditTab';
 import { VendorCreditApplicationsTab } from './components/VendorCreditApplicationsTab';
 import { VendorCreditStatusControl } from './components/VendorCreditStatusControl';
 import { DeleteVendorCreditDialog } from './components/DeleteVendorCreditDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { VendorCredit } from '@/types/vendorCredit';
 
 const TABS = [
@@ -345,8 +346,7 @@ export default function VendorCreditDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorCreditDialog
                 vendorCreditId={id}
                 label={`Vendor Credit ${credit.vendorCreditNumber}`}
@@ -355,7 +355,7 @@ export default function VendorCreditDetailPage() {
                   navigate('/purchases/vendor_credit');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

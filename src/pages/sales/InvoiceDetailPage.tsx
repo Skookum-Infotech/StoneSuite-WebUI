@@ -20,6 +20,7 @@ import { INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/
 import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { RecordPaymentDialog } from './components/RecordPaymentDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
@@ -421,8 +422,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteInvoiceDialog
                 invoiceId={id}
                 label={`Invoice ${invoice.invoiceNumber}`}
@@ -431,7 +431,7 @@ export default function InvoiceDetailPage() {
                   navigate('/sales/invoice');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

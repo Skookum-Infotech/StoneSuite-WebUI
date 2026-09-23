@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { CREDIT_MEMO_STATUS_COLORS, CREDIT_MEMO_READONLY_STATUSES, CREDIT_MEMO_DRAFT_STATUS } from '@/lib/creditMemoForm';
 import { CreditMemoAuditTab } from './components/CreditMemoAuditTab';
 import { DeleteCreditMemoDialog } from './components/DeleteCreditMemoDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { VoidCreditMemoDialog } from './components/VoidCreditMemoDialog';
 import { ApplyCreditMemoDialog } from './components/ApplyCreditMemoDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -444,8 +445,7 @@ export default function CreditMemoDetailPage() {
           </div>
 
           {isDraft && canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteCreditMemoDialog
                 creditMemoId={id}
                 label={`Credit Memo ${creditMemo.creditMemoNumber}`}
@@ -454,7 +454,7 @@ export default function CreditMemoDetailPage() {
                   navigate('/sales/credit_memo');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

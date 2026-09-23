@@ -21,6 +21,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
@@ -475,8 +476,7 @@ export default function SalesOrderDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteSalesOrderDialog
                 orderId={id}
                 label={`Sales Order ${order.salesOrderNumber}`}
@@ -485,7 +485,7 @@ export default function SalesOrderDetailPage() {
                   navigate('/sales/sales_order');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

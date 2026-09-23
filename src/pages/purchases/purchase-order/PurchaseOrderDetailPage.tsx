@@ -20,6 +20,7 @@ import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
@@ -419,8 +420,7 @@ export default function PurchaseOrderDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeletePurchaseOrderDialog
                 purchaseOrderId={id}
                 label={`Purchase Order ${po.purchaseOrderNumber}`}
@@ -429,7 +429,7 @@ export default function PurchaseOrderDetailPage() {
                   navigate('/purchases/purchase_order');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

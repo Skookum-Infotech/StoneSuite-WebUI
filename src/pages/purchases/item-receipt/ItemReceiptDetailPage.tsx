@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { IR_STATUS_COLORS, IR_EDITABLE_STATUSES, IR_POSTABLE_STATUSES, IR_VOIDABLE_STATUSES, IR_DELETABLE_STATUSES } from '@/lib/itemReceiptForm';
 import { ItemReceiptAuditTab } from './components/ItemReceiptAuditTab';
 import { DeleteItemReceiptDialog } from './components/DeleteItemReceiptDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { PostReceiptDialog } from './components/PostReceiptDialog';
 import { VoidReceiptDialog } from './components/VoidReceiptDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
@@ -342,8 +343,7 @@ export default function ItemReceiptDetailPage() {
           </div>
 
           {(canDeleteHere || canVoidHere) && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               {canVoidHere && (
                 <VoidReceiptDialog itemReceiptId={id} statusCode={ir.statusCode} onVoided={refresh} />
               )}
@@ -357,7 +357,7 @@ export default function ItemReceiptDetailPage() {
                   }}
                 />
               )}
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

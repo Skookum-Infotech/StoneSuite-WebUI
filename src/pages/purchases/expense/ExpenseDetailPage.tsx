@@ -21,6 +21,7 @@ import {
 import { statusToastLabel } from '@/lib/statusToast';
 import { ExpenseAuditTab } from './components/ExpenseAuditTab';
 import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { ExpenseStatusControl } from './components/ExpenseStatusControl';
 import { RejectExpenseDialog } from './components/RejectExpenseDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
@@ -371,8 +372,7 @@ export default function ExpenseDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteExpenseDialog
                 expenseId={id}
                 label={`Expense ${exp.expenseNumber}`}
@@ -381,7 +381,7 @@ export default function ExpenseDetailPage() {
                   navigate('/purchases/expense');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

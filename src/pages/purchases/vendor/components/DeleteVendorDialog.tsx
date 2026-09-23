@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { vendorService } from '@/services/vendorService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Mirrors DeleteSalesOrderDialog's look, but calls vendorService.deleteVendor
 // directly (no reason field — the vendor DELETE endpoint doesn't accept one).
@@ -24,15 +25,12 @@ export function DeleteVendorDialog({ vendorId, label, onDeleted }: {
 
   return (
     <>
-      <button
-        type="button"
+      <DangerZoneAction
+        description="Delete this vendor permanently."
+        buttonLabel="Delete vendor"
+        ariaLabel={`Delete ${label}`}
         onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Trash2 className="size-4 shrink-0" />
-        Delete vendor
-      </button>
+      />
 
       {open && createPortal(
         <div

@@ -20,6 +20,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { RefundAuditTab } from './components/RefundAuditTab';
 import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { RefundStatusControl } from './components/RefundStatusControl';
 
@@ -306,8 +307,7 @@ export default function RefundDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteRefundDialog
                 refundId={id}
                 label={`Refund ${refund.refundNumber}`}
@@ -316,7 +316,7 @@ export default function RefundDetailPage() {
                   navigate('/sales/refund');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

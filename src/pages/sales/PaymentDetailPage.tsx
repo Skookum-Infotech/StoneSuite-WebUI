@@ -20,6 +20,7 @@ import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY } fro
 import { statusToastLabel } from '@/lib/statusToast';
 import { PaymentAuditTab } from './components/PaymentAuditTab';
 import { DeletePaymentDialog } from './components/DeletePaymentDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -375,8 +376,7 @@ export default function PaymentDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeletePaymentDialog
                 paymentId={id}
                 label={`Payment ${payment.paymentNumber}`}
@@ -385,7 +385,7 @@ export default function PaymentDetailPage() {
                   navigate('/sales/payment');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

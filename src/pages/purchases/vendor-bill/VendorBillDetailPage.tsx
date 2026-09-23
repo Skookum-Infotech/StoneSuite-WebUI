@@ -20,6 +20,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { VendorBillStatusControl } from './components/VendorBillStatusControl';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -444,8 +445,7 @@ export default function VendorBillDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorBillDialog
                 vendorBillId={id}
                 label={`Vendor Bill ${bill.vendorBillNumber}`}
@@ -454,7 +454,7 @@ export default function VendorBillDetailPage() {
                   navigate('/purchases/vendor_bill');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
