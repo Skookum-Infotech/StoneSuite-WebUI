@@ -1,12 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { Package, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { UploadDocumentButton } from '@/components/tenant/UploadDocumentButton';
 import { PurchaseOrderTable } from './components/PurchaseOrderTable';
 
 export default function PurchaseOrderListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
   const canCreate = isLoading || hasPermission('purchase_order', 'create');
+
+  // TODO(backend): there is no upload endpoint yet, so a picked file is only
+  // acknowledged, never sent. To wire it up, add the call to purchaseOrderService,
+  // run it through a useMutation, and invalidate ['purchase-orders'] on success.
+  function handleFileSelected(file: File) {
+    toast.info(`"${file.name}" selected — sending it to the backend isn't wired up yet.`);
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -33,7 +42,13 @@ export default function PurchaseOrderListPage() {
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
-          <PurchaseOrderTable />
+          <PurchaseOrderTable
+            toolbarActions={
+              canCreate && (
+                <UploadDocumentButton documentLabel="Purchase Order" onFileSelected={handleFileSelected} />
+              )
+            }
+          />
         </div>
       </div>
     </div>
