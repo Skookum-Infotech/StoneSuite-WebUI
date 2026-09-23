@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SubscriptionPage from './SubscriptionPage'
+import { DEFAULT_COUNTRY_NAME } from '@/lib/lookupDefaults'
 
 // SubscriptionPage is a UI-only mock module (no backend contract — see
 // types/subscription.ts), so these tests exercise real user flows against
@@ -79,6 +80,14 @@ describe('SubscriptionPage — Payment tab', () => {
     expect(screen.getByText('•••• •••• •••• 4242')).toBeInTheDocument()
     expect(screen.getAllByText('Default')).toHaveLength(1)
     expect(screen.getByRole('heading', { name: 'Billing Details' })).toBeInTheDocument()
+  })
+
+  it('shows the same country wording the lookup table uses elsewhere in the app', async () => {
+    const user = userEvent.setup()
+    render(<SubscriptionPage />)
+    await goToPaymentTab(user)
+
+    expect(screen.getByText(DEFAULT_COUNTRY_NAME, { exact: false, selector: 'dd' })).toBeInTheDocument()
   })
 
   it('adds a new card via the mock form', async () => {

@@ -2,6 +2,7 @@ import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
 import { isPortalSession } from '@/store/useAuthStore';
 import { normalizeScope, normalizeScopeList } from '@/lib/scope';
+import type { LookupItem } from '@/services/lookupService';
 import type {
   Tenant,
   TenantInvite,
@@ -30,6 +31,11 @@ import type {
 // e.g. { company_name, super_admin_email, ...customExtras }.
 export type OnboardingFormData = Record<string, unknown>;
 
+export interface OnboardingLookups {
+  countries: LookupItem[];
+  currencies: LookupItem[];
+}
+
 // ----- Public onboarding (self-service) -------------------------------------
 
 export const onboardingService = {
@@ -37,6 +43,13 @@ export const onboardingService = {
     tenantClient
       .get<{ success: boolean; fields: FieldDefinition[] }>('/onboarding/form-schema')
       .then((r) => r.data.fields ?? []),
+  // Read-only country/currency reference lists for the public form's
+  // Country/Currency dropdowns — separate from services/lookupService.ts's
+  // getCrmLookups, which requires a tenant JWT this pre-auth flow doesn't have.
+  lookups: (): Promise<OnboardingLookups> =>
+    tenantClient
+      .get<{ success: boolean; countries: LookupItem[]; currencies: LookupItem[] }>('/onboarding/lookups')
+      .then((r) => ({ countries: r.data.countries ?? [], currencies: r.data.currencies ?? [] })),
   getApply: (token: string) =>
     tenantClient.get<OnboardingApplyDetails>(`/onboarding/apply/${token}`).then((r) => r.data),
   submitApply: (token: string, formData: OnboardingFormData) =>

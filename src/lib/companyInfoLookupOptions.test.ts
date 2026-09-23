@@ -32,26 +32,26 @@ function lookups(overrides: Partial<CrmLookups> = {}): CrmLookups {
 
 describe('countryOptions', () => {
   it('maps countries to value/label pairs keyed by name', () => {
-    expect(countryOptions(lookups(), '')).toEqual([
+    expect(countryOptions(lookups().countries, '')).toEqual([
       { value: 'United States', label: 'United States' },
       { value: 'Canada', label: 'Canada' },
     ]);
   });
 
   it('does not duplicate the current value when it already matches a lookup entry', () => {
-    const result = countryOptions(lookups(), 'Canada');
+    const result = countryOptions(lookups().countries, 'Canada');
     expect(result.filter((o) => o.value === 'Canada')).toHaveLength(1);
   });
 
   it('prepends the current value when it matches no lookup entry, so saving does not blank it out', () => {
-    const result = countryOptions(lookups(), 'USA');
+    const result = countryOptions(lookups().countries, 'USA');
     expect(result[0]).toEqual({ value: 'USA', label: 'USA (current)' });
     expect(result).toHaveLength(3);
   });
 
   it('ignores a blank current value', () => {
-    expect(countryOptions(lookups(), '')).toHaveLength(2);
-    expect(countryOptions(lookups(), '   ')).toHaveLength(2);
+    expect(countryOptions(lookups().countries, '')).toHaveLength(2);
+    expect(countryOptions(lookups().countries, '   ')).toHaveLength(2);
   });
 
   it('returns an empty list when lookups have not loaded yet', () => {
@@ -67,14 +67,14 @@ describe('countryOptions', () => {
 
 describe('currencyOptions', () => {
   it('maps currencies to value/label pairs keyed by code, labeled with the full name', () => {
-    expect(currencyOptions(lookups(), '')).toEqual([
+    expect(currencyOptions(lookups().currencies, '')).toEqual([
       { value: 'USD', label: 'USD — US Dollar' },
       { value: 'CAD', label: 'CAD — Canadian Dollar' },
     ]);
   });
 
   it('prepends the current value when it matches no lookup entry', () => {
-    const result = currencyOptions(lookups(), 'EUR');
+    const result = currencyOptions(lookups().currencies, 'EUR');
     expect(result[0]).toEqual({ value: 'EUR', label: 'EUR (current)' });
   });
 });

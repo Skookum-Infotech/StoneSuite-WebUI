@@ -166,7 +166,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('country')}
           error={errors.country?.message}
-          options={countryOptions(lookupsQ.data, values.country ?? '')}
+          options={countryOptions(lookupsQ.data?.countries, values.country ?? '')}
         />
       );
     }
@@ -177,7 +177,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('currency')}
           error={errors.currency?.message}
-          options={currencyOptions(lookupsQ.data, values.currency ?? '')}
+          options={currencyOptions(lookupsQ.data?.currencies, values.currency ?? '')}
         />
       );
     }
@@ -206,7 +206,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={fieldSpec}
           registration={register(`${group.key}.country`)}
           error={errors[group.key]?.country?.message}
-          options={countryOptions(lookupsQ.data, groupValues?.country ?? '')}
+          options={countryOptions(lookupsQ.data?.countries, groupValues?.country ?? '')}
         />
       );
     }

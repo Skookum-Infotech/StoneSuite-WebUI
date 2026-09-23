@@ -12,7 +12,7 @@
 // dropdown that silently drops an unrecognized value and saving would
 // blank out already-saved data the user never intended to change.
 
-import type { CrmLookups } from '@/services/lookupService';
+import type { CrmLookups, LookupItem } from '@/services/lookupService';
 
 export interface SelectOption {
   value: string;
@@ -25,13 +25,18 @@ function withCurrentValue(options: SelectOption[], currentValue: string): Select
   return [{ value: trimmed, label: `${trimmed} (current)` }, ...options];
 }
 
-export function countryOptions(lookups: CrmLookups | undefined, currentValue: string): SelectOption[] {
-  const base = (lookups?.countries ?? []).map((c) => ({ value: c.name, label: c.name }));
+// Takes the bare countries/currencies array (not the full CrmLookups
+// object) so callers with a narrower fetch than getCrmLookups -- the public
+// onboarding form's own /onboarding/lookups, which has no tenant JWT to
+// call getCrmLookups with -- can reuse the same option-mapping and
+// preserve-current-value safeguard as Company Profile/Locations.
+export function countryOptions(countries: LookupItem[] | undefined, currentValue: string): SelectOption[] {
+  const base = (countries ?? []).map((c) => ({ value: c.name, label: c.name }));
   return withCurrentValue(base, currentValue);
 }
 
-export function currencyOptions(lookups: CrmLookups | undefined, currentValue: string): SelectOption[] {
-  const base = (lookups?.currencies ?? []).map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }));
+export function currencyOptions(currencies: LookupItem[] | undefined, currentValue: string): SelectOption[] {
+  const base = (currencies ?? []).map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }));
   return withCurrentValue(base, currentValue);
 }
 
