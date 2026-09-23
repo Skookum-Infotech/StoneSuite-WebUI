@@ -63,6 +63,21 @@ function sseResponse(frames: string, status = 200): Response {
   return new Response(stream, { status });
 }
 
+/** Like sseResponse, but delivers each string in `chunks` as its own
+ *  separate reader.read() resolution — for exercising the parser's
+ *  cross-chunk buffering instead of always handing it one complete frame at
+ *  a time. */
+function chunkedSseResponse(chunks: string[], status = 200): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+      controller.close();
+    },
+  });
+  return new Response(stream, { status });
+}
+
 function collect(): AskStreamHandlers & { sources: unknown[]; tokens: string[]; done?: unknown; error?: string } {
   const calls = { sources: [] as unknown[], tokens: [] as string[], done: undefined as unknown, error: undefined as string | undefined };
   return Object.assign(calls, {
@@ -197,6 +212,104 @@ describe('askAssistantStream', () => {
 
     expect(handlers.done).toBeUndefined();
     expect(handlers.error).toBeUndefined();
+  });
+
+  it('calls onError with the server message for a dedicated "error" SSE event', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      sseResponse('event: sources\ndata: {"citations":[]}\n\nevent: error\ndata: {"message":"The assistant took too long to respond."}\n\n'),
+    );
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.error).toBe('The assistant took too long to respond.');
+    expect(handlers.done).toBeUndefined();
+  });
+
+  it('drops a malformed "token" frame but keeps streaming the rest', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      sseResponse(
+        [
+          'event: token',
+          'data: "good-1"',
+          '',
+          'event: token',
+          'data: not valid json',
+          '',
+          'event: token',
+          'data: "good-2"',
+          '',
+          'event: done',
+          'data: {"answer":"good-1good-2","citations":[]}',
+          '',
+          '',
+        ].join('\n'),
+      ),
+    );
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.tokens).toEqual(['good-1', 'good-2']);
+    expect(handlers.done).toEqual({ result: { answer: 'good-1good-2', citations: [] }, conversationId: undefined });
+    expect(handlers.error).toBeUndefined();
+  });
+
+  it('drops a malformed "sources" frame but keeps streaming the rest', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      sseResponse('event: sources\ndata: not json\n\nevent: token\ndata: "x"\n\nevent: done\ndata: {"answer":"x","citations":[]}\n\n'),
+    );
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.sources).toEqual([]);
+    expect(handlers.tokens).toEqual(['x']);
+    expect(handlers.error).toBeUndefined();
+  });
+
+  it('reports a clear error, not a raw parse exception, when the "done" frame itself is malformed', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(sseResponse('event: done\ndata: not valid json\n\n'));
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.error).toBe('The assistant sent an invalid response.');
+    expect(handlers.done).toBeUndefined();
+  });
+
+  it('reassembles a token frame split across two reader chunks', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      chunkedSseResponse(['event: token\ndata: "hel', 'lo"\n\nevent: done\ndata: {"answer":"hello","citations":[]}\n\n']),
+    );
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.tokens).toEqual(['hello']);
+    expect(handlers.done).toEqual({ result: { answer: 'hello', citations: [] }, conversationId: undefined });
+  });
+
+  it('tolerates CRLF-framed SSE (a proxy that rewrites line endings in transit)', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      sseResponse('event: token\r\ndata: "x"\r\n\r\nevent: done\r\ndata: {"answer":"x","citations":[]}\r\n\r\n'),
+    );
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.tokens).toEqual(['x']);
+    expect(handlers.done).toEqual({ result: { answer: 'x', citations: [] }, conversationId: undefined });
+    expect(handlers.error).toBeUndefined();
+  });
+
+  it('a "done" payload with no conversation_id delivers conversationId: undefined, not a clobbered value', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(sseResponse('event: done\ndata: {"answer":"x","citations":[]}\n\n'));
+
+    const handlers = collect();
+    await askAssistantStream('q', 'conv-should-not-leak-in', handlers, new AbortController().signal);
+
+    expect((handlers.done as { conversationId?: string }).conversationId).toBeUndefined();
   });
 });
 

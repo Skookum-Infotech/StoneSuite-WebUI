@@ -12,6 +12,7 @@ Element.prototype.scrollTo = vi.fn();
 
 vi.mock('@/services/aiService', () => ({
   askAssistantStream: vi.fn(),
+  aiService: { askAssistant: vi.fn() },
   AskStreamHTTPError: class AskStreamHTTPError extends Error {
     status: number;
     constructor(status: number, message: string) {
@@ -23,7 +24,7 @@ vi.mock('@/services/aiService', () => ({
 }));
 
 import { AssistantPanel } from './AssistantPanel';
-import { askAssistantStream, conversationService } from '@/services/aiService';
+import { aiService, askAssistantStream, AskStreamHTTPError, conversationService } from '@/services/aiService';
 
 function renderPanel() {
   const wrapper = ({ children }: { children: ReactNode }) => <MemoryRouter>{children}</MemoryRouter>;
@@ -195,5 +196,91 @@ describe('AssistantPanel streaming', () => {
     // The input is usable again — no longer stuck disabled behind a stream
     // that will now never resolve on its own.
     await waitFor(() => expect(screen.getByRole('textbox', { name: /ask the ai assistant/i })).not.toBeDisabled());
+  });
+
+  // Regression test for the process-global maxConcurrentStreams=2 semaphore
+  // (shared across every tenant): the third concurrent streaming user
+  // anywhere gets a 429 with no queuing. Rather than surfacing that as a
+  // dead end, the panel falls back to the plain non-streaming ask so the
+  // user still gets an answer.
+  it('falls back to the non-streaming ask and still renders an answer on a 429', async () => {
+    vi.mocked(conversationService.create).mockResolvedValue({
+      id: 'conv-429',
+      ownerUserId: 'u1',
+      title: '',
+      createdAt: '',
+      updatedAt: '',
+    });
+    vi.mocked(askAssistantStream).mockRejectedValue(
+      new AskStreamHTTPError(429, 'The assistant is handling too many conversations right now.'),
+    );
+    vi.mocked(aiService.askAssistant).mockResolvedValue({
+      result: { answer: 'fallback answer', citations: [] },
+      conversationId: 'conv-429',
+    });
+
+    renderPanel();
+    await ask('busy question');
+
+    await screen.findByText('fallback answer');
+    expect(aiService.askAssistant).toHaveBeenCalledWith('busy question', 'conv-429');
+    // No error bubble, no stuck Stop button — this must read as a normal
+    // completed turn, not a failure the user has to notice and route around.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /send question/i })).toBeInTheDocument();
+  });
+
+  it('surfaces an error if the 429 fallback ask itself fails', async () => {
+    vi.mocked(conversationService.create).mockResolvedValue({
+      id: 'conv-429b',
+      ownerUserId: 'u1',
+      title: '',
+      createdAt: '',
+      updatedAt: '',
+    });
+    vi.mocked(askAssistantStream).mockRejectedValue(new AskStreamHTTPError(429, 'busy'));
+    vi.mocked(aiService.askAssistant).mockRejectedValue(new Error('network down'));
+
+    renderPanel();
+    await ask('busy question');
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+  });
+
+  // Regression test for P1-5: a later "done" payload that omits
+  // conversation_id (the backend never does this once a conversation
+  // exists, but nothing before this asserted it) must not silently drop
+  // multi-turn context by overwriting a good id with undefined.
+  it('does not clobber a held conversationId when a later done payload omits it', async () => {
+    vi.mocked(conversationService.create).mockResolvedValue({
+      id: 'conv-keep',
+      ownerUserId: 'u1',
+      title: '',
+      createdAt: '',
+      updatedAt: '',
+    });
+    vi.mocked(askAssistantStream)
+      .mockImplementationOnce(resolveWith('first answer', 'conv-keep'))
+      // Explicitly omits conversation_id in the "done" payload, unlike
+      // resolveWith's default of echoing back whatever convId it was
+      // called with -- that echo would mask exactly the bug this test
+      // exists to catch.
+      .mockImplementationOnce(async (_q, _convId, handlers: AskStreamHandlers) => {
+        handlers.onDone({ result: { answer: 'second answer', citations: [] }, conversationId: undefined });
+      });
+
+    renderPanel();
+
+    await ask('one');
+    await screen.findByText('first answer');
+
+    await ask('two');
+    await screen.findByText('second answer');
+
+    await ask('three');
+    await waitFor(() => expect(askAssistantStream).toHaveBeenCalledTimes(3));
+    // Still 'conv-keep', not undefined -- the second turn's omitted
+    // conversation_id must not have wiped it.
+    expect(vi.mocked(askAssistantStream).mock.calls[2][1]).toBe('conv-keep');
   });
 });

@@ -67,6 +67,15 @@ function parseSSEFrame(raw: string): { event: string; data: string } | null {
   return event ? { event, data } : null;
 }
 
+// streamInactivityTimeoutMs bounds how long askAssistantStream will wait
+// between any two bytes arriving on the connection (a real event or just the
+// heartbeat) before giving up and surfacing an error — comfortably above the
+// backend's 15s ": ping" heartbeat interval, so a healthy connection never
+// trips it, but a silently wedged one (proxy ate the connection, server
+// process died mid-stream) doesn't hang the panel forever with Stop as the
+// only escape.
+const streamInactivityTimeoutMs = 45_000;
+
 /** Streaming twin of askAssistant: POST /tenant/ai/ask/stream, delivered via
  *  `fetch` + ReadableStream instead of axios — EventSource can't POST or set
  *  auth headers, and axios's XHR adapter buffers the whole response instead
@@ -134,12 +143,33 @@ export async function askAssistantStream(
   const decoder = new TextDecoder();
   let buffer = '';
   let settled = false;
+  let timedOut = false;
+
+  // Inactivity watchdog: reset on every chunk the reader hands back (a real
+  // event or a heartbeat both count as activity), and on expiry cancel the
+  // reader so the stuck read() resolves instead of hanging forever. Cleared
+  // in the finally below regardless of how the stream ends.
+  let inactivityTimer: ReturnType<typeof setTimeout> | undefined;
+  const armInactivityTimer = () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      timedOut = true;
+      void reader.cancel().catch(() => {});
+    }, streamInactivityTimeoutMs);
+  };
 
   try {
+    armInactivityTimer();
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
-      buffer += decoder.decode(value, { stream: true });
+      armInactivityTimer();
+
+      // Normalize CRLF to LF before framing: a proxy between the browser and
+      // the backend (Fly, Cloudflare) may rewrite line endings in transit,
+      // and the exact "\n\n" / "event: " / "data: " matching below would
+      // otherwise silently break every frame for the rest of the connection.
+      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
 
       let sep: number;
       while ((sep = buffer.indexOf('\n\n')) !== -1) {
@@ -148,25 +178,48 @@ export async function askAssistantStream(
         const frame = parseSSEFrame(rawFrame);
         if (!frame) continue; // a ": ping" heartbeat comment, or a blank keepalive
 
+        // Each case parses its own JSON independently: one malformed frame
+        // must not take down an otherwise-healthy stream. A bad "sources" or
+        // "token" frame is simply dropped — more of both are still coming.
+        // A bad "done"/"error" frame still ends the stream (the server
+        // considers it over either way) but reports a clear message instead
+        // of leaking a raw JSON.parse exception to the UI.
         switch (frame.event) {
           case 'sources': {
-            const parsed = JSON.parse(frame.data) as { citations?: Citation[] };
-            handlers.onSources?.(parsed.citations ?? []);
+            try {
+              const parsed = JSON.parse(frame.data) as { citations?: Citation[] };
+              handlers.onSources?.(parsed.citations ?? []);
+            } catch {
+              // Drop this frame; sources are advisory and tokens keep streaming.
+            }
             break;
           }
-          case 'token':
-            handlers.onToken(JSON.parse(frame.data) as string);
+          case 'token': {
+            try {
+              handlers.onToken(JSON.parse(frame.data) as string);
+            } catch {
+              // Drop this one chunk rather than aborting the whole answer.
+            }
             break;
+          }
           case 'done': {
-            const parsed = JSON.parse(frame.data) as AskResult & { conversation_id?: string };
             settled = true;
-            handlers.onDone({ result: { answer: parsed.answer, citations: parsed.citations }, conversationId: parsed.conversation_id });
+            try {
+              const parsed = JSON.parse(frame.data) as AskResult & { conversation_id?: string };
+              handlers.onDone({ result: { answer: parsed.answer, citations: parsed.citations }, conversationId: parsed.conversation_id });
+            } catch {
+              handlers.onError('The assistant sent an invalid response.');
+            }
             return;
           }
           case 'error': {
-            const parsed = JSON.parse(frame.data) as { message?: string };
             settled = true;
-            handlers.onError(parsed.message ?? 'The assistant could not answer that.');
+            try {
+              const parsed = JSON.parse(frame.data) as { message?: string };
+              handlers.onError(parsed.message ?? 'The assistant could not answer that.');
+            } catch {
+              handlers.onError('The assistant could not answer that.');
+            }
             return;
           }
           // Unknown event names are ignored, same as a real EventSource client.
@@ -177,10 +230,20 @@ export async function askAssistantStream(
     if (err instanceof DOMException && err.name === 'AbortError') return;
     handlers.onError(err instanceof Error ? err.message : 'Lost connection to the assistant.');
     return;
+  } finally {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    // Releases the underlying stream/connection on every exit path,
+    // including the two early returns above — a no-op if the stream already
+    // finished naturally, cancels an abandoned one otherwise.
+    await reader.cancel().catch(() => {});
   }
 
   if (!settled) {
-    handlers.onError('The connection closed before the assistant finished responding.');
+    handlers.onError(
+      timedOut
+        ? 'The assistant stopped responding.'
+        : 'The connection closed before the assistant finished responding.',
+    );
   }
 }
 

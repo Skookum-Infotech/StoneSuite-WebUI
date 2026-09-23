@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sparkles, X, Send, Square, Loader2, FileText, BookOpen } from 'lucide-react';
-import { AskStreamHTTPError, askAssistantStream, conversationService } from '@/services/aiService';
+import { AskStreamHTTPError, aiService, askAssistantStream, conversationService } from '@/services/aiService';
 import type { AskStreamHandlers } from '@/services/aiService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { Citation } from '@/types/ai';
@@ -187,7 +187,12 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
             );
           },
           onDone: ({ result, conversationId: newConversationId }) => {
-            setConversationId(newConversationId);
+            // Only ever move conversationId forward: a "done" payload that
+            // omits it (shouldn't happen once a conversation exists, but
+            // nothing before this asserted it) must not clobber a good id
+            // already held from an earlier turn and silently drop multi-turn
+            // context on the very next question.
+            if (newConversationId) setConversationId(newConversationId);
             patchTurn({ answer: result.answer, citations: result.citations, streaming: false });
           },
           onError: (message) => patchTurn({ error: message, streaming: false }),
@@ -195,7 +200,26 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
         controller.signal,
       );
     } catch (err) {
-      patchTurn({ error: apiErrorMessage(err, 'The assistant could not answer that.'), streaming: false });
+      if (err instanceof AskStreamHTTPError && err.status === 429) {
+        // The server's concurrent-stream cap (shared across every tenant) is
+        // saturated. Fall back to the plain non-streaming ask rather than
+        // just failing — the user still gets an answer, without the token
+        // animation. Note this fallback request isn't wired to abortRef, so
+        // Stop can't cancel it mid-flight (matches askAssistant's existing
+        // behavior everywhere else it's used).
+        try {
+          const { result, conversationId: newConversationId } = await aiService.askAssistant(
+            trimmed,
+            activeConversationId,
+          );
+          if (newConversationId) setConversationId(newConversationId);
+          patchTurn({ answer: result.answer, citations: result.citations, streaming: false });
+        } catch (fallbackErr) {
+          patchTurn({ error: apiErrorMessage(fallbackErr, 'The assistant could not answer that.'), streaming: false });
+        }
+      } else {
+        patchTurn({ error: apiErrorMessage(err, 'The assistant could not answer that.'), streaming: false });
+      }
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
       setIsStreaming(false);
@@ -251,7 +275,7 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
               {turn.question}
             </p>
             {turn.error && (
-              <p className="max-w-[85%] rounded-2xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <p role="alert" className="max-w-[85%] rounded-2xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
                 {turn.error}
               </p>
             )}
@@ -262,7 +286,11 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
             )}
             {turn.answer !== undefined && (
               <div className="max-w-[95%] space-y-2">
-                <p className="rounded-2xl bg-stone-100 px-3 py-2 text-xs text-stone-700 dark:bg-white/[0.06] dark:text-stone-200">
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-2xl bg-stone-100 px-3 py-2 text-xs text-stone-700 dark:bg-white/[0.06] dark:text-stone-200"
+                >
                   {turn.answer}
                   {turn.streaming && (
                     <span className="ml-0.5 inline-block h-3 w-1 animate-pulse bg-current align-middle" aria-hidden="true" />
