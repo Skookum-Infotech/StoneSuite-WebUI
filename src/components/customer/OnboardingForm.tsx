@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { onboardingService } from '@/services/tenantServices';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import type { FieldDefinition } from '@/types/tenant';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +74,7 @@ const SECTIONS: { title: string; icon: React.ElementType; fields: BaseField[] }[
 ];
 
 const BASE_KEYS = new Set(SECTIONS.flatMap((s) => s.fields.map((f) => f.key)));
+const ALL_BASE_FIELDS = SECTIONS.flatMap((s) => s.fields);
 
 const inputCls =
   'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-300 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
@@ -96,6 +98,7 @@ export function OnboardingForm({
     ...(prefill ?? {}),
   }));
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const schemaQ = useQuery({ queryKey: ['onboarding-form-schema'], queryFn: onboardingService.formSchema });
   const extras = useMemo<FieldDefinition[]>(
@@ -105,18 +108,22 @@ export function OnboardingForm({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const badPhone = firstInvalidPhoneLabel(ALL_BASE_FIELDS, data);
+    if (badPhone) { setPhoneError(`Enter a valid phone number for ${badPhone}.`); return; }
+    setPhoneError(null);
     onSubmit(data);
   };
 
   const str = (k: string) => (typeof data[k] === 'string' ? (data[k] as string) : '');
+  const bannerMessage = phoneError || errorMessage;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-      {errorMessage && (
+      {bannerMessage && (
         <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
           <AlertCircle className="size-4 mt-0.5 shrink-0 text-red-500" />
-          <p className="text-sm text-red-700">{errorMessage}</p>
+          <p className="text-sm text-red-700">{bannerMessage}</p>
         </div>
       )}
 

@@ -17,9 +17,10 @@ import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import {
-  fromOrder, toCreatePayload, PAGE_TABS, type PageTab,
+  fromOrder, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type SOLineItem, type SODrawing, SO_STATUS_CODES,
 } from '@/lib/salesOrderForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
@@ -147,7 +148,11 @@ export default function EditSalesOrderPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => salesOrderService.updateOrder(id, toCreatePayload(data, lineItems, customFieldValues)),
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      return salesOrderService.updateOrder(id, toCreatePayload(data, lineItems, customFieldValues));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });

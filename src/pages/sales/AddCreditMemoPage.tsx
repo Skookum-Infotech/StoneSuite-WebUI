@@ -19,9 +19,10 @@ import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
 import {
-  creditMemoDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  creditMemoDefaults, toCreatePayload, PAGE_TABS, BILLING_FIELDS, type PageTab,
   type CreditMemoLineItem,
 } from '@/lib/creditMemoForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface CreditMemoDraft {
@@ -115,6 +116,8 @@ export default function AddCreditMemoPage() {
     mutationFn: () => {
       if (!customer) throw new Error('A customer is required.');
       if (lineItems.length === 0) throw new Error('At least one line item is required.');
+      const badPhone = firstInvalidPhoneLabel(BILLING_FIELDS, formData);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload(
         { ...formData, customer_uuid: customer.id, invoice_uuid: invoice?.id, sales_order_uuid: salesOrder?.id },
         lineItems,

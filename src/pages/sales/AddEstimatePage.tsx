@@ -18,9 +18,10 @@ import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { EstimateFormBody } from './components/EstimateFormBody';
 import {
-  estimateDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  estimateDefaults, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type EstimateLineItem,
 } from '@/lib/estimateForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface EstimateDraft {
@@ -120,6 +121,8 @@ export default function AddEstimatePage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], formData);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
       return estimateService.createEstimate(payload);
     },

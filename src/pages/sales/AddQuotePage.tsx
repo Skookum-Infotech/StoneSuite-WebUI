@@ -19,9 +19,10 @@ import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { QuoteFormBody } from './components/QuoteFormBody';
 import {
-  quoteDefaults, toCreatePayload, fromSourceEstimate, PAGE_TABS, type PageTab,
+  quoteDefaults, toCreatePayload, fromSourceEstimate, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type QuoteLineItem,
 } from '@/lib/quoteForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface QuoteDraft {
@@ -153,6 +154,8 @@ export default function AddQuotePage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A billing customer is required.');
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload({ ...data, customer_uuid: customer.id }, lineItems, sourceEstimate?.id, customFieldValues);
       return quoteService.createQuote(payload);
     },

@@ -22,9 +22,10 @@ import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import {
-  purchaseOrderDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
+  purchaseOrderDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, SHIP_TO_FIELDS, type PageTab,
   type PurchaseOrderLineItem,
 } from '@/lib/purchaseOrderForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface PurchaseOrderDraft {
@@ -138,6 +139,8 @@ export default function AddPurchaseOrderPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!vendor) throw new Error('A vendor is required.');
+      const badPhone = firstInvalidPhoneLabel(SHIP_TO_FIELDS, formData);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues);
       return purchaseOrderService.createPurchaseOrder(payload);
     },
