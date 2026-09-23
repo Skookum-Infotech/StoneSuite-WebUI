@@ -125,20 +125,10 @@ export default function RefundDetailPage() {
         recordNumber: refund.refundNumber,
         statusLabel: refund.status,
         customerName: refund.customer.name,
-        createdAt: refund.createdAt,
-        updatedAt: refund.updatedAt,
+        issueDate: fmtDate(refund.refundDate),
+        keyAmount: { label: 'Unapplied', value: currency(refund.unappliedAmount) },
+        notesText: refund.memo || undefined,
         sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Refund Method', refund.method || ''],
-              ['Reference #', refund.referenceNumber || ''],
-              ['Refund Date', fmtDate(refund.refundDate)],
-              ['Reason', refund.reason || ''],
-              ['Memo', refund.memo || ''],
-              ['Internal Notes', refund.internalNotes || ''],
-            ],
-          },
           {
             title: 'Applications',
             rows: refund.applications.map((app) => [
@@ -150,7 +140,6 @@ export default function RefundDetailPage() {
         totals: [
           { label: 'Amount', value: currency(refund.amount), bold: true },
           { label: 'Applied', value: currency(refund.appliedTotal) },
-          { label: 'Unapplied', value: currency(refund.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {

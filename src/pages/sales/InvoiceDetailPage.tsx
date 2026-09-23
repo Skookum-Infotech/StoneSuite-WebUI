@@ -132,23 +132,13 @@ export default function InvoiceDetailPage() {
         recordNumber: invoice.invoiceNumber,
         statusLabel: invoice.status,
         customerName: invoice.customer.name,
-        createdAt: invoice.createdAt,
-        updatedAt: invoice.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Invoice Date', fmtDate(invoice.invoiceDate)],
-              ['Due Date', invoice.dueDate ? fmtDate(invoice.dueDate) : ''],
-              ['PO Number', invoice.poNumber || ''],
-              ['Reference #', invoice.referenceNumber || ''],
-              ['Sales Tax %', `${invoice.salesTaxPercent}%`],
-              ['Memo', invoice.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(invoice.billing) },
-          { title: 'Ship To', rows: addressRows(invoice.shipping) },
-        ],
+        issueDate: fmtDate(invoice.invoiceDate),
+        dueDate: invoice.dueDate ? fmtDate(invoice.dueDate) : undefined,
+        keyAmount: { label: 'Amount Due', value: currency(invoice.balanceDue) },
+        billTo: invoice.billing,
+        shipTo: invoice.shipping,
+        notesText: invoice.memo || undefined,
+        sections: [],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: invoice.items.map((line) => [
@@ -161,6 +151,7 @@ export default function InvoiceDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: invoice.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -169,7 +160,6 @@ export default function InvoiceDetailPage() {
           { label: 'Tax', value: currency(invoice.taxTotal) },
           { label: 'Grand Total', value: currency(invoice.grandTotal), bold: true },
           { label: 'Amount Paid', value: currency(invoice.amountPaid) },
-          { label: 'Balance Due', value: currency(invoice.balanceDue), bold: true },
         ],
       });
     } catch (err) {
@@ -459,17 +449,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

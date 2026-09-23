@@ -145,8 +145,7 @@ export default function FabricationJobDetailPage() {
         recordNumber: job.jobNumber,
         statusLabel: job.status,
         customerName: job.customer.name,
-        createdAt: job.createdAt,
-        updatedAt: job.updatedAt,
+        notesText: job.notes || undefined,
         sections: [
           {
             title: 'Sales Order',
@@ -172,7 +171,6 @@ export default function FabricationJobDetailPage() {
               ['Approval Status', job.approvalStatus !== 'none' ? APPROVAL_STATUS_LABELS[job.approvalStatus] : ''],
             ],
           },
-          { title: 'Notes', rows: [['Notes', job.notes || '']] },
         ],
         itemsTable: {
           title: 'Pieces',

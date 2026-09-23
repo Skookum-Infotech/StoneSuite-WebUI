@@ -4,18 +4,26 @@ import {
   MARGIN_X,
   PAGE_BOTTOM_SAFE,
   BRAND_LIME,
-  BRAND_DARK_ACCENT,
   INK,
-  STONE_200,
-  STONE_400,
   STONE_600,
   HEADER_BAND_HEIGHT,
   HEADER_ACCENT_HEIGHT,
   drawMasthead,
   drawFooterOnAllPages,
-  fmtDate,
   type DocWithAutoTable,
 } from "@/lib/pdfBranding";
+import {
+  CARD_FILL,
+  drawDocumentHeader,
+  drawBillShipRow,
+  drawCustomerLine,
+  drawTotalsCard,
+  drawEmphasisBar,
+  type PdfAddressBlock,
+  type PdfKeyAmount,
+  type PdfTotalRow,
+} from "@/lib/pdfDocumentBlocks";
+import { drawTextCard, makeItemDescriptionHooks } from "@/lib/pdfTextBlocks";
 
 export type SalesDocType =
   | "sales_order"
@@ -39,22 +47,33 @@ export interface SalesPdfTable {
   rows: string[][];
   /** Column index (0-based) from which cells are right-aligned, e.g. numeric/currency columns. */
   numericFrom?: number;
+  /** Row-aligned with `rows` — an optional line rendered under the item name
+   *  (column index 1) instead of its own column. */
+  descriptions?: Array<string | undefined>;
 }
 
-export interface SalesPdfTotal {
-  label: string;
-  value: string;
-  bold?: boolean;
-}
+export type SalesPdfTotal = PdfTotalRow;
 
 export interface SalesExportParams {
   docType: SalesDocType;
   title: string;
   recordNumber?: string;
   statusLabel?: string;
+  /** Fallback name shown when there's no billTo/shipTo address data at all
+   *  (Payment, Refund, Fabrication Job). Ignored once billTo or shipTo is set. */
   customerName?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  issueDate?: string;
+  dueDate?: string;
+  /** Defaults to "Due Date"; pass e.g. "Valid Until" for Quote/Estimate. */
+  dueDateLabel?: string;
+  /** The one figure worth calling out twice (header badge + summary bar) —
+   *  e.g. Balance Due for Invoice, Unapplied for Payment/Refund. Omit for doc
+   *  types where the totals card's own Grand Total row is emphasis enough. */
+  keyAmount?: PdfKeyAmount;
+  billTo?: PdfAddressBlock;
+  shipTo?: PdfAddressBlock;
+  /** Rendered as a Notes card next to the totals summary. */
+  notesText?: string;
   sections: SalesPdfSection[];
   itemsTable?: SalesPdfTable;
   totals?: SalesPdfTotal[];
@@ -71,6 +90,11 @@ const DOC_TYPE_LABEL: Record<SalesDocType, string> = {
   fabrication_job: "Fabrication Job",
 };
 
+const TERMS_PLACEHOLDER = "Terms will be available in a future update.";
+const PAYMENT_DETAILS_PLACEHOLDER = "Bank and payment details will be available in a future update.";
+const FOOTER_COLUMN_GAP = 24;
+const WHITE: [number, number, number] = [255, 255, 255];
+
 export function buildExportFilename(
   docType: SalesDocType,
   recordNumber: string | undefined,
@@ -83,67 +107,40 @@ export function buildExportFilename(
 /** Builds a branded PDF summary of a Sales document (Sales Order, Invoice,
  *  Estimate, Quote, Credit Memo, Payment, Refund, or Fabrication Job). */
 export async function buildSalesDocPdf(params: SalesExportParams): Promise<DocWithAutoTable> {
-  const { docType, title, recordNumber, statusLabel, customerName, createdAt, updatedAt, sections, itemsTable, totals } =
-    params;
+  const {
+    docType,
+    recordNumber,
+    statusLabel,
+    customerName,
+    issueDate,
+    dueDate,
+    dueDateLabel,
+    keyAmount,
+    billTo,
+    shipTo,
+    notesText,
+    sections,
+    itemsTable,
+    totals,
+  } = params;
 
   const doc = new jsPDF({ unit: "pt", format: "a4" }) as DocWithAutoTable;
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  await drawMasthead(doc, pageWidth);
+  await drawMasthead(doc, pageWidth, DOC_TYPE_LABEL[docType], recordNumber, statusLabel);
 
-  let cursorY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 34;
+  let cursorY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 30;
+  cursorY = await drawDocumentHeader(doc, pageWidth, cursorY, { issueDate, dueDate, dueDateLabel, keyAmount });
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...BRAND_DARK_ACCENT);
-  doc.text("SALES DOCUMENT SUMMARY", MARGIN_X, cursorY, { charSpace: 1.4 });
+  if (billTo || shipTo) {
+    cursorY = drawBillShipRow(doc, pageWidth, cursorY, billTo, shipTo);
+  } else if (customerName) {
+    cursorY = drawCustomerLine(doc, MARGIN_X, cursorY, customerName) + 16;
+  }
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...STONE_400);
-  doc.text(`Generated ${new Date().toLocaleString()}`, pageWidth - MARGIN_X, cursorY, {
-    align: "right",
-  });
-
-  cursorY += 24;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(...INK);
-  doc.text(title || "(unnamed)", MARGIN_X, cursorY);
-
-  cursorY += 18;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...STONE_600);
-  const subtitleParts = [DOC_TYPE_LABEL[docType], recordNumber].filter(Boolean);
-  doc.text(subtitleParts.join("  ·  "), MARGIN_X, cursorY);
-
-  cursorY += 16;
-  doc.setDrawColor(...STONE_200);
-  doc.setLineWidth(0.75);
-  doc.line(MARGIN_X, cursorY, pageWidth - MARGIN_X, cursorY);
-  cursorY += 20;
-
-  autoTable(doc, {
-    startY: cursorY,
-    margin: { left: MARGIN_X, right: MARGIN_X },
-    theme: "plain",
-    styles: { fontSize: 9, textColor: STONE_600, cellPadding: 2 },
-    body: [
-      ["Status", statusLabel || "—", "Customer", customerName || "—"],
-      ["Created", fmtDate(createdAt || ""), "Updated", fmtDate(updatedAt || "")],
-    ],
-    columnStyles: {
-      0: { fontStyle: "bold", textColor: INK, cellWidth: 90 },
-      2: { fontStyle: "bold", textColor: INK, cellWidth: 90 },
-    },
-  });
-
-  cursorY = doc.lastAutoTable.finalY + 20;
-
-  function ensureSpace() {
-    if (cursorY > pageHeight - PAGE_BOTTOM_SAFE) {
+  function ensureSpace(minHeight = 0) {
+    if (cursorY + minHeight > pageHeight - PAGE_BOTTOM_SAFE) {
       doc.addPage();
       cursorY = 44;
     }
@@ -175,27 +172,6 @@ export async function buildSalesDocPdf(params: SalesExportParams): Promise<DocWi
     cursorY = doc.lastAutoTable.finalY + 20;
   }
 
-  if (totals && totals.length > 0) {
-    ensureSpace();
-
-    autoTable(doc, {
-      startY: cursorY,
-      margin: { left: MARGIN_X, right: MARGIN_X },
-      theme: "plain",
-      tableWidth: "wrap",
-      styles: { fontSize: 7, cellPadding: 4 },
-      head: [totals.map((t) => t.label.toUpperCase())],
-      headStyles: { textColor: STONE_400, fontStyle: "normal" },
-      body: [totals.map((t) => t.value)],
-      bodyStyles: { textColor: INK, fontSize: 10 },
-      columnStyles: Object.fromEntries(
-        totals.map((t, i) => [i, t.bold ? { fontStyle: "bold" as const } : {}]),
-      ),
-    });
-
-    cursorY = doc.lastAutoTable.finalY + 20;
-  }
-
   if (itemsTable && itemsTable.rows.length > 0) {
     ensureSpace();
 
@@ -206,21 +182,51 @@ export async function buildSalesDocPdf(params: SalesExportParams): Promise<DocWi
     cursorY += 8;
 
     const numericFrom = itemsTable.numericFrom ?? itemsTable.head.length;
+    const descriptionHooks = itemsTable.descriptions ? makeItemDescriptionHooks(doc, itemsTable.descriptions) : {};
     autoTable(doc, {
       startY: cursorY + 4,
       margin: { left: MARGIN_X, right: MARGIN_X },
       theme: "grid",
       styles: { fontSize: 8, cellPadding: 4, textColor: STONE_600 },
-      headStyles: { fillColor: BRAND_LIME, textColor: INK },
+      headStyles: { fillColor: INK, textColor: WHITE },
+      alternateRowStyles: { fillColor: CARD_FILL },
       head: [itemsTable.head],
       body: itemsTable.rows,
       columnStyles: Object.fromEntries(
         itemsTable.head.map((_, i) => [i, i >= numericFrom ? { halign: "right" as const } : {}]),
       ),
+      ...descriptionHooks,
     });
 
-    cursorY = doc.lastAutoTable.finalY + 20;
+    cursorY = doc.lastAutoTable.finalY + 18;
   }
+
+  ensureSpace(140);
+  const footerColWidth = (pageWidth - MARGIN_X * 2 - FOOTER_COLUMN_GAP) / 2;
+  const footerRightX = MARGIN_X + footerColWidth + FOOTER_COLUMN_GAP;
+
+  let footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, cursorY, "Terms & Conditions", TERMS_PLACEHOLDER, {
+    placeholder: true,
+  });
+  if (notesText) {
+    footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, footerLeftY + 12, "Notes", notesText);
+  }
+
+  let footerRightY = cursorY;
+  if (totals && totals.length > 0) {
+    footerRightY = drawTotalsCard(doc, footerRightX, footerColWidth, footerRightY, totals) + 10;
+  }
+  if (keyAmount) {
+    footerRightY = drawEmphasisBar(doc, footerRightX, footerColWidth, footerRightY, keyAmount);
+  }
+
+  cursorY = Math.max(footerLeftY, footerRightY) + 8;
+
+  ensureSpace(70);
+  cursorY =
+    drawTextCard(doc, MARGIN_X, pageWidth - MARGIN_X * 2, cursorY, "Payment Details", PAYMENT_DETAILS_PLACEHOLDER, {
+      placeholder: true,
+    }) + 10;
 
   drawFooterOnAllPages(doc, pageHeight, `StoneSuite Sales — ${DOC_TYPE_LABEL[docType]}`);
 

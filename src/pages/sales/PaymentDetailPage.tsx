@@ -135,19 +135,10 @@ export default function PaymentDetailPage() {
         recordNumber: payment.paymentNumber,
         statusLabel: payment.status,
         customerName: payment.customer.name,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt,
+        issueDate: fmtDate(payment.paymentDate),
+        keyAmount: { label: 'Unapplied', value: currency(payment.unappliedAmount) },
+        notesText: payment.memo || undefined,
         sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Payment Method', payment.method || ''],
-              ['Reference #', payment.referenceNumber || ''],
-              ['Payment Date', fmtDate(payment.paymentDate)],
-              ['Memo', payment.memo || ''],
-              ['Internal Notes', payment.internalNotes || ''],
-            ],
-          },
           {
             title: 'Applications',
             rows: payment.applications.map((app) => [`Invoice ${app.invoiceNumber || '—'}`, currency(app.amount)]),
@@ -156,7 +147,6 @@ export default function PaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
-          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {

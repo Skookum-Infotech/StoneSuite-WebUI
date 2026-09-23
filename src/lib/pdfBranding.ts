@@ -102,9 +102,18 @@ async function rasterizeSvgToDataUrl(
   }
 }
 
-/** Draws the dark masthead band (StoneSuite mark + client logo plate) at the
- *  top of the current page. */
-export async function drawMasthead(doc: DocWithAutoTable, pageWidth: number): Promise<void> {
+/** Draws the dark masthead band (StoneSuite mark + client logo, both left-aligned)
+ *  at the top of the current page. `docTypeLabel`/`recordNumber`/`statusLabel` are
+ *  optional — passing them right-aligns a document title block (e.g. "INVOICE" /
+ *  "INV-000142" / "Draft") the way a professional invoice names itself up front;
+ *  domains that don't pass them keep the plain branding-only masthead. */
+export async function drawMasthead(
+  doc: DocWithAutoTable,
+  pageWidth: number,
+  docTypeLabel?: string,
+  recordNumber?: string,
+  statusLabel?: string,
+): Promise<void> {
   const [stoneSuiteLogo, clientLogo] = await Promise.all([
     loadPngDataUrl("/logo-white.png"),
     rasterizeSvgToDataUrl("/elevation-stone-logo.svg", ELEVATION_STONE_LOGO_CROP),
@@ -115,13 +124,29 @@ export async function drawMasthead(doc: DocWithAutoTable, pageWidth: number): Pr
   doc.setFillColor(...BRAND_LIME);
   doc.rect(0, HEADER_BAND_HEIGHT, pageWidth, HEADER_ACCENT_HEIGHT, "F");
 
+  const logoH = 30;
+  let logoX = MARGIN_X;
   if (stoneSuiteLogo) {
-    const logoH = 36;
     const logoW = (stoneSuiteLogo.width / stoneSuiteLogo.height) * logoH;
     doc.addImage(
       stoneSuiteLogo.dataUrl,
       "PNG",
-      MARGIN_X,
+      logoX,
+      (HEADER_BAND_HEIGHT - logoH) / 2,
+      logoW,
+      logoH,
+      undefined,
+      IMAGE_COMPRESSION,
+    );
+    logoX += logoW + 18;
+  }
+
+  if (clientLogo) {
+    const logoW = (clientLogo.width / clientLogo.height) * logoH;
+    doc.addImage(
+      clientLogo.dataUrl,
+      "PNG",
+      logoX,
       (HEADER_BAND_HEIGHT - logoH) / 2,
       logoW,
       logoH,
@@ -130,32 +155,27 @@ export async function drawMasthead(doc: DocWithAutoTable, pageWidth: number): Pr
     );
   }
 
-  if (clientLogo) {
-    const plateH = 46;
-    const plateY = (HEADER_BAND_HEIGHT - plateH) / 2;
-    const logoH = 24;
-    const logoW = (clientLogo.width / clientLogo.height) * logoH;
-    const platePadX = 14;
-    const plateW = logoW + platePadX * 2;
-    const plateX = pageWidth - MARGIN_X - plateW;
-
+  if (docTypeLabel) {
+    const rightX = pageWidth - MARGIN_X;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.setTextColor(...BRAND_LIME);
-    doc.text("PREPARED FOR", plateX + plateW, plateY - 5, { align: "right", charSpace: 1.2 });
+    doc.setFontSize(20);
+    doc.setTextColor(255, 255, 255);
+    doc.text(docTypeLabel.toUpperCase(), rightX, HEADER_BAND_HEIGHT / 2 - 2, { align: "right" });
 
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(plateX, plateY, plateW, plateH, 5, 5, "F");
-    doc.addImage(
-      clientLogo.dataUrl,
-      "PNG",
-      plateX + platePadX,
-      plateY + (plateH - logoH) / 2,
-      logoW,
-      logoH,
-      undefined,
-      IMAGE_COMPRESSION,
-    );
+    let metaY = HEADER_BAND_HEIGHT / 2 + 17;
+    if (recordNumber) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...BRAND_LIME);
+      doc.text(recordNumber, rightX, metaY, { align: "right" });
+      metaY += 13;
+    }
+    if (statusLabel) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...STONE_200);
+      doc.text(statusLabel, rightX, metaY, { align: "right" });
+    }
   }
 }
 
