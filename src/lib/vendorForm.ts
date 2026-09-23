@@ -4,6 +4,7 @@
 // assembled into the wire payload only at submit time via toCreatePayload.
 
 import type { CrmLookups } from '@/services/lookupService';
+import { isInvalidPhoneValue } from './phoneValidation';
 import type {
   AcceptedPaymentMethod, Vendor, VendorCreatePayload, VendorType,
 } from '@/types/vendor';
@@ -127,6 +128,13 @@ export function validateVendorForm(data: Record<string, unknown>): VendorFieldEr
     if (!String(data.family_name ?? '').trim()) errors.push({ key: 'family_name', label: 'Last Name' });
   } else {
     if (!String(data.legal_name ?? '').trim()) errors.push({ key: 'legal_name', label: 'Legal Business Name' });
+  }
+
+  if (isInvalidPhoneValue(String(data.fax_number ?? ''))) {
+    errors.push({ key: 'fax_number', label: 'Fax Number' });
+  }
+  if (isInvalidPhoneValue(String(data.contact_point_telephone ?? ''))) {
+    errors.push({ key: 'contact_point_telephone', label: 'Contact Telephone' });
   }
   return errors;
 }

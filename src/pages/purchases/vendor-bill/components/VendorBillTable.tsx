@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -66,7 +66,7 @@ function fmtDate(iso?: string): string {
   return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
-export function VendorBillTable() {
+export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
@@ -270,18 +270,22 @@ export function VendorBillTable() {
           </button>
         )}
 
-        {records.length > 0 && (
-          <button
-            type="button"
-            onClick={handleDownloadCsv}
-            disabled={isExporting}
-            aria-label={hasFilters ? 'Download filtered vendor bills as CSV' : 'Download all vendor bills as CSV'}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
-            {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
-          </button>
-        )}
+        {/* Right-aligned: Download CSV, then any actions the page slots in (e.g. Upload). */}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          {records.length > 0 && (
+            <button
+              type="button"
+              onClick={handleDownloadCsv}
+              disabled={isExporting}
+              aria-label={hasFilters ? 'Download filtered vendor bills as CSV' : 'Download all vendor bills as CSV'}
+              className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+              {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
+            </button>
+          )}
+          {toolbarActions}
+        </div>
       </div>
 
       {isError && (

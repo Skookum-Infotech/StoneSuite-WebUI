@@ -20,6 +20,7 @@ import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, va
 import { statusToastLabel } from '@/lib/statusToast';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { QuoteStatusControl } from './components/QuoteStatusControl';
 
@@ -144,30 +145,18 @@ export default function QuoteDetailPage() {
         recordNumber: quote.quoteNumber,
         statusLabel: quote.status,
         customerName: quote.customer.name,
-        createdAt: quote.createdAt,
-        updatedAt: quote.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Quote Date', fmtDate(quote.quoteDate)],
-              ['Valid Until', quote.validUntil ? fmtDate(quote.validUntil) : ''],
-              ['PO Number', quote.poNumber || ''],
-              ['Reference #', quote.referenceNumber || ''],
-              ['Sales Tax %', `${quote.salesTaxPercent}%`],
-              ['Source Estimate', quote.estimate?.number || ''],
-              ['Memo', quote.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(quote.billing) },
-          { title: 'Ship To', rows: addressRows(quote.shipping) },
-        ],
+        issueDate: fmtDate(quote.quoteDate),
+        dueDate: quote.validUntil ? fmtDate(quote.validUntil) : undefined,
+        dueDateLabel: 'Valid Until',
+        billTo: quote.billing,
+        shipTo: quote.shipping,
+        notesText: quote.memo || undefined,
+        sections: [],
         itemsTable: {
-          head: ['#', 'Item', 'Description', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: quote.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
-            line.description || '—',
             line.sku || '—',
             String(line.quantity),
             currency(line.unitPrice),
@@ -175,7 +164,8 @@ export default function QuoteDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
-          numericFrom: 4,
+          descriptions: quote.items.map((line) => line.description || undefined),
+          numericFrom: 3,
         },
         totals: [
           { label: 'Subtotal', value: currency(quote.subtotal) },
@@ -453,8 +443,7 @@ export default function QuoteDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteQuoteDialog
                 quoteId={id}
                 label={`Quote ${quote.quoteNumber}`}
@@ -463,7 +452,7 @@ export default function QuoteDetailPage() {
                   navigate('/sales/quote');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -491,17 +480,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

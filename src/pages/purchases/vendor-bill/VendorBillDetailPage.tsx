@@ -20,6 +20,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { VendorBillStatusControl } from './components/VendorBillStatusControl';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -136,22 +137,22 @@ export default function VendorBillDetailPage() {
         title: bill.vendorBillNumber || 'Vendor Bill',
         recordNumber: bill.vendorBillNumber,
         statusLabel: bill.status,
+        issueDate: fmtDate(bill.billDate),
+        issueDateLabel: 'Bill Date',
+        dueDate: bill.dueDate ? fmtDate(bill.dueDate) : undefined,
+        keyAmount: { label: 'Balance Due', value: currency(bill.balanceDue) },
         counterpartyName: bill.vendor.name,
-        createdAt: bill.createdAt,
-        updatedAt: bill.updatedAt,
+        notesText: bill.notes || undefined,
+        termsText: bill.termsConditions || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ["Vendor's Invoice #", bill.vendorInvoiceNumber || ''],
               ['Reference #', bill.referenceNumber || ''],
-              ['Bill Date', fmtDate(bill.billDate)],
-              ['Due Date', bill.dueDate ? fmtDate(bill.dueDate) : ''],
               ['Sales Tax %', `${bill.salesTaxPercent}%`],
               ['Purchase Order', bill.purchaseOrder?.number || ''],
               ['Memo', bill.memo || ''],
-              ['Notes', bill.notes || ''],
-              ['Terms & Conditions', bill.termsConditions || ''],
             ],
           },
         ],
@@ -167,6 +168,7 @@ export default function VendorBillDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: bill.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -177,7 +179,6 @@ export default function VendorBillDetailPage() {
           { label: 'Grand Total', value: currency(bill.grandTotal), bold: true },
           { label: 'Amount Paid', value: currency(bill.amountPaid) },
           { label: 'Credits Applied', value: currency(creditsApplied) },
-          { label: 'Balance Due', value: currency(bill.balanceDue), bold: true },
         ],
       });
     } catch (err) {
@@ -444,8 +445,7 @@ export default function VendorBillDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorBillDialog
                 vendorBillId={id}
                 label={`Vendor Bill ${bill.vendorBillNumber}`}
@@ -454,7 +454,7 @@ export default function VendorBillDetailPage() {
                   navigate('/purchases/vendor_bill');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

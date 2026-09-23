@@ -22,6 +22,7 @@ import {
 import { statusToastLabel } from '@/lib/statusToast';
 import { RequisitionAuditTab } from './components/RequisitionAuditTab';
 import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { RequisitionStatusControl } from './components/RequisitionStatusControl';
 import { ConvertToPurchaseOrderDialog } from './components/ConvertToPurchaseOrderDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
@@ -153,20 +154,20 @@ export default function RequisitionDetailPage() {
         title: reqn.requisitionNumber || 'Requisition',
         recordNumber: reqn.requisitionNumber,
         statusLabel: reqn.status,
+        issueDate: fmtDate(reqn.createdAt),
+        dueDate: reqn.neededByDate ? fmtDate(reqn.neededByDate) : undefined,
+        dueDateLabel: 'Needed By',
         counterpartyLabel: 'Suggested Vendor',
         counterpartyName: reqn.vendor?.name,
-        createdAt: reqn.createdAt,
-        updatedAt: reqn.updatedAt,
+        notesText: reqn.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Requested By', requesterName ?? ''],
               ['Department', reqn.department || ''],
-              ['Needed By', reqn.neededByDate ? fmtDate(reqn.neededByDate) : ''],
               ['Priority', priorityLabel(reqn.priority)],
               ['Sales Tax %', `${reqn.salesTaxPercent}%`],
-              ['Memo', reqn.memo || ''],
             ],
           },
         ],
@@ -180,6 +181,7 @@ export default function RequisitionDetailPage() {
             currency(line.estimatedUnitPrice),
             currency(line.estimatedAmount),
           ]),
+          descriptions: reqn.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -429,8 +431,7 @@ export default function RequisitionDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteRequisitionDialog
                 requisitionId={id}
                 label={`Requisition ${reqn.requisitionNumber}`}
@@ -439,7 +440,7 @@ export default function RequisitionDetailPage() {
                   navigate('/purchases/requisition');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

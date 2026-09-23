@@ -24,6 +24,7 @@ import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { HelpMenu } from '@/components/HelpMenu';
 import { NotificationBell } from '@/components/NotificationBell';
+import { TenantLogoMark } from '@/components/TenantLogoMark';
 import {
   Menu,
   ChevronRight,
@@ -240,26 +241,9 @@ export default function MainLayout(): React.JSX.Element {
             </div>
           </NavLink>
 
-          {/* Divider between the two logos */}
-          <div className="hidden lg:block h-7 w-px bg-white/12 mx-1" />
-
-          {/* Elevation Stone — pill logo on desktop */}
-          <div className="hidden lg:flex items-center px-3">
-            <img
-              src="/elevation-stone-logo.svg"
-              alt="Elevation Stone"
-              className="h-45 w-auto object-contain"
-            />
-          </div>
-
-          {/* Elevation Stone — circular badge on mobile */}
-          <div className="flex lg:hidden items-center pl-2">
-            <img
-              src="/elevation-stone-badge.svg"
-              alt="Elevation Stone"
-              className="h-9 w-9 object-contain"
-            />
-          </div>
+          {/* Tenant's own uploaded logo — divider + pill (desktop) or badge
+              (mobile), or nothing at all when the tenant has no logo set. */}
+          <TenantLogoMark />
         </div>
 
         {/* GlobalSearch — flex-centered between logos and actions on lg+ */}

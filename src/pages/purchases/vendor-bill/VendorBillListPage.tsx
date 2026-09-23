@@ -1,12 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { FileCheck, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { UploadDocumentButton } from '@/components/tenant/UploadDocumentButton';
 import { VendorBillTable } from './components/VendorBillTable';
 
 export default function VendorBillListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
   const canCreate = isLoading || hasPermission('vendor_bill', 'create');
+
+  // TODO(backend): there is no upload endpoint yet, so a picked file is only
+  // acknowledged, never sent. To wire it up, add the call to vendorBillService,
+  // run it through a useMutation, and invalidate ['vendor-bills'] on success.
+  function handleFileSelected(file: File) {
+    toast.info(`"${file.name}" selected — sending it to the backend isn't wired up yet.`);
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -33,7 +42,13 @@ export default function VendorBillListPage() {
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
-          <VendorBillTable />
+          <VendorBillTable
+            toolbarActions={
+              canCreate && (
+                <UploadDocumentButton documentLabel="Vendor Bill" onFileSelected={handleFileSelected} />
+              )
+            }
+          />
         </div>
       </div>
     </div>

@@ -16,7 +16,10 @@ import { useScrollToError } from '@/hooks/useScrollToError';
 import { FabricationJobFormBody } from './components/FabricationJobFormBody';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
-import { fromJob, toJobFields, canEditPieces, PAGE_TABS, type PageTab, FJ_STATUS_CODES } from '@/lib/fabricationForm';
+import {
+  fromJob, toJobFields, canEditPieces, PAGE_TABS, SITE_FIELDS, type PageTab, FJ_STATUS_CODES,
+} from '@/lib/fabricationForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { statusToastLabel } from '@/lib/statusToast';
 import type { FabricationJob } from '@/types/fabrication';
 
@@ -94,7 +97,11 @@ export default function EditFabricationJobPage() {
   });
 
   const save = useMutation({
-    mutationFn: () => fabricationService.updateJob(id, toJobFields(data, customFieldValues)),
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel(SITE_FIELDS, data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      return fabricationService.updateJob(id, toJobFields(data, customFieldValues));
+    },
     onSuccess: (updated) => {
       applyUpdatedJob(updated);
       navigate('/sales/installation');

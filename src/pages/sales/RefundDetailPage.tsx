@@ -20,6 +20,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { RefundAuditTab } from './components/RefundAuditTab';
 import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { RefundStatusControl } from './components/RefundStatusControl';
 
@@ -124,20 +125,10 @@ export default function RefundDetailPage() {
         recordNumber: refund.refundNumber,
         statusLabel: refund.status,
         customerName: refund.customer.name,
-        createdAt: refund.createdAt,
-        updatedAt: refund.updatedAt,
+        issueDate: fmtDate(refund.refundDate),
+        keyAmount: { label: 'Unapplied', value: currency(refund.unappliedAmount) },
+        notesText: refund.memo || undefined,
         sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Refund Method', refund.method || ''],
-              ['Reference #', refund.referenceNumber || ''],
-              ['Refund Date', fmtDate(refund.refundDate)],
-              ['Reason', refund.reason || ''],
-              ['Memo', refund.memo || ''],
-              ['Internal Notes', refund.internalNotes || ''],
-            ],
-          },
           {
             title: 'Applications',
             rows: refund.applications.map((app) => [
@@ -149,7 +140,6 @@ export default function RefundDetailPage() {
         totals: [
           { label: 'Amount', value: currency(refund.amount), bold: true },
           { label: 'Applied', value: currency(refund.appliedTotal) },
-          { label: 'Unapplied', value: currency(refund.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -306,8 +296,7 @@ export default function RefundDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteRefundDialog
                 refundId={id}
                 label={`Refund ${refund.refundNumber}`}
@@ -316,7 +305,7 @@ export default function RefundDetailPage() {
                   navigate('/sales/refund');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

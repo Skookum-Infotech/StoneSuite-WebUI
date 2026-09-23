@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 // Mirrors DeleteSalesOrderDialog's look, plus focus management the sibling
 // dialog is missing (moves focus into the panel on open, restores it to the
@@ -54,16 +55,13 @@ export function DeleteFabricationJobDialog({ jobId, label, onDeleted }: {
 
   return (
     <>
-      <button
+      <DangerZoneAction
         ref={triggerRef}
-        type="button"
+        description="Delete this fabrication job permanently."
+        buttonLabel="Delete fabrication job"
+        ariaLabel={`Delete ${label}`}
         onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Trash2 className="size-4 shrink-0" />
-        Delete fabrication job
-      </button>
+      />
 
       {open && createPortal(
         <div

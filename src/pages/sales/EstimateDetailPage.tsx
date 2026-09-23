@@ -20,6 +20,7 @@ import { ESTIMATE_STATUS_COLORS, ESTIMATE_STATUS_CODES, ESTIMATE_CONVERTIBLE_STA
 import { statusToastLabel } from '@/lib/statusToast';
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { EstimateStatusControl } from './components/EstimateStatusControl';
 
@@ -144,29 +145,18 @@ export default function EstimateDetailPage() {
         recordNumber: estimate.estimateNumber,
         statusLabel: estimate.status,
         customerName: estimate.customer.name,
-        createdAt: estimate.createdAt,
-        updatedAt: estimate.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Estimate Date', fmtDate(estimate.estimateDate)],
-              ['Valid Until', estimate.validUntil ? fmtDate(estimate.validUntil) : ''],
-              ['PO Number', estimate.poNumber || ''],
-              ['Reference #', estimate.referenceNumber || ''],
-              ['Sales Tax %', `${estimate.salesTaxPercent}%`],
-              ['Memo', estimate.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(estimate.billing) },
-          { title: 'Ship To', rows: addressRows(estimate.shipping) },
-        ],
+        issueDate: fmtDate(estimate.estimateDate),
+        dueDate: estimate.validUntil ? fmtDate(estimate.validUntil) : undefined,
+        dueDateLabel: 'Valid Until',
+        billTo: estimate.billing,
+        shipTo: estimate.shipping,
+        notesText: estimate.memo || undefined,
+        sections: [],
         itemsTable: {
-          head: ['#', 'Item', 'Description', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: estimate.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
-            line.description || '—',
             line.sku || '—',
             String(line.quantity),
             currency(line.unitPrice),
@@ -174,7 +164,8 @@ export default function EstimateDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
-          numericFrom: 4,
+          descriptions: estimate.items.map((line) => line.description || undefined),
+          numericFrom: 3,
         },
         totals: [
           { label: 'Subtotal', value: currency(estimate.subtotal) },
@@ -440,8 +431,7 @@ export default function EstimateDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteEstimateDialog
                 estimateId={id}
                 label={`Estimate ${estimate.estimateNumber}`}
@@ -450,7 +440,7 @@ export default function EstimateDetailPage() {
                   navigate('/sales/estimate');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -478,17 +468,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

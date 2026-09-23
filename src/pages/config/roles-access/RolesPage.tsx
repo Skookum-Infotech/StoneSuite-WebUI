@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { SCOPE_LABELS } from "@/lib/scope";
 import { buildPermModules } from "@/lib/permissionMatrix";
 import type { PermModule, ResourceRow } from "@/lib/permissionMatrix";
+import { hasWildcardGrant } from "@/lib/roleValidation";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { Role, Scope, WorkspaceUser } from "@/types/tenant";
 import { AssignUsersModal } from "./components/AssignUsersModal";
@@ -174,9 +175,11 @@ export default function RolesPage(): React.JSX.Element {
                     </span>
                   </div>
                   <p className="mt-0.5 text-2xs text-stone-400 truncate">
-                    {role.permissions.length === 0
-                      ? "No permissions"
-                      : `${role.permissions.length} permission${role.permissions.length !== 1 ? "s" : ""}`}
+                    {hasWildcardGrant(role)
+                      ? "All permissions"
+                      : role.permissions.length === 0
+                        ? "No permissions"
+                        : `${role.permissions.length} permission${role.permissions.length !== 1 ? "s" : ""}`}
                   </p>
                 </button>
               );
@@ -301,9 +304,11 @@ function RoleDetail({
             <p className="text-xs text-stone-500 mt-0.5">{role.description}</p>
           )}
           <p className="mt-1 text-label text-stone-400">
-            {role.permissions.length === 0
-              ? "No permissions assigned."
-              : `${role.permissions.length} permission${role.permissions.length !== 1 ? "s" : ""} granted`}
+            {isWildcard
+              ? "All permissions granted"
+              : role.permissions.length === 0
+                ? "No permissions assigned."
+                : `${role.permissions.length} permission${role.permissions.length !== 1 ? "s" : ""} granted`}
           </p>
         </div>
 
@@ -416,7 +421,9 @@ function RoleDetail({
               id: "permissions",
               label: "Permissions",
               icon: ShieldCheck,
-              count: role.permissions.length,
+              // Wildcard grant isn't "1 permission" — suppress the numeric
+              // badge here; the tab body already renders the "Full Access" state.
+              count: isWildcard ? 0 : role.permissions.length,
             },
             {
               id: "users",

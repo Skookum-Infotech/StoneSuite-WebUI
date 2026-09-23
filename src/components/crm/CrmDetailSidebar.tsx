@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Upload, Pencil, X, LayoutList, FileDown, Loader2 } from "lucide-react";
 import { Badge, ErrorNote } from "@/components/tenant/ui";
+import { DangerZoneCard } from "@/components/tenant/DangerZoneCard";
 import { resolveStatusColor, quickActionRowCls } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
 import type { StatusInfo, AssignableUser } from "@/types/tenant";
@@ -149,10 +150,7 @@ export function CrmDetailSidebar({
 
       {/* Danger Zone */}
       {deleteSlot && (
-        <div className={cardCls}>
-          <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-          <div className="space-y-0.5">{deleteSlot}</div>
-        </div>
+        <DangerZoneCard>{deleteSlot}</DangerZoneCard>
       )}
     </div>
   );

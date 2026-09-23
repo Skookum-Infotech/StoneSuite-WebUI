@@ -11,6 +11,7 @@ import { UpgradePlanDialog } from './components/UpgradePlanDialog'
 import { CancelPlanDialog } from './components/CancelPlanDialog'
 import { ContactSalesDialog } from './components/ContactSalesDialog'
 import { toPaymentMethodInput } from '@/lib/subscriptionForm'
+import { DEFAULT_COUNTRY_NAME } from '@/lib/lookupDefaults'
 import type {
   PlanTier, CurrentPlan, PaymentMethod as PaymentMethodType, BillingContact, CancelReason,
 } from '@/types/subscription'
@@ -80,7 +81,7 @@ const INITIAL_BILLING_CONTACT: BillingContact = {
   city: 'San Francisco',
   state: 'CA',
   postalCode: '94105',
-  country: 'United States',
+  country: DEFAULT_COUNTRY_NAME,
 }
 
 const TIER_ORDER: Record<PlanTier['id'], number> = { starter: 0, pro: 1, enterprise: 2 }

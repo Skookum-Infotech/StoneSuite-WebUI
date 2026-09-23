@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Repeat, Pencil, Trash2, Truck } from 'lucide-react';
+import { Repeat, Pencil, Truck } from 'lucide-react';
 import { inventoryTransferService } from '@/services/inventoryTransferService';
+import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { ModernSection } from '@/components/crm/FormPrimitives';
@@ -145,12 +146,13 @@ export default function TransferDetailPage() {
           )}
 
           {canDelete && isDraft && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4">
-              <p className="text-xs font-semibold text-red-400 mb-2">Danger Zone</p>
-              <button type="button" onClick={() => remove()} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left">
-                <Trash2 className="size-4 shrink-0" /> Delete transfer
-              </button>
-            </div>
+            <DangerZoneCard>
+              <DangerZoneAction
+                description="Delete this transfer permanently."
+                buttonLabel="Delete transfer"
+                onClick={() => remove()}
+              />
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

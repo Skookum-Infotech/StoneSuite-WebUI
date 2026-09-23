@@ -14,9 +14,10 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import type { VendorRef } from './components/VendorPicker';
 import {
-  fromPurchaseOrder, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
+  fromPurchaseOrder, toCreatePayload, calcHeaderTotals, PAGE_TABS, SHIP_TO_FIELDS, type PageTab,
   type PurchaseOrderLineItem, PO_NON_DRAFT_LOCKED,
 } from '@/lib/purchaseOrderForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 
@@ -107,7 +108,11 @@ export default function EditPurchaseOrderPage() {
   );
 
   const save = useMutation({
-    mutationFn: () => purchaseOrderService.updatePurchaseOrder(id, toCreatePayload(data, lineItems, customFieldValues)),
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel(SHIP_TO_FIELDS, data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      return purchaseOrderService.updatePurchaseOrder(id, toCreatePayload(data, lineItems, customFieldValues));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-order', id] });
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
