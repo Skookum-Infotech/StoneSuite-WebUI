@@ -1,5 +1,6 @@
 import type jsPDF from "jspdf";
 import type { ImageCompression } from "jspdf";
+import { companyProfileService } from "@/services/companyProfileService";
 
 /** Shared StoneSuite masthead/footer branding for exported PDFs (CRM records,
  *  Sales documents). One source of truth so every exported PDF looks the same. */
@@ -24,10 +25,6 @@ export const HEADER_ACCENT_HEIGHT = 3;
 // bitmaps — "SLOW" makes it DEFLATE-compress them (still fully lossless) before
 // embedding, which is the difference between a ~260KB and a ~14KB logo in the PDF.
 const IMAGE_COMPRESSION: ImageCompression = "SLOW";
-
-// Fixed crop window (in the source SVG's native 3000x3000 canvas) isolating the
-// Elevation Stone wordmark — the rest of the canvas is empty padding.
-const ELEVATION_STONE_LOGO_CROP = { x: 299.69, y: 1229.63, width: 2399.84, height: 536.51 };
 
 type LoadedLogo = { dataUrl: string; width: number; height: number };
 
@@ -61,44 +58,20 @@ async function loadPngDataUrl(url: string): Promise<LoadedLogo | null> {
   }
 }
 
-/** Fetches an SVG, crops it to a fixed region, and rasterizes it to a PNG data URL —
- *  jsPDF's addImage() only accepts raster formats, not SVG markup. */
-async function rasterizeSvgToDataUrl(
-  url: string,
-  crop: { x: number; y: number; width: number; height: number },
-  targetHeightPx = 480,
-): Promise<LoadedLogo | null> {
-  let objectUrl: string | undefined;
+/** Loads the tenant's own uploaded logo (Configuration -> Company Info) for the
+ *  masthead — same self-fetch precedent as drawCompanyBlock in
+ *  pdfDocumentBlocks.ts. The backend already crops it to content and re-encodes
+ *  it as PNG on upload, so no client-side cropping is needed here. Returns null
+ *  (masthead just omits the client logo) when the tenant has none set, the
+ *  request fails, or the image can't be loaded — a missing logo must never
+ *  break PDF export. */
+async function loadTenantLogo(): Promise<LoadedLogo | null> {
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const rawSvg = await res.text();
-    const croppedSvg = rawSvg.replace(
-      /<svg[^>]*>/,
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${crop.x} ${crop.y} ${crop.width} ${crop.height}">`,
-    );
-
-    objectUrl = URL.createObjectURL(new Blob([croppedSvg], { type: "image/svg+xml" }));
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("Failed to rasterize SVG logo"));
-      el.src = objectUrl as string;
-    });
-
-    const height = targetHeightPx;
-    const width = Math.round(height * (crop.width / crop.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(img, 0, 0, width, height);
-    return { dataUrl: canvas.toDataURL("image/png"), width, height };
+    const { logoUrl } = await companyProfileService.get();
+    if (!logoUrl) return null;
+    return await loadPngDataUrl(logoUrl);
   } catch {
     return null;
-  } finally {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
   }
 }
 
@@ -116,7 +89,7 @@ export async function drawMasthead(
 ): Promise<void> {
   const [stoneSuiteLogo, clientLogo] = await Promise.all([
     loadPngDataUrl("/logo-white.png"),
-    rasterizeSvgToDataUrl("/elevation-stone-logo.svg", ELEVATION_STONE_LOGO_CROP),
+    loadTenantLogo(),
   ]);
 
   doc.setFillColor(...INK);

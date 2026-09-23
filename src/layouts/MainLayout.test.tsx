@@ -10,6 +10,7 @@ vi.mock('@/components/Sidebar', () => ({ default: () => null }));
 vi.mock('@/components/GlobalSearch', () => ({ GlobalSearch: () => null }));
 vi.mock('@/components/HelpMenu', () => ({ HelpMenu: () => null }));
 vi.mock('@/components/NotificationBell', () => ({ NotificationBell: () => null }));
+vi.mock('@/components/TenantLogoMark', () => ({ TenantLogoMark: () => null }));
 vi.mock('@/hooks/useSessionTimer', () => ({
   useSessionTimer: () => ({
     showWarning: false,
