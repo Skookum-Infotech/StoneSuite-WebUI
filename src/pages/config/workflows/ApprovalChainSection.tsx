@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Badge, Spinner, ErrorNote } from '@/components/tenant/ui';
+import { Switch } from '@/components/ui/switch';
 import { ApproverPicker, MAX_APPROVERS, type ApproverCandidate } from '@/components/tenant/ApproverPicker';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { ApprovalGate, ApprovalChainEmployee } from '@/types/tenant';
@@ -102,9 +103,19 @@ function ApprovalGateEditor({
   // through the query cache.
   const [confirmedIds, setConfirmedIds] = useState(gate.approverEmployeeIds);
   const [localIds, setLocalIds] = useState(gate.approverEmployeeIds);
+  // enabled tracks the toggle independently of localIds -- flipping it on
+  // must reveal an empty picker (nothing chosen yet) without that empty
+  // list collapsing straight back to "disabled".
+  const [enabled, setEnabled] = useState(gate.approverEmployeeIds.length > 0);
+  // justEnabled is only ever set true by this user flipping the switch on
+  // (never by the initial/re-synced state above), so the picker only
+  // auto-focuses on a deliberate enable, not on an ordinary page load
+  // where the gate already had approvers.
+  const [justEnabled, setJustEnabled] = useState(false);
   if (gate.approverEmployeeIds !== confirmedIds) {
     setConfirmedIds(gate.approverEmployeeIds);
     setLocalIds(gate.approverEmployeeIds);
+    setEnabled(gate.approverEmployeeIds.length > 0);
   }
 
   const update = useMutation({
@@ -118,7 +129,10 @@ function ApprovalGateEditor({
       );
       toast.success('Approval chain updated.');
     },
-    onError: () => setLocalIds(confirmedIds),
+    onError: () => {
+      setLocalIds(confirmedIds);
+      setEnabled(confirmedIds.length > 0);
+    },
   });
 
   // Batch rapid add/remove clicks into one save: fire only after localIds
@@ -132,8 +146,36 @@ function ApprovalGateEditor({
 
   return (
     <div>
-      <p className="mb-1.5 text-xs font-semibold text-stone-900 dark:text-stone-100">
-        Before leaving <span className="font-normal text-stone-500">{gate.statusLabel}</span>
+      <p className="mb-1.5 flex items-center justify-between gap-2 text-xs font-semibold text-stone-900 dark:text-stone-100">
+        <span>
+          Before leaving <span className="font-normal text-stone-500">{gate.statusLabel}</span>
+        </span>
+        {canConfigure ? (
+          <label className="flex shrink-0 items-center gap-1.5 select-none">
+            <Switch
+              checked={enabled}
+              onCheckedChange={(checked) => {
+                setEnabled(checked);
+                if (checked) {
+                  setJustEnabled(true);
+                } else {
+                  setLocalIds([]);
+                }
+              }}
+              disabled={update.isPending}
+              aria-label={
+                enabled ? `Disable approval for ${gate.statusLabel}` : `Enable approval for ${gate.statusLabel}`
+              }
+            />
+            <span className="text-2xs font-normal text-stone-500">
+              {update.isPending ? 'Saving…' : enabled ? 'Enabled' : 'Disabled'}
+            </span>
+          </label>
+        ) : (
+          <span className="shrink-0 text-2xs font-normal text-stone-500">
+            {gate.approverEmployeeIds.length > 0 ? 'Enabled' : 'Disabled'}
+          </span>
+        )}
       </p>
       {!canConfigure ? (
         gate.approverEmployeeIds.length === 0 ? (
@@ -143,24 +185,25 @@ function ApprovalGateEditor({
             {gate.approverEmployeeIds.map((id) => byId.get(id)?.fullName || 'Unknown employee').join(', ')}
           </p>
         )
+      ) : !enabled ? (
+        <p className="text-2xs text-stone-400">Approval is disabled — records can leave this status without sign-off.</p>
       ) : (
-        <>
-          <ApproverPicker
-            users={employees}
-            selected={localIds}
-            onAdd={(id) => {
-              if (localIds.length >= MAX_APPROVERS || localIds.includes(id)) return;
-              setLocalIds([...localIds, id]);
-            }}
-            onRemove={(id) => setLocalIds(localIds.filter((x) => x !== id))}
-            disabled={update.isPending}
-          />
-          {update.error && (
-            <div className="mt-2">
-              <ErrorNote>{apiErrorMessage(update.error, 'Failed to update approval chain.')}</ErrorNote>
-            </div>
-          )}
-        </>
+        <ApproverPicker
+          users={employees}
+          selected={localIds}
+          onAdd={(id) => {
+            if (localIds.length >= MAX_APPROVERS || localIds.includes(id)) return;
+            setLocalIds([...localIds, id]);
+          }}
+          onRemove={(id) => setLocalIds(localIds.filter((x) => x !== id))}
+          disabled={update.isPending}
+          autoFocus={justEnabled}
+        />
+      )}
+      {canConfigure && update.error && (
+        <div className="mt-2">
+          <ErrorNote>{apiErrorMessage(update.error, 'Failed to update approval chain.')}</ErrorNote>
+        </div>
       )}
     </div>
   );

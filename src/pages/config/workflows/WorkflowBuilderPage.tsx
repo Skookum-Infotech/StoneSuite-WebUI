@@ -179,11 +179,7 @@ export default function WorkflowBuilderPage() {
           narrow column. */}
       <div className="flex-1 overflow-y-auto modal-scrollbar">
         <div className="space-y-4 px-4 py-4 sm:px-8">
-          {crmKey && (
-            <Section title="Approval chain" action={<Badge size="sm">Whole stage</Badge>}>
-              <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />
-            </Section>
-          )}
+          {crmKey && <ApproversSection workflowId={id} approverUserIds={def.workflow.approverUserIds} />}
 
           {hasApprovalChain && <ApprovalChainSection workflowId={id} />}
 
@@ -197,19 +193,21 @@ export default function WorkflowBuilderPage() {
 
           <Section
             title="Custom fields"
+            titleExtra={
+              <label className="flex items-center gap-1.5 select-none">
+                <Switch
+                  checked={def.workflow.customFieldsEnabled}
+                  onCheckedChange={(checked) => { setCustomFieldsToggleError(null); customFieldsToggle.mutate(checked); }}
+                  disabled={customFieldsToggle.isPending}
+                  aria-label={def.workflow.customFieldsEnabled ? 'Disable custom fields section' : 'Enable custom fields section'}
+                />
+                <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
+                  {customFieldsToggle.isPending ? 'Saving…' : def.workflow.customFieldsEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </label>
+            }
             action={
               <div className="flex items-center gap-3">
-                <label className="flex items-center gap-1.5 select-none">
-                  <Switch
-                    checked={def.workflow.customFieldsEnabled}
-                    onCheckedChange={(checked) => { setCustomFieldsToggleError(null); customFieldsToggle.mutate(checked); }}
-                    disabled={customFieldsToggle.isPending}
-                    aria-label={def.workflow.customFieldsEnabled ? 'Disable custom fields section' : 'Enable custom fields section'}
-                  />
-                  <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-                    {customFieldsToggle.isPending ? 'Saving…' : def.workflow.customFieldsEnabled ? 'Enabled' : 'Disabled'}
-                  </span>
-                </label>
                 <FieldsCounter count={def.fields.length} />
                 {!fieldFormOpen && (
                   <button
@@ -246,19 +244,30 @@ export default function WorkflowBuilderPage() {
   );
 }
 
+// titleExtra renders immediately next to the heading text (e.g. this
+// section's own enable/disable toggle) so it reads as part of the title,
+// distinct from action, which is right-aligned controls unrelated to the
+// heading itself (counters, buttons, badges) -- keeps toggle placement
+// consistent with the workflow-level Enabled/Disabled switch up in the
+// page header, which already sits right next to the workflow name.
 function Section({
   title,
+  titleExtra,
   action,
   children,
 }: {
   title: string;
+  titleExtra?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
-        <h2 className="text-sm font-semibold text-stone-950 dark:text-white">{title}</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-semibold text-stone-950 dark:text-white">{title}</h2>
+          {titleExtra}
+        </div>
         {action}
       </div>
       {children}
@@ -274,10 +283,27 @@ function FieldsCounter({ count }: { count: number }) {
   );
 }
 
-function ApproversSection({ workflowId, approverUserIds }: { workflowId: string; approverUserIds: string[] }) {
+export function ApproversSection({ workflowId, approverUserIds }: { workflowId: string; approverUserIds: string[] }) {
   const qc = useQueryClient();
   const usersQ = useQuery({ queryKey: ['users'], queryFn: userService.listUsers, staleTime: 5 * 60 * 1000 });
   const [error, setError] = useState<string | null>(null);
+
+  // confirmedUserIds/enabled sync from the prop during render (not an
+  // effect) whenever approverUserIds changes underneath us -- mirrors
+  // ApprovalChainSection's ApprovalGateEditor. enabled tracks the toggle
+  // independently so flipping it on can reveal an empty picker without
+  // that empty list collapsing straight back to "disabled".
+  const [confirmedUserIds, setConfirmedUserIds] = useState(approverUserIds);
+  const [enabled, setEnabled] = useState(approverUserIds.length > 0);
+  // justEnabled is only ever set true by this user flipping the switch on
+  // (never by the initial/re-synced state above), so the picker only
+  // auto-focuses on a deliberate enable, not on an ordinary page load
+  // where approvers were already configured.
+  const [justEnabled, setJustEnabled] = useState(false);
+  if (approverUserIds !== confirmedUserIds) {
+    setConfirmedUserIds(approverUserIds);
+    setEnabled(approverUserIds.length > 0);
+  }
 
   const activeUsers = (usersQ.data ?? []).filter((u) => u.status === 'active');
 
@@ -287,7 +313,10 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
       setError(null);
       qc.invalidateQueries({ queryKey: ['workflow', workflowId] });
     },
-    onError: (err: unknown) => setError(apiErrorMessage(err, 'Failed to update approvers.')),
+    onError: (err: unknown) => {
+      setError(apiErrorMessage(err, 'Failed to update approvers.'));
+      setEnabled(confirmedUserIds.length > 0);
+    },
   });
 
   const addApprover = (userId: string) => {
@@ -297,12 +326,40 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
   const removeApprover = (userId: string) => update.mutate(approverUserIds.filter((id) => id !== userId));
 
   return (
-    <div>
+    <section className="rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-semibold text-stone-950 dark:text-white">Approval chain</h2>
+          <label className="flex shrink-0 items-center gap-1.5 select-none">
+            <Switch
+              checked={enabled}
+              onCheckedChange={(checked) => {
+                setEnabled(checked);
+                if (checked) {
+                  setJustEnabled(true);
+                } else {
+                  update.mutate([]);
+                }
+              }}
+              disabled={update.isPending}
+              aria-label={enabled ? 'Disable approval chain' : 'Enable approval chain'}
+            />
+            <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
+              {update.isPending ? 'Saving…' : enabled ? 'Enabled' : 'Disabled'}
+            </span>
+          </label>
+        </div>
+        <Badge size="sm">Whole stage</Badge>
+      </div>
       <p className="mb-3 max-w-xl text-xs text-stone-500">
         Up to {MAX_APPROVERS} active users required to sign off before a record can leave this stage — e.g. moving a
-        Lead to Prospect or Customer. Leave empty to skip approval for this stage.
+        Lead to Prospect or Customer.
       </p>
-      {usersQ.isLoading ? (
+      {!enabled ? (
+        <p className="text-xs text-stone-400">
+          Approval is disabled — records can move past this stage without sign-off.
+        </p>
+      ) : usersQ.isLoading ? (
         <Spinner label="Loading users…" />
       ) : (
         <ApproverPicker
@@ -311,6 +368,7 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
           onAdd={addApprover}
           onRemove={removeApprover}
           disabled={update.isPending}
+          autoFocus={justEnabled}
         />
       )}
       {error && (
@@ -318,7 +376,7 @@ function ApproversSection({ workflowId, approverUserIds }: { workflowId: string;
           <ErrorNote>{error}</ErrorNote>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
