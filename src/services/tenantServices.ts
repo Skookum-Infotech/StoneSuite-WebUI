@@ -3,6 +3,7 @@ import { tenantClient } from '@/api/tenantClient';
 import { isPortalSession } from '@/store/useAuthStore';
 import { normalizeScope, normalizeScopeList } from '@/lib/scope';
 import type { LookupItem } from '@/services/lookupService';
+import type { UserRole } from '@/types/auth';
 import type {
   Tenant,
   TenantInvite,
@@ -161,15 +162,21 @@ export const rbacService = {
   deleteRole: (id: string) => tenantClient.delete(`/tenant/roles/${id}`).then((r) => r.data),
   // activeRoleId is '' when the caller has no active-role restriction (all
   // assigned roles' grants apply, unioned) — the server-side source of truth
-  // for which role, if any, the switch-role flow last narrowed to.
+  // for which role, if any, the switch-role flow last narrowed to. roles is the
+  // caller's assigned roles, live: it stays undefined (not []) when an older
+  // backend omits the field, so callers can tell "none assigned" from "unknown".
   myPermissions: () =>
     tenantClient
-      .get<{ success: boolean; grants: GrantWire[] | null; activeRoleId: string }>(
-        '/tenant/users/me/permissions',
-      )
+      .get<{
+        success: boolean;
+        grants: GrantWire[] | null;
+        activeRoleId: string;
+        roles?: UserRole[] | null;
+      }>('/tenant/users/me/permissions')
       .then((r) => ({
         grants: (r.data.grants ?? []).map(toGrant),
         activeRoleId: r.data.activeRoleId ?? '',
+        roles: r.data.roles ?? undefined,
       })),
   // Sets (or clears, when roleId is '') which one of the caller's assigned
   // roles is enforced server-side. Returns a freshly-signed token — the

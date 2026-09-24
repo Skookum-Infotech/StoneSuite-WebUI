@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -59,9 +60,13 @@ function renderAt(path: string) {
           { path: 'sales/sales_order', element: <div>Sales orders page</div> },
           { path: 'sales/invoice/:id', element: <div>Invoice page</div> },
           { path: 'support', element: <div>Support page</div> },
+          { path: 'finance/journal-entries', element: <div>Journal entries page</div> },
+          { path: 'finance/journal-entries/:id', element: <div>Journal entry page</div> },
         ],
       },
       { path: '/auth/login', element: <div>Sign in</div> },
+      // Same catch-all the real router ends with — where a dead crumb would land.
+      { path: '*', element: <div>404 - Not Found</div> },
     ],
     { initialEntries: [path] },
   );
@@ -108,6 +113,37 @@ describe('MainLayout customer-portal allowlist', () => {
     renderAt('/support');
 
     expect(screen.getByText('Support page')).toBeInTheDocument();
+  });
+});
+
+describe('MainLayout breadcrumb links', () => {
+  function breadcrumb() {
+    return within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+  }
+
+  // "Finance" is only a sidebar group — there is no /finance page, so a click
+  // used to land on the bare 404 route instead of doing nothing.
+  it('does not navigate when a group crumb with no page of its own is clicked', async () => {
+    signInAsStaff();
+    const router = renderAt('/finance/journal-entries');
+
+    await userEvent.click(breadcrumb().getByText('Finance'));
+
+    expect(router.state.location.pathname).toBe('/finance/journal-entries');
+    expect(screen.queryByText('404 - Not Found')).not.toBeInTheDocument();
+    expect(screen.getByText('Journal entries page')).toBeInTheDocument();
+  });
+
+  // Guards the other direction: gating on the route table must not turn every
+  // crumb inert (e.g. if the router context stops being readable).
+  it('still navigates when a crumb whose page exists is clicked', async () => {
+    signInAsStaff();
+    const router = renderAt('/finance/journal-entries/9');
+
+    await userEvent.click(breadcrumb().getByText('Journal Entries'));
+
+    expect(router.state.location.pathname).toBe('/finance/journal-entries');
+    expect(screen.getByText('Journal entries page')).toBeInTheDocument();
   });
 });
 
