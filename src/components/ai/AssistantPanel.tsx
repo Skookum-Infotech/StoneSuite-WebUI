@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, History, Loader2, Plus, Sparkles, X } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { warmAssistant } from '@/services/aiService';
 import { AssistantInput } from './AssistantInput';
 import { AssistantTurn } from './AssistantTurn';
 import { ConversationList } from './ConversationList';
@@ -35,6 +36,13 @@ export function AssistantPanel({ onClose }: { onClose: () => void }): React.JSX.
   useEffect(() => {
     if (view === 'chat') inputRef.current?.focus();
   }, [view]);
+
+  // Fire-and-forget: gets the model loaded in the background so the first
+  // real question doesn't pay Ollama's cold-start cost. Errors (assistant
+  // off, model unreachable) surface soon enough from the ask itself.
+  useEffect(() => {
+    void warmAssistant().catch(() => {});
+  }, []);
 
   // Back in the input once an answer finishes, ready for the follow-up.
   const wasBusyRef = useRef(false);

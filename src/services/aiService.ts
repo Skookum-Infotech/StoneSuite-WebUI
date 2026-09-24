@@ -1,11 +1,15 @@
 import { API_BASE_URL, attemptRefresh, authHeaders, forceLogout } from '@/api/client';
 import { tenantClient } from '@/api/tenantClient';
-import type { AiConversation, AiMessage, AskResponse, AskResult, Citation } from '@/types/ai';
+import type { AIStatus, AiConversation, AiMessage, AskResponse, AskResult, Citation, PlatformAISettings } from '@/types/ai';
 
 /** Error codes the backend puts on a 429 so the two kinds can be told apart:
  *  the model is busy (retry shortly) vs. the caller is asking too fast. */
 export const ASSISTANT_BUSY = 'assistant_busy';
 export const RATE_LIMITED = 'rate_limited';
+/** The code a 403 carries when the assistant is off (platform or tenant
+ *  switch) — distinct from an ordinary permission 403 so the UI can point at
+ *  the toggle instead of a generic "no access" message. */
+export const ASSISTANT_DISABLED = 'assistant_disabled';
 
 /** Thrown by askAssistantStream when the server rejects the request before
  *  any SSE byte is written (auth, validation, an unknown conversation_id, a
@@ -37,6 +41,7 @@ export function friendlyAskError(err: unknown): string {
   if (err instanceof AskStreamHTTPError) {
     if (err.code === RATE_LIMITED) return "You're asking questions too quickly — please wait a moment and try again.";
     if (err.code === ASSISTANT_BUSY) return 'The assistant is busy with other questions — please try again in a few seconds.';
+    if (err.code === ASSISTANT_DISABLED) return 'The StoneSuite Assistant has been turned off by your administrator.';
     if (err.status === 401) return SESSION_EXPIRED_MESSAGE;
     if (err.status === 403) return "You don't have access to the assistant.";
     if (err.status === 400 || err.status === 413 || err.status >= 500) return err.message;
@@ -261,6 +266,43 @@ export async function askAssistantStream(
         : 'The connection closed before the assistant finished responding.',
     );
   }
+}
+
+/** The assistant is on only when both switches agree — see AIStatus. Tenant
+ *  staff (not customer-portal) call this to decide whether to offer the
+ *  assistant at all. */
+export function getAIStatus(): Promise<AIStatus> {
+  return tenantClient
+    .get<{ success: boolean; status: AIStatus }>('/tenant/ai/status')
+    .then((r) => r.data.status);
+}
+
+/** Tenant-admin toggle (requires company-profile Configure). Returns the
+ *  same shape as getAIStatus so the caller can update the cache directly. */
+export function setTenantAIEnabled(enabled: boolean): Promise<AIStatus> {
+  return tenantClient
+    .put<{ success: boolean; status: AIStatus }>('/tenant/ai/settings', { enabled })
+    .then((r) => r.data.status);
+}
+
+/** Platform-admin master switch — the AND'd other half of AIStatus. */
+export function getPlatformAISettings(): Promise<PlatformAISettings> {
+  return tenantClient
+    .get<{ success: boolean } & PlatformAISettings>('/platform/ai/settings')
+    .then((r) => r.data);
+}
+
+export function setPlatformAIEnabled(enabled: boolean): Promise<PlatformAISettings> {
+  return tenantClient
+    .put<{ success: boolean } & PlatformAISettings>('/platform/ai/settings', { enabled })
+    .then((r) => r.data);
+}
+
+/** Kicks off loading the AI model in the background so the first real
+ *  question doesn't pay a cold-start cost. Callers fire this and ignore the
+ *  result — never await it for UI state. */
+export function warmAssistant(): Promise<void> {
+  return tenantClient.post('/tenant/ai/warm').then(() => undefined);
 }
 
 export const conversationService = {
