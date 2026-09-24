@@ -15,6 +15,7 @@ vi.mock('@/services/aiService', async (importOriginal) => ({
   ...(await importOriginal<typeof AiServiceModule>()),
   askAssistantStream: vi.fn(),
   conversationService: { create: vi.fn(), list: vi.fn(), get: vi.fn(), remove: vi.fn() },
+  warmAssistant: vi.fn(),
 }));
 
 const hasPermission = vi.fn<(resource: string, action: string) => boolean>();
@@ -23,7 +24,8 @@ vi.mock('@/hooks/useUserPermissions', () => ({
 }));
 
 import { AssistantPanel } from './AssistantPanel';
-import { askAssistantStream, AskStreamHTTPError, conversationService } from '@/services/aiService';
+import { askAssistantStream, AskStreamHTTPError, conversationService, warmAssistant } from '@/services/aiService';
+import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const STORAGE_KEY = 'ai-conversation:t1:u1';
@@ -76,6 +78,7 @@ beforeEach(() => {
   hasPermission.mockReturnValue(true);
   vi.mocked(conversationService.create).mockResolvedValue(conv('conv-1'));
   vi.mocked(conversationService.list).mockResolvedValue([]);
+  vi.mocked(warmAssistant).mockResolvedValue(undefined);
 });
 
 describe('conversation wiring', () => {
@@ -250,6 +253,22 @@ describe('streaming', () => {
     expect(askAssistantStream).toHaveBeenCalledTimes(1);
   });
 
+  // The backend sends this as a pre-flight 403 (before any SSE byte), never
+  // as the 429 assistant_busy code the retry loop above handles — it must
+  // not be treated as "busy" and retried.
+  it('shows the disabled message and refreshes ai-status when the assistant is turned off', async () => {
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    vi.mocked(askAssistantStream).mockRejectedValue(new AskStreamHTTPError(403, 'raw', 'assistant_disabled'));
+    renderPanel();
+    await ask('q');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The StoneSuite Assistant has been turned off by your administrator.',
+    );
+    expect(askAssistantStream).toHaveBeenCalledTimes(1);
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ai-status'] });
+  });
+
   it('Retry re-asks an errored turn in place', async () => {
     vi.mocked(askAssistantStream)
       .mockImplementationOnce(async (_q, _c, h) => h.onError('The assistant is temporarily unavailable. Please try again.'))
@@ -353,6 +372,12 @@ describe('history view', () => {
 });
 
 describe('panel behavior', () => {
+  it('warms the assistant once on mount', () => {
+    renderPanel();
+
+    expect(warmAssistant).toHaveBeenCalledTimes(1);
+  });
+
   it('Escape closes only when focus is inside the panel', () => {
     const { onClose } = renderPanel();
 

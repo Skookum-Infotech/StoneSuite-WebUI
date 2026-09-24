@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type * as ApiClientModule from '@/api/client';
 
 vi.mock('@/api/tenantClient', () => ({
-  tenantClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
+  tenantClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
 }));
 vi.mock('@/api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof ApiClientModule>()),
@@ -15,11 +15,17 @@ import { tenantClient } from '@/api/tenantClient';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
   ASSISTANT_BUSY,
+  ASSISTANT_DISABLED,
   RATE_LIMITED,
   askAssistantStream,
   AskStreamHTTPError,
   conversationService,
   friendlyAskError,
+  getAIStatus,
+  getPlatformAISettings,
+  setPlatformAIEnabled,
+  setTenantAIEnabled,
+  warmAssistant,
 } from './aiService';
 import type { AskStreamHandlers } from './aiService';
 
@@ -378,6 +384,7 @@ describe('friendlyAskError', () => {
   it.each([
     [new AskStreamHTTPError(429, 'x', RATE_LIMITED), "You're asking questions too quickly — please wait a moment and try again."],
     [new AskStreamHTTPError(429, 'x', ASSISTANT_BUSY), 'The assistant is busy with other questions — please try again in a few seconds.'],
+    [new AskStreamHTTPError(403, 'x', ASSISTANT_DISABLED), 'The StoneSuite Assistant has been turned off by your administrator.'],
     [new AskStreamHTTPError(401, 'raw'), 'Your session has expired. Please sign in again.'],
     [new AskStreamHTTPError(400, 'question is too long, please shorten it.'), 'question is too long, please shorten it.'],
     [new AskStreamHTTPError(503, 'The assistant is starting up.'), 'The assistant is starting up.'],
@@ -414,5 +421,71 @@ describe('conversationService', () => {
     const { conversation, messages } = await conversationService.get('c1');
     expect(conversation.id).toBe('c1');
     expect(messages).toHaveLength(1);
+  });
+});
+
+describe('assistant availability + settings', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('getAIStatus() unwraps status', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: { success: true, status: { platformEnabled: true, tenantEnabled: false, available: false } },
+    });
+
+    const status = await getAIStatus();
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/ai/status');
+    expect(status).toEqual({ platformEnabled: true, tenantEnabled: false, available: false });
+  });
+
+  it('setTenantAIEnabled() PUTs {enabled} and unwraps the same status shape', async () => {
+    vi.mocked(tenantClient.put).mockResolvedValue({
+      data: { success: true, status: { platformEnabled: true, tenantEnabled: true, available: true } },
+    });
+
+    const status = await setTenantAIEnabled(true);
+
+    expect(tenantClient.put).toHaveBeenCalledWith('/tenant/ai/settings', { enabled: true });
+    expect(status).toEqual({ platformEnabled: true, tenantEnabled: true, available: true });
+  });
+
+  it('getPlatformAISettings() fetches the platform master switch', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({
+      data: {
+        success: true,
+        enabled: true,
+        updatedAt: '2026-09-01T00:00:00Z',
+        updatedBy: 'admin@stonesuite.local',
+        helpCorpusSyncedAt: '2026-09-02T00:00:00Z',
+        ollamaState: 'started',
+        leaseHolders: ['tenant-a'],
+      },
+    });
+
+    const settings = await getPlatformAISettings();
+
+    expect(tenantClient.get).toHaveBeenCalledWith('/platform/ai/settings');
+    expect(settings.enabled).toBe(true);
+    expect(settings.ollamaState).toBe('started');
+    expect(settings.leaseHolders).toEqual(['tenant-a']);
+  });
+
+  it('setPlatformAIEnabled() PUTs {enabled} against the platform endpoint', async () => {
+    vi.mocked(tenantClient.put).mockResolvedValue({
+      data: { success: true, enabled: false, updatedAt: null, updatedBy: null, helpCorpusSyncedAt: null },
+    });
+
+    const settings = await setPlatformAIEnabled(false);
+
+    expect(tenantClient.put).toHaveBeenCalledWith('/platform/ai/settings', { enabled: false });
+    expect(settings.enabled).toBe(false);
+  });
+
+  it('warmAssistant() POSTs to /tenant/ai/warm', async () => {
+    vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true } });
+
+    await warmAssistant();
+
+    expect(tenantClient.post).toHaveBeenCalledWith('/tenant/ai/warm');
   });
 });

@@ -84,6 +84,9 @@ const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const CompanyProfilePage = lazyWithRetry(
   () => import("@/pages/config/company-profile/CompanyProfilePage"),
 );
+const AIAssistantConfigPage = lazyWithRetry(
+  () => import("@/pages/config/ai-assistant/AIAssistantConfigPage"),
+);
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
@@ -104,6 +107,9 @@ const FeedbackListPage = lazyWithRetry(
 );
 const FeedbackDetailPage = lazyWithRetry(
   () => import("@/pages/platform/feedback/FeedbackDetailPage"),
+);
+const PlatformAIPage = lazyWithRetry(
+  () => import("@/pages/platform/ai/PlatformAIPage"),
 );
 const SamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/SamlSetupPage"),
@@ -1379,6 +1385,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "config/ai-assistant",
+        element: lazy_(
+          <PermissionGuard resource="company_profile" action="read">
+            <AIAssistantConfigPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
         path: "config/record-numbering",
         element: lazy_(
           <PermissionGuard resource="workflow_config" action="configure">
@@ -1483,6 +1497,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard platformAdminOnly>
             <FeedbackDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "platform/ai",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <PlatformAIPage />
           </PermissionGuard>,
         ),
       },
