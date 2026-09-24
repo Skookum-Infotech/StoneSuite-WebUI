@@ -1,16 +1,24 @@
 import * as React from 'react';
-import { useState, useEffect, useCallback, startTransition } from 'react';
-import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useContext, startTransition } from 'react';
+import {
+  Outlet,
+  Navigate,
+  NavLink,
+  UNSAFE_DataRouterContext,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles';
 import { useExitConfirmation } from '@/hooks/useExitConfirmation';
 import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
 import { CUSTOMER_ALLOWED_PATH_PREFIXES } from '@/config/customerPortal';
-import { formatBreadcrumbSegment } from '@/lib/breadcrumb';
+import { formatBreadcrumbSegment, isRegisteredPath } from '@/lib/breadcrumb';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
@@ -48,9 +56,16 @@ export default function MainLayout(): React.JSX.Element {
   const applyWorkspaceSwitch = useAuthStore((s) => s.applyWorkspaceSwitch);
   const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
   const { activeRoleId } = useUserPermissions();
+  const roles = useCurrentUserRoles();
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
+  // The route table of the router this layout is mounted in. The router module
+  // imports this layout, so it cannot be imported back here (circular); and
+  // react-router has no public hook for it. If it ever stops being readable the
+  // breadcrumb degrades to plain text rather than linking to a possible 404 —
+  // the "page exists" test in MainLayout.test.tsx will flag that.
+  const routes = useContext(UNSAFE_DataRouterContext)?.router.routes ?? [];
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const isProfileOpen = useHeaderMenuStore((s) => s.openMenu === 'profile');
   const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
@@ -183,9 +198,6 @@ export default function MainLayout(): React.JSX.Element {
   }
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
-
-  // Segments that are namespace prefixes with no real index page — non-navigable in breadcrumb.
-  const nonNavigableSegments = new Set(['crm', 'sales', 'purchases', 'customer', 'onboarding']);
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
@@ -378,10 +390,10 @@ export default function MainLayout(): React.JSX.Element {
                       <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
                         Roles
                       </div>
-                      {user?.roles && user.roles.length > 0 ? (
+                      {roles.length > 0 ? (
                         <div className="space-y-0.5">
-                          {user.roles.map((role) => {
-                            const isActive = role.id === (activeRoleId || user.selectedRoleId);
+                          {roles.map((role) => {
+                            const isActive = role.id === (activeRoleId || user?.selectedRoleId);
                             const isSwitching = switchRoleMutation.isPending && switchRoleMutation.variables === role.id;
                             return (
                               <button
@@ -471,7 +483,9 @@ export default function MainLayout(): React.JSX.Element {
               {pathSegments.map((segment, index) => {
                 const url = `/${pathSegments.slice(0, index + 1).join('/')}`;
                 const isLast = index === pathSegments.length - 1;
-                const isClickable = !isLast && !nonNavigableSegments.has(segment);
+                // Only crumbs whose URL is a real page are links — group prefixes like
+                // /finance have none, and would land on the 404 route.
+                const isClickable = !isLast && isRegisteredPath(routes, url);
                 return (
                   <React.Fragment key={segment}>
                     <ChevronRight className="size-3 xl:size-3.5 text-stone-300 shrink-0" />
