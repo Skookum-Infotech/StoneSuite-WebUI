@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation } from '@tanstack/react-query';
-import { AlertTriangle, ShieldAlert, PackageCheck, Loader2 } from 'lucide-react';
+import { PackageCheck, Loader2 } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { overReceiptDetails, type OverReceiptLine } from '@/lib/itemReceiptErrors';
 import type { ItemReceipt } from '@/types/itemReceipt';
+import { OverReceiptPanel, OVER_RECEIPT_TITLE_ID } from './OverReceiptPanel';
 
 type PostBranch = 'confirm' | 'approve' | 'escalate';
 
@@ -109,7 +110,7 @@ function PostReceiptDialogContent({
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="post-receipt-title"
+      aria-labelledby={branch === 'confirm' ? 'post-receipt-title' : OVER_RECEIPT_TITLE_ID}
       className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-2xl outline-none"
     >
       {branch === 'confirm' ? (
@@ -151,90 +152,15 @@ function PostReceiptDialogContent({
             </button>
           </div>
         </>
-      ) : branch === 'approve' ? (
-        <>
-          <div role="alert" className="mb-4 flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
-              <ShieldAlert className="size-4 text-amber-600" />
-            </div>
-            <div>
-              <h3 id="post-receipt-title" className="text-sm font-bold text-stone-900">This exceeds the ordered quantity</h3>
-              <p className="text-xs text-stone-400 mt-0.5">Confirm the over-receipt to post anyway.</p>
-            </div>
-          </div>
-          <OverReceiptLinesList lines={overReceiptLines} />
-          <label className="mt-4 block text-xs font-semibold text-stone-900" htmlFor="over-receipt-reason">
-            Reason <span className="text-red-400">*</span>
-          </label>
-          <textarea
-            id="over-receipt-reason"
-            required
-            rows={3}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Why is this shipment larger than ordered?"
-            aria-label="Over-receipt reason"
-            className="mt-1.5 w-full resize-none rounded-[10px] border border-stone-300 px-3.5 py-2.5 text-xs text-stone-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/30"
-          />
-          <div className="mt-4 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isPending}
-              className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={onConfirmOverReceipt}
-              disabled={isPending || !reason.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
-            >
-              {isPending && <Loader2 className="size-3 animate-spin" />}
-              {isPending ? 'Posting…' : 'Confirm & Post'}
-            </button>
-          </div>
-        </>
       ) : (
-        <>
-          <div role="alert" className="mb-4 flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="size-4 text-destructive" />
-            </div>
-            <div>
-              <h3 id="post-receipt-title" className="text-sm font-bold text-stone-900">This exceeds the ordered quantity</h3>
-              <p className="text-xs text-stone-400 mt-0.5">You don&apos;t have permission to accept an over-delivery.</p>
-            </div>
-          </div>
-          <OverReceiptLinesList lines={overReceiptLines} />
-          <p className="mt-4 text-xs text-stone-600">
-            Ask someone with the Item Receipt Approve permission to post this receipt, or reduce the received
-            quantities to stay within the ordered amount.
-          </p>
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
-            >
-              Close
-            </button>
-          </div>
-        </>
+        <OverReceiptPanel
+          lines={overReceiptLines}
+          canApprove={branch === 'approve'}
+          isPending={isPending}
+          reason={{ value: reason, onChange: setReason }}
+          actions={{ onConfirm: onConfirmOverReceipt, onClose }}
+        />
       )}
     </div>
-  );
-}
-
-function OverReceiptLinesList({ lines }: { lines: OverReceiptLine[] }) {
-  return (
-    <ul className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-2xs text-amber-800">
-      {lines.map((l) => (
-        <li key={l.lineNumber}>
-          Line {l.lineNumber} — ordered {l.ordered}, already received {l.alreadyReceived}, receiving {l.receiving}
-        </li>
-      ))}
-    </ul>
   );
 }

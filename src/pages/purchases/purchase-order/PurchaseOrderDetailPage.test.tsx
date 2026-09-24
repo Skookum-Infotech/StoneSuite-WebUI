@@ -11,6 +11,7 @@ vi.mock('@/services/purchaseOrderService', () => ({
     approve: vi.fn(),
     reject: vi.fn(),
     transition: vi.fn(),
+    convertToBill: vi.fn(),
   },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
@@ -50,10 +51,11 @@ const pendingOrder = {
   updatedAt: '2026-09-01T00:00:00Z',
 } as unknown as PurchaseOrder;
 
-function renderPage({ isSuperAdmin = false } = {}) {
+function renderPage({ isSuperAdmin = false, denied = [] as string[] } = {}) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [], isLoading: false, activeRoleId: '', isSuperAdmin,
-    hasPermission: () => true,
+    // `denied` lists "resource:action" grants to withhold; everything else is allowed.
+    hasPermission: (resource: string, action: string) => !denied.includes(`${resource}:${action}`),
   } as ReturnType<typeof useUserPermissions>);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   render(
@@ -220,5 +222,105 @@ describe('PurchaseOrderDetailPage — header actions and the admin-only status d
     await user.click((await screen.findAllByRole('button', { name: 'Send to Vendor' }))[0]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(refusal);
+  });
+});
+
+// Create Bill is a header button (it used to be a sidebar "Convert to Bill"
+// action). It bills what has been received and not yet billed, so it is offered
+// on a partly received order and disappears once everything received is billed.
+describe('PurchaseOrderDetailPage — Create Bill', () => {
+  const line = (id: string, n: number, quantity: number, qtyReceived: number, qtyBilled: number) => ({
+    id, lineNumber: n, itemName: `Item ${n}`, description: '', quantity, qtyReceived, qtyBilled,
+    unitPrice: 25, discountPercent: 0, taxPercent: 0, lineSubtotal: 0, lineDiscount: 0, lineTax: 0, lineTotal: 0,
+  });
+  const partlyReceived = {
+    ...approvedOrder,
+    status: 'Partially Received', statusCode: 'PART', nextStatusCodes: ['RCVD', 'CLSD'],
+    items: [line('l1', 1, 10, 4, 0), line('l2', 2, 5, 0, 0)],
+  } as unknown as PurchaseOrder;
+
+  it('offers Create Bill in the header of a partly received order, not in the sidebar', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(partlyReceived);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Create Bill' })).toHaveLength(HEADER_COPIES);
+    expect(screen.queryByRole('button', { name: /Convert this purchase order to a vendor bill/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Convert to Bill')).not.toBeInTheDocument();
+  });
+
+  it('lists only what has been received and not yet billed, then bills it', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(partlyReceived);
+    vi.mocked(purchaseOrderService.convertToBill).mockResolvedValue({ id: 'vb-1' } as never);
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Create Bill' }))[0]);
+
+    const list = await screen.findByRole('list', { name: 'Lines on the new bill' });
+    expect(list).toHaveTextContent('1. Item 1');
+    expect(list).toHaveTextContent('4 of 10 ordered');
+    expect(list).not.toHaveTextContent('Item 2'); // nothing received on it
+    await user.click(screen.getByRole('button', { name: 'Create vendor bill' }));
+
+    await waitFor(() => expect(purchaseOrderService.convertToBill).toHaveBeenCalledWith('po-1'));
+  });
+
+  it('is hidden once everything received has been billed', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
+      ...partlyReceived, items: [line('l1', 1, 10, 4, 4)],
+    } as unknown as PurchaseOrder);
+    renderPage();
+
+    await screen.findAllByText('Partially Received');
+    expect(screen.queryAllByRole('button', { name: 'Create Bill' })).toHaveLength(0);
+  });
+
+  it.each([
+    ['Sent, nothing received', { status: 'Sent', statusCode: 'SENT', items: [line('l1', 1, 10, 0, 0)] }],
+    ['Approved', { items: [line('l1', 1, 10, 10, 0)] }],
+  ])('is hidden on an order that is %s', async (_label, overrides) => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({ ...approvedOrder, ...overrides } as unknown as PurchaseOrder);
+    renderPage();
+
+    await screen.findAllByText(/Approved|Sent/);
+    expect(screen.queryAllByRole('button', { name: 'Create Bill' })).toHaveLength(0);
+  });
+
+  it('is offered on a fully received order that still has goods to bill', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
+      ...partlyReceived, status: 'Received', statusCode: 'RCVD', nextStatusCodes: ['CLSD'],
+      items: [line('l1', 1, 10, 10, 6)],
+    } as unknown as PurchaseOrder);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Create Bill' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it('is hidden without permission to create vendor bills', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(partlyReceived);
+    renderPage({ denied: ['vendor_bill:create'] });
+
+    await screen.findAllByText('Partially Received');
+    expect(screen.queryAllByRole('button', { name: 'Create Bill' })).toHaveLength(0);
+  });
+});
+
+// Receiving now saves and posts in one step, so it takes both item-receipt grants.
+describe('PurchaseOrderDetailPage — Receive items permissions', () => {
+  const sentReceivable = { ...sentOrder, items: [] } as unknown as PurchaseOrder;
+
+  it('is offered with both item_receipt:create and item_receipt:transition', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentReceivable);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Receive items' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it.each(['item_receipt:create', 'item_receipt:transition'])('is hidden without %s', async (denied) => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentReceivable);
+    renderPage({ denied: [denied] });
+
+    await screen.findAllByText('Sent');
+    expect(screen.queryAllByRole('button', { name: 'Receive items' })).toHaveLength(0);
   });
 });

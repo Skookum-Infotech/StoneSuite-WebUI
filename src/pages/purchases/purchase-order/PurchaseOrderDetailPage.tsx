@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Package, Upload, Pencil, FileDown, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Package, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -15,7 +15,8 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import {
-  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES, poDropdownTransitions,
+  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES,
+  poBillableLines, poDropdownTransitions,
 } from '@/lib/purchaseOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
@@ -27,10 +28,6 @@ import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusCont
 import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
-
-// PO statuses a vendor bill may be converted from — a bill only makes sense
-// once goods have actually been received (backend: vendorbill/store_convert.go).
-const PO_BILLABLE_STATUSES = new Set(['RCVD', 'CLSD']);
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -67,7 +64,9 @@ export default function PurchaseOrderDetailPage() {
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
-  const canReceive = permissionsLoading || hasPermission('item_receipt', 'create');
+  // A new receipt is saved and posted in one step, so it takes both grants.
+  const canReceive = permissionsLoading
+    || (hasPermission('item_receipt', 'create') && hasPermission('item_receipt', 'transition'));
   const canTransition = permissionsLoading || hasPermission('purchase_order', 'transition');
   const canConvertToBill = permissionsLoading || hasPermission('vendor_bill', 'create');
 
@@ -130,6 +129,10 @@ export default function PurchaseOrderDetailPage() {
   // empty "Actions" header. Hide it then.
   const showActions = isSuperAdmin && canTransition && poDropdownTransitions(po).length > 0;
   const canReceiveHere = canReceive && isPurchaseOrderReceivable(po);
+  // What Create Bill would bill: received and not yet billed. Empty (button
+  // hidden) until something has been received, and again once it's all billed.
+  const billableLines = poBillableLines(po);
+  const canCreateBillHere = canConvertToBill && billableLines.length > 0;
 
   async function handleExportPdf() {
     if (!po) return;
@@ -217,7 +220,10 @@ export default function PurchaseOrderDetailPage() {
             canTransition={canTransition}
             onTransition={(toCode) => transition.mutate(toCode)}
             transitioning={transition.isPending}
-            onReceive={canReceiveHere ? () => navigate(`/purchases/item_receipt/new?po=${id}`) : undefined}
+            actions={{
+              onReceive: canReceiveHere ? () => navigate(`/purchases/item_receipt/new?po=${id}`) : undefined,
+              onCreateBill: canCreateBillHere ? () => setConvertOpen(true) : undefined,
+            }}
           />
         )}
       />
@@ -361,17 +367,6 @@ export default function PurchaseOrderDetailPage() {
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {canConvertToBill && PO_BILLABLE_STATUSES.has(po.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => setConvertOpen(true)}
-                  aria-label="Convert this purchase order to a vendor bill"
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />
-                  Convert to Bill
-                </button>
-              )}
               {canEdit && po.statusCode === 'DRFT' && (
                 <button
                   type="button"
@@ -454,14 +449,13 @@ export default function PurchaseOrderDetailPage() {
 
       {convertOpen && (
         <ConvertToBillDialog
-          purchaseOrderId={id}
-          purchaseOrderNumber={po.purchaseOrderNumber}
-          vendorName={po.vendor.name}
-          grandTotal={po.grandTotal}
+          purchaseOrder={{ id, number: po.purchaseOrderNumber, vendorName: po.vendor.name }}
+          lines={billableLines}
           onClose={() => setConvertOpen(false)}
           onConverted={(bill) => {
             setConvertOpen(false);
             queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+            queryClient.invalidateQueries({ queryKey: ['purchase-order', id] });
             navigate(`/purchases/vendor_bill/${bill.id}`);
           }}
         />

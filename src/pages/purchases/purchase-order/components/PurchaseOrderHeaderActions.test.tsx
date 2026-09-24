@@ -19,6 +19,7 @@ function renderActions(order: Order, props: Partial<Parameters<typeof PurchaseOr
       canTransition
       onTransition={onTransition}
       transitioning={false}
+      actions={{}}
       {...props}
     />,
   );
@@ -85,7 +86,7 @@ describe('PurchaseOrderHeaderActions', () => {
 
   it('shows Receive items only when a receive handler is passed, and fires it', async () => {
     const onReceive = vi.fn();
-    const { onTransition } = renderActions(sent, { onReceive });
+    const { onTransition } = renderActions(sent, { actions: { onReceive } });
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Receive items' }));
 
@@ -97,5 +98,31 @@ describe('PurchaseOrderHeaderActions', () => {
     renderActions(sent);
 
     expect(screen.queryByRole('button', { name: 'Receive items' })).not.toBeInTheDocument();
+  });
+
+  it('shows Create Bill only when a create-bill handler is passed, and fires it', async () => {
+    const onCreateBill = vi.fn();
+    const { onTransition } = renderActions(sent, { actions: { onCreateBill } });
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Create Bill' }));
+
+    expect(onCreateBill).toHaveBeenCalledOnce();
+    expect(onTransition).not.toHaveBeenCalled();
+  });
+
+  it('omits Create Bill when there is no create-bill handler', () => {
+    renderActions(sent);
+
+    expect(screen.queryByRole('button', { name: 'Create Bill' })).not.toBeInTheDocument();
+  });
+
+  it('shows Create Bill on an order with no status moves left (a fully received order can still be billed)', () => {
+    renderActions(
+      { statusCode: 'RCVD', approvalStatus: 'approved', nextStatusCodes: ['CLSD'] },
+      { actions: { onCreateBill: vi.fn() } },
+    );
+
+    expect(screen.getByRole('button', { name: 'Create Bill' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send to Vendor' })).not.toBeInTheDocument();
   });
 });
