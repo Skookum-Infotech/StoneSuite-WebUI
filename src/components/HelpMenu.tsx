@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircleHelp, LifeBuoy, Sparkles } from 'lucide-react';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
+import { useAIStatus } from '@/hooks/useAIStatus';
 import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
 import { supportPath } from '@/lib/feedback';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -22,6 +23,10 @@ export function HelpMenu() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const unreadCount = useFeedbackUnreadCount();
+  // undefined while loading (or for a portal session, which never fetches
+  // this) intentionally reads as "not available" — hide the entry rather
+  // than flash it on and then off once the platform/tenant switch is known.
+  const assistantAvailable = useAIStatus().data?.available === true;
 
   // Same click-outside-closes convention as MainLayout's own profile menu.
   useEffect(() => {
@@ -71,7 +76,7 @@ export function HelpMenu() {
             'sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2.5 sm:w-72 sm:origin-top-right',
           )}
         >
-          {!isPortal && (
+          {!isPortal && assistantAvailable && (
           <button
             type="button"
             role="menuitem"

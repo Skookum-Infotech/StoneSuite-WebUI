@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2 } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2, Sparkles } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
 
 /**
@@ -43,6 +43,12 @@ const sections = [
     icon: Upload,
     title: 'Import Data',
     description: 'Bulk-create records from a CSV, XLSX, DOCX, or PDF file — stage, review, and commit.',
+  },
+  {
+    to: '/config/ai-assistant',
+    icon: Sparkles,
+    title: 'StoneSuite Assistant',
+    description: 'Turn the AI assistant on or off for your organization.',
   },
 ];
 

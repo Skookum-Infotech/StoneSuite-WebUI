@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
+import { queryClient } from '@/lib/queryClient';
 import {
   ASSISTANT_BUSY,
+  ASSISTANT_DISABLED,
   AskStreamHTTPError,
   askAssistantStream,
   conversationService,
@@ -206,6 +208,13 @@ export function useAssistantConversation() {
           patchTurn(turnId, { waiting: true });
           await sleep((err.retryAfter ?? DEFAULT_BUSY_RETRY_SECONDS) * 1000, signal);
           continue;
+        }
+        // A 403 assistant_disabled is not a busy 429 — never retried, and
+        // the cached ['ai-status'] is stale (a switch flipped since the Help
+        // menu last fetched it), so refresh it to hide the entry/update the
+        // settings toggle instead of leaving a now-wrong "on" behind.
+        if (err instanceof AskStreamHTTPError && err.code === ASSISTANT_DISABLED) {
+          void queryClient.invalidateQueries({ queryKey: ['ai-status'] });
         }
         patchTurn(turnId, { error: friendlyAskError(err), streaming: false, waiting: false, saved: false });
         break;
