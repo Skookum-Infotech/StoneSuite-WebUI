@@ -65,7 +65,7 @@ export default function AIAssistantConfigPage() {
           <>
             {platformOff && (
               <div className="mb-3">
-                <ErrorNote>
+                <ErrorNote role="status" id="ai-platform-off-note">
                   The assistant is turned off for all organizations by the StoneSuite platform administrator.
                 </ErrorNote>
               </div>
@@ -80,6 +80,7 @@ export default function AIAssistantConfigPage() {
                 onCheckedChange={(checked) => toggle.mutate(checked)}
                 disabled={!canConfigure || platformOff || toggle.isPending}
                 aria-label="Enable StoneSuite Assistant for your organization"
+                aria-describedby={platformOff ? 'ai-platform-off-note' : undefined}
               />
             </label>
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useRef, useState } from 'react';
+import { AlertDialog } from 'radix-ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -39,6 +39,7 @@ function formatPlatformTimestamp(iso: string | null | undefined): string {
 export default function PlatformAIPage() {
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const switchRef = useRef<HTMLButtonElement>(null);
 
   const settingsQ = useQuery({
     queryKey: ['platform-ai-settings'],
@@ -111,6 +112,7 @@ export default function PlatformAIPage() {
               </span>
               <Switch
                 checked={settings?.enabled ?? false}
+                ref={switchRef}
                 onCheckedChange={handleToggle}
                 disabled={toggle.isPending}
                 aria-label="StoneSuite Assistant (all organizations)"
@@ -155,52 +157,50 @@ export default function PlatformAIPage() {
         )}
       </section>
 
-      {confirmOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="disable-ai-dialog-title"
-            onClick={(e) => e.target === e.currentTarget && setConfirmOpen(false)}
+      <AlertDialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-[2px]" />
+          <AlertDialog.Content
+            aria-describedby="disable-ai-dialog-desc"
+            onCloseAutoFocus={(e) => {
+              e.preventDefault();
+              switchRef.current?.focus();
+            }}
+            className="fixed left-1/2 top-1/2 z-[9999] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-900"
           >
-            <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl dark:bg-stone-900">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                  <AlertTriangle className="size-4 text-destructive" />
-                </div>
-                <div>
-                  <h3 id="disable-ai-dialog-title" className="text-sm font-bold text-stone-900 dark:text-white">
-                    Turn off the StoneSuite Assistant?
-                  </h3>
-                  <p className="mt-0.5 text-xs text-stone-400">
-                    This stops the AI server and disables the assistant for every organization.
-                  </p>
-                </div>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                <AlertTriangle className="size-4 text-destructive" aria-hidden="true" />
               </div>
-
-              <div className="mt-5 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmOpen(false)}
-                  disabled={toggle.isPending}
-                  className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmDisable}
-                  disabled={toggle.isPending}
-                  className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
-                >
-                  {toggle.isPending ? 'Turning off…' : 'Turn off for everyone'}
-                </button>
+              <div>
+                <AlertDialog.Title className="text-sm font-bold text-stone-900 dark:text-white">
+                  Turn off the StoneSuite Assistant?
+                </AlertDialog.Title>
+                <AlertDialog.Description id="disable-ai-dialog-desc" className="mt-0.5 text-xs text-stone-500">
+                  This stops the AI server and disables the assistant for every organization.
+                </AlertDialog.Description>
               </div>
             </div>
-          </div>,
-          document.body,
-        )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <AlertDialog.Cancel
+                disabled={toggle.isPending}
+                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+              >
+                Cancel
+              </AlertDialog.Cancel>
+              <button
+                type="button"
+                onClick={confirmDisable}
+                disabled={toggle.isPending}
+                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+              >
+                {toggle.isPending ? 'Turning off…' : 'Turn off for everyone'}
+              </button>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </div>
   );
 }

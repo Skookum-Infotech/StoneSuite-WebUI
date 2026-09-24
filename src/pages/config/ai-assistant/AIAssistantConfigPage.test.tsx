@@ -72,7 +72,9 @@ describe('AIAssistantConfigPage', () => {
 
     const toggle = await screen.findByRole('switch', { name: SWITCH_NAME });
     expect(toggle).toBeDisabled();
-    expect(screen.getByText(PLATFORM_OFF_TEXT)).toBeInTheDocument();
+    const note = screen.getByText(PLATFORM_OFF_TEXT);
+    expect(note).toHaveAttribute('role', 'status');
+    expect(toggle).toHaveAccessibleDescription(PLATFORM_OFF_TEXT);
 
     await user.click(toggle);
     expect(setTenantAIEnabled).not.toHaveBeenCalled();

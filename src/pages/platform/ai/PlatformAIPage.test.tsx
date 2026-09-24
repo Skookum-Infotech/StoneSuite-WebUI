@@ -102,15 +102,34 @@ describe('PlatformAIPage master switch', () => {
 
     await user.click(await screen.findByRole('switch', { name: SWITCH_NAME }));
 
-    const dialog = screen.getByRole('dialog', { name: 'Turn off the StoneSuite Assistant?' });
+    const dialog = screen.getByRole('alertdialog', { name: 'Turn off the StoneSuite Assistant?' });
     expect(dialog).toHaveTextContent('stops the AI server and disables the assistant for every organization');
     expect(setPlatformAIEnabled).not.toHaveBeenCalled();
 
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(setPlatformAIEnabled).not.toHaveBeenCalled();
     expect(screen.getByRole('switch', { name: SWITCH_NAME })).toBeChecked();
+  });
+
+  it('is an accessible alertdialog: focuses Cancel, described, Escape closes and refocuses the switch', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getPlatformAISettings).mockResolvedValue(settings({ enabled: true }));
+    renderPage();
+
+    const toggleSwitch = await screen.findByRole('switch', { name: SWITCH_NAME });
+    await user.click(toggleSwitch);
+
+    const dialog = await screen.findByRole('alertdialog', { name: 'Turn off the StoneSuite Assistant?' });
+    expect(dialog).toHaveAccessibleDescription(/This stops the AI server/);
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(toggleSwitch).toHaveFocus();
+    expect(setPlatformAIEnabled).not.toHaveBeenCalled();
   });
 
   it('turns off after confirming, updates the cache, and refreshes ai-status', async () => {
@@ -125,7 +144,7 @@ describe('PlatformAIPage master switch', () => {
 
     await waitFor(() => expect(setPlatformAIEnabled).toHaveBeenCalledWith(false));
     await waitFor(() => expect(screen.getByRole('switch', { name: SWITCH_NAME })).not.toBeChecked());
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['ai-status'] });
   });
 
@@ -137,7 +156,7 @@ describe('PlatformAIPage master switch', () => {
 
     await user.click(await screen.findByRole('switch', { name: SWITCH_NAME }));
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     await waitFor(() => expect(setPlatformAIEnabled).toHaveBeenCalledWith(true));
   });
 });

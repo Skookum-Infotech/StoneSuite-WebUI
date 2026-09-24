@@ -61,16 +61,27 @@ export function Badge({
 
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="flex items-center gap-2 py-10 text-sm text-stone-400">
+    <div role="status" className="flex items-center gap-2 py-10 text-sm text-stone-400">
       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
       {label}
     </div>
   );
 }
 
-export function ErrorNote({ children }: { children: ReactNode }) {
+export function ErrorNote({
+  children,
+  role = 'alert',
+  id,
+}: {
+  children: ReactNode;
+  role?: 'alert' | 'status';
+  id?: string;
+}) {
   return (
-    <div className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600 dark:bg-red-950/30">
+    <div
+      id={id}
+      role={role}
+      className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600 dark:bg-red-950/30">
       {children}
     </div>
   );
