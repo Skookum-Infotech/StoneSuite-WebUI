@@ -90,6 +90,10 @@ export interface PurchaseOrderLine {
   /** Cumulative quantity received against this line via Item Receipt — 0
    *  until that module ships (AD-4 receiving hook). */
   qtyReceived: number;
+  /** How much of this line existing vendor bills already cover (live,
+   *  non-void bills raised from this order). Received minus billed is what a
+   *  new bill can still claim. */
+  qtyBilled: number;
   unitPrice: number;
   discountPercent: number;
   taxPercent: number;

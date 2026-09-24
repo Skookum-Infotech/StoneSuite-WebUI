@@ -8,7 +8,8 @@ import { PurchaseOrderPickerDialog } from './components/PurchaseOrderPickerDialo
 export default function ItemReceiptListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
-  const canCreate = isLoading || hasPermission('item_receipt', 'create');
+  // A new receipt is saved and posted in one step, so it takes both grants.
+  const canCreate = isLoading || (hasPermission('item_receipt', 'create') && hasPermission('item_receipt', 'transition'));
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (

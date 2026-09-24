@@ -38,11 +38,12 @@ const BILL: VendorBillSummary = {
   ownerEmployeeId: null,
 };
 
-function mockPermissions(canCreate: boolean) {
+function mockPermissions(canCreate: boolean, isSuperAdmin = false) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
     activeRoleId: '',
+    isSuperAdmin,
     hasPermission: () => canCreate,
   } as ReturnType<typeof useUserPermissions>);
 }
@@ -103,5 +104,24 @@ describe('VendorBillListPage upload button', () => {
 
     expect(toast.info).toHaveBeenCalledWith(expect.stringContaining('bill-77.pdf'));
     expect(toast.error).not.toHaveBeenCalled();
+  });
+});
+
+// Only a super admin may change status from the list; everyone else sees the
+// status but gets no control for it.
+describe('VendorBillListPage status column', () => {
+  it('shows a super admin the status dropdown', async () => {
+    mockPermissions(true, true);
+    renderPage([{ ...BILL, nextStatusCodes: ['APPV', 'VOID'] }]);
+
+    expect(await screen.findByRole('button', { name: 'Draft' })).toBeInTheDocument();
+  });
+
+  it('shows everyone else the status as plain text', async () => {
+    mockPermissions(true, false);
+    renderPage([{ ...BILL, nextStatusCodes: ['APPV', 'VOID'] }]);
+
+    expect(await screen.findByText('Draft')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Draft' })).not.toBeInTheDocument();
   });
 });

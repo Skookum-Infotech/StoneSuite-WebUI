@@ -41,7 +41,7 @@ function mockPermissions(allowed = true) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string) => (resource === 'portal_access' ? allowed : false),
   } as ReturnType<typeof useUserPermissions>);
 }

@@ -16,6 +16,8 @@ import {
 } from '@/lib/expenseFilters';
 import { ExpenseFilterDrawer } from './ExpenseFilterDrawer';
 import { ExpenseStatusControl } from './ExpenseStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
+import { EXPENSE_STATUS_COLORS } from '@/lib/expenseForm';
 import type { ExpenseSearchRequest } from '@/types/expense';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -74,7 +76,7 @@ export function ExpenseTable() {
     },
   });
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('expense', 'update');
 
   const [term, setTerm] = useState('');
@@ -338,12 +340,16 @@ export function ExpenseTable() {
                         {exp.department || '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <ExpenseStatusControl
-                          order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, nextStatusCodes: exp.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: exp.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === exp.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <ExpenseStatusControl
+                            order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, nextStatusCodes: exp.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: exp.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === exp.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={exp.status} color={EXPENSE_STATUS_COLORS[exp.statusCode]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (

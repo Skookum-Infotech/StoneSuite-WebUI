@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircleHelp, LifeBuoy, Sparkles } from 'lucide-react';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
 import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
 import { supportPath } from '@/lib/feedback';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
 
@@ -11,12 +12,14 @@ import { cn } from '@/lib/utils';
 // assistant button and the standalone feedback icon): opens a small dropdown
 // with "StoneSuite Assistant" (a floating panel) and "Support" (a shortcut to
 // the Support page, which also has its own sidebar entry). Rendered for both
-// tenant staff and customer-portal sessions, same as the two things it
-// replaces were.
+// tenant staff and customer-portal sessions; the Assistant item is staff-only,
+// since the assistant lives under /api/tenant/*, which a portal token can't reach.
 export function HelpMenu() {
   const menuOpen = useHeaderMenuStore((s) => s.openMenu === 'help');
   const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
+  const isPortal = useAuthStore((s) => s.kind === 'portal');
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const unreadCount = useFeedbackUnreadCount();
 
@@ -40,6 +43,7 @@ export function HelpMenu() {
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpenMenu(menuOpen ? null : 'help'); }}
         aria-label={unreadCount > 0 ? `Help (${unreadCount} unread)` : 'Help'}
@@ -67,6 +71,7 @@ export function HelpMenu() {
             'sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2.5 sm:w-72 sm:origin-top-right',
           )}
         >
+          {!isPortal && (
           <button
             type="button"
             role="menuitem"
@@ -83,6 +88,7 @@ export function HelpMenu() {
               </span>
             </span>
           </button>
+          )}
 
           <button
             type="button"
@@ -115,7 +121,14 @@ export function HelpMenu() {
         </div>
       )}
 
-      {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} />}
+      {assistantOpen && (
+        <AssistantPanel
+          onClose={() => {
+            setAssistantOpen(false);
+            triggerRef.current?.focus();
+          }}
+        />
+      )}
     </div>
   );
 }

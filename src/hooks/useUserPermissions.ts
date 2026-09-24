@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { rbacService } from '@/services/tenantServices';
 import { useAuthStore } from '@/store/useAuthStore';
+import { isSuperAdminGrants } from '@/lib/dashboardWidgets';
 
 // A customer-portal identity has no `users` row and so no RBAC grants at all
 // (see CLAUDE.md's merged-login design) — rbacService.myPermissions() lives
@@ -52,5 +53,11 @@ export function useUserPermissions() {
     );
   }
 
-  return { grants, hasPermission, isLoading: isPortal ? false : isLoading, activeRoleId };
+  // The literal `*:*` grant is reserved for the seeded super_admin role — the
+  // same test the backend's authz.IsSuperAdmin applies. False until grants load
+  // (and always for a portal session) so an admin-only control never flashes up
+  // for a non-admin; unlike the optimistic `can*` checks, this one fails closed.
+  const isSuperAdmin = !isPortal && isSuperAdminGrants(grants);
+
+  return { grants, hasPermission, isSuperAdmin, isLoading: isPortal ? false : isLoading, activeRoleId };
 }
