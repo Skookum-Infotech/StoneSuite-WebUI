@@ -20,7 +20,7 @@ function mockCanCreateVendor(allowed: boolean) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) => allowed && resource === 'vendor' && action === 'create',
   } as ReturnType<typeof useUserPermissions>);
 }

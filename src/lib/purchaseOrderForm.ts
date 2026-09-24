@@ -416,6 +416,32 @@ export function isPoTransitionBlocked(toCode: string, approvalStatus: string, ga
   return toCode !== 'DRFT' && (gated ?? approvalStatus === 'pending');
 }
 
+/** Targets the Detail page renders as header buttons instead of status-dropdown
+ *  options, in button order: submit for approval, then send to vendor. These are
+ *  the only two manual moves the backend lets a non-super-admin request
+ *  (purchaseorder.NonAdminMayTransitionTo); every other move stays a
+ *  super-admin dropdown option. */
+export const PO_HEADER_TRANSITION_CODES: readonly string[] = ['PAPV', 'SENT'];
+
+/** The record's legal next-moves: its own `nextStatusCodes` when loaded (the
+ *  backend's view, with an unconfigured approval checkpoint collapsed out),
+ *  else the static map. */
+export function poNextCodes(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  return order.nextStatusCodes ?? PO_ALLOWED_TRANSITIONS[order.statusCode] ?? [];
+}
+
+/** Header-button transitions legal for this record right now, in button order. */
+export function poHeaderTransitions(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  const next = poNextCodes(order);
+  return PO_HEADER_TRANSITION_CODES.filter((code) => next.includes(code));
+}
+
+/** Legal next-moves that remain dropdown options once the header buttons have
+ *  taken theirs. */
+export function poDropdownTransitions(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  return poNextCodes(order).filter((code) => !PO_HEADER_TRANSITION_CODES.includes(code));
+}
+
 /** Status badge color (spec §2) — shared by the list table, detail page, and
  *  transition bar. Keyed by status code (PORD statuses are fixed/seeded, so
  *  unlike Estimate this doesn't need to key off the human label). */

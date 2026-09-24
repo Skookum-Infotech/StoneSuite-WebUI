@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Package, Upload, Pencil, PackagePlus, FileDown, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Package, Upload, Pencil, FileDown, Loader2, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -14,7 +14,9 @@ import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
+import {
+  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES, poDropdownTransitions,
+} from '@/lib/purchaseOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
@@ -22,6 +24,7 @@ import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab'
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
+import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -61,7 +64,7 @@ export default function PurchaseOrderDetailPage() {
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [convertOpen, setConvertOpen] = useState(false);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
   const canReceive = permissionsLoading || hasPermission('item_receipt', 'create');
@@ -119,12 +122,14 @@ export default function PurchaseOrderDetailPage() {
 
   const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
   const canDeleteHere = canDelete && PO_DELETABLE_STATUSES.has(po.statusCode);
-  // Terminal statuses (CLSD/CANC) have no legal transitions, and a user without
-  // `purchase_order:transition` sees none either — in both cases the bar renders
-  // nothing, so the card would be an empty "Actions" header. Hide it unless it
-  // has real content (a transition, an approval gate, or a failed transition).
-  const hasTransitions = canTransition && (PO_ALLOWED_TRANSITIONS[po.statusCode]?.length ?? 0) > 0;
-  const showActions = hasTransitions || Boolean(transition.error);
+  // Only a super admin gets the status dropdown (the backend refuses any manual
+  // move but PAPV/SENT to anyone else); everyone else moves an order with the
+  // header buttons. Terminal statuses (CLSD/CANC) have no legal transitions, and
+  // Submit for Approval / Send to Vendor are header buttons, not options — when
+  // none is left the dropdown would render nothing, so the card would be an
+  // empty "Actions" header. Hide it then.
+  const showActions = isSuperAdmin && canTransition && poDropdownTransitions(po).length > 0;
+  const canReceiveHere = canReceive && isPurchaseOrderReceivable(po);
 
   async function handleExportPdf() {
     if (!po) return;
@@ -206,7 +211,22 @@ export default function PurchaseOrderDetailPage() {
         subtitle={po.vendor.name}
         recordNumber={po.purchaseOrderNumber}
         statusBadge={<Badge color={color}>{po.status}</Badge>}
+        actions={(
+          <PurchaseOrderHeaderActions
+            order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, gated: po.gated, nextStatusCodes: po.nextStatusCodes }}
+            canTransition={canTransition}
+            onTransition={(toCode) => transition.mutate(toCode)}
+            transitioning={transition.isPending}
+            onReceive={canReceiveHere ? () => navigate(`/purchases/item_receipt/new?po=${id}`) : undefined}
+          />
+        )}
       />
+
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change status.')}
+        </p>
+      )}
 
       <RecordApprovalBanner
         record={po}
@@ -341,16 +361,6 @@ export default function PurchaseOrderDetailPage() {
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {canReceive && isPurchaseOrderReceivable(po) && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/purchases/item_receipt/new?po=${id}`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <PackagePlus className="size-4 text-stone-400 shrink-0" />
-                  Receive items
-                </button>
-              )}
               {canConvertToBill && PO_BILLABLE_STATUSES.has(po.statusCode) && (
                 <button
                   type="button"
@@ -396,10 +406,8 @@ export default function PurchaseOrderDetailPage() {
                 onChange={(toCode) => transition.mutate(toCode)}
                 disabled={transition.isPending}
                 variant="pill"
+                excludeCodes={PO_HEADER_TRANSITION_CODES}
               />
-              {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
-              )}
             </div>
           )}
 

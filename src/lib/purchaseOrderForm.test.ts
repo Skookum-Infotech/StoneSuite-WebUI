@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   PO_ALLOWED_TRANSITIONS, isPoTransitionBlocked, poTransitionLabel, poStatusLabel,
+  poNextCodes, poHeaderTransitions, poDropdownTransitions,
   calcLineItem, calcHeaderTotals, toCreatePayload, validatePurchaseOrderCustomFields,
 } from './purchaseOrderForm'
 import type { FieldDefinition } from '@/types/tenant'
@@ -17,6 +18,31 @@ describe('PO_ALLOWED_TRANSITIONS', () => {
     ['CANC', []],
   ])('from(%p) -> %p', (code, expected) => {
     expect(PO_ALLOWED_TRANSITIONS[code]).toEqual(expected)
+  })
+})
+
+// The header buttons (Submit for Approval, Send to Vendor) and the super-admin
+// dropdown split a record's legal next-moves between them: together they must
+// cover every move exactly once.
+describe('poNextCodes / poHeaderTransitions / poDropdownTransitions', () => {
+  it.each([
+    // [label, order, next, header buttons, dropdown options]
+    ['draft, approvers configured (static map)', { statusCode: 'DRFT' }, ['PAPV', 'CANC'], ['PAPV'], ['CANC']],
+    ['draft, nobody to approve (backend collapsed the checkpoint)', { statusCode: 'DRFT', nextStatusCodes: ['CANC', 'SENT'] }, ['CANC', 'SENT'], ['SENT'], ['CANC']],
+    ['pending approval', { statusCode: 'PAPV' }, ['APPV', 'DRFT', 'CANC'], [], ['APPV', 'DRFT', 'CANC']],
+    ['approved', { statusCode: 'APPV' }, ['SENT', 'DRFT', 'CANC'], ['SENT'], ['DRFT', 'CANC']],
+    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'CLSD', 'CANC'], [], ['PART', 'RCVD', 'CLSD', 'CANC']],
+    ['closed is terminal', { statusCode: 'CLSD' }, [], [], []],
+    ['record nextStatusCodes wins over the static map', { statusCode: 'DRFT', nextStatusCodes: [] }, [], [], []],
+    ['unknown status has no moves', { statusCode: 'XXXX' }, [], [], []],
+  ])('%s', (_label, order, next, header, dropdown) => {
+    expect(poNextCodes(order)).toEqual(next)
+    expect(poHeaderTransitions(order)).toEqual(header)
+    expect(poDropdownTransitions(order)).toEqual(dropdown)
+  })
+
+  it('lists Submit for Approval before Send to Vendor when both are legal', () => {
+    expect(poHeaderTransitions({ statusCode: 'DRFT', nextStatusCodes: ['SENT', 'PAPV', 'CANC'] })).toEqual(['PAPV', 'SENT'])
   })
 })
 

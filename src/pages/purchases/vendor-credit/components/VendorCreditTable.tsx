@@ -10,13 +10,14 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { vendorCreditService } from '@/services/vendorCreditService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { VC_EDITABLE_STATUSES } from '@/lib/vendorCreditForm';
+import { VC_EDITABLE_STATUSES, VC_STATUS_COLORS } from '@/lib/vendorCreditForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorCreditFilterState,
 } from '@/lib/vendorCreditFilters';
 import { VendorCreditFilterDrawer } from './VendorCreditFilterDrawer';
 import { VendorCreditStatusControl } from './VendorCreditStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { VendorCreditSearchRequest } from '@/types/vendorCredit';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -74,7 +75,7 @@ export function VendorCreditTable() {
     },
   });
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_credit', 'update');
 
   const [term, setTerm] = useState('');
@@ -335,12 +336,16 @@ export function VendorCreditTable() {
                         {credit.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <VendorCreditStatusControl
-                          order={{ statusCode: credit.statusCode }}
-                          onChange={(code) => transition.mutate({ id: credit.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === credit.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <VendorCreditStatusControl
+                            order={{ statusCode: credit.statusCode }}
+                            onChange={(code) => transition.mutate({ id: credit.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === credit.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={credit.status} color={VC_STATUS_COLORS[credit.statusCode]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[200px]">
                         {credit.reason || '—'}

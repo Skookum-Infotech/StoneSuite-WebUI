@@ -16,6 +16,8 @@ import {
 } from '@/lib/purchaseOrderFilters';
 import { PurchaseOrderFilterDrawer } from './PurchaseOrderFilterDrawer';
 import { PurchaseOrderStatusControl } from './PurchaseOrderStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
+import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -67,11 +69,13 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the
-  // Detail page's transition mutation (see PurchaseOrderDetailPage.tsx).
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves an order from its Detail
+  // page. Mirrors the Detail page's transition mutation (see
+  // PurchaseOrderDetailPage.tsx).
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => purchaseOrderService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -335,12 +339,16 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                         {po.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <PurchaseOrderStatusControl
-                          order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, nextStatusCodes: po.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: po.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === po.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <PurchaseOrderStatusControl
+                            order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, nextStatusCodes: po.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: po.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === po.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={po.status} color={PO_STATUS_COLORS[po.statusCode]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (

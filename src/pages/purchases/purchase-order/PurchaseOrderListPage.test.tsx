@@ -39,7 +39,7 @@ function mockPermissions(canCreate: boolean) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: () => canCreate,
   } as ReturnType<typeof useUserPermissions>);
 }
