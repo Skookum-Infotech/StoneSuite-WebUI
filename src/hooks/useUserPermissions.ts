@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { rbacService } from '@/services/tenantServices';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useMyPermissionsQuery } from '@/hooks/useMyPermissionsQuery';
 import { isSuperAdminGrants } from '@/lib/dashboardWidgets';
 
 // A customer-portal identity has no `users` row and so no RBAC grants at all
@@ -21,22 +20,11 @@ const PORTAL_GRANTS: ReadonlySet<string> = new Set([
 ]);
 
 export function useUserPermissions() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const userId = useAuthStore((s) => s.user?.id);
   const isPortal = useAuthStore((s) => s.kind === 'portal');
 
-  const { data, isLoading } = useQuery({
-    // Include userId in the key so each identity gets its own cache entry.
-    // Without this, a prior user's stale grants bleed into the next login.
-    queryKey: ['user-permissions', userId],
-    queryFn: () => rbacService.myPermissions(),
-    // A portal session never fires this query — see PORTAL_GRANTS above for
-    // why calling it would only produce a 403 and a spurious security-log
-    // entry (portal_token_outside_portal) on every customer page load.
-    enabled: isAuthenticated && Boolean(userId) && !isPortal,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
+  // Shared with useCurrentUserRoles — see useMyPermissionsQuery for the key,
+  // the portal-session gate, and the caching.
+  const { data, isLoading } = useMyPermissionsQuery();
 
   const grants = data?.grants ?? [];
   // '' means no active-role restriction is set server-side (all assigned

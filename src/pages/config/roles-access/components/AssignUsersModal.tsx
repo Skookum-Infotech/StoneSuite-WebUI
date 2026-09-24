@@ -5,6 +5,7 @@ import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote, Spinner } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
+import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
 import type { Role } from "@/types/tenant";
 
 export function AssignUsersModal({
@@ -27,7 +28,7 @@ export function AssignUsersModal({
   const assignMut = useMutation({
     mutationFn: (userId: string) => userService.assignRole(userId, role.id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
+      invalidateUserRoleQueries(qc);
       setSelectedUserId("");
       setError(null);
     },
@@ -37,7 +38,7 @@ export function AssignUsersModal({
   const removeMut = useMutation({
     mutationFn: (userId: string) => userService.removeRole(userId, role.id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
+      invalidateUserRoleQueries(qc);
       setError(null);
       setPendingRemove(null);
     },
