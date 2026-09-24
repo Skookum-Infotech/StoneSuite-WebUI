@@ -252,8 +252,9 @@ export function toCreatePayload(
   data: Record<string, unknown>,
   lines: ItemReceiptDraftLine[],
   customFields: Record<string, unknown> = {},
+  posting?: Pick<ItemReceiptCreatePayload, 'post' | 'overReceiptReason'>,
 ): ItemReceiptCreatePayload {
-  return { purchaseOrderUuid, ...toHeaderFields(data, lines, customFields) };
+  return { purchaseOrderUuid, ...toHeaderFields(data, lines, customFields), ...posting };
 }
 
 /** Maps the Edit form's state to the backend's `ItemReceiptUpdatePayload`. */

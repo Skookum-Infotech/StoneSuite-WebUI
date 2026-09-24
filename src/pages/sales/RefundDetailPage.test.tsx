@@ -49,7 +49,7 @@ const pendingRefund = {
 
 function renderPage() {
   vi.mocked(useUserPermissions).mockReturnValue({
-    grants: [], isLoading: false, activeRoleId: '',
+    grants: [], isLoading: false, activeRoleId: '', isSuperAdmin: false,
     hasPermission: () => true,
   } as ReturnType<typeof useUserPermissions>);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });

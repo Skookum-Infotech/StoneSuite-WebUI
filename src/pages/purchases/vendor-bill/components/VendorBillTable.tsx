@@ -16,6 +16,8 @@ import {
 } from '@/lib/vendorBillFilters';
 import { VendorBillFilterDrawer } from './VendorBillFilterDrawer';
 import { VendorBillStatusControl } from './VendorBillStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
+import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
 import type { VendorBillSearchRequest } from '@/types/vendorBill';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -81,7 +83,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
     },
   });
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
 
   const [term, setTerm] = useState('');
@@ -344,12 +346,16 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                         {bill.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <VendorBillStatusControl
-                          order={{ statusCode: bill.statusCode, approvalStatus, nextStatusCodes: bill.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: bill.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === bill.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <VendorBillStatusControl
+                            order={{ statusCode: bill.statusCode, approvalStatus, nextStatusCodes: bill.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: bill.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === bill.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={bill.status} color={VB_STATUS_COLORS[bill.statusCode]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (

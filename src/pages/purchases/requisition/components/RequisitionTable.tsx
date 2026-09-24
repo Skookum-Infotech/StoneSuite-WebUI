@@ -10,13 +10,14 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { requisitionService } from '@/services/requisitionService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { PRIORITY_COLORS, priorityLabel } from '@/lib/requisitionForm';
+import { PRIORITY_COLORS, REQUISITION_STATUS_COLORS, priorityLabel } from '@/lib/requisitionForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type RequisitionFilterState,
 } from '@/lib/requisitionFilters';
 import { RequisitionFilterDrawer } from './RequisitionFilterDrawer';
 import { RequisitionStatusControl } from './RequisitionStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { RequisitionSearchRequest } from '@/types/requisition';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -82,7 +83,7 @@ export function RequisitionTable() {
     },
   });
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('requisition', 'update');
 
   const [term, setTerm] = useState('');
@@ -355,12 +356,16 @@ export function RequisitionTable() {
                         {reqn.department || '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <RequisitionStatusControl
-                          order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, nextStatusCodes: reqn.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: reqn.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === reqn.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <RequisitionStatusControl
+                            order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, nextStatusCodes: reqn.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: reqn.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === reqn.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={reqn.status} color={REQUISITION_STATUS_COLORS[reqn.statusCode]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (

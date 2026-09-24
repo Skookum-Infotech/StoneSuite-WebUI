@@ -19,10 +19,14 @@ type DangerZoneActionProps = {
   onClick: () => void;
   icon?: ComponentType<{ className?: string }>;
   ariaLabel?: string;
+  /** Renders the button inert — pair with `hint` so the reason is visible. */
+  disabled?: boolean;
+  /** Why the action is unavailable right now, shown under the button. */
+  hint?: string;
 };
 
 export const DangerZoneAction = forwardRef<HTMLButtonElement, DangerZoneActionProps>(
-  function DangerZoneAction({ description, buttonLabel, onClick, icon: Icon = Trash2, ariaLabel }, ref) {
+  function DangerZoneAction({ description, buttonLabel, onClick, icon: Icon = Trash2, ariaLabel, disabled, hint }, ref) {
     return (
       <div className="space-y-2 border-t border-destructive/10 pt-3 first:border-t-0 first:pt-0">
         <div className="space-y-0.5">
@@ -33,12 +37,14 @@ export const DangerZoneAction = forwardRef<HTMLButtonElement, DangerZoneActionPr
           ref={ref}
           type="button"
           onClick={onClick}
+          disabled={disabled}
           aria-label={ariaLabel ?? buttonLabel}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-destructive px-3 py-2 text-xs font-semibold text-white hover:bg-destructive/90 active:scale-95 transition-all"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-destructive px-3 py-2 text-xs font-semibold text-white hover:bg-destructive/90 active:scale-95 transition-all disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
         >
           <Icon className="size-4 shrink-0" />
           {buttonLabel}
         </button>
+        {hint && <p className="text-2xs text-stone-500 dark:text-stone-400">{hint}</p>}
       </div>
     );
   },

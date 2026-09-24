@@ -76,7 +76,7 @@ function mockCanCreateItems(allowed: boolean) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) => allowed && resource === 'inventory_item' && action === 'create',
   } as ReturnType<typeof useUserPermissions>);
 }

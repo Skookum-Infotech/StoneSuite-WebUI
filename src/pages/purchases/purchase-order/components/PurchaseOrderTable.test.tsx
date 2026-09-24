@@ -17,11 +17,14 @@ import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { PurchaseOrderSummary } from '@/types/purchaseOrder';
 
-function mockPermissions() {
+// Every permission granted; `isSuperAdmin` is the only thing that decides
+// whether the list row's status is a dropdown or a read-only pill.
+function mockPermissions(isSuperAdmin = true) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
     activeRoleId: '',
+    isSuperAdmin,
     hasPermission: () => true,
   } as ReturnType<typeof useUserPermissions>);
 }
@@ -60,6 +63,26 @@ async function renderWithRow(row: PurchaseOrderSummary): Promise<HTMLElement> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+// Only a super admin may change status from the list; everyone else sees the
+// status but gets no control for it (they move an order from its Detail page).
+describe('PurchaseOrderTable status for a non-admin', () => {
+  it('shows the status as plain text, with no dropdown to change it', async () => {
+    mockPermissions(false);
+    const row = await renderWithRow(draftOrder(['CANC', 'SENT']));
+
+    expect(within(row).getByText('Draft')).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: 'Draft' })).not.toBeInTheDocument();
+    expect(within(row).queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('shows the same status pill dropdown to a super admin', async () => {
+    mockPermissions(true);
+    const row = await renderWithRow(draftOrder(['CANC', 'SENT']));
+
+    expect(within(row).getByRole('button', { name: 'Draft' })).toBeInTheDocument();
+  });
 });
 
 // The list row's status pill must offer the record's own nextStatusCodes (what

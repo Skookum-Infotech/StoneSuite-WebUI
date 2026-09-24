@@ -200,6 +200,7 @@ export default function EditVendorBillPage() {
             vendor={vendor}
             setVendor={setLocalVendor}
             vendorLocked
+            purchaseOrder={mapped?.purchaseOrder ?? null}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

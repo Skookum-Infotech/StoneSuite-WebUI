@@ -416,6 +416,75 @@ export function isPoTransitionBlocked(toCode: string, approvalStatus: string, ga
   return toCode !== 'DRFT' && (gated ?? approvalStatus === 'pending');
 }
 
+/** Targets the Detail page renders as header buttons instead of status-dropdown
+ *  options, in button order: submit for approval, then send to vendor. These are
+ *  the only two manual moves the backend lets a non-super-admin request
+ *  (purchaseorder.NonAdminMayTransitionTo); every other move stays a
+ *  super-admin dropdown option. */
+export const PO_HEADER_TRANSITION_CODES: readonly string[] = ['PAPV', 'SENT'];
+
+/** The record's legal next-moves: its own `nextStatusCodes` when loaded (the
+ *  backend's view, with an unconfigured approval checkpoint collapsed out),
+ *  else the static map. */
+export function poNextCodes(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  return order.nextStatusCodes ?? PO_ALLOWED_TRANSITIONS[order.statusCode] ?? [];
+}
+
+/** Header-button transitions legal for this record right now, in button order. */
+export function poHeaderTransitions(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  const next = poNextCodes(order);
+  return PO_HEADER_TRANSITION_CODES.filter((code) => next.includes(code));
+}
+
+/** Legal next-moves that remain dropdown options once the header buttons have
+ *  taken theirs. */
+export function poDropdownTransitions(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  return poNextCodes(order).filter((code) => !PO_HEADER_TRANSITION_CODES.includes(code));
+}
+
+// ── Billing (Create Bill) ─────────────────────────────────────────────────────
+
+/** Statuses a vendor bill may be raised from — anything that has received goods
+ *  (backend vendorbill.IsConvertibleStatus). Partially Received is included so a
+ *  first delivery can be billed before the order is complete. */
+export const PO_BILLABLE_STATUSES: ReadonlySet<string> = new Set(['PART', 'RCVD', 'CLSD']);
+
+/** One order line a new bill would cover, and how much of it. */
+export interface BillableLine {
+  id: string;
+  lineNumber: number;
+  itemName: string;
+  ordered: number;
+  toBill: number;
+}
+
+/** How much of a line a new bill can claim: received minus already billed,
+ *  rounded to the 3 decimals the backend stores (so 5.1 - 2.1 is 3, not
+ *  3.0000000000000004) and floored at zero. Mirrors vendorbill.billableQuantity;
+ *  the backend is authoritative and re-derives it at conversion. */
+export function billableQuantity(received: number, billed: number): number {
+  const q = Math.round((received - billed) * 1000) / 1000;
+  return q > 0 ? q : 0;
+}
+
+/** The lines Create Bill would put on a new bill — empty when the order's status
+ *  can't be billed or everything received is already billed, which is also
+ *  when the Create Bill button stays hidden. */
+export function poBillableLines(
+  po: { statusCode: string; items: PurchaseOrderLine[] },
+): BillableLine[] {
+  if (!PO_BILLABLE_STATUSES.has(po.statusCode)) return [];
+  return po.items
+    .map((line) => ({
+      id: line.id,
+      lineNumber: line.lineNumber,
+      itemName: line.itemName || line.description,
+      ordered: line.quantity,
+      toBill: billableQuantity(line.qtyReceived, line.qtyBilled),
+    }))
+    .filter((line) => line.toBill > 0);
+}
+
 /** Status badge color (spec §2) — shared by the list table, detail page, and
  *  transition bar. Keyed by status code (PORD statuses are fixed/seeded, so
  *  unlike Estimate this doesn't need to key off the human label). */

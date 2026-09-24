@@ -8,11 +8,13 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
+import { PurchaseOrderPicker } from './PurchaseOrderPicker';
 import { VendorBillSectionGrid } from './VendorBillFormFields';
 import { VendorBillSummaryCard } from './VendorBillSummaryCard';
 import { VendorBillItemsTab } from './VendorBillItemsTab';
 import { VendorBillAuditTab } from './VendorBillAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
+import type { VendorBillPurchaseOrderRef } from '@/types/vendorBill';
 import {
   PRIMARY_INFO_FIELDS, PAGE_TABS, type PageTab, type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
@@ -25,6 +27,7 @@ export function VendorBillFormBody({
   activeTab, setActiveTab, vendorBillId,
   data, set, lineItems, setLineItems,
   vendor, setVendor, vendorLocked = false, onCreateVendor,
+  purchaseOrder, setPurchaseOrder,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, adjustment, total, filesPanelRef,
 }: {
@@ -46,6 +49,12 @@ export function VendorBillFormBody({
    *  doesn't have (see useRecordCreateReturn). Omitted on Edit (the vendor is
    *  locked there anyway) or when the user can't create vendors. */
   onCreateVendor?: (name: string) => void;
+  /** The optional Purchase Order link. With `setPurchaseOrder` (Add) it is an
+   *  editable picker scoped to the chosen vendor; without it (Edit — the link
+   *  is fixed at creation, like the vendor) it shows read-only, and only when
+   *  the bill actually has one. */
+  purchaseOrder: VendorBillPurchaseOrderRef | null;
+  setPurchaseOrder?: (v: VendorBillPurchaseOrderRef | null) => void;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -107,6 +116,17 @@ export function VendorBillFormBody({
                       <ModernFieldShell label="Vendor Bill Status">
                         <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>Draft</div>
                       </ModernFieldShell>
+                      {(setPurchaseOrder || purchaseOrder) && (
+                        <ModernFieldShell label="Purchase Order">
+                          {setPurchaseOrder ? (
+                            <PurchaseOrderPicker vendor={vendor} value={purchaseOrder} onChange={setPurchaseOrder} />
+                          ) : (
+                            <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
+                              {purchaseOrder?.number}
+                            </div>
+                          )}
+                        </ModernFieldShell>
+                      )}
                     </div>
                     <VendorBillSectionGrid
                       fields={PRIMARY_INFO_FIELDS.filter((f) => f.key !== 'vb_status' && (f.key !== 'vb_doc_num' || Boolean(vendorBillId)))}

@@ -30,7 +30,7 @@ function mockPermissions({ canConfigure = true, isLoading = false }: { canConfig
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) => {
       if (resource !== 'workflow_config') return false;
       if (action === 'read') return true;

@@ -11,7 +11,7 @@ function mockPermissions(canTransition = true) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) =>
       resource === 'purchase_order' && action === 'transition' ? canTransition : false,
   } as ReturnType<typeof useUserPermissions>);
@@ -100,6 +100,43 @@ describe('PurchaseOrderStatusControl', () => {
 
     await user.click(option);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('leaves the excluded targets out of the options', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    render(
+      <PurchaseOrderStatusControl
+        order={{ statusCode: 'APPV', approvalStatus: 'approved' }}
+        onChange={vi.fn()}
+        variant="pill"
+        excludeCodes={['PAPV', 'SENT']}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Approved' }));
+
+    expect(screen.queryByRole('option', { name: 'Send to Vendor' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Revise' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Cancel' })).toBeInTheDocument();
+  });
+
+  it('excludes from the record\'s own nextStatusCodes when it carries them', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    render(
+      <PurchaseOrderStatusControl
+        order={{ statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['CANC', 'SENT'] }}
+        onChange={vi.fn()}
+        variant="pill"
+        excludeCodes={['PAPV', 'SENT']}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Draft' }));
+
+    expect(screen.queryByRole('option', { name: 'Send to Vendor' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Cancel' })).toBeInTheDocument();
   });
 
   it('offers "Send to Vendor" directly from Draft when the backend collapsed the checkpoint', async () => {

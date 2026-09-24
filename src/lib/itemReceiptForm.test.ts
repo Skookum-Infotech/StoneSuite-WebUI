@@ -11,7 +11,7 @@ import type { ItemReceipt, ItemReceiptLine } from '@/types/itemReceipt'
 function poLine(overrides: Partial<PurchaseOrderLine> = {}): PurchaseOrderLine {
   return {
     id: 'poi-1', lineNumber: 1, sku: 'SKU-1', itemName: 'Widget', description: 'A widget',
-    unitCode: 'EA', quantity: 100, qtyReceived: 0, unitPrice: 5, discountPercent: 0,
+    unitCode: 'EA', quantity: 100, qtyReceived: 0, qtyBilled: 0, unitPrice: 5, discountPercent: 0,
     taxPercent: 0, lineSubtotal: 500, lineDiscount: 0, lineTax: 0, lineTotal: 500,
     inventoryItemId: 'inv-1',
     ...overrides,
