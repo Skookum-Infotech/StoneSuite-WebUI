@@ -116,6 +116,49 @@ describe('PurchaseOrderHeaderActions', () => {
     expect(screen.queryByRole('button', { name: 'Create Bill' })).not.toBeInTheDocument();
   });
 
+  describe('emphasis — the next step is the one that stands out', () => {
+    const partReceived: Order = { statusCode: 'PART', approvalStatus: 'approved', nextStatusCodes: ['RCVD', 'CLSD', 'CANC'] };
+
+    it('fills Receive items when it is the only action, like Send to Vendor', () => {
+      renderActions(sent, { actions: { onReceive: vi.fn() } });
+
+      expect(screen.getByRole('button', { name: 'Receive items' })).toHaveClass('bg-brand');
+    });
+
+    it('fills Create Bill when it is the only action (a fully received order)', () => {
+      renderActions(
+        { statusCode: 'RCVD', approvalStatus: 'approved', nextStatusCodes: ['CLSD'] },
+        { actions: { onCreateBill: vi.fn() } },
+      );
+
+      expect(screen.getByRole('button', { name: 'Create Bill' })).toHaveClass('bg-brand');
+    });
+
+    it('fills Receive items and tints Create Bill when a part-received order offers both', () => {
+      renderActions(partReceived, { actions: { onReceive: vi.fn(), onCreateBill: vi.fn() } });
+
+      const receive = screen.getByRole('button', { name: 'Receive items' });
+      const bill = screen.getByRole('button', { name: 'Create Bill' });
+      expect(receive).toHaveClass('bg-brand');
+      expect(bill).toHaveClass('bg-brand/10', 'border-brand/50');
+      expect(bill).not.toHaveClass('bg-brand');
+    });
+
+    it('no longer renders either as a plain white button that reads like Back', () => {
+      renderActions(partReceived, { actions: { onReceive: vi.fn(), onCreateBill: vi.fn() } });
+
+      expect(screen.getByRole('button', { name: 'Receive items' })).not.toHaveClass('bg-white');
+      expect(screen.getByRole('button', { name: 'Create Bill' })).not.toHaveClass('bg-white');
+    });
+
+    it('says what each one will do on hover', () => {
+      renderActions(partReceived, { actions: { onReceive: vi.fn(), onCreateBill: vi.fn() } });
+
+      expect(screen.getByRole('button', { name: 'Receive items' })).toHaveAttribute('title', 'Receive goods against this order');
+      expect(screen.getByRole('button', { name: 'Create Bill' })).toHaveAttribute('title', 'Bill what has been received and not yet billed');
+    });
+  });
+
   it('shows Create Bill on an order with no status moves left (a fully received order can still be billed)', () => {
     renderActions(
       { statusCode: 'RCVD', approvalStatus: 'approved', nextStatusCodes: ['CLSD'] },
