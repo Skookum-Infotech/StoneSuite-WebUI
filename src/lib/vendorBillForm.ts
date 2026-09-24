@@ -8,6 +8,7 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
 import type {
   VendorBill, CreateVendorBillPayload, VendorBillLineInput, VendorBillLine,
+  VendorBillPurchaseOrderRef,
 } from '@/types/vendorBill';
 
 export const PAGE_TABS = [
@@ -406,9 +407,11 @@ function toLineInput(item: VendorBillLineItem, lineNo: number): VendorBillLineIn
 
 /** Maps the AddVendorBillPage form state + line items to the backend's
  *  `CreateVendorBillPayload`. `vendorUuid` comes from the VendorPicker's
- *  selection (stored under `vendor_uuid` in form state). Status is
- *  intentionally omitted: every new vendor bill starts at DRFT
- *  server-side; status changes go through the `/transition` endpoint. */
+ *  selection (stored under `vendor_uuid` in form state) and the optional
+ *  `purchaseOrderUuid` from the PurchaseOrderPicker's (`purchase_order_uuid`;
+ *  omitted when nothing is linked). Status is intentionally omitted: every new
+ *  vendor bill starts at DRFT server-side; status changes go through the
+ *  `/transition` endpoint. */
 export function toCreatePayload(
   data: Record<string, unknown>,
   lineItems: VendorBillLineItem[],
@@ -416,6 +419,7 @@ export function toCreatePayload(
 ): CreateVendorBillPayload {
   return {
     vendorUuid: toStr(data.vendor_uuid),
+    purchaseOrderUuid: toStr(data.purchase_order_uuid) || undefined,
     vendorInvoiceNumber: toStr(data.vendor_invoice_number),
     referenceNumber: toStr(data.reference_number),
     billDate: toStr(data.bill_date),
@@ -464,11 +468,14 @@ function fromLine(line: VendorBillLine, i: number): VendorBillLineItem {
 
 /** Maps a loaded VendorBill (GET response) back to the Edit form's state —
  *  the inverse of toCreatePayload. Vendor is returned separately since it's
- *  driven by VendorPicker's own state, not a plain form field. */
+ *  driven by VendorPicker's own state, not a plain form field; so is the
+ *  linked purchase order, which the Edit form shows read-only (null when the
+ *  bill has none). */
 export function fromVendorBill(bill: VendorBill): {
   data: Record<string, unknown>;
   lineItems: VendorBillLineItem[];
   vendor: { id: string; name: string };
+  purchaseOrder: VendorBillPurchaseOrderRef | null;
   customFieldValues: Record<string, unknown>;
 } {
   const data: Record<string, unknown> = {
@@ -495,6 +502,7 @@ export function fromVendorBill(bill: VendorBill): {
     data,
     lineItems,
     vendor: { id: bill.vendor.id, name: bill.vendor.name },
+    purchaseOrder: bill.purchaseOrder ?? null,
     customFieldValues: bill.customFields ?? {},
   };
 }
