@@ -11,7 +11,7 @@ import {
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { companyProfileService } from '@/services/companyProfileService';
 import { companyProfileSchema, type CompanyProfileFormValues } from '@/lib/companyProfileForm';
-import type { Address } from '@/types/companyProfile';
+import type { Address, PaymentDetails } from '@/types/companyProfile';
 import { lookupService } from '@/services/lookupService';
 import { countryOptions, currencyOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupOptions';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -19,8 +19,10 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CompanyInfoTextField, CompanyInfoReadonlyField, type CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import { CompanyInfoSelectField } from './CompanyInfoSelectField';
+import { PaymentDetailsSection } from './PaymentDetailsSection';
 
 const EMPTY_ADDRESS: Address = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' };
+const EMPTY_PAYMENT_DETAILS: PaymentDetails = { bankName: '', accountNumber: '', routingNumber: '' };
 
 const DEFAULT_VALUES: CompanyProfileFormValues = {
   companyName: '',
@@ -34,6 +36,7 @@ const DEFAULT_VALUES: CompanyProfileFormValues = {
   billingAddress: EMPTY_ADDRESS,
   shippingAddress: EMPTY_ADDRESS,
   returnAddress: EMPTY_ADDRESS,
+  paymentDetails: EMPTY_PAYMENT_DETAILS,
 };
 
 // Spans chosen by how much text each field typically holds, not uniformly:
@@ -324,6 +327,14 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
             </div>
           </ModernSection>
         ))}
+
+        <PaymentDetailsSection
+          index={ADDRESS_GROUPS.length + 1}
+          isEditing={isEditing}
+          values={values}
+          register={register}
+          errors={errors}
+        />
       </form>
     </>
   );
