@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -161,4 +162,5 @@ export async function buildInventoryRecordPdf(params: InventoryExportParams): Pr
 export async function exportInventoryRecordToPdf(params: InventoryExportParams): Promise<void> {
   const doc = await buildInventoryRecordPdf(params);
   doc.save(buildExportFilename(params.recordType, params.recordNumber, params.title));
+  toast.success("Downloaded successfully!");
 }

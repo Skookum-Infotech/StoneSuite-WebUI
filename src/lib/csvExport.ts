@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 const CSV_ESCAPE_PATTERN = /[",\r\n]/;
 
 /** Escapes a single value for CSV — quotes it (doubling embedded quotes) only when needed. */
@@ -37,6 +39,7 @@ export function downloadCsv(filename: string, csvContent: string): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  toast.success("Downloaded successfully!");
 }
 
 export interface CsvSearchPage<T> {
