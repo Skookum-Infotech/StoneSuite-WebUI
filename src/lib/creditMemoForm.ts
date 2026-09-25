@@ -5,7 +5,13 @@
 // backend verbatim).
 
 import type { CrmLookups } from '@/services/lookupService';
-import type { CreditMemo, CreditMemoCreatePayload, CreditMemoUpdatePayload, CreditMemoLineInput } from '@/types/creditMemo';
+import type { CreditMemo, CreditMemoCreatePayload, CreditMemoUpdatePayload } from '@/types/creditMemo';
+
+/** Cents — the precision of every money field. */
+export const MONEY_STEP = 0.01;
+/** The backend stores the sales tax rate to 4 decimal places (DECIMAL(6,4)), so
+ *  a real rate such as 8.875% must be enterable. */
+export const PERCENT_STEP = 0.0001;
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -33,9 +39,12 @@ export interface CreditMemoFormField {
   colSpanFull?: boolean;
   /** Textarea row count (only used when type === 'textarea') */
   rows?: number;
-  /** Native min/max for type: 'number' fields */
+  /** Native min/max/step for type: 'number' fields. Without a step a browser
+   *  only accepts whole numbers counted from `min` (so an Amount of 100 with
+   *  min 0.01 fails as 'nearest valid values 99.01 and 100.01'). */
   min?: number;
   max?: number;
+  step?: number;
   /** When true, field is disabled while the credit memo is not editable
    *  (Edit page only — money fields lock once status leaves DRFT). */
   moneyField?: boolean;
@@ -69,6 +78,23 @@ export const PRIMARY_INFO_FIELDS: CreditMemoFormField[] = [
     required: true,
   },
   {
+    key: 'currency_id',
+    label: 'Currency',
+    type: 'select',
+    lookupKey: 'currencies',
+    moneyField: true,
+  },
+  {
+    key: 'amount',
+    label: 'Amount',
+    type: 'number',
+    required: true,
+    placeholder: '0.00',
+    min: 0.01,
+    step: MONEY_STEP,
+    moneyField: true,
+  },
+  {
     key: 'reason',
     label: 'Reason',
     type: 'text',
@@ -81,6 +107,7 @@ export const PRIMARY_INFO_FIELDS: CreditMemoFormField[] = [
     placeholder: '0.00',
     min: 0,
     max: 100,
+    step: PERCENT_STEP,
     moneyField: true,
   },
   {
@@ -88,6 +115,7 @@ export const PRIMARY_INFO_FIELDS: CreditMemoFormField[] = [
     label: 'Adjustment',
     type: 'number',
     placeholder: '0.00',
+    step: MONEY_STEP,
     moneyField: true,
   },
   {
@@ -176,63 +204,6 @@ export const BILLING_FIELDS: CreditMemoFormField[] = [
   },
 ];
 
-// ── Items sub-tab ─────────────────────────────────────────────────────────────
-
-// Sent under `lines` (not `items`, unlike Invoice) — otherwise the same shape:
-// a line is either a catalog pick (inventoryItemUuid; server snapshots sku/
-// name/unit) or free text, where `itemName` doubles as the description sent
-// to the server. Per-line tax always follows the header's Sales Tax %.
-export interface CreditMemoLineItem {
-  id: string;
-  lineNo: number;
-  itemName: string;
-  quantity: string;
-  unitPrice: string;
-  discount: string;
-  amount: string;   // calculated
-  total: string;    // calculated, using the header's Sales Tax %
-  inventoryItemUuid?: string;
-  itemSku?: string;
-  units?: string;
-}
-
-export const EMPTY_LINE_ITEM: Omit<CreditMemoLineItem, 'id' | 'lineNo'> = {
-  itemName: '',
-  quantity: '',
-  unitPrice: '',
-  discount: '0',
-  amount: '',
-  total: '',
-};
-
-/** Clamps a percent field (discount) to [0, 100] as the user types — see
- *  invoiceForm.ts's clampPercent for why this is needed (rows commit via a
- *  button click, not a native form submit). */
-export function clampPercent(raw: string): string {
-  if (raw === '') return raw;
-  const n = parseFloat(raw);
-  if (Number.isNaN(n)) return raw;
-  const clamped = Math.min(100, Math.max(0, n));
-  return clamped === n ? raw : String(clamped);
-}
-
-/** Client-side estimate of a line's amount/total, using the header's Sales
- *  Tax % (mirrors invoiceForm.ts's calcLineItem). */
-export function calcLineItem(
-  item: Pick<CreditMemoLineItem, 'quantity' | 'unitPrice' | 'discount'>,
-  headerTaxPercent: number,
-): { amount: string; total: string } {
-  const qty = parseFloat(item.quantity) || 0;
-  const price = parseFloat(item.unitPrice) || 0;
-  const disc = parseFloat(item.discount) || 0;
-  const amount = qty * price * (1 - disc / 100);
-  const total = amount * (1 + (headerTaxPercent || 0) / 100);
-  return {
-    amount: qty && price ? amount.toFixed(2) : '',
-    total: qty && price ? total.toFixed(2) : '',
-  };
-}
-
 // ── Status catalog (fixed, branching state machine) ───────────────────────────
 
 export const CREDIT_MEMO_STATUS_CODES: { code: string; label: string }[] = [
@@ -264,7 +235,7 @@ export const CREDIT_MEMO_ALLOWED_TRANSITIONS: Record<string, string[]> = {
  *  applying, or unapplying once reached. */
 export const CREDIT_MEMO_READONLY_STATUSES = new Set(['APPL', 'VOID']);
 
-/** Editable-fields rule (spec): lines, sales tax, and adjustment are only
+/** Editable-fields rule (spec): amount, sales tax, and adjustment are only
  *  editable while the credit memo is still DRFT — every other status
  *  disables just those "money fields" rather than locking the whole form. */
 export const CREDIT_MEMO_DRAFT_STATUS = 'DRFT';
@@ -298,16 +269,25 @@ function toStr(v: unknown): string {
   return v === null || v === undefined ? '' : String(v);
 }
 
-/** Maps one editable line row to the create/update contract's line shape. */
-function toLineInput(item: CreditMemoLineItem, lineNo: number): CreditMemoLineInput {
-  return {
-    lineNumber: lineNo,
-    inventoryItemUuid: item.inventoryItemUuid || undefined,
-    description: item.inventoryItemUuid ? undefined : (item.itemName || undefined),
-    quantity: toNum(item.quantity),
-    unitPrice: toNum(item.unitPrice),
-    discountPercent: toNum(item.discount),
-  };
+const CENTS_PER_UNIT = 100;
+const PERCENT_DIVISOR = 100;
+
+function round2(value: number): number {
+  return Math.round(value * CENTS_PER_UNIT) / CENTS_PER_UNIT;
+}
+
+/** The credit memo's money from its one Amount — the same arithmetic the
+ *  backend stores (creditmemo.ComputeAmountLine + ComputeHeader): the amount
+ *  is the subtotal, sales tax is charged on top of it, then the adjustment.
+ *  A blank or non-numeric amount counts as 0 while the user is still typing. */
+export function creditMemoTotals(
+  amount: unknown,
+  taxPercent: number,
+  adjustment: number,
+): { subtotal: number; taxTotal: number; total: number } {
+  const subtotal = round2(toNum(amount));
+  const taxTotal = round2(subtotal * (taxPercent / PERCENT_DIVISOR));
+  return { subtotal, taxTotal, total: round2(subtotal + taxTotal + adjustment) };
 }
 
 function billingFromData(data: Record<string, unknown>) {
@@ -326,20 +306,23 @@ function billingFromData(data: Record<string, unknown>) {
   };
 }
 
-/** Maps the AddCreditMemoPage form state + line items to the backend's
- *  `CreditMemoCreatePayload`. `customerUuid`/`invoiceUuid`/`salesOrderUuid`
- *  come from their respective pickers' selections. Status is intentionally
- *  omitted: every new credit memo starts at DRFT server-side. Applications
- *  are never sent here — they're created later via /apply. */
+/** Maps the AddCreditMemoPage form state to the backend's
+ *  `CreditMemoCreatePayload`. `customerUuid`/`invoiceUuid`/`salesOrderUuid`/
+ *  `sourcePaymentUuid` come from their respective pickers / the payment
+ *  handoff. Status is intentionally omitted: every new credit memo starts at
+ *  DRFT server-side. Applications are never sent here — they're created later
+ *  via /apply. */
 export function toCreatePayload(
   data: Record<string, unknown>,
-  lineItems: CreditMemoLineItem[],
   customFields: Record<string, unknown> = {},
 ): CreditMemoCreatePayload {
   return {
     customerUuid: toStr(data.customer_uuid),
     invoiceUuid: toStr(data.invoice_uuid) || undefined,
     salesOrderUuid: toStr(data.sales_order_uuid) || undefined,
+    sourcePaymentUuid: toStr(data.source_payment_uuid) || undefined,
+    amount: toNum(data.amount),
+    currencyId: toIntOrNull(data.currency_id),
     referenceNumber: toStr(data.reference_number),
     creditMemoDate: toStr(data.credit_memo_date),
     reason: toStr(data.reason),
@@ -350,23 +333,28 @@ export function toCreatePayload(
     internalNotes: toStr(data.internal_notes),
     billing: billingFromData(data),
     customFields,
-    lines: lineItems.map((item, i) => toLineInput(item, i + 1)),
   };
 }
 
 /** Maps the EditCreditMemoPage form state to the backend's
- *  `CreditMemoUpdatePayload` — no customer/invoice/salesOrder (immutable
- *  post-creation). `recordVersion` must be the version last read from the
- *  server, for optimistic locking. */
+ *  `CreditMemoUpdatePayload` — no customer/invoice/salesOrder/sourcePayment
+ *  (immutable post-creation). `recordVersion` must be the version last read
+ *  from the server, for optimistic locking.
+ *
+ *  `amount` is only sent when it differs from `originalAmount`: the backend
+ *  replaces any legacy line items with a single amount when it receives one, so
+ *  an untouched amount must not be resent. */
 export function toUpdatePayload(
   data: Record<string, unknown>,
-  lineItems: CreditMemoLineItem[],
   recordVersion: number,
   customFields: Record<string, unknown> = {},
+  originalAmount?: string,
 ): CreditMemoUpdatePayload {
+  const amountEdited = originalAmount !== undefined && toNum(data.amount) !== toNum(originalAmount);
   return {
     referenceNumber: toStr(data.reference_number),
     creditMemoDate: toStr(data.credit_memo_date),
+    currencyId: toIntOrNull(data.currency_id),
     reason: toStr(data.reason),
     salesTaxPercent: toNum(data.sales_tax_pct),
     adjustment: toNum(data.adjustment),
@@ -375,7 +363,7 @@ export function toUpdatePayload(
     internalNotes: toStr(data.internal_notes),
     billing: billingFromData(data),
     customFields,
-    lines: lineItems.map((item, i) => toLineInput(item, i + 1)),
+    ...(amountEdited ? { amount: toNum(data.amount) } : {}),
     recordVersion,
   };
 }
@@ -392,10 +380,10 @@ function idOrEmpty(id: number | null | undefined): string {
  *  display, not plain form fields. */
 export function fromCreditMemo(creditMemo: CreditMemo): {
   data: Record<string, unknown>;
-  lineItems: CreditMemoLineItem[];
   customer: { id: string; name: string };
   invoice: { id: string; number: string } | null;
   salesOrder: { id: string; number: string } | null;
+  sourcePayment: { id: string; number: string } | null;
   customFieldValues: Record<string, unknown>;
 } {
   // Older/legacy records can round-trip without a `billing` block at all —
@@ -407,6 +395,10 @@ export function fromCreditMemo(creditMemo: CreditMemo): {
     credit_memo_doc_num: creditMemo.creditMemoNumber,
     reference_number: creditMemo.referenceNumber ?? '',
     credit_memo_date: creditMemo.creditMemoDate,
+    // A legacy memo's lines are not editable any more; its net subtotal stands
+    // in as the amount. An amount-only memo has no discount, so this is its amount.
+    amount: (creditMemo.subtotal - creditMemo.discountTotal).toFixed(2),
+    currency_id: idOrEmpty(creditMemo.currencyId),
     reason: creditMemo.reason ?? '',
     sales_tax_pct: String(creditMemo.salesTaxPercent ?? 0),
     adjustment: String(creditMemo.adjustment ?? 0),
@@ -426,26 +418,12 @@ export function fromCreditMemo(creditMemo: CreditMemo): {
     bill_email: billing.email ?? '',
   };
 
-  const lineItems: CreditMemoLineItem[] = creditMemo.lines.map((line, i) => ({
-    id: `existing-${i}`,
-    lineNo: line.lineNumber,
-    itemName: line.itemName,
-    itemSku: line.sku,
-    units: line.unitCode,
-    quantity: String(line.quantity),
-    unitPrice: String(line.unitPrice),
-    discount: String(line.discountPercent),
-    amount: line.lineSubtotal.toFixed(2),
-    total: line.lineTotal.toFixed(2),
-    inventoryItemUuid: line.inventoryItemId ?? undefined,
-  }));
-
   return {
     data,
-    lineItems,
     customer: { id: creditMemo.customer.id, name: creditMemo.customer.name },
     invoice: creditMemo.invoice ? { id: creditMemo.invoice.id, number: creditMemo.invoice.number } : null,
     salesOrder: creditMemo.salesOrder ? { id: creditMemo.salesOrder.id, number: creditMemo.salesOrder.number } : null,
+    sourcePayment: creditMemo.sourcePayment ? { id: creditMemo.sourcePayment.id, number: creditMemo.sourcePayment.number } : null,
     customFieldValues: creditMemo.customFields ?? {},
   };
 }

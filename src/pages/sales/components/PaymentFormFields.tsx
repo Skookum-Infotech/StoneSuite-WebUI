@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls, parseNumberFieldValue } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -10,12 +11,19 @@ import type { PaymentFormField } from '@/lib/paymentForm';
 // existing `lookupKey` (CrmLookups-sourced) and static `options` (string[])
 // select sources — Payment methods aren't part of CrmLookups (see AD-1 of
 // docs/superpowers/specs/2026-07-15-payment-module-integration-design.md).
-export function PaymentField({ field, value, set, lookups }: {
+export function PaymentField({ field, value, set, lookups, error }: {
   field: PaymentFormField;
   value: unknown;
   set: (k: string, v: unknown) => void;
   lookups?: CrmLookups;
+  /** Inline validation message; the field takes focus when one appears. */
+  error?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (error) inputRef.current?.focus();
+  }, [error]);
+  const errorId = `${field.key}-error`;
   const str = typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
 
   if (field.type === 'readonly') {
@@ -88,6 +96,7 @@ export function PaymentField({ field, value, set, lookups }: {
     <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
       <ModernFieldShell label={field.label} required={field.required}>
         <input
+          ref={inputRef}
           type={field.type ?? 'text'}
           required={field.required}
           value={str}
@@ -95,25 +104,34 @@ export function PaymentField({ field, value, set, lookups }: {
           className={fieldCls}
           placeholder={field.placeholder}
           aria-label={field.label}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           step={field.type === 'number' ? '0.01' : undefined}
           min={field.type === 'number' ? field.min : undefined}
           max={field.type === 'number' ? field.max : undefined}
         />
+        {error && (
+          <p id={errorId} role="alert" className="text-xs font-medium text-destructive">
+            {error}
+          </p>
+        )}
       </ModernFieldShell>
     </div>
   );
 }
 
-export function PaymentSectionGrid({ fields, data, set, lookups }: {
+export function PaymentSectionGrid({ fields, data, set, lookups, errors }: {
   fields: PaymentFormField[];
   data: Record<string, unknown>;
   set: (k: string, v: unknown) => void;
   lookups?: CrmLookups;
+  /** Inline error per field key. */
+  errors?: Record<string, string>;
 }) {
   return (
     <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
       {fields.map((f) => (
-        <PaymentField key={f.key} field={f} value={data[f.key]} set={set} lookups={lookups} />
+        <PaymentField key={f.key} field={f} value={data[f.key]} set={set} lookups={lookups} error={errors?.[f.key]} />
       ))}
     </div>
   );

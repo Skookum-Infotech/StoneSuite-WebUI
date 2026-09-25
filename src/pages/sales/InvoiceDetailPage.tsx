@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Receipt, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { Receipt, Upload, Pencil, FileDown, Loader2, Send, ShoppingCart, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoiceService';
 import { lookupService } from '@/services/lookupService';
@@ -16,12 +16,11 @@ import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
+import { INVOICE_PAYABLE_STATUSES, INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
-import { RecordPaymentDialog } from './components/RecordPaymentDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 
@@ -61,6 +60,9 @@ export default function InvoiceDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('invoice', 'update');
   const canDelete = permissionsLoading || hasPermission('invoice', 'delete');
+  const canRecordPayment = !permissionsLoading
+    && hasPermission('invoice', 'update')
+    && hasPermission('payment', 'create');
 
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: ['invoice', id],
@@ -191,6 +193,17 @@ export default function InvoiceDetailPage() {
         subtitle={invoice.customer.name}
         recordNumber={invoice.invoiceNumber}
         statusBadge={<Badge color={color}>{invoice.status}</Badge>}
+        actions={canRecordPayment && INVOICE_PAYABLE_STATUSES.has(invoice.statusCode) && (
+          <button
+            type="button"
+            onClick={() => navigate(`/sales/payment/new?fromInvoice=${encodeURIComponent(id)}`)}
+            aria-label={`Record payment for invoice ${invoice.invoiceNumber}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+          >
+            <DollarSign className="size-3.5" />
+            Record payment
+          </button>
+        )}
       />
 
       <RecordApprovalBanner
@@ -245,6 +258,19 @@ export default function InvoiceDetailPage() {
                   )}
                   {invoice.priceLevelId && (
                     <ReadonlyField label="Price Level" value={lookups?.priceLevels.find((p) => p.id === invoice.priceLevelId)?.name ?? '—'} />
+                  )}
+                  {invoice.salesOrder && (
+                    <div className="space-y-1">
+                      <label className={fieldLabelCls}>Source Sales Order</label>
+                      <Link
+                        to={`/sales/sales_order/${invoice.salesOrder.id}`}
+                        aria-label={`View sales order ${invoice.salesOrder.number}`}
+                        className="inline-flex items-center gap-1.5 rounded-[10px] border border-stone-300 bg-stone-50 px-3.5 py-2.5 text-xs font-semibold text-accent-foreground hover:bg-stone-100 transition-colors"
+                      >
+                        <ShoppingCart className="size-3.5" />
+                        {invoice.salesOrder.number}
+                      </Link>
+                    </div>
                   )}
                   {invoice.memo && <ReadonlyField label="Memo" value={invoice.memo} full />}
                 </div>
@@ -351,14 +377,6 @@ export default function InvoiceDetailPage() {
                   <Send className="size-4 text-stone-400 shrink-0" />
                   Send to Customer
                 </button>
-              )}
-              {canEdit && (
-                <RecordPaymentDialog
-                  invoiceId={id}
-                  statusCode={invoice.statusCode}
-                  balanceDue={invoice.balanceDue}
-                  onRecorded={() => queryClient.invalidateQueries({ queryKey: ['invoice', id] })}
-                />
               )}
               <button
                 type="button"
