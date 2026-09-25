@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -279,4 +280,5 @@ export async function buildCrmRecordPdf(params: CrmExportParams): Promise<DocWit
 export async function exportCrmRecordToPdf(params: CrmExportParams): Promise<void> {
   const doc = await buildCrmRecordPdf(params);
   doc.save(buildExportFilename(params.recordType, params.recordNumber, params.title));
+  toast.success("Downloaded successfully!");
 }

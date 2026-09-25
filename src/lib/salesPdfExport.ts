@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -245,4 +246,5 @@ export async function buildSalesDocPdf(params: SalesExportParams): Promise<DocWi
 export async function exportSalesDocToPdf(params: SalesExportParams): Promise<void> {
   const doc = await buildSalesDocPdf(params);
   doc.save(buildExportFilename(params.docType, params.recordNumber, params.title));
+  toast.success("Downloaded successfully!");
 }
