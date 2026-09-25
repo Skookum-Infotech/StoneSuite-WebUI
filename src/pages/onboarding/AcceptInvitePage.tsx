@@ -8,6 +8,7 @@ import { Loader2, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 import { userService } from '@/services/tenantServices';
 import { authService } from '@/services/authService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { inviteFullNameDefault, looksLikeEmail } from '@/lib/inviteName';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,12 @@ const buildSchema = (requireFullName: boolean) =>
   z
     .object({
       fullName: requireFullName
-        ? z.string().min(1, 'Full name is required').max(120)
+        ? z
+            .string()
+            .trim()
+            .min(1, 'Full name is required')
+            .max(120)
+            .refine((v) => !looksLikeEmail(v), 'Enter your name, not your email address')
         : z.string().optional(),
       password: z.string().min(8, 'Password must be at least 8 characters'),
       confirm: z.string().min(1, 'Please confirm your password'),
@@ -110,7 +116,7 @@ export default function AcceptInvitePage() {
   } = useForm<Fields>({
     resolver: zodResolver(schema),
     defaultValues: {
-      fullName: invite?.fullName ?? '',
+      fullName: inviteFullNameDefault(invite?.fullName, invite?.email),
     },
   });
 
@@ -262,7 +268,7 @@ export default function AcceptInvitePage() {
               id="fullName"
               type="text"
               placeholder="Jane Smith"
-              defaultValue={invite!.fullName}
+              defaultValue={inviteFullNameDefault(invite!.fullName, invite!.email)}
               aria-invalid={Boolean(errors.fullName)}
               aria-describedby={errors.fullName ? 'name-error' : undefined}
               {...register('fullName')}
