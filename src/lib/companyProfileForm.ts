@@ -29,6 +29,16 @@ const addressSchema = z.object({
 // shape (every sub-field's own .default('') never runs in that case).
 const EMPTY_ADDRESS = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' } as const;
 
+// Bank details printed on invoices, quotes, estimates and sales orders — every
+// field optional, matching the backend's companyprofile.PaymentDetails.
+const paymentDetailsSchema = z.object({
+  bankName: shortField,
+  accountNumber: shortField,
+  routingNumber: shortField,
+});
+
+const EMPTY_PAYMENT_DETAILS = { bankName: '', accountNumber: '', routingNumber: '' } as const;
+
 export const companyProfileSchema = z.object({
   companyName: z
     .string()
@@ -47,6 +57,7 @@ export const companyProfileSchema = z.object({
   billingAddress: addressSchema.default(EMPTY_ADDRESS),
   shippingAddress: addressSchema.default(EMPTY_ADDRESS),
   returnAddress: addressSchema.default(EMPTY_ADDRESS),
+  paymentDetails: paymentDetailsSchema.default(EMPTY_PAYMENT_DETAILS),
 });
 
 export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
