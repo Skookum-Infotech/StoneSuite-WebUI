@@ -64,7 +64,7 @@ export function VendorBillPicker({
     queryFn: async (): Promise<VendorBillRef[]> => {
       const page = await vendorBillService.searchVendorBills({
         search: vendor!.name,
-        sort: [{ field: 'bill_date', dir: 'desc' }],
+        sort: [{ field: 'created_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
       const scoped = page.records.filter(

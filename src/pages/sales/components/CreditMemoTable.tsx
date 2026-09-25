@@ -21,18 +21,20 @@ const EXPORT_PAGE_SIZE = 200;
 // crmService. Mirrors InvoiceTable/PaymentTable's search/sort/cursor-
 // pagination UX for visual consistency.
 
-type SortField = 'creditMemoDate' | 'grandTotal' | 'unappliedAmount';
+type SortField = 'createdAt' | 'creditMemoDate' | 'grandTotal' | 'unappliedAmount';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
 const SORT_LABELS: Record<SortField, string> = {
+  createdAt: 'Date Created',
   creditMemoDate: 'Credit Memo Date',
   grandTotal: 'Grand Total',
   unappliedAmount: 'Unapplied',
 };
 
 const SORT_KEY: Record<SortField, string> = {
+  createdAt: 'created_at',
   creditMemoDate: 'credit_memo_date',
   grandTotal: 'grand_total',
   unappliedAmount: 'unapplied_amount',
@@ -51,7 +53,7 @@ export function CreditMemoTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('creditMemoDate');
+  const [sortBy, setSortBy] = useState<SortField>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');

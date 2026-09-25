@@ -97,7 +97,7 @@ export function RefundSourcePicker({ customer, kind, value, onChange, excludeIds
       if (kind === 'payment') {
         const page = await paymentService.searchPayments({
           search: customer!.name,
-          sort: [{ field: 'payment_date', dir: 'desc' }],
+          sort: [{ field: 'created_at', dir: 'desc' }],
           limit: RESULT_LIMIT,
         });
         return page.records
@@ -106,7 +106,7 @@ export function RefundSourcePicker({ customer, kind, value, onChange, excludeIds
       }
       const page = await creditMemoService.searchCreditMemos({
         search: customer!.name,
-        sort: [{ field: 'credit_memo_date', dir: 'desc' }],
+        sort: [{ field: 'created_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
       return page.records
