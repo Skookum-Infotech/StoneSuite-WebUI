@@ -11,6 +11,16 @@ export interface Address {
   zip: string;
 }
 
+// Bank details printed on the tenant's customer-facing documents (invoice,
+// quote, estimate, sales order) so a customer knows where to send payment.
+// Free text — account formats differ by country; a blank field is left off the
+// document.
+export interface PaymentDetails {
+  bankName: string;
+  accountNumber: string;
+  routingNumber: string; // wire routing number
+}
+
 // The tenant's own company name/address (Configuration -> Company Info) — as
 // opposed to a CRM Lead/Prospect/Customer's address, or a vendor's. One
 // singleton record per tenant, backed by GET/PUT /api/tenant/company-profile.
@@ -26,6 +36,9 @@ export interface CompanyProfile {
   billingAddress: Address;
   shippingAddress: Address;
   returnAddress: Address;
+  // Absent from a backend that predates payment details. On update, leaving it
+  // out keeps the stored values; sending it replaces them.
+  paymentDetails?: PaymentDetails;
 }
 
 // A physical address a tenant operates from (office, warehouse, showroom) —

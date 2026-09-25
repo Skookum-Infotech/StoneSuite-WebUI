@@ -12,6 +12,8 @@ describe('companyProfileSchema', () => {
     zip: '62704',
   };
 
+  const payment = { bankName: 'Chase Bank', accountNumber: '000123456789', routingNumber: '021000021' };
+
   const valid = {
     companyName: 'Acme Stone Co.',
     legalName: 'Acme Stone Company LLC',
@@ -24,6 +26,7 @@ describe('companyProfileSchema', () => {
     billingAddress: address,
     shippingAddress: address,
     returnAddress: address,
+    paymentDetails: payment,
   };
 
   it('accepts a fully populated profile', () => {
@@ -92,5 +95,29 @@ describe('companyProfileSchema', () => {
   it('rejects a shipping address city over the max length', () => {
     const city = 'a'.repeat(MAX_FIELD_LENGTH + 1);
     expect(companyProfileSchema.safeParse({ ...valid, shippingAddress: { ...address, city } }).success).toBe(false);
+  });
+
+  it('keeps the payment details it is given', () => {
+    const result = companyProfileSchema.safeParse(valid);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.paymentDetails).toEqual(payment);
+  });
+
+  it('defaults every payment detail to an empty string when omitted', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme Stone Co.' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.paymentDetails).toEqual({ bankName: '', accountNumber: '', routingNumber: '' });
+    }
+  });
+
+  it.each(['bankName', 'accountNumber', 'routingNumber'] as const)('accepts a %s at the max length', (field) => {
+    const paymentDetails = { ...payment, [field]: 'a'.repeat(MAX_FIELD_LENGTH) };
+    expect(companyProfileSchema.safeParse({ ...valid, paymentDetails }).success).toBe(true);
+  });
+
+  it.each(['bankName', 'accountNumber', 'routingNumber'] as const)('rejects a %s over the max length', (field) => {
+    const paymentDetails = { ...payment, [field]: 'a'.repeat(MAX_FIELD_LENGTH + 1) };
+    expect(companyProfileSchema.safeParse({ ...valid, paymentDetails }).success).toBe(false);
   });
 });
