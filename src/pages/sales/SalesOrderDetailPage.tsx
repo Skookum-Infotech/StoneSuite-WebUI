@@ -224,7 +224,7 @@ export default function SalesOrderDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
               >
                 {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
-                Convert to Invoice
+                Create Invoice
               </button>
             )}
             {canFabricate && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (

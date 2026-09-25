@@ -80,6 +80,9 @@ export interface Payment {
   amount: number;
   appliedTotal: number;
   unappliedAmount: number;
+  /** The part of the overpayment already turned into credit memos issued from
+   *  this payment — no longer free to apply or refund. Absent on older payloads. */
+  creditedTotal?: number;
   customFields?: Record<string, unknown>;
   applications: PaymentApplication[];
   createdAt?: string;

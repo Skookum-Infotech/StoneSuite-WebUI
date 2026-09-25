@@ -27,23 +27,16 @@ export interface CreditMemoAddressInput {
   email?: string;
 }
 
-/** One ordered line — same shape as Invoice's line input, sent under `lines`
- *  instead of `items`. A line is either a catalog pick (inventoryItemUuid) or
- *  free text (description); one of the two is required. */
-export interface CreditMemoLineInput {
-  lineNumber: number;
-  inventoryItemUuid?: string;
-  description?: string;
-  quantity: number;
-  unitPrice: number;
-  discountPercent?: number;
-  taxRateId?: number | null;
-}
-
 export interface CreditMemoCreatePayload {
   customerUuid: string;
   invoiceUuid?: string;
   salesOrderUuid?: string;
+  /** Issues the memo from this payment's overpayment: the memo's total is taken
+   *  out of what the payment can still be applied or refunded. */
+  sourcePaymentUuid?: string;
+  /** The credit — replaces line items. Sales tax and adjustment apply on top. */
+  amount: number;
+  currencyId?: number | null;
   referenceNumber?: string;
   creditMemoDate?: string;     // ISO date "yyyy-mm-dd" — defaults to CURRENT_DATE server-side
   reason?: string;
@@ -54,7 +47,6 @@ export interface CreditMemoCreatePayload {
   adjustment?: number;
   billing?: CreditMemoAddressInput;
   customFields?: Record<string, unknown>;
-  lines: CreditMemoLineInput[];
   // Applications must never be sent at create time — they're only created via
   // the dedicated /apply endpoint once the credit memo is approved.
 }
@@ -64,8 +56,11 @@ export interface CreditMemoCreatePayload {
  *  locking — every PATCH must carry the version it read. */
 export type CreditMemoUpdatePayload = Omit<
   CreditMemoCreatePayload,
-  'customerUuid' | 'invoiceUuid' | 'salesOrderUuid'
+  'customerUuid' | 'invoiceUuid' | 'salesOrderUuid' | 'sourcePaymentUuid' | 'amount'
 > & {
+  /** Only sent when the user changed it — the backend replaces any legacy line
+   *  items with this single amount. */
+  amount?: number;
   recordVersion: number;
 };
 
@@ -93,6 +88,12 @@ export interface CreditMemoInvoiceRef {
 }
 
 export interface CreditMemoSalesOrderRef {
+  id: string;
+  number: string;
+}
+
+/** The payment a credit memo was issued from — its overpayment funds the memo. */
+export interface CreditMemoPaymentRef {
   id: string;
   number: string;
 }
@@ -145,6 +146,8 @@ export interface CreditMemo {
   customer: CreditMemoCustomerRef;
   invoice?: CreditMemoInvoiceRef | null;
   salesOrder?: CreditMemoSalesOrderRef | null;
+  sourcePayment?: CreditMemoPaymentRef | null;
+  currencyId?: number | null;
   referenceNumber?: string;
   creditMemoDate: string;
   reason?: string;
@@ -161,6 +164,8 @@ export interface CreditMemo {
   unappliedAmount: number;
   billing: CreditMemoAddressInput;
   customFields?: Record<string, unknown>;
+  /** Empty for memos created from an amount; kept for older memos that were
+   *  entered as line items. */
   lines: CreditMemoLine[];
   applications: CreditMemoApplication[];
   createdAt?: string;

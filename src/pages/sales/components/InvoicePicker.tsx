@@ -32,13 +32,14 @@ export interface InvoiceRef {
 // and ids in `excludeIds` (already added to this payment's applications)
 // are filtered out of the results.
 export function InvoicePicker({
-  customer, value, onChange, excludeIds = [], disabled,
+  customer, value, onChange, excludeIds = [], disabled, currencyCode = 'USD',
 }: {
   customer: { id: string; name: string } | null;
   value: InvoiceRef | null;
   onChange: (invoice: InvoiceRef | null) => void;
   excludeIds?: string[];
   disabled?: boolean;
+  currencyCode?: string;
 }) {
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -94,7 +95,7 @@ export function InvoicePicker({
         <Receipt className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="flex-1 truncate font-medium text-stone-800">{value.number}</span>
         <span className="shrink-0 text-xs text-stone-400 tabular-nums">
-          {value.balanceDue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })} due
+          {value.balanceDue.toLocaleString(undefined, { style: 'currency', currency: currencyCode })} due
         </span>
         <button
           type="button"
@@ -146,7 +147,7 @@ export function InvoicePicker({
                 <span className="truncate">{inv.number}</span>
               </span>
               <span className="shrink-0 tabular-nums text-stone-400">
-                {inv.balanceDue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                {inv.balanceDue.toLocaleString(undefined, { style: 'currency', currency: currencyCode })}
               </span>
             </button>
           ))}

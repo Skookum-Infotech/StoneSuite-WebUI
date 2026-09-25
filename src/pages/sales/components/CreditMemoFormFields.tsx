@@ -5,7 +5,7 @@ import {
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
-import type { CreditMemoFormField } from '@/lib/creditMemoForm';
+import { MONEY_STEP, type CreditMemoFormField } from '@/lib/creditMemoForm';
 
 // Renders one CreditMemoFormField — shared by the Add and Edit Credit Memo
 // forms. Mirrors InvoiceFormFields' InvoiceField/InvoiceSectionGrid.
@@ -127,6 +127,7 @@ export function CreditMemoField({ field, value, set, lookups, dependsOnValue, di
           placeholder={field.placeholder}
           min={field.min}
           max={field.max}
+          step={field.type === 'number' ? (field.step ?? MONEY_STEP) : undefined}
           aria-label={field.label}
         />
       </ModernFieldShell>

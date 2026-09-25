@@ -122,6 +122,9 @@ export default function PaymentDetailPage() {
 
   const color = PAYMENT_STATUS_COLORS[payment.status] ?? '#a8a29e';
   const applyBlocked = PAYMENT_BLOCKS_APPLY.has(payment.statusCode);
+  // Overpayment already turned into credit memos is not free to apply any more.
+  const creditedTotal = payment.creditedTotal ?? 0;
+  const availableToApply = Math.max(0, payment.unappliedAmount - creditedTotal);
 
   async function handleExportPdf() {
     if (!payment) return;
@@ -147,6 +150,7 @@ export default function PaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
+          ...(creditedTotal > 0 ? [{ label: 'Credited to credit memos', value: currency(creditedTotal) }] : []),
         ],
       });
     } catch (err) {
@@ -220,10 +224,12 @@ export default function PaymentDetailPage() {
                 </div>
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className={cn('grid gap-3', creditedTotal > 0 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-3')}>
                   <Total label="Amount" value={payment.amount} bold />
                   <Total label="Applied" value={payment.appliedTotal} />
                   <Total label="Unapplied" value={payment.unappliedAmount} bold />
+                  {creditedTotal > 0 && <Total label="Credited to credit memos" value={creditedTotal} />}
+                  {creditedTotal > 0 && <Total label="Available to apply" value={availableToApply} bold />}
                 </div>
               </div>
             </>
@@ -236,8 +242,8 @@ export default function PaymentDetailPage() {
                   <button
                     type="button"
                     onClick={() => setApplyOpen(true)}
-                    disabled={applyBlocked || payment.unappliedAmount <= 0}
-                    title={applyBlocked ? 'A voided payment cannot be applied.' : payment.unappliedAmount <= 0 ? 'No unapplied balance remaining.' : undefined}
+                    disabled={applyBlocked || availableToApply <= 0}
+                    title={applyBlocked ? 'A voided payment cannot be applied.' : availableToApply <= 0 ? 'No unapplied balance remaining.' : undefined}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     <DollarSign className="size-3.5" />
@@ -384,7 +390,7 @@ export default function PaymentDetailPage() {
         <ApplyDialog
           paymentId={id}
           customer={payment.customer}
-          unappliedAmount={payment.unappliedAmount}
+          unappliedAmount={availableToApply}
           excludeIds={payment.applications.map((a) => a.invoiceId)}
           onClose={() => setApplyOpen(false)}
           onApplied={() => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileMinus, Upload, Pencil, DollarSign, Unlink, Loader2, FileDown } from 'lucide-react';
+import { FileMinus, Upload, Pencil, DollarSign, Unlink, Loader2, FileDown, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -111,6 +111,9 @@ export default function CreditMemoDetailPage() {
   const isReadOnly = CREDIT_MEMO_READONLY_STATUSES.has(creditMemo.statusCode);
   const canVoid = canTransition && (isDraft || creditMemo.statusCode === 'APPV');
   const canApply = canUpdate && creditMemo.statusCode === 'APPV';
+  // A credit memo is one Amount, so it has no line items to show. Memos entered
+  // before that (which do have lines) keep a read-only Items tab.
+  const visibleTabs = TABS.filter((tab) => tab.key !== 'items' || creditMemo.lines.length > 0);
 
   async function handleExportPdf() {
     if (!creditMemo) return;
@@ -129,7 +132,7 @@ export default function CreditMemoDetailPage() {
         billTo: creditMemo.billing,
         notesText: creditMemo.notes || undefined,
         sections: [],
-        itemsTable: {
+        itemsTable: creditMemo.lines.length > 0 ? {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: creditMemo.lines.map((line) => [
             String(line.lineNumber),
@@ -143,10 +146,10 @@ export default function CreditMemoDetailPage() {
           ]),
           descriptions: creditMemo.lines.map((line) => line.description || undefined),
           numericFrom: 3,
-        },
+        } : undefined,
         totals: [
           { label: 'Subtotal', value: currency(creditMemo.subtotal) },
-          { label: 'Discount', value: currency(creditMemo.discountTotal) },
+          ...(creditMemo.discountTotal > 0 ? [{ label: 'Discount', value: currency(creditMemo.discountTotal) }] : []),
           { label: 'Tax', value: currency(creditMemo.taxTotal) },
           { label: 'Adjustment', value: currency(creditMemo.adjustment) },
           { label: 'Grand Total', value: currency(creditMemo.grandTotal), bold: true },
@@ -186,7 +189,7 @@ export default function CreditMemoDetailPage() {
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -215,6 +218,19 @@ export default function CreditMemoDetailPage() {
                   <ReadonlyField label="Reason" value={creditMemo.reason} />
                   <ReadonlyField label="Invoice" value={creditMemo.invoice?.number} />
                   <ReadonlyField label="Sales Order" value={creditMemo.salesOrder?.number} />
+                  {creditMemo.sourcePayment && (
+                    <div className="space-y-1">
+                      <label className={fieldLabelCls}>Source Payment</label>
+                      <Link
+                        to={`/sales/payment/${creditMemo.sourcePayment.id}`}
+                        aria-label={`View payment ${creditMemo.sourcePayment.number}`}
+                        className="inline-flex items-center gap-1.5 rounded-[10px] border border-stone-300 bg-stone-50 px-3.5 py-2.5 text-xs font-semibold text-accent-foreground hover:bg-stone-100 transition-colors"
+                      >
+                        <CreditCard className="size-3.5" />
+                        {creditMemo.sourcePayment.number}
+                      </Link>
+                    </div>
+                  )}
                   <ReadonlyField label="Sales Tax %" value={`${creditMemo.salesTaxPercent}%`} />
                   {creditMemo.memo && <ReadonlyField label="Memo" value={creditMemo.memo} full />}
                   {creditMemo.notes && <ReadonlyField label="Notes" value={creditMemo.notes} full />}
@@ -227,7 +243,7 @@ export default function CreditMemoDetailPage() {
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                   <Total label="Subtotal" value={creditMemo.subtotal} />
-                  <Total label="Discount" value={creditMemo.discountTotal} />
+                  {creditMemo.discountTotal > 0 && <Total label="Discount" value={creditMemo.discountTotal} />}
                   <Total label="Tax" value={creditMemo.taxTotal} />
                   <Total label="Adjustment" value={creditMemo.adjustment} />
                   <Total label="Grand Total" value={creditMemo.grandTotal} bold />
