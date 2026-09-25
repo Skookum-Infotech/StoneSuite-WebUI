@@ -29,6 +29,13 @@ const MAX_MARKER_RANGE = 10;
 // answer cited: [1], [1, 2], [1-3], [1–3].
 const markerRe = /\[(\d+(?:\s*[,\-\u2013]\s*\d+)*)\](?!\()/g;
 
+// Splits on fenced (```...```) and inline (`...`) code so marker rewriting
+// can skip them \u2014 a code sample that happens to contain "array[1]" or an
+// index expression must render verbatim, not become a citation link. The
+// capturing group makes String.prototype.split keep the delimiters in the
+// result, interleaved: even indices are prose, odd indices are code.
+const codeSegmentRe = /(```[\s\S]*?```|`[^`\n]*`)/g;
+
 function markerNumbers(inner: string): number[] {
   const out: number[] = [];
   for (const part of inner.split(',')) {
@@ -40,10 +47,17 @@ function markerNumbers(inner: string): number[] {
   return out;
 }
 
-/** Rewrites [n] markers as links to "#cite-n" so the markdown renderer can
- *  turn them into citation buttons. */
-export function linkCitationMarkers(text: string): string {
+function linkMarkersInProse(text: string): string {
   return text.replace(markerRe, (_, inner: string) =>
     markerNumbers(inner).map((n) => `[${n}](${CITE_PREFIX}${n})`).join(''),
   );
+}
+
+/** Rewrites [n] markers as links to "#cite-n" so the markdown renderer can
+ *  turn them into citation buttons \u2014 outside code spans/blocks only. */
+export function linkCitationMarkers(text: string): string {
+  return text
+    .split(codeSegmentRe)
+    .map((segment, i) => (i % 2 === 1 ? segment : linkMarkersInProse(segment)))
+    .join('');
 }

@@ -80,12 +80,21 @@ describe('AIAssistantConfigPage', () => {
     expect(setTenantAIEnabled).not.toHaveBeenCalled();
   });
 
-  it('disables the switch for a caller without company-profile configure', async () => {
+  it('disables the switch for a caller without company-profile configure, and says why', async () => {
     hasPermission.mockImplementation((resource, action) => !(resource === 'company_profile' && action === 'configure'));
     vi.mocked(getAIStatus).mockResolvedValue(status());
     renderPage();
 
     expect(await screen.findByRole('switch', { name: SWITCH_NAME })).toBeDisabled();
+    expect(screen.getByText(/don't have permission to change this setting/)).toBeInTheDocument();
+  });
+
+  it('does not show the permission note for a caller who can configure it', async () => {
+    vi.mocked(getAIStatus).mockResolvedValue(status());
+    renderPage();
+
+    expect(await screen.findByRole('switch', { name: SWITCH_NAME })).toBeEnabled();
+    expect(screen.queryByText(/don't have permission to change this setting/)).not.toBeInTheDocument();
   });
 
   it('shows the server message when saving fails', async () => {

@@ -2,12 +2,27 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircleHelp, LifeBuoy, Sparkles } from 'lucide-react';
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
+import { useAssistantConversation } from '@/components/ai/useAssistantConversation';
 import { useAIStatus } from '@/hooks/useAIStatus';
 import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
 import { supportPath } from '@/lib/feedback';
+import { warmAssistant } from '@/services/aiService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
+
+/** Minimum gap between warmAssistant() calls. Module-level (not a ref) so it
+ *  also guards against React StrictMode's deliberate double-invoke of
+ *  effects in dev, which would otherwise fire it twice on the same open. */
+const WARM_ASSISTANT_MIN_INTERVAL_MS = 5 * 60 * 1000;
+let lastWarmAssistantAt = 0;
+
+function warmAssistantThrottled(): void {
+  const now = Date.now();
+  if (now - lastWarmAssistantAt < WARM_ASSISTANT_MIN_INTERVAL_MS) return;
+  lastWarmAssistantAt = now;
+  void warmAssistant().catch(() => {});
+}
 
 // Single "Help" entry point in the header (replaces the separate floating AI
 // assistant button and the standalone feedback icon): opens a small dropdown
@@ -15,11 +30,17 @@ import { cn } from '@/lib/utils';
 // the Support page, which also has its own sidebar entry). Rendered for both
 // tenant staff and customer-portal sessions; the Assistant item is staff-only,
 // since the assistant lives under /api/tenant/*, which a portal token can't reach.
+//
+// The conversation (and its typed-but-unsent draft) live here, not in
+// AssistantPanel: HelpMenu stays mounted for the whole session (it's in
+// MainLayout's header), so closing the panel doesn't abort an in-flight
+// stream or lose what was being typed — only Stop does that.
 export function HelpMenu() {
   const menuOpen = useHeaderMenuStore((s) => s.openMenu === 'help');
   const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
   const isPortal = useAuthStore((s) => s.kind === 'portal');
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const conversation = useAssistantConversation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const unreadCount = useFeedbackUnreadCount();
@@ -27,6 +48,14 @@ export function HelpMenu() {
   // this) intentionally reads as "not available" — hide the entry rather
   // than flash it on and then off once the platform/tenant switch is known.
   const assistantAvailable = useAIStatus().data?.available === true;
+
+  // Gets the model loaded in the background as soon as the menu is opened
+  // (not only once the panel itself is opened), so the first real question
+  // pays less of Ollama's cold-start cost. Errors (assistant off, model
+  // unreachable) surface soon enough from the ask itself.
+  useEffect(() => {
+    if (menuOpen && assistantAvailable) warmAssistantThrottled();
+  }, [menuOpen, assistantAvailable]);
 
   // Same click-outside-closes convention as MainLayout's own profile menu.
   useEffect(() => {
@@ -128,6 +157,8 @@ export function HelpMenu() {
 
       {assistantOpen && (
         <AssistantPanel
+          conversation={conversation}
+          draft={{ value: conversation.draft, onChange: conversation.setDraft }}
           onClose={() => {
             setAssistantOpen(false);
             triggerRef.current?.focus();

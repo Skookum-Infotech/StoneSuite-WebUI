@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PlatformAISettings } from '@/types/ai';
@@ -158,5 +158,58 @@ describe('PlatformAIPage master switch', () => {
 
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     await waitFor(() => expect(setPlatformAIEnabled).toHaveBeenCalledWith(true));
+  });
+
+  it('shows "Turning off…" on the confirm button until the mutation settles', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getPlatformAISettings).mockResolvedValue(settings({ enabled: true }));
+    let resolveToggle!: (s: PlatformAISettings) => void;
+    vi.mocked(setPlatformAIEnabled).mockReturnValue(new Promise((r) => { resolveToggle = r; }));
+    renderPage();
+
+    await user.click(await screen.findByRole('switch', { name: SWITCH_NAME }));
+    await user.click(screen.getByRole('button', { name: 'Turn off for everyone' }));
+
+    expect(await screen.findByRole('button', { name: 'Turning off…' })).toBeInTheDocument();
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    resolveToggle(settings({ enabled: false, ollamaState: 'stopped' }));
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+  });
+
+  it('polls the platform settings every 5s for 60s after a toggle, to catch the AI server state up', async () => {
+    // The polling setInterval is created in response to the mutation
+    // settling, so fake timers need to be active for that whole sequence —
+    // switching to them only afterward would leave the interval on the real
+    // clock. fireEvent (not userEvent) drives the clicks: it dispatches
+    // synchronously with none of userEvent's own real-timer-based waits.
+    vi.useFakeTimers();
+    try {
+      vi.mocked(getPlatformAISettings)
+        .mockResolvedValueOnce(settings({ enabled: true, ollamaState: 'started' }))
+        .mockResolvedValue(settings({ enabled: false, ollamaState: 'stopped' }));
+      vi.mocked(setPlatformAIEnabled).mockResolvedValue(settings({ enabled: false, ollamaState: 'started' }));
+      renderPage();
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); }); // flush the initial settings query
+
+      fireEvent.click(screen.getByRole('switch', { name: SWITCH_NAME }));
+      fireEvent.click(screen.getByRole('button', { name: 'Turn off for everyone' }));
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); }); // flush the mutation + its effects
+      expect(setPlatformAIEnabled).toHaveBeenCalledTimes(1);
+
+      const callsBeforePoll = vi.mocked(getPlatformAISettings).mock.calls.length;
+      await act(() => vi.advanceTimersByTimeAsync(61_000));
+
+      // ~12 polls over 60s at a 5s interval.
+      expect(vi.mocked(getPlatformAISettings).mock.calls.length).toBeGreaterThan(callsBeforePoll + 8);
+
+      // Polling stops once the 60s window elapses — no further calls.
+      const callsAfterWindow = vi.mocked(getPlatformAISettings).mock.calls.length;
+      await act(() => vi.advanceTimersByTimeAsync(20_000));
+      expect(vi.mocked(getPlatformAISettings).mock.calls.length).toBe(callsAfterWindow);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
