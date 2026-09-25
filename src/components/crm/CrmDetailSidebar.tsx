@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Upload, Plus, Pencil, X, LayoutList, FileDown, Loader2 } from "lucide-react";
+import { Upload, Pencil, X, LayoutList, FileDown, Loader2 } from "lucide-react";
 import { Badge, ErrorNote } from "@/components/tenant/ui";
-import { resolveStatusColor } from "@/components/crm/formUtils";
+import { DangerZoneCard } from "@/components/tenant/DangerZoneCard";
+import { resolveStatusColor, quickActionRowCls } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
 import type { StatusInfo, AssignableUser } from "@/types/tenant";
 
@@ -40,8 +41,7 @@ const headingCls =
   "text-xs font-semibold text-stone-400";
 const rowCls =
   "flex justify-between items-center py-2 border-b border-stone-100 last:border-0 text-xs";
-const actionRowCls =
-  "flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left";
+const actionRowCls = quickActionRowCls;
 
 /** Sticky right-panel shown on all CRM record detail pages.
  *  On lg+: renders inline. On mobile: FAB in bottom-right corner → slide-up sheet. */
@@ -93,10 +93,6 @@ export function CrmDetailSidebar({
               Edit record
             </button>
           )}
-          <button type="button" className={actionRowCls} aria-label="Add note">
-            <Plus className="size-4 text-stone-400 shrink-0" />
-            Add note
-          </button>
           {onExportPdf && (
             <button
               type="button"
@@ -154,10 +150,7 @@ export function CrmDetailSidebar({
 
       {/* Danger Zone */}
       {deleteSlot && (
-        <div className={cardCls}>
-          <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-          <div className="space-y-0.5">{deleteSlot}</div>
-        </div>
+        <DangerZoneCard>{deleteSlot}</DangerZoneCard>
       )}
     </div>
   );

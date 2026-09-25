@@ -4,6 +4,7 @@
 // assembled into the wire payload only at submit time via toCreatePayload.
 
 import type { CrmLookups } from '@/services/lookupService';
+import { isInvalidPhoneValue } from './phoneValidation';
 import type {
   AcceptedPaymentMethod, Vendor, VendorCreatePayload, VendorType,
 } from '@/types/vendor';
@@ -128,7 +129,29 @@ export function validateVendorForm(data: Record<string, unknown>): VendorFieldEr
   } else {
     if (!String(data.legal_name ?? '').trim()) errors.push({ key: 'legal_name', label: 'Legal Business Name' });
   }
+
+  if (isInvalidPhoneValue(String(data.fax_number ?? ''))) {
+    errors.push({ key: 'fax_number', label: 'Fax Number' });
+  }
+  if (isInvalidPhoneValue(String(data.contact_point_telephone ?? ''))) {
+    errors.push({ key: 'contact_point_telephone', label: 'Contact Telephone' });
+  }
   return errors;
+}
+
+/** The name AddVendorPage's duplicate-name check searches/matches against —
+ *  there's no client-side displayName like Vendor.displayName until the
+ *  record exists, so this derives the same value from the in-progress form:
+ *  legal name for an Organization, "first last" for a Person. */
+export function vendorNameForDuplicateCheck(data: Record<string, unknown>): string {
+  const vendorType = (data.vendor_type as VendorType) ?? 'Organization';
+  if (vendorType === 'Person') {
+    return [data.given_name, data.family_name]
+      .map((v) => String(v ?? '').trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+  return String(data.legal_name ?? '').trim();
 }
 
 // ── Payload mapping (UI form state -> create contract) ───────────────────────

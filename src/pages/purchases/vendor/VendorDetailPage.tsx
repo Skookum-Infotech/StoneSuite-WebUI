@@ -16,6 +16,7 @@ import type { PurchasesPdfSection } from '@/lib/purchasesPdfExport';
 import { VendorOverviewTab } from './components/VendorOverviewTab';
 import { VendorAuditTab } from './components/VendorAuditTab';
 import { DeleteVendorDialog } from './components/DeleteVendorDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -83,14 +84,15 @@ export default function VendorDetailPage() {
         title: vendor.displayName || 'Vendor',
         recordNumber: vendor.vendorNumber,
         statusLabel: vendor.status,
-        counterpartyLabel: 'Vendor Type',
-        counterpartyName: vendor.vendorType,
-        createdAt: vendor.createdAt,
-        updatedAt: vendor.updatedAt,
+        issueDate: fmtDate(vendor.createdAt),
+        issueDateLabel: 'Created',
+        dueDate: fmtDate(vendor.updatedAt),
+        dueDateLabel: 'Updated',
         sections: isPerson ? [
           {
             title: 'Personal Identity',
             rows: [
+              ['Vendor Type', vendor.vendorType],
               ['Honorific Prefix', vendor.honorificPrefix || ''],
               ['First Name', vendor.givenName || ''],
               ['Middle Name', vendor.additionalName || ''],
@@ -113,6 +115,7 @@ export default function VendorDetailPage() {
           {
             title: 'Company Details',
             rows: [
+              ['Vendor Type', vendor.vendorType],
               ['Legal Business Name', vendor.legalName || ''],
               ['Company Registration Info / Certification', vendor.registrationInfo || ''],
               ['DUNS Number', vendor.dunsNumber || ''],
@@ -251,8 +254,7 @@ export default function VendorDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorDialog
                 vendorId={id}
                 label={vendor.displayName}
@@ -261,7 +263,7 @@ export default function VendorDetailPage() {
                   navigate('/purchases/vendor');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </div>
       </div>

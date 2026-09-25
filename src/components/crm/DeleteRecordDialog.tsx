@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { crmService } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
 type Props = {
   recordId: string;
@@ -40,15 +41,12 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
 
   return (
     <>
-      <button
-        type="button"
+      <DangerZoneAction
+        description="Delete this record permanently."
+        buttonLabel="Delete record"
+        ariaLabel={`Delete ${label}`}
         onClick={() => setOpen(true)}
-        aria-label={`Delete ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
-      >
-        <Trash2 className="size-4 shrink-0" />
-        Delete record
-      </button>
+      />
 
       {open && createPortal(
         <div

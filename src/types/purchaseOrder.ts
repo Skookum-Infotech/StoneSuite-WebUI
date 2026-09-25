@@ -7,7 +7,7 @@
 // router — served from `/api/tenant/purchase-orders*`. Structurally
 // identical to Estimate, with a vendor instead of a customer and a single
 // ship-to address instead of a billing/shipping pair.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -90,6 +90,10 @@ export interface PurchaseOrderLine {
   /** Cumulative quantity received against this line via Item Receipt — 0
    *  until that module ships (AD-4 receiving hook). */
   qtyReceived: number;
+  /** How much of this line existing vendor bills already cover (live,
+   *  non-void bills raised from this order). Received minus billed is what a
+   *  new bill can still claim. */
+  qtyBilled: number;
   unitPrice: number;
   discountPercent: number;
   taxPercent: number;
@@ -122,6 +126,8 @@ export interface PurchaseOrder {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   vendor: PurchaseOrderVendorRef;
   orderDate: string;
   expectedDate?: string;

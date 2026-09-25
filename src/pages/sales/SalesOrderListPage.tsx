@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/store/useAuthStore';
+import { UploadDocumentButton } from '@/components/tenant/UploadDocumentButton';
 import { SalesOrderTable } from './components/SalesOrderTable';
 
 export default function SalesOrderListPage() {
@@ -9,6 +11,13 @@ export default function SalesOrderListPage() {
   // merged-login design) but never creates a sales order — the backend has
   // no such endpoint under /api/portal/*, so the button would always 404.
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
+
+  // TODO(backend): there is no upload endpoint yet, so a picked file is only
+  // acknowledged, never sent. To wire it up, add the call to salesOrderService,
+  // run it through a useMutation, and invalidate ['sales-orders'] on success.
+  function handleFileSelected(file: File) {
+    toast.info(`"${file.name}" selected — sending it to the backend isn't wired up yet.`);
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -35,7 +44,13 @@ export default function SalesOrderListPage() {
         </div>
 
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
-          <SalesOrderTable />
+          <SalesOrderTable
+            toolbarActions={
+              !isCustomer && (
+                <UploadDocumentButton documentLabel="Sales Order" onFileSelected={handleFileSelected} />
+              )
+            }
+          />
         </div>
       </div>
     </div>

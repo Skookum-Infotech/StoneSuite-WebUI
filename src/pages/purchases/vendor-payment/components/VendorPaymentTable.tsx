@@ -10,13 +10,14 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { VP_EDITABLE_STATUSES } from '@/lib/vendorPaymentForm';
+import { VP_EDITABLE_STATUSES, VP_STATUS_COLORS } from '@/lib/vendorPaymentForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorPaymentFilterState,
 } from '@/lib/vendorPaymentFilters';
 import { VendorPaymentFilterDrawer } from './VendorPaymentFilterDrawer';
 import { VendorPaymentStatusControl } from './VendorPaymentStatusControl';
+import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { VendorPaymentSearchRequest } from '@/types/vendorPayment';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -82,7 +83,7 @@ export function VendorPaymentTable() {
     },
   });
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_payment', 'update');
 
   const [term, setTerm] = useState('');
@@ -347,17 +348,21 @@ export function VendorPaymentTable() {
                         {payment.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <VendorPaymentStatusControl
-                          order={{
-                            statusCode: payment.statusCode,
-                            approvalStatus: payment.approvalStatus,
-                            scheduledDate: payment.scheduledDate,
-                            nextStatusCodes: payment.nextStatusCodes,
-                          }}
-                          onChange={(code) => transition.mutate({ id: payment.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === payment.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <VendorPaymentStatusControl
+                            order={{
+                              statusCode: payment.statusCode,
+                              approvalStatus: payment.approvalStatus,
+                              scheduledDate: payment.scheduledDate,
+                              nextStatusCodes: payment.nextStatusCodes,
+                            }}
+                            onChange={(code) => transition.mutate({ id: payment.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === payment.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={payment.status} color={VP_STATUS_COLORS[payment.statusCode]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (

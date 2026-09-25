@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
-  VB_ALLOWED_TRANSITIONS, isVbTransitionBlocked, vbTransitionLabel, vbStatusLabel,
-  calcLineItem, calcHeaderTotals, toCreatePayload, validateVendorBillCustomFields,
+  VB_ALLOWED_TRANSITIONS, VB_HEADER_TRANSITION_CODES, VB_VOID_CODE, VB_CONFIRMED_TRANSITION_CODES,
+  isVbTransitionBlocked, vbTransitionLabel, vbStatusLabel,
+  vbNextCodes, vbHeaderTransitions, vbCanVoid, vbDropdownTransitions, isVbConfirmedTransition,
+  calcLineItem, calcHeaderTotals, toCreatePayload, fromVendorBill, validateVendorBillCustomFields,
 } from './vendorBillForm'
 import type { FieldDefinition } from '@/types/tenant'
+import type { VendorBill } from '@/types/vendorBill'
 
 describe('VB_ALLOWED_TRANSITIONS', () => {
   it.each([
@@ -154,6 +157,130 @@ describe('toCreatePayload line item description mapping', () => {
     expect(payload.customFields).toEqual({ budget_code: 'CAP-100' })
     expect(payload).not.toHaveProperty('shipTo')
     expect(payload).not.toHaveProperty('shippingCharge')
+  })
+})
+
+describe('toCreatePayload optional purchase order link', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', bill_date: '2026-08-11' }
+
+  it.each([
+    ['a picked order', 'po-1', 'po-1'],
+    ['no order chosen (undefined)', undefined, undefined],
+    ['a cleared order (empty string)', '', undefined],
+    ['a null order', null, undefined],
+  ])('maps %s to purchaseOrderUuid', (_label, formValue, expected) => {
+    const payload = toCreatePayload({ ...baseData, purchase_order_uuid: formValue }, [])
+    expect(payload.purchaseOrderUuid).toBe(expected)
+  })
+
+  it('leaves the field out of the serialized body when nothing is linked', () => {
+    const body = JSON.parse(JSON.stringify(toCreatePayload(baseData, [])))
+    expect(body).not.toHaveProperty('purchaseOrderUuid')
+  })
+})
+
+describe('fromVendorBill purchase order link', () => {
+  const bill: VendorBill = {
+    id: 'vb-1', vendorBillNumber: 'VB-1001', status: 'Draft', statusCode: 'DRFT',
+    approvalStatus: 'none', gated: false, approvers: [], requiredApprovals: 0, approvedCount: 0,
+    canApprove: false, isOverride: false, callerAlreadyApproved: false,
+    vendor: { id: 'v-1', name: 'Marble Supply Co' },
+    vendorInvoiceNumber: '', referenceNumber: '', billDate: '2026-08-11',
+    paymentTermsId: null, currencyId: null, exchangeRate: 1, salesTaxPercent: 0,
+    memo: '', notes: '', internalNotes: '', termsConditions: '',
+    subtotal: 0, discountTotal: 0, taxTotal: 0, adjustment: 0, grandTotal: 0, amountPaid: 0, balanceDue: 0,
+    items: [],
+  }
+
+  it('returns the linked order so Edit can show it read-only', () => {
+    const linked = { ...bill, purchaseOrder: { id: 'po-1', number: 'PORD-000042' } }
+    expect(fromVendorBill(linked).purchaseOrder).toEqual({ id: 'po-1', number: 'PORD-000042' })
+  })
+
+  it('returns null when the bill has no linked order', () => {
+    expect(fromVendorBill(bill).purchaseOrder).toBeNull()
+  })
+
+  it('does not leak the link into form data, so an Edit save never re-sends it', () => {
+    const linked = { ...bill, purchaseOrder: { id: 'po-1', number: 'PORD-000042' } }
+    const { data } = fromVendorBill(linked)
+    expect(toCreatePayload(data, []).purchaseOrderUuid).toBeUndefined()
+  })
+})
+
+describe('where each status move lives on the detail page', () => {
+  const statuses = Object.keys(VB_ALLOWED_TRANSITIONS)
+
+  it.each([
+    ['APPV', ['ODUE', 'PART', 'PAID']],
+    ['PART', ['ODUE', 'PAID']],
+    ['ODUE', ['PART', 'PAID']],
+    ['DRFT', []],
+    ['PAPV', []],
+    ['PAID', []],
+    ['VOID', []],
+  ])('%s offers the header buttons %j, in Overdue → Partially Paid → Paid order', (statusCode, want) => {
+    expect(vbHeaderTransitions({ statusCode })).toEqual(want)
+  })
+
+  it.each([
+    ['DRFT', true], ['PAPV', true], ['APPV', true], ['PART', true], ['ODUE', true],
+    ['PAID', false], ['VOID', false],
+  ])('%s can void: %s', (statusCode, want) => {
+    expect(vbCanVoid({ statusCode })).toBe(want)
+  })
+
+  it.each([
+    ['DRFT', ['PAPV']],
+    ['PAPV', ['APPV', 'DRFT']],
+    ['APPV', []],
+    ['PART', []],
+    ['ODUE', []],
+    ['PAID', []],
+    ['VOID', []],
+  ])('%s leaves the sidebar pill %j — only the approval moves', (statusCode, want) => {
+    expect(vbDropdownTransitions({ statusCode })).toEqual(want)
+  })
+
+  it("prefers the backend's own next-moves over the static map", () => {
+    // With nobody configured to approve, the backend collapses the PAPV
+    // checkpoint out of Draft and offers Approved directly.
+    const draft = { statusCode: 'DRFT', nextStatusCodes: ['APPV', 'VOID'] }
+    expect(vbNextCodes(draft)).toEqual(['APPV', 'VOID'])
+    expect(vbDropdownTransitions(draft)).toEqual(['APPV'])
+    expect(vbCanVoid(draft)).toBe(true)
+    expect(vbCanVoid({ statusCode: 'DRFT', nextStatusCodes: ['APPV'] })).toBe(false)
+  })
+
+  it('treats an unknown status as having no moves rather than throwing', () => {
+    expect(vbNextCodes({ statusCode: 'NOPE' })).toEqual([])
+    expect(vbHeaderTransitions({ statusCode: 'NOPE' })).toEqual([])
+    expect(vbCanVoid({ statusCode: 'NOPE' })).toBe(false)
+  })
+
+  it.each(statuses)('%s: every legal move has exactly one home (header, Void, or pill)', (statusCode) => {
+    const order = { statusCode }
+    const homes = [
+      ...vbHeaderTransitions(order),
+      ...(vbCanVoid(order) ? [VB_VOID_CODE] : []),
+      ...vbDropdownTransitions(order),
+    ]
+    expect([...homes].sort()).toEqual([...vbNextCodes(order)].sort())
+  })
+
+  it('confirms exactly the terminal statuses — those no legal move leaves', () => {
+    const terminal = statuses.filter((s) => VB_ALLOWED_TRANSITIONS[s].length === 0).sort()
+    expect([...VB_CONFIRMED_TRANSITION_CODES].sort()).toEqual(terminal)
+  })
+
+  it.each([
+    ['PAID', true], ['VOID', true], ['PART', false], ['ODUE', false], ['PAPV', false], ['', false],
+  ])('isVbConfirmedTransition(%j) = %s', (code, want) => {
+    expect(isVbConfirmedTransition(code)).toBe(want)
+  })
+
+  it('never puts a terminal move in the header except Paid, whose confirm the page owns', () => {
+    expect(VB_HEADER_TRANSITION_CODES.filter((c) => VB_ALLOWED_TRANSITIONS[c].length === 0)).toEqual(['PAID'])
   })
 })
 

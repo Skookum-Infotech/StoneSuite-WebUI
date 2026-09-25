@@ -12,7 +12,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls, fieldCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY } fro
 import { statusToastLabel } from '@/lib/statusToast';
 import { PaymentAuditTab } from './components/PaymentAuditTab';
 import { DeletePaymentDialog } from './components/DeletePaymentDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
@@ -107,6 +108,14 @@ export default function PaymentDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['payment', id] });
+    queryClient.invalidateQueries({ queryKey: ['payments'] });
+    toast.success('Rejected — edit it to resubmit for approval.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading payment…" /></div>;
   if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load payment.')}</ErrorNote></div>;
@@ -126,19 +135,10 @@ export default function PaymentDetailPage() {
         recordNumber: payment.paymentNumber,
         statusLabel: payment.status,
         customerName: payment.customer.name,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt,
+        issueDate: fmtDate(payment.paymentDate),
+        keyAmount: { label: 'Unapplied', value: currency(payment.unappliedAmount) },
+        notesText: payment.memo || undefined,
         sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Payment Method', payment.method || ''],
-              ['Reference #', payment.referenceNumber || ''],
-              ['Payment Date', fmtDate(payment.paymentDate)],
-              ['Memo', payment.memo || ''],
-              ['Internal Notes', payment.internalNotes || ''],
-            ],
-          },
           {
             title: 'Applications',
             rows: payment.applications.map((app) => [`Invoice ${app.invoiceNumber || '—'}`, currency(app.amount)]),
@@ -147,7 +147,6 @@ export default function PaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
-          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -169,24 +168,16 @@ export default function PaymentDetailPage() {
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
       />
 
-      {payment.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={payment.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={payment.canApprove}
-            isOverride={payment.isOverride}
-            requiredApprovals={payment.requiredApprovals}
-            approvedCount={payment.approvedCount}
-            callerAlreadyApproved={payment.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve payment.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={payment}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'payment', run: (reason) => paymentService.reject(id, reason), onRejected: handleRejected }}
+      />
+      {payment.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve payment.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -375,8 +366,7 @@ export default function PaymentDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeletePaymentDialog
                 paymentId={id}
                 label={`Payment ${payment.paymentNumber}`}
@@ -385,7 +375,7 @@ export default function PaymentDetailPage() {
                   navigate('/sales/payment');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

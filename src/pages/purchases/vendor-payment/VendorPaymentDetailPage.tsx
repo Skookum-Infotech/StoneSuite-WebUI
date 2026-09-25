@@ -11,7 +11,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -23,6 +23,7 @@ import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicat
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
 import { VendorPaymentStatusControl } from './components/VendorPaymentStatusControl';
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { VendorPayment } from '@/types/vendorPayment';
 
 const TABS = [
@@ -109,6 +110,14 @@ export default function VendorPaymentDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['vendor-payment', id] });
+    queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor payment…" /></div>;
   if (!payment)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor payment.')}</ErrorNote></div>;
@@ -132,18 +141,19 @@ export default function VendorPaymentDetailPage() {
         title: payment.vendorPaymentNumber || 'Vendor Payment',
         recordNumber: payment.vendorPaymentNumber,
         statusLabel: payment.status,
+        issueDate: fmtDate(payment.paymentDate),
+        issueDateLabel: 'Payment Date',
+        dueDate: payment.scheduledDate ? fmtDate(payment.scheduledDate) : undefined,
+        dueDateLabel: 'Scheduled Date',
+        keyAmount: { label: 'Unapplied', value: currency(payment.unappliedAmount) },
         counterpartyName: payment.vendor.name,
-        createdAt: payment.createdAt,
-        updatedAt: payment.updatedAt,
+        notesText: payment.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Payment Method', payment.method || ''],
               ['Reference #', payment.referenceNumber || ''],
-              ['Payment Date', fmtDate(payment.paymentDate)],
-              ['Scheduled Date', payment.scheduledDate ? fmtDate(payment.scheduledDate) : ''],
-              ['Memo', payment.memo || ''],
               ['Internal Notes', payment.internalNotes || ''],
             ],
           },
@@ -161,7 +171,6 @@ export default function VendorPaymentDetailPage() {
         totals: [
           { label: 'Amount', value: currency(payment.amount), bold: true },
           { label: 'Applied', value: currency(payment.appliedTotal) },
-          { label: 'Unapplied', value: currency(payment.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -183,24 +192,17 @@ export default function VendorPaymentDetailPage() {
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
       />
 
-      {payment.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={payment.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={payment.canApprove}
-            isOverride={payment.isOverride}
-            requiredApprovals={payment.requiredApprovals}
-            approvedCount={payment.approvedCount}
-            callerAlreadyApproved={payment.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve vendor payment.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={payment}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'vendor payment', run: (reason) => vendorPaymentService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {payment.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve vendor payment.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -377,8 +379,7 @@ export default function VendorPaymentDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorPaymentDialog
                 vendorPaymentId={id}
                 label={`Vendor Payment ${payment.vendorPaymentNumber}`}
@@ -387,7 +388,7 @@ export default function VendorPaymentDetailPage() {
                   navigate('/purchases/vendor_payment');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

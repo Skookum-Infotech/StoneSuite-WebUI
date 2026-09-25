@@ -15,9 +15,10 @@ import { EstimateStatusControl } from './components/EstimateStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import {
-  fromEstimate, toCreatePayload, PAGE_TABS, type PageTab,
+  fromEstimate, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type EstimateLineItem, ESTIMATE_TERMINAL_STATUSES, ESTIMATE_STATUS_CODES,
 } from '@/lib/estimateForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
@@ -137,7 +138,11 @@ export default function EditEstimatePage() {
   );
 
   const save = useMutation({
-    mutationFn: () => estimateService.updateEstimate(id, toCreatePayload(data, lineItems, customFieldValues)),
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      return estimateService.updateEstimate(id, toCreatePayload(data, lineItems, customFieldValues));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['estimate', id] });
       queryClient.invalidateQueries({ queryKey: ['estimates'] });

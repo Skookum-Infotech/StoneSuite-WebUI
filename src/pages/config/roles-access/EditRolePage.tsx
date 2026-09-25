@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { SCOPES, SCOPE_LABELS } from "@/lib/scope";
 import { buildPermModules } from "@/lib/permissionMatrix";
 import type { PermModule, ResourceRow } from "@/lib/permissionMatrix";
+import { isDuplicateRoleName } from "@/lib/roleValidation";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import type { Grant, Role, Scope } from "@/types/tenant";
 
@@ -126,6 +127,7 @@ export default function EditRolePage(): React.JSX.Element | null {
         ),
       )}
       scopes={catalogQ.data?.scopes ?? SCOPES}
+      otherRoles={(rolesQ.data ?? []).filter((r) => r.id !== role.id)}
     />
   );
 }
@@ -137,11 +139,13 @@ function EditRoleInner({
   modules,
   actionsByResource,
   scopes,
+  otherRoles,
 }: {
   role: Role;
   modules: PermModule[];
   actionsByResource: Record<string, string[]>;
   scopes: Scope[];
+  otherRoles: Role[];
 }): React.JSX.Element {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -285,7 +289,10 @@ function EditRoleInner({
     },
   });
 
-  const canSubmit = Boolean(name.trim()) && !update.isPending;
+  const trimmedName = name.trim();
+  const isDuplicateName = isDuplicateRoleName(trimmedName, otherRoles);
+
+  const canSubmit = Boolean(name.trim()) && !isDuplicateName && !update.isPending;
   const totalGrants = Object.values(selected).reduce(
     (n, r) => n + r.actions.length,
     0,
@@ -350,7 +357,14 @@ function EditRoleInner({
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Sales Rep"
                       className="h-9 text-xs"
+                      aria-invalid={isDuplicateName}
+                      aria-describedby={isDuplicateName ? "rname-error" : undefined}
                     />
+                    {isDuplicateName && (
+                      <p id="rname-error" className="text-2xs text-red-500">
+                        A role named "{trimmedName}" already exists.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

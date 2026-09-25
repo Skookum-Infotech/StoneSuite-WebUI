@@ -6,7 +6,7 @@
 // a Quote's billing/shipping address references lkp_state/lkp_country by
 // numeric id (stateId/countryId), not free-text. A line item is either a
 // catalog pick or free-text, same as Estimate — see QuoteLineInput below.
-import type { FilterClause, SortKey, RecordApprover } from '@/types/tenant';
+import type { FilterClause, SortKey, RecordApprover, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -129,6 +129,8 @@ export interface Quote {
   canApprove: boolean;         // whether the requesting user can approve (configured approver OR super admin)
   isOverride: boolean;         // true when canApprove is only true because the user is a super admin, not a configured approver
   callerAlreadyApproved: boolean; // true if the requesting user already signed off this round (quorum may still need others)
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
   customer: QuoteCustomerRef;
   estimate?: QuoteEstimateRef | null;
   quoteDate: string;

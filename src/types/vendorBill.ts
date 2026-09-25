@@ -8,7 +8,7 @@
 // served from `/api/tenant/vendor-bills*`. Unlike Purchase Order, a vendor
 // bill has no shipping/address block and carries its own settlement ledger
 // (payments) plus optional Purchase Order lineage.
-import type { FilterClause, RecordApprover, SortKey } from '@/types/tenant';
+import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
 
@@ -29,6 +29,10 @@ export interface VendorBillLineInput {
 
 export interface CreateVendorBillPayload {
   vendorUuid: string;
+  /** Optional reference to one of the vendor's purchase orders. A plain link:
+   *  it copies no lines and records no billed quantity (only the PO's
+   *  "Convert to Bill" does). Create-only — fixed after creation like the vendor. */
+  purchaseOrderUuid?: string;
   vendorInvoiceNumber?: string;
   referenceNumber?: string;
   billDate?: string;    // ISO date "yyyy-mm-dd" — defaults to CURRENT_DATE server-side
@@ -46,10 +50,10 @@ export interface CreateVendorBillPayload {
   items: VendorBillLineInput[];
 }
 
-/** Update mirrors create minus the vendor (a vendor bill's vendor is fixed
- *  after creation — AD-2). Rejected by the server with a 400 once the bill
- *  has left DRFT — recall to draft to edit. */
-export type UpdateVendorBillPayload = Omit<CreateVendorBillPayload, 'vendorUuid'>;
+/** Update mirrors create minus the vendor and purchase order (a vendor bill's
+ *  vendor is fixed after creation — AD-2 — and so is its PO link). Rejected by
+ *  the server with a 400 once the bill has left DRFT — recall to draft to edit. */
+export type UpdateVendorBillPayload = Omit<CreateVendorBillPayload, 'vendorUuid' | 'purchaseOrderUuid'>;
 
 // ── Responses (server → client) ──────────────────────────────────────────────
 
@@ -59,8 +63,9 @@ export interface VendorBillVendorRef {
   number?: string;
 }
 
-/** Flattened {id, number} lineage reference — present only when this bill was
- *  created via a purchase order's "Convert to Bill" action (AD-8). */
+/** Flattened {id, number} lineage reference — present when this bill was
+ *  created via a purchase order's "Convert to Bill" action (AD-8) or was linked
+ *  to one by hand on the create form. */
 export interface VendorBillPurchaseOrderRef {
   id: string;
   number: string;
@@ -138,6 +143,8 @@ export interface VendorBill {
   canApprove: boolean;
   isOverride: boolean;
   callerAlreadyApproved: boolean;
+  canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
+  rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
 
   vendor: VendorBillVendorRef;
   purchaseOrder?: VendorBillPurchaseOrderRef; // nullable lineage (AD-8)

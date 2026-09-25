@@ -8,7 +8,7 @@ import { fabricationService } from '@/services/fabricationService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -21,6 +21,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
@@ -129,6 +130,14 @@ export default function SalesOrderDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+    queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading sales order…" /></div>;
   if (!order)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
@@ -147,22 +156,13 @@ export default function SalesOrderDetailPage() {
         recordNumber: order.salesOrderNumber,
         statusLabel: order.status,
         customerName: order.customer.name,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Order Date', fmtDate(order.orderDate)],
-              ['PO Number', order.poNumber || ''],
-              ['Payment Due Date', order.paymentDueDate ? fmtDate(order.paymentDueDate) : ''],
-              ['Sales Tax %', `${order.salesTaxPercent}%`],
-              ['Memo', order.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(order.billing) },
-          { title: 'Ship To', rows: addressRows(order.shipping) },
-        ],
+        issueDate: fmtDate(order.orderDate),
+        dueDate: order.paymentDueDate ? fmtDate(order.paymentDueDate) : undefined,
+        dueDateLabel: 'Payment Due Date',
+        billTo: order.billing,
+        shipTo: order.shipping,
+        notesText: order.memo || undefined,
+        sections: [],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: order.items.map((line) => [
@@ -175,6 +175,7 @@ export default function SalesOrderDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: order.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -252,24 +253,17 @@ export default function SalesOrderDetailPage() {
         </p>
       )}
 
-      {order.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={order.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={order.canApprove}
-            isOverride={order.isOverride}
-            requiredApprovals={order.requiredApprovals}
-            approvedCount={order.approvedCount}
-            callerAlreadyApproved={order.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={order}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'sales order', run: (reason) => salesOrderService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {order.gated && approve.isError && (
+        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -474,8 +468,7 @@ export default function SalesOrderDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteSalesOrderDialog
                 orderId={id}
                 label={`Sales Order ${order.salesOrderNumber}`}
@@ -484,7 +477,7 @@ export default function SalesOrderDetailPage() {
                   navigate('/sales/sales_order');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -512,17 +505,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

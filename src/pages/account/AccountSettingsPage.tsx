@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Lock,
   Shield,
@@ -18,9 +18,10 @@ import {
   Zap,
 } from 'lucide-react'
 import { authService } from '@/services/authService'
-import { userService, rbacService } from '@/services/tenantServices'
+import { rbacService } from '@/services/tenantServices'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useUserPermissions } from '@/hooks/useUserPermissions'
+import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import { apiErrorMessage } from '@/api/tenantClient'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -253,6 +254,9 @@ export default function AccountSettingsPage() {
   const { user, setAuth } = useAuthStore()
   const isCustomer = useAuthStore((s) => s.kind === 'portal')
   const { grants, isLoading: permissionsLoading, activeRoleId } = useUserPermissions()
+  // Same live /me/permissions response as the header menu, so the two can never
+  // disagree about which roles the user holds.
+  const roles = useCurrentUserRoles()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [showCurrent, setShowCurrent] = useState(false)
@@ -262,21 +266,6 @@ export default function AccountSettingsPage() {
 
   const [firstName, ...lastParts] = (user?.fullName ?? '').split(' ')
   const lastName = lastParts.join(' ')
-
-  // A customer-portal session has no workspace `users` row and userService
-  // lives under /api/tenant/*, which a portal-kind token is structurally
-  // confined away from (RequireAuth) — skip the call rather than let it 403.
-  const { data: workspaceUsers } = useQuery({
-    queryKey: ['workspace-users'],
-    queryFn: () => userService.listUsers(),
-    staleTime: 1000 * 60 * 2,
-    enabled: Boolean(user?.email) && !isCustomer,
-  })
-
-  const currentWorkspaceUser = workspaceUsers?.find((u) => u.email === user?.email)
-  const roles: UserRole[] =
-    currentWorkspaceUser?.roles?.map((r) => ({ id: r.id, key: r.key, name: r.name })) ??
-    user?.roles ?? []
 
   // Server's active-role claim is the source of truth; user?.selectedRoleId
   // (persisted locally) and the first assigned role are fallbacks only for

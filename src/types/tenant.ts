@@ -189,6 +189,31 @@ export interface RecordApprover {
   approved: boolean;
 }
 
+/** Who rejected a record that was awaiting approval, why and when. Sent under
+ *  a record's `approval` overlay while the record still sits in the status the
+ *  rejection left it in -- the Draft it was sent back to, or (Credit Memo,
+ *  Vendor Credit, Payment, Refund) the status it was flagged rejected in. */
+export interface ApprovalRejection {
+  byName: string;
+  reason: string;
+  at: string;
+}
+
+/** The approval fields the Sales/Purchases detail endpoints overlay onto a
+ *  record. Every module's record type carries them, so any of those records
+ *  can be handed to `RecordApprovalBanner` as-is. */
+export interface ApprovalOverlay {
+  gated: boolean;
+  approvers: RecordApprover[];
+  requiredApprovals: number;
+  approvedCount: number;
+  canApprove: boolean;
+  isOverride: boolean;
+  callerAlreadyApproved: boolean;
+  canReject?: boolean;
+  rejection?: ApprovalRejection;
+}
+
 export interface WorkflowTransition {
   id: string;
   workflowId: string;
@@ -446,7 +471,6 @@ export interface StatusInfo {
 export interface CRMCreatePayload {
   ownerUserId?: string;
   teamId?: string;
-  crmStatusId?: string;
   coreFields: Record<string, unknown>;
   customFields?: Record<string, unknown>;
 }

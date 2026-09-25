@@ -17,6 +17,7 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useI
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { VendorBillFormBody } from './components/VendorBillFormBody';
+import type { VendorBillPurchaseOrderRef } from '@/types/vendorBill';
 import {
   vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
   type VendorBillLineItem,
@@ -28,6 +29,7 @@ interface VendorBillDraft {
   data: Record<string, unknown>;
   lineItems: VendorBillLineItem[];
   vendor: VendorRef | null;
+  purchaseOrder: VendorBillPurchaseOrderRef | null;
   customFieldValues: Record<string, unknown>;
 }
 
@@ -45,7 +47,16 @@ export default function AddVendorBillPage() {
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? vendorBillDefaults());
   const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? []);
   const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [purchaseOrder, setPurchaseOrder] = useState<VendorBillPurchaseOrderRef | null>(restored?.purchaseOrder ?? null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+
+  // A linked purchase order must belong to the bill's vendor, so switching (or
+  // clearing) the vendor drops the link rather than leaving a stale one the
+  // server would reject.
+  const changeVendor = useCallback((next: VendorRef | null) => {
+    if (next?.id !== vendor?.id) setPurchaseOrder(null);
+    setVendor(next);
+  }, [vendor]);
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -58,7 +69,7 @@ export default function AddVendorBillPage() {
   useEffect(() => {
     if (vendorReturn.createdRef) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setVendor(vendorReturn.createdRef);
+      changeVendor(vendorReturn.createdRef);
       vendorReturn.consumeCreated();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,7 +90,7 @@ export default function AddVendorBillPage() {
   }, [data, lookups]);
 
   const guard = useUnsavedChangesGuard(
-    { data, lineItems, vendor, customFieldValues },
+    { data, lineItems, vendor, purchaseOrder, customFieldValues },
     true,
     inventoryReturn.isRestored || vendorReturn.isRestored,
   );
@@ -93,13 +104,17 @@ export default function AddVendorBillPage() {
   );
 
   // Shared by both return-trip hooks — either one may stash and restore it.
-  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, customFieldValues };
+  const draft: VendorBillDraft = { activeTab, data, lineItems, vendor, purchaseOrder, customFieldValues };
   const { startCreate: startCreateVendor } = vendorReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!vendor) throw new Error('A vendor is required.');
-      const payload = toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues);
+      const payload = toCreatePayload(
+        { ...formData, vendor_uuid: vendor.id, purchase_order_uuid: purchaseOrder?.id },
+        lineItems,
+        customFieldValues,
+      );
       return vendorBillService.createVendorBill(payload);
     },
     onSuccess: async (bill) => {
@@ -159,8 +174,10 @@ export default function AddVendorBillPage() {
             lineItems={lineItems}
             setLineItems={setLineItems}
             vendor={vendor}
-            setVendor={setVendor}
+            setVendor={changeVendor}
             onCreateVendor={startCreateVendor}
+            purchaseOrder={purchaseOrder}
+            setPurchaseOrder={setPurchaseOrder}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
             lookups={lookups}

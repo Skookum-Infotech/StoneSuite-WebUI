@@ -2,6 +2,8 @@ import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
 import { isPortalSession } from '@/store/useAuthStore';
 import { normalizeScope, normalizeScopeList } from '@/lib/scope';
+import type { LookupItem } from '@/services/lookupService';
+import type { UserRole } from '@/types/auth';
 import type {
   Tenant,
   TenantInvite,
@@ -30,6 +32,11 @@ import type {
 // e.g. { company_name, super_admin_email, ...customExtras }.
 export type OnboardingFormData = Record<string, unknown>;
 
+export interface OnboardingLookups {
+  countries: LookupItem[];
+  currencies: LookupItem[];
+}
+
 // ----- Public onboarding (self-service) -------------------------------------
 
 export const onboardingService = {
@@ -37,6 +44,13 @@ export const onboardingService = {
     tenantClient
       .get<{ success: boolean; fields: FieldDefinition[] }>('/onboarding/form-schema')
       .then((r) => r.data.fields ?? []),
+  // Read-only country/currency reference lists for the public form's
+  // Country/Currency dropdowns — separate from services/lookupService.ts's
+  // getCrmLookups, which requires a tenant JWT this pre-auth flow doesn't have.
+  lookups: (): Promise<OnboardingLookups> =>
+    tenantClient
+      .get<{ success: boolean; countries: LookupItem[]; currencies: LookupItem[] }>('/onboarding/lookups')
+      .then((r) => ({ countries: r.data.countries ?? [], currencies: r.data.currencies ?? [] })),
   getApply: (token: string) =>
     tenantClient.get<OnboardingApplyDetails>(`/onboarding/apply/${token}`).then((r) => r.data),
   submitApply: (token: string, formData: OnboardingFormData) =>
@@ -148,15 +162,21 @@ export const rbacService = {
   deleteRole: (id: string) => tenantClient.delete(`/tenant/roles/${id}`).then((r) => r.data),
   // activeRoleId is '' when the caller has no active-role restriction (all
   // assigned roles' grants apply, unioned) — the server-side source of truth
-  // for which role, if any, the switch-role flow last narrowed to.
+  // for which role, if any, the switch-role flow last narrowed to. roles is the
+  // caller's assigned roles, live: it stays undefined (not []) when an older
+  // backend omits the field, so callers can tell "none assigned" from "unknown".
   myPermissions: () =>
     tenantClient
-      .get<{ success: boolean; grants: GrantWire[] | null; activeRoleId: string }>(
-        '/tenant/users/me/permissions',
-      )
+      .get<{
+        success: boolean;
+        grants: GrantWire[] | null;
+        activeRoleId: string;
+        roles?: UserRole[] | null;
+      }>('/tenant/users/me/permissions')
       .then((r) => ({
         grants: (r.data.grants ?? []).map(toGrant),
         activeRoleId: r.data.activeRoleId ?? '',
+        roles: r.data.roles ?? undefined,
       })),
   // Sets (or clears, when roleId is '') which one of the caller's assigned
   // roles is enforced server-side. Returns a freshly-signed token — the

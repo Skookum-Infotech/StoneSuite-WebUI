@@ -103,7 +103,7 @@ export function LocationFormCard({
                     field={fieldSpec}
                     registration={register('address.country')}
                     error={errors.address?.country?.message}
-                    options={countryOptions(lookupsQ.data, values.address?.country ?? '')}
+                    options={countryOptions(lookupsQ.data?.countries, values.address?.country ?? '')}
                   />
                 );
               }

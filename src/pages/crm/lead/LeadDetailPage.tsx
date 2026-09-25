@@ -10,7 +10,8 @@ import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
-import { StatusDropdown } from "@/components/crm/StatusDropdown";
+import { LeadStatusActions } from "@/components/crm/LeadStatusActions";
+import { ConvertRecordButton } from "@/components/crm/ConvertRecordButton";
 import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
@@ -26,7 +27,8 @@ import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
-import { recordApprovalState, type StatusInfo } from "@/types/tenant";
+import { canConvertCrmRecord } from "@/lib/crmStatusFlow";
+import { recordApprovalState, type StatusInfo, type WorkflowRecord } from "@/types/tenant";
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -44,6 +46,9 @@ export default function LeadDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission("lead", "update");
+  // Convert mints a Prospect, so the backend checks lead:create on this lead
+  // and prospect:create on the target — gate the button on both.
+  const canConvert = permissionsLoading || (hasPermission("lead", "create") && hasPermission("prospect", "create"));
 
   const {
     data: record,
@@ -74,22 +79,30 @@ export default function LeadDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
   });
 
-  // Inline status change from the sidebar's Status row — mirrors the Edit
-  // page's transition mutation (see EditLeadPage.tsx). A converting
-  // transition (e.g. Lead -> Prospect) navigates to the new record, same as
-  // the Edit page does today.
-  const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "lead"),
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
-      queryClient.invalidateQueries({ queryKey: ["crm-records", "lead"] });
-      const newType = updated.workflowId?.toLowerCase();
-      if (newType && newType !== "lead" && CRM_WORKFLOW_ROUTES[newType]) {
-        queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
-        navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
-      }
-    },
-  });
+  // Header status-button change (LeadStatusActions runs its own mutation) —
+  // mirrors the Edit page's transition handling (see EditLeadPage.tsx). The
+  // server no longer moves a lead into another stage this way (a prospect
+  // comes from Convert to Prospect), so the stage-change branch below only
+  // guards a response that says otherwise.
+  const handleStatusChanged = (updated: WorkflowRecord) => {
+    queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+    // The Edit page's dropdown's legal next moves depend on the status just set.
+    queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
+    queryClient.invalidateQueries({ queryKey: ["crm-records", "lead"] });
+    const newType = updated.workflowId?.toLowerCase();
+    if (newType && newType !== "lead" && CRM_WORKFLOW_ROUTES[newType]) {
+      queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
+      navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
+    }
+  };
+
+  // Lands on the record the conversion made — or, when the lead had already
+  // been converted, the one an earlier conversion made (see crmService.convertRecord).
+  const handleConverted = (converted: WorkflowRecord) => {
+    const type = converted.workflowId.toLowerCase();
+    queryClient.invalidateQueries({ queryKey: ["crm-records", type] });
+    navigate(`${CRM_WORKFLOW_ROUTES[type] || CRM_WORKFLOW_ROUTES.prospect}/${converted.id}`);
+  };
 
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
@@ -178,6 +191,20 @@ export default function LeadDetailPage() {
         subtitle="Lead"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
+        actions={(
+          <>
+            <LeadStatusActions
+              recordId={id}
+              statusCode={statusInfo?.stateKey}
+              gated={approval?.gated}
+              statuses={statusData?.statuses ?? []}
+              onChanged={handleStatusChanged}
+            />
+            {canConvert && canConvertCrmRecord("lead", statusInfo?.stateKey, approval?.gated) && (
+              <ConvertRecordButton recordId={id} sourceKey="lead" onConverted={handleConverted} />
+            )}
+          </>
+        )}
       />
 
       {approval?.gated && (
@@ -265,18 +292,6 @@ export default function LeadDetailPage() {
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <CrmDetailSidebar
             statusInfo={statusInfo}
-            statusControl={statusInfo && (
-              <StatusDropdown
-                workflowKey="lead"
-                mode="transitions"
-                recordId={id}
-                value={record.currentStateId}
-                onChange={(toStateId) => transition.mutate(toStateId)}
-                disabled={transition.isPending}
-                variant="pill"
-                gated={approval?.gated}
-              />
-            )}
             ownerUserId={record.ownerUserId}
             users={users}
             createdAt={record.createdAt}

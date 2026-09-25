@@ -84,6 +84,9 @@ const UsersPage = lazyWithRetry(() => import("@/pages/config/users/UsersPage"));
 const CompanyProfilePage = lazyWithRetry(
   () => import("@/pages/config/company-profile/CompanyProfilePage"),
 );
+const AIAssistantConfigPage = lazyWithRetry(
+  () => import("@/pages/config/ai-assistant/AIAssistantConfigPage"),
+);
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
@@ -104,6 +107,9 @@ const FeedbackListPage = lazyWithRetry(
 );
 const FeedbackDetailPage = lazyWithRetry(
   () => import("@/pages/platform/feedback/FeedbackDetailPage"),
+);
+const PlatformAIPage = lazyWithRetry(
+  () => import("@/pages/platform/ai/PlatformAIPage"),
 );
 const SamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/SamlSetupPage"),
@@ -126,6 +132,7 @@ const AccountSettingsPage = lazyWithRetry(
 const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
+const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
 const SubscriptionPage = lazyWithRetry(
   () => import("@/pages/subscription/SubscriptionPage"),
 );
@@ -391,6 +398,9 @@ export const router = createBrowserRouter([
       { path: "search", element: lazy_(<SearchResultsPage />) },
       { path: "account/settings", element: lazy_(<AccountSettingsPage />) },
       { path: "transactions", element: lazy_(<TransactionsPage />) },
+      // Open to every signed-in user, customer-portal sessions included (see
+      // CUSTOMER_ALLOWED_PATH_PREFIXES), so deliberately no PermissionGuard.
+      { path: "support", element: lazy_(<SupportPage />) },
       {
         path: "subscription",
         element: lazy_(
@@ -1375,6 +1385,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "config/ai-assistant",
+        element: lazy_(
+          <PermissionGuard resource="company_profile" action="read">
+            <AIAssistantConfigPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
         path: "config/record-numbering",
         element: lazy_(
           <PermissionGuard resource="workflow_config" action="configure">
@@ -1479,6 +1497,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard platformAdminOnly>
             <FeedbackDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "platform/ai",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <PlatformAIPage />
           </PermissionGuard>,
         ),
       },

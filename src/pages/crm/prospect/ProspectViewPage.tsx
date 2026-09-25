@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Users } from "lucide-react";
@@ -10,7 +10,9 @@ import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { DeleteRecordDialog } from "@/components/crm/DeleteRecordDialog";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
-import { StatusDropdown } from "@/components/crm/StatusDropdown";
+import { MoveStageButton } from "@/components/crm/MoveStageButton";
+import { ConvertRecordButton } from "@/components/crm/ConvertRecordButton";
+import { PendingConversionButton } from "@/components/crm/PendingConversionButton";
 import { CRM_WORKFLOW_ROUTES } from "@/components/crm/crmWorkflowRoutes";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
 import { ApprovalBanner } from "@/components/tenant/ApprovalBanner";
@@ -26,7 +28,12 @@ import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
 import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
-import { recordApprovalState, type StatusInfo } from "@/types/tenant";
+import {
+  CRM_PENDING_CONVERSION_STATUS,
+  canConvertCrmRecord,
+  canMarkPendingConversion,
+} from "@/lib/crmStatusFlow";
+import { recordApprovalState, type StatusInfo, type WorkflowRecord } from "@/types/tenant";
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -44,6 +51,12 @@ export default function ProspectViewPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission("prospect", "update");
+  // Marking Pending Conversion is a status transition on this prospect, and
+  // Convert mints a Customer — so the backend checks prospect:transition for the
+  // first, and prospect:create on this prospect plus customer:create on the
+  // target for the second. Gate each button on exactly that.
+  const canMarkPending = permissionsLoading || hasPermission("prospect", "transition");
+  const canConvert = permissionsLoading || (hasPermission("prospect", "create") && hasPermission("customer", "create"));
 
   const {
     data: record,
@@ -74,21 +87,39 @@ export default function ProspectViewPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-record", id] }),
   });
 
-  // Inline status change from the sidebar's Status row — mirrors the Edit
-  // page's transition mutation. A converting transition (e.g. Prospect ->
-  // Customer) navigates to the new record, same as the Edit page does today.
-  const transition = useMutation({
-    mutationFn: (toStateId: string) => crmService.transitionRecord(id, toStateId, "prospect"),
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
-      queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
-      const newType = updated.workflowId?.toLowerCase();
-      if (newType && newType !== "prospect" && CRM_WORKFLOW_ROUTES[newType]) {
-        queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
-        navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
-      }
-    },
-  });
+  // Header status change (MoveStageButton runs its own mutation) — mirrors the
+  // Edit page's transition handling. The server no longer moves a prospect
+  // into another stage this way (a customer comes from Convert to Customer),
+  // so the stage-change branch below only guards a response that says
+  // otherwise.
+  const handleStatusChanged = (updated: WorkflowRecord) => {
+    queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+    // The Edit page's dropdown's legal next moves depend on the status just set.
+    queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
+    queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
+    const newType = updated.workflowId?.toLowerCase();
+    if (newType && newType !== "prospect" && CRM_WORKFLOW_ROUTES[newType]) {
+      queryClient.invalidateQueries({ queryKey: ["crm-records", newType] });
+      navigate(`${CRM_WORKFLOW_ROUTES[newType]}/${updated.id}`);
+    }
+  };
+
+  // Marking Pending Conversion changes the status, so refresh the record, the
+  // dropdown's options (they depend on the status) and the list.
+  const handleMarkedPending = () => {
+    queryClient.invalidateQueries({ queryKey: ["crm-record", id] });
+    queryClient.invalidateQueries({ queryKey: ["crm-transitions", id] });
+    queryClient.invalidateQueries({ queryKey: ["crm-records", "prospect"] });
+  };
+
+  // Lands on the customer the conversion made — or, when the prospect had
+  // already been converted, the one an earlier conversion made (see
+  // crmService.convertRecord).
+  const handleConverted = (converted: WorkflowRecord) => {
+    const type = converted.workflowId.toLowerCase();
+    queryClient.invalidateQueries({ queryKey: ["crm-records", type] });
+    navigate(`${CRM_WORKFLOW_ROUTES[type] || CRM_WORKFLOW_ROUTES.customer}/${converted.id}`);
+  };
 
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
@@ -140,6 +171,24 @@ export default function ProspectViewPage() {
       : recordApproval;
   const approverNames = (approval?.approvers ?? []).map((a) => a.name);
 
+  // At most one header action applies at a time: a prospect being worked is
+  // first marked Pending Conversion, and only then can it be converted into a
+  // customer. Both are hidden while the prospect awaits approval.
+  const pendingConversionStateId = statusData?.statuses.find(
+    (s) => s.stateKey === CRM_PENDING_CONVERSION_STATUS,
+  )?.stateId;
+  let headerAction: ReactNode = null;
+  if (
+    canMarkPending && pendingConversionStateId
+    && canMarkPendingConversion("prospect", statusInfo?.stateKey, approval?.gated)
+  ) {
+    headerAction = (
+      <PendingConversionButton recordId={id} toStateId={pendingConversionStateId} onMarked={handleMarkedPending} />
+    );
+  } else if (canConvert && canConvertCrmRecord("prospect", statusInfo?.stateKey, approval?.gated)) {
+    headerAction = <ConvertRecordButton recordId={id} sourceKey="prospect" onConverted={handleConverted} />;
+  }
+
   async function handleExportPdf() {
     setExportPdfError(undefined);
     setExportingPdf(true);
@@ -176,6 +225,20 @@ export default function ProspectViewPage() {
         subtitle="Prospect"
         recordNumber={record.recordNumber}
         statusBadge={statusInfo && <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>}
+        actions={(
+          <>
+            {canMarkPending && (
+              <MoveStageButton
+                workflowKey="prospect"
+                recordId={id}
+                currentStateId={record.currentStateId}
+                gated={approval?.gated}
+                onChanged={handleStatusChanged}
+              />
+            )}
+            {headerAction}
+          </>
+        )}
       />
 
       {approval?.gated && (
@@ -263,18 +326,6 @@ export default function ProspectViewPage() {
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <CrmDetailSidebar
             statusInfo={statusInfo}
-            statusControl={statusInfo && (
-              <StatusDropdown
-                workflowKey="prospect"
-                mode="transitions"
-                recordId={id}
-                value={record.currentStateId}
-                onChange={(toStateId) => transition.mutate(toStateId)}
-                disabled={transition.isPending}
-                variant="pill"
-                gated={approval?.gated}
-              />
-            )}
             ownerUserId={record.ownerUserId}
             users={users}
             createdAt={record.createdAt}

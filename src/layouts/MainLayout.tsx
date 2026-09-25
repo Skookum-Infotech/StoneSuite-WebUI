@@ -1,14 +1,24 @@
 import * as React from 'react';
-import { useState, useEffect, useCallback, startTransition } from 'react';
-import { Outlet, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useContext, startTransition } from 'react';
+import {
+  Outlet,
+  Navigate,
+  NavLink,
+  UNSAFE_DataRouterContext,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { useSessionTimer } from '@/hooks/useSessionTimer';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles';
 import { useExitConfirmation } from '@/hooks/useExitConfirmation';
-import { formatBreadcrumbSegment } from '@/lib/breadcrumb';
+import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
+import { CUSTOMER_ALLOWED_PATH_PREFIXES } from '@/config/customerPortal';
+import { formatBreadcrumbSegment, isRegisteredPath } from '@/lib/breadcrumb';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
@@ -22,6 +32,7 @@ import Sidebar from '@/components/Sidebar';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { HelpMenu } from '@/components/HelpMenu';
 import { NotificationBell } from '@/components/NotificationBell';
+import { TenantLogoMark } from '@/components/TenantLogoMark';
 import {
   Menu,
   ChevronRight,
@@ -37,16 +48,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// See the isCustomer guard below for why this exists as an explicit allowlist
-// rather than per-route PermissionGuard coverage alone.
-const CUSTOMER_ALLOWED_PATH_PREFIXES = [
-  '/sales/sales_order',
-  '/sales/invoice',
-  '/sales/payment',
-  '/sales/refund',
-  '/account/settings',
-];
-
 export default function MainLayout(): React.JSX.Element {
   const { isAuthenticated, user, setAuth, logout } = useAuthStore();
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
@@ -55,15 +56,26 @@ export default function MainLayout(): React.JSX.Element {
   const applyWorkspaceSwitch = useAuthStore((s) => s.applyWorkspaceSwitch);
   const breadcrumbLabels = useBreadcrumbStore((s) => s.labels);
   const { activeRoleId } = useUserPermissions();
+  const roles = useCurrentUserRoles();
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
+  // The route table of the router this layout is mounted in. The router module
+  // imports this layout, so it cannot be imported back here (circular); and
+  // react-router has no public hook for it. If it ever stops being readable the
+  // breadcrumb degrades to plain text rather than linking to a possible 404 —
+  // the "page exists" test in MainLayout.test.tsx will flag that.
+  const routes = useContext(UNSAFE_DataRouterContext)?.router.routes ?? [];
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const isProfileOpen = useHeaderMenuStore((s) => s.openMenu === 'profile');
   const setOpenMenu = useHeaderMenuStore((s) => s.setOpenMenu);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const { showWarning, secondsRemaining, onStay, onLogout, isExtending } = useSessionTimer();
+
+  // Tickets are filed from /support; remember the page the user was on before
+  // that so the ticket can still say where the problem happened.
+  useTrackLastAppPath();
 
   // Same switch-role round-trip as the Account Settings > Roles & Access tab —
   // re-signs the JWT server-side so the active-role claim actually narrows
@@ -176,21 +188,16 @@ export default function MainLayout(): React.JSX.Element {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // A customer-portal session may only reach its four document types (List
-  // and Detail — Add/Edit already render "Access Denied" via PermissionGuard,
-  // so there is no need to redirect away from those specifically) plus its
-  // own account settings. Everything else under this shell is staff-only.
-  // This is a single allowlisted choke point rather than relying on every
-  // route remembering its own PermissionGuard — /dashboard, /transactions and
-  // /subscription, for instance, declare none at all.
+  // A customer-portal session may only reach the paths in
+  // CUSTOMER_ALLOWED_PATH_PREFIXES (its document types, account settings and
+  // Support). Everything else under this shell is staff-only. See that list
+  // for why this is one allowlisted choke point rather than relying on every
+  // route remembering its own PermissionGuard.
   if (isCustomer && !CUSTOMER_ALLOWED_PATH_PREFIXES.some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/sales/sales_order" replace />;
   }
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
-
-  // Segments that are namespace prefixes with no real index page — non-navigable in breadcrumb.
-  const nonNavigableSegments = new Set(['crm', 'sales', 'purchases', 'customer', 'onboarding']);
 
   return (
     <div className="min-h-screen bg-stone-50/50 dark:bg-stone-900/10">
@@ -246,26 +253,9 @@ export default function MainLayout(): React.JSX.Element {
             </div>
           </NavLink>
 
-          {/* Divider between the two logos */}
-          <div className="hidden lg:block h-7 w-px bg-white/12 mx-1" />
-
-          {/* Elevation Stone — pill logo on desktop */}
-          <div className="hidden lg:flex items-center px-3">
-            <img
-              src="/elevation-stone-logo.svg"
-              alt="Elevation Stone"
-              className="h-45 w-auto object-contain"
-            />
-          </div>
-
-          {/* Elevation Stone — circular badge on mobile */}
-          <div className="flex lg:hidden items-center pl-2">
-            <img
-              src="/elevation-stone-badge.svg"
-              alt="Elevation Stone"
-              className="h-9 w-9 object-contain"
-            />
-          </div>
+          {/* Tenant's own uploaded logo — divider + pill (desktop) or badge
+              (mobile), or nothing at all when the tenant has no logo set. */}
+          <TenantLogoMark />
         </div>
 
         {/* GlobalSearch — flex-centered between logos and actions on lg+ */}
@@ -400,10 +390,10 @@ export default function MainLayout(): React.JSX.Element {
                       <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
                         Roles
                       </div>
-                      {user?.roles && user.roles.length > 0 ? (
+                      {roles.length > 0 ? (
                         <div className="space-y-0.5">
-                          {user.roles.map((role) => {
-                            const isActive = role.id === (activeRoleId || user.selectedRoleId);
+                          {roles.map((role) => {
+                            const isActive = role.id === (activeRoleId || user?.selectedRoleId);
                             const isSwitching = switchRoleMutation.isPending && switchRoleMutation.variables === role.id;
                             return (
                               <button
@@ -493,7 +483,9 @@ export default function MainLayout(): React.JSX.Element {
               {pathSegments.map((segment, index) => {
                 const url = `/${pathSegments.slice(0, index + 1).join('/')}`;
                 const isLast = index === pathSegments.length - 1;
-                const isClickable = !isLast && !nonNavigableSegments.has(segment);
+                // Only crumbs whose URL is a real page are links — group prefixes like
+                // /finance have none, and would land on the 404 route.
+                const isClickable = !isLast && isRegisteredPath(routes, url);
                 return (
                   <React.Fragment key={segment}>
                     <ChevronRight className="size-3 xl:size-3.5 text-stone-300 shrink-0" />

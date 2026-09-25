@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileCheck, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { FileCheck, Upload, Pencil, FileDown, Loader2, Send, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -11,16 +11,23 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VB_STATUS_COLORS, VB_STATUS_CODES, VB_ALLOWED_TRANSITIONS, VB_DELETABLE_STATUSES } from '@/lib/vendorBillForm';
+import {
+  VB_STATUS_COLORS, VB_STATUS_CODES, VB_DELETABLE_STATUSES, VB_VOID_CODE,
+  isVbTransitionBlocked, isVbConfirmedTransition, vbCanVoid, vbDropdownTransitions,
+  type VbConfirmedCode,
+} from '@/lib/vendorBillForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { VendorBillAuditTab } from './components/VendorBillAuditTab';
 import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
+import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import { VendorBillStatusControl } from './components/VendorBillStatusControl';
+import { VendorBillHeaderActions } from './components/VendorBillHeaderActions';
+import { ConfirmVendorBillStatusDialog } from './components/ConfirmVendorBillStatusDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
 const TABS = [
@@ -55,6 +62,11 @@ export default function VendorBillDetailPage() {
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [sendSuccess, setSendSuccess] = useState<string>();
+  // The terminal move (Paid / Void) awaiting confirmation, if any.
+  const [confirmCode, setConfirmCode] = useState<VbConfirmedCode | null>(null);
+  // Stable so the dialog's focus effect doesn't re-run (and re-steal focus) on
+  // every page render.
+  const cancelConfirm = useCallback(() => setConfirmCode(null), []);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
@@ -89,6 +101,17 @@ export default function VendorBillDetailPage() {
     },
   });
 
+  // Terminal moves (Paid / Void) ask first; every other move fires straight away.
+  const requestTransition = (code: string) => {
+    if (isVbConfirmedTransition(code)) setConfirmCode(code);
+    else transition.mutate(code);
+  };
+  const runConfirmed = () => {
+    if (!confirmCode) return;
+    // Close on either outcome: a failure shows in the error banner under the header.
+    transition.mutate(confirmCode, { onSettled: () => setConfirmCode(null) });
+  };
+
   const approve = useMutation({
     mutationFn: () => vendorBillService.approve(id),
     onSuccess: (updated) => {
@@ -97,6 +120,14 @@ export default function VendorBillDetailPage() {
       toast.success('Approved.');
     },
   });
+
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['vendor-bill', id] });
+    queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor bill…" /></div>;
   if (!bill)
@@ -110,12 +141,16 @@ export default function VendorBillDetailPage() {
   // should never go negative in practice.
   const creditsApplied = Math.max(0, bill.grandTotal - bill.amountPaid - bill.balanceDue);
   const canDeleteHere = canDelete && VB_DELETABLE_STATUSES.has(bill.statusCode);
-  // Terminal statuses (PAID/VOID) have no legal transitions, and a user
-  // without `vendor_bill:transition` sees none either — in both cases the
-  // bar renders nothing, so the card would be an empty "Actions" header.
-  // Hide it unless it has real content (mirrors PurchaseOrderDetailPage).
-  const hasTransitions = canTransition && (VB_ALLOWED_TRANSITIONS[bill.statusCode]?.length ?? 0) > 0;
-  const showActions = hasTransitions || Boolean(transition.error);
+  // Each status move has one home: Mark Overdue / Partially Paid / Paid are
+  // header buttons, Void is a Danger Zone button at the bottom of the sidebar,
+  // and the approval moves (Submit, Approve, Recall) are all the sidebar pill
+  // keeps. When none of those is left — a paid or void bill, or a user without
+  // `vendor_bill:transition` — the pill would render nothing, so the card would
+  // be an empty "Actions" header; hide it then (mirrors PurchaseOrderDetailPage).
+  const pillCodes = canTransition ? vbDropdownTransitions(bill) : [];
+  const showActions = pillCodes.length > 0;
+  const canVoidHere = canTransition && vbCanVoid(bill);
+  const voidBlocked = isVbTransitionBlocked(VB_VOID_CODE, bill.approvalStatus, bill.gated);
 
   async function handleExportPdf() {
     if (!bill) return;
@@ -128,22 +163,22 @@ export default function VendorBillDetailPage() {
         title: bill.vendorBillNumber || 'Vendor Bill',
         recordNumber: bill.vendorBillNumber,
         statusLabel: bill.status,
+        issueDate: fmtDate(bill.billDate),
+        issueDateLabel: 'Bill Date',
+        dueDate: bill.dueDate ? fmtDate(bill.dueDate) : undefined,
+        keyAmount: { label: 'Balance Due', value: currency(bill.balanceDue) },
         counterpartyName: bill.vendor.name,
-        createdAt: bill.createdAt,
-        updatedAt: bill.updatedAt,
+        notesText: bill.notes || undefined,
+        termsText: bill.termsConditions || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ["Vendor's Invoice #", bill.vendorInvoiceNumber || ''],
               ['Reference #', bill.referenceNumber || ''],
-              ['Bill Date', fmtDate(bill.billDate)],
-              ['Due Date', bill.dueDate ? fmtDate(bill.dueDate) : ''],
               ['Sales Tax %', `${bill.salesTaxPercent}%`],
               ['Purchase Order', bill.purchaseOrder?.number || ''],
               ['Memo', bill.memo || ''],
-              ['Notes', bill.notes || ''],
-              ['Terms & Conditions', bill.termsConditions || ''],
             ],
           },
         ],
@@ -159,6 +194,7 @@ export default function VendorBillDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: bill.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -169,7 +205,6 @@ export default function VendorBillDetailPage() {
           { label: 'Grand Total', value: currency(bill.grandTotal), bold: true },
           { label: 'Amount Paid', value: currency(bill.amountPaid) },
           { label: 'Credits Applied', value: currency(creditsApplied) },
-          { label: 'Balance Due', value: currency(bill.balanceDue), bold: true },
         ],
       });
     } catch (err) {
@@ -189,26 +224,33 @@ export default function VendorBillDetailPage() {
         subtitle={bill.vendor.name}
         recordNumber={bill.vendorBillNumber}
         statusBadge={<Badge color={color}>{bill.status}</Badge>}
+        actions={(
+          <VendorBillHeaderActions
+            order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: bill.nextStatusCodes }}
+            canTransition={canTransition}
+            onTransition={requestTransition}
+            pendingCode={transition.isPending ? transition.variables : undefined}
+          />
+        )}
       />
 
-      {bill.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={bill.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={bill.canApprove}
-            isOverride={bill.isOverride}
-            requiredApprovals={bill.requiredApprovals}
-            approvedCount={bill.approvedCount}
-            callerAlreadyApproved={bill.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve vendor bill.')}
-            </p>
-          )}
-        </>
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change status.')}
+        </p>
+      )}
+
+      <RecordApprovalBanner
+        record={bill}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'vendor bill', run: (reason) => vendorBillService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {bill.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve vendor bill.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -385,14 +427,11 @@ export default function VendorBillDetailPage() {
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-400">Actions</p>
               <VendorBillStatusControl
-                order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: bill.nextStatusCodes }}
-                onChange={(toCode) => transition.mutate(toCode)}
+                order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: pillCodes }}
+                onChange={requestTransition}
                 disabled={transition.isPending}
                 variant="pill"
               />
-              {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
-              )}
             </div>
           )}
 
@@ -442,18 +481,30 @@ export default function VendorBillDetailPage() {
             </div>
           </div>
 
-          {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
-              <DeleteVendorBillDialog
-                vendorBillId={id}
-                label={`Vendor Bill ${bill.vendorBillNumber}`}
-                onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
-                  navigate('/purchases/vendor_bill');
-                }}
-              />
-            </div>
+          {(canVoidHere || canDeleteHere) && (
+            <DangerZoneCard>
+              {canVoidHere && (
+                <DangerZoneAction
+                  description="Void this vendor bill. It can no longer be paid or edited."
+                  buttonLabel="Void vendor bill"
+                  ariaLabel={`Void Vendor Bill ${bill.vendorBillNumber}`}
+                  icon={Ban}
+                  onClick={() => setConfirmCode(VB_VOID_CODE)}
+                  disabled={voidBlocked || transition.isPending}
+                  hint={voidBlocked ? 'Awaiting approval sign-off' : undefined}
+                />
+              )}
+              {canDeleteHere && (
+                <DeleteVendorBillDialog
+                  vendorBillId={id}
+                  label={`Vendor Bill ${bill.vendorBillNumber}`}
+                  onDeleted={() => {
+                    queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+                    navigate('/purchases/vendor_bill');
+                  }}
+                />
+              )}
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -471,6 +522,16 @@ export default function VendorBillDetailPage() {
           )
         }
       />
+
+      {confirmCode && (
+        <ConfirmVendorBillStatusDialog
+          target={confirmCode}
+          billNumber={bill.vendorBillNumber}
+          pending={transition.isPending}
+          onConfirm={runConfirmed}
+          onCancel={cancelConfirm}
+        />
+      )}
     </div>
   );
 }

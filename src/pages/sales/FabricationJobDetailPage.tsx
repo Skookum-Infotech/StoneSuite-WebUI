@@ -29,6 +29,7 @@ import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { CancelFabricationJobDialog } from './components/CancelFabricationJobDialog';
 import { DeleteFabricationJobDialog } from './components/DeleteFabricationJobDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { FabricationJob } from '@/types/fabrication';
 
 function fmtDate(iso?: string): string {
@@ -144,8 +145,7 @@ export default function FabricationJobDetailPage() {
         recordNumber: job.jobNumber,
         statusLabel: job.status,
         customerName: job.customer.name,
-        createdAt: job.createdAt,
-        updatedAt: job.updatedAt,
+        notesText: job.notes || undefined,
         sections: [
           {
             title: 'Sales Order',
@@ -171,7 +171,6 @@ export default function FabricationJobDetailPage() {
               ['Approval Status', job.approvalStatus !== 'none' ? APPROVAL_STATUS_LABELS[job.approvalStatus] : ''],
             ],
           },
-          { title: 'Notes', rows: [['Notes', job.notes || '']] },
         ],
         itemsTable: {
           title: 'Pieces',
@@ -386,8 +385,7 @@ export default function FabricationJobDetailPage() {
           )}
 
           {canDelete && canDeleteJob(job.statusCode) && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteFabricationJobDialog
                 jobId={id}
                 label={`Fabrication Job ${job.jobNumber}`}
@@ -396,7 +394,7 @@ export default function FabricationJobDetailPage() {
                   navigate('/sales/installation');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

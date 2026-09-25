@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { AlertCircle, File as FileIcon, FileSpreadsheet, FileText, Image as ImageIcon, X } from 'lucide-react';
+import { AlertCircle, File as FileIcon, FileSpreadsheet, FileText, Image as ImageIcon, Upload, X } from 'lucide-react';
 import { MAX_FEEDBACK_ATTACHMENTS, formatFeedbackFileSize, validateFeedbackFile } from '@/lib/feedback';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +22,7 @@ function fileTypeConfig(fileName: string, contentType: string): FileTypeConfig {
   return { color: 'text-stone-500', bg: 'bg-stone-100 dark:bg-white/10', Icon: FileIcon };
 }
 
-// Staged file picker for the Submit screen — files are only validated and
+// Staged file picker for the New Ticket form — files are only validated and
 // held locally (`files`/`onFilesChange`, owned by FeedbackSubmitForm) until
 // the ticket itself is created; FeedbackSubmitForm then presigns/uploads/
 // confirms each one against the new ticket's id. There is no per-file
@@ -91,7 +91,7 @@ export function FeedbackAttachmentPicker({
           aria-label="Attach a screenshot or file"
           onKeyDown={(e) => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); fileInputRef.current?.click(); } }}
           className={cn(
-            'relative rounded-[10px] border-2 border-dashed px-4 py-4 text-center transition-all duration-150 group',
+            'relative rounded-[10px] border-2 border-dashed px-4 py-6 text-center transition-all duration-150 group',
             disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
             dragging
               ? 'border-brand bg-brand/5'
@@ -102,10 +102,14 @@ export function FeedbackAttachmentPicker({
             ref={fileInputRef} type="file" multiple aria-hidden="true" tabIndex={-1} disabled={disabled}
             accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg" className="sr-only" onChange={onFileChange}
           />
-          <p className="text-2xs font-medium text-stone-600 dark:text-stone-300">
+          <Upload
+            className={cn('mx-auto mb-2 size-5 transition-colors', dragging ? 'text-brand-dark' : 'text-stone-400')}
+            aria-hidden="true"
+          />
+          <p className="text-sm font-medium text-stone-700 dark:text-stone-200">
             {dragging ? 'Release to attach' : 'Drop a screenshot or file, or click to browse'}
           </p>
-          <p className="mt-0.5 text-2xs text-stone-400">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
             PDF, DOCX, XLSX, PNG, JPG · Max {MAX_FEEDBACK_ATTACHMENTS} files, 25 MB each
           </p>
         </div>
@@ -127,13 +131,13 @@ export function FeedbackAttachmentPicker({
           {files.map((file, i) => {
             const ft = fileTypeConfig(file.name, file.type);
             return (
-              <li key={`${file.name}-${file.size}-${i}`} className="flex items-center gap-2.5 px-3 py-2">
-                <div className={cn('flex size-6 shrink-0 items-center justify-center rounded', ft.bg)}>
-                  <ft.Icon className={cn('size-3.5', ft.color)} />
+              <li key={`${file.name}-${file.size}-${i}`} className="flex items-center gap-3 px-3 py-2.5">
+                <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-md', ft.bg)}>
+                  <ft.Icon className={cn('size-4', ft.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-2xs font-medium text-stone-700 dark:text-stone-200">{file.name}</p>
-                  <span className="text-2xs text-stone-400">{formatFeedbackFileSize(file.size)}</span>
+                  <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">{file.name}</p>
+                  <span className="text-xs text-stone-400">{formatFeedbackFileSize(file.size)}</span>
                 </div>
                 <button
                   type="button"

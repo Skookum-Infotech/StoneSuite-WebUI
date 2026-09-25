@@ -43,6 +43,7 @@ import {
   CalendarClock,
   LayoutGrid,
   KeyRound,
+  LifeBuoy,
   MessageSquareText,
   Upload,
 } from "lucide-react";
@@ -52,6 +53,10 @@ export interface NavPermission {
   resource: string;
   action: string;
 }
+
+/** Live counters a link can show beside its label. The config only names the
+ *  counter; Sidebar resolves the number, which keeps this file static data. */
+export type NavBadge = "support-unread";
 
 export interface NavLink {
   type: "link";
@@ -63,11 +68,18 @@ export interface NavLink {
   iconColor: string;
   permission?: NavPermission;
   platformAdminOnly?: boolean;
-  /** Opt out of permission gating for links every signed-in user may see.
-   *  Required: a link with neither `permission` nor `alwaysVisible` is hidden,
-   *  so forgetting to declare a permission fails closed rather than exposing
-   *  a module the API will refuse. */
+  /** Opt out of permission gating for links every signed-in STAFF user may
+   *  see. Required: a link with neither `permission` nor `alwaysVisible` is
+   *  hidden, so forgetting to declare a permission fails closed rather than
+   *  exposing a module the API will refuse. */
   alwaysVisible?: boolean;
+  /** Also show an `alwaysVisible` link to customer-portal sessions, which
+   *  otherwise never see one (a permission-gated link reaches customers through
+   *  useUserPermissions' portal allowlist instead). The path must also be in
+   *  CUSTOMER_ALLOWED_PATH_PREFIXES or MainLayout bounces the customer away. */
+  customerVisible?: boolean;
+  /** Live counter shown as a pill beside the label. */
+  badge?: NavBadge;
   /** Workflow key (Configuration > Workflows) backing this link's form, e.g.
    *  "lead". When set, the link is hidden for every user — independent of
    *  permission — while that workflow is disabled. Omit for links with no
@@ -623,6 +635,27 @@ export const sidebarNav: SidebarNavConfig = {
       ],
     },
     {
+      id: "support",
+      label: "Support",
+      entries: [
+        {
+          type: "link",
+          id: "my-tickets",
+          label: "My Tickets",
+          path: "/support",
+          icon: LifeBuoy,
+          iconColor: "text-teal-500 dark:text-teal-400",
+          badge: "support-unread",
+          // Open to every signed-in user — staff and customers alike — so it
+          // declares no `permission`: no role can grant or withhold it, and it
+          // never shows up as a row in the role editor's matrix. That is why
+          // Support has its own section instead of living under Configuration.
+          alwaysVisible: true,
+          customerVisible: true,
+        },
+      ],
+    },
+    {
       id: "platform",
       label: "Platform",
       platformAdminOnly: true,
@@ -643,6 +676,15 @@ export const sidebarNav: SidebarNavConfig = {
           path: "/platform/feedback",
           icon: MessageSquareText,
           iconColor: "text-teal-500 dark:text-teal-400",
+          platformAdminOnly: true,
+        },
+        {
+          type: "link",
+          id: "ai-assistant",
+          label: "AI Assistant",
+          path: "/platform/ai",
+          icon: Sparkles,
+          iconColor: "text-brand dark:text-brand",
           platformAdminOnly: true,
         },
       ],

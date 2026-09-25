@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Package, Upload, Pencil, PackagePlus, FileDown, Loader2, ArrowRightLeft, Send } from 'lucide-react';
+import { Package, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -11,23 +11,24 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_ALLOWED_TRANSITIONS } from '@/lib/purchaseOrderForm';
+import {
+  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES,
+  poBillableLines, poDropdownTransitions,
+} from '@/lib/purchaseOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
+import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
-
-// PO statuses a vendor bill may be converted from — a bill only makes sense
-// once goods have actually been received (backend: vendorbill/store_convert.go).
-const PO_BILLABLE_STATUSES = new Set(['RCVD', 'CLSD']);
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -63,10 +64,12 @@ export default function PurchaseOrderDetailPage() {
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [sendSuccess, setSendSuccess] = useState<string>();
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
-  const canReceive = permissionsLoading || hasPermission('item_receipt', 'create');
+  // A new receipt is saved and posted in one step, so it takes both grants.
+  const canReceive = permissionsLoading
+    || (hasPermission('item_receipt', 'create') && hasPermission('item_receipt', 'transition'));
   const canTransition = permissionsLoading || hasPermission('purchase_order', 'transition');
   const canConvertToBill = permissionsLoading || hasPermission('vendor_bill', 'create');
 
@@ -107,18 +110,32 @@ export default function PurchaseOrderDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['purchase-order', id] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
   if (!po)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load purchase order.')}</ErrorNote></div>;
 
   const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
   const canDeleteHere = canDelete && PO_DELETABLE_STATUSES.has(po.statusCode);
-  // Terminal statuses (CLSD/CANC) have no legal transitions, and a user without
-  // `purchase_order:transition` sees none either — in both cases the bar renders
-  // nothing, so the card would be an empty "Actions" header. Hide it unless it
-  // has real content (a transition, an approval gate, or a failed transition).
-  const hasTransitions = canTransition && (PO_ALLOWED_TRANSITIONS[po.statusCode]?.length ?? 0) > 0;
-  const showActions = hasTransitions || Boolean(transition.error);
+  // Only a super admin gets the status dropdown (the backend refuses any manual
+  // move but PAPV/SENT to anyone else); everyone else moves an order with the
+  // header buttons. Terminal statuses (CLSD/CANC) have no legal transitions, and
+  // Submit for Approval / Send to Vendor are header buttons, not options — when
+  // none is left the dropdown would render nothing, so the card would be an
+  // empty "Actions" header. Hide it then.
+  const showActions = isSuperAdmin && canTransition && poDropdownTransitions(po).length > 0;
+  const canReceiveHere = canReceive && isPurchaseOrderReceivable(po);
+  // What Create Bill would bill: received and not yet billed. Empty (button
+  // hidden) until something has been received, and again once it's all billed.
+  const billableLines = poBillableLines(po);
+  const canCreateBillHere = canConvertToBill && billableLines.length > 0;
 
   async function handleExportPdf() {
     if (!po) return;
@@ -131,23 +148,32 @@ export default function PurchaseOrderDetailPage() {
         title: po.purchaseOrderNumber || 'Purchase Order',
         recordNumber: po.purchaseOrderNumber,
         statusLabel: po.status,
+        issueDate: fmtDate(po.orderDate),
+        dueDate: po.expectedDate ? fmtDate(po.expectedDate) : undefined,
+        dueDateLabel: 'Expected Date',
         counterpartyName: po.vendor.name,
-        createdAt: po.createdAt,
-        updatedAt: po.updatedAt,
+        shipTo: {
+          customerName: po.shipTo.name,
+          attention: po.shipTo.attention,
+          addrLine1: po.shipTo.addrLine1,
+          addrLine2: po.shipTo.addrLine2,
+          suiteUnit: po.shipTo.suiteUnit,
+          city: po.shipTo.city,
+          zip: po.shipTo.zip,
+          phone: po.shipTo.phone,
+          email: po.shipTo.email,
+        },
+        notesText: po.notes || undefined,
+        termsText: po.termsConditions || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
-              ['Order Date', fmtDate(po.orderDate)],
-              ['Expected Date', po.expectedDate ? fmtDate(po.expectedDate) : ''],
               ['Reference #', po.referenceNumber || ''],
               ['Sales Tax %', `${po.salesTaxPercent}%`],
               ['Memo', po.memo || ''],
-              ['Notes', po.notes || ''],
-              ['Terms & Conditions', po.termsConditions || ''],
             ],
           },
-          { title: 'Ship To', rows: addressRows(po.shipTo) },
         ],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
@@ -162,6 +188,7 @@ export default function PurchaseOrderDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: po.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -190,26 +217,37 @@ export default function PurchaseOrderDetailPage() {
         subtitle={po.vendor.name}
         recordNumber={po.purchaseOrderNumber}
         statusBadge={<Badge color={color}>{po.status}</Badge>}
+        actions={(
+          <PurchaseOrderHeaderActions
+            order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, gated: po.gated, nextStatusCodes: po.nextStatusCodes }}
+            canTransition={canTransition}
+            onTransition={(toCode) => transition.mutate(toCode)}
+            transitioning={transition.isPending}
+            actions={{
+              onReceive: canReceiveHere ? () => navigate(`/purchases/item_receipt/new?po=${id}`) : undefined,
+              onCreateBill: canCreateBillHere ? () => setConvertOpen(true) : undefined,
+            }}
+          />
+        )}
       />
 
-      {po.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={po.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={po.canApprove}
-            isOverride={po.isOverride}
-            requiredApprovals={po.requiredApprovals}
-            approvedCount={po.approvedCount}
-            callerAlreadyApproved={po.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve purchase order.')}
-            </p>
-          )}
-        </>
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change status.')}
+        </p>
+      )}
+
+      <RecordApprovalBanner
+        record={po}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'purchase order', run: (reason) => purchaseOrderService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {po.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve purchase order.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -332,27 +370,6 @@ export default function PurchaseOrderDetailPage() {
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {canReceive && isPurchaseOrderReceivable(po) && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/purchases/item_receipt/new?po=${id}`)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <PackagePlus className="size-4 text-stone-400 shrink-0" />
-                  Receive items
-                </button>
-              )}
-              {canConvertToBill && PO_BILLABLE_STATUSES.has(po.statusCode) && (
-                <button
-                  type="button"
-                  onClick={() => setConvertOpen(true)}
-                  aria-label="Convert this purchase order to a vendor bill"
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />
-                  Convert to Bill
-                </button>
-              )}
               {canEdit && po.statusCode === 'DRFT' && (
                 <button
                   type="button"
@@ -401,10 +418,8 @@ export default function PurchaseOrderDetailPage() {
                 onChange={(toCode) => transition.mutate(toCode)}
                 disabled={transition.isPending}
                 variant="pill"
+                excludeCodes={PO_HEADER_TRANSITION_CODES}
               />
-              {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
-              )}
             </div>
           )}
 
@@ -435,8 +450,7 @@ export default function PurchaseOrderDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeletePurchaseOrderDialog
                 purchaseOrderId={id}
                 label={`Purchase Order ${po.purchaseOrderNumber}`}
@@ -445,21 +459,20 @@ export default function PurchaseOrderDetailPage() {
                   navigate('/purchases/purchase_order');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
 
       {convertOpen && (
         <ConvertToBillDialog
-          purchaseOrderId={id}
-          purchaseOrderNumber={po.purchaseOrderNumber}
-          vendorName={po.vendor.name}
-          grandTotal={po.grandTotal}
+          purchaseOrder={{ id, number: po.purchaseOrderNumber, vendorName: po.vendor.name }}
+          lines={billableLines}
           onClose={() => setConvertOpen(false)}
           onConverted={(bill) => {
             setConvertOpen(false);
             queryClient.invalidateQueries({ queryKey: ['vendor-bills'] });
+            queryClient.invalidateQueries({ queryKey: ['purchase-order', id] });
             navigate(`/purchases/vendor_bill/${bill.id}`);
           }}
         />
@@ -505,17 +518,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.name || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { name?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

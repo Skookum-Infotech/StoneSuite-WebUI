@@ -8,6 +8,7 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
 import type {
   VendorBill, CreateVendorBillPayload, VendorBillLineInput, VendorBillLine,
+  VendorBillPurchaseOrderRef,
 } from '@/types/vendorBill';
 
 export const PAGE_TABS = [
@@ -287,6 +288,57 @@ export const VB_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   VOID: [],
 };
 
+// ── Where each status move lives on the detail page ──────────────────────────
+//
+// The page splits a bill's legal next-moves three ways so each has one obvious
+// home: the settlement moves are header buttons, Void is a Danger Zone button
+// at the bottom of the sidebar, and everything else (the approval flow:
+// Submit for Approval, Approve, Recall to Draft) stays in the sidebar pill.
+
+/** Moves surfaced as header buttons, in button order — least to most final, so
+ *  Paid lands in the corner. */
+export const VB_HEADER_TRANSITION_CODES: readonly string[] = ['ODUE', 'PART', 'PAID'];
+
+/** The move offered as a Danger Zone button rather than next to Paid. */
+export const VB_VOID_CODE = 'VOID';
+
+/** Moves that end the bill's life — no legal move leaves them — so firing one
+ *  from a one-click button asks first (the sidebar pill's two-step confirm did
+ *  this before they became buttons). Must stay equal to the statuses
+ *  VB_ALLOWED_TRANSITIONS leaves empty; the test suite pins that. */
+export const VB_CONFIRMED_TRANSITION_CODES = ['PAID', 'VOID'] as const;
+export type VbConfirmedCode = (typeof VB_CONFIRMED_TRANSITION_CODES)[number];
+
+export function isVbConfirmedTransition(code: string): code is VbConfirmedCode {
+  return (VB_CONFIRMED_TRANSITION_CODES as readonly string[]).includes(code);
+}
+
+type VbNextMoves = { statusCode: string; nextStatusCodes?: string[] };
+
+/** The record's legal next-moves: its own `nextStatusCodes` when loaded (the
+ *  backend's view, with an unconfigured approval checkpoint collapsed out),
+ *  else the static map. */
+export function vbNextCodes(order: VbNextMoves): string[] {
+  return order.nextStatusCodes ?? VB_ALLOWED_TRANSITIONS[order.statusCode] ?? [];
+}
+
+/** Header-button moves legal for this bill right now, in button order. */
+export function vbHeaderTransitions(order: VbNextMoves): string[] {
+  const next = vbNextCodes(order);
+  return VB_HEADER_TRANSITION_CODES.filter((code) => next.includes(code));
+}
+
+/** Whether Void is a legal move right now (the Danger Zone button). */
+export function vbCanVoid(order: VbNextMoves): boolean {
+  return vbNextCodes(order).includes(VB_VOID_CODE);
+}
+
+/** Legal next-moves left for the sidebar pill once the header buttons and Void
+ *  have taken theirs. */
+export function vbDropdownTransitions(order: VbNextMoves): string[] {
+  return vbNextCodes(order).filter((code) => !VB_HEADER_TRANSITION_CODES.includes(code) && code !== VB_VOID_CODE);
+}
+
 /** Button label per (from, to) status-code pair — a plain `to`-keyed map
  *  can't distinguish contexts that share a target code, so the key is
  *  `${from}:${to}` (mirrors PO_TRANSITION_LABELS). */
@@ -406,9 +458,11 @@ function toLineInput(item: VendorBillLineItem, lineNo: number): VendorBillLineIn
 
 /** Maps the AddVendorBillPage form state + line items to the backend's
  *  `CreateVendorBillPayload`. `vendorUuid` comes from the VendorPicker's
- *  selection (stored under `vendor_uuid` in form state). Status is
- *  intentionally omitted: every new vendor bill starts at DRFT
- *  server-side; status changes go through the `/transition` endpoint. */
+ *  selection (stored under `vendor_uuid` in form state) and the optional
+ *  `purchaseOrderUuid` from the PurchaseOrderPicker's (`purchase_order_uuid`;
+ *  omitted when nothing is linked). Status is intentionally omitted: every new
+ *  vendor bill starts at DRFT server-side; status changes go through the
+ *  `/transition` endpoint. */
 export function toCreatePayload(
   data: Record<string, unknown>,
   lineItems: VendorBillLineItem[],
@@ -416,6 +470,7 @@ export function toCreatePayload(
 ): CreateVendorBillPayload {
   return {
     vendorUuid: toStr(data.vendor_uuid),
+    purchaseOrderUuid: toStr(data.purchase_order_uuid) || undefined,
     vendorInvoiceNumber: toStr(data.vendor_invoice_number),
     referenceNumber: toStr(data.reference_number),
     billDate: toStr(data.bill_date),
@@ -464,11 +519,14 @@ function fromLine(line: VendorBillLine, i: number): VendorBillLineItem {
 
 /** Maps a loaded VendorBill (GET response) back to the Edit form's state —
  *  the inverse of toCreatePayload. Vendor is returned separately since it's
- *  driven by VendorPicker's own state, not a plain form field. */
+ *  driven by VendorPicker's own state, not a plain form field; so is the
+ *  linked purchase order, which the Edit form shows read-only (null when the
+ *  bill has none). */
 export function fromVendorBill(bill: VendorBill): {
   data: Record<string, unknown>;
   lineItems: VendorBillLineItem[];
   vendor: { id: string; name: string };
+  purchaseOrder: VendorBillPurchaseOrderRef | null;
   customFieldValues: Record<string, unknown>;
 } {
   const data: Record<string, unknown> = {
@@ -495,6 +553,7 @@ export function fromVendorBill(bill: VendorBill): {
     data,
     lineItems,
     vendor: { id: bill.vendor.id, name: bill.vendor.name },
+    purchaseOrder: bill.purchaseOrder ?? null,
     customFieldValues: bill.customFields ?? {},
   };
 }

@@ -7,16 +7,17 @@ import { cn } from '@/lib/utils';
 import { customerCoreDefaults } from '@/lib/customerDefaults';
 import { fieldCls } from '@/components/crm/formUtils';
 import { hasExactName } from '@/lib/recordCreateReturn';
+import { CUSTOMER_USABLE_STATUS } from '@/lib/crmStatusFlow';
 import type { FilterClause } from '@/types/tenant';
 
 const RESULT_LIMIT = 8;
 
-// A customer's "status" is a CRM pipeline stage (lkp_crm_status), not a plain
-// active/inactive flag — only these two stages count as billable for a new
-// Sales Order (matches the "status" filter contract used by CrmRecordTable:
-// value is the numeric crm_status_id, resolved server-side against
-// customer_crm_status).
-const BILLABLE_STATUS_NAMES = ['Customer Closed Won', 'Customer Renewal'];
+// A customer's "status" is a CRM status (lkp_crm_status): Draft, Active, Inactive
+// or Credit Hold. Only an Active customer can be used on other records, so it is
+// the only one listed here — the backend refuses to create a document for any
+// other (workflow/customer_usable.go). Matches the "status" filter contract used
+// by CrmRecordTable: value is the numeric crm_status_id, resolved server-side
+// against customer_crm_status.
 
 export interface CustomerRef {
   id: string;
@@ -91,23 +92,23 @@ export function CustomerPicker({
     staleTime: 10 * 60 * 1000,
   });
 
-  const billableStatusIds = useMemo(
+  const usableStatusIds = useMemo(
     () => (lookups?.crmStatuses ?? [])
-      .filter((s) => BILLABLE_STATUS_NAMES.includes(s.name))
+      .filter((s) => s.code === CUSTOMER_USABLE_STATUS)
       .map((s) => String(s.id)),
     [lookups],
   );
 
   // Wait for the status lookup before querying, so we never briefly show an
-  // unfiltered (all-statuses) list before narrowing to billable ones.
-  const enabled = open && billableStatusIds.length > 0;
+  // unfiltered (all-statuses) list before narrowing to Active ones.
+  const enabled = open && usableStatusIds.length > 0;
 
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ['customer-picker', debounced, billableStatusIds],
+    queryKey: ['customer-picker', debounced, usableStatusIds],
     enabled,
     staleTime: 30 * 1000,
     queryFn: async (): Promise<CustomerRef[]> => {
-      const filters: FilterClause[] = [{ field: 'status', op: 'in', value: billableStatusIds }];
+      const filters: FilterClause[] = [{ field: 'status', op: 'in', value: usableStatusIds }];
       if (debounced) filters.push({ field: 'core:customer_name', op: 'contains', value: debounced });
       const page = await crmService.searchRecords('customer', {
         filters,
@@ -134,11 +135,40 @@ export function CustomerPicker({
     onCreateNew?.(debounced);
   }
 
-  // Only once the search has actually settled — not while `enabled` is still
-  // waiting on the status lookup — so this never flashes true on first open.
-  const notFound = enabled && !isFetching && debounced.length > 0 && results.length === 0;
-  const showCreateNew = Boolean(onCreateNew) && enabled && !isFetching && debounced.length > 0
-    && !hasExactName(results, debounced);
+  // The list above only ever searches Active customers (CUSTOMER_USABLE_STATUS),
+  // so an exact-name match here proves the name is free. It doesn't prove the
+  // opposite: a Draft/Inactive/Credit Hold customer of that name is invisible
+  // to that query, so without this second, unfiltered check "Create" would be
+  // offered for a name that already belongs to someone — just not an Active
+  // someone. Only runs once the Active-only list has no match, so most
+  // keystrokes never trigger it. Links straight to that customer's own detail
+  // page rather than through the "New Customer" form (which would then have to
+  // explain, again, that the name is taken) — the reactivate action already
+  // lives there as a Quick Action button (CustomerStatusActions.tsx).
+  const activeHasExactMatch = hasExactName(results, debounced);
+  const inactiveCheckEnabled = enabled && !isFetching && debounced.length > 0 && !activeHasExactMatch;
+  const { data: inactiveDuplicateId = null, isFetching: isCheckingInactive } = useQuery({
+    queryKey: ['customer-picker-inactive-check', debounced],
+    enabled: inactiveCheckEnabled,
+    staleTime: 30 * 1000,
+    queryFn: async (): Promise<string | null> => {
+      const page = await crmService.searchRecords('customer', {
+        filters: [{ field: 'core:customer_name', op: 'contains', value: debounced }],
+        limit: 5,
+      });
+      const needle = debounced.trim().toLowerCase();
+      const match = page.records.find((r) => String(r.coreFields.customer_name ?? '').trim().toLowerCase() === needle);
+      return match?.id ?? null;
+    },
+  });
+
+  // Only once every search involved has actually settled — not while `enabled`
+  // is still waiting on the status lookup, or the inactive check is still in
+  // flight — so none of these ever flash the wrong state on first open.
+  const settled = enabled && !isFetching && !isCheckingInactive && debounced.length > 0;
+  const notFound = settled && results.length === 0 && !inactiveDuplicateId;
+  const showCreateNew = Boolean(onCreateNew) && settled && !activeHasExactMatch && !inactiveDuplicateId;
+  const showInactiveNotice = settled && Boolean(inactiveDuplicateId);
 
   if (value) {
     return (
@@ -171,16 +201,16 @@ export function CustomerPicker({
           className={cn(fieldCls, 'pl-8')}
           aria-label="Search billing customer"
         />
-        {isFetching && (
+        {(isFetching || isCheckingInactive) && (
           <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-stone-400" />
         )}
       </div>
 
       {open && enabled && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
-          {results.length === 0 && !isFetching && (
+          {results.length === 0 && !isFetching && !showInactiveNotice && (
             <p className="px-3 py-2 text-xs text-stone-400">
-              {debounced ? 'No matching customers.' : 'No billable customers available.'}
+              {debounced ? 'No matching customers.' : 'No active customers available.'}
             </p>
           )}
           {results.map((c) => (
@@ -203,6 +233,29 @@ export function CustomerPicker({
               {!onCreateNew && (
                 <p className="mt-0.5 pl-5 text-2xs text-stone-500">
                   Ask someone with customer access to add them first.
+                </p>
+              )}
+            </div>
+          )}
+          {showInactiveNotice && (
+            <div role="status" className="px-3 py-2">
+              <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                <span className="min-w-0 break-words">A customer named “{debounced}” already exists but isn't Active.</span>
+              </p>
+              {onCreateNew ? (
+                <a
+                  href={`/crm/customer/${inactiveDuplicateId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open “${debounced}” to reactivate — opens in a new tab`}
+                  className="mt-1 flex items-center gap-1.5 pl-5 text-2xs font-semibold text-stone-700 hover:text-stone-900 transition-colors"
+                >
+                  Open it to reactivate
+                </a>
+              ) : (
+                <p className="mt-0.5 pl-5 text-2xs text-stone-500">
+                  Ask someone with customer access to reactivate them.
                 </p>
               )}
             </div>

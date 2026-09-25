@@ -10,10 +10,7 @@ import {
   MARGIN_X,
   PAGE_BOTTOM_SAFE,
   BRAND_LIME,
-  BRAND_DARK_ACCENT,
   INK,
-  STONE_200,
-  STONE_400,
   STONE_600,
   HEADER_BAND_HEIGHT,
   HEADER_ACCENT_HEIGHT,
@@ -22,6 +19,16 @@ import {
   fmtDate,
   type DocWithAutoTable,
 } from "@/lib/pdfBranding";
+import {
+  drawRecordTitle,
+  drawDateAmountHeader,
+  drawAddressRow,
+  drawTotalsCard,
+  drawEmphasisBar,
+  type PdfAddressBlock,
+  type PdfKeyAmount,
+} from "@/lib/pdfDocumentBlocks";
+import { drawTextCard } from "@/lib/pdfTextBlocks";
 
 export { fmtDate } from "@/lib/pdfBranding";
 
@@ -46,6 +53,15 @@ const RECORD_TYPE_LABEL: Record<CrmExportRecordType, string> = {
   prospect: "Prospect",
   customer: "Customer",
 };
+
+// Rendered as address cards instead of a generic Field/Value grid — see
+// billingAddressBlock/shippingAddressBlock below.
+const ADDRESS_SECTION_TITLES = new Set(["Billing Address", "Shipping Address"]);
+// Rendered as a Notes card instead of a generic grid row.
+const NOTES_FIELD_KEY = "customer_internal_notes";
+// Rendered as the key-amount badge (Customer only) instead of a grid row.
+const BALANCE_HEADLINE_KEY = "customer_total_balance";
+const FOOTER_COLUMN_GAP = 24;
 
 export function resolveLookupLabel(
   lookups: CrmLookups | undefined,
@@ -85,6 +101,32 @@ export function buildExportFilename(
   return `${recordType}-${safeName}.pdf`;
 }
 
+// customer_bill_addr_*/customer_ship_addr_* -> a PdfAddressBlock, resolving
+// the state/country lookup IDs to display names. Returns undefined when the
+// address hasn't been filled in at all, so the caller can skip the card.
+function addressBlockFromCoreFields(
+  coreFields: Record<string, unknown>,
+  lookups: CrmLookups | undefined,
+  prefix: "customer_bill_addr_" | "customer_ship_addr_",
+): PdfAddressBlock | undefined {
+  const line1 = String(coreFields[`${prefix}line1`] ?? "");
+  if (!line1) return undefined;
+
+  const stateField: CrmCoreField = { key: `${prefix}state`, label: "", type: "lookup-select", lookupKey: "states" };
+  const countryField: CrmCoreField = { key: `${prefix}country`, label: "", type: "lookup-select", lookupKey: "countries" };
+  const city = String(coreFields[`${prefix}city`] ?? "");
+  const state = resolveLookupLabel(lookups, stateField, coreFields[`${prefix}state`]);
+
+  return {
+    addrLine1: line1,
+    addrLine2: String(coreFields[`${prefix}line2`] ?? "") || undefined,
+    suiteUnit: String(coreFields[`${prefix}suitenum`] ?? "") || undefined,
+    city: [city, state].filter(Boolean).join(", ") || undefined,
+    zip: String(coreFields[`${prefix}zip`] ?? "") || undefined,
+    country: resolveLookupLabel(lookups, countryField, coreFields[`${prefix}country`]) || undefined,
+  };
+}
+
 /** Builds a branded PDF summary of a CRM Lead/Prospect/Customer record. */
 export async function buildCrmRecordPdf(params: CrmExportParams): Promise<DocWithAutoTable> {
   const {
@@ -105,57 +147,47 @@ export async function buildCrmRecordPdf(params: CrmExportParams): Promise<DocWit
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  await drawMasthead(doc, pageWidth);
+  await drawMasthead(doc, pageWidth, RECORD_TYPE_LABEL[recordType], recordNumber, statusLabel);
 
-  let cursorY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 34;
+  const headerStartY = HEADER_BAND_HEIGHT + HEADER_ACCENT_HEIGHT + 30;
+  const balanceField = CRM_CUSTOMER_BALANCE_SECTION.fields.find((f) => f.key === BALANCE_HEADLINE_KEY);
+  const keyAmount: PdfKeyAmount | undefined =
+    showCustomerBalances && balanceField
+      ? { label: "Balance", value: fieldDisplayValue(coreFields, lookups, balanceField) }
+      : undefined;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...BRAND_DARK_ACCENT);
-  doc.text("CRM RECORD SUMMARY", MARGIN_X, cursorY, { charSpace: 1.4 });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...STONE_400);
-  doc.text(`Generated ${new Date().toLocaleString()}`, pageWidth - MARGIN_X, cursorY, {
-    align: "right",
+  const titleBottom = drawRecordTitle(doc, headerStartY, title || "(unnamed)");
+  const dateAmountBottom = drawDateAmountHeader(doc, pageWidth, headerStartY, {
+    issueDate: fmtDate(createdAt),
+    issueDateLabel: "Created",
+    dueDate: fmtDate(updatedAt),
+    dueDateLabel: "Updated",
+    keyAmount,
   });
+  let cursorY = Math.max(titleBottom, dateAmountBottom) + 20;
 
-  cursorY += 24;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(...INK);
-  doc.text(title || "(unnamed)", MARGIN_X, cursorY);
+  if (ownerName) {
+    cursorY = drawAddressRow(doc, pageWidth, cursorY, { label: "Account Owner", addr: { customerName: ownerName } });
+  }
 
-  cursorY += 18;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...STONE_600);
-  const subtitleParts = [RECORD_TYPE_LABEL[recordType], recordNumber].filter(Boolean);
-  doc.text(subtitleParts.join("  ·  "), MARGIN_X, cursorY);
+  const billTo = addressBlockFromCoreFields(coreFields, lookups, "customer_bill_addr_");
+  const shipTo = addressBlockFromCoreFields(coreFields, lookups, "customer_ship_addr_");
+  if (billTo || shipTo) {
+    cursorY = drawAddressRow(
+      doc,
+      pageWidth,
+      cursorY,
+      billTo && { label: "Billing Address", addr: billTo },
+      shipTo && { label: "Shipping Address", addr: shipTo },
+    );
+  }
 
-  cursorY += 16;
-  doc.setDrawColor(...STONE_200);
-  doc.setLineWidth(0.75);
-  doc.line(MARGIN_X, cursorY, pageWidth - MARGIN_X, cursorY);
-  cursorY += 20;
-
-  autoTable(doc, {
-    startY: cursorY,
-    margin: { left: MARGIN_X, right: MARGIN_X },
-    theme: "plain",
-    styles: { fontSize: 9, textColor: STONE_600, cellPadding: 2 },
-    body: [
-      ["Status", statusLabel || "—", "Account Owner", ownerName || "—"],
-      ["Created", fmtDate(createdAt), "Updated", fmtDate(updatedAt)],
-    ],
-    columnStyles: {
-      0: { fontStyle: "bold", textColor: INK, cellWidth: 90 },
-      2: { fontStyle: "bold", textColor: INK, cellWidth: 90 },
-    },
-  });
-
-  cursorY = doc.lastAutoTable.finalY + 20;
+  function ensureSpace(minHeight = 0) {
+    if (cursorY + minHeight > pageHeight - PAGE_BOTTOM_SAFE) {
+      doc.addPage();
+      cursorY = 44;
+    }
+  }
 
   function renderSectionTable(sectionTitle: string, fields: CrmCoreField[]) {
     const rows = fields
@@ -163,10 +195,7 @@ export async function buildCrmRecordPdf(params: CrmExportParams): Promise<DocWit
       .map((field) => [field.label, fieldDisplayValue(coreFields, lookups, field)]);
     if (rows.length === 0) return;
 
-    if (cursorY > pageHeight - PAGE_BOTTOM_SAFE) {
-      doc.addPage();
-      cursorY = 44;
-    }
+    ensureSpace();
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
@@ -188,20 +217,42 @@ export async function buildCrmRecordPdf(params: CrmExportParams): Promise<DocWit
     cursorY = doc.lastAutoTable.finalY + 20;
   }
 
-  for (const section of CRM_CORE_SECTIONS) renderSectionTable(section.title, section.fields);
+  for (const section of CRM_CORE_SECTIONS) {
+    if (ADDRESS_SECTION_TITLES.has(section.title)) continue;
+    const fields = section.fields.filter((field) => field.key !== NOTES_FIELD_KEY);
+    renderSectionTable(section.title, fields);
+  }
 
-  if (showCustomerBalances) {
-    renderSectionTable(CRM_CUSTOMER_BALANCE_SECTION.title, CRM_CUSTOMER_BALANCE_SECTION.fields);
+  const notesRaw = coreFields[NOTES_FIELD_KEY];
+  const notesText = notesRaw !== null && notesRaw !== undefined && notesRaw !== "" ? String(notesRaw) : undefined;
+
+  const balanceTotals = showCustomerBalances
+    ? CRM_CUSTOMER_BALANCE_SECTION.fields
+        .filter((field) => field.key !== BALANCE_HEADLINE_KEY && isFieldVisible(coreFields, field))
+        .map((field) => ({ label: field.label, value: fieldDisplayValue(coreFields, lookups, field) }))
+        .filter((row) => row.value !== "—")
+    : [];
+
+  if (notesText || balanceTotals.length > 0 || keyAmount) {
+    ensureSpace(80);
+    const colWidth = (pageWidth - MARGIN_X * 2 - FOOTER_COLUMN_GAP) / 2;
+    const rightX = MARGIN_X + colWidth + FOOTER_COLUMN_GAP;
+
+    let leftY = cursorY;
+    if (notesText) leftY = drawTextCard(doc, MARGIN_X, colWidth, leftY, "Notes", notesText);
+
+    let rightY = cursorY;
+    if (balanceTotals.length > 0) rightY = drawTotalsCard(doc, rightX, colWidth, rightY, balanceTotals) + 10;
+    if (keyAmount) rightY = drawEmphasisBar(doc, rightX, colWidth, rightY, keyAmount);
+
+    cursorY = Math.max(leftY, rightY) + 20;
   }
 
   const customEntries = Object.entries(customFields).filter(
     ([, value]) => value !== null && value !== undefined && value !== "",
   );
   if (customEntries.length > 0) {
-    if (cursorY > pageHeight - PAGE_BOTTOM_SAFE) {
-      doc.addPage();
-      cursorY = 44;
-    }
+    ensureSpace();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(...INK);

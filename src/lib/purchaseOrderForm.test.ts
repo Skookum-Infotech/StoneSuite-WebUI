@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
   PO_ALLOWED_TRANSITIONS, isPoTransitionBlocked, poTransitionLabel, poStatusLabel,
+  poNextCodes, poHeaderTransitions, poDropdownTransitions,
+  billableQuantity, poBillableLines, PO_BILLABLE_STATUSES,
   calcLineItem, calcHeaderTotals, toCreatePayload, validatePurchaseOrderCustomFields,
 } from './purchaseOrderForm'
 import type { FieldDefinition } from '@/types/tenant'
@@ -17,6 +19,31 @@ describe('PO_ALLOWED_TRANSITIONS', () => {
     ['CANC', []],
   ])('from(%p) -> %p', (code, expected) => {
     expect(PO_ALLOWED_TRANSITIONS[code]).toEqual(expected)
+  })
+})
+
+// The header buttons (Submit for Approval, Send to Vendor) and the super-admin
+// dropdown split a record's legal next-moves between them: together they must
+// cover every move exactly once.
+describe('poNextCodes / poHeaderTransitions / poDropdownTransitions', () => {
+  it.each([
+    // [label, order, next, header buttons, dropdown options]
+    ['draft, approvers configured (static map)', { statusCode: 'DRFT' }, ['PAPV', 'CANC'], ['PAPV'], ['CANC']],
+    ['draft, nobody to approve (backend collapsed the checkpoint)', { statusCode: 'DRFT', nextStatusCodes: ['CANC', 'SENT'] }, ['CANC', 'SENT'], ['SENT'], ['CANC']],
+    ['pending approval', { statusCode: 'PAPV' }, ['APPV', 'DRFT', 'CANC'], [], ['APPV', 'DRFT', 'CANC']],
+    ['approved', { statusCode: 'APPV' }, ['SENT', 'DRFT', 'CANC'], ['SENT'], ['DRFT', 'CANC']],
+    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'CLSD', 'CANC'], [], ['PART', 'RCVD', 'CLSD', 'CANC']],
+    ['closed is terminal', { statusCode: 'CLSD' }, [], [], []],
+    ['record nextStatusCodes wins over the static map', { statusCode: 'DRFT', nextStatusCodes: [] }, [], [], []],
+    ['unknown status has no moves', { statusCode: 'XXXX' }, [], [], []],
+  ])('%s', (_label, order, next, header, dropdown) => {
+    expect(poNextCodes(order)).toEqual(next)
+    expect(poHeaderTransitions(order)).toEqual(header)
+    expect(poDropdownTransitions(order)).toEqual(dropdown)
+  })
+
+  it('lists Submit for Approval before Send to Vendor when both are legal', () => {
+    expect(poHeaderTransitions({ statusCode: 'DRFT', nextStatusCodes: ['SENT', 'PAPV', 'CANC'] })).toEqual(['PAPV', 'SENT'])
   })
 })
 
@@ -173,5 +200,61 @@ describe('validatePurchaseOrderCustomFields', () => {
 
   it('ignores optional fields entirely', () => {
     expect(validatePurchaseOrderCustomFields(defs, { budget_code: 'CAP-100', notes: '' })).toEqual([])
+  })
+})
+
+// Mirrors vendorbill.billableQuantity / planConversion on the backend, which is
+// authoritative -- this only decides whether Create Bill shows and what its
+// dialog lists.
+describe('billableQuantity', () => {
+  it.each([
+    ['nothing received', 0, 0, 0],
+    ['first delivery, nothing billed', 6, 0, 6],
+    ['second delivery bills only the new goods', 10, 6, 4],
+    ['fully billed', 10, 10, 0],
+    ['receipt voided after billing leaves nothing, not a negative', 4, 6, 0],
+    ['fractional quantities', 2.5, 1, 1.5],
+    ['float noise is rounded away', 5.1, 2.1, 3],
+  ])('%s', (_label, received, billed, want) => {
+    expect(billableQuantity(received, billed)).toBe(want)
+  })
+})
+
+describe('poBillableLines', () => {
+  const item = (id: string, lineNumber: number, quantity: number, qtyReceived: number, qtyBilled: number) => ({
+    id, lineNumber, itemName: `Item ${lineNumber}`, description: '', quantity, qtyReceived, qtyBilled,
+  }) as unknown as Parameters<typeof poBillableLines>[0]['items'][number]
+
+  it.each(['PART', 'RCVD', 'CLSD'])('bills what arrived on a %s order, leaving off lines with nothing received', (statusCode) => {
+    const lines = poBillableLines({
+      statusCode,
+      items: [item('a', 1, 10, 4, 0), item('b', 2, 5, 0, 0), item('c', 3, 8, 8, 0)],
+    })
+    expect(lines).toEqual([
+      { id: 'a', lineNumber: 1, itemName: 'Item 1', ordered: 10, toBill: 4 },
+      { id: 'c', lineNumber: 3, itemName: 'Item 3', ordered: 8, toBill: 8 },
+    ])
+  })
+
+  it('subtracts what earlier bills already cover', () => {
+    const lines = poBillableLines({ statusCode: 'PART', items: [item('a', 1, 10, 10, 4)] })
+    expect(lines.map((l) => l.toBill)).toEqual([6])
+  })
+
+  it('is empty once everything received is billed', () => {
+    expect(poBillableLines({ statusCode: 'RCVD', items: [item('a', 1, 10, 10, 10)] })).toEqual([])
+  })
+
+  it.each(['DRFT', 'PAPV', 'APPV', 'SENT', 'CANC'])('is empty on a %s order even if quantities are set', (statusCode) => {
+    expect(poBillableLines({ statusCode, items: [item('a', 1, 10, 10, 0)] })).toEqual([])
+  })
+
+  it('falls back to the description for a free-text line with no item name', () => {
+    const line = { ...item('a', 1, 10, 3, 0), itemName: '', description: 'Freight' }
+    expect(poBillableLines({ statusCode: 'PART', items: [line] })[0].itemName).toBe('Freight')
+  })
+
+  it('agrees with the statuses the backend converts', () => {
+    expect([...PO_BILLABLE_STATUSES].sort()).toEqual(['CLSD', 'PART', 'RCVD'])
   })
 })

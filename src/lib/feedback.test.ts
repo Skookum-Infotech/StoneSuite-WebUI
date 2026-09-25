@@ -5,6 +5,9 @@ import {
   feedbackPriorityLabel,
   feedbackAreaLabel,
   resolveFeedbackArea,
+  resolveSupportTab,
+  supportPath,
+  isSupportPath,
   validateFeedbackDescription,
   validateFeedbackComment,
   validateFeedbackFile,
@@ -112,6 +115,45 @@ describe('resolveFeedbackArea', () => {
     ['/', 'other'],
   ])('resolves %s to %s', (pathname, area) => {
     expect(resolveFeedbackArea(pathname)).toBe(area)
+  })
+})
+
+describe('resolveSupportTab', () => {
+  // The tab comes straight from a user-editable query string, so anything
+  // unrecognised must land on the ticket list rather than render no panel.
+  it.each([
+    ['new', 'new'],
+    ['tickets', 'tickets'],
+    [null, 'tickets'],
+    ['', 'tickets'],
+    ['bogus', 'tickets'],
+    ['NEW', 'tickets'],
+  ])('resolves ?tab=%s to %s', (param, tab) => {
+    expect(resolveSupportTab(param)).toBe(tab)
+  })
+})
+
+describe('supportPath', () => {
+  it.each([
+    [undefined, '/support'],
+    ['new', '/support?tab=new'],
+    ['tickets', '/support?tab=tickets'],
+  ] as const)('builds the URL for tab %s', (tab, url) => {
+    expect(supportPath(tab)).toBe(url)
+  })
+})
+
+describe('isSupportPath', () => {
+  it.each([
+    ['/support', true],
+    ['/support/', true],
+    ['/support/anything', true],
+    ['/supportive', false],
+    ['/sales/support', false],
+    ['/dashboard', false],
+    ['', false],
+  ])('%s -> %s', (pathname, expected) => {
+    expect(isSupportPath(pathname)).toBe(expected)
   })
 })
 

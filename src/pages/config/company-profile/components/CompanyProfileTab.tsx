@@ -20,6 +20,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CompanyInfoTextField, CompanyInfoReadonlyField, type CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import { CompanyInfoSelectField } from './CompanyInfoSelectField';
 import { PaymentDetailsSection } from './PaymentDetailsSection';
+import { CompanyLogoCard } from './CompanyLogoCard';
 
 const EMPTY_ADDRESS: Address = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' };
 const EMPTY_PAYMENT_DETAILS: PaymentDetails = { bankName: '', accountNumber: '', routingNumber: '' };
@@ -168,7 +169,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('country')}
           error={errors.country?.message}
-          options={countryOptions(lookupsQ.data, values.country ?? '')}
+          options={countryOptions(lookupsQ.data?.countries, values.country ?? '')}
         />
       );
     }
@@ -179,7 +180,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={field}
           registration={register('currency')}
           error={errors.currency?.message}
-          options={currencyOptions(lookupsQ.data, values.currency ?? '')}
+          options={currencyOptions(lookupsQ.data?.currencies, values.currency ?? '')}
         />
       );
     }
@@ -208,7 +209,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           field={fieldSpec}
           registration={register(`${group.key}.country`)}
           error={errors[group.key]?.country?.message}
-          options={countryOptions(lookupsQ.data, groupValues?.country ?? '')}
+          options={countryOptions(lookupsQ.data?.countries, groupValues?.country ?? '')}
         />
       );
     }
@@ -310,18 +311,23 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           </div>
         )}
 
-        {/* Separate ModernSection per group (Company Information, then each
-            address) with minimal space between them — same pattern as
+        {/* Separate ModernSection per group (Logo, Company Information, then
+            each address) with minimal space between them — same pattern as
             VendorFormBody's edit form / VendorOverviewTab's read-only view,
-            rather than one big card. */}
-        <ModernSection title="Company Information" index={0}>
+            rather than one big card. CompanyLogoCard isn't part of this
+            react-hook-form instance — its buttons are type="button" and it
+            mutates immediately via its own upload/delete endpoints, so
+            nesting it inside this <form> doesn't interact with Save/Cancel. */}
+        <CompanyLogoCard canConfigure={canConfigure} />
+
+        <ModernSection title="Company Information" index={1}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
             {COMPANY_FIELDS.map(renderCompanyField)}
           </div>
         </ModernSection>
 
         {ADDRESS_GROUPS.map((group, i) => (
-          <ModernSection key={group.key} title={group.title} index={i + 1}>
+          <ModernSection key={group.key} title={group.title} index={i + 2}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
               {ADDRESS_SUBFIELDS.map((sub) => renderAddressField(group, sub))}
             </div>

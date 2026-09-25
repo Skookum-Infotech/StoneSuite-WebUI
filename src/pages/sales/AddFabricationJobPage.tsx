@@ -14,8 +14,9 @@ import type { FabricationSourceOrder } from './components/FabricationSourceOrder
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { FabricationJobFormBody } from './components/FabricationJobFormBody';
 import {
-  fjDefaults, toJobFields, toPieceInput, PAGE_TABS, type PageTab, type FJPieceRow,
+  fjDefaults, toJobFields, toPieceInput, PAGE_TABS, SITE_FIELDS, type PageTab, type FJPieceRow,
 } from '@/lib/fabricationForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 
 export default function AddFabricationJobPage() {
   const navigate = useNavigate();
@@ -55,6 +56,8 @@ export default function AddFabricationJobPage() {
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!sourceOrder) throw new Error('A sales order is required to open a fabrication job.');
+      const badPhone = firstInvalidPhoneLabel(SITE_FIELDS, data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       return fabricationService.createJob({
         salesOrderUuid: sourceOrder.id,
         ...toJobFields(data, customFieldValues),

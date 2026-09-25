@@ -16,8 +16,16 @@ import { lookupService, type CrmLookups } from '@/services/lookupService';
 import type { RecordPage, WorkflowRecord } from '@/types/tenant';
 
 const LOOKUPS: Partial<CrmLookups> = {
-  crmStatuses: [{ id: 1, code: 'CCW', name: 'Customer Closed Won' }, { id: 2, code: 'CRN', name: 'Customer Renewal' }],
+  // Every customer status plus one from another stage: only Active may be listed.
+  crmStatuses: [
+    { id: 1, code: 'PDIS', name: 'In Discussion' },
+    { id: 3, code: 'CDRF', name: 'Draft' },
+    { id: 4, code: 'CACT', name: 'Active' },
+    { id: 5, code: 'CINA', name: 'Inactive' },
+    { id: 6, code: 'CCHD', name: 'Credit Hold' },
+  ],
 };
+const ACTIVE_STATUS_ID = '4';
 const ACME: CustomerRef = { id: 'cust-1', name: 'Acme Corp' };
 
 function mockSearch(records: CustomerRef[]) {
@@ -48,6 +56,30 @@ beforeEach(() => {
 });
 
 describe('CustomerPicker', () => {
+  it('lists only Active customers — not Draft, Inactive or Credit Hold ones', async () => {
+    mockSearch([ACME]);
+    const user = userEvent.setup();
+    renderPicker();
+
+    await user.click(screen.getByRole('textbox', { name: 'Search billing customer' }));
+    await screen.findByRole('button', { name: /Acme Corp/ });
+
+    expect(crmService.searchRecords).toHaveBeenCalledTimes(1);
+    const [workflowKey, request] = vi.mocked(crmService.searchRecords).mock.calls[0];
+    expect(workflowKey).toBe('customer');
+    expect(request.filters).toContainEqual({ field: 'status', op: 'in', value: [ACTIVE_STATUS_ID] });
+  });
+
+  it('says so when there are no Active customers to browse', async () => {
+    mockSearch([]);
+    const user = userEvent.setup();
+    renderPicker();
+
+    await user.click(screen.getByRole('textbox', { name: 'Search billing customer' }));
+
+    expect(await screen.findByText('No active customers available.')).toBeInTheDocument();
+  });
+
   it('picks a customer on click', async () => {
     mockSearch([ACME]);
     const onChange = vi.fn();
@@ -111,5 +143,35 @@ describe('CustomerPicker', () => {
 
     expect(await screen.findByRole('button', { name: /Acme Corp/ })).toBeInTheDocument();
     expect(screen.queryByText(/isn't an existing customer/)).not.toBeInTheDocument();
+  });
+
+  it('links straight to the existing customer instead of Create when the name belongs to a non-Active customer', async () => {
+    // The Active-only list (status:in filter) has no match, but a second,
+    // unfiltered search finds one — e.g. a Draft/Inactive/Credit Hold customer,
+    // which CUSTOMER_USABLE_STATUS excludes from the first query entirely.
+    vi.mocked(crmService.searchRecords).mockImplementation(async (_workflowKey, req) => {
+      const isActiveOnlyQuery = req.filters?.some((f) => f.field === 'status');
+      const records: WorkflowRecord[] = isActiveOnlyQuery ? [] : [{
+        id: 'cust-9', workflowId: '', currentStateId: 's-draft', coreFields: { customer_name: 'Wayne Enterprises' },
+        customFields: {}, createdAt: '', updatedAt: '',
+      }];
+      return { records, nextCursor: '', hasMore: false, scope: 'all' };
+    });
+    const onCreateNew = vi.fn();
+    const user = userEvent.setup();
+    renderPicker({ onCreateNew });
+
+    const input = screen.getByRole('textbox', { name: 'Search billing customer' });
+    await user.click(input);
+    await user.type(input, 'Wayne Enterprises');
+
+    expect(await screen.findByText(/already exists but isn't Active/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /as a new customer/ })).not.toBeInTheDocument();
+    expect(onCreateNew).not.toHaveBeenCalled();
+
+    const link = await screen.findByRole('link', { name: /reactivate/i });
+    expect(link).toHaveAttribute('href', '/crm/customer/cust-9');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
   });
 });

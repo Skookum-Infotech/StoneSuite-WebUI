@@ -11,7 +11,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -20,6 +20,7 @@ import { INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/
 import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { RecordPaymentDialog } from './components/RecordPaymentDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
@@ -105,6 +106,14 @@ export default function InvoiceDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading invoice…" /></div>;
   if (!invoice)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load invoice.')}</ErrorNote></div>;
@@ -123,23 +132,13 @@ export default function InvoiceDetailPage() {
         recordNumber: invoice.invoiceNumber,
         statusLabel: invoice.status,
         customerName: invoice.customer.name,
-        createdAt: invoice.createdAt,
-        updatedAt: invoice.updatedAt,
-        sections: [
-          {
-            title: 'Primary Information',
-            rows: [
-              ['Invoice Date', fmtDate(invoice.invoiceDate)],
-              ['Due Date', invoice.dueDate ? fmtDate(invoice.dueDate) : ''],
-              ['PO Number', invoice.poNumber || ''],
-              ['Reference #', invoice.referenceNumber || ''],
-              ['Sales Tax %', `${invoice.salesTaxPercent}%`],
-              ['Memo', invoice.memo || ''],
-            ],
-          },
-          { title: 'Bill To', rows: addressRows(invoice.billing) },
-          { title: 'Ship To', rows: addressRows(invoice.shipping) },
-        ],
+        issueDate: fmtDate(invoice.invoiceDate),
+        dueDate: invoice.dueDate ? fmtDate(invoice.dueDate) : undefined,
+        keyAmount: { label: 'Amount Due', value: currency(invoice.balanceDue) },
+        billTo: invoice.billing,
+        shipTo: invoice.shipping,
+        notesText: invoice.memo || undefined,
+        sections: [],
         itemsTable: {
           head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: invoice.items.map((line) => [
@@ -152,6 +151,7 @@ export default function InvoiceDetailPage() {
             `${line.taxPercent}%`,
             currency(line.lineTotal),
           ]),
+          descriptions: invoice.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -160,7 +160,6 @@ export default function InvoiceDetailPage() {
           { label: 'Tax', value: currency(invoice.taxTotal) },
           { label: 'Grand Total', value: currency(invoice.grandTotal), bold: true },
           { label: 'Amount Paid', value: currency(invoice.amountPaid) },
-          { label: 'Balance Due', value: currency(invoice.balanceDue), bold: true },
         ],
       });
     } catch (err) {
@@ -194,24 +193,17 @@ export default function InvoiceDetailPage() {
         statusBadge={<Badge color={color}>{invoice.status}</Badge>}
       />
 
-      {invoice.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={invoice.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={invoice.canApprove}
-            isOverride={invoice.isOverride}
-            requiredApprovals={invoice.requiredApprovals}
-            approvedCount={invoice.approvedCount}
-            callerAlreadyApproved={invoice.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve invoice.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={invoice}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'invoice', run: (reason) => invoiceService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {invoice.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve invoice.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -420,8 +412,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           {canDelete && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteInvoiceDialog
                 invoiceId={id}
                 label={`Invoice ${invoice.invoiceNumber}`}
@@ -430,7 +421,7 @@ export default function InvoiceDetailPage() {
                   navigate('/sales/invoice');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
@@ -458,17 +449,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
-}
-
-function addressRows(addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string }): Array<[string, string]> {
-  return [
-    ['Name', addr.customerName || ''],
-    ['Attention', addr.attention || ''],
-    ['Address', [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', ')],
-    ['City/Zip', [addr.suiteUnit, addr.city, addr.zip].filter(Boolean).join(', ')],
-    ['Phone', addr.phone || ''],
-    ['Email', addr.email || ''],
-  ];
 }
 
 function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {

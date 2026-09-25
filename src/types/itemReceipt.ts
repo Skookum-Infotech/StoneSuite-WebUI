@@ -46,6 +46,12 @@ export interface ItemReceiptFields {
  *  counterparty than the order it settles. */
 export interface ItemReceiptCreatePayload extends ItemReceiptFields {
   purchaseOrderUuid: string;
+  /** Create and post in one transaction, so the receipt is never left Pending.
+   *  Requires item_receipt:transition on top of :create. A refused post (over-
+   *  receipt, order no longer receivable) saves nothing. */
+  post?: boolean;
+  /** Accompanies `post`, exactly as on the /post payload. */
+  overReceiptReason?: string;
 }
 
 /** Update mirrors create minus the purchase order (a receipt's source order

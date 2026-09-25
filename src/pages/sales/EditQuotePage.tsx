@@ -15,9 +15,10 @@ import { QuoteStatusControl } from './components/QuoteStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import {
-  fromQuote, toCreatePayload, PAGE_TABS, type PageTab,
+  fromQuote, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type QuoteLineItem, QUOTE_TERMINAL_STATUSES, QUOTE_STATUS_CODES,
 } from '@/lib/quoteForm';
+import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
@@ -137,7 +138,11 @@ export default function EditQuotePage() {
   );
 
   const save = useMutation({
-    mutationFn: () => quoteService.updateQuote(id, toCreatePayload(data, lineItems, undefined, customFieldValues)),
+    mutationFn: () => {
+      const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], data);
+      if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      return quoteService.updateQuote(id, toCreatePayload(data, lineItems, undefined, customFieldValues));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });

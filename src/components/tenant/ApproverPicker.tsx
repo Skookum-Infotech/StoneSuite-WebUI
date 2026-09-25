@@ -21,16 +21,32 @@ export function ApproverPicker({
   onAdd,
   onRemove,
   disabled,
+  autoFocus,
 }: {
   users: ApproverCandidate[];
   selected: string[];
   onAdd: (userId: string) => void;
   onRemove: (userId: string) => void;
   disabled?: boolean;
+  // autoFocus is for the caller to request focus the instant this picker
+  // first mounts (e.g. a gate that was just switched from disabled to
+  // enabled) -- not a plain HTML autofocus, which would also steal focus
+  // on an ordinary page load where the gate already had approvers.
+  autoFocus?: boolean;
 }) {
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
+  // Starts open when autoFocus is requested -- set from the initial value
+  // directly (not via a setState-on-mount effect) since autoFocus never
+  // changes for the lifetime of a given mount.
+  const [open, setOpen] = useState(Boolean(autoFocus));
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+    // Only ever fires once, right after this picker mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const byId = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
   const atLimit = selected.length >= MAX_APPROVERS;
@@ -90,6 +106,7 @@ export function ApproverPicker({
       ) : (
         <div ref={containerRef} className="relative">
           <input
+            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => {

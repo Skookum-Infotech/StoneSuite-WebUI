@@ -11,7 +11,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ import {
 import { statusToastLabel } from '@/lib/statusToast';
 import { RequisitionAuditTab } from './components/RequisitionAuditTab';
 import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { RequisitionStatusControl } from './components/RequisitionStatusControl';
 import { ConvertToPurchaseOrderDialog } from './components/ConvertToPurchaseOrderDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
@@ -111,6 +112,14 @@ export default function RequisitionDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['requisition', id] });
+    queryClient.invalidateQueries({ queryKey: ['requisitions'] });
+    toast.success('Rejected — sent back to Draft.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading requisition…" /></div>;
   // A 404 here can mean "exists but is out of your scope" as well as "no such
   // record", so the copy stays non-committal about whether it exists.
@@ -145,20 +154,20 @@ export default function RequisitionDetailPage() {
         title: reqn.requisitionNumber || 'Requisition',
         recordNumber: reqn.requisitionNumber,
         statusLabel: reqn.status,
+        issueDate: fmtDate(reqn.createdAt),
+        dueDate: reqn.neededByDate ? fmtDate(reqn.neededByDate) : undefined,
+        dueDateLabel: 'Needed By',
         counterpartyLabel: 'Suggested Vendor',
         counterpartyName: reqn.vendor?.name,
-        createdAt: reqn.createdAt,
-        updatedAt: reqn.updatedAt,
+        notesText: reqn.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Requested By', requesterName ?? ''],
               ['Department', reqn.department || ''],
-              ['Needed By', reqn.neededByDate ? fmtDate(reqn.neededByDate) : ''],
               ['Priority', priorityLabel(reqn.priority)],
               ['Sales Tax %', `${reqn.salesTaxPercent}%`],
-              ['Memo', reqn.memo || ''],
             ],
           },
         ],
@@ -172,6 +181,7 @@ export default function RequisitionDetailPage() {
             currency(line.estimatedUnitPrice),
             currency(line.estimatedAmount),
           ]),
+          descriptions: reqn.items.map((line) => line.description || undefined),
           numericFrom: 3,
         },
         totals: [
@@ -199,24 +209,17 @@ export default function RequisitionDetailPage() {
         statusBadge={<Badge color={color}>{reqn.status}</Badge>}
       />
 
-      {reqn.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={reqn.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={reqn.canApprove}
-            isOverride={reqn.isOverride}
-            requiredApprovals={reqn.requiredApprovals}
-            approvedCount={reqn.approvedCount}
-            callerAlreadyApproved={reqn.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={reqn}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'requisition', run: (reason) => requisitionService.reject(id, reason), onRejected: handleRejected }}
+        resubmitVia="submit"
+      />
+      {reqn.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -428,8 +431,7 @@ export default function RequisitionDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteRequisitionDialog
                 requisitionId={id}
                 label={`Requisition ${reqn.requisitionNumber}`}
@@ -438,7 +440,7 @@ export default function RequisitionDetailPage() {
                   navigate('/purchases/requisition');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

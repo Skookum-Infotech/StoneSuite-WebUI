@@ -11,7 +11,7 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
-import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
+import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -22,6 +22,7 @@ import { VendorCreditAuditTab } from './components/VendorCreditAuditTab';
 import { VendorCreditApplicationsTab } from './components/VendorCreditApplicationsTab';
 import { VendorCreditStatusControl } from './components/VendorCreditStatusControl';
 import { DeleteVendorCreditDialog } from './components/DeleteVendorCreditDialog';
+import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { VendorCredit } from '@/types/vendorCredit';
 
 const TABS = [
@@ -103,6 +104,14 @@ export default function VendorCreditDetailPage() {
     },
   });
 
+  // An approver rejected it. The POST response carries no approval overlay, so refetch
+  // to show the rejection banner and drop it from the list's pending view.
+  const handleRejected = () => {
+    queryClient.invalidateQueries({ queryKey: ['vendor-credit', id] });
+    queryClient.invalidateQueries({ queryKey: ['vendor-credits'] });
+    toast.success('Rejected — edit it to resubmit for approval.');
+  };
+
   if (isLoading) return <div className="p-6"><Spinner label="Loading vendor credit…" /></div>;
   if (!credit)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor credit.')}</ErrorNote></div>;
@@ -126,17 +135,17 @@ export default function VendorCreditDetailPage() {
         title: credit.vendorCreditNumber || 'Vendor Credit',
         recordNumber: credit.vendorCreditNumber,
         statusLabel: credit.status,
+        issueDate: fmtDate(credit.creditDate),
+        issueDateLabel: 'Credit Date',
+        keyAmount: { label: 'Unapplied', value: currency(credit.unappliedAmount) },
         counterpartyName: credit.vendor.name,
-        createdAt: credit.createdAt,
-        updatedAt: credit.updatedAt,
+        notesText: credit.memo || undefined,
         sections: [
           {
             title: 'Primary Information',
             rows: [
               ['Reference #', credit.referenceNumber || ''],
-              ['Credit Date', fmtDate(credit.creditDate)],
               ['Reason', credit.reason || ''],
-              ['Memo', credit.memo || ''],
               ['Internal Notes', credit.internalNotes || ''],
             ],
           },
@@ -154,7 +163,6 @@ export default function VendorCreditDetailPage() {
         totals: [
           { label: 'Amount', value: currency(credit.grandTotal), bold: true },
           { label: 'Applied', value: currency(credit.appliedTotal) },
-          { label: 'Unapplied', value: currency(credit.unappliedAmount), bold: true },
         ],
       });
     } catch (err) {
@@ -176,24 +184,16 @@ export default function VendorCreditDetailPage() {
         statusBadge={<Badge color={color}>{credit.status}</Badge>}
       />
 
-      {credit.gated && (
-        <>
-          <ApprovalBanner
-            approverNames={credit.approvers.filter((a) => !a.approved).map((a) => a.name)}
-            canApprove={credit.canApprove}
-            isOverride={credit.isOverride}
-            requiredApprovals={credit.requiredApprovals}
-            approvedCount={credit.approvedCount}
-            callerAlreadyApproved={credit.callerAlreadyApproved}
-            onApprove={() => approve.mutate()}
-            approving={approve.isPending}
-          />
-          {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
-              {apiErrorMessage(approve.error, 'Failed to approve vendor credit.')}
-            </p>
-          )}
-        </>
+      <RecordApprovalBanner
+        record={credit}
+        onApprove={() => approve.mutate()}
+        approving={approve.isPending}
+        reject={{ noun: 'vendor credit', run: (reason) => vendorCreditService.reject(id, reason), onRejected: handleRejected }}
+      />
+      {credit.gated && approve.isError && (
+        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(approve.error, 'Failed to approve vendor credit.')}
+        </p>
       )}
 
       {/* Tab bar */}
@@ -345,8 +345,7 @@ export default function VendorCreditDetailPage() {
           </div>
 
           {canDeleteHere && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-red-400">Danger Zone</p>
+            <DangerZoneCard>
               <DeleteVendorCreditDialog
                 vendorCreditId={id}
                 label={`Vendor Credit ${credit.vendorCreditNumber}`}
@@ -355,7 +354,7 @@ export default function VendorCreditDetailPage() {
                   navigate('/purchases/vendor_credit');
                 }}
               />
-            </div>
+            </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>

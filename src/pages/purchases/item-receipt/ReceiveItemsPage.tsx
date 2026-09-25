@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Inbox, AlertCircle, Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Inbox, AlertCircle, Loader2, PackageCheck, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { lookupService } from '@/services/lookupService';
@@ -12,13 +13,21 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
+import { OverReceiptDialog } from './components/OverReceiptDialog';
+import { overReceiptDetails, type OverReceiptDetails } from '@/lib/itemReceiptErrors';
 import {
   itemReceiptDefaults, toCreatePayload, validateReceiptLines, validateReceiptLineErrors, mergeReceiptLines,
   isPurchaseOrderReceivable, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
+// Saving a new receipt posts it: the backend creates and posts in one
+// transaction, so there is no Pending receipt to come back to and post later.
+// A delivery over the ordered quantity is refused with nothing saved; the
+// over-receipt dialog then lets an approver confirm it with a reason, which
+// re-sends the whole receipt.
 export default function ReceiveItemsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -30,6 +39,10 @@ export default function ReceiveItemsPage() {
   const [data, setData] = useState<Record<string, unknown>>(itemReceiptDefaults);
   const [lines, setLines] = useState<ItemReceiptDraftLine[] | null>(null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [overReceipt, setOverReceipt] = useState<OverReceiptDetails | null>(null);
+
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const canApproveOverReceipt = !permissionsLoading && hasPermission('item_receipt', 'approve');
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -58,12 +71,16 @@ export default function ReceiveItemsPage() {
   const guard = useUnsavedChangesGuard({ data, activeLines, customFieldValues }, Boolean(po));
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => {
+    mutationFn: (overReceiptReason?: string) => {
       if (validationErrors.length > 0) throw new Error(validationErrors[0]);
-      const payload = toCreatePayload(purchaseOrderId, data, activeLines, customFieldValues);
+      const payload = toCreatePayload(purchaseOrderId, data, activeLines, customFieldValues, {
+        post: true, overReceiptReason,
+      });
       return itemReceiptService.createItemReceipt(payload);
     },
+    onError: (err) => setOverReceipt(overReceiptDetails(err)),
     onSuccess: async (ir) => {
+      setOverReceipt(null);
       queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-order-receipts', purchaseOrderId] });
       queryClient.invalidateQueries({ queryKey: ['purchase-order', purchaseOrderId] });
@@ -71,6 +88,7 @@ export default function ReceiveItemsPage() {
         try { await panelRef.current.uploadStagedTo(ir.id); } catch { /* non-fatal */ }
       }
       guard.markClean();
+      toast.success(`Item receipt ${ir.itemReceiptNumber} posted.`);
       navigate(`/purchases/item_receipt/${ir.id}`);
     },
   });
@@ -127,23 +145,23 @@ export default function ReceiveItemsPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <UnsavedChangesPrompt guard={guard} />
-      <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
+      <form onSubmit={(e) => { e.preventDefault(); save(undefined); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Item Receipts"
           onBack={() => navigate('/purchases/item_receipt')}
           icon={Inbox}
           title="New Item Receipt"
-          subtitle={`Against ${po.purchaseOrderNumber} · Fields marked * are required.`}
+          subtitle={`Against ${po.purchaseOrderNumber} · Saving posts the receipt and moves stock. Fields marked * are required.`}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
-              {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-              {isPending ? 'Saving…' : 'Save Item Receipt'}
+              {isPending ? <Loader2 className="size-3 animate-spin" /> : <PackageCheck className="size-3" />}
+              {isPending ? 'Posting…' : 'Save & Post Receipt'}
             </button>
           )}
         />
 
-        {saveError && (
+        {saveError && !overReceipt && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -155,7 +173,7 @@ export default function ReceiveItemsPage() {
             </span>
             <p className="text-xs text-red-700">
               <span className="font-bold">Error: </span>
-              {apiErrorMessage(saveError, 'Failed to save item receipt.')}
+              {apiErrorMessage(saveError, 'Failed to save and post item receipt.')}
             </p>
           </div>
         )}
@@ -178,9 +196,19 @@ export default function ReceiveItemsPage() {
         <FormActionBar
           onCancel={() => navigate('/purchases/item_receipt')}
           isPending={isPending}
-          submitLabel="Save Item Receipt"
+          submitLabel="Save & Post Receipt"
         />
       </form>
+
+      {overReceipt && (
+        <OverReceiptDialog
+          lines={overReceipt.lines}
+          canApprove={canApproveOverReceipt}
+          isPending={isPending}
+          onConfirm={(reason) => save(reason)}
+          onClose={() => setOverReceipt(null)}
+        />
+      )}
     </div>
   );
 }

@@ -30,7 +30,7 @@ function mockPermissions({ canConfigure = true, isLoading = false }: { canConfig
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading,
-    activeRoleId: '',
+    activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) => {
       if (resource !== 'workflow_config') return false;
       if (action === 'read') return true;
@@ -57,6 +57,7 @@ beforeEach(() => {
 
 describe('ApprovalChainSection', () => {
   it('renders one approver-picker-backed card per gate returned by getApprovalChain', async () => {
+    const user = userEvent.setup();
     mockPermissions();
     vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
       gates: FABRICATION_GATES,
@@ -67,6 +68,12 @@ describe('ApprovalChainSection', () => {
 
     expect(await screen.findByText('Templating')).toBeInTheDocument();
     expect(screen.getByText('QC Pending')).toBeInTheDocument();
+
+    // Both gates start with no approvers, so each renders disabled by
+    // default -- enable both before their pickers appear.
+    await user.click(screen.getByRole('switch', { name: 'Enable approval for Templating' }));
+    await user.click(screen.getByRole('switch', { name: 'Enable approval for QC Pending' }));
+
     // Each gate gets its own interactive ApproverPicker search box.
     expect(screen.getAllByLabelText('Search active users to add as an approver')).toHaveLength(2);
   });
@@ -85,6 +92,9 @@ describe('ApprovalChainSection', () => {
     await screen.findByText('Templating');
     const qcPendingCard = screen.getByText('QC Pending').closest('div');
     if (!qcPendingCard) throw new Error('QC Pending card not found');
+
+    // QCPD starts with no approvers, so it renders disabled by default.
+    await user.click(within(qcPendingCard).getByRole('switch', { name: 'Enable approval for QC Pending' }));
 
     const searchInput = within(qcPendingCard).getByLabelText('Search active users to add as an approver');
     await user.click(searchInput);
@@ -120,6 +130,7 @@ describe('ApprovalChainSection', () => {
     renderSection();
 
     await screen.findByText('Pending Approval');
+    await user.click(screen.getByRole('switch', { name: 'Enable approval for Pending Approval' }));
     const searchInput = screen.getByLabelText('Search active users to add as an approver');
 
     await user.click(searchInput);
@@ -148,6 +159,7 @@ describe('ApprovalChainSection', () => {
     renderSection();
 
     await screen.findByText('Pending Approval');
+    await user.click(screen.getByRole('switch', { name: 'Enable approval for Pending Approval' }));
     await user.click(screen.getByLabelText('Search active users to add as an approver'));
     await user.click(await screen.findByRole('button', { name: 'Casey Approver' }));
 
@@ -206,5 +218,142 @@ describe('ApprovalChainSection', () => {
     renderSection();
 
     expect(await screen.findByText('No approval gates configured for this workflow.')).toBeInTheDocument();
+  });
+
+  it('a gate with no approvers renders disabled with its picker hidden', async () => {
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: [] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    expect(screen.getByRole('switch', { name: 'Enable approval for Pending Approval' })).not.toBeChecked();
+    expect(screen.queryByLabelText('Search active users to add as an approver')).not.toBeInTheDocument();
+    expect(screen.getByText(/Approval is disabled/)).toBeInTheDocument();
+  });
+
+  it("turning a gate's toggle on reveals its picker without saving until an approver is picked", async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: [] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    await user.click(screen.getByRole('switch', { name: 'Enable approval for Pending Approval' }));
+
+    expect(await screen.findByLabelText('Search active users to add as an approver')).toBeInTheDocument();
+    expect(workflowService.setApprovalChain).not.toHaveBeenCalled();
+  });
+
+  it("turning a gate's toggle off clears its approvers and hides the picker", async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: ['201'] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+    vi.mocked(workflowService.setApprovalChain).mockResolvedValue([]);
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    expect(screen.getByRole('switch', { name: 'Disable approval for Pending Approval' })).toBeChecked();
+
+    await user.click(screen.getByRole('switch', { name: 'Disable approval for Pending Approval' }));
+
+    expect(screen.queryByLabelText('Search active users to add as an approver')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(workflowService.setApprovalChain).toHaveBeenCalledWith(WORKFLOW_ID, 'PEND', []),
+    );
+  });
+
+  it('reverts a gate toggle to enabled when disabling fails to save', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: ['201'] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+    vi.mocked(workflowService.setApprovalChain).mockRejectedValue(new Error('save failed'));
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    await user.click(screen.getByRole('switch', { name: 'Disable approval for Pending Approval' }));
+
+    await waitFor(() => expect(workflowService.setApprovalChain).toHaveBeenCalled());
+    expect(await screen.findByRole('switch', { name: 'Disable approval for Pending Approval' })).toBeChecked();
+    expect(screen.getByLabelText('Search active users to add as an approver')).toBeInTheDocument();
+  });
+
+  it("turning a gate's toggle on focuses the approver search box", async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: [] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    await user.click(screen.getByRole('switch', { name: 'Enable approval for Pending Approval' }));
+
+    expect(await screen.findByLabelText('Search active users to add as an approver')).toHaveFocus();
+  });
+
+  it('does not steal focus into the picker for a gate that already has approvers on load', async () => {
+    mockPermissions();
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: ['201'] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+
+    renderSection();
+
+    const searchInput = await screen.findByLabelText('Search active users to add as an approver');
+    expect(searchInput).not.toHaveFocus();
+  });
+
+  it('read-only viewers see a plain Enabled/Disabled label instead of an interactive toggle', async () => {
+    mockPermissions({ canConfigure: false });
+    const gates: ApprovalGate[] = [
+      { statusCode: 'PEND', statusLabel: 'Pending Approval', approverEmployeeIds: [] },
+    ];
+    vi.mocked(workflowService.getApprovalChain).mockResolvedValue({
+      gates,
+      employees: makeEmployees([{ id: '201', name: 'Casey Approver' }]),
+    });
+
+    renderSection();
+
+    await screen.findByText('Pending Approval');
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(screen.getByText('Disabled')).toBeInTheDocument();
   });
 });

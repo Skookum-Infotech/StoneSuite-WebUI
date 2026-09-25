@@ -6,6 +6,7 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
 import type { WorkspaceUser } from "@/types/tenant";
 
 export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
@@ -26,7 +27,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const assignMut = useMutation({
     mutationFn: (roleId: string) => userService.assignRole(user.id, roleId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
+      invalidateUserRoleQueries(qc);
       setSelectedRoleId("");
       setError(null);
     },
@@ -36,7 +37,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const removeMut = useMutation({
     mutationFn: (roleId: string) => userService.removeRole(user.id, roleId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
+      invalidateUserRoleQueries(qc);
       setError(null);
       setPendingRemove(null);
     },
