@@ -56,7 +56,7 @@ export function ItemReceiptTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('receiptDate');
+  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filters, setFilters] = useState<ItemReceiptFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);

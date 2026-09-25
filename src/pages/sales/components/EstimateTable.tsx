@@ -21,17 +21,19 @@ const EXPORT_PAGE_SIZE = 200;
 // CrmRecordTable/crmService. Mirrors InvoiceTable's search/sort/
 // cursor-pagination UX for visual consistency.
 
-type SortField = 'estimateDate' | 'grandTotal';
+type SortField = 'createdAt' | 'estimateDate' | 'grandTotal';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
 const SORT_LABELS: Record<SortField, string> = {
+  createdAt: 'Date Created',
   estimateDate: 'Estimate Date',
   grandTotal: 'Amount',
 };
 
 const SORT_KEY: Record<SortField, string> = {
+  createdAt: 'created_at',
   estimateDate: 'estimate_date',
   grandTotal: 'grand_total',
 };
@@ -65,7 +67,7 @@ export function EstimateTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('estimateDate');
+  const [sortBy, setSortBy] = useState<SortField>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');

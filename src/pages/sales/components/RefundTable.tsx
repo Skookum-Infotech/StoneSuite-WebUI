@@ -20,9 +20,11 @@ const EXPORT_PAGE_SIZE = 200;
 // (/api/tenant/refunds*) directly rather than reusing CrmRecordTable/
 // crmService. Mirrors PaymentTable's search/sort/cursor-pagination UX.
 
-// Keys must match refund/resolver.go's sortFields whitelist — a key outside it
-// is a 400, not a silently ignored sort.
-type SortField = 'refund_date' | 'amount' | 'unapplied_amount';
+// Keys must match refund/resolver.go's sortFields whitelist, plus the engine's
+// universal created_at/updated_at/record_number trio (always sortable — see
+// query.sortableFields) — a key outside both is a 400, not a silently ignored
+// sort.
+type SortField = 'refund_date' | 'amount' | 'unapplied_amount' | 'created_at';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
@@ -31,6 +33,7 @@ const SORT_LABELS: Record<SortField, string> = {
   refund_date: 'Refund Date',
   amount: 'Amount',
   unapplied_amount: 'Unapplied',
+  created_at: 'Refund Created',
 };
 
 function currency(n: number | undefined): string {
@@ -57,7 +60,7 @@ export function RefundTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('refund_date');
+  const [sortBy, setSortBy] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');

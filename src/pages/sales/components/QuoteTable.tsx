@@ -21,17 +21,19 @@ const EXPORT_PAGE_SIZE = 200;
 // CrmRecordTable/crmService. Mirrors EstimateTable's search/sort/
 // cursor-pagination UX for visual consistency.
 
-type SortField = 'quoteDate' | 'grandTotal';
+type SortField = 'createdAt' | 'quoteDate' | 'grandTotal';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 25;
 
 const SORT_LABELS: Record<SortField, string> = {
+  createdAt: 'Date Created',
   quoteDate: 'Quote Date',
   grandTotal: 'Amount',
 };
 
 const SORT_KEY: Record<SortField, string> = {
+  createdAt: 'created_at',
   quoteDate: 'quote_date',
   grandTotal: 'grand_total',
 };
@@ -65,7 +67,7 @@ export function QuoteTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('quoteDate');
+  const [sortBy, setSortBy] = useState<SortField>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');
