@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { FileMinus, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,43 +14,65 @@ import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults
 import { defaultCountryId } from '@/lib/lookupDefaults';
 import { type InvoiceRef } from './components/InvoicePicker';
 import { type SalesOrderRef } from './components/SalesOrderPicker';
-import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
 import {
-  creditMemoDefaults, toCreatePayload, PAGE_TABS, BILLING_FIELDS, type PageTab,
-  type CreditMemoLineItem,
+  creditMemoDefaults, creditMemoTotals, toCreatePayload, PAGE_TABS, BILLING_FIELDS, type PageTab,
 } from '@/lib/creditMemoForm';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import {
+  creditMemoFromPaymentPrefill,
+  creditMemoFromPaymentState,
+} from '@/lib/creditMemoHandoff';
+import type { CreditMemoPaymentRef } from '@/types/creditMemo';
 
-/** Unsaved form state carried across an "Add to Inventory" round trip. */
+/** Unsaved form state carried across a "Create Customer" round trip. */
 interface CreditMemoDraft {
   activeTab: PageTab;
   data: Record<string, unknown>;
-  lineItems: CreditMemoLineItem[];
   customer: CustomerRef | null;
   invoice: InvoiceRef | null;
   salesOrder: SalesOrderRef | null;
+  sourcePayment: CreditMemoPaymentRef | null;
   customFieldValues: Record<string, unknown>;
 }
 
 export default function AddCreditMemoPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
-  const inventoryReturn = useInventoryItemReturn<CreditMemoDraft>();
   const customerReturn = useRecordCreateReturn<CreditMemoDraft, CustomerRef>(
     'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
   );
-  const restored = inventoryReturn.restored ?? customerReturn.restored;
+  const restored = customerReturn.restored;
+  const paymentHandoff = useMemo(() => creditMemoFromPaymentState(location.state), [location.state]);
+  const paymentHandoffPrefill = useMemo(
+    () => paymentHandoff ? creditMemoFromPaymentPrefill(paymentHandoff) : null,
+    [paymentHandoff],
+  );
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? creditMemoDefaults());
-  const [lineItems, setLineItems] = useState<CreditMemoLineItem[]>(restored?.lineItems ?? []);
-  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? null);
-  const [invoice, setInvoice] = useState<InvoiceRef | null>(restored?.invoice ?? null);
+  const [data, setData] = useState<Record<string, unknown>>(
+    () => restored?.data ?? paymentHandoffPrefill?.data ?? creditMemoDefaults(),
+  );
+  const [customer, setCustomer] = useState<CustomerRef | null>(() => restored?.customer ?? (
+    paymentHandoff
+      ? { id: paymentHandoff.customer.id, name: paymentHandoff.customer.name }
+      : null
+  ));
+  const [invoice, setInvoice] = useState<InvoiceRef | null>(
+    () => restored?.invoice ?? paymentHandoffPrefill?.invoice ?? null,
+  );
   const [salesOrder, setSalesOrder] = useState<SalesOrderRef | null>(restored?.salesOrder ?? null);
+  // The payment whose overpayment funds this memo. It belongs to one customer,
+  // so it is dropped the moment the customer changes.
+  const [sourcePayment, setSourcePayment] = useState<CreditMemoPaymentRef | null>(() => restored?.sourcePayment ?? (
+    paymentHandoff
+      ? { id: paymentHandoff.payment.id, number: paymentHandoff.payment.number ?? '' }
+      : null
+  ));
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
@@ -61,6 +83,12 @@ export default function AddCreditMemoPage() {
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
+    if (next?.id !== customer?.id) {
+      setInvoice(null);
+      setSalesOrder(null);
+      setSourcePayment(null);
+      setData((current) => ({ ...current, currency_id: '' }));
+    }
     if (next) {
       const defaults = customerDefaultFields(next);
       setData((d) => ({
@@ -68,7 +96,7 @@ export default function AddCreditMemoPage() {
         ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
       }));
     }
-  }, []);
+  }, [customer?.id]);
 
   // Applies the customer created via the round trip exactly as if it had
   // been picked from the list — same Bill To/currency/tax defaulting.
@@ -97,30 +125,28 @@ export default function AddCreditMemoPage() {
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
+  const { subtotal, taxTotal, total } = useMemo(
+    () => creditMemoTotals(data.amount, headerTaxPercent, adjustment),
+    [data.amount, headerTaxPercent, adjustment],
+  );
 
-  const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
-    const subtotal = lineItems.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-    const discountAmt = lineItems.reduce((s, r) => {
-      const base = (parseFloat(r.quantity) || 0) * (parseFloat(r.unitPrice) || 0);
-      return s + base * ((parseFloat(r.discount) || 0) / 100);
-    }, 0);
-    const taxTotal = subtotal * (headerTaxPercent / 100);
-    return { subtotal, discountAmt, taxTotal, total: subtotal - discountAmt + taxTotal + adjustment };
-  }, [lineItems, headerTaxPercent, adjustment]);
-
-  // Shared by both return-trip hooks — either one may stash and restore it.
-  const draft: CreditMemoDraft = { activeTab, data, lineItems, customer, invoice, salesOrder, customFieldValues };
+  const draft: CreditMemoDraft = { activeTab, data, customer, invoice, salesOrder, sourcePayment, customFieldValues };
   const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!customer) throw new Error('A customer is required.');
-      if (lineItems.length === 0) throw new Error('At least one line item is required.');
+      if (!(parseFloat(String(formData.amount ?? '')) > 0)) throw new Error('Enter an amount greater than zero.');
       const badPhone = firstInvalidPhoneLabel(BILLING_FIELDS, formData);
       if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
       const payload = toCreatePayload(
-        { ...formData, customer_uuid: customer.id, invoice_uuid: invoice?.id, sales_order_uuid: salesOrder?.id },
-        lineItems,
+        {
+          ...formData,
+          customer_uuid: customer.id,
+          invoice_uuid: invoice?.id,
+          sales_order_uuid: salesOrder?.id,
+          source_payment_uuid: sourcePayment?.id,
+        },
         customFieldValues,
       );
       return creditMemoService.createCreditMemo(payload);
@@ -128,6 +154,7 @@ export default function AddCreditMemoPage() {
     onSuccess: async (creditMemo) => {
       toast.success('Credit memo created.');
       queryClient.invalidateQueries({ queryKey: ['creditMemos'] });
+      if (sourcePayment) queryClient.invalidateQueries({ queryKey: ['payment', sourcePayment.id] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(creditMemo.id); } catch { /* non-fatal */ }
       }
@@ -144,7 +171,9 @@ export default function AddCreditMemoPage() {
           onBack={() => navigate('/sales/credit_memo')}
           icon={FileMinus}
           title="New Credit Memo"
-          subtitle="Fields marked * are required."
+          subtitle={sourcePayment
+            ? `Prefilled from ${sourcePayment.number || 'the payment'}. Review before saving.`
+            : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
@@ -171,33 +200,29 @@ export default function AddCreditMemoPage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
-          <CreditMemoFormBody
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            data={formData}
-            set={set}
-            lineItems={lineItems}
-            setLineItems={setLineItems}
-            customer={customer}
-            setCustomer={handleCustomerChange}
-            onCreateCustomer={startCreateCustomer}
-            invoice={invoice}
-            setInvoice={setInvoice}
-            salesOrder={salesOrder}
-            setSalesOrder={setSalesOrder}
-            customFieldValues={customFieldValues}
-            setCustomField={setCustomField}
-            lookups={lookups}
-            subtotal={subtotal}
-            discountAmt={discountAmt}
-            taxTotal={taxTotal}
-            adjustment={adjustment}
-            total={total}
-            appliedTotal={0}
-            filesPanelRef={panelRef}
-          />
-        </InventoryItemReturnContext.Provider>
+        <CreditMemoFormBody
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          data={formData}
+          set={set}
+          customer={customer}
+          setCustomer={handleCustomerChange}
+          onCreateCustomer={startCreateCustomer}
+          invoice={invoice}
+          setInvoice={setInvoice}
+          salesOrder={salesOrder}
+          setSalesOrder={setSalesOrder}
+          sourcePayment={sourcePayment}
+          customFieldValues={customFieldValues}
+          setCustomField={setCustomField}
+          lookups={lookups}
+          subtotal={subtotal}
+          taxTotal={taxTotal}
+          adjustment={adjustment}
+          total={total}
+          appliedTotal={0}
+          filesPanelRef={panelRef}
+        />
 
         <FormActionBar
           onCancel={() => navigate('/sales/credit_memo')}

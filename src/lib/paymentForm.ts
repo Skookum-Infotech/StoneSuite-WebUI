@@ -3,6 +3,7 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type { Payment, PaymentCreatePayload, PaymentUpdatePayload } from '@/types/payment';
+import type { Invoice } from '@/types/invoice';
 import { PAYMENT_METHODS } from './paymentMethods';
 
 export const PAGE_TABS = [
@@ -101,6 +102,25 @@ export function paymentDefaults(): Record<string, unknown> {
   const today = new Date().toISOString().split('T')[0];
   return {
     payment_date: today,
+  };
+}
+
+export function fromSourceInvoice(invoice: Pick<Invoice, 'id' | 'invoiceNumber' | 'balanceDue' | 'currencyId' | 'customer'>): {
+  data: Record<string, unknown>;
+  customer: { id: string; name: string };
+  pendingInvoice: { id: string; number: string; balanceDue: number };
+} {
+  return {
+    data: {
+      amount: invoice.balanceDue,
+      currency_id: invoice.currencyId ?? '',
+    },
+    customer: { id: invoice.customer.id, name: invoice.customer.name },
+    pendingInvoice: {
+      id: invoice.id,
+      number: invoice.invoiceNumber,
+      balanceDue: invoice.balanceDue,
+    },
   };
 }
 

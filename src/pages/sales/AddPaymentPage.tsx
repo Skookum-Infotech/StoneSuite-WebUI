@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, AlertCircle, Loader2, Save, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
-import { lookupService } from '@/services/lookupService';
+import { invoiceService } from '@/services/invoiceService';
+import { lookupService, type CrmLookups } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
@@ -20,30 +21,56 @@ import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
+import { ExcessPaymentDialog, type ExcessPaymentPrompt } from './components/ExcessPaymentDialog';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import {
-  PRIMARY_INFO_FIELDS, paymentDefaults, toCreatePayload, PAGE_TABS, type PageTab,
+  PRIMARY_INFO_FIELDS, fromSourceInvoice, paymentDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/paymentForm';
 import type { ApplicationInput } from '@/types/payment';
+import { CREDIT_MEMO_FROM_PAYMENT_STATE } from '@/lib/creditMemoHandoff';
+import {
+  applicationsForConfirmedExcess, checkPaymentAgainstInvoices, creditMemoExcessAmount, pendingInvoiceLine,
+  type AppliedInvoiceLine,
+} from '@/lib/paymentExcess';
+import { INVOICE_PAYABLE_STATUSES } from '@/lib/invoiceForm';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useWorkflows } from '@/hooks/useWorkflows';
 
-function currency(n: number): string {
-  return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+const PAYMENT_AMOUNT_TOLERANCE = 0.005;
+
+function currency(value: number, currencyCode: string): string {
+  return value.toLocaleString(undefined, { style: 'currency', currency: currencyCode });
+}
+
+function currencyIdFrom(data: Record<string, unknown>): number | null {
+  const value = Number(data.currency_id);
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function currencyCodeFrom(data: Record<string, unknown>, lookups?: CrmLookups): string {
+  const currencyId = currencyIdFrom(data);
+  return lookups?.currencies.find((item) => item.id === currencyId)?.code ?? 'USD';
 }
 
 /** Unsaved form state carried across a "Create Customer" round trip. */
 interface PaymentDraft {
   activeTab: PageTab;
-  data: Record<string, unknown>;
-  customer: CustomerRef | null;
+  localData: Record<string, unknown> | null;
+  localCustomer: CustomerRef | null;
+  customerTouched: boolean;
   customFieldValues: Record<string, unknown>;
-  applications: ApplicationInput[];
-  appliedInvoiceNumbers: Record<string, string>;
+  localApplications: ApplicationInput[] | null;
+  localAppliedInvoiceNumbers: Record<string, string> | null;
+  localAppliedInvoiceBalances: Record<string, number> | null;
+  pendingInvoice: InvoiceRef | null | undefined;
 }
 
 export default function AddPaymentPage() {
   const navigate    = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromInvoiceId = searchParams.get('fromInvoice') ?? '';
   const queryClient = useQueryClient();
   const panelRef    = useRef<EditableFilesPanelHandle>(null);
   const customerReturn = useRecordCreateReturn<PaymentDraft, CustomerRef>(
@@ -51,31 +78,101 @@ export default function AddPaymentPage() {
   );
   const restored = customerReturn.restored;
 
+  const {
+    data: sourceInvoice,
+    isLoading: sourceInvoiceLoading,
+    error: sourceInvoiceError,
+  } = useQuery({
+    queryKey: ['invoice', fromInvoiceId],
+    queryFn: () => invoiceService.getInvoice(fromInvoiceId),
+    enabled: Boolean(fromInvoiceId),
+  });
+  const sourceInvoicePayable = Boolean(
+    sourceInvoice && INVOICE_PAYABLE_STATUSES.has(sourceInvoice.statusCode),
+  );
+  const prefill = useMemo(
+    () => sourceInvoice && sourceInvoicePayable ? fromSourceInvoice(sourceInvoice) : null,
+    [sourceInvoice, sourceInvoicePayable],
+  );
+  const sourceInvoiceUnavailable = Boolean(
+    fromInvoiceId && (sourceInvoiceLoading || sourceInvoiceError || !sourceInvoicePayable),
+  );
+  const baseData = useMemo(
+    () => ({ ...paymentDefaults(), ...(prefill?.data ?? {}) }),
+    [prefill],
+  );
+
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? 'details');
-  const [data, setData]           = useState<Record<string, unknown>>(() => restored?.data ?? paymentDefaults());
-  const [customer, setCustomer]   = useState<CustomerRef | null>(restored?.customer ?? null);
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(restored?.localData ?? null);
+  const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(restored?.localCustomer ?? null);
+  const [customerTouched, setCustomerTouched] = useState(restored?.customerTouched ?? false);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
-
-  const [applications, setApplications] = useState<ApplicationInput[]>(restored?.applications ?? []);
-  const [appliedInvoiceNumbers, setAppliedInvoiceNumbers] = useState<Record<string, string>>(restored?.appliedInvoiceNumbers ?? {});
-  const [pendingInvoice, setPendingInvoice] = useState<InvoiceRef | null>(null);
+  const [localApplications, setLocalApplications] = useState<ApplicationInput[] | null>(restored?.localApplications ?? null);
+  const [localAppliedInvoiceNumbers, setLocalAppliedInvoiceNumbers] = useState<Record<string, string> | null>(restored?.localAppliedInvoiceNumbers ?? null);
+  const [localAppliedInvoiceBalances, setLocalAppliedInvoiceBalances] = useState<Record<string, number> | null>(restored?.localAppliedInvoiceBalances ?? null);
+  const [pendingInvoiceState, setPendingInvoiceState] = useState<InvoiceRef | null | undefined>(restored?.pendingInvoice);
   const [pendingAmount, setPendingAmount] = useState('');
+  const [overpaymentPrompt, setOverpaymentPrompt] = useState<ExcessPaymentPrompt | null>(null);
+  const [applicationAmountError, setApplicationAmountError] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
 
-  const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
+  const data = localData ?? baseData;
+  const customer = customerTouched ? localCustomer : (prefill?.customer ?? null);
+  const applications = useMemo(() => localApplications ?? [], [localApplications]);
+  const appliedInvoiceNumbers = useMemo(() => localAppliedInvoiceNumbers ?? {}, [localAppliedInvoiceNumbers]);
+  const appliedInvoiceBalances = useMemo(() => localAppliedInvoiceBalances ?? {}, [localAppliedInvoiceBalances]);
+  const pendingInvoice = pendingInvoiceState === undefined
+    ? (prefill?.pendingInvoice ?? null)
+    : pendingInvoiceState;
+  const appliedLines = useMemo<AppliedInvoiceLine[]>(() => applications.flatMap((application) => {
+    const balanceDue = appliedInvoiceBalances[application.invoiceUuid];
+    if (balanceDue === undefined) return [];
+    return [{
+      invoiceUuid: application.invoiceUuid,
+      invoiceNumber: appliedInvoiceNumbers[application.invoiceUuid] ?? 'Invoice',
+      balanceDue,
+      amount: application.amount,
+    }];
+  }), [applications, appliedInvoiceBalances, appliedInvoiceNumbers]);
+  const returnPath = fromInvoiceId ? `/sales/invoice/${encodeURIComponent(fromInvoiceId)}` : '/sales/payment';
+
+  const set = useCallback((key: string, value: unknown) => {
+    if (key === 'amount') setAmountError(null);
+    setLocalData((current) => ({ ...(current ?? baseData), [key]: value }));
+  }, [baseData]);
   const setCustomField = useCallback(
     (key: string, value: unknown) => setCustomFieldValues((v) => ({ ...v, [key]: value })),
     [],
   );
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
-    setCustomer(next);
+    setLocalCustomer(next);
+    setCustomerTouched(true);
+    if (fromInvoiceId) {
+      setLocalApplications([]);
+      setLocalAppliedInvoiceNumbers({});
+      setLocalAppliedInvoiceBalances({});
+      setPendingInvoiceState(null);
+      setPendingAmount('');
+    }
+    setOverpaymentPrompt(null);
+    setApplicationAmountError(null);
+    setAmountError(null);
     if (next) {
       const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
+      setLocalData((current) => {
+        const values = current ?? baseData;
+        return {
+          ...values,
+          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !values[k] || BILL_ADDRESS_KEYS.has(k))),
+        };
+      });
     }
+  }, [baseData, fromInvoiceId]);
+
+  const handlePendingInvoiceChange = useCallback((next: InvoiceRef | null) => {
+    setPendingInvoiceState(next);
+    setApplicationAmountError(null);
   }, []);
 
   // Applies the customer created via the round trip exactly as if it had
@@ -94,6 +191,12 @@ export default function AddPaymentPage() {
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
+  const canCreateCreditMemo = !permissionsLoading
+    && !workflowsLoading
+    && hasPermission('credit_memo', 'create')
+    && isWorkflowEnabled('credit_memo');
 
   // New payments default to USD once the lookups load — derived rather than
   // copied into state, so it never clobbers a value the user (or a picked
@@ -102,11 +205,31 @@ export default function AddPaymentPage() {
     if (!lookups) return data;
     return { ...data, currency_id: data.currency_id || defaultCurrencyId(lookups.currencies) };
   }, [data, lookups]);
+  const paymentCurrencyId = currencyIdFrom(formData);
+  const paymentCurrencyCode = currencyCodeFrom(formData, lookups);
+  // The invoice picked but not yet added counts too, so a payment opened from
+  // an invoice is checked against it before any application row exists.
+  const checkLines = useMemo(() => {
+    const pending = pendingInvoiceLine(pendingInvoice, parseFloat(pendingAmount), Number(formData.amount), appliedLines);
+    return pending ? [...appliedLines, pending] : appliedLines;
+  }, [pendingInvoice, pendingAmount, formData.amount, appliedLines]);
+  const paymentCheck = useMemo(
+    () => checkPaymentAgainstInvoices(Number(formData.amount), checkLines),
+    [formData.amount, checkLines],
+  );
 
   // Shared with the return-trip hook — it may stash and restore this.
-  const { startCreate: startCreateCustomer } = customerReturn.provide(
-    { activeTab, data, customer, customFieldValues, applications, appliedInvoiceNumbers },
-  );
+  const { startCreate: startCreateCustomer } = customerReturn.provide({
+    activeTab,
+    localData,
+    localCustomer,
+    customerTouched,
+    customFieldValues,
+    localApplications,
+    localAppliedInvoiceNumbers,
+    localAppliedInvoiceBalances,
+    pendingInvoice: pendingInvoiceState,
+  });
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const paymentWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'payment');
@@ -121,50 +244,198 @@ export default function AddPaymentPage() {
     if (!pendingInvoice) return;
     const amount = parseFloat(pendingAmount);
     if (!Number.isFinite(amount) || amount <= 0) return;
-    setApplications((a) => [...a, { invoiceUuid: pendingInvoice.id, amount }]);
-    setAppliedInvoiceNumbers((m) => ({ ...m, [pendingInvoice.id]: pendingInvoice.number }));
-    setPendingInvoice(null);
+    setLocalApplications((current) => [
+      ...(current ?? []),
+      { invoiceUuid: pendingInvoice.id, amount },
+    ]);
+    setLocalAppliedInvoiceNumbers((current) => ({
+      ...(current ?? {}),
+      [pendingInvoice.id]: pendingInvoice.number,
+    }));
+    setLocalAppliedInvoiceBalances((current) => ({
+      ...(current ?? {}),
+      [pendingInvoice.id]: pendingInvoice.balanceDue,
+    }));
+    setPendingInvoiceState(null);
     setPendingAmount('');
+    setApplicationAmountError(null);
+    setAmountError(null);
   }
 
   function removeApplication(invoiceUuid: string) {
-    setApplications((a) => a.filter((row) => row.invoiceUuid !== invoiceUuid));
-    setAppliedInvoiceNumbers((m) => {
-      const next = { ...m };
+    setLocalApplications((current) => (current ?? []).filter((row) => row.invoiceUuid !== invoiceUuid));
+    setLocalAppliedInvoiceNumbers((current) => {
+      const next = { ...(current ?? {}) };
       delete next[invoiceUuid];
       return next;
     });
+    setLocalAppliedInvoiceBalances((current) => {
+      const next = { ...(current ?? {}) };
+      delete next[invoiceUuid];
+      return next;
+    });
+    setApplicationAmountError(null);
+    setAmountError(null);
   }
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => {
+    mutationFn: async (confirmedOverage: ExcessPaymentPrompt | null) => {
       if (!customer) throw new Error('A customer is required.');
-      const payload = { ...toCreatePayload(formData, customer.id, customFieldValues), applications };
+      // Confirming raises the payment to the larger of the two amounts entered.
+      const paymentAmount = confirmedOverage ? confirmedOverage.enteredAmount : Number(formData.amount);
+      if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+        throw new Error('Enter a valid payment amount.');
+      }
+      const effectiveApplications = confirmedOverage
+        ? applicationsForConfirmedExcess(applications, confirmedOverage.applications)
+        : applications;
+      if (effectiveApplications.some((application) => !Number.isFinite(application.amount) || application.amount <= 0)) {
+        throw new Error('Enter a valid amount for every applied invoice.');
+      }
+      const appliedTotal = effectiveApplications.reduce((total, application) => total + application.amount, 0);
+      if (appliedTotal > paymentAmount + PAYMENT_AMOUNT_TOLERANCE) {
+        throw new Error('Applied invoice amounts cannot exceed the payment amount.');
+      }
+      if (fromInvoiceId) {
+        const latestSourceInvoice = await invoiceService.getInvoice(fromInvoiceId);
+        if (!INVOICE_PAYABLE_STATUSES.has(latestSourceInvoice.statusCode)) {
+          throw new Error('The source invoice is no longer eligible for payment. Remove it or return to the invoice.');
+        }
+        const knownBalance = appliedInvoiceBalances[fromInvoiceId]
+          ?? confirmedOverage?.applications.find((line) => line.invoiceUuid === fromInvoiceId)?.balanceDue;
+        if (
+          knownBalance !== undefined
+          && Math.abs(latestSourceInvoice.balanceDue - knownBalance) > PAYMENT_AMOUNT_TOLERANCE
+        ) {
+          throw new Error('The source invoice balance changed. Remove and re-add it before saving.');
+        }
+      }
+      const payload = {
+        ...toCreatePayload(formData, customer.id, customFieldValues),
+        amount: paymentAmount,
+        applications: effectiveApplications,
+      };
       return paymentService.createPayment(payload);
     },
-    onSuccess: async (payment) => {
-      toast.success('Payment created.');
+    onError: () => {
+      if (fromInvoiceId) queryClient.invalidateQueries({ queryKey: ['invoice', fromInvoiceId] });
+    },
+    onSuccess: async (payment, confirmedOverage) => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      if (fromInvoiceId) {
+        queryClient.invalidateQueries({ queryKey: ['invoice', fromInvoiceId] });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      }
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(payment.id); } catch { /* non-fatal */ }
       }
-      navigate('/sales/payment');
+      const creditMemoAmount = confirmedOverage
+        ? creditMemoExcessAmount(confirmedOverage.excessAmount, payment.unappliedAmount)
+        : 0;
+      if (
+        confirmedOverage
+        && customer
+        && canCreateCreditMemo
+        && creditMemoAmount > PAYMENT_AMOUNT_TOLERANCE
+      ) {
+        toast.success('Payment created. Review the prefilled credit memo.');
+        navigate('/sales/credit_memo/new', {
+          state: {
+            [CREDIT_MEMO_FROM_PAYMENT_STATE]: {
+              customer: { id: customer.id, name: customer.name },
+              invoices: confirmedOverage.applications.map((application) => ({
+                id: application.invoiceUuid,
+                number: application.invoiceNumber,
+              })),
+              payment: { id: payment.id, number: payment.paymentNumber || undefined },
+              currencyId: payment.currencyId ?? confirmedOverage.currencyId,
+              currencyCode: confirmedOverage.currencyCode,
+              unappliedAmount: creditMemoAmount,
+            },
+          },
+        });
+        return;
+      }
+      toast.success(confirmedOverage
+        ? 'Payment created. No unapplied balance is available for a credit memo.'
+        : 'Payment created.');
+      navigate(returnPath);
     },
   });
+
+  function submitPayment() {
+    if (sourceInvoiceUnavailable || applicationAmountError) return;
+    if (paymentCheck.excessAmount > 0 && customer) {
+      setOverpaymentPrompt({
+        customerName: customer.name,
+        applications: checkLines,
+        paymentAmount: Number(formData.amount),
+        enteredAmount: paymentCheck.enteredAmount,
+        balanceTotal: paymentCheck.balanceTotal,
+        excessAmount: paymentCheck.excessAmount,
+        currencyId: paymentCurrencyId,
+        currencyCode: paymentCurrencyCode,
+        canCreateCreditMemo,
+      });
+      return;
+    }
+    // Only reachable with several invoices: one is over its own balance while
+    // another still has room, so the total is not really in excess. Which
+    // invoice should take the difference is the user's call, and the backend
+    // rejects an over-applied row, so send that row back to be corrected.
+    if (paymentCheck.overBalanceLines.length > 0) {
+      sendRowBackForCorrection(paymentCheck.overBalanceLines[0], paymentCurrencyCode);
+      return;
+    }
+    save(null);
+  }
+
+  function sendRowBackForCorrection(line: AppliedInvoiceLine, currencyCode: string) {
+    removeApplication(line.invoiceUuid);
+    setPendingInvoiceState({ id: line.invoiceUuid, number: line.invoiceNumber, balanceDue: line.balanceDue });
+    setPendingAmount(line.balanceDue.toFixed(2));
+    setApplicationAmountError(
+      `Application amount for ${line.invoiceNumber} cannot exceed ${currency(line.balanceDue, currencyCode)}. Re-add it with that amount or less, or clear the invoice to save without an application.`,
+    );
+  }
+
+  function confirmExcess() {
+    if (!overpaymentPrompt) return;
+    const confirmed = overpaymentPrompt;
+    setOverpaymentPrompt(null);
+    save(confirmed);
+  }
+
+  function rejectExcess() {
+    const rejected = overpaymentPrompt;
+    setOverpaymentPrompt(null);
+    if (!rejected) return;
+    // A row that is itself over its invoice's balance needs fixing too — put
+    // it back in the picker now rather than surfacing it on the next Save.
+    const overBalance = checkPaymentAgainstInvoices(rejected.paymentAmount, rejected.applications).overBalanceLines[0];
+    if (overBalance) sendRowBackForCorrection(overBalance, rejected.currencyCode);
+    // Only when the Payment Amount field is itself over the balance. Set after
+    // the row is sent back — removing a row clears the amount error.
+    if (rejected.paymentAmount > rejected.balanceTotal + PAYMENT_AMOUNT_TOLERANCE) {
+      const balance = currency(rejected.balanceTotal, rejected.currencyCode);
+      setAmountError(`Payment amount cannot exceed the invoice balance of ${balance}. Enter ${balance} or less to save.`);
+    }
+  }
+
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
-      <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
+      <form onSubmit={(e) => { e.preventDefault(); submitPayment(); }} className="flex flex-col flex-1 min-h-0">
 
         <CrmPageHeader
-          backLabel="Payments"
-          onBack={() => navigate('/sales/payment')}
+          backLabel={fromInvoiceId ? 'Invoice' : 'Payments'}
+          onBack={() => navigate(returnPath)}
           icon={CreditCard}
           title="New Payment"
-          subtitle="Fields marked * are required."
+          subtitle={sourceInvoice ? `For invoice ${sourceInvoice.invoiceNumber}` : 'Fields marked * are required.'}
           actions={(
-            <button type="submit" disabled={isPending}
+            <button type="submit" disabled={isPending || sourceInvoiceUnavailable}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Payment'}
@@ -189,6 +460,21 @@ export default function AddPaymentPage() {
           </div>
         )}
 
+        {fromInvoiceId && sourceInvoiceLoading ? (
+          <div role="status" className="flex flex-1 items-center justify-center gap-2 bg-stone-50 text-sm text-stone-600">
+            <Loader2 className="size-4 animate-spin" />
+            Loading source invoice…
+          </div>
+        ) : fromInvoiceId && sourceInvoiceError ? (
+          <div role="alert" className="flex flex-1 items-center justify-center bg-stone-50 px-6 text-center text-sm text-red-700">
+            {apiErrorMessage(sourceInvoiceError, 'Failed to load the source invoice.')}
+          </div>
+        ) : fromInvoiceId && !sourceInvoicePayable ? (
+          <div role="alert" className="flex flex-1 items-center justify-center bg-stone-50 px-6 text-center text-sm text-red-700">
+            The source invoice is no longer eligible for payment. Return to the invoice and start a new payment.
+          </div>
+        ) : (
+          <>
         {/* ── Page-level tab bar ── */}
         <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
           {PAGE_TABS.map((tab) => (
@@ -219,7 +505,13 @@ export default function AddPaymentPage() {
                 </ModernSection>
 
                 <ModernSection title="Payment Details" index={1}>
-                  <PaymentSectionGrid fields={PRIMARY_INFO_FIELDS} data={formData} set={set} lookups={lookups} />
+                  <PaymentSectionGrid
+                    fields={PRIMARY_INFO_FIELDS}
+                    data={formData}
+                    set={set}
+                    lookups={lookups}
+                    errors={amountError ? { amount: amountError } : undefined}
+                  />
                 </ModernSection>
 
                 {customFieldDefs.length > 0 && (
@@ -245,7 +537,7 @@ export default function AddPaymentPage() {
                           <div key={app.invoiceUuid} className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs">
                             <span className="font-medium text-stone-700">{appliedInvoiceNumbers[app.invoiceUuid]}</span>
                             <div className="flex items-center gap-2">
-                              <span className="tabular-nums text-stone-600">{currency(app.amount)}</span>
+                              <span className="tabular-nums text-stone-600">{currency(app.amount, paymentCurrencyCode)}</span>
                               <button
                                 type="button"
                                 onClick={() => removeApplication(app.invoiceUuid)}
@@ -265,7 +557,7 @@ export default function AddPaymentPage() {
                         <InvoicePicker
                           customer={customer}
                           value={pendingInvoice}
-                          onChange={setPendingInvoice}
+                          onChange={handlePendingInvoiceChange}
                           excludeIds={applications.map((a) => a.invoiceUuid)}
                         />
                       </div>
@@ -289,6 +581,11 @@ export default function AddPaymentPage() {
                         Add
                       </button>
                     </div>
+                    {applicationAmountError && (
+                      <p role="alert" className="text-xs font-medium text-destructive">
+                        {applicationAmountError}
+                      </p>
+                    )}
                     {!customer && (
                       <p className="text-2xs text-stone-400">Select a customer above to apply this payment to their invoices.</p>
                     )}
@@ -309,13 +606,23 @@ export default function AddPaymentPage() {
             </div>
           </div>
         </div>
+          </>
+        )}
 
         <FormActionBar
-          onCancel={() => navigate('/sales/payment')}
+          onCancel={() => navigate(returnPath)}
           isPending={isPending}
+          isSubmitDisabled={sourceInvoiceUnavailable}
           submitLabel="Save Payment"
         />
       </form>
+      {overpaymentPrompt && (
+        <ExcessPaymentDialog
+          prompt={overpaymentPrompt}
+          onConfirm={confirmExcess}
+          onReject={rejectExcess}
+        />
+      )}
     </div>
   );
 }
