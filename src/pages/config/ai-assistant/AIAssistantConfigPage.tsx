@@ -71,6 +71,14 @@ export default function AIAssistantConfigPage() {
               </div>
             )}
 
+            {!canConfigure && !platformOff && (
+              <div className="mb-3">
+                <ErrorNote role="status" id="ai-no-permission-note">
+                  You don&apos;t have permission to change this setting — it requires Company Profile Configure access.
+                </ErrorNote>
+              </div>
+            )}
+
             <label className="flex items-center justify-between gap-3 select-none">
               <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
                 Enable StoneSuite Assistant for your organization
@@ -80,7 +88,7 @@ export default function AIAssistantConfigPage() {
                 onCheckedChange={(checked) => toggle.mutate(checked)}
                 disabled={!canConfigure || platformOff || toggle.isPending}
                 aria-label="Enable StoneSuite Assistant for your organization"
-                aria-describedby={platformOff ? 'ai-platform-off-note' : undefined}
+                aria-describedby={platformOff ? 'ai-platform-off-note' : !canConfigure ? 'ai-no-permission-note' : undefined}
               />
             </label>
 

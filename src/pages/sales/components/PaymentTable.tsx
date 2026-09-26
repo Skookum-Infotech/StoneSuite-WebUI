@@ -57,7 +57,7 @@ export function PaymentTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('payment_date');
+  const [sortBy, setSortBy] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const [cursor, setCursor] = useState('');

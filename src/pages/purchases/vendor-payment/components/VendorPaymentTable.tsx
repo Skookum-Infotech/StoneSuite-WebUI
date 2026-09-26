@@ -88,7 +88,7 @@ export function VendorPaymentTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('paymentDate');
+  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filters, setFilters] = useState<VendorPaymentFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);

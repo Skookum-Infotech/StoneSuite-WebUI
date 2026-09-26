@@ -62,7 +62,7 @@ export function JournalEntryTable() {
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('transferDate');
+  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filters, setFilters] = useState<JournalEntryFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);

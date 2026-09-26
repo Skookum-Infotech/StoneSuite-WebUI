@@ -69,7 +69,7 @@ export function InvoicePicker({
     queryFn: async (): Promise<InvoiceRef[]> => {
       const page = await invoiceService.searchInvoices({
         search: customer!.name,
-        sort: [{ field: 'invoice_date', dir: 'desc' }],
+        sort: [{ field: 'created_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
       const scoped = page.records.filter((r) => r.customer.id === customer!.id);

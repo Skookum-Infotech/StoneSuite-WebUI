@@ -86,7 +86,7 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('orderDate');
+  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filters, setFilters] = useState<PurchaseOrderFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);

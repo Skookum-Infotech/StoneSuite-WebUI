@@ -17,37 +17,56 @@ interface ConversationListProps {
  *  or delete it (two clicks, since it can't be undone). */
 export function ConversationList({ activeId, onOpen, onDeleted }: ConversationListProps) {
   const [items, setItems] = useState<AiConversation[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  // Kept separate from the load failure: a delete failing doesn't invalidate
+  // the list already on screen, so it shouldn't blank the whole panel out.
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     conversationService
       .list()
       .then((list) => {
-        if (!cancelled) setItems(list);
+        if (!cancelled) {
+          setItems(list);
+          setLoadFailed(false);
+        }
       })
       .catch(() => {
-        if (!cancelled) setFailed(true);
+        if (!cancelled) setLoadFailed(true);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadAttempt]);
 
   const remove = async (id: string): Promise<void> => {
     setConfirmingId(null);
+    setDeleteError(null);
     try {
       await conversationService.remove(id);
       setItems((prev) => prev?.filter((c) => c.id !== id) ?? null);
       onDeleted(id);
     } catch {
-      setFailed(true);
+      setDeleteError("Couldn't delete that conversation. Please try again.");
     }
   };
 
-  if (failed) {
-    return <p role="alert" className="px-4 py-3 text-xs text-destructive">Couldn't load your conversations. Please try again.</p>;
+  if (loadFailed) {
+    return (
+      <div className="px-4 py-3">
+        <p role="alert" className="text-xs text-destructive">Couldn't load your conversations.</p>
+        <button
+          type="button"
+          onClick={() => setLoadAttempt((n) => n + 1)}
+          className="mt-1.5 rounded-lg px-2 py-1 text-2xs font-semibold text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-white/10 cursor-pointer"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
   if (items === null) {
     return (
@@ -61,7 +80,11 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
   }
 
   return (
-    <ul aria-label="Recent conversations" className="divide-y divide-stone-100 dark:divide-white/5">
+    <>
+      {deleteError && (
+        <p role="alert" className="px-4 pb-1 text-xs text-destructive">{deleteError}</p>
+      )}
+      <ul aria-label="Recent conversations" className="divide-y divide-stone-100 dark:divide-white/5">
       {items.map((c) => {
         const title = c.title || 'Untitled conversation';
         return (
@@ -105,6 +128,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </>
   );
 }

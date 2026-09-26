@@ -88,7 +88,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
 
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('billDate');
+  const [sortBy, setSortBy] = useState<SortField>('recordNumber');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filters, setFilters] = useState<VendorBillFilterState>(EMPTY_FILTER_STATE);
   const [filtersOpen, setFiltersOpen] = useState(false);

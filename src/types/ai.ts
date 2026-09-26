@@ -31,6 +31,9 @@ export interface AskResponse {
   /** false when the answer arrived but couldn't be saved to the
    *  conversation's history. */
   persisted?: boolean;
+  /** How the answer was produced ("rag"|"count_direct"|"count_routed"|
+   *  "lookup"|"help_cache") — informational, not yet surfaced in the UI. */
+  route?: string;
 }
 
 export interface AiConversation {
@@ -45,6 +48,9 @@ export interface AiMessage {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  /** Present on assistant messages reloaded from a saved conversation, same
+   *  shape as a live turn's citations. */
+  citations?: Citation[];
 }
 
 /** Whether the StoneSuite Assistant is reachable for the caller's tenant —

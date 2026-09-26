@@ -33,7 +33,7 @@ export default function AdjustmentListPage() {
 
   const req: AdjustmentSearchRequest = {
     search: debounced || undefined,
-    sort: [{ field: 'date', dir: 'desc' }],
+    sort: [{ field: 'created_at', dir: 'desc' }],
     limit: PAGE_SIZE,
     cursor: cursor || undefined,
   };
