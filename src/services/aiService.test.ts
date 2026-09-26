@@ -353,6 +353,69 @@ describe('askAssistantStream', () => {
     expect(handlers.done).toEqual({ result: { answer: 'x', citations: [], truncated: true }, conversationId: 'c1', persisted: false });
   });
 
+  it('stays alive past the 45s inactivity window as long as ": ping" chunks keep arriving', async () => {
+    vi.useFakeTimers();
+    try {
+      const encoder = new TextEncoder();
+      let push!: (chunk: string) => void;
+      let close!: () => void;
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          push = (chunk: string) => controller.enqueue(encoder.encode(chunk));
+          close = () => controller.close();
+        },
+      });
+      vi.mocked(global.fetch).mockResolvedValue(new Response(stream, { status: 200 }));
+
+      const handlers = collect();
+      const done = askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+      // Three rounds of "almost timed out, but a ping arrives just in time" —
+      // comfortably past the 45s window in total, never letting the gap
+      // between two arrivals exceed it.
+      for (let i = 0; i < 3; i++) {
+        await vi.advanceTimersByTimeAsync(40_000);
+        push(': ping\n\n');
+      }
+      push('event: done\ndata: {"answer":"still here","citations":[]}\n\n');
+      close();
+      await done;
+
+      expect(handlers.error).toBeUndefined();
+      expect((handlers.done as { result: { answer: string } }).result.answer).toBe('still here');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('normalizes a CRLF frame separator split across two reader chunks', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      // "\r" ends chunk 1, "\n" begins chunk 2 — a per-chunk-only replace
+      // would miss this and leave a literal \r\n in the buffered frame.
+      chunkedSseResponse(['event: token\r\ndata: "x"\r', '\n\r\nevent: done\r\ndata: {"answer":"x","citations":[]}\r\n\r\n']),
+    );
+
+    const handlers = collect();
+    await askAssistantStream('q', undefined, handlers, new AbortController().signal);
+
+    expect(handlers.tokens).toEqual(['x']);
+    expect(handlers.error).toBeUndefined();
+    expect((handlers.done as { result: { answer: string } }).result.answer).toBe('x');
+  });
+
+  it('carries the "error" SSE event\'s own code (e.g. starting_up) to onError', async () => {
+    vi.mocked(global.fetch).mockResolvedValue(
+      sseResponse('event: error\ndata: {"message":"The assistant is starting up.","code":"starting_up"}\n\n'),
+    );
+
+    const handlers = collect();
+    let capturedCode: string | undefined;
+    await askAssistantStream('q', undefined, { ...handlers, onError: (m, c) => { handlers.error = m; capturedCode = c; } }, new AbortController().signal);
+
+    expect(handlers.error).toBe('The assistant is starting up.');
+    expect(capturedCode).toBe('starting_up');
+  });
+
   it('gives up with an error when the stream goes silent past the inactivity window', async () => {
     vi.useFakeTimers();
     try {

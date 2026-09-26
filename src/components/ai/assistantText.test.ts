@@ -17,6 +17,18 @@ describe('linkCitationMarkers', () => {
   it('caps a runaway range', () => {
     expect(linkCitationMarkers('[1-9999]').match(/#cite-/g)).toHaveLength(10);
   });
+
+  it('leaves a marker-shaped index inside inline code untouched', () => {
+    expect(linkCitationMarkers('Use `array[1]` to index it, see [2].')).toBe(
+      'Use `array[1]` to index it, see [2](#cite-2).',
+    );
+  });
+
+  it('leaves a marker-shaped index inside a fenced code block untouched', () => {
+    const input = 'See [1].\n\n```js\nconst x = arr[2];\n```\n\nAlso [3].';
+    const want = 'See [1](#cite-1).\n\n```js\nconst x = arr[2];\n```\n\nAlso [3](#cite-3).';
+    expect(linkCitationMarkers(input)).toBe(want);
+  });
 });
 
 describe('questionBytes', () => {

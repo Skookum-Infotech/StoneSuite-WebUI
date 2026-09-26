@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertDialog } from 'radix-ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Sparkles } from 'lucide-react';
@@ -15,6 +15,12 @@ const OLLAMA_STATE_LABEL: Record<OllamaState, string> = {
   mixed: 'Partially running',
   unknown: 'Unknown',
 };
+
+/** After a toggle, the AI server takes a while to actually finish starting
+ *  or stopping — poll the settings query so `ollamaState` catches up instead
+ *  of sitting on a stale value until the next unrelated refetch. */
+const SETTINGS_POLL_INTERVAL_MS = 5000;
+const SETTINGS_POLL_DURATION_MS = 60_000;
 
 /** Human-readable local timestamp, matching lib/feedback.ts's
  *  formatFeedbackTime / lib/auditLog.ts's formatAuditTime convention. Falls
@@ -59,9 +65,29 @@ export default function PlatformAIPage() {
           : 'StoneSuite Assistant disabled for all organizations.',
       );
     },
+    // Keeps the confirm dialog open (showing "Turning off…") through the
+    // whole request instead of closing it the instant it's clicked — closing
+    // early looked like the switch had already flipped before the request
+    // even landed. A no-op for the "turn on" path, which never opens it.
+    onSettled: () => setConfirmOpen(false),
   });
 
   const settings = settingsQ.data;
+
+  // The Ollama server's own start/stop lags the settings write — poll for a
+  // while after any toggle so `ollamaState` catches up on this page without
+  // the admin needing to manually refresh.
+  useEffect(() => {
+    if (!toggle.isSuccess) return;
+    const intervalId = setInterval(() => {
+      void qc.invalidateQueries({ queryKey: ['platform-ai-settings'] });
+    }, SETTINGS_POLL_INTERVAL_MS);
+    const timeoutId = setTimeout(() => clearInterval(intervalId), SETTINGS_POLL_DURATION_MS);
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [toggle.isSuccess, qc]);
 
   function handleToggle(checked: boolean): void {
     if (checked) {
@@ -72,7 +98,6 @@ export default function PlatformAIPage() {
   }
 
   function confirmDisable(): void {
-    setConfirmOpen(false);
     toggle.mutate(false);
   }
 

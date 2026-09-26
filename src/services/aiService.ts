@@ -10,6 +10,9 @@ export const RATE_LIMITED = 'rate_limited';
  *  switch) — distinct from an ordinary permission 403 so the UI can point at
  *  the toggle instead of a generic "no access" message. */
 export const ASSISTANT_DISABLED = 'assistant_disabled';
+/** The code an "error" SSE event carries while Ollama is still cold-starting
+ *  — worth one silent auto-retry instead of surfacing as a failure. */
+export const STARTING_UP = 'starting_up';
 
 /** Thrown by askAssistantStream when the server rejects the request before
  *  any SSE byte is written (auth, validation, an unknown conversation_id, a
@@ -63,8 +66,10 @@ export interface AskStreamHandlers {
   /** Called for a stream-level failure (the "error" SSE event, the
    *  connection closing before "done", or a read failure) — never for the
    *  pre-flight case, which throws AskStreamHTTPError instead. Nothing else
-   *  fires after this. Not called on an intentional abort (see signal). */
-  onError: (message: string) => void;
+   *  fires after this. Not called on an intentional abort (see signal).
+   *  `code` is the "error" event's own code (e.g. STARTING_UP) when the
+   *  stream-level failure carried one; absent for a connection/read failure. */
+  onError: (message: string, code?: string) => void;
 }
 
 /** One SSE frame: "event: X\ndata: Y" (comment lines and any other field are
@@ -186,7 +191,12 @@ export async function askAssistantStream(
       // the backend (Fly, Cloudflare) may rewrite line endings in transit,
       // and the exact "\n\n" / "event: " / "data: " matching below would
       // otherwise silently break every frame for the rest of the connection.
-      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+      // The replace runs on the whole accumulated buffer, not the raw chunk,
+      // so a \r\n split across two reader.read() chunks (chunk A ends "\r",
+      // chunk B starts "\n") still normalizes once both halves are joined —
+      // per-chunk replace would miss it and leave a literal \r\n in buffer.
+      buffer += decoder.decode(value, { stream: true });
+      buffer = buffer.replace(/\r\n/g, '\n');
 
       let sep: number;
       while ((sep = buffer.indexOf('\n\n')) !== -1) {
@@ -222,11 +232,12 @@ export async function askAssistantStream(
           case 'done': {
             settled = true;
             try {
-              const parsed = JSON.parse(frame.data) as AskResult & { conversation_id?: string; persisted?: boolean };
+              const parsed = JSON.parse(frame.data) as AskResult & { conversation_id?: string; persisted?: boolean; route?: string };
               handlers.onDone({
                 result: { answer: parsed.answer, citations: parsed.citations ?? [], truncated: parsed.truncated === true },
                 conversationId: parsed.conversation_id,
                 persisted: parsed.persisted,
+                route: parsed.route,
               });
             } catch {
               handlers.onError('The assistant sent an invalid response.');
@@ -236,8 +247,8 @@ export async function askAssistantStream(
           case 'error': {
             settled = true;
             try {
-              const parsed = JSON.parse(frame.data) as { message?: string };
-              handlers.onError(parsed.message ?? GENERIC_MESSAGE);
+              const parsed = JSON.parse(frame.data) as { message?: string; code?: string };
+              handlers.onError(parsed.message ?? GENERIC_MESSAGE, parsed.code);
             } catch {
               handlers.onError(GENERIC_MESSAGE);
             }

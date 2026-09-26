@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useState } from 'react';
 import type * as AiServiceModule from '@/services/aiService';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -10,6 +11,9 @@ import type { AiConversation, Citation } from '@/types/ai';
 // jsdom doesn't implement Element.scrollTo, which the follow-the-stream
 // effect calls on every turns change.
 Element.prototype.scrollTo = vi.fn();
+// Nor scrollIntoView, which an [n] marker with nowhere to navigate calls via
+// CitationChips' scrollToAndHighlight.
+Element.prototype.scrollIntoView = vi.fn();
 
 vi.mock('@/services/aiService', async (importOriginal) => ({
   ...(await importOriginal<typeof AiServiceModule>()),
@@ -24,11 +28,13 @@ vi.mock('@/hooks/useUserPermissions', () => ({
 }));
 
 import { AssistantPanel } from './AssistantPanel';
-import { askAssistantStream, AskStreamHTTPError, conversationService, warmAssistant } from '@/services/aiService';
+import { useAssistantConversation } from './useAssistantConversation';
+import { RATE_LIMITED, STARTING_UP, askAssistantStream, AskStreamHTTPError, conversationService, warmAssistant } from '@/services/aiService';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/store/useAuthStore';
 
-const STORAGE_KEY = 'ai-conversation:t1:u1';
+// Trailing empty segment: the test user below carries no selectedRoleId.
+const STORAGE_KEY = 'ai-conversation:t1:u1:';
 
 function conv(id: string, title = ''): AiConversation {
   return { id, ownerUserId: 'u1', title, createdAt: '', updatedAt: new Date().toISOString() };
@@ -38,6 +44,15 @@ function LocationProbe() {
   return <div data-testid="location">{useLocation().pathname}</div>;
 }
 
+/** AssistantPanel's conversation/draft are owned by its caller (HelpMenu in
+ *  the app) so a stream survives the panel unmounting — this harness plays
+ *  that role for tests, the same way HelpMenu composes them. */
+function Harness({ onClose }: { onClose: () => void }) {
+  const conversation = useAssistantConversation();
+  const [draft, setDraft] = useState('');
+  return <AssistantPanel conversation={conversation} draft={{ value: draft, onChange: setDraft }} onClose={onClose} />;
+}
+
 function renderPanel(onClose = vi.fn(), initialPath = '/crm/prospect/p-1') {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <MemoryRouter initialEntries={[initialPath]}>
@@ -45,7 +60,7 @@ function renderPanel(onClose = vi.fn(), initialPath = '/crm/prospect/p-1') {
       <LocationProbe />
     </MemoryRouter>
   );
-  return { onClose, ...render(<AssistantPanel onClose={onClose} />, { wrapper }) };
+  return { onClose, ...render(<Harness onClose={onClose} />, { wrapper }) };
 }
 
 function input(): HTMLElement {
@@ -372,12 +387,6 @@ describe('history view', () => {
 });
 
 describe('panel behavior', () => {
-  it('warms the assistant once on mount', () => {
-    renderPanel();
-
-    expect(warmAssistant).toHaveBeenCalledTimes(1);
-  });
-
   it('Escape closes only when focus is inside the panel', () => {
     const { onClose } = renderPanel();
 
@@ -420,5 +429,383 @@ describe('panel behavior', () => {
     await screen.findByText('done');
 
     await waitFor(() => expect(input()).toHaveFocus());
+  });
+});
+
+// The conversation/draft are owned by whoever composes AssistantPanel
+// (HelpMenu in the app), specifically so an in-flight answer and a
+// half-typed question both survive the panel unmounting.
+function OpenCloseHarness() {
+  const conversation = useAssistantConversation();
+  const [draft, setDraft] = useState('');
+  const [open, setOpen] = useState(true);
+  return (
+    <MemoryRouter>
+      <button type="button" onClick={() => setOpen((o) => !o)}>toggle panel</button>
+      {open && (
+        <AssistantPanel conversation={conversation} draft={{ value: draft, onChange: setDraft }} onClose={() => setOpen(false)} />
+      )}
+    </MemoryRouter>
+  );
+}
+
+describe('surviving panel close (HIGH #3)', () => {
+  it('keeps streaming after the panel closes and shows the finished answer on reopen', async () => {
+    let finish!: () => void;
+    vi.mocked(askAssistantStream).mockImplementation(
+      (_q, convId, h) =>
+        new Promise<void>((resolve) => {
+          finish = () => {
+            h.onToken('late answer');
+            h.onDone({ result: { answer: 'late answer', citations: [] }, conversationId: convId ?? 'conv-1', persisted: true });
+            resolve();
+          };
+        }),
+    );
+    render(<OpenCloseHarness />);
+    await ask('slow one');
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Close AI assistant' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    act(() => finish());
+    await userEvent.setup().click(screen.getByRole('button', { name: 'toggle panel' }));
+
+    expect(await screen.findByText('late answer')).toBeInTheDocument();
+    expect(askAssistantStream).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the typed draft after closing and reopening the panel', async () => {
+    render(<OpenCloseHarness />);
+    fireEvent.change(input(), { target: { value: 'half-typed question' } });
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Close AI assistant' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'toggle panel' }));
+
+    expect(input()).toHaveValue('half-typed question');
+  });
+});
+
+describe('send disabled while a conversation loads (HIGH #1)', () => {
+  it('disables Send (without swapping to Stop) while a saved conversation is loading', async () => {
+    localStorage.setItem(STORAGE_KEY, 'conv-1');
+    let resolveGet!: (v: { conversation: AiConversation; messages: never[] }) => void;
+    vi.mocked(conversationService.get).mockReturnValue(new Promise((r) => { resolveGet = r; }));
+    renderPanel();
+
+    fireEvent.change(input(), { target: { value: 'question while loading' } });
+    expect(screen.getByRole('button', { name: /send question/i })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /stop generating/i })).not.toBeInTheDocument();
+
+    act(() => resolveGet({ conversation: conv('conv-1'), messages: [] }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /send question/i })).toBeEnabled());
+  });
+});
+
+describe('a superseded conversation-create doesn\'t clobber a newer action (HIGH #2)', () => {
+  it('New chat during the first ask keeps the conversation empty once the stale create() resolves', async () => {
+    let resolveCreate!: (c: AiConversation) => void;
+    vi.mocked(conversationService.create).mockReturnValue(new Promise((r) => { resolveCreate = r; }));
+    renderPanel();
+
+    await userEvent.setup().type(input(), 'first question{Enter}');
+    // A stream is in flight, so New chat asks for confirmation first (#20).
+    await userEvent.setup().click(screen.getByRole('button', { name: 'New chat' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      resolveCreate(conv('stale-conv'));
+      await Promise.resolve();
+    });
+
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(screen.queryByText('first question')).not.toBeInTheDocument();
+  });
+});
+
+describe('failed conversation loads (HIGH #4)', () => {
+  it('shows an error with Retry and clears the stale id after a failed initial restore', async () => {
+    localStorage.setItem(STORAGE_KEY, 'conv-1');
+    vi.mocked(conversationService.get)
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValueOnce({ conversation: conv('conv-1'), messages: [{ role: 'user', content: 'q', createdAt: '' }] });
+    renderPanel();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't load/i);
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(await screen.findByText('q')).toBeInTheDocument();
+  });
+});
+
+describe('cold start hint (HIGH #5)', () => {
+  it('shows a warming-up hint after 8s still waiting on the first token', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(askAssistantStream).mockImplementation(() => new Promise(() => {}));
+      renderPanel();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(input(), 'slow start');
+      await user.click(screen.getByRole('button', { name: /send question/i }));
+
+      expect(screen.getByText('Thinking…', { selector: 'span:not(.sr-only)' })).toBeInTheDocument();
+      await act(() => vi.advanceTimersByTimeAsync(8_100));
+      expect(await screen.findByText(/Warming up the assistant/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('starting_up auto-retry (HIGH #7)', () => {
+  it('shows a countdown and retries once after a starting_up error', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(askAssistantStream)
+        .mockImplementationOnce(async (_q, _c, h) => h.onError('The assistant is starting up.', STARTING_UP))
+        .mockImplementationOnce(streamWith('warmed up now'));
+      renderPanel();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(input(), 'q');
+      await user.click(screen.getByRole('button', { name: /send question/i }));
+
+      expect(await screen.findByText(/starting up — retrying in 10s/)).toBeInTheDocument();
+      await act(() => vi.advanceTimersByTimeAsync(10_100));
+      expect(await screen.findByText('warmed up now')).toBeInTheDocument();
+      expect(askAssistantStream).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('rate-limit countdown (MEDIUM #15)', () => {
+  it('disables Retry with a countdown honoring Retry-After, until it elapses', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(askAssistantStream).mockRejectedValue(new AskStreamHTTPError(429, 'raw', RATE_LIMITED, 3));
+      renderPanel();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(input(), 'q');
+      await user.click(screen.getByRole('button', { name: /send question/i }));
+
+      const retryButton = await screen.findByRole('button', { name: /retry in 3s/i });
+      expect(retryButton).toBeDisabled();
+      await act(() => vi.advanceTimersByTimeAsync(3_100));
+      expect(await screen.findByRole('button', { name: 'Retry' })).toBeEnabled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('empty state suggested questions (LOW #18)', () => {
+  it('asks the question immediately when a suggestion is clicked', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('suggested answer'));
+    renderPanel();
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'What can the assistant help with?' }));
+
+    expect(await screen.findByText('suggested answer')).toBeInTheDocument();
+    expect(vi.mocked(askAssistantStream).mock.calls[0][0]).toBe('What can the assistant help with?');
+  });
+
+  it('offers how-to-only suggestions to a user without CRM read access', () => {
+    hasPermission.mockReturnValue(false);
+    renderPanel();
+
+    expect(screen.getByRole('button', { name: 'How do I invite a user?' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'How many leads do I have?' })).not.toBeInTheDocument();
+  });
+});
+
+describe('copy button (LOW #17)', () => {
+  it('copies the answer to the clipboard and shows a confirmation', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('copy me'));
+    renderPanel();
+    await ask('q');
+    await screen.findByText('copy me');
+
+    // Defined right before use, after ask()'s own userEvent calls: userEvent
+    // v14 installs its own clipboard stub on first use, which would
+    // otherwise clobber a mock set up earlier in the test. fireEvent (not
+    // userEvent) fires the actual click so nothing touches clipboard again.
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy answer' }));
+
+    expect(writeText).toHaveBeenCalledWith('copy me');
+    expect(await screen.findByRole('button', { name: 'Copied answer to clipboard' })).toBeInTheDocument();
+  });
+});
+
+describe('new chat / history confirm while streaming (LOW #20)', () => {
+  it('asks for confirmation before starting a new chat while an answer is streaming', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(() => new Promise(() => {}));
+    renderPanel();
+    await ask('slow question');
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'New chat' }));
+    expect(screen.getByText(/stop the current answer/i)).toBeInTheDocument();
+    expect(screen.getByText('slow question')).toBeInTheDocument();
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.queryByText('slow question')).not.toBeInTheDocument();
+  });
+});
+
+describe('citation chip numbering (MEDIUM #11)', () => {
+  it('numbers chips to match their [n] marker and shows the found-sources line while streaming', async () => {
+    const help: Citation = { source_type: 'help', source_id: 'leads › Overview', snippet: 'About leads' };
+    const customer: Citation = { source_type: 'record', source_id: 'c-4', snippet: 'Globex', record_type: 'customer' };
+    vi.mocked(askAssistantStream).mockImplementation(
+      streamWith('Globex is active [2].', { sources: [help, customer], citations: [customer] }),
+    );
+    renderPanel();
+    await ask('q');
+
+    expect(await screen.findByText(/Found 2 sources/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open customer: Globex' })).toHaveTextContent('[2]');
+  });
+});
+
+// A role or tenant/workspace switch re-authenticates MainLayout's session in
+// place — this same mounted useAssistantConversation instance keeps running,
+// so it must notice from the auth store itself rather than a remount.
+describe('identity change clears the conversation (security)', () => {
+  it('clears turns and stops reusing the conversation id after a role switch', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('role A answer'));
+    renderPanel();
+    await ask('role A question');
+    await screen.findByText('role A answer');
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('conv-1');
+
+    act(() => {
+      useAuthStore.setState((s) => ({ user: s.user && { ...s.user, selectedRoleId: 'role-2' } }));
+    });
+
+    expect(screen.queryByText('role A question')).not.toBeInTheDocument();
+    expect(screen.queryByText('role A answer')).not.toBeInTheDocument();
+
+    vi.mocked(conversationService.create).mockResolvedValue(conv('conv-2'));
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('role B answer'));
+    await ask('role B question');
+    await screen.findByText('role B answer');
+
+    expect(conversationService.create).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(askAssistantStream).mock.calls[1][1]).toBe('conv-2');
+    // The old role's own saved conversation is untouched, not overwritten.
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('conv-1');
+    expect(localStorage.getItem('ai-conversation:t1:u1:role-2')).toBe('conv-2');
+  });
+
+  it('clears turns and the conversation id when the tenant changes', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('tenant A answer'));
+    renderPanel();
+    await ask('tenant A question');
+    await screen.findByText('tenant A answer');
+
+    act(() => {
+      useAuthStore.setState((s) => ({ user: s.user && { ...s.user, tenantId: 't2' } }));
+    });
+
+    expect(screen.queryByText('tenant A question')).not.toBeInTheDocument();
+    expect(screen.queryByText('tenant A answer')).not.toBeInTheDocument();
+    // Nothing saved yet for t2, so no load was attempted against it.
+    expect(conversationService.get).not.toHaveBeenCalled();
+
+    vi.mocked(conversationService.create).mockResolvedValue(conv('conv-t2'));
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('tenant B answer'));
+    await ask('tenant B question');
+
+    expect(vi.mocked(askAssistantStream).mock.calls[1][1]).toBe('conv-t2');
+  });
+
+  it('clears turns and the conversation id on logout', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('signed-in answer'));
+    renderPanel();
+    await ask('signed-in question');
+    await screen.findByText('signed-in answer');
+
+    act(() => useAuthStore.setState({ user: null }));
+
+    expect(screen.queryByText('signed-in question')).not.toBeInTheDocument();
+  });
+
+  it('aborts an in-flight stream when the identity changes mid-ask', async () => {
+    let capturedSignal: AbortSignal | undefined;
+    vi.mocked(askAssistantStream).mockImplementation(
+      (_q, _c, _h, signal) => {
+        capturedSignal = signal;
+        return new Promise<void>(() => {});
+      },
+    );
+    renderPanel();
+    await ask('slow question');
+    await waitFor(() => expect(capturedSignal).toBeDefined());
+    expect(capturedSignal!.aborted).toBe(false);
+
+    act(() => {
+      useAuthStore.setState((s) => ({ user: s.user && { ...s.user, selectedRoleId: 'role-2' } }));
+    });
+
+    expect(capturedSignal!.aborted).toBe(true);
+  });
+});
+
+describe('background inertness while open (a11y)', () => {
+  it('makes #root inert while the panel is mounted and restores it on unmount', () => {
+    const root = document.createElement('div');
+    root.id = 'root';
+    document.body.appendChild(root);
+    try {
+      const { unmount } = renderPanel();
+      expect(root).toHaveAttribute('inert');
+      expect(root).toHaveAttribute('aria-hidden', 'true');
+
+      unmount();
+      expect(root).not.toHaveAttribute('inert');
+      expect(root).not.toHaveAttribute('aria-hidden');
+    } finally {
+      root.remove();
+    }
+  });
+});
+
+describe('stop-answer confirm accessibility (a11y)', () => {
+  it('is an alertdialog with a label, focuses Cancel when it appears, and returns focus to New chat on Cancel', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(() => new Promise(() => {}));
+    renderPanel();
+    await ask('slow question');
+    const user = userEvent.setup();
+    const newChatButton = screen.getByRole('button', { name: 'New chat' });
+
+    await user.click(newChatButton);
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog.getAttribute('aria-label')).toBeTruthy();
+    const cancelButton = within(dialog).getByRole('button', { name: 'Cancel' });
+    expect(cancelButton).toHaveFocus();
+
+    await user.click(cancelButton);
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(newChatButton).toHaveFocus();
+  });
+});
+
+describe('citation marker focus and announcement (a11y)', () => {
+  it('focuses the matching chip and announces it when an [n] marker with nowhere to navigate is activated', async () => {
+    const help: Citation = { source_type: 'help', source_id: 'leads › Overview', snippet: 'About leads' };
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('See [1] for details.', { sources: [help], citations: [help] }));
+    renderPanel();
+    await ask('q');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Open source 1' }));
+
+    const chip = screen.getByRole('button', { name: 'Help reference: leads › Overview' });
+    await waitFor(() => expect(chip).toHaveFocus());
+    expect(screen.getByText('Source 1')).toBeInTheDocument();
   });
 });
