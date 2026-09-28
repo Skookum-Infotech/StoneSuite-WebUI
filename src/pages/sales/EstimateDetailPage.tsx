@@ -22,6 +22,7 @@ import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { EstimateStatusControl } from './components/EstimateStatusControl';
 
 const TABS = [
@@ -259,6 +260,14 @@ export default function EstimateDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Subtotal', value: estimate.subtotal },
+                  { label: 'Discount', value: estimate.discountTotal },
+                  { label: 'Tax', value: estimate.taxTotal },
+                  { label: 'Grand Total', value: estimate.grandTotal, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Estimate Date" value={fmtDate(estimate.estimateDate)} />
@@ -284,14 +293,6 @@ export default function EstimateDetailPage() {
               <ModernSection title="Ship To" index={2}>
                 <AddressBlock addr={estimate.shipping} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Total label="Subtotal" value={estimate.subtotal} />
-                  <Total label="Discount" value={estimate.discountTotal} />
-                  <Total label="Tax" value={estimate.taxTotal} />
-                  <Total label="Grand Total" value={estimate.grandTotal} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -486,17 +487,6 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

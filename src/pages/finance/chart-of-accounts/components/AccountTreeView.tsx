@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search, ChevronRight, ChevronDown, ChevronsDown, ChevronsUp, FolderPlus, Plus, X } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
@@ -9,7 +10,8 @@ import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { placementLabel, placementOf, type Placement } from '@/lib/coaPlacement';
 import { accountRowDomId, HighlightedAccountContext } from '@/lib/coaAccountHighlight';
-import type { Account, TreeSection } from '@/types/chartOfAccounts';
+import { ACCOUNT_NEW_PARAM, createDrawerFromParams } from '@/lib/pickerCreate';
+import type { Account, AccountType, TreeSection } from '@/types/chartOfAccounts';
 import { AccountTreeRow, type TreeRowActions, type TreeRowPerms } from './AccountTreeRow';
 import { BulkActionBar } from './BulkActionBar';
 import { AccountFormDrawer, type AccountParentRef } from './AccountFormDrawer';
@@ -22,7 +24,9 @@ type DrawerState =
   // initialPlacement is set when opened from a category/sub-category's own
   // inline "+" — the click already said where the account goes, so the
   // picker opens pre-selected instead of forcing the user to choose again.
-  | { mode: 'create'; initialPlacement?: Placement; initialPlacementLabel?: string }
+  // initialName/initialType are set when an account picker's "Create" link
+  // opened this page (?new=1&name=…), so the drawer starts with what was typed.
+  | { mode: 'create'; initialPlacement?: Placement; initialPlacementLabel?: string; initialName?: string; initialType?: AccountType }
   | { mode: 'create-child'; parent: AccountParentRef }
   | { mode: 'edit'; account: Account }
   | null;
@@ -88,7 +92,10 @@ export function AccountTreeView() {
   const [includeHidden, setIncludeHidden] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [drawer, setDrawer] = useState<DrawerState>(null);
+  // An account picker elsewhere links here to create the account it couldn't
+  // find; open the drawer for it, but only for someone who may create accounts.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [drawer, setDrawer] = useState<DrawerState>(() => (perms.canCreate ? createDrawerFromParams(searchParams) : null));
   const [taxonomy, setTaxonomy] = useState<TaxonomyIntent | null>(null);
   const [announcement, setAnnouncement] = useState('');
 
@@ -112,10 +119,17 @@ export function AccountTreeView() {
   // just kicked off the background refetch.
   const { highlightedId, markCreated } = useHighlightOnCreate(accountRowDomId, sections);
 
+  // The link's params only seed the drawer; drop them once it closes so a
+  // refresh doesn't reopen it.
+  function closeDrawer() {
+    setDrawer(null);
+    if (searchParams.has(ACCOUNT_NEW_PARAM)) setSearchParams({}, { replace: true });
+  }
+
   // Fires for both a top-level create and a sub-account create, never edit —
   // an edited account is already visible wherever the user opened it from.
   function handleAccountCreated(account: Account) {
-    setDrawer(null);
+    closeDrawer();
     // A create can be opened while a search is active (the row-level "add
     // sub-account" button renders in search results too). Clearing it here
     // guarantees the new account is reachable: the search query isn't part of
@@ -411,10 +425,12 @@ export function AccountTreeView() {
 
       {drawer?.mode === 'create' && (
         <AccountFormDrawer
-          onClose={() => setDrawer(null)}
+          onClose={closeDrawer}
           onSaved={handleAccountCreated}
           initialPlacement={drawer.initialPlacement}
           initialPlacementLabel={drawer.initialPlacementLabel}
+          initialName={drawer.initialName}
+          initialType={drawer.initialType}
         />
       )}
       {drawer?.mode === 'create-child' && (

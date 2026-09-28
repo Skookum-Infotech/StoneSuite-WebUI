@@ -10,13 +10,15 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { defaultCountryId } from '@/lib/lookupDefaults';
 import { type InvoiceRef } from './components/InvoicePicker';
 import { type SalesOrderRef } from './components/SalesOrderPicker';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
+import { useCustomerRef } from '@/hooks/useCustomerRef';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
+import { LeaveCreditMemoDialog } from './components/LeaveCreditMemoDialog';
 import {
   creditMemoDefaults, creditMemoTotals, toCreatePayload, PAGE_TABS, BILLING_FIELDS, type PageTab,
 } from '@/lib/creditMemoForm';
@@ -26,6 +28,8 @@ import {
   creditMemoFromPaymentState,
 } from '@/lib/creditMemoHandoff';
 import type { CreditMemoPaymentRef } from '@/types/creditMemo';
+
+const CREDIT_MEMO_LIST_PATH = '/sales/credit_memo';
 
 /** Unsaved form state carried across a "Create Customer" round trip. */
 interface CreditMemoDraft {
@@ -89,13 +93,7 @@ export default function AddCreditMemoPage() {
       setSourcePayment(null);
       setData((current) => ({ ...current, currency_id: '' }));
     }
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
-    }
+    if (next) setData((d) => mergeCustomerDefaults(d, next));
   }, [customer?.id]);
 
   // Applies the customer created via the round trip exactly as if it had
@@ -108,6 +106,22 @@ export default function AddCreditMemoPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerReturn.createdRef]);
+
+  // The payment handoff carries only the customer's id and name, so its Bill To
+  // address and defaults come from the customer record instead — applied once,
+  // as if the customer had just been picked. Skipped when the user has already
+  // changed or cleared the customer by the time the record arrives, and when
+  // the form was restored from a Create Customer round trip (it has its own).
+  const handoffCustomerId = !restored && paymentHandoff ? paymentHandoff.customer.id : undefined;
+  const { data: handoffCustomer } = useCustomerRef(handoffCustomerId);
+  const handoffApplied = useRef(false);
+  useEffect(() => {
+    if (!handoffCustomer || handoffApplied.current) return;
+    handoffApplied.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (customer?.id === handoffCustomer.id) handleCustomerChange(handoffCustomer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handoffCustomer]);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -163,12 +177,25 @@ export default function AddCreditMemoPage() {
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
 
+  // Opened from a payment, the payment is already saved: walking away leaves
+  // its excess unapplied with no credit memo, so ask before leaving, and go back
+  // to the payment (where "Create credit memo" can raise this again) rather than
+  // to the list.
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  function requestLeave() {
+    if (paymentHandoff) setLeaveOpen(true);
+    else navigate(CREDIT_MEMO_LIST_PATH);
+  }
+  function leave() {
+    navigate(paymentHandoff ? `/sales/payment/${encodeURIComponent(paymentHandoff.payment.id)}` : CREDIT_MEMO_LIST_PATH);
+  }
+
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Credit Memos"
-          onBack={() => navigate('/sales/credit_memo')}
+          onBack={requestLeave}
           icon={FileMinus}
           title="New Credit Memo"
           subtitle={sourcePayment
@@ -225,11 +252,23 @@ export default function AddCreditMemoPage() {
         />
 
         <FormActionBar
-          onCancel={() => navigate('/sales/credit_memo')}
+          onCancel={requestLeave}
           isPending={isPending}
           submitLabel="Save Credit Memo"
         />
       </form>
+
+      {leaveOpen && paymentHandoff && (
+        <LeaveCreditMemoDialog
+          paymentNumber={paymentHandoff.payment.number}
+          amount={paymentHandoff.unappliedAmount.toLocaleString(undefined, {
+            style: 'currency',
+            currency: paymentHandoff.currencyCode,
+          })}
+          onStay={() => setLeaveOpen(false)}
+          onLeave={leave}
+        />
+      )}
     </div>
   );
 }

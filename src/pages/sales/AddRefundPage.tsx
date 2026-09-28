@@ -16,7 +16,7 @@ import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { RefundSourcePicker, type RefundSourceRef } from './components/RefundSourcePicker';
 import { RefundSectionGrid } from './components/RefundFormFields';
@@ -117,13 +117,7 @@ export default function AddRefundPage() {
     setCustomer(next);
     setLineagePayment(null);
     setLineageCreditMemo(null);
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
-    }
+    if (next) setData((d) => mergeCustomerDefaults(d, next));
   }, []);
 
   // Applies the customer created via the round trip exactly as if it had

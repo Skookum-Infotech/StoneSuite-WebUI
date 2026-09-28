@@ -22,6 +22,7 @@ import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 
 const TABS = [
@@ -243,6 +244,16 @@ export default function InvoiceDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Subtotal', value: invoice.subtotal },
+                  { label: 'Discount', value: invoice.discountTotal },
+                  { label: 'Tax', value: invoice.taxTotal },
+                  { label: 'Grand Total', value: invoice.grandTotal, emphasis: 'strong' },
+                  { label: 'Amount Paid', value: invoice.amountPaid },
+                  { label: 'Balance Due', value: invoice.balanceDue, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Invoice Date" value={fmtDate(invoice.invoiceDate)} />
@@ -281,16 +292,6 @@ export default function InvoiceDetailPage() {
               <ModernSection title="Ship To" index={2}>
                 <AddressBlock addr={invoice.shipping} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <Total label="Subtotal" value={invoice.subtotal} />
-                  <Total label="Discount" value={invoice.discountTotal} />
-                  <Total label="Tax" value={invoice.taxTotal} />
-                  <Total label="Grand Total" value={invoice.grandTotal} bold />
-                  <Total label="Amount Paid" value={invoice.amountPaid} />
-                  <Total label="Balance Due" value={invoice.balanceDue} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -485,17 +486,6 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

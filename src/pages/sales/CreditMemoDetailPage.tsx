@@ -21,6 +21,7 @@ import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { VoidCreditMemoDialog } from './components/VoidCreditMemoDialog';
 import { ApplyCreditMemoDialog } from './components/ApplyCreditMemoDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import type { CreditMemoApplication } from '@/types/creditMemo';
 
 const TABS = [
@@ -211,6 +212,17 @@ export default function CreditMemoDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Subtotal', value: creditMemo.subtotal },
+                  ...(creditMemo.discountTotal > 0 ? [{ label: 'Discount', value: creditMemo.discountTotal }] : []),
+                  { label: 'Tax', value: creditMemo.taxTotal },
+                  { label: 'Adjustment', value: creditMemo.adjustment },
+                  { label: 'Grand Total', value: creditMemo.grandTotal, emphasis: 'strong' },
+                  { label: 'Applied Total', value: creditMemo.appliedTotal },
+                  { label: 'Unapplied Amount', value: creditMemo.unappliedAmount, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Credit Memo Date" value={fmtDate(creditMemo.creditMemoDate)} />
@@ -240,17 +252,6 @@ export default function CreditMemoDetailPage() {
               <ModernSection title="Billing Address" index={1}>
                 <AddressBlock addr={creditMemo.billing ?? {}} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <Total label="Subtotal" value={creditMemo.subtotal} />
-                  {creditMemo.discountTotal > 0 && <Total label="Discount" value={creditMemo.discountTotal} />}
-                  <Total label="Tax" value={creditMemo.taxTotal} />
-                  <Total label="Adjustment" value={creditMemo.adjustment} />
-                  <Total label="Grand Total" value={creditMemo.grandTotal} bold />
-                  <Total label="Applied Total" value={creditMemo.appliedTotal} />
-                  <Total label="Unapplied Amount" value={creditMemo.unappliedAmount} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -503,17 +504,6 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

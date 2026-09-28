@@ -22,6 +22,7 @@ import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { RefundStatusControl } from './components/RefundStatusControl';
 
 const TABS = [
@@ -197,6 +198,15 @@ export default function RefundDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              {/* Amount / Applied / Unapplied only — a refund is scalar: no line
+                  items, so no subtotal or tax to roll up (spec AD-1). */}
+              <AmountsStrip
+                items={[
+                  { label: 'Amount', value: refund.amount, emphasis: 'strong' },
+                  { label: 'Applied', value: refund.appliedTotal },
+                  { label: 'Unapplied', value: refund.unappliedAmount, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Refund Method" value={refund.method} />
@@ -210,15 +220,6 @@ export default function RefundDetailPage() {
                   {refund.internalNotes && <ReadonlyField label="Internal Notes" value={refund.internalNotes} full />}
                 </div>
               </ModernSection>
-              {/* Amount / Applied / Unapplied only — a refund is scalar: no line
-                  items, so no subtotal or tax to roll up (spec AD-1). */}
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <Total label="Amount" value={refund.amount} bold />
-                  <Total label="Applied" value={refund.appliedTotal} />
-                  <Total label="Unapplied" value={refund.unappliedAmount} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -318,17 +319,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

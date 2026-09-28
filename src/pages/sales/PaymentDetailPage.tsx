@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, Loader2 } from 'lucide-react';
+import { CreditCard, Upload, Pencil, DollarSign, Unlink, FileDown, FileMinus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { paymentService } from '@/services/paymentService';
 import { lookupService } from '@/services/lookupService';
@@ -15,8 +15,10 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useWorkflows } from '@/hooks/useWorkflows';
 import { cn } from '@/lib/utils';
 import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_CODES, PAYMENT_BLOCKS_APPLY } from '@/lib/paymentForm';
+import { CREDIT_MEMO_FROM_PAYMENT_STATE, creditMemoHandoffFromPayment } from '@/lib/creditMemoHandoff';
 import { statusToastLabel } from '@/lib/statusToast';
 import { PaymentAuditTab } from './components/PaymentAuditTab';
 import { DeletePaymentDialog } from './components/DeletePaymentDialog';
@@ -24,6 +26,7 @@ import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
 import type { PaymentApplication } from '@/types/payment';
 
@@ -39,6 +42,10 @@ const TABS = [
 // unread poll.
 const DETAIL_POLL_MS = 60_000;
 type Tab = (typeof TABS)[number]['key'];
+
+// Used for the credit memo handoff when the payment's currency is not in the
+// loaded lookups — the same fallback the New Payment page uses.
+const FALLBACK_CURRENCY_CODE = 'USD';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -61,6 +68,11 @@ export default function PaymentDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('payment', 'update');
   const canDelete = permissionsLoading || hasPermission('payment', 'delete');
+  const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
+  const canCreateCreditMemo = !permissionsLoading
+    && !workflowsLoading
+    && hasPermission('credit_memo', 'create')
+    && isWorkflowEnabled('credit_memo');
 
   const { data: payment, isLoading, error } = useQuery({
     queryKey: ['payment', id],
@@ -125,6 +137,15 @@ export default function PaymentDetailPage() {
   // Overpayment already turned into credit memos is not free to apply any more.
   const creditedTotal = payment.creditedTotal ?? 0;
   const availableToApply = Math.max(0, payment.unappliedAmount - creditedTotal);
+  // An excess whose credit memo was never saved (or was cancelled) is still
+  // sitting unapplied here — this raises that memo again, prefilled and linked
+  // to the payment exactly as the New Payment page does after confirming it.
+  const creditMemoHandoff = canCreateCreditMemo && !applyBlocked
+    ? creditMemoHandoffFromPayment(
+      payment,
+      lookups?.currencies.find((c) => c.id === payment.currencyId)?.code ?? FALLBACK_CURRENCY_CODE,
+    )
+    : null;
 
   async function handleExportPdf() {
     if (!payment) return;
@@ -208,6 +229,19 @@ export default function PaymentDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Amount', value: payment.amount, emphasis: 'strong' },
+                  { label: 'Applied', value: payment.appliedTotal },
+                  // Once part of the payment has moved to credit memos, what is
+                  // left to apply is the figure to read; Unapplied steps back.
+                  { label: 'Unapplied', value: payment.unappliedAmount, emphasis: creditedTotal > 0 ? 'strong' : 'key' },
+                  ...(creditedTotal > 0 ? [
+                    { label: 'Credited to credit memos', value: creditedTotal },
+                    { label: 'Available to apply', value: availableToApply, emphasis: 'key' as const },
+                  ] : []),
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Payment Method" value={payment.method} />
@@ -223,15 +257,6 @@ export default function PaymentDetailPage() {
                   {payment.internalNotes && <ReadonlyField label="Internal Notes" value={payment.internalNotes} full />}
                 </div>
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className={cn('grid gap-3', creditedTotal > 0 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-3')}>
-                  <Total label="Amount" value={payment.amount} bold />
-                  <Total label="Applied" value={payment.appliedTotal} />
-                  <Total label="Unapplied" value={payment.unappliedAmount} bold />
-                  {creditedTotal > 0 && <Total label="Credited to credit memos" value={creditedTotal} />}
-                  {creditedTotal > 0 && <Total label="Available to apply" value={availableToApply} bold />}
-                </div>
-              </div>
             </>
           )}
 
@@ -328,6 +353,19 @@ export default function PaymentDetailPage() {
                 >
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit payment
+                </button>
+              )}
+              {creditMemoHandoff && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/sales/credit_memo/new', {
+                    state: { [CREDIT_MEMO_FROM_PAYMENT_STATE]: creditMemoHandoff },
+                  })}
+                  aria-label="Create credit memo"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <FileMinus className="size-4 text-stone-400 shrink-0" />
+                  Create credit memo
                 </button>
               )}
               <button
@@ -503,17 +541,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

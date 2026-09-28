@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
   checkPaymentAgainstInvoices, capApplicationsToBalance, creditMemoExcessAmount,
-  pendingInvoiceLine, applicationsForConfirmedExcess,
+  pendingInvoiceLine, applicationsForConfirmedExcess, applicationsWithPendingInvoice,
+  appliedAmountForLine, excessBreakdown,
   type AppliedInvoiceLine,
 } from './paymentExcess'
 
@@ -111,6 +112,57 @@ describe('pendingInvoiceLine', () => {
   })
 })
 
+describe('appliedAmountForLine', () => {
+  it.each([
+    ['a row above its balance is capped to the balance', 1000, 600, 600],
+    ['a row equal to its balance is kept', 600, 600, 600],
+    ['a row below its balance is kept', 400, 600, 400],
+  ])('%s', (_name, amount, balanceDue, expected) => {
+    expect(appliedAmountForLine({ amount, balanceDue })).toBe(expected)
+  })
+})
+
+describe('excessBreakdown', () => {
+  const second = line({ invoiceUuid: 'inv-2', invoiceNumber: 'INV-000002', balanceDue: 300, amount: 300 })
+
+  it('splits a single invoice into what is applied and what is extra', () => {
+    const result = excessBreakdown(1000, 400, [line()])
+    expect(result.rows).toEqual([{ ...line(), appliedAmount: 600 }])
+    expect(result.balanceTotal).toBe(600)
+    expect(result.appliedTotal).toBe(600)
+    expect(result.unappliedRemainder).toBe(0)
+  })
+
+  it('caps each row to its own balance and totals the rows', () => {
+    const over = line({ amount: 1500 })
+    const result = excessBreakdown(1500, 600, [over, second])
+    expect(result.rows.map((row) => row.appliedAmount)).toEqual([600, 300])
+    expect(result.balanceTotal).toBe(900)
+    expect(result.appliedTotal).toBe(900)
+    expect(result.unappliedRemainder).toBe(0)
+  })
+
+  it('reports what stays unapplied when a row is entered below its balance', () => {
+    const result = excessBreakdown(1000, 400, [line({ amount: 300 })])
+    expect(result.appliedTotal).toBe(300)
+    expect(result.unappliedRemainder).toBe(300)
+  })
+
+  it('does not let floating point noise create a remainder', () => {
+    const cents = line({ balanceDue: 0.1, amount: 0.1 })
+    const other = line({ invoiceUuid: 'inv-2', balanceDue: 0.2, amount: 0.2 })
+    const result = excessBreakdown(0.5, 0.2, [cents, other])
+    expect(result.appliedTotal).toBe(0.3)
+    expect(result.unappliedRemainder).toBe(0)
+  })
+
+  it('does not mutate the lines it is given', () => {
+    const lines = [line({ amount: 1000 })]
+    excessBreakdown(1000, 400, lines)
+    expect(lines).toEqual([line({ amount: 1000 })])
+  })
+})
+
 describe('applicationsForConfirmedExcess', () => {
   it('caps existing applications and appends selected invoices that were never added', () => {
     const applications = [{ invoiceUuid: 'inv-1', amount: 1000 }]
@@ -128,5 +180,37 @@ describe('applicationsForConfirmedExcess', () => {
     expect(applicationsForConfirmedExcess([], [line({ amount: 400 })])).toEqual([
       { invoiceUuid: 'inv-1', amount: 400 },
     ])
+  })
+})
+
+describe('applicationsWithPendingInvoice', () => {
+  it('appends the invoice that is selected but was never added, after the rows already added', () => {
+    const applications = [{ invoiceUuid: 'inv-2', amount: 100 }]
+    expect(applicationsWithPendingInvoice(applications, line({ amount: 400 }))).toEqual([
+      { invoiceUuid: 'inv-2', amount: 100 },
+      { invoiceUuid: 'inv-1', amount: 400 },
+    ])
+  })
+
+  it('applies a pending invoice when there are no rows at all', () => {
+    expect(applicationsWithPendingInvoice([], line())).toEqual([{ invoiceUuid: 'inv-1', amount: 600 }])
+  })
+
+  it("never applies more than the pending invoice's balance", () => {
+    expect(applicationsWithPendingInvoice([], line({ balanceDue: 300, amount: 900 }))).toEqual([
+      { invoiceUuid: 'inv-1', amount: 300 },
+    ])
+  })
+
+  it('leaves the rows untouched when nothing is pending', () => {
+    const applications = [{ invoiceUuid: 'inv-1', amount: 100 }]
+    expect(applicationsWithPendingInvoice(applications, null)).toEqual(applications)
+    expect(applicationsWithPendingInvoice([], null)).toEqual([])
+  })
+
+  it('does not mutate the rows it is given', () => {
+    const applications = [{ invoiceUuid: 'inv-2', amount: 100 }]
+    applicationsWithPendingInvoice(applications, line())
+    expect(applications).toEqual([{ invoiceUuid: 'inv-2', amount: 100 }])
   })
 })

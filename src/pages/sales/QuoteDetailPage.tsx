@@ -22,6 +22,7 @@ import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { QuoteStatusControl } from './components/QuoteStatusControl';
 
 const TABS = [
@@ -259,6 +260,14 @@ export default function QuoteDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Subtotal', value: quote.subtotal },
+                  { label: 'Discount', value: quote.discountTotal },
+                  { label: 'Tax', value: quote.taxTotal },
+                  { label: 'Grand Total', value: quote.grandTotal, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Quote Date" value={fmtDate(quote.quoteDate)} />
@@ -296,14 +305,6 @@ export default function QuoteDetailPage() {
               <ModernSection title="Ship To" index={2}>
                 <AddressBlock addr={quote.shipping} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Total label="Subtotal" value={quote.subtotal} />
-                  <Total label="Discount" value={quote.discountTotal} />
-                  <Total label="Tax" value={quote.taxTotal} />
-                  <Total label="Grand Total" value={quote.grandTotal} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -498,17 +499,6 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

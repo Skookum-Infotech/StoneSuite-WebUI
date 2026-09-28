@@ -10,7 +10,7 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
@@ -63,13 +63,7 @@ export default function AddInvoicePage() {
 
   const handleCustomerChange = useCallback((next: CustomerRef | null) => {
     setCustomer(next);
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
-    }
+    if (next) setData((d) => mergeCustomerDefaults(d, next, { shipTo: true }));
   }, []);
 
   // Applies the customer created via the round trip exactly as if it had

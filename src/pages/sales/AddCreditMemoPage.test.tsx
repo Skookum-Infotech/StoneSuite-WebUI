@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { CrmLookups } from '@/services/lookupService';
 import type { CreditMemo } from '@/types/creditMemo';
+import type { WorkflowRecord } from '@/types/tenant';
 
 vi.mock('@/services/creditMemoService', () => ({
   creditMemoService: { createCreditMemo: vi.fn() },
+}));
+vi.mock('@/services/crmService', () => ({
+  crmService: { getRecord: vi.fn(), searchRecords: vi.fn() },
 }));
 vi.mock('@/services/lookupService', () => ({
   lookupService: { getCrmLookups: vi.fn() },
@@ -42,31 +46,54 @@ vi.mock('@/hooks/useScrollToError', () => ({ useScrollToError: () => null }));
 import AddCreditMemoPage from './AddCreditMemoPage';
 import { CREDIT_MEMO_FROM_PAYMENT_STATE } from '@/lib/creditMemoHandoff';
 import { creditMemoService } from '@/services/creditMemoService';
+import { crmService } from '@/services/crmService';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
 
-function Providers() {
+/** Long enough for a resolved query and the effect it triggers to run. */
+const SETTLE_MS = 50;
+
+/** The customer CRM record the handoff's `{ id, name }` refers to. */
+function customerRecord(): WorkflowRecord {
+  return {
+    id: 'cust-1',
+    coreFields: {
+      customer_name: 'Acme Stoneworks',
+      customer_is_bill_as_primary: false,
+      customer_bill_addr_line1: '456 Commerce Blvd',
+      customer_bill_addr_city: 'Chicago',
+      customer_bill_addr_state: 17,
+      customer_bill_addr_country: 1,
+      customer_bill_addr_zip: '60601',
+    },
+  } as unknown as WorkflowRecord;
+}
+
+const PAYMENT_HANDOFF_STATE = {
+  [CREDIT_MEMO_FROM_PAYMENT_STATE]: {
+    customer: { id: 'cust-1', name: 'Acme Stoneworks' },
+    invoices: [{ id: 'inv-1', number: 'INV-000001' }],
+    payment: { id: 'pay-1', number: 'PAY-000001' },
+    currencyId: 2,
+    currencyCode: 'CAD',
+    unappliedAmount: 24.5,
+  },
+};
+
+/** `state` is what the payment hands over; pass `null` to open the form on its
+ *  own, as Credit Memos → New does. */
+function Providers({ state = PAYMENT_HANDOFF_STATE }: { state?: typeof PAYMENT_HANDOFF_STATE | null } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[{
-        pathname: '/sales/credit_memo/new',
-        state: {
-          [CREDIT_MEMO_FROM_PAYMENT_STATE]: {
-            customer: { id: 'cust-1', name: 'Acme Stoneworks' },
-            invoices: [{ id: 'inv-1', number: 'INV-000001' }],
-            payment: { id: 'pay-1', number: 'PAY-000001' },
-            currencyId: 2,
-            currencyCode: 'CAD',
-            unappliedAmount: 24.5,
-          },
-        },
-      }]}>
+      <MemoryRouter initialEntries={[{ pathname: '/sales/credit_memo/new', state }]}>
         <Routes>
           <Route path="/sales/credit_memo/new" element={<AddCreditMemoPage />} />
           <Route path="/sales/credit_memo/:id" element={<div>credit memo saved</div>} />
+          <Route path="/sales/credit_memo" element={<div>credit memo list</div>} />
+          <Route path="/sales/payment/:id" element={<div>payment page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -74,8 +101,9 @@ function Providers() {
 }
 
 function submitForm() {
-  // Billing fields are required natively and the handoff carries no address,
-  // so submit the form directly instead of through the (blocked) button.
+  // Billing fields are required natively and may not have been filled from the
+  // customer record yet, so submit the form directly instead of through the
+  // (blockable) button.
   const form = document.querySelector('form');
   if (!form) throw new Error('form not found');
   fireEvent.submit(form);
@@ -91,7 +119,7 @@ beforeEach(() => {
     priceLevels: [],
     currencies: [{ id: 2, code: 'CAD', name: 'Canadian Dollar' }],
     countries: [{ id: 1, code: 'US', name: 'United States' }],
-    states: [],
+    states: [{ id: 17, code: 'IL', name: 'Illinois', countryId: 1 }],
     leadSources: [],
     contactMethods: [],
     employees: [],
@@ -99,6 +127,7 @@ beforeEach(() => {
   } satisfies CrmLookups);
   vi.mocked(workflowService.list).mockResolvedValue([]);
   vi.mocked(creditMemoService.createCreditMemo).mockResolvedValue({ id: 'cm-1' } as CreditMemo);
+  vi.mocked(crmService.getRecord).mockResolvedValue(customerRecord());
 });
 
 describe('AddCreditMemoPage payment handoff', () => {
@@ -116,6 +145,57 @@ describe('AddCreditMemoPage payment handoff', () => {
     expect(screen.getByLabelText('Memo')).toHaveValue('Created from payment PAY-000001 for invoice INV-000001.');
     expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
     expect(screen.getAllByText('CA$24.50').length).toBeGreaterThanOrEqual(2);
+  });
+
+  // The handoff only carries the customer's id and name, so the billing
+  // address has to be read from the customer record — otherwise the user
+  // retypes an address the customer already has.
+  it("fills the billing address from the customer's record", async () => {
+    render(<Providers />);
+
+    await waitFor(() => expect(screen.getByLabelText('Address Line 1')).toHaveValue('456 Commerce Blvd'));
+    expect(screen.getByLabelText('City')).toHaveValue('Chicago');
+    expect(screen.getByLabelText('Zip / Postal Code')).toHaveValue('60601');
+    expect(screen.getByLabelText('Country')).toHaveValue('1');
+    expect(screen.getByLabelText('State')).toHaveValue('17');
+    expect(crmService.getRecord).toHaveBeenCalledWith('cust-1', 'customer');
+  });
+
+  it('keeps the handoff currency, amount and lineage once the address is filled in', async () => {
+    render(<Providers />);
+    await waitFor(() => expect(screen.getByLabelText('Address Line 1')).toHaveValue('456 Commerce Blvd'));
+
+    expect(screen.getByText('INV-000001')).toBeInTheDocument();
+    expect(screen.getByText('PAY-000001')).toBeInTheDocument();
+    expect(screen.getByLabelText('Currency')).toHaveValue('2');
+    expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
+  });
+
+  it('does not bring the customer back if the user cleared it before the record loaded', async () => {
+    let resolveRecord: (record: WorkflowRecord) => void = () => {};
+    vi.mocked(crmService.getRecord).mockReturnValue(new Promise((resolve) => { resolveRecord = resolve; }));
+    render(<Providers />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Change billing customer' }));
+    await act(async () => {
+      resolveRecord(customerRecord());
+      // Let the query settle and any effect it triggers run before asserting.
+      await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+    });
+
+    expect(crmService.getRecord).toHaveBeenCalled();
+    expect(screen.queryByText('Acme Stoneworks')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Address Line 1')).toHaveValue('');
+  });
+
+  it('still opens with the customer and an empty address when the customer record cannot be read', async () => {
+    vi.mocked(crmService.getRecord).mockRejectedValue(new Error('forbidden'));
+    render(<Providers />);
+
+    expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
+    await waitFor(() => expect(crmService.getRecord).toHaveBeenCalled());
+    expect(screen.getByLabelText('Address Line 1')).toHaveValue('');
+    expect(screen.getByText('INV-000001')).toBeInTheDocument();
   });
 
   it('has no line items section', async () => {
@@ -166,6 +246,72 @@ describe('AddCreditMemoPage payment handoff', () => {
 
     expect(amount.value).toBe(typed);
     expect(amount.validity.valid).toBe(true);
+  });
+
+  // The payment is already saved by the time this page opens, so walking away
+  // leaves its excess unapplied with no credit memo — say so before leaving.
+  describe('cancelling', () => {
+    const leaveDialog = () => screen.queryByRole('dialog', { name: 'Leave without creating the credit memo?' });
+
+    async function openAndCancel() {
+      render(<Providers />);
+      expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    }
+
+    it('warns that the payment is saved and its excess is still unapplied', async () => {
+      await openAndCancel();
+
+      const dialog = leaveDialog();
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveTextContent('PAY-000001');
+      expect(dialog).toHaveTextContent('CA$24.50');
+      expect(dialog).toHaveTextContent('no credit memo has been created');
+      expect(dialog).toHaveTextContent('Create credit memo');
+      expect(screen.queryByText('payment page')).not.toBeInTheDocument();
+      expect(screen.queryByText('credit memo list')).not.toBeInTheDocument();
+    });
+
+    it('stays on the form, with everything entered, when the user chooses to stay', async () => {
+      await openAndCancel();
+      await userEvent.click(screen.getByRole('button', { name: 'Stay and review the credit memo' }));
+
+      expect(leaveDialog()).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
+      expect(creditMemoService.createCreditMemo).not.toHaveBeenCalled();
+    });
+
+    it('stays when the dialog is dismissed with Escape', async () => {
+      await openAndCancel();
+      await userEvent.keyboard('{Escape}');
+
+      expect(leaveDialog()).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
+    });
+
+    it('returns to the payment when the user leaves', async () => {
+      await openAndCancel();
+      await userEvent.click(screen.getByRole('button', { name: 'Leave without creating a credit memo' }));
+
+      expect(await screen.findByText('payment page')).toBeInTheDocument();
+      expect(creditMemoService.createCreditMemo).not.toHaveBeenCalled();
+    });
+
+    it('warns from the header back link too', async () => {
+      render(<Providers />);
+      expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
+      await userEvent.click(screen.getAllByRole('button', { name: 'Back to Credit Memos' })[0]);
+
+      expect(leaveDialog()).toBeInTheDocument();
+    });
+
+    it('leaves straight away when the form was not opened from a payment', async () => {
+      render(<Providers state={null} />);
+      await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+
+      expect(await screen.findByText('credit memo list')).toBeInTheDocument();
+      expect(leaveDialog()).not.toBeInTheDocument();
+    });
   });
 
   it('does not save without an amount', async () => {

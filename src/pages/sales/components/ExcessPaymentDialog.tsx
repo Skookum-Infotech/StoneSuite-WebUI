@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom';
 import { TriangleAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModalDialog } from '@/hooks/useModalDialog';
-import type { AppliedInvoiceLine } from '@/lib/paymentExcess';
+import { excessBreakdown, type AppliedInvoiceLine } from '@/lib/paymentExcess';
 
 export interface ExcessPaymentPrompt {
   customerName: string;
@@ -33,6 +33,7 @@ export function ExcessPaymentDialog({ prompt, onConfirm, onReject }: {
   const { currencyCode } = prompt;
   const invoiceNumbers = prompt.applications.map((application) => application.invoiceNumber).join(', ');
   const raisesPaymentAmount = prompt.enteredAmount > prompt.paymentAmount;
+  const breakdown = excessBreakdown(prompt.enteredAmount, prompt.excessAmount, prompt.applications);
 
   return createPortal(
     <div
@@ -54,30 +55,66 @@ export function ExcessPaymentDialog({ prompt, onConfirm, onReject }: {
 
         <div id="excess-payment-description" className="space-y-3 text-xs text-stone-600">
           <p>
-            The amount entered is more than the balance due on {invoiceNumbers}. Add the extra {money(prompt.excessAmount, currencyCode)} to Credit Memos?
+            The amount received is more than the balance due on {invoiceNumbers}. Add the extra {money(prompt.excessAmount, currencyCode)} to Credit Memos? If the amount received was a typo, choose No and correct it.
           </p>
+          <div className="max-h-44 overflow-y-auto rounded-lg border border-stone-200 modal-scrollbar">
+            <table className="w-full tabular-nums">
+              <caption className="sr-only">Amount applied to each invoice</caption>
+              <thead className="bg-stone-50 text-2xs uppercase tracking-wide text-stone-500">
+                <tr>
+                  <th scope="col" className="px-3 py-1.5 text-left font-semibold">Invoice</th>
+                  <th scope="col" className="px-3 py-1.5 text-right font-semibold">Balance due</th>
+                  <th scope="col" className="px-3 py-1.5 text-right font-semibold">Amount applied</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {breakdown.rows.map((row) => (
+                  <tr key={row.invoiceUuid}>
+                    <th scope="row" className="px-3 py-1.5 text-left font-medium text-stone-700">{row.invoiceNumber}</th>
+                    <td className="px-3 py-1.5 text-right text-stone-600">{money(row.balanceDue, currencyCode)}</td>
+                    <td className="px-3 py-1.5 text-right font-medium text-stone-800">{money(row.appliedAmount, currencyCode)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {breakdown.rows.length > 1 && (
+                <tfoot className="border-t border-stone-200 bg-stone-50 font-semibold text-stone-800">
+                  <tr>
+                    <th scope="row" className="px-3 py-1.5 text-left">Total</th>
+                    <td className="px-3 py-1.5 text-right">{money(breakdown.balanceTotal, currencyCode)}</td>
+                    <td className="px-3 py-1.5 text-right">{money(breakdown.appliedTotal, currencyCode)}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
           <dl className="space-y-1 rounded-lg border border-stone-200 bg-stone-50 p-3 tabular-nums">
             <div className="flex items-center justify-between gap-3">
-              <dt>Amount entered</dt>
+              <dt>Amount received</dt>
               <dd className="font-medium text-stone-700">{money(prompt.enteredAmount, currencyCode)}</dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt>Invoice balance due</dt>
-              <dd className="font-medium text-stone-700">{money(prompt.balanceTotal, currencyCode)}</dd>
+              <dt>Applied to invoices</dt>
+              <dd className="font-medium text-stone-700">{money(breakdown.appliedTotal, currencyCode)}</dd>
             </div>
+            {breakdown.unappliedRemainder > 0 && (
+              <div className="flex items-center justify-between gap-3">
+                <dt>Left unapplied on the payment</dt>
+                <dd className="font-medium text-stone-700">{money(breakdown.unappliedRemainder, currencyCode)}</dd>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-3 border-t border-stone-200 pt-1">
-              <dt className="font-semibold text-stone-800">Extra</dt>
+              <dt className="font-semibold text-stone-800">Extra, to Credit Memo</dt>
               <dd className="font-semibold text-stone-900">{money(prompt.excessAmount, currencyCode)}</dd>
             </div>
           </dl>
           {raisesPaymentAmount && (
             <p>
-              The payment will be saved as {money(prompt.enteredAmount, currencyCode)}; the Payment Amount field currently says {money(prompt.paymentAmount, currencyCode)}.
+              The payment will be saved as {money(prompt.enteredAmount, currencyCode)}; the Amount field currently says {money(prompt.paymentAmount, currencyCode)}.
             </p>
           )}
           {prompt.canCreateCreditMemo ? (
             <p>
-              Yes saves the payment, applies up to the balance due to the invoice, and opens a draft Credit Memo for {prompt.customerName} with the extra amount. Review and save that memo separately. No lets you enter a correct amount instead.
+              Yes saves the payment, applies the amounts shown to each invoice, and opens a draft Credit Memo for {prompt.customerName} with the extra amount. Review and save that memo separately. No lets you enter a correct amount instead.
             </p>
           ) : (
             <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 font-medium text-red-700">
