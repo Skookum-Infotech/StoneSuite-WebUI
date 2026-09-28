@@ -90,6 +90,12 @@ function HelpChip({ citation, n, highlighted, chipRef }: { citation: Citation; n
   );
 }
 
+/** Invisible, zero-width — appended to every other announcement so
+ *  activating the same marker twice in a row still changes the live
+ *  region's text. Setting the identical string twice is a no-op React
+ *  bail-out, and most screen readers only re-announce on an actual change. */
+const PARITY_MARK = '⁠';
+
 export const CitationChips = forwardRef<CitationChipsHandle, { items: NumberedCitation[] }>(function CitationChips({ items }, ref) {
   const chipEls = useRef<Record<number, HTMLElement | null>>({});
   const [highlightedN, setHighlightedN] = useState<number | null>(null);
@@ -97,13 +103,20 @@ export const CitationChips = forwardRef<CitationChipsHandle, { items: NumberedCi
   // anything happened — this announces which source it jumped to, for
   // whoever can't see the scroll/highlight.
   const [announcement, setAnnouncement] = useState('');
+  // Starts at 0 so the very first activation renders with no mark, keeping
+  // its announcement text an exact "Source n".
+  const activationCount = useRef(0);
 
   useImperativeHandle(ref, () => ({
     scrollToAndHighlight(n: number) {
       const el = chipEls.current[n];
       el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       el?.focus();
-      if (el) setAnnouncement(`Source ${n}`);
+      if (el) {
+        activationCount.current += 1;
+        const mark = activationCount.current % 2 === 0 ? PARITY_MARK : '';
+        setAnnouncement(`Source ${n}${mark}`);
+      }
       setHighlightedN(n);
       window.setTimeout(() => setHighlightedN((cur) => (cur === n ? null : cur)), HIGHLIGHT_MS);
     },

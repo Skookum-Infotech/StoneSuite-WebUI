@@ -44,6 +44,7 @@ export function AssistantPanel({
   const canSearchRecords = RECORD_RESOURCES.some((r) => hasPermission(r, 'read'));
 
   const panelRef = useRef<HTMLDivElement>(null);
+  const confirmDialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const followRef = useRef(true);
@@ -132,11 +133,24 @@ export function AssistantPanel({
     else if (action === 'history') setView('history');
   };
 
+  // Shared by Cancel's click and Escape — dismissing the confirm always
+  // returns focus to whichever header button opened it.
+  const cancelConfirm = (): void => {
+    const trigger = confirmAction === 'newChat' ? newChatButtonRef : historyButtonRef;
+    setConfirmAction(null);
+    trigger.current?.focus();
+  };
+
   // A minimal focus trap: Tab/Shift+Tab wrap within the panel instead of
   // escaping to the page behind it, matching the panel's modal semantics.
+  // While the stop-answer confirm is open it's the only reachable content
+  // (see the `inert` wrappers below) — the trap must be scoped to just its
+  // two buttons, or Tab would still walk through the chat/header behind it.
   const trapFocus = (e: React.KeyboardEvent): void => {
-    if (e.key !== 'Tab' || !panelRef.current) return;
-    const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    if (e.key !== 'Tab') return;
+    const root = confirmAction ? confirmDialogRef.current : panelRef.current;
+    if (!root) return;
+    const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
       (el) => !el.hasAttribute('disabled'),
     );
     if (focusable.length === 0) return;
@@ -171,11 +185,14 @@ export function AssistantPanel({
       // listener also closed it (aborting the answer) from any Escape on the
       // page. Closing no longer aborts anything: the conversation is owned
       // by HelpMenu, which stays mounted, so an in-flight answer keeps
-      // streaming while the panel is closed.
+      // streaming while the panel is closed. While the stop-answer confirm
+      // is open, Escape dismisses that nested dialog first (standard nested-
+      // dialog behavior) rather than closing the whole panel out from under it.
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.stopPropagation();
-          onClose();
+          if (confirmAction) cancelConfirm();
+          else onClose();
         } else {
           trapFocus(e);
         }
@@ -183,38 +200,48 @@ export function AssistantPanel({
       className="fixed inset-0 z-50 flex flex-col overflow-hidden overscroll-contain border-stone-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1c1c1c] sm:inset-auto sm:top-[4.5rem] sm:right-6 sm:h-[32rem] sm:max-h-[calc(100dvh-5.5rem)] sm:w-96 sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl sm:border"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-stone-200 px-4 py-3 dark:border-white/10">
-        <div className="flex min-w-0 items-center gap-2">
-          {view === 'history' ? (
-            <button type="button" onClick={() => setView('chat')} aria-label="Back to chat" className={headerButton}>
-              <ArrowLeft className="size-4" />
+      {/* `display: contents` keeps this wrapper invisible to the flex layout
+          (its children stay direct flex items of the dialog) while giving
+          the confirm banner below a single toggle to make everything else
+          in the panel unreachable — otherwise its Tab trap and pointer
+          clicks alike could still reach the header buttons or, worse, an
+          enabled "Stop generating" behind a still-open "stop the current
+          answer?" prompt. */}
+      <div className="contents" inert={confirmAction ? true : undefined}>
+        <div className="flex items-center justify-between gap-2 border-b border-stone-200 px-4 py-3 dark:border-white/10">
+          <div className="flex min-w-0 items-center gap-2">
+            {view === 'history' ? (
+              <button type="button" onClick={() => setView('chat')} aria-label="Back to chat" className={headerButton}>
+                <ArrowLeft className="size-4" />
+              </button>
+            ) : (
+              <Sparkles className="size-4 shrink-0 text-brand" aria-hidden="true" />
+            )}
+            <h2 className="truncate text-sm font-bold text-stone-700 dark:text-stone-200">
+              {view === 'history' ? 'Recent conversations' : 'StoneSuite Assistant'}
+            </h2>
+          </div>
+          <div className="flex items-center gap-1">
+            {view === 'chat' && (
+              <>
+                <button ref={newChatButtonRef} type="button" onClick={() => requestAction('newChat')} aria-label="New chat" title="New chat" className={headerButton}>
+                  <Plus className="size-4" />
+                </button>
+                <button ref={historyButtonRef} type="button" onClick={() => requestAction('history')} aria-label="Recent conversations" title="Recent conversations" className={headerButton}>
+                  <History className="size-4" />
+                </button>
+              </>
+            )}
+            <button type="button" onClick={onClose} aria-label="Close AI assistant" className={headerButton}>
+              <X className="size-4" />
             </button>
-          ) : (
-            <Sparkles className="size-4 shrink-0 text-brand" aria-hidden="true" />
-          )}
-          <h2 className="truncate text-sm font-bold text-stone-700 dark:text-stone-200">
-            {view === 'history' ? 'Recent conversations' : 'StoneSuite Assistant'}
-          </h2>
-        </div>
-        <div className="flex items-center gap-1">
-          {view === 'chat' && (
-            <>
-              <button ref={newChatButtonRef} type="button" onClick={() => requestAction('newChat')} aria-label="New chat" title="New chat" className={headerButton}>
-                <Plus className="size-4" />
-              </button>
-              <button ref={historyButtonRef} type="button" onClick={() => requestAction('history')} aria-label="Recent conversations" title="Recent conversations" className={headerButton}>
-                <History className="size-4" />
-              </button>
-            </>
-          )}
-          <button type="button" onClick={onClose} aria-label="Close AI assistant" className={headerButton}>
-            <X className="size-4" />
-          </button>
+          </div>
         </div>
       </div>
 
       {confirmAction && (
         <div
+          ref={confirmDialogRef}
           role="alertdialog"
           aria-label="Confirm stopping the current answer"
           className="flex items-center justify-between gap-2 border-b border-stone-200 bg-amber-50 px-4 py-2 text-2xs text-stone-700 dark:border-white/10 dark:bg-amber-500/10 dark:text-stone-200"
@@ -231,11 +258,7 @@ export function AssistantPanel({
             <button
               ref={cancelButtonRef}
               type="button"
-              onClick={() => {
-                const trigger = confirmAction === 'newChat' ? newChatButtonRef : historyButtonRef;
-                setConfirmAction(null);
-                trigger.current?.focus();
-              }}
+              onClick={cancelConfirm}
               className="rounded-lg px-2 py-1 font-semibold text-stone-600 hover:bg-stone-100 cursor-pointer dark:text-stone-300 dark:hover:bg-white/10"
             >
               Cancel
@@ -244,6 +267,7 @@ export function AssistantPanel({
         </div>
       )}
 
+      <div className="contents" inert={confirmAction ? true : undefined}>
       {view === 'history' ? (
         <div className="min-h-0 flex-1 overflow-y-auto py-1">
           <ConversationList
@@ -338,6 +362,7 @@ export function AssistantPanel({
           />
         </>
       )}
+      </div>
     </div>,
     document.body,
   );
