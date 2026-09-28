@@ -69,28 +69,31 @@ function customerRecord(): WorkflowRecord {
   } as unknown as WorkflowRecord;
 }
 
-function Providers() {
+const PAYMENT_HANDOFF_STATE = {
+  [CREDIT_MEMO_FROM_PAYMENT_STATE]: {
+    customer: { id: 'cust-1', name: 'Acme Stoneworks' },
+    invoices: [{ id: 'inv-1', number: 'INV-000001' }],
+    payment: { id: 'pay-1', number: 'PAY-000001' },
+    currencyId: 2,
+    currencyCode: 'CAD',
+    unappliedAmount: 24.5,
+  },
+};
+
+/** `state` is what the payment hands over; pass `null` to open the form on its
+ *  own, as Credit Memos → New does. */
+function Providers({ state = PAYMENT_HANDOFF_STATE }: { state?: typeof PAYMENT_HANDOFF_STATE | null } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[{
-        pathname: '/sales/credit_memo/new',
-        state: {
-          [CREDIT_MEMO_FROM_PAYMENT_STATE]: {
-            customer: { id: 'cust-1', name: 'Acme Stoneworks' },
-            invoices: [{ id: 'inv-1', number: 'INV-000001' }],
-            payment: { id: 'pay-1', number: 'PAY-000001' },
-            currencyId: 2,
-            currencyCode: 'CAD',
-            unappliedAmount: 24.5,
-          },
-        },
-      }]}>
+      <MemoryRouter initialEntries={[{ pathname: '/sales/credit_memo/new', state }]}>
         <Routes>
           <Route path="/sales/credit_memo/new" element={<AddCreditMemoPage />} />
           <Route path="/sales/credit_memo/:id" element={<div>credit memo saved</div>} />
+          <Route path="/sales/credit_memo" element={<div>credit memo list</div>} />
+          <Route path="/sales/payment/:id" element={<div>payment page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -243,6 +246,72 @@ describe('AddCreditMemoPage payment handoff', () => {
 
     expect(amount.value).toBe(typed);
     expect(amount.validity.valid).toBe(true);
+  });
+
+  // The payment is already saved by the time this page opens, so walking away
+  // leaves its excess unapplied with no credit memo — say so before leaving.
+  describe('cancelling', () => {
+    const leaveDialog = () => screen.queryByRole('dialog', { name: 'Leave without creating the credit memo?' });
+
+    async function openAndCancel() {
+      render(<Providers />);
+      expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    }
+
+    it('warns that the payment is saved and its excess is still unapplied', async () => {
+      await openAndCancel();
+
+      const dialog = leaveDialog();
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveTextContent('PAY-000001');
+      expect(dialog).toHaveTextContent('CA$24.50');
+      expect(dialog).toHaveTextContent('no credit memo has been created');
+      expect(dialog).toHaveTextContent('Create credit memo');
+      expect(screen.queryByText('payment page')).not.toBeInTheDocument();
+      expect(screen.queryByText('credit memo list')).not.toBeInTheDocument();
+    });
+
+    it('stays on the form, with everything entered, when the user chooses to stay', async () => {
+      await openAndCancel();
+      await userEvent.click(screen.getByRole('button', { name: 'Stay and review the credit memo' }));
+
+      expect(leaveDialog()).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
+      expect(creditMemoService.createCreditMemo).not.toHaveBeenCalled();
+    });
+
+    it('stays when the dialog is dismissed with Escape', async () => {
+      await openAndCancel();
+      await userEvent.keyboard('{Escape}');
+
+      expect(leaveDialog()).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
+    });
+
+    it('returns to the payment when the user leaves', async () => {
+      await openAndCancel();
+      await userEvent.click(screen.getByRole('button', { name: 'Leave without creating a credit memo' }));
+
+      expect(await screen.findByText('payment page')).toBeInTheDocument();
+      expect(creditMemoService.createCreditMemo).not.toHaveBeenCalled();
+    });
+
+    it('warns from the header back link too', async () => {
+      render(<Providers />);
+      expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
+      await userEvent.click(screen.getAllByRole('button', { name: 'Back to Credit Memos' })[0]);
+
+      expect(leaveDialog()).toBeInTheDocument();
+    });
+
+    it('leaves straight away when the form was not opened from a payment', async () => {
+      render(<Providers state={null} />);
+      await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+
+      expect(await screen.findByText('credit memo list')).toBeInTheDocument();
+      expect(leaveDialog()).not.toBeInTheDocument();
+    });
   });
 
   it('does not save without an amount', async () => {

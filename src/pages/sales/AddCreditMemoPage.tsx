@@ -18,6 +18,7 @@ import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useCustomerRef } from '@/hooks/useCustomerRef';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
+import { LeaveCreditMemoDialog } from './components/LeaveCreditMemoDialog';
 import {
   creditMemoDefaults, creditMemoTotals, toCreatePayload, PAGE_TABS, BILLING_FIELDS, type PageTab,
 } from '@/lib/creditMemoForm';
@@ -27,6 +28,8 @@ import {
   creditMemoFromPaymentState,
 } from '@/lib/creditMemoHandoff';
 import type { CreditMemoPaymentRef } from '@/types/creditMemo';
+
+const CREDIT_MEMO_LIST_PATH = '/sales/credit_memo';
 
 /** Unsaved form state carried across a "Create Customer" round trip. */
 interface CreditMemoDraft {
@@ -174,12 +177,25 @@ export default function AddCreditMemoPage() {
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
 
+  // Opened from a payment, the payment is already saved: walking away leaves
+  // its excess unapplied with no credit memo, so ask before leaving, and go back
+  // to the payment (where "Create credit memo" can raise this again) rather than
+  // to the list.
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  function requestLeave() {
+    if (paymentHandoff) setLeaveOpen(true);
+    else navigate(CREDIT_MEMO_LIST_PATH);
+  }
+  function leave() {
+    navigate(paymentHandoff ? `/sales/payment/${encodeURIComponent(paymentHandoff.payment.id)}` : CREDIT_MEMO_LIST_PATH);
+  }
+
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Credit Memos"
-          onBack={() => navigate('/sales/credit_memo')}
+          onBack={requestLeave}
           icon={FileMinus}
           title="New Credit Memo"
           subtitle={sourcePayment
@@ -236,11 +252,23 @@ export default function AddCreditMemoPage() {
         />
 
         <FormActionBar
-          onCancel={() => navigate('/sales/credit_memo')}
+          onCancel={requestLeave}
           isPending={isPending}
           submitLabel="Save Credit Memo"
         />
       </form>
+
+      {leaveOpen && paymentHandoff && (
+        <LeaveCreditMemoDialog
+          paymentNumber={paymentHandoff.payment.number}
+          amount={paymentHandoff.unappliedAmount.toLocaleString(undefined, {
+            style: 'currency',
+            currency: paymentHandoff.currencyCode,
+          })}
+          onStay={() => setLeaveOpen(false)}
+          onLeave={leave}
+        />
+      )}
     </div>
   );
 }
