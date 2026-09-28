@@ -10,11 +10,12 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { defaultCountryId } from '@/lib/lookupDefaults';
 import { type InvoiceRef } from './components/InvoicePicker';
 import { type SalesOrderRef } from './components/SalesOrderPicker';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
+import { useCustomerRef } from '@/hooks/useCustomerRef';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
 import {
@@ -89,13 +90,7 @@ export default function AddCreditMemoPage() {
       setSourcePayment(null);
       setData((current) => ({ ...current, currency_id: '' }));
     }
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setData((d) => ({
-        ...d,
-        ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !d[k] || BILL_ADDRESS_KEYS.has(k))),
-      }));
-    }
+    if (next) setData((d) => mergeCustomerDefaults(d, next));
   }, [customer?.id]);
 
   // Applies the customer created via the round trip exactly as if it had
@@ -108,6 +103,22 @@ export default function AddCreditMemoPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerReturn.createdRef]);
+
+  // The payment handoff carries only the customer's id and name, so its Bill To
+  // address and defaults come from the customer record instead — applied once,
+  // as if the customer had just been picked. Skipped when the user has already
+  // changed or cleared the customer by the time the record arrives, and when
+  // the form was restored from a Create Customer round trip (it has its own).
+  const handoffCustomerId = !restored && paymentHandoff ? paymentHandoff.customer.id : undefined;
+  const { data: handoffCustomer } = useCustomerRef(handoffCustomerId);
+  const handoffApplied = useRef(false);
+  useEffect(() => {
+    if (!handoffCustomer || handoffApplied.current) return;
+    handoffApplied.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (customer?.id === handoffCustomer.id) handleCustomerChange(handoffCustomer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handoffCustomer]);
 
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],

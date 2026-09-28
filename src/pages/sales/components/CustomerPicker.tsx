@@ -4,7 +4,7 @@ import { Search, X, Loader2, Building2, AlertTriangle, UserPlus } from 'lucide-r
 import { crmService } from '@/services/crmService';
 import { lookupService } from '@/services/lookupService';
 import { cn } from '@/lib/utils';
-import { customerCoreDefaults } from '@/lib/customerDefaults';
+import { customerRefFromRecord } from '@/lib/customerDefaults';
 import { fieldCls } from '@/components/crm/formUtils';
 import { hasExactName } from '@/lib/recordCreateReturn';
 import { CUSTOMER_USABLE_STATUS } from '@/lib/crmStatusFlow';
@@ -45,6 +45,17 @@ export interface CustomerRef {
   billPhone?: string;
   billFax?: string;
   billEmail?: string;
+  /** The customer's effective Ship To address (its Shipping Address block, or
+   *  its primary Address when shipping is flagged same-as-primary). Contact
+   *  name/phone/fax/email reuse the bill* values above — a customer has just
+   *  one of each. See customerShipToFields (lib/customerDefaults.ts). */
+  shipAddress1?: string;
+  shipAddress2?: string;
+  shipSuite?: string;
+  shipCity?: string;
+  shipStateId?: string;
+  shipCountryId?: string;
+  shipZip?: string;
 }
 
 // Billing-customer picker for the Sales Order create form. Opens showing the
@@ -115,11 +126,7 @@ export function CustomerPicker({
         sort: [{ field: 'updated_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
-      return page.records.map((r) => ({
-        id: r.id,
-        name: String(r.coreFields.customer_name ?? '(unnamed)'),
-        ...customerCoreDefaults(r.coreFields),
-      }));
+      return page.records.map(customerRefFromRecord);
     },
   });
 

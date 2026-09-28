@@ -24,6 +24,7 @@ import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
 import type { PaymentApplication } from '@/types/payment';
 
@@ -208,6 +209,19 @@ export default function PaymentDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Amount', value: payment.amount, emphasis: 'strong' },
+                  { label: 'Applied', value: payment.appliedTotal },
+                  // Once part of the payment has moved to credit memos, what is
+                  // left to apply is the figure to read; Unapplied steps back.
+                  { label: 'Unapplied', value: payment.unappliedAmount, emphasis: creditedTotal > 0 ? 'strong' : 'key' },
+                  ...(creditedTotal > 0 ? [
+                    { label: 'Credited to credit memos', value: creditedTotal },
+                    { label: 'Available to apply', value: availableToApply, emphasis: 'key' as const },
+                  ] : []),
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Payment Method" value={payment.method} />
@@ -223,15 +237,6 @@ export default function PaymentDetailPage() {
                   {payment.internalNotes && <ReadonlyField label="Internal Notes" value={payment.internalNotes} full />}
                 </div>
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className={cn('grid gap-3', creditedTotal > 0 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-3')}>
-                  <Total label="Amount" value={payment.amount} bold />
-                  <Total label="Applied" value={payment.appliedTotal} />
-                  <Total label="Unapplied" value={payment.unappliedAmount} bold />
-                  {creditedTotal > 0 && <Total label="Credited to credit memos" value={creditedTotal} />}
-                  {creditedTotal > 0 && <Total label="Available to apply" value={availableToApply} bold />}
-                </div>
-              </div>
             </>
           )}
 
@@ -503,17 +508,6 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
       <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

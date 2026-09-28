@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { CrmLookups } from '@/services/lookupService';
 import type { CreditMemo } from '@/types/creditMemo';
+import type { WorkflowRecord } from '@/types/tenant';
 
 vi.mock('@/services/creditMemoService', () => ({
   creditMemoService: { createCreditMemo: vi.fn() },
+}));
+vi.mock('@/services/crmService', () => ({
+  crmService: { getRecord: vi.fn(), searchRecords: vi.fn() },
 }));
 vi.mock('@/services/lookupService', () => ({
   lookupService: { getCrmLookups: vi.fn() },
@@ -42,8 +46,28 @@ vi.mock('@/hooks/useScrollToError', () => ({ useScrollToError: () => null }));
 import AddCreditMemoPage from './AddCreditMemoPage';
 import { CREDIT_MEMO_FROM_PAYMENT_STATE } from '@/lib/creditMemoHandoff';
 import { creditMemoService } from '@/services/creditMemoService';
+import { crmService } from '@/services/crmService';
 import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
+
+/** Long enough for a resolved query and the effect it triggers to run. */
+const SETTLE_MS = 50;
+
+/** The customer CRM record the handoff's `{ id, name }` refers to. */
+function customerRecord(): WorkflowRecord {
+  return {
+    id: 'cust-1',
+    coreFields: {
+      customer_name: 'Acme Stoneworks',
+      customer_is_bill_as_primary: false,
+      customer_bill_addr_line1: '456 Commerce Blvd',
+      customer_bill_addr_city: 'Chicago',
+      customer_bill_addr_state: 17,
+      customer_bill_addr_country: 1,
+      customer_bill_addr_zip: '60601',
+    },
+  } as unknown as WorkflowRecord;
+}
 
 function Providers() {
   const queryClient = new QueryClient({
@@ -74,8 +98,9 @@ function Providers() {
 }
 
 function submitForm() {
-  // Billing fields are required natively and the handoff carries no address,
-  // so submit the form directly instead of through the (blocked) button.
+  // Billing fields are required natively and may not have been filled from the
+  // customer record yet, so submit the form directly instead of through the
+  // (blockable) button.
   const form = document.querySelector('form');
   if (!form) throw new Error('form not found');
   fireEvent.submit(form);
@@ -91,7 +116,7 @@ beforeEach(() => {
     priceLevels: [],
     currencies: [{ id: 2, code: 'CAD', name: 'Canadian Dollar' }],
     countries: [{ id: 1, code: 'US', name: 'United States' }],
-    states: [],
+    states: [{ id: 17, code: 'IL', name: 'Illinois', countryId: 1 }],
     leadSources: [],
     contactMethods: [],
     employees: [],
@@ -99,6 +124,7 @@ beforeEach(() => {
   } satisfies CrmLookups);
   vi.mocked(workflowService.list).mockResolvedValue([]);
   vi.mocked(creditMemoService.createCreditMemo).mockResolvedValue({ id: 'cm-1' } as CreditMemo);
+  vi.mocked(crmService.getRecord).mockResolvedValue(customerRecord());
 });
 
 describe('AddCreditMemoPage payment handoff', () => {
@@ -116,6 +142,57 @@ describe('AddCreditMemoPage payment handoff', () => {
     expect(screen.getByLabelText('Memo')).toHaveValue('Created from payment PAY-000001 for invoice INV-000001.');
     expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
     expect(screen.getAllByText('CA$24.50').length).toBeGreaterThanOrEqual(2);
+  });
+
+  // The handoff only carries the customer's id and name, so the billing
+  // address has to be read from the customer record — otherwise the user
+  // retypes an address the customer already has.
+  it("fills the billing address from the customer's record", async () => {
+    render(<Providers />);
+
+    await waitFor(() => expect(screen.getByLabelText('Address Line 1')).toHaveValue('456 Commerce Blvd'));
+    expect(screen.getByLabelText('City')).toHaveValue('Chicago');
+    expect(screen.getByLabelText('Zip / Postal Code')).toHaveValue('60601');
+    expect(screen.getByLabelText('Country')).toHaveValue('1');
+    expect(screen.getByLabelText('State')).toHaveValue('17');
+    expect(crmService.getRecord).toHaveBeenCalledWith('cust-1', 'customer');
+  });
+
+  it('keeps the handoff currency, amount and lineage once the address is filled in', async () => {
+    render(<Providers />);
+    await waitFor(() => expect(screen.getByLabelText('Address Line 1')).toHaveValue('456 Commerce Blvd'));
+
+    expect(screen.getByText('INV-000001')).toBeInTheDocument();
+    expect(screen.getByText('PAY-000001')).toBeInTheDocument();
+    expect(screen.getByLabelText('Currency')).toHaveValue('2');
+    expect(screen.getByLabelText('Amount')).toHaveValue(24.5);
+  });
+
+  it('does not bring the customer back if the user cleared it before the record loaded', async () => {
+    let resolveRecord: (record: WorkflowRecord) => void = () => {};
+    vi.mocked(crmService.getRecord).mockReturnValue(new Promise((resolve) => { resolveRecord = resolve; }));
+    render(<Providers />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Change billing customer' }));
+    await act(async () => {
+      resolveRecord(customerRecord());
+      // Let the query settle and any effect it triggers run before asserting.
+      await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+    });
+
+    expect(crmService.getRecord).toHaveBeenCalled();
+    expect(screen.queryByText('Acme Stoneworks')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Address Line 1')).toHaveValue('');
+  });
+
+  it('still opens with the customer and an empty address when the customer record cannot be read', async () => {
+    vi.mocked(crmService.getRecord).mockRejectedValue(new Error('forbidden'));
+    render(<Providers />);
+
+    expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
+    await waitFor(() => expect(crmService.getRecord).toHaveBeenCalled());
+    expect(screen.getByLabelText('Address Line 1')).toHaveValue('');
+    expect(screen.getByText('INV-000001')).toBeInTheDocument();
   });
 
   it('has no line items section', async () => {

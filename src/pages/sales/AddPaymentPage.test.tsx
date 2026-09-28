@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -211,6 +211,13 @@ describe('AddPaymentPage from invoice', () => {
     expect(dialog).toHaveTextContent('CA$24.50');
     expect(paymentService.createPayment).not.toHaveBeenCalled();
 
+    // The total received is labelled as such, and each invoice shows its balance
+    // next to the amount that will actually be applied to it.
+    expect(within(dialog).getByText('Amount received')).toBeInTheDocument();
+    expect(within(dialog).queryByText('Amount entered')).not.toBeInTheDocument();
+    const invoiceRow = within(dialog).getByRole('row', { name: /INV-000001/ });
+    expect(within(invoiceRow).getAllByRole('cell').map((cell) => cell.textContent)).toEqual(['CA$125.50', 'CA$125.50']);
+
     await userEvent.click(screen.getByRole('button', {
       name: 'Yes, save the payment and continue to a credit memo',
     }));
@@ -271,6 +278,90 @@ describe('AddPaymentPage from invoice', () => {
 
     await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalled());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  // Regression: "Record Payment" on an invoice opens with that invoice selected
+  // in the Apply to Invoices picker. Saving without pressing Add used to send
+  // no application at all, so the payment was created but never reached the
+  // invoice.
+  describe('when the invoice is selected but never added as a row', () => {
+    async function save() {
+      expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
+      await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+      await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
+    }
+
+    it('applies the prefilled payment amount to the invoice', async () => {
+      renderPage();
+      await save();
+
+      await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+        amount: 125.5,
+        applications: [{ invoiceUuid: 'inv-1', amount: 125.5 }],
+      })));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(await screen.findByTestId('location')).toHaveTextContent('/sales/invoice/inv-1');
+    });
+
+    it('applies a smaller payment amount in full, as a partial payment', async () => {
+      renderPage();
+      expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
+      const paymentAmount = screen.getByLabelText('Amount');
+      await userEvent.clear(paymentAmount);
+      await userEvent.type(paymentAmount, '50');
+      await save();
+
+      await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+        amount: 50,
+        applications: [{ invoiceUuid: 'inv-1', amount: 50 }],
+      })));
+    });
+
+    it('applies an application amount that was typed but never added', async () => {
+      renderPage();
+      expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
+      await userEvent.type(screen.getByLabelText('Application amount'), '40');
+      await save();
+
+      await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+        amount: 125.5,
+        applications: [{ invoiceUuid: 'inv-1', amount: 40 }],
+      })));
+    });
+
+    it('does not apply the invoice a second time once it has been added as a row', async () => {
+      renderPage();
+      expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
+      await userEvent.type(screen.getByLabelText('Application amount'), '50');
+      await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+      await save();
+
+      await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+        applications: [{ invoiceUuid: 'inv-1', amount: 50 }],
+      })));
+    });
+
+    it('still saves a plain prepayment when the invoice is cleared from the picker', async () => {
+      renderPage();
+      await userEvent.click(await screen.findByLabelText('Change invoice'));
+      await save();
+
+      await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+        amount: 125.5,
+        applications: [],
+      })));
+    });
+
+    it('still refuses to save when the invoice balance changed since the page opened', async () => {
+      vi.mocked(invoiceService.getInvoice)
+        .mockResolvedValueOnce(sourceInvoice())
+        .mockResolvedValueOnce({ ...sourceInvoice(), balanceDue: 100 });
+      renderPage();
+      await save();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('The source invoice balance changed');
+      expect(paymentService.createPayment).not.toHaveBeenCalled();
+    });
   });
 
   it('asks for a correct amount when the excess is rejected and saves once it is fixed', async () => {
