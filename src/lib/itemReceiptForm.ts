@@ -301,9 +301,13 @@ export function itemReceiptDefaults(): Record<string, unknown> {
   return { receipt_date: today };
 }
 
-/** Purchase orders that can be received against — SENT/PART only
- *  (itemreceipt/store.go receivableStatusCodes). Drives which rows the PO
- *  picker offers vs. shows disabled. */
+/** PO status codes that can be received against — SENT/PART only
+ *  (itemreceipt/store.go receivableStatusCodes). The PO picker sends these as a
+ *  server-side `status_code` filter so it only ever lists usable orders. */
+export const RECEIVABLE_PO_STATUS_CODES: readonly string[] = ['SENT', 'PART'];
+
+/** Whether a purchase order can be received against — gates the PO detail
+ *  page's Receive action and the receive-items page. */
 export function isPurchaseOrderReceivable(po: Pick<PurchaseOrder, 'statusCode'>): boolean {
-  return po.statusCode === 'SENT' || po.statusCode === 'PART';
+  return RECEIVABLE_PO_STATUS_CODES.includes(po.statusCode);
 }

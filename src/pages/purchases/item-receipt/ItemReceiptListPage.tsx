@@ -10,6 +10,9 @@ export default function ItemReceiptListPage() {
   const { hasPermission, isLoading } = useUserPermissions();
   // A new receipt is saved and posted in one step, so it takes both grants.
   const canCreate = isLoading || (hasPermission('item_receipt', 'create') && hasPermission('item_receipt', 'transition'));
+  // The picker's empty state can jump straight to PO creation, but only for a
+  // user the PO Add route (purchase_order:create) would let through.
+  const canCreatePurchaseOrder = !isLoading && hasPermission('purchase_order', 'create');
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
@@ -45,6 +48,7 @@ export default function ItemReceiptListPage() {
         <PurchaseOrderPickerDialog
           onClose={() => setPickerOpen(false)}
           onSelect={(purchaseOrderId) => navigate(`/purchases/item_receipt/new?po=${purchaseOrderId}`)}
+          onCreatePurchaseOrder={canCreatePurchaseOrder ? () => navigate('/purchases/purchase_order/new') : undefined}
         />
       )}
     </div>

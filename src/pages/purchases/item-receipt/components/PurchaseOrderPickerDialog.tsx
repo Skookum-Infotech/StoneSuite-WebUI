@@ -1,33 +1,35 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Package, Inbox } from 'lucide-react';
+import { Search, Package, Inbox, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
-import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
+import { RECEIVABLE_PO_STATUS_CODES } from '@/lib/itemReceiptForm';
 
 const RESULT_LIMIT = 15;
+const SEARCH_DEBOUNCE_MS = 300;
 
 // Entry point for "New Receipt": a purchase order must be finalized (SENT or
-// PART) to receive against (itemreceipt/store.go receivableStatusCodes) —
-// every other row is shown but disabled, with the reason spelled out, rather
-// than filtered server-side (the `status` filter compares against an
-// internal lkp_record_status id with no code-lookup endpoint, so it can't be
-// narrowed to "receivable" server-side — mirrors VendorPicker/
-// PurchaseOrderFilterDrawer's same omission).
-export function PurchaseOrderPickerDialog({ onClose, onSelect }: {
+// PART) to receive against (itemreceipt/store.go receivableStatusCodes), so the
+// picker asks the server for only those — any other order would be a dead row.
+// `status_code` (purchaseorder/resolver.go) filters on the status's stable code;
+// the plain `status` key is an internal lkp_record_status id no client can look
+// up. When nothing matches, `onCreatePurchaseOrder` (only passed to users who
+// may create one) offers to start the order that isn't there yet.
+export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseOrder }: {
   onClose: () => void;
   onSelect: (purchaseOrderId: string) => void;
+  onCreatePurchaseOrder?: () => void;
 }) {
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
   const contentRef = useModalDialog(onClose);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(term.trim()), 300);
+    const t = setTimeout(() => setDebounced(term.trim()), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [term]);
 
@@ -35,6 +37,7 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect }: {
     queryKey: ['po-picker', debounced],
     queryFn: () => purchaseOrderService.searchPurchaseOrders({
       search: debounced || undefined,
+      filters: [{ field: 'status_code', op: 'in', value: RECEIVABLE_PO_STATUS_CODES }],
       sort: [{ field: 'updated_at', dir: 'desc' }],
       limit: RESULT_LIMIT,
     }),
@@ -75,30 +78,39 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect }: {
               ))}
             </div>
           ) : records.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
               <Inbox className="size-6 text-stone-300" aria-hidden="true" />
-              <p className="text-xs text-stone-400">No purchase orders match.</p>
+              <p className="text-xs font-medium text-stone-500">
+                {debounced ? `No open purchase orders match "${debounced}".` : 'No purchase orders are open for receiving.'}
+              </p>
+              <p className="text-2xs text-stone-400">
+                {debounced
+                  ? 'It may not exist yet, or may not have been sent to the vendor.'
+                  : 'Send a purchase order to the vendor first, or create a new one.'}
+              </p>
+              {onCreatePurchaseOrder && (
+                <button
+                  type="button"
+                  onClick={onCreatePurchaseOrder}
+                  aria-label="Create purchase order"
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+                >
+                  <Plus className="size-3.5" aria-hidden="true" />
+                  Create purchase order
+                </button>
+              )}
             </div>
           ) : (
             <ul className="space-y-1">
               {records.map((po) => {
-                const receivable = isPurchaseOrderReceivable(po);
                 const color = PO_STATUS_COLORS[po.statusCode] ?? '#a8a29e';
                 return (
                   <li key={po.id}>
                     <button
                       type="button"
-                      disabled={!receivable}
                       onClick={() => onSelect(po.id)}
-                      aria-label={
-                        receivable
-                          ? `Receive against ${po.purchaseOrderNumber}`
-                          : `${po.purchaseOrderNumber} is not open for receiving`
-                      }
-                      className={cn(
-                        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                        receivable ? 'hover:bg-accent/10 cursor-pointer' : 'opacity-50 cursor-not-allowed',
-                      )}
+                      aria-label={`Receive against ${po.purchaseOrderNumber}`}
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/10"
                     >
                       <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0 flex-1">
