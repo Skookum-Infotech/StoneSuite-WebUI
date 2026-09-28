@@ -2,10 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, X, Loader2, Landmark } from 'lucide-react';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
+import { PickerNotFound } from '@/components/PickerNotFound';
 import { accountPickerTypeFilters } from '@/lib/accountPickerFilters';
-import type { AccountType } from '@/types/chartOfAccounts';
+import {
+  CHART_OF_ACCOUNTS_PATH, EXISTING_MATCH_LIMIT, accountUnavailableReason, findExistingMatch, newAccountHref,
+} from '@/lib/pickerCreate';
+import type { Account, AccountType } from '@/types/chartOfAccounts';
 
 const RESULT_LIMIT = 8;
 
@@ -36,6 +41,14 @@ export interface AccountPickerOptions {
 // VendorPicker's debounced search-as-you-type UX. Cosmetic/behavioral knobs
 // live under `options` (not their own top-level props) to stay within the
 // 5-prop cap.
+//
+// A code/name that isn't in the list offers "Create it" — in a new tab, because
+// the Chart of Accounts create form is a drawer on its own page and these
+// pickers sit on forms whose unsaved state isn't stashed. Before offering it, an
+// unfiltered lookup rules out an account that already exists but is inactive,
+// hidden, a header (non-postable), or of a type this field excludes, so nothing
+// the user types can lead to a duplicate. The lists refetch when the tab
+// regains focus, so the new account is there on return.
 export function AccountPicker({
   value,
   onChange,
@@ -55,6 +68,8 @@ export function AccountPicker({
   const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { hasPermission } = useUserPermissions();
+  const canCreate = hasPermission('chart_of_account', 'create');
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(term.trim()), 300);
@@ -76,6 +91,7 @@ export function AccountPicker({
     queryKey: ['account-picker', debounced, types],
     enabled: open,
     staleTime: 30 * 1000,
+    refetchOnWindowFocus: 'always',
     queryFn: async (): Promise<AccountRef[]> => {
       const page = typeFilters
         ? await chartOfAccountsService.searchAccounts(
@@ -91,6 +107,22 @@ export function AccountPicker({
       return page.records.map((a) => ({ id: a.id, code: a.code, name: a.name }));
     },
   });
+
+  // Runs only once the (postable/active/type-narrowed) list has no exact code or
+  // name match, and deliberately without those narrowings, so an inactive,
+  // hidden, header or wrong-type account of that code/name is still found.
+  const exactInResults = findExistingMatch(results, debounced, (a) => [a.code, a.name]) !== null;
+  const { data: existingAccount = null, isFetching: isChecking } = useQuery({
+    queryKey: ['account-picker-existing', debounced],
+    enabled: open && debounced.length > 0 && !isFetching && !exactInResults,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: 'always',
+    queryFn: async (): Promise<Account | null> => {
+      const page = await chartOfAccountsService.listAccounts({ search: debounced, limit: EXISTING_MATCH_LIMIT });
+      return findExistingMatch(page.records, debounced, (a) => [a.code, a.name]);
+    },
+  });
+  const showNotFound = open && debounced.length > 0 && !isFetching && !isChecking && !exactInResults;
 
   function select(account: AccountRef) {
     onChange(account);
@@ -154,6 +186,20 @@ export function AccountPicker({
               <span className="truncate">{a.name}</span>
             </button>
           ))}
+          {showNotFound && (
+            <PickerNotFound
+              entity="account"
+              term={debounced}
+              existing={existingAccount
+                ? {
+                  name: `${existingAccount.code} ${existingAccount.name}`,
+                  statusLabel: accountUnavailableReason(existingAccount),
+                  href: `${CHART_OF_ACCOUNTS_PATH}/${existingAccount.id}`,
+                }
+                : null}
+              createHref={canCreate ? newAccountHref(debounced, types?.[0]) : undefined}
+            />
+          )}
         </div>
       )}
     </div>
