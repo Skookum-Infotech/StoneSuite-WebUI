@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
@@ -9,6 +9,10 @@ import { userService } from '@/services/tenantServices';
 import { authService } from '@/services/authService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { inviteFullNameDefault, looksLikeEmail } from '@/lib/inviteName';
+import { strongPasswordSchema } from '@/lib/passwordPolicy';
+import { PasswordInput } from '@/components/auth/PasswordInput';
+import { PasswordRequirements } from '@/components/auth/PasswordRequirements';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +37,7 @@ const buildSchema = (requireFullName: boolean) =>
             .max(120)
             .refine((v) => !looksLikeEmail(v), 'Enter your name, not your email address')
         : z.string().optional(),
-      password: z.string().min(8, 'Password must be at least 8 characters'),
+      password: strongPasswordSchema,
       confirm: z.string().min(1, 'Please confirm your password'),
     })
     .refine((d) => d.password === d.confirm, {
@@ -112,6 +116,7 @@ export default function AcceptInvitePage() {
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<Fields>({
     resolver: zodResolver(schema),
@@ -119,6 +124,8 @@ export default function AcceptInvitePage() {
       fullName: inviteFullNameDefault(invite?.fullName, invite?.email),
     },
   });
+
+  const passwordValue = useWatch({ control, name: 'password', defaultValue: '' });
 
   const onSubmit = async (data: Fields) => {
     try {
@@ -282,10 +289,10 @@ export default function AcceptInvitePage() {
 
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
-            placeholder="at least 8 characters"
+            autoComplete="new-password"
+            placeholder="Create a strong password"
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? 'pw-error' : undefined}
             {...register('password')}
@@ -294,13 +301,18 @@ export default function AcceptInvitePage() {
           {errors.password && (
             <p id="pw-error" className="text-xs text-red-500">{errors.password.message}</p>
           )}
+          <PasswordStrengthMeter password={passwordValue} />
         </div>
+
+        <PasswordRequirements password={passwordValue} />
 
         <div className="space-y-1.5">
           <Label htmlFor="confirm">Confirm password</Label>
-          <Input
+          <PasswordInput
             id="confirm"
-            type="password"
+            toggleLabel="confirmation password"
+            autoComplete="new-password"
+            placeholder="Repeat your password"
             aria-invalid={Boolean(errors.confirm)}
             aria-describedby={errors.confirm ? 'confirm-error' : undefined}
             {...register('confirm')}

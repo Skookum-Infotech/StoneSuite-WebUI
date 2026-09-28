@@ -18,17 +18,16 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { authService } from '@/services/authService'
 import { apiErrorMessage } from '@/api/tenantClient'
+import { strongPasswordSchema } from '@/lib/passwordPolicy'
+import { PasswordRequirements } from '@/components/auth/PasswordRequirements'
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 const schema = z
   .object({
-    newPassword: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Must include an uppercase letter')
-      .regex(/[0-9]/, 'Must include a number'),
+    newPassword: strongPasswordSchema,
     confirm: z.string().min(1, 'Please confirm your password'),
   })
   .refine((d) => d.newPassword === d.confirm, {
@@ -173,20 +172,6 @@ export default function ResetPasswordPage() {
       setError('root', { message: apiErrorMessage(err, 'Could not reset password. Please try again.') })
     }
   }
-
-  // Password strength indicator (cosmetic only — validation is via Zod)
-  const strength = (() => {
-    if (!passwordValue) return 0
-    let score = 0
-    if (passwordValue.length >= 8) score++
-    if (/[A-Z]/.test(passwordValue)) score++
-    if (/[0-9]/.test(passwordValue)) score++
-    if (/[^A-Za-z0-9]/.test(passwordValue)) score++
-    return score
-  })()
-
-  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength]
-  const strengthColor = ['', 'bg-red-400', 'bg-amber-400', 'bg-blue-400', 'bg-emerald-500'][strength]
 
   const card = (children: React.ReactNode) => (
     <div
@@ -368,7 +353,7 @@ export default function ResetPasswordPage() {
                         id="newPassword"
                         type={showPassword ? 'text' : 'password'}
                         autoComplete="new-password"
-                        placeholder="Min 8 characters"
+                        placeholder="Create a strong password"
                         aria-invalid={Boolean(errors.newPassword)}
                         aria-describedby={errors.newPassword ? 'pw-error' : undefined}
                         {...register('newPassword')}
@@ -389,38 +374,10 @@ export default function ResetPasswordPage() {
                       </p>
                     )}
 
-                    {/* Strength meter */}
-                    {passwordValue.length > 0 && (
-                      <div className="pt-1">
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4].map((level) => (
-                            <div
-                              key={level}
-                              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                                strength >= level ? strengthColor : 'bg-stone-200'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="mt-1 text-xs text-stone-400">
-                          Strength:{' '}
-                          <span
-                            className={`font-semibold ${
-                              strength <= 1
-                                ? 'text-red-400'
-                                : strength === 2
-                                  ? 'text-amber-400'
-                                  : strength === 3
-                                    ? 'text-blue-400'
-                                    : 'text-emerald-500'
-                            }`}
-                          >
-                            {strengthLabel}
-                          </span>
-                        </p>
-                      </div>
-                    )}
+                    <PasswordStrengthMeter password={passwordValue} />
                   </div>
+
+                  <PasswordRequirements password={passwordValue} />
 
                   {/* Confirm password */}
                   <div className="space-y-1.5">
