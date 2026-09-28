@@ -2,9 +2,10 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Copy, Loader2, RotateCcw } from 'lucide-react';
 import { AssistantMarkdown } from './AssistantMarkdown';
-import { citationRoute } from './assistantText';
+import { citationRoute, referencedMarkerNumbers } from './assistantText';
 import { CitationChips, type CitationChipsHandle, type NumberedCitation } from './CitationChips';
 import type { ChatTurn } from './useAssistantConversation';
+import type { Citation } from '@/types/ai';
 
 const noteClass = 'text-2xs italic text-stone-400 dark:text-stone-500';
 /** After this many seconds still waiting on the first token, swap "Thinking…"
@@ -50,14 +51,33 @@ function CopyButton({ text }: { text: string }) {
 /** Finds the marker number (1-based position in the turn's raw retrieved
  *  set) a citation corresponds to, so a chip's [n] always matches the answer
  *  text's own [n]. Falls back to the citation's position among its cited
- *  siblings for a turn reloaded from history, which has no `sources`. */
+ *  siblings only when neither `sources` nor the answer text itself resolves
+ *  one (shouldn't happen in practice — see `sourcesForTurn`). */
 function numberCitations(citations: NonNullable<ChatTurn['citations']>, sources: ChatTurn['sources']): NumberedCitation[] {
   return citations.map((citation, i) => {
+    // `sources` derived for a reloaded turn (see sourcesForTurn) is sparse —
+    // findIndex still visits its holes, passing `undefined`, unlike map/forEach.
     const idx = sources?.findIndex(
-      (s) => s.source_type === citation.source_type && s.source_id === citation.source_id && s.snippet === citation.snippet,
+      (s) => s !== undefined && s.source_type === citation.source_type && s.source_id === citation.source_id && s.snippet === citation.snippet,
     );
     return { citation, n: idx !== undefined && idx !== -1 ? idx + 1 : i + 1 };
   });
+}
+
+/** The turn's raw retrieved set, indexed so marker n is at [n - 1] — exactly
+ *  like a live turn's `sources`. A turn reloaded from history has no
+ *  `sources` (the full retrieved set isn't persisted, only the cited
+ *  subset), so its markers derive from `citations` plus the answer's own
+ *  [n] text (see `referencedMarkerNumbers`) instead — without this, every
+ *  inline [n] marker in a reopened conversation renders as dead text. */
+function sourcesForTurn(turn: ChatTurn): ChatTurn['sources'] {
+  const { sources, citations, answer } = turn;
+  if (sources) return sources;
+  if (!citations || citations.length === 0 || !answer) return undefined;
+  const markers = referencedMarkerNumbers(answer).slice(0, citations.length);
+  const derived: Citation[] = [];
+  markers.forEach((n, i) => { derived[n - 1] = citations[i]; });
+  return derived;
 }
 
 export const AssistantTurn = memo(function AssistantTurn({
@@ -90,18 +110,19 @@ export const AssistantTurn = memo(function AssistantTurn({
   const countdownSeconds = turn.countdownUntil ? Math.max(0, Math.ceil((turn.countdownUntil - now) / 1000)) : 0;
 
   // [n] markers index the retrieved set (sources), in order.
+  const sources = sourcesForTurn(turn);
   const routeFor = (n: number): string | null => {
-    const source = turn.sources?.[n - 1];
+    const source = sources?.[n - 1];
     return source ? citationRoute(source) : null;
   };
-  const canOpenCitation = (n: number): boolean => turn.sources?.[n - 1] !== undefined;
+  const canOpenCitation = (n: number): boolean => sources?.[n - 1] !== undefined;
   const onOpenCitation = (n: number): void => {
     const route = routeFor(n);
     if (route) navigate(route);
     else chipsRef.current?.scrollToAndHighlight(n);
   };
 
-  const numberedCitations = turn.citations ? numberCitations(turn.citations, turn.sources) : [];
+  const numberedCitations = turn.citations ? numberCitations(turn.citations, sources) : [];
   const retryDisabled = busy || (turn.countdownKind === 'rate_limited' && countdownSeconds > 0);
 
   return (

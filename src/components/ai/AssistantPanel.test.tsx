@@ -360,6 +360,33 @@ describe('rendering and citations', () => {
     expect(chip).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Leads are new contacts.')).toBeInTheDocument();
   });
+
+  // Regression: a turn reloaded from history has `citations` (the cited
+  // subset persisted on "done") but never `sources` (the raw retrieved set
+  // isn't persisted) — canOpenCitation used to key off `sources` alone, so
+  // every inline [n] marker in a reopened conversation silently went dead.
+  it('an [n] marker still opens its source after the conversation is reloaded from history', async () => {
+    const customer: Citation = { source_type: 'record', source_id: 'c-4', snippet: 'Globex', record_type: 'customer' };
+    vi.mocked(conversationService.get).mockResolvedValue({
+      conversation: conv('conv-1'),
+      messages: [
+        { role: 'user', content: 'q', createdAt: '' },
+        // The model only cited source 2 of what it retrieved — the marker
+        // embedded in the persisted answer text still says "[2]", not "[1]".
+        { role: 'assistant', content: 'Globex is active [2].', createdAt: '', citations: [customer] },
+      ],
+    });
+    localStorage.setItem(STORAGE_KEY, 'conv-1');
+    renderPanel();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Open source 2' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/crm/customer/c-4');
+    // The chip is numbered [2] too, matching the marker — not [1], its mere
+    // position in the (length-1) persisted citations array.
+    expect(screen.getByRole('button', { name: 'Open customer: Globex' })).toHaveTextContent('[2]');
+  });
 });
 
 describe('history view', () => {
@@ -792,6 +819,57 @@ describe('stop-answer confirm accessibility (a11y)', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(newChatButton).toHaveFocus();
   });
+
+  // Regression: the Tab trap and click-through both used to reach the rest
+  // of the panel while the confirm was open — a keyboard user could Tab
+  // straight past Cancel into "Stop generating", which resolves the stream
+  // exactly like Continue would while the confirm still claims to be pending.
+  it('makes the rest of the panel unreachable while the confirm is open', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(() => new Promise(() => {}));
+    renderPanel();
+    await ask('slow question');
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'New chat' }));
+    const dialog = await screen.findByRole('alertdialog');
+    const cancelButton = within(dialog).getByRole('button', { name: 'Cancel' });
+    const continueButton = within(dialog).getByRole('button', { name: 'Continue' });
+    expect(cancelButton).toHaveFocus();
+
+    // Tab from Cancel (the last focusable element while confirming) wraps
+    // back to Continue, not out into the header or chat behind it.
+    await user.tab();
+    expect(continueButton).toHaveFocus();
+
+    // `inert` is set on the wrapping container (its behavior applies to
+    // every descendant without copying the attribute onto each one), so the
+    // proof here is that each button sits inside an inert ancestor.
+    const stopButton = screen.getByRole('button', { name: 'Stop generating' });
+    const closeButton = screen.getByRole('button', { name: 'Close AI assistant' });
+    expect(stopButton.closest('[inert]')).not.toBeNull();
+    expect(closeButton.closest('[inert]')).not.toBeNull();
+  });
+
+  // Regression: Escape closed the whole panel outright while the confirm was
+  // open, bypassing the confirmation gate instead of dismissing the nested
+  // dialog first (standard nested-dialog behavior).
+  it('Escape dismisses the confirm dialog first, not the whole panel', async () => {
+    vi.mocked(askAssistantStream).mockImplementation(() => new Promise(() => {}));
+    const { onClose } = renderPanel();
+    await ask('slow question');
+    const user = userEvent.setup();
+    const newChatButton = screen.getByRole('button', { name: 'New chat' });
+
+    await user.click(newChatButton);
+    await screen.findByRole('alertdialog');
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(newChatButton).toHaveFocus();
+    expect(screen.getByText('slow question')).toBeInTheDocument();
+  });
 });
 
 describe('citation marker focus and announcement (a11y)', () => {
@@ -807,5 +885,29 @@ describe('citation marker focus and announcement (a11y)', () => {
     const chip = screen.getByRole('button', { name: 'Help reference: leads › Overview' });
     await waitFor(() => expect(chip).toHaveFocus());
     expect(screen.getByText('Source 1')).toBeInTheDocument();
+  });
+
+  // Regression: the live region set the exact same "Source 1" text on every
+  // activation, so re-clicking the same marker after looking away was a
+  // no-op React re-render — most screen readers only re-announce on an
+  // actual text change.
+  it('changes the live region text on a repeat activation of the same source', async () => {
+    const help: Citation = { source_type: 'help', source_id: 'leads › Overview', snippet: 'About leads' };
+    vi.mocked(askAssistantStream).mockImplementation(streamWith('See [1] for details.', { sources: [help], citations: [help] }));
+    renderPanel();
+    await ask('q');
+    const user = userEvent.setup();
+    const marker = await screen.findByRole('button', { name: 'Open source 1' });
+    const announcementText = () =>
+      screen.getAllByRole('status').map((el) => el.textContent).find((t) => t?.startsWith('Source 1'));
+
+    await user.click(marker);
+    const first = announcementText();
+    expect(first).toBeTruthy();
+
+    await user.click(marker);
+    const second = announcementText();
+
+    expect(second).not.toBe(first);
   });
 });

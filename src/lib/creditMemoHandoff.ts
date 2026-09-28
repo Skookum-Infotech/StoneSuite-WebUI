@@ -1,6 +1,13 @@
 import { creditMemoDefaults } from './creditMemoForm';
+import type { Payment } from '@/types/payment';
 
 export const CREDIT_MEMO_FROM_PAYMENT_STATE = 'creditMemoFromPayment' as const;
+
+const CENTS_PER_UNIT = 100;
+
+/** Stands in for an invoice number the payment's application did not carry, so
+ *  the handoff still passes isHandoff (which needs every invoice named). */
+const UNNUMBERED_INVOICE_LABEL = 'Invoice';
 
 export interface CreditMemoFromPayment {
   customer: { id: string; name: string };
@@ -42,6 +49,37 @@ function isHandoff(value: unknown): value is CreditMemoFromPayment {
     && Number.isFinite(value.unappliedAmount)
     && value.unappliedAmount > 0
   );
+}
+
+/** What of a payment a credit memo can still take: its unapplied balance less
+ *  what earlier credit memos issued from it already took. (The backend also
+ *  nets off refunds, which the payment API does not expose — it enforces the
+ *  true limit when the memo is saved.) */
+export function creditableFromPayment(payment: Pick<Payment, 'unappliedAmount' | 'creditedTotal'>): number {
+  const cents = Math.round(payment.unappliedAmount * CENTS_PER_UNIT)
+    - Math.round((payment.creditedTotal ?? 0) * CENTS_PER_UNIT);
+  return Math.max(0, cents) / CENTS_PER_UNIT;
+}
+
+/** The handoff for raising the credit memo from an already-saved payment — the
+ *  same one the New Payment page sends after an excess is confirmed, so the memo
+ *  opens prefilled and linked to the payment either way. Null when there is
+ *  nothing left to credit, or the payment was applied to no invoice (the memo
+ *  form is prefilled from the invoices it was applied to). */
+export function creditMemoHandoffFromPayment(payment: Payment, currencyCode: string): CreditMemoFromPayment | null {
+  const unappliedAmount = creditableFromPayment(payment);
+  if (unappliedAmount <= 0 || payment.applications.length === 0) return null;
+  return {
+    customer: { id: payment.customer.id, name: payment.customer.name },
+    invoices: payment.applications.map((application) => ({
+      id: application.invoiceId,
+      number: application.invoiceNumber || UNNUMBERED_INVOICE_LABEL,
+    })),
+    payment: { id: payment.id, number: payment.paymentNumber || undefined },
+    currencyId: payment.currencyId ?? null,
+    currencyCode,
+    unappliedAmount,
+  };
 }
 
 export function creditMemoFromPaymentState(value: unknown): CreditMemoFromPayment | null {

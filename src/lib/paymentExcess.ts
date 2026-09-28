@@ -57,6 +57,47 @@ export function checkPaymentAgainstInvoices(
   };
 }
 
+/** What confirming the excess applies to one invoice: the row's amount, never
+ *  more than that invoice's balance — the same cap the payload is built with. */
+export function appliedAmountForLine(line: Pick<AppliedInvoiceLine, 'balanceDue' | 'amount'>): number {
+  return Math.min(line.amount, line.balanceDue);
+}
+
+export interface ExcessBreakdownRow extends AppliedInvoiceLine {
+  /** What Yes applies to this invoice. */
+  appliedAmount: number;
+}
+
+export interface ExcessBreakdown {
+  rows: ExcessBreakdownRow[];
+  balanceTotal: number;
+  appliedTotal: number;
+  /** Received but neither applied to an invoice nor moved to the credit memo —
+   *  it stays unapplied on the payment. 0 unless a row was entered below its
+   *  invoice's balance. */
+  unappliedRemainder: number;
+}
+
+/** Splits the amount received into the three places it goes on Yes: each
+ *  invoice, the credit memo (the excess) and, rarely, what stays unapplied. */
+export function excessBreakdown(
+  enteredAmount: number,
+  excessAmount: number,
+  lines: AppliedInvoiceLine[],
+): ExcessBreakdown {
+  const rows = lines.map((item) => ({ ...item, appliedAmount: appliedAmountForLine(item) }));
+  const appliedCents = rows.reduce((total, item) => total + toCents(item.appliedAmount), 0);
+  const balanceCents = rows.reduce((total, item) => total + toCents(item.balanceDue), 0);
+  const remainderCents = Math.max(0, toCents(enteredAmount) - appliedCents - toCents(excessAmount));
+
+  return {
+    rows,
+    balanceTotal: fromCents(balanceCents),
+    appliedTotal: fromCents(appliedCents),
+    unappliedRemainder: fromCents(remainderCents),
+  };
+}
+
 /** Caps each application to its invoice's balance; applications for invoices
  *  without a known balance pass through untouched. */
 export function capApplicationsToBalance(
@@ -96,6 +137,21 @@ export function pendingInvoiceLine(
   return { invoiceUuid: pending.id, invoiceNumber: pending.number, balanceDue: pending.balanceDue, amount };
 }
 
+/** The applications to send on an ordinary save: the rows already added, plus
+ *  the invoice that is selected in the picker but was never added with "Add".
+ *  A payment opened from an invoice starts with that invoice selected, so
+ *  dropping it here saved the payment fully unapplied and the invoice never
+ *  received the money. The check (pendingInvoiceLine) already treats it as
+ *  applied, so what is sent has to match. Capped to the invoice's balance,
+ *  like every other application the backend would otherwise reject. */
+export function applicationsWithPendingInvoice(
+  applications: ApplicationInput[],
+  pending: AppliedInvoiceLine | null,
+): ApplicationInput[] {
+  if (!pending) return applications
+  return [...applications, { invoiceUuid: pending.invoiceUuid, amount: appliedAmountForLine(pending) }]
+}
+
 /** The applications to send once the excess is confirmed: existing rows capped
  *  to their balance, plus any checked invoice that was never added as a row. */
 export function applicationsForConfirmedExcess(
@@ -104,6 +160,6 @@ export function applicationsForConfirmedExcess(
 ): ApplicationInput[] {
   const notYetAdded = lines
     .filter((item) => !applications.some((application) => application.invoiceUuid === item.invoiceUuid))
-    .map((item) => ({ invoiceUuid: item.invoiceUuid, amount: Math.min(item.amount, item.balanceDue) }));
+    .map((item) => ({ invoiceUuid: item.invoiceUuid, amount: appliedAmountForLine(item) }));
   return [...capApplicationsToBalance(applications, lines), ...notYetAdded];
 }

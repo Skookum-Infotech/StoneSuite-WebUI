@@ -61,3 +61,24 @@ export function linkCitationMarkers(text: string): string {
     .map((segment, i) => (i % 2 === 1 ? segment : linkMarkersInProse(segment)))
     .join('');
 }
+
+/** The distinct marker numbers referenced in an answer's prose (outside code
+ *  spans/blocks), ascending \u2014 e.g. "[1] and [3]." \u2192 [1, 3]. A reloaded
+ *  turn has no `sources` (the raw retrieved set isn't persisted), only the
+ *  cited subset in `citations`; the backend's own citedOnly() keeps that
+ *  subset in ascending marker order and only ever includes markers the
+ *  answer actually referenced within range, so the smallest
+ *  `citations.length` numbers here line up with `citations` 1:1 in order.
+ *  Any larger number is necessarily one the backend already excluded as
+ *  out-of-range (a hallucinated "[99]") \u2014 always sorts after every valid
+ *  one, so a caller can safely take the smallest N and ignore the rest. */
+export function referencedMarkerNumbers(text: string): number[] {
+  const nums = new Set<number>();
+  text.split(codeSegmentRe).forEach((segment, i) => {
+    if (i % 2 === 1) return; // code span/block \u2014 not a real citation reference
+    for (const m of segment.matchAll(markerRe)) {
+      for (const n of markerNumbers(m[1])) nums.add(n);
+    }
+  });
+  return Array.from(nums).sort((a, b) => a - b);
+}

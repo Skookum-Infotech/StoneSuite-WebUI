@@ -6,8 +6,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Lock,
   Shield,
-  Eye,
-  EyeOff,
   CheckCircle2,
   Check,
   Loader2,
@@ -23,7 +21,10 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useUserPermissions } from '@/hooks/useUserPermissions'
 import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import { apiErrorMessage } from '@/api/tenantClient'
-import { Input } from '@/components/ui/input'
+import { strongPasswordSchema } from '@/lib/passwordPolicy'
+import { PasswordInput } from '@/components/auth/PasswordInput'
+import { PasswordRequirements } from '@/components/auth/PasswordRequirements'
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -35,16 +36,16 @@ import type { Grant } from '@/types/tenant'
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z
-      .string()
-      .min(8, 'Must be at least 8 characters')
-      .regex(/[A-Z]/, 'Must include an uppercase letter')
-      .regex(/[0-9]/, 'Must include a number'),
+    newPassword: strongPasswordSchema,
     confirmPassword: z.string().min(1, 'Please confirm your new password'),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
+  })
+  .refine((d) => d.newPassword !== d.currentPassword, {
+    message: 'New password must be different from your current password',
+    path: ['newPassword'],
   })
 
 type PasswordFields = z.infer<typeof passwordSchema>
@@ -69,35 +70,6 @@ function ReadOnlyField({
         <span className="flex-1 text-xs text-stone-600 select-all">{value || '—'}</span>
         <Lock className="size-3.5 shrink-0 text-stone-300" />
       </div>
-    </div>
-  )
-}
-
-// ── Password strength ────────────────────────────────────────────────────────
-
-function StrengthMeter({ password }: { password: string }) {
-  if (!password) return null
-  const score = (() => {
-    let s = 0
-    if (password.length >= 8) s++
-    if (/[A-Z]/.test(password)) s++
-    if (/[0-9]/.test(password)) s++
-    if (/[^A-Za-z0-9]/.test(password)) s++
-    return s
-  })()
-  const colors = ['', 'bg-red-400', 'bg-amber-400', 'bg-blue-400', 'bg-emerald-500']
-  const textColors = ['', 'text-red-500', 'text-amber-500', 'text-blue-500', 'text-emerald-600']
-  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
-  return (
-    <div className="pt-1.5 space-y-1.5">
-      <div className="flex gap-1">
-        {[1, 2, 3, 4].map((level) => (
-          <div key={level} className={cn('h-1 flex-1 rounded-full transition-all duration-300', score >= level ? colors[score] : 'bg-stone-200')} />
-        ))}
-      </div>
-      <p className="text-xs text-stone-400">
-        Strength: <span className={cn('font-semibold', textColors[score])}>{labels[score]}</span>
-      </p>
     </div>
   )
 }
@@ -259,9 +231,6 @@ export default function AccountSettingsPage() {
   const roles = useCurrentUserRoles()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
-  const [showCurrent, setShowCurrent] = useState(false)
-  const [showNew, setShowNew] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   const [firstName, ...lastParts] = (user?.fullName ?? '').split(' ')
@@ -448,7 +417,7 @@ export default function AccountSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-stone-900">Update Password</h2>
-                      <p className="text-xs text-stone-500 mt-0.5">Use an uppercase letter and number for a strong password</p>
+                      <p className="text-xs text-stone-500 mt-0.5">Use upper and lowercase letters, a number and a special character</p>
                     </div>
                   </div>
                 </div>
@@ -469,21 +438,16 @@ export default function AccountSettingsPage() {
                       <Label htmlFor="currentPassword" className="text-xs font-semibold text-stone-500">
                         Current Password
                       </Label>
-                      <div className="relative">
-                        <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
-                        <Input
-                          id="currentPassword"
-                          type={showCurrent ? 'text' : 'password'}
-                          autoComplete="current-password"
-                          placeholder="Enter your current password"
-                          aria-invalid={Boolean(errors.currentPassword)}
-                          {...register('currentPassword')}
-                          className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-300"
-                        />
-                        <button type="button" onClick={() => setShowCurrent(v => !v)} aria-label="Toggle" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors">
-                          {showCurrent ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </button>
-                      </div>
+                      <PasswordInput
+                        id="currentPassword"
+                        withLockIcon
+                        toggleLabel="current password"
+                        autoComplete="current-password"
+                        placeholder="Enter your current password"
+                        aria-invalid={Boolean(errors.currentPassword)}
+                        {...register('currentPassword')}
+                        className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-300"
+                      />
                       {errors.currentPassword && <p className="text-xs text-destructive">{errors.currentPassword.message}</p>}
                     </div>
 
@@ -493,62 +457,39 @@ export default function AccountSettingsPage() {
                         <Label htmlFor="newPassword" className="text-xs font-semibold text-stone-500">
                           New Password
                         </Label>
-                        <div className="relative">
-                          <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
-                          <Input
-                            id="newPassword"
-                            type={showNew ? 'text' : 'password'}
-                            autoComplete="new-password"
-                            placeholder="Min 8 characters"
-                            aria-invalid={Boolean(errors.newPassword)}
-                            {...register('newPassword')}
-                            className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-300"
-                          />
-                          <button type="button" onClick={() => setShowNew(v => !v)} aria-label="Toggle" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors">
-                            {showNew ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                          </button>
-                        </div>
+                        <PasswordInput
+                          id="newPassword"
+                          withLockIcon
+                          toggleLabel="new password"
+                          autoComplete="new-password"
+                          placeholder="Create a strong password"
+                          aria-invalid={Boolean(errors.newPassword)}
+                          {...register('newPassword')}
+                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-300"
+                        />
                         {errors.newPassword && <p className="text-xs text-destructive">{errors.newPassword.message}</p>}
-                        <StrengthMeter password={newPasswordValue} />
+                        <PasswordStrengthMeter password={newPasswordValue} />
                       </div>
 
                       <div className="space-y-1.5">
                         <Label htmlFor="confirmPassword" className="text-xs font-semibold text-stone-500">
                           Confirm Password
                         </Label>
-                        <div className="relative">
-                          <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
-                          <Input
-                            id="confirmPassword"
-                            type={showConfirm ? 'text' : 'password'}
-                            autoComplete="new-password"
-                            placeholder="Repeat new password"
-                            aria-invalid={Boolean(errors.confirmPassword)}
-                            {...register('confirmPassword')}
-                            className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-300"
-                          />
-                          <button type="button" onClick={() => setShowConfirm(v => !v)} aria-label="Toggle" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors">
-                            {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                          </button>
-                        </div>
+                        <PasswordInput
+                          id="confirmPassword"
+                          withLockIcon
+                          toggleLabel="confirmation password"
+                          autoComplete="new-password"
+                          placeholder="Repeat new password"
+                          aria-invalid={Boolean(errors.confirmPassword)}
+                          {...register('confirmPassword')}
+                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-300"
+                        />
                         {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
                       </div>
                     </div>
 
-                    {/* Password rules */}
-                    <div className="rounded-xl bg-stone-50 border border-stone-200 px-4 py-3.5 grid grid-cols-2 gap-2">
-                      {[
-                        'At least 8 characters',
-                        'One uppercase letter',
-                        'One number',
-                        'Special character (recommended)',
-                      ].map((rule) => (
-                        <div key={rule} className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-stone-300 shrink-0" />
-                          <span className="text-xs text-stone-500">{rule}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <PasswordRequirements password={newPasswordValue} />
 
                     {errors.root && (
                       <div className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">

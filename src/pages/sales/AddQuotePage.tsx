@@ -11,7 +11,7 @@ import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { type CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
 import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
@@ -108,16 +108,7 @@ export default function AddQuotePage() {
   const setCustomer = useCallback((c: CustomerRef | null) => {
     setLocalCustomer(c);
     setCustomerTouched(true);
-    if (c) {
-      const defaults = customerDefaultFields(c);
-      setLocalData((d) => {
-        const current = d ?? baseData;
-        return {
-          ...current,
-          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !current[k] || BILL_ADDRESS_KEYS.has(k))),
-        };
-      });
-    }
+    if (c) setLocalData((d) => mergeCustomerDefaults(d ?? baseData, c, { shipTo: true }));
   }, [baseData]);
 
   // Applies the customer created via the round trip exactly as if it had

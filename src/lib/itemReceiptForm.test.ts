@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   mergeReceiptLines, includedReceiptLines, validateReceiptLines, validateReceiptLineErrors,
   toCreatePayload, toUpdatePayload, fromItemReceipt, irStatusLabel,
-  isPurchaseOrderReceivable, IR_STATUS_COLORS,
+  isPurchaseOrderReceivable, RECEIVABLE_PO_STATUS_CODES, IR_STATUS_COLORS,
   type ItemReceiptDraftLine,
 } from './itemReceiptForm'
+import { PO_STATUS_CODES } from './purchaseOrderForm'
 import type { PurchaseOrderLine } from '@/types/purchaseOrder'
 import type { ItemReceipt, ItemReceiptLine } from '@/types/itemReceipt'
 
@@ -189,6 +190,20 @@ describe('irStatusLabel', () => {
 describe('IR_STATUS_COLORS', () => {
   it('is a distinct map from the PO status colors (spec §5)', () => {
     expect(Object.keys(IR_STATUS_COLORS).sort()).toEqual(['PART', 'PEND', 'RCVD', 'VOID'])
+  })
+})
+
+describe('RECEIVABLE_PO_STATUS_CODES', () => {
+  // The picker filters server-side on this list, so it must agree with the
+  // per-order check above and with itemreceipt/store.go receivableStatusCodes.
+  it('is exactly SENT and PART', () => {
+    expect([...RECEIVABLE_PO_STATUS_CODES].sort()).toEqual(['PART', 'SENT'])
+  })
+
+  it('agrees with isPurchaseOrderReceivable for every PO status', () => {
+    for (const { code } of PO_STATUS_CODES) {
+      expect(isPurchaseOrderReceivable({ statusCode: code as never })).toBe(RECEIVABLE_PO_STATUS_CODES.includes(code))
+    }
   })
 })
 

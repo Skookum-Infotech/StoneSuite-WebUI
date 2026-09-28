@@ -24,6 +24,7 @@ import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
+import { AmountsStrip } from './components/AmountsStrip';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 
 const TABS = [
@@ -290,6 +291,14 @@ export default function SalesOrderDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && (
             <>
+              <AmountsStrip
+                items={[
+                  { label: 'Subtotal', value: order.subtotal },
+                  { label: 'Discount', value: order.discountTotal },
+                  { label: 'Tax', value: order.taxTotal },
+                  { label: 'Grand Total', value: order.grandTotal, emphasis: 'key' },
+                ]}
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Order Date" value={fmtDate(order.orderDate)} />
@@ -314,14 +323,6 @@ export default function SalesOrderDetailPage() {
               <ModernSection title="Ship To" index={2}>
                 <AddressBlock addr={order.shipping} />
               </ModernSection>
-              <div className="rounded-lg border border-stone-200 bg-white p-4">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Total label="Subtotal" value={order.subtotal} />
-                  <Total label="Discount" value={order.discountTotal} />
-                  <Total label="Tax" value={order.taxTotal} />
-                  <Total label="Grand Total" value={order.grandTotal} bold />
-                </div>
-              </div>
             </>
           )}
 
@@ -523,17 +524,6 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
-    </div>
-  );
-}
-
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
-      <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
-      </p>
     </div>
   );
 }

@@ -17,7 +17,7 @@ import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { CustomerPicker } from './components/CustomerPicker';
 import type { CustomerRef } from './components/CustomerPicker';
-import { customerDefaultFields, BILL_ADDRESS_KEYS } from '@/lib/customerDefaults';
+import { mergeCustomerDefaults } from '@/lib/customerDefaults';
 import { defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
@@ -31,7 +31,8 @@ import {
 import type { ApplicationInput } from '@/types/payment';
 import { CREDIT_MEMO_FROM_PAYMENT_STATE } from '@/lib/creditMemoHandoff';
 import {
-  applicationsForConfirmedExcess, checkPaymentAgainstInvoices, creditMemoExcessAmount, pendingInvoiceLine,
+  applicationsForConfirmedExcess, applicationsWithPendingInvoice, checkPaymentAgainstInvoices,
+  creditMemoExcessAmount, pendingInvoiceLine,
   type AppliedInvoiceLine,
 } from '@/lib/paymentExcess';
 import { INVOICE_PAYABLE_STATUSES } from '@/lib/invoiceForm';
@@ -158,16 +159,7 @@ export default function AddPaymentPage() {
     setOverpaymentPrompt(null);
     setApplicationAmountError(null);
     setAmountError(null);
-    if (next) {
-      const defaults = customerDefaultFields(next);
-      setLocalData((current) => {
-        const values = current ?? baseData;
-        return {
-          ...values,
-          ...Object.fromEntries(Object.entries(defaults).filter(([k]) => !values[k] || BILL_ADDRESS_KEYS.has(k))),
-        };
-      });
-    }
+    if (next) setLocalData((current) => mergeCustomerDefaults(current ?? baseData, next));
   }, [baseData, fromInvoiceId]);
 
   const handlePendingInvoiceChange = useCallback((next: InvoiceRef | null) => {
@@ -208,11 +200,16 @@ export default function AddPaymentPage() {
   const paymentCurrencyId = currencyIdFrom(formData);
   const paymentCurrencyCode = currencyCodeFrom(formData, lookups);
   // The invoice picked but not yet added counts too, so a payment opened from
-  // an invoice is checked against it before any application row exists.
-  const checkLines = useMemo(() => {
-    const pending = pendingInvoiceLine(pendingInvoice, parseFloat(pendingAmount), Number(formData.amount), appliedLines);
-    return pending ? [...appliedLines, pending] : appliedLines;
-  }, [pendingInvoice, pendingAmount, formData.amount, appliedLines]);
+  // an invoice is checked against it before any application row exists — and it
+  // is applied on save (see mutationFn), so what is checked is what is sent.
+  const pendingLine = useMemo(
+    () => pendingInvoiceLine(pendingInvoice, parseFloat(pendingAmount), Number(formData.amount), appliedLines),
+    [pendingInvoice, pendingAmount, formData.amount, appliedLines],
+  );
+  const checkLines = useMemo(
+    () => (pendingLine ? [...appliedLines, pendingLine] : appliedLines),
+    [appliedLines, pendingLine],
+  );
   const paymentCheck = useMemo(
     () => checkPaymentAgainstInvoices(Number(formData.amount), checkLines),
     [formData.amount, checkLines],
@@ -288,7 +285,7 @@ export default function AddPaymentPage() {
       }
       const effectiveApplications = confirmedOverage
         ? applicationsForConfirmedExcess(applications, confirmedOverage.applications)
-        : applications;
+        : applicationsWithPendingInvoice(applications, pendingLine);
       if (effectiveApplications.some((application) => !Number.isFinite(application.amount) || application.amount <= 0)) {
         throw new Error('Enter a valid amount for every applied invoice.');
       }
@@ -302,7 +299,8 @@ export default function AddPaymentPage() {
           throw new Error('The source invoice is no longer eligible for payment. Remove it or return to the invoice.');
         }
         const knownBalance = appliedInvoiceBalances[fromInvoiceId]
-          ?? confirmedOverage?.applications.find((line) => line.invoiceUuid === fromInvoiceId)?.balanceDue;
+          ?? confirmedOverage?.applications.find((line) => line.invoiceUuid === fromInvoiceId)?.balanceDue
+          ?? (pendingLine?.invoiceUuid === fromInvoiceId ? pendingLine.balanceDue : undefined);
         if (
           knownBalance !== undefined
           && Math.abs(latestSourceInvoice.balanceDue - knownBalance) > PAYMENT_AMOUNT_TOLERANCE

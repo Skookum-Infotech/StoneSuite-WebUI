@@ -46,6 +46,11 @@ interface AccountFormDrawerProps {
    *  `parent.placementLabel` is used for the sub-account title below. */
   initialPlacement?: Placement;
   initialPlacementLabel?: string;
+  /** What an account picker's "Create" link carried over from the search box,
+   *  so the drawer opens with the typed name (and the field's account type)
+   *  already filled in. Ignored when editing. */
+  initialName?: string;
+  initialType?: AccountType;
 }
 
 function initialAttrDraft(type: AccountType, attrs: Record<string, string>): Record<string, string> {
@@ -62,15 +67,15 @@ function initialAttrDraft(type: AccountType, attrs: Record<string, string>): Rec
 // each row, which is the only place that can guarantee chk_coa_visibility is
 // never violated; folding them into a generic form would reopen that risk.
 export function AccountFormDrawer({
-  onClose, onSaved, account, parent, initialPlacement, initialPlacementLabel,
+  onClose, onSaved, account, parent, initialPlacement, initialPlacementLabel, initialName, initialType,
 }: AccountFormDrawerProps) {
   const isEdit = Boolean(account);
   const contentRef = useModalDialog(onClose);
   const queryClient = useQueryClient();
 
-  const [name, setName] = useState(account?.name ?? '');
+  const [name, setName] = useState(account?.name ?? initialName ?? '');
   const [description, setDescription] = useState(account?.description ?? '');
-  const [type, setType] = useState<AccountType>(account?.type ?? 'general');
+  const [type, setType] = useState<AccountType>(account?.type ?? initialType ?? 'general');
   const [isPostable, setIsPostable] = useState(account?.isPostable ?? true);
   // Split into two selects instead of one combined "Placement" dropdown. A
   // sub-category-level initialPlacement (from the tree's "+" on a
