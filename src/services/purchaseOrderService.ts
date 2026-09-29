@@ -17,6 +17,9 @@ import type { VendorBill } from '@/types/vendorBill';
 // scope, and IDOR.
 const BASE = '/tenant/purchase-orders';
 
+/** A transitioned purchase order plus the vendor-email outcome of a move to SENT. */
+export type PurchaseOrderTransitionResult = PurchaseOrder & { emailSent?: boolean; emailError?: string };
+
 export const purchaseOrderService = {
   // Full filter + sort + global search + keyset pagination. Cursors are
   // opaque — pass back what the server returned, never construct one.
@@ -74,13 +77,15 @@ export const purchaseOrderService = {
 
   // Status change validated against the server-side transition map; a denied
   // move returns 409 (surface as a blocked-transition message, not a failure).
-  transition: (uuid: string, toStatusCode: string): Promise<PurchaseOrder> =>
+  // A move to SENT ("Send to Vendor") also emails the vendor server-side; the
+  // result then carries emailSent (and emailError when delivery failed).
+  transition: (uuid: string, toStatusCode: string): Promise<PurchaseOrderTransitionResult> =>
     tenantClient
-      .post<{ success: boolean; purchaseOrder: PurchaseOrder }>(
+      .post<{ success: boolean; purchaseOrder: PurchaseOrder; emailSent?: boolean; emailError?: string }>(
         `${BASE}/${uuid}/transition`,
         { toStatusCode },
       )
-      .then((r) => r.data.purchaseOrder),
+      .then((r) => ({ ...r.data.purchaseOrder, emailSent: r.data.emailSent, emailError: r.data.emailError })),
 
   // Records one configured approver's sign-off on the PO's current status
   // (AD-6). Rejected with 409 if the status has no approvers configured, or
