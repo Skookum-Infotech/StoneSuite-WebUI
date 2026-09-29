@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileCheck, Upload, Pencil, FileDown, Loader2, Send, Ban } from 'lucide-react';
+import { FileCheck, Upload, Pencil, FileDown, Loader2, Send, Ban, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -17,7 +17,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { unitLabel } from '@/lib/unitLabels';
 import {
-  VB_STATUS_COLORS, VB_STATUS_CODES, VB_DELETABLE_STATUSES, VB_VOID_CODE,
+  VB_STATUS_COLORS, VB_STATUS_CODES, VB_DELETABLE_STATUSES, VB_VOID_CODE, VB_PAYABLE_STATUSES,
   isVbTransitionBlocked, isVbConfirmedTransition, vbCanVoid, vbDropdownTransitions,
   type VbConfirmedCode,
 } from '@/lib/vendorBillForm';
@@ -73,6 +73,7 @@ export default function VendorBillDetailPage() {
   const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
   const canDelete = permissionsLoading || hasPermission('vendor_bill', 'delete');
   const canTransition = permissionsLoading || hasPermission('vendor_bill', 'transition');
+  const canRecordPayment = permissionsLoading || hasPermission('vendor_payment', 'create');
 
   const { data: bill, isLoading, error } = useQuery({
     queryKey: ['vendor-bill', id],
@@ -226,12 +227,25 @@ export default function VendorBillDetailPage() {
         recordNumber={bill.vendorBillNumber}
         statusBadge={<Badge color={color}>{bill.status}</Badge>}
         actions={(
+          <>
+          {canRecordPayment && VB_PAYABLE_STATUSES.has(bill.statusCode) && bill.balanceDue > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate(`/purchases/vendor_payment/new?fromBill=${encodeURIComponent(id)}`)}
+              aria-label="Record payment for this vendor bill"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover"
+            >
+              <Wallet className="size-3.5" aria-hidden="true" />
+              Record Payment
+            </button>
+          )}
           <VendorBillHeaderActions
             order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: bill.nextStatusCodes }}
             canTransition={canTransition}
             onTransition={requestTransition}
             pendingCode={transition.isPending ? transition.variables : undefined}
           />
+          </>
         )}
       />
 

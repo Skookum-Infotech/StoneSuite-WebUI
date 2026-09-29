@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { X, Filter } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
-import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { useModalDialog } from '@/hooks/useModalDialog';
@@ -34,12 +33,6 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
 }) {
   const [draft, setDraft] = useState<VendorPaymentFilterState>(value);
   const contentRef = useModalDialog(onClose);
-
-  const { data: lookups } = useQuery({
-    queryKey: ['crm-lookups'],
-    queryFn: lookupService.getCrmLookups,
-    staleTime: 10 * 60 * 1000,
-  });
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const vpWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'vendor_payment');
@@ -125,15 +118,6 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
               <option value="">— Any —</option>
               {APPROVAL_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </FilterField>
-
-          <FilterField label="Owner">
-            <select value={draft.ownerId} onChange={(e) => set('ownerId', e.target.value)} className={fieldCls} aria-label="Owner">
-              <option value="">— Any —</option>
-              {(lookups?.employees ?? []).map((emp) => (
-                <option key={emp.id} value={emp.id}>{emp.name}</option>
               ))}
             </select>
           </FilterField>

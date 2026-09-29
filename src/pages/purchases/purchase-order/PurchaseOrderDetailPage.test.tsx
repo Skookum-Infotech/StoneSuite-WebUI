@@ -151,6 +151,24 @@ describe('PurchaseOrderDetailPage — header actions and the admin-only status d
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Moved to Sent.'));
   });
 
+  it('has no separate Send to Vendor quick action — the header button is the only one', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    renderPage();
+
+    await screen.findAllByRole('button', { name: 'Send to Vendor' });
+    expect(screen.queryAllByRole('button', { name: 'Send purchase order to vendor' })).toHaveLength(0);
+    expect(screen.getAllByRole('button', { name: 'Send to Vendor' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it('reports the vendor email outcome of the header Send to Vendor move', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    vi.mocked(purchaseOrderService.transition).mockResolvedValue({ ...sentOrder, emailSent: true });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click((await screen.findAllByRole('button', { name: 'Send to Vendor' }))[0]);
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Moved to Sent and emailed to the vendor.'));
+  });
+
   it('lets a non-admin submit a Draft for approval from the header', async () => {
     vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
       ...approvedOrder, status: 'Draft', statusCode: 'DRFT', approvalStatus: 'none', nextStatusCodes: ['PAPV', 'CANC'],

@@ -21,7 +21,6 @@ export interface VendorPaymentFilterState {
   /** lkp_payment_method id — filterable because PAYMENT_METHODS already
    *  mirrors the seed order client-side (lib/paymentMethods.ts). */
   methodId: string;
-  ownerId: string;
   customFields: Record<string, string>;
 }
 
@@ -29,7 +28,7 @@ export const EMPTY_FILTER_STATE: VendorPaymentFilterState = {
   recordNumber: '', referenceNumber: '',
   paymentDateFrom: '', paymentDateTo: '', scheduledDateFrom: '', scheduledDateTo: '',
   amountMin: '', amountMax: '', unappliedMin: '', unappliedMax: '',
-  approvalStatus: '', methodId: '', ownerId: '', customFields: {},
+  approvalStatus: '', methodId: '', customFields: {},
 };
 
 export function hasActiveFilters(f: VendorPaymentFilterState): boolean {
@@ -37,7 +36,7 @@ export function hasActiveFilters(f: VendorPaymentFilterState): boolean {
     f.recordNumber || f.referenceNumber
     || f.paymentDateFrom || f.paymentDateTo || f.scheduledDateFrom || f.scheduledDateTo
     || f.amountMin || f.amountMax || f.unappliedMin || f.unappliedMax
-    || f.approvalStatus || f.methodId || f.ownerId
+    || f.approvalStatus || f.methodId
     || Object.values(f.customFields).some(Boolean),
   );
 }
@@ -62,7 +61,6 @@ export function toFilterClauses(f: VendorPaymentFilterState): FilterClause[] {
   if (f.unappliedMax) clauses.push({ field: 'unapplied_amount', op: 'lte', value: Number(f.unappliedMax) });
   if (f.approvalStatus) clauses.push({ field: 'approval_status', op: 'eq', value: f.approvalStatus });
   if (f.methodId) clauses.push({ field: 'method_id', op: 'eq', value: f.methodId });
-  if (f.ownerId) clauses.push({ field: 'owner_id', op: 'eq', value: f.ownerId });
   for (const [key, val] of Object.entries(f.customFields)) {
     if (val) clauses.push({ field: `cf:${key}`, op: 'contains', value: val });
   }
