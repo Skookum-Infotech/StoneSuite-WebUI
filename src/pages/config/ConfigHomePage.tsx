@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2, Sparkles } from 'lucide-react';
+import { Workflow, ShieldCheck, ArrowRight, UsersRound, ScrollText, Upload, Building2, Sparkles, Mail } from 'lucide-react';
 import { PageHeader } from '@/components/tenant/ui';
 
 /**
@@ -49,6 +49,12 @@ const sections = [
     icon: Sparkles,
     title: 'StoneSuite Assistant',
     description: 'Turn the AI assistant on or off for your organization.',
+  },
+  {
+    to: '/config/crm-notifications',
+    icon: Mail,
+    title: 'CRM Email Recipients',
+    description: 'Choose which roles receive the manager and finance emails as leads, prospects and customers change status.',
   },
 ];
 
