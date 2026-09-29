@@ -3,9 +3,10 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import type * as ReactRouter from 'react-router-dom';
 
 vi.mock('react-router-dom', async () => ({
-  ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
+  ...(await vi.importActual<typeof ReactRouter>('react-router-dom')),
   useNavigate: () => vi.fn(),
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
