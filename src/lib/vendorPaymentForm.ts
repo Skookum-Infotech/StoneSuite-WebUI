@@ -9,6 +9,8 @@ import type { FieldDefinition } from '@/types/tenant';
 import type {
   VendorPayment, CreateVendorPaymentPayload, UpdateVendorPaymentPayload,
 } from '@/types/vendorPayment';
+import type { VendorBill } from '@/types/vendorBill';
+import type { VendorPaymentApplicationInput } from '@/types/vendorPayment';
 import { PAYMENT_METHODS } from './paymentMethods';
 
 export const PAGE_TABS = [
@@ -53,7 +55,6 @@ export const PRIMARY_INFO_FIELDS: VendorPaymentFormField[] = [
     hint: 'Required before this payment can be scheduled for dispatch.',
   },
   { key: 'currency_id', label: 'Currency', type: 'select', lookupKey: 'currencies' },
-  { key: 'owner_employee', label: 'Owner', type: 'select', lookupKey: 'employees' },
   { key: 'memo', label: 'Memo', type: 'textarea', placeholder: 'Notes related to this payment…', colSpanFull: true },
   { key: 'internal_notes', label: 'Internal Notes', type: 'textarea', placeholder: 'Notes visible to your team only…', colSpanFull: true },
 ];
@@ -136,6 +137,29 @@ export function vpTransitionTargets(fromCode: string): string[] {
   return (VP_ALLOWED_TRANSITIONS[fromCode] ?? []).filter(
     (to) => !VP_APPROVAL_ONLY_EDGES.has(`${fromCode}:${to}`),
   );
+}
+
+export const VP_VOID_CODE = 'VOID';
+
+interface VpNextMoves { statusCode: string; nextStatusCodes?: string[] }
+
+/** Legal next moves right now: the record's own `nextStatusCodes` (approval
+ *  checkpoint nobody can sign off collapsed out) else the static map, minus
+ *  the approval-only edges the generic endpoint rejects. */
+export function vpNextCodes(order: VpNextMoves): string[] {
+  const codes = order.nextStatusCodes ?? VP_ALLOWED_TRANSITIONS[order.statusCode] ?? [];
+  return codes.filter((to) => !VP_APPROVAL_ONLY_EDGES.has(`${order.statusCode}:${to}`));
+}
+
+/** Moves rendered as header buttons — every legal move except Void, which is
+ *  a confirmed Danger Zone action. */
+export function vpHeaderTransitions(order: VpNextMoves): string[] {
+  return vpNextCodes(order).filter((code) => code !== VP_VOID_CODE);
+}
+
+/** Whether Void is a legal move right now (the Danger Zone button). */
+export function vpCanVoid(order: VpNextMoves): boolean {
+  return vpNextCodes(order).includes(VP_VOID_CODE);
 }
 
 /** AD-6 approval gate (vendorpayment/store_transition.go): once a status
@@ -242,7 +266,6 @@ export function toCreatePayload(
     paymentDate: toRFC3339OrUndefined(toStr(data.payment_date)),
     scheduledDate: toRFC3339OrUndefined(toStr(data.scheduled_date)),
     currencyId: toIntOrNull(data.currency_id),
-    ownerEmployeeId: toIntOrNull(data.owner_employee),
     amount: toNum(data.amount),
     memo: toStr(data.memo),
     internalNotes: toStr(data.internal_notes),
@@ -262,7 +285,6 @@ export function toUpdatePayload(
     paymentDate: toRFC3339OrUndefined(toStr(data.payment_date)),
     scheduledDate: toRFC3339OrUndefined(toStr(data.scheduled_date)),
     currencyId: toIntOrNull(data.currency_id),
-    ownerEmployeeId: toIntOrNull(data.owner_employee),
     memo: toStr(data.memo),
     internalNotes: toStr(data.internal_notes),
     customFields,
@@ -289,7 +311,6 @@ export function fromVendorPayment(payment: VendorPayment): {
     payment_date: fromRFC3339DateOnly(payment.paymentDate),
     scheduled_date: fromRFC3339DateOnly(payment.scheduledDate),
     currency_id: idOrEmpty(payment.currencyId),
-    owner_employee: idOrEmpty(payment.ownerEmployeeId),
     memo: payment.memo ?? '',
     internal_notes: payment.internalNotes ?? '',
   };
@@ -316,4 +337,33 @@ export function validateVendorPaymentCustomFields(
     }
   }
   return errors;
+}
+
+// ── Record Payment from a vendor bill ────────────────────────────────────────
+
+/** What "Record Payment" on a vendor bill seeds into the new-payment form. */
+export interface BillPaymentPrefill {
+  data: Record<string, unknown>;
+  vendor: { id: string; name: string };
+  application: VendorPaymentApplicationInput;
+  billNumber: string;
+}
+
+/** Maps a source vendor bill to the new-payment form's starting state: its
+ *  vendor, its currency, the full balance due as the amount, and one
+ *  application against the bill. Null when the bill can't be paid (not in a
+ *  payable status, or nothing left due) — the page then explains instead. */
+export function fromSourceBill(bill: VendorBill): BillPaymentPrefill | null {
+  if (!VP_PAYABLE_BILL_STATUSES.has(bill.statusCode) || !(bill.balanceDue > 0)) return null;
+  return {
+    data: {
+      ...vendorPaymentDefaults(),
+      amount: String(bill.balanceDue),
+      currency_id: idOrEmpty(bill.currencyId),
+      memo: bill.vendorBillNumber ? `Payment for ${bill.vendorBillNumber}` : '',
+    },
+    vendor: { id: bill.vendor.id, name: bill.vendor.name },
+    application: { vendorBillUuid: bill.id, amount: bill.balanceDue },
+    billNumber: bill.vendorBillNumber,
+  };
 }

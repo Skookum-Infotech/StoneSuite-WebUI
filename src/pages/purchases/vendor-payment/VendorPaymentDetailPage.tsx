@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Wallet, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { Wallet, Upload, Pencil, FileDown, Loader2, Send, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -16,14 +16,18 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { VP_STATUS_COLORS, VP_STATUS_CODES, VP_EDITABLE_STATUSES, vpTransitionTargets } from '@/lib/vendorPaymentForm';
+import {
+  VP_STATUS_COLORS, VP_STATUS_CODES, VP_EDITABLE_STATUSES, VP_VOID_CODE,
+  isVpTransitionBlocked, vpCanVoid,
+} from '@/lib/vendorPaymentForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { VendorPaymentAuditTab } from './components/VendorPaymentAuditTab';
 import { VendorPaymentApplicationsTab } from './components/VendorPaymentApplicationsTab';
 import { VendorPaymentRefundsTab } from './components/VendorPaymentRefundsTab';
-import { VendorPaymentStatusControl } from './components/VendorPaymentStatusControl';
+import { VendorPaymentHeaderActions } from './components/VendorPaymentHeaderActions';
+import { ConfirmVendorPaymentVoidDialog } from './components/ConfirmVendorPaymentVoidDialog';
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
-import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import type { VendorPayment } from '@/types/vendorPayment';
 
 const TABS = [
@@ -58,6 +62,7 @@ export default function VendorPaymentDetailPage() {
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [sendSuccess, setSendSuccess] = useState<string>();
+  const [confirmVoid, setConfirmVoid] = useState(false);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_payment', 'update');
@@ -126,8 +131,8 @@ export default function VendorPaymentDetailPage() {
   // The backend refuses a delete while any live application references the
   // payment (409) — unapply or void it first.
   const canDeleteHere = canDelete && payment.applications.length === 0;
-  const hasTransitions = canTransition && vpTransitionTargets(payment.statusCode).length > 0;
-  const showActions = hasTransitions || Boolean(transition.error);
+  const canVoidHere = canTransition && vpCanVoid(payment);
+  const voidBlocked = isVpTransitionBlocked(VP_VOID_CODE, payment.approvalStatus, payment.gated);
   const canEditHere = canEdit && VP_EDITABLE_STATUSES.has(payment.statusCode);
 
   async function handleExportPdf() {
@@ -190,7 +195,21 @@ export default function VendorPaymentDetailPage() {
         subtitle={payment.vendor.name}
         recordNumber={payment.vendorPaymentNumber}
         statusBadge={<Badge color={color}>{payment.status}</Badge>}
+        actions={(
+          <VendorPaymentHeaderActions
+            order={payment}
+            canTransition={canTransition}
+            onTransition={(code) => transition.mutate(code)}
+            pendingCode={transition.isPending ? transition.variables : undefined}
+          />
+        )}
       />
+
+      {transition.isError && (
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+          {apiErrorMessage(transition.error, 'Failed to change status.')}
+        </p>
+      )}
 
       <RecordApprovalBanner
         record={payment}
@@ -315,29 +334,6 @@ export default function VendorPaymentDetailPage() {
             )}
           </div>
 
-          {showActions && (
-            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
-              <VendorPaymentStatusControl
-                order={{
-                  statusCode: payment.statusCode,
-                  approvalStatus: payment.approvalStatus,
-                  gated: payment.gated,
-                  scheduledDate: payment.scheduledDate,
-                  nextStatusCodes: payment.nextStatusCodes,
-                }}
-                onChange={(toCode) => transition.mutate(toCode)}
-                disabled={transition.isPending}
-                variant="pill"
-              />
-              {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">
-                  {apiErrorMessage(transition.error, 'Failed to change status.')}
-                </p>
-              )}
-            </div>
-          )}
-
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-400">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
@@ -378,20 +374,42 @@ export default function VendorPaymentDetailPage() {
             </div>
           </div>
 
-          {canDeleteHere && (
+          {(canVoidHere || canDeleteHere) && (
             <DangerZoneCard>
-              <DeleteVendorPaymentDialog
-                vendorPaymentId={id}
-                label={`Vendor Payment ${payment.vendorPaymentNumber}`}
-                onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
-                  navigate('/purchases/vendor_payment');
-                }}
-              />
+              {canVoidHere && (
+                <DangerZoneAction
+                  description="Void this vendor payment. It can no longer be scheduled, sent or edited."
+                  buttonLabel="Void vendor payment"
+                  ariaLabel={`Void Vendor Payment ${payment.vendorPaymentNumber}`}
+                  icon={Ban}
+                  onClick={() => setConfirmVoid(true)}
+                  disabled={voidBlocked || transition.isPending}
+                  hint={voidBlocked ? 'Awaiting approval sign-off' : undefined}
+                />
+              )}
+              {canDeleteHere && (
+                <DeleteVendorPaymentDialog
+                  vendorPaymentId={id}
+                  label={`Vendor Payment ${payment.vendorPaymentNumber}`}
+                  onDeleted={() => {
+                    queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
+                    navigate('/purchases/vendor_payment');
+                  }}
+                />
+              )}
             </DangerZoneCard>
           )}
         </SalesDetailSidebar>
       </div>
+
+      {confirmVoid && (
+        <ConfirmVendorPaymentVoidDialog
+          paymentNumber={payment.vendorPaymentNumber}
+          pending={transition.isPending}
+          onConfirm={() => transition.mutate(VP_VOID_CODE, { onSettled: () => setConfirmVoid(false) })}
+          onCancel={() => setConfirmVoid(false)}
+        />
+      )}
 
       <SendToCustomerDialog
         recordId={id}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Wallet, Pencil, Filter,
   ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
@@ -8,7 +8,6 @@ import {
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
-import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { VP_EDITABLE_STATUSES, VP_STATUS_COLORS } from '@/lib/vendorPaymentForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
@@ -16,7 +15,6 @@ import {
   EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type VendorPaymentFilterState,
 } from '@/lib/vendorPaymentFilters';
 import { VendorPaymentFilterDrawer } from './VendorPaymentFilterDrawer';
-import { VendorPaymentStatusControl } from './VendorPaymentStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { VendorPaymentSearchRequest } from '@/types/vendorPayment';
 
@@ -70,20 +68,9 @@ function fmtDate(iso?: string | null): string {
 
 export function VendorPaymentTable() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  // Inline status change from the list row's status pill — mirrors the
-  // Detail page's transition mutation (see VendorPaymentDetailPage.tsx).
-  const transition = useMutation({
-    mutationFn: (vars: { id: string; toStatusCode: string }) => vendorPaymentService.transition(vars.id, vars.toStatusCode),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(['vendor-payment', updated.id], updated);
-      queryClient.invalidateQueries({ queryKey: ['vendor-payments'] });
-    },
-  });
-
-  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_payment', 'update');
 
   const [term, setTerm] = useState('');
@@ -98,13 +85,6 @@ export function VendorPaymentTable() {
 
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-
-  const { data: lookups } = useQuery({
-    queryKey: ['crm-lookups'],
-    queryFn: lookupService.getCrmLookups,
-    staleTime: 10 * 60 * 1000,
-  });
-  const employeeNames = new Map((lookups?.employees ?? []).map((e) => [String(e.id), e.name]));
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -190,7 +170,7 @@ export function VendorPaymentTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => vendorPaymentService.searchVendorPayments({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Payment #', 'Vendor', 'Status', 'Approval', 'Method', 'Reference #', 'Payment Date', 'Scheduled Date', 'Owner', 'Amount', 'Applied', 'Unapplied'],
+        ['Payment #', 'Vendor', 'Status', 'Approval', 'Method', 'Reference #', 'Payment Date', 'Scheduled Date', 'Amount', 'Applied', 'Unapplied'],
         (payment) => [
           payment.vendorPaymentNumber ?? '',
           payment.vendor?.name ?? '',
@@ -200,7 +180,6 @@ export function VendorPaymentTable() {
           payment.referenceNumber ?? '',
           fmtCsvDate(payment.paymentDate),
           fmtCsvDate(payment.scheduledDate ?? undefined),
-          (payment.ownerEmployeeId ? employeeNames.get(String(payment.ownerEmployeeId)) : undefined) ?? '',
           String(payment.amount ?? 0),
           String(payment.appliedTotal ?? 0),
           String(payment.unappliedAmount ?? 0),
@@ -312,7 +291,6 @@ export function VendorPaymentTable() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Method</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied</th>
                 {canEdit && (
@@ -324,7 +302,7 @@ export function VendorPaymentTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: canEdit ? 10 : 9 }, (_, j) => (
+                    {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
                       <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
@@ -332,7 +310,6 @@ export function VendorPaymentTable() {
               ) : records.length > 0 ? (
                 records.map((payment) => {
                   const approvalLabel = APPROVAL_LABELS[payment.approvalStatus];
-                  const ownerName = payment.ownerEmployeeId ? employeeNames.get(String(payment.ownerEmployeeId)) : undefined;
                   return (
                     <tr key={payment.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
@@ -348,21 +325,7 @@ export function VendorPaymentTable() {
                         {payment.vendor?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        {isSuperAdmin ? (
-                          <VendorPaymentStatusControl
-                            order={{
-                              statusCode: payment.statusCode,
-                              approvalStatus: payment.approvalStatus,
-                              scheduledDate: payment.scheduledDate,
-                              nextStatusCodes: payment.nextStatusCodes,
-                            }}
-                            onChange={(code) => transition.mutate({ id: payment.id, toStatusCode: code })}
-                            disabled={transition.isPending && transition.variables?.id === payment.id}
-                            variant="pill"
-                          />
-                        ) : (
-                          <ReadOnlyStatusPill label={payment.status} color={VP_STATUS_COLORS[payment.statusCode]} />
-                        )}
+                        <ReadOnlyStatusPill label={payment.status} color={VP_STATUS_COLORS[payment.statusCode]} />
                       </td>
                       <td className="px-4 py-3.5">
                         {approvalLabel ? (
@@ -382,9 +345,6 @@ export function VendorPaymentTable() {
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {fmtDate(payment.paymentDate)}
-                      </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[140px]">
-                        {ownerName ?? '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(payment.amount)}
