@@ -6,6 +6,8 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
+import { TRACKING_SERIALIZED } from '@/types/inventory';
+import { toExpectedSlabs } from '@/lib/slabEstimate';
 import type {
   PurchaseOrder, PurchaseOrderCreatePayload, PurchaseOrderLineInput, PurchaseOrderLine,
 } from '@/types/purchaseOrder';
@@ -242,6 +244,11 @@ export interface PurchaseOrderLineItem {
   inventoryItemUuid?: string;
   itemSku?: string;
   units?: string;
+  /** The picked item's tracking mode — a `serialized` line is a slab line, which
+   *  shows the expected-slabs helper. */
+  tracking?: string;
+  /** Expected slab count while typing (a whole number, or blank). Only sent for a slab line. */
+  expectedSlabs?: string;
 }
 
 export const EMPTY_LINE_ITEM: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'> = {
@@ -555,6 +562,8 @@ function toLineInput(item: PurchaseOrderLineItem, lineNo: number): PurchaseOrder
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
+    // Only a slab line carries an expected count; the server refuses it elsewhere.
+    expectedSlabs: item.tracking === TRACKING_SERIALIZED && item.inventoryItemUuid ? toExpectedSlabs(item.expectedSlabs) : undefined,
   };
 }
 
@@ -627,6 +636,8 @@ function fromLine(line: PurchaseOrderLine, i: number): PurchaseOrderLineItem {
     amount: (line.lineSubtotal - line.lineDiscount).toFixed(2),
     total: line.lineTotal.toFixed(2),
     inventoryItemUuid: line.inventoryItemId ?? undefined,
+    tracking: line.tracking,
+    expectedSlabs: line.expectedSlabs ? String(line.expectedSlabs) : '',
   };
 }
 

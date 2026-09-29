@@ -14,13 +14,16 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
 import { OverReceiptDialog } from './components/OverReceiptDialog';
 import { overReceiptDetails, type OverReceiptDetails } from '@/lib/itemReceiptErrors';
+import { defaultWarehouseUuid, toNumericWarehouseId } from '@/lib/inventoryWarehouse';
+import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
 import {
-  itemReceiptDefaults, toCreatePayload, validateReceiptLines, validateReceiptLineErrors, mergeReceiptLines,
-  isPurchaseOrderReceivable, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
+  itemReceiptDefaults, toCreatePayload, validateReceiptLines, validateReceiptLineErrors, validateReceiptHeader,
+  mergeReceiptLines, isPurchaseOrderReceivable, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
 // Saving a new receipt posts it: the backend creates and posts in one
@@ -62,19 +65,33 @@ export default function ReceiveItemsPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { lookups: inventoryLookups } = useInventoryLookups();
+  const warehouses = inventoryLookups?.warehouses;
+  // The picker opens on the tenant's default warehouse; choosing another
+  // overrides it. It is mandatory, so it can't be left empty.
+  const receiptData = useMemo(
+    () => (data.warehouse_id ? data : { ...data, warehouse_id: defaultWarehouseUuid(warehouses ?? []) }),
+    [data, warehouses],
+  );
+
   const activeLines = useMemo(() => lines ?? (po ? mergeReceiptLines(po.items) : []), [lines, po]);
-  const validationErrors = validateReceiptLines(activeLines);
+  const validationErrors = [...validateReceiptHeader(receiptData), ...validateReceiptLines(activeLines)];
   const lineErrors = useMemo(() => validateReceiptLineErrors(activeLines), [activeLines]);
 
-  // Baseline once the PO has loaded — the received-quantity lines are seeded from
-  // it, so an earlier baseline would flag those defaults as user edits.
-  const guard = useUnsavedChangesGuard({ data, activeLines, customFieldValues }, Boolean(po));
+  // Baseline once the PO and the warehouse lookups have loaded — the received-
+  // quantity lines and the default warehouse are seeded from them, so an earlier
+  // baseline would flag those defaults as user edits.
+  const guard = useUnsavedChangesGuard(
+    { data: receiptData, activeLines, customFieldValues },
+    Boolean(po) && Boolean(inventoryLookups),
+  );
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: (overReceiptReason?: string) => {
       if (validationErrors.length > 0) throw new Error(validationErrors[0]);
-      const payload = toCreatePayload(purchaseOrderId, data, activeLines, customFieldValues, {
+      const payload = toCreatePayload(purchaseOrderId, receiptData, activeLines, customFieldValues, {
         post: true, overReceiptReason,
+        warehouseId: toNumericWarehouseId(warehouses ?? [], String(receiptData.warehouse_id)),
       });
       return itemReceiptService.createItemReceipt(payload);
     },
@@ -84,6 +101,9 @@ export default function ReceiveItemsPage() {
       queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-order-receipts', purchaseOrderId] });
       queryClient.invalidateQueries({ queryKey: ['purchase-order', purchaseOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['slab-sequence', purchaseOrderId] });
+      // Posting adds any slabs to Inventory and moves stock.
+      for (const queryKey of INVENTORY_STOCK_QUERY_KEYS) queryClient.invalidateQueries({ queryKey });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(ir.id); } catch { /* non-fatal */ }
       }
@@ -151,7 +171,7 @@ export default function ReceiveItemsPage() {
           onBack={() => navigate('/purchases/item_receipt')}
           icon={Inbox}
           title="New Item Receipt"
-          subtitle={`Against ${po.purchaseOrderNumber} · Saving posts the receipt and moves stock. Fields marked * are required.`}
+          subtitle={`Against ${po.purchaseOrderNumber} · Saving posts the receipt and moves stock; slabs are added to Inventory. Fields marked * are required.`}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
@@ -181,7 +201,7 @@ export default function ReceiveItemsPage() {
         <ItemReceiptFormBody
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          data={data}
+          data={receiptData}
           set={set}
           lines={activeLines}
           setLines={setLines}

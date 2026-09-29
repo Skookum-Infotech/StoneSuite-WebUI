@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import { EMPTY_LINE_ITEM, calcLineItem, type RequisitionLineItem } from '@/lib/requisitionForm';
 
 const inlineCls =
@@ -48,9 +49,11 @@ export function RequisitionLinesTable({ items, onUpdate }: {
   // the server re-snapshots authoritatively from inventoryItemUuid at save
   // time. The item's unit price seeds the *estimate* — the requester is
   // free to overwrite it, since a requisition predates any vendor quote.
+  const unitCodeFor = useItemUnitCode();
   const applyCatalogItem = (prev: Omit<RequisitionLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
     ...prev,
     itemName: item.name,
+    units: unitCodeFor(item),
     itemDescription: item.description,
     itemSku: item.sku,
     estimatedUnitPrice: String(item.unitPrice),

@@ -201,7 +201,29 @@ export interface SalesOrderInventoryRow {
   itemId: string;
   sku: string;
   onHand: number;
+  /** On hand less what every open order holds — what is still free to promise. */
   available: number;
+  /** What every open order still holds (its reservation less what is fulfilled). */
   allocated: number;
+  /** This order's own share of `allocated`. */
+  reservedForOrder?: number;
   salesOrderQuantity: number;
+  /** False for an item whose stock is not checked or reserved (a service). */
+  tracked?: boolean;
+}
+
+/** One item a Sales Order asked for more of than is free — the 409 the server
+ *  answers a save with (code `insufficient_stock`). */
+export interface StockShortage {
+  /** inventory_item uuid */
+  itemId: string;
+  sku: string;
+  name: string;
+  unitCode: string;
+  /** What the order still needs. */
+  requested: number;
+  /** What is free for it (never negative). */
+  available: number;
+  /** requested - available. */
+  short: number;
 }

@@ -14,6 +14,8 @@ import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/unitLabels';
+import { slabProgressText } from '@/lib/itemReceiptSlabs';
 import {
   PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES,
   poBillableLines, poDropdownTransitions,
@@ -178,11 +180,12 @@ export default function PurchaseOrderDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', 'Unit', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: po.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            unitLabel(line.unitCode) || '—',
             String(line.quantity),
             String(line.qtyReceived),
             currency(line.unitPrice),
@@ -191,7 +194,7 @@ export default function PurchaseOrderDetailPage() {
             currency(line.lineTotal),
           ]),
           descriptions: po.items.map((line) => line.description || undefined),
-          numericFrom: 3,
+          numericFrom: 4,
         },
         totals: [
           { label: 'Subtotal', value: currency(po.subtotal) },
@@ -314,6 +317,7 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Received' },
                       { label: 'Unit Price', right: true },
@@ -334,9 +338,15 @@ export default function PurchaseOrderDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5">
                         <ReceiptProgress received={line.qtyReceived} ordered={line.quantity} />
+                        {(line.expectedSlabs || line.slabsReceived) ? (
+                          <p className="mt-1 text-2xs text-stone-400">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
@@ -345,7 +355,7 @@ export default function PurchaseOrderDetailPage() {
                     </tr>
                   ))}
                   {po.items.length === 0 && (
-                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={11} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
