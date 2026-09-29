@@ -26,7 +26,6 @@ export interface CreateVendorPaymentPayload {
   paymentDate?: string;
   scheduledDate?: string;   // RFC3339; required before a move to SCHD
   currencyId?: number | null;
-  ownerEmployeeId?: number | null;
   amount: number;
   memo?: string;
   internalNotes?: string;
@@ -100,7 +99,6 @@ export interface VendorPayment {
   rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
 
   vendor: VendorPaymentVendorRef;
-  ownerEmployeeId?: number | null;
   approvedByEmployeeId?: number | null;
 
   methodId: number;
@@ -134,7 +132,7 @@ export type VendorPaymentSummary = Pick<
   | 'id' | 'vendorPaymentNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'vendor' | 'method' | 'methodId' | 'referenceNumber'
   | 'paymentDate' | 'scheduledDate' | 'amount' | 'appliedTotal' | 'unappliedAmount'
-  | 'ownerEmployeeId' | 'createdAt' | 'updatedAt'
+  | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search
