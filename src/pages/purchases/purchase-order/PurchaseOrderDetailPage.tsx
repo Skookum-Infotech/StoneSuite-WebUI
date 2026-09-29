@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Package, Upload, Pencil, FileDown, Loader2, Send } from 'lucide-react';
+import { Package, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -61,8 +60,6 @@ export default function PurchaseOrderDetailPage() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [convertOpen, setConvertOpen] = useState(false);
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendSuccess, setSendSuccess] = useState<string>();
 
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
@@ -97,7 +94,12 @@ export default function PurchaseOrderDetailPage() {
       // Label the actual resulting status, not the one requested -- a move
       // onto an unconfigured approval gate auto-skips server-side (see
       // purchaseorder/store_transition.go), so the two can differ.
-      toast.success(`Moved to ${statusToastLabel(PO_STATUS_CODES, updated.statusCode)}.`);
+      const label = statusToastLabel(PO_STATUS_CODES, updated.statusCode);
+      // A move to Sent also emails the vendor server-side; report that outcome
+      // so a status change with a failed email is never mistaken for a full send.
+      if (updated.emailSent === true) toast.success(`Moved to ${label} and emailed to the vendor.`);
+      else if (updated.emailSent === false) toast.warning(`Moved to ${label}, but the vendor email failed: ${updated.emailError ?? 'unknown error'}`);
+      else toast.success(`Moved to ${label}.`);
     },
   });
 
@@ -380,17 +382,6 @@ export default function PurchaseOrderDetailPage() {
                   Edit purchase order
                 </button>
               )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => setSendDialogOpen(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send purchase order to vendor"
-                >
-                  <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Vendor
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -404,9 +395,6 @@ export default function PurchaseOrderDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -478,19 +466,6 @@ export default function PurchaseOrderDetailPage() {
         />
       )}
 
-      <SendToCustomerDialog
-        recordId={id}
-        open={sendDialogOpen}
-        onOpenChange={setSendDialogOpen}
-        recipientEmail={po.shipTo?.email || ''}
-        recipientKind="vendor"
-        label={`Purchase Order ${po.purchaseOrderNumber}`}
-        onSent={(result) =>
-          setSendSuccess(
-            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
-      />
     </div>
   );
 }
