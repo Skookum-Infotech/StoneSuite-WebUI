@@ -3,6 +3,9 @@ import {
   toCreatePayload,
   toUpdatePayload,
   fromVendorPayment,
+  fromSourceBill,
+  vpHeaderTransitions,
+  vpCanVoid,
   toRFC3339OrUndefined,
   fromRFC3339DateOnly,
   vpTransitionTargets,
@@ -52,7 +55,6 @@ describe('toCreatePayload', () => {
         payment_date: '2026-08-12',
         scheduled_date: '2026-08-20',
         currency_id: '1',
-        owner_employee: '7',
         amount: '1250.50',
         memo: 'August rent',
         internal_notes: 'approved verbally',
@@ -68,7 +70,6 @@ describe('toCreatePayload', () => {
       paymentDate: '2026-08-12T00:00:00Z',
       scheduledDate: '2026-08-20T00:00:00Z',
       currencyId: 1,
-      ownerEmployeeId: 7,
       amount: 1250.5,
       memo: 'August rent',
       internalNotes: 'approved verbally',
@@ -78,11 +79,10 @@ describe('toCreatePayload', () => {
 
   it('sends null (not 0) for blank optional id selects, and omits blank dates', () => {
     const payload = toCreatePayload(
-      { payment_method: '1', payment_date: '2026-08-12', amount: '10', currency_id: '', owner_employee: '', scheduled_date: '' },
+      { payment_method: '1', payment_date: '2026-08-12', amount: '10', currency_id: '', scheduled_date: '' },
       'vendor-uuid-2',
     );
     expect(payload.currencyId).toBeNull();
-    expect(payload.ownerEmployeeId).toBeNull();
     expect(payload.scheduledDate).toBeUndefined();
     expect(payload.customFields).toEqual({});
   });
@@ -122,7 +122,6 @@ describe('fromVendorPayment', () => {
     isOverride: false,
     callerAlreadyApproved: false,
     vendor: { id: 'v-1', name: 'Granite Supply Co' },
-    ownerEmployeeId: 7,
     methodId: 4,
     method: 'ACH',
     referenceNumber: 'ACH-77',
@@ -151,7 +150,6 @@ describe('fromVendorPayment', () => {
       paymentDate: '2026-08-12T00:00:00Z',
       scheduledDate: '2026-08-20T00:00:00Z',
       currencyId: null,
-      ownerEmployeeId: 7,
       memo: 'partial',
       internalNotes: '',
       customFields: { po_ref: 'PO-42' },
@@ -240,5 +238,39 @@ describe('validateVendorPaymentCustomFields', () => {
     expect(validateVendorPaymentCustomFields(defs, {})).toEqual([{ key: 'po_ref', label: 'PO Reference' }]);
     expect(validateVendorPaymentCustomFields(defs, { po_ref: '' })).toEqual([{ key: 'po_ref', label: 'PO Reference' }]);
     expect(validateVendorPaymentCustomFields(defs, { po_ref: null })).toEqual([{ key: 'po_ref', label: 'PO Reference' }]);
+  });
+});
+
+describe('fromSourceBill', () => {
+  const bill = (over: Record<string, unknown>) => ({
+    id: 'b-1', vendorBillNumber: 'VBIL-000004', statusCode: 'APPV', balanceDue: 30000, currencyId: 1,
+    vendor: { id: 'v-1', name: 'Akhila' }, ...over,
+  }) as unknown as Parameters<typeof fromSourceBill>[0];
+
+  it.each([
+    ['approved with balance', { statusCode: 'APPV' }, true],
+    ['partially paid', { statusCode: 'PART', balanceDue: 5 }, true],
+    ['draft', { statusCode: 'DRFT' }, false],
+    ['paid off', { statusCode: 'APPV', balanceDue: 0 }, false],
+  ])('%s', (_name, over, expected) => {
+    expect(fromSourceBill(bill(over)) !== null).toBe(expected);
+  });
+
+  it('seeds vendor, amount, currency and one application for the full balance', () => {
+    const p = fromSourceBill(bill({}))!;
+    expect(p.vendor).toEqual({ id: 'v-1', name: 'Akhila' });
+    expect(p.data.amount).toBe('30000');
+    expect(p.data.currency_id).toBe('1');
+    expect(p.application).toEqual({ vendorBillUuid: 'b-1', amount: 30000 });
+    expect(p.billNumber).toBe('VBIL-000004');
+  });
+});
+
+describe('vpHeaderTransitions / vpCanVoid', () => {
+  it('excludes Void and approval-only edges from header buttons', () => {
+    expect(vpHeaderTransitions({ statusCode: 'DRFT' })).toEqual(['PAPV']);
+    expect(vpHeaderTransitions({ statusCode: 'PAPV' })).toEqual(['DRFT']);
+    expect(vpCanVoid({ statusCode: 'SENT' })).toBe(true);
+    expect(vpCanVoid({ statusCode: 'VOID' })).toBe(false);
   });
 });

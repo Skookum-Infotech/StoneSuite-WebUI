@@ -51,7 +51,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue }: {
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={() => navigate('/purchases/vendor_payment/new')}
+            onClick={() => navigate(`/purchases/vendor_payment/new?fromBill=${encodeURIComponent(vendorBillId)}`)}
             aria-label="Record a vendor payment for this bill"
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all"
           >
