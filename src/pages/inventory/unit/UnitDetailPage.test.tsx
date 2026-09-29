@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -15,7 +15,7 @@ vi.mock('./components/CutUnitDialog', () => ({ CutUnitDialog: () => null }));
 import UnitDetailPage from './UnitDetailPage';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { makeCutUnit, makeUnit } from './components/unitFixtures';
+import { makeAllocatedUnit, makeCutUnit, makeUnit } from './components/unitFixtures';
 import type { InventoryUnit } from '@/types/inventory';
 
 function renderPage(unit: InventoryUnit) {
@@ -89,6 +89,38 @@ describe('UnitDetailPage', () => {
       expect(buttons.length).toBeGreaterThan(0);
       buttons.forEach((b) => expect(b).toBeEnabled());
     }
+  });
+
+  it('highlights the sales order and job a slab is reserved for, on every tab', async () => {
+    renderPage(makeAllocatedUnit());
+    const user = userEvent.setup();
+
+    const banner = await screen.findByRole('region', { name: 'Slab allocation' });
+    expect(banner).toHaveTextContent('Reserved for');
+    expect(within(banner).getByRole('link', { name: 'Sales order SORD-000003' })).toHaveAttribute('href', '/sales/sales_order/so-3');
+    expect(within(banner).getByRole('link', { name: 'Fabrication job FJOB-000007' })).toHaveAttribute('href', '/sales/installation/job-7');
+
+    await user.click(screen.getByRole('button', { name: 'Details' }));
+    expect(screen.getByRole('region', { name: 'Slab allocation' })).toBeInTheDocument();
+  });
+
+  it('says a cut slab was cut for that order and job', async () => {
+    renderPage(makeAllocatedUnit({ status: 'consumed' }));
+
+    expect(await screen.findByRole('region', { name: 'Slab allocation' })).toHaveTextContent('Cut for');
+  });
+
+  it('shows no allocation strip for a slab nobody has claimed', async () => {
+    renderPage(makeUnit());
+    await screen.findByText('Untouched', { selector: 'p' });
+
+    expect(screen.queryByRole('region', { name: 'Slab allocation' })).not.toBeInTheDocument();
+  });
+
+  it('notes the sales order on the lifecycle step where the job took the slab', async () => {
+    renderPage(makeAllocatedUnit());
+
+    expect(await screen.findByText('For sales order SORD-000003')).toBeInTheDocument();
   });
 
   it('explains why a cut slab can no longer be acted on', async () => {

@@ -42,3 +42,22 @@ export function makeCutUnit(used: number, recovered: number, offcuts: number, ov
     ...overrides,
   });
 }
+
+/** A slab a fabrication job (FJOB-000007) is holding for a sales order
+ *  (SORD-000003). Pass `status: 'consumed'` for one the job has since cut. */
+export function makeAllocatedUnit(overrides: Partial<InventoryUnit> = {}): InventoryUnit {
+  return makeUnit({
+    status: 'reserved',
+    usage: {
+      jobId: 'job-7',
+      jobNumber: 'FJOB-000007',
+      salesOrderId: 'so-3',
+      salesOrderNumber: 'SORD-000003',
+      reservedAt: '2026-09-29T09:00:00',
+      offcutCount: 0,
+      recoveredArea: 0,
+      usedArea: 0,
+    },
+    ...overrides,
+  });
+}

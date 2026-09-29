@@ -2,8 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
+  useNavigate: () => vi.fn(),
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/inventoryUnitService', () => ({
   inventoryUnitService: { searchUnits: vi.fn() },
@@ -15,7 +19,7 @@ vi.mock('./CutUnitDialog', () => ({ CutUnitDialog: () => null }));
 import { UnitTable } from './UnitTable';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { makeCutUnit, makeUnit } from './unitFixtures';
+import { makeAllocatedUnit, makeCutUnit, makeUnit } from './unitFixtures';
 import type { UnitSearchRequest } from '@/types/inventory';
 
 const searchUnits = vi.mocked(inventoryUnitService.searchUnits);
@@ -28,13 +32,16 @@ function renderTable() {
     records: [
       makeUnit({ id: 'u1', serial: 'PO-00012-001' }),
       makeCutUnit(30, 15.2, 2, { id: 'u2', serial: 'PO-00012-002' }),
+      makeAllocatedUnit({ id: 'u3', serial: 'PO-00012-003' }),
     ],
     nextCursor: '', hasMore: false,
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <UnitTable />
+      <MemoryRouter>
+        <UnitTable />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -57,6 +64,23 @@ describe('UnitTable', () => {
     expect(within(untouched).getByText('Untouched')).toBeInTheDocument();
     const cut = screen.getByText('PO-00012-002').closest('tr') as HTMLElement;
     expect(within(cut).getByText('66% used · 15.20 sq ft back')).toBeInTheDocument();
+  });
+
+  it('has an Allocated To column naming the sales order and job a slab is held for', async () => {
+    renderTable();
+
+    expect(await screen.findByRole('columnheader', { name: 'Allocated To' })).toBeInTheDocument();
+    const held = (await screen.findByText('PO-00012-003')).closest('tr') as HTMLElement;
+    expect(within(held).getByRole('link', { name: 'Sales order SORD-000003' })).toHaveAttribute('href', '/sales/sales_order/so-3');
+    expect(within(held).getByRole('link', { name: 'Fabrication job FJOB-000007' })).toHaveAttribute('href', '/sales/installation/job-7');
+  });
+
+  it('leaves the Allocated To cell blank for a slab nobody has claimed', async () => {
+    renderTable();
+
+    const free = (await screen.findByText('PO-00012-001')).closest('tr') as HTMLElement;
+    expect(within(free).getByLabelText('Not allocated')).toBeInTheDocument();
+    expect(within(free).queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('shows what each area is measured in', async () => {

@@ -8,12 +8,14 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv } from '@/lib/csvExport';
+import { allocationOf } from '@/lib/unitAllocation';
 import { formatUnitArea, usageOf } from '@/lib/unitConsumption';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT } from '@/types/inventory';
 import type { InventoryUnit, UnitSearchRequest } from '@/types/inventory';
 import { MoveUnitDialog } from './MoveUnitDialog';
 import { ScrapUnitDialog } from './ScrapUnitDialog';
 import { CutUnitDialog } from './CutUnitDialog';
+import { UnitAllocationChips } from './UnitAllocationChips';
 import { UnitConsumptionCell } from './UnitConsumptionCell';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -96,9 +98,11 @@ export function UnitTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => inventoryUnitService.searchUnits({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Serial', 'Item', 'Kind', 'Status', 'Area', 'Unit', 'Used', 'Recovered', 'Warehouse', 'Bin'],
+        ['Serial', 'Item', 'Kind', 'Status', 'Sales Order', 'Fabrication Job', 'Area', 'Unit', 'Used', 'Recovered', 'Warehouse', 'Bin'],
         (u) => [
-          u.serial, u.inventoryItemName ?? '', u.kind, u.status, u.area.toFixed(2), u.areaUnitCode ?? '',
+          u.serial, u.inventoryItemName ?? '', u.kind, u.status,
+          usageOf(u).salesOrderNumber ?? '', usageOf(u).jobNumber ?? '',
+          u.area.toFixed(2), u.areaUnitCode ?? '',
           usageOf(u).usedArea.toFixed(2), usageOf(u).recoveredArea.toFixed(2), u.warehouseName ?? '', u.binPath ?? '',
         ],
         'Inventory Unit',
@@ -152,13 +156,14 @@ export function UnitTable() {
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[1040px] text-left text-xs">
+          <table className="w-full min-w-[1180px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Serial</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Item</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kind</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Allocated To</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Area</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Consumption</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
@@ -168,7 +173,7 @@ export function UnitTable() {
             <tbody className="divide-y divide-stone-100">
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
-                  <tr key={i}>{Array.from({ length: canUpdate ? 8 : 7 }, (_, j) => <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>)}</tr>
+                  <tr key={i}>{Array.from({ length: canUpdate ? 9 : 8 }, (_, j) => <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>)}</tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((u) => {
@@ -186,6 +191,9 @@ export function UnitTable() {
                           <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: STATUS_COLORS[u.status] ?? '#a8a29e' }} aria-hidden="true" />
                           {u.status.replace('_', ' ')}
                         </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {allocationOf(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-300" aria-label="Not allocated">—</span>}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right whitespace-nowrap">{formatUnitArea(u.area, u.areaUnitCode)}</td>
                       <td className="px-4 py-3.5"><UnitConsumptionCell unit={u} /></td>
@@ -210,7 +218,7 @@ export function UnitTable() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={7 + (canUpdate ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={8 + (canUpdate ? 1 : 0)} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-2xl bg-stone-100 p-4"><Layers className="size-6 text-stone-400" /></div>
                       <p className="text-sm font-semibold text-stone-700">{hasFilters ? 'No units match the current search.' : 'No slabs in stock yet — receive a purchase order to add some.'}</p>

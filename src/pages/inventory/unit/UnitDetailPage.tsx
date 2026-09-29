@@ -14,6 +14,7 @@ import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } 
 import { MoveUnitDialog } from './components/MoveUnitDialog';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
+import { UnitAllocationBanner } from './components/UnitAllocationBanner';
 import { UnitUsageTab } from './components/UnitUsageTab';
 import { UnitDetailsTab } from './components/UnitDetailsTab';
 
@@ -124,6 +125,7 @@ export default function UnitDetailPage() {
             title: 'Consumption',
             rows: [
               ['State', consumptionState(unit)],
+              ['Sales Order', usageOf(unit).salesOrderNumber || ''],
               ['Fabrication Job', usageOf(unit).jobNumber || ''],
               ['Used', formatUnitArea(usageOf(unit).usedArea, unit.areaUnitCode)],
               ['Recovered As Offcuts', formatUnitArea(usageOf(unit).recoveredArea, unit.areaUnitCode)],
@@ -149,6 +151,8 @@ export default function UnitDetailPage() {
         subtitle={unit.inventoryItemName}
         statusBadge={<Badge color={STATUS_COLORS[unit.status] ?? '#a8a29e'}>{unit.status.replace('_', ' ')}</Badge>}
       />
+
+      <UnitAllocationBanner unit={unit} />
 
       {cutMessage && (
         <div className="shrink-0 flex items-start gap-3 border-b border-emerald-200 bg-emerald-50 px-5 py-2.5">

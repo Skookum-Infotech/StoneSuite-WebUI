@@ -248,6 +248,7 @@ export function lifecycleSteps(unit: InventoryUnit): LifecycleStep[] {
       key: 'reserved',
       title: use.jobId ? 'Held for job' : 'Held for a job',
       link: use.jobId ? { label: use.jobNumber || 'fabrication job', to: `/sales/installation/${use.jobId}` } : undefined,
+      detail: use.salesOrderNumber ? `For sales order ${use.salesOrderNumber}` : undefined,
       at: use.reservedAt,
     });
   }

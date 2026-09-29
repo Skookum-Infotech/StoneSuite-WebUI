@@ -8,6 +8,7 @@ import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { lookupService } from '@/services/lookupService';
 import { findUnit, requiresDimensions } from '@/lib/inventoryUnits';
 import { TRACKING_OPTIONS } from '@/lib/inventoryItemForm';
+import { TRACKING_SERIALIZED } from '@/types/inventory';
 
 // Shared field layout for Add/Edit Item — the item form is small enough
 // (no line items, no tabs) that a single body component covers both modes,
@@ -26,6 +27,8 @@ export function ItemFormBody({ data, set }: {
   const units = lookups?.units ?? [];
   const selectedUnit = findUnit(units, Number(data.unit_id) || undefined);
   const showDimensions = requiresDimensions(selectedUnit);
+  // A slab item always has stock to run out of, so its switch is on and fixed.
+  const slabTracked = data.tracking === TRACKING_SERIALIZED;
 
   return (
     <div className="space-y-2">
@@ -124,6 +127,24 @@ export function ItemFormBody({ data, set }: {
               className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30"
             />
             <label htmlFor="item-is-active" className={checkboxLabelCls}>Active</label>
+          </div>
+          <div className="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="item-track-stock"
+                checked={slabTracked || data.track_stock !== false}
+                disabled={slabTracked}
+                onChange={(e) => set('track_stock', e.target.checked)}
+                className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30 disabled:opacity-60"
+              />
+              <label htmlFor="item-track-stock" className={checkboxLabelCls}>Track stock</label>
+            </div>
+            <p className="pl-6 text-2xs text-stone-500">
+              {slabTracked
+                ? 'Slab items are always tracked: a sales order for one is checked against the slabs in stock.'
+                : 'Sales orders for this item are checked against stock and hold it. Turn off for a service, delivery or labour charge.'}
+            </p>
           </div>
         </div>
         <label className={cn(fieldLabelCls, 'mt-4')}>Description</label>

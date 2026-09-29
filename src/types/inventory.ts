@@ -115,6 +115,11 @@ export interface InventoryItem {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  /** Whether a sales order line for this item is checked against stock and
+   *  reserves it. Off for a service/delivery/labour item; always on for a slab
+   *  item. The API always sends it; optional here so a hand-built item (a test
+   *  fixture) still type-checks — absent reads as on. */
+  trackStock?: boolean;
 
   createdAt: string;
   updatedAt: string;
@@ -140,6 +145,7 @@ export interface InventoryItemInput {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  trackStock?: boolean;
 }
 
 export interface InventoryItemPage {
@@ -182,6 +188,9 @@ export interface UnitUsage {
   /** Fabrication job holding (reserved) or that cut (consumed) the unit. */
   jobId?: string;
   jobNumber?: string;
+  /** The customer's sales order that job is for. */
+  salesOrderId?: string;
+  salesOrderNumber?: string;
   reservedAt?: string | null;
   consumedAt?: string | null;
   scrappedAt?: string | null;
