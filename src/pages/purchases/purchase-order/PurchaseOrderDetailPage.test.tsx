@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -322,5 +322,61 @@ describe('PurchaseOrderDetailPage — Receive items permissions', () => {
 
     await screen.findAllByText('Sent');
     expect(screen.queryAllByRole('button', { name: 'Receive items' })).toHaveLength(0);
+  });
+});
+
+// "Ordered 30" says nothing about what 30 is; the Items tab names the unit, and
+// a slab line also shows how many slabs have arrived against how many were expected.
+describe('PurchaseOrderDetailPage — Items tab units', () => {
+  const line = (id: string, n: number, over: Record<string, unknown>) => ({
+    id, lineNumber: n, itemName: `Item ${n}`, description: '', sku: `SKU-${n}`, quantity: 30, qtyReceived: 0, qtyBilled: 0,
+    unitPrice: 25, discountPercent: 0, taxPercent: 0, lineSubtotal: 0, lineDiscount: 0, lineTax: 0, lineTotal: 0, ...over,
+  });
+  const order = {
+    ...sentOrder,
+    items: [
+      line('l1', 1, { unitCode: 'EA' }),
+      line('l2', 2, { unitCode: 'SQFT', quantity: 600, qtyReceived: 550, tracking: 'serialized', expectedSlabs: 12, slabsReceived: 11 }),
+      line('l3', 3, { unitCode: 'SQM', tracking: 'serialized', slabsReceived: 4 }),
+      line('l4', 4, { unitCode: '' }),
+    ],
+  } as unknown as PurchaseOrder
+
+  async function openItemsTab() {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(order);
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Items' }));
+  }
+
+  it('has a Unit column beside the quantity', async () => {
+    await openItemsTab();
+    const headers = screen.getAllByRole('columnheader').map((h) => h.textContent);
+    expect(headers.indexOf('Unit')).toBeGreaterThan(-1);
+    expect(headers.indexOf('Unit')).toBe(headers.indexOf('Qty') - 1);
+  });
+
+  it('names each line\'s unit', async () => {
+    await openItemsTab();
+    expect(within(screen.getByText('Item 1').closest('tr') as HTMLElement).getByText('Each')).toBeInTheDocument();
+    expect(within(screen.getByText('Item 2').closest('tr') as HTMLElement).getByText('Sq ft')).toBeInTheDocument();
+    expect(within(screen.getByText('Item 3').closest('tr') as HTMLElement).getByText('Sq m')).toBeInTheDocument();
+  });
+
+  it('shows a dash rather than nothing when a line has no unit', async () => {
+    await openItemsTab();
+    const cells = within(screen.getByText('Item 4').closest('tr') as HTMLElement).getAllByRole('cell');
+    expect(cells[4]).toHaveTextContent('—');
+  });
+
+  it('shows slabs received against those expected on a slab line', async () => {
+    await openItemsTab();
+    expect(within(screen.getByText('Item 2').closest('tr') as HTMLElement).getByText('11 of about 12 slabs')).toBeInTheDocument();
+  });
+
+  it('just counts the slabs when none were expected, and says nothing on a quantity line', async () => {
+    await openItemsTab();
+    expect(within(screen.getByText('Item 3').closest('tr') as HTMLElement).getByText('4 slabs')).toBeInTheDocument();
+    expect(within(screen.getByText('Item 1').closest('tr') as HTMLElement).queryByText(/slab/)).not.toBeInTheDocument();
   });
 });

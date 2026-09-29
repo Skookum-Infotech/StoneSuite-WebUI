@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from './InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import { Badge } from '@/components/tenant/ui';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS,
@@ -37,10 +38,12 @@ const ITEM_COLS = [
 export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; onUpdate: (v: SOLineItem[]) => void }) {
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
+  const unitCodeFor = useItemUnitCode();
   const applyCatalogItem = (prev: Omit<SOLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
     const next = {
       ...prev,
       itemName: item.name,
+      units: unitCodeFor(item),
       itemSku: item.sku,
       itemDescription: item.description,
       unitPrice: String(item.unitPrice),

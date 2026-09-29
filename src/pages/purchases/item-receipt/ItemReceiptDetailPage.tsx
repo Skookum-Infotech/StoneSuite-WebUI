@@ -12,12 +12,15 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/unitLabels';
 import { IR_STATUS_COLORS, IR_EDITABLE_STATUSES, IR_POSTABLE_STATUSES, IR_VOIDABLE_STATUSES, IR_DELETABLE_STATUSES } from '@/lib/itemReceiptForm';
 import { ItemReceiptAuditTab } from './components/ItemReceiptAuditTab';
 import { DeleteItemReceiptDialog } from './components/DeleteItemReceiptDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { PostReceiptDialog } from './components/PostReceiptDialog';
 import { VoidReceiptDialog } from './components/VoidReceiptDialog';
+import { ReceiptSlabsTable } from './components/ReceiptSlabsTable';
+import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
 const TABS = [
@@ -71,6 +74,8 @@ export default function ItemReceiptDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
     queryClient.invalidateQueries({ queryKey: ['purchase-order-receipts'] });
     queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
+    // Posting adds slabs to Inventory and voiding takes them back out.
+    for (const queryKey of INVENTORY_STOCK_QUERY_KEYS) queryClient.invalidateQueries({ queryKey });
   }
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading item receipt…" /></div>;
@@ -119,18 +124,19 @@ export default function ItemReceiptDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Ordered', 'Received', 'Rejected', 'Notes'],
+          head: ['#', 'Item', 'SKU', 'Unit', 'Ordered', 'Received', 'Rejected', 'Notes'],
           rows: items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            unitLabel(line.unitCode) || '—',
             String(line.qtyOrdered),
             String(line.qtyReceived),
             String(line.qtyRejected),
             line.lineNotes || '—',
           ]),
           descriptions: items.map((line) => line.description || undefined),
-          numericFrom: 3,
+          numericFrom: 4,
         },
       });
     } catch (err) {
@@ -213,6 +219,7 @@ export default function ItemReceiptDetailPage() {
           )}
 
           {activeTab === 'items' && (
+            <>
             <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
               <table className="w-full text-left text-xs">
                 <thead className="bg-stone-50 border-b border-stone-200">
@@ -221,6 +228,7 @@ export default function ItemReceiptDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
+                      { label: 'Unit' },
                       { label: 'Ordered', right: true },
                       { label: 'Received', right: true },
                       { label: 'Rejected', right: true },
@@ -238,6 +246,9 @@ export default function ItemReceiptDetailPage() {
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.qtyOrdered}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{line.qtyReceived}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.qtyRejected}</td>
@@ -245,11 +256,13 @@ export default function ItemReceiptDetailPage() {
                     </tr>
                   ))}
                   {items.length === 0 && (
-                    <tr><td colSpan={7} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
+            <ReceiptSlabsTable lines={items} />
+            </>
           )}
 
           {activeTab === 'audit' && <ItemReceiptAuditTab itemReceiptId={id} />}

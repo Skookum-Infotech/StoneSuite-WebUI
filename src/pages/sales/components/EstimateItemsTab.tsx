@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from './InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type EstimateLineItem,
 } from '@/lib/estimateForm';
@@ -49,9 +50,11 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
 
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
+  const unitCodeFor = useItemUnitCode();
   const applyCatalogItem = (prev: Omit<EstimateLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
     ...prev,
     itemName: item.name,
+    units: unitCodeFor(item),
     itemDescription: item.description,
     itemSku: item.sku,
     unitPrice: String(item.unitPrice),

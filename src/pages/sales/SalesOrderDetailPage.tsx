@@ -16,6 +16,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/unitLabels';
 import { SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
@@ -335,6 +336,7 @@ export default function SalesOrderDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
+                      { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
                       { label: 'Disc %', right: true },
@@ -354,6 +356,9 @@ export default function SalesOrderDetailPage() {
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
@@ -367,7 +372,7 @@ export default function SalesOrderDetailPage() {
                     </tr>
                   ))}
                   {order.items.length === 0 && (
-                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

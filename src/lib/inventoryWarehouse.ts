@@ -17,3 +17,17 @@ export function toNumericWarehouseId(warehouses: Warehouse[], uuid: string): num
   const w = warehouses.find((x) => x.id === uuid) as (Warehouse & { warehouseId?: number }) | undefined;
   return w?.warehouseId ?? 0;
 }
+
+/** The inverse of `toNumericWarehouseId`: a warehouse's uuid from the numeric id
+ *  a receipt (or other saved document) carries. Empty when it can't be matched —
+ *  the lookups haven't loaded yet, or the warehouse was since removed. */
+export function toWarehouseUuid(warehouses: Warehouse[], numericId: number | null | undefined): string {
+  if (numericId === null || numericId === undefined) return '';
+  const w = warehouses.find((x) => x.warehouseId === numericId);
+  return w?.id ?? '';
+}
+
+/** The tenant's default active warehouse (its uuid), or empty when none is set. */
+export function defaultWarehouseUuid(warehouses: Warehouse[]): string {
+  return warehouses.find((w) => w.isDefault && w.isActive)?.id ?? '';
+}

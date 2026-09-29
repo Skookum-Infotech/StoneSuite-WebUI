@@ -1,12 +1,15 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
-  InventoryUnit, CreateUnitInput, UnitPage, UnitSearchRequest,
+  InventoryUnit, UnitPage, UnitSearchRequest,
   MoveUnitInput, ScrapUnitInput, CutUnitInput, CutResult, UnitHistoryEntry,
 } from '@/types/inventory';
 
 // Physical units — slabs and remnants — `inventory_unit` RBAC resource.
 // Legacy `/inventory/slabs/*` paths are served by the same backend handlers;
 // this service only uses the current `/inventory/units/*` paths.
+//
+// There is deliberately no create call: a new unit enters inventory only by
+// posting an item receipt against a purchase order (itemReceiptService).
 const BASE = '/tenant/inventory/units';
 
 export const inventoryUnitService = {
@@ -33,11 +36,6 @@ export const inventoryUnitService = {
   getUnit: (uuid: string): Promise<InventoryUnit> =>
     tenantClient
       .get<{ success: boolean; unit: InventoryUnit }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.unit),
-
-  createUnit: (payload: CreateUnitInput): Promise<InventoryUnit> =>
-    tenantClient
-      .post<{ success: boolean; unit: InventoryUnit }>(BASE, payload)
       .then((r) => r.data.unit),
 
   // Stock-neutral — moves bin only, never fires a ledger entry. Refused for

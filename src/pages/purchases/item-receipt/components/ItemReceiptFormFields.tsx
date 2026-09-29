@@ -3,6 +3,7 @@ import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CrmLookups } from '@/services/lookupService';
 import type { ItemReceiptFormField } from '@/lib/itemReceiptForm';
+import { ReceiptWarehouseField } from './ReceiptWarehouseField';
 
 // Renders one ItemReceiptFormField — shared by the Receive and Edit forms.
 // Mirrors PurchaseOrderField, trimmed: no lookupKey country/state chaining
@@ -23,6 +24,10 @@ export function ItemReceiptField({ field, value, set, lookups }: {
         </div>
       </ModernFieldShell>
     );
+  }
+
+  if (field.type === 'warehouse') {
+    return <ReceiptWarehouseField field={field} value={value} set={set} />;
   }
 
   if (field.type === 'textarea') {

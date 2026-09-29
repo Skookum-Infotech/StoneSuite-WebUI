@@ -8,6 +8,7 @@ import type {
   ItemReceiptVoidPayload,
   ItemReceiptSearchRequest,
   ItemReceiptPage,
+  SlabSequence,
 } from '@/types/itemReceipt';
 
 // Item Receipt API wrapper. Talks to the dedicated relational module under
@@ -82,4 +83,15 @@ export const itemReceiptService = {
     tenantClient
       .get<{ success: boolean; records: ItemReceipt[] }>(`/tenant/purchase-orders/${purchaseOrderUuid}/receipts`)
       .then((r) => r.data.records ?? []),
+
+  // GET /api/tenant/purchase-orders/{uuid}/next-slab-serial — previews the
+  // serial numbering of slabs about to be received, so the form can show each
+  // slab's serial before the receipt is saved. Gated by the order's own
+  // permission, like forPurchaseOrder.
+  nextSlabSerial: (purchaseOrderUuid: string): Promise<SlabSequence> =>
+    tenantClient
+      .get<{ success: boolean; prefix: string; next: number }>(
+        `/tenant/purchase-orders/${purchaseOrderUuid}/next-slab-serial`,
+      )
+      .then((r) => ({ prefix: r.data.prefix, next: r.data.next })),
 };

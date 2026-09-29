@@ -5,16 +5,26 @@ import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { ModernSection } from '@/components/crm/FormPrimitives';
-import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } from '@/types/inventory';
 import { MoveUnitDialog } from './components/MoveUnitDialog';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
+import { UnitUsageTab } from './components/UnitUsageTab';
+import { UnitDetailsTab } from './components/UnitDetailsTab';
+
+// Usage first: it is what someone opening a slab wants to know. The static facts
+// sit on Details, the operational trail on History.
+const TABS = [
+  { key: 'usage', label: 'Usage' },
+  { key: 'details', label: 'Details' },
+  { key: 'history', label: 'History' },
+] as const;
+type Tab = (typeof TABS)[number]['key'];
 
 const STATUS_COLORS: Record<string, string> = {
   available: '#22c55e', reserved: '#f59e0b', consumed: '#64748b', scrapped: '#ef4444', in_transit: '#6366f1',
@@ -37,7 +47,7 @@ export default function UnitDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<Tab>('usage');
   const [dialog, setDialog] = useState<'move' | 'scrap' | 'cut' | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
@@ -100,7 +110,7 @@ export default function UnitDetailPage() {
               ['Item', unit.inventoryItemName || ''],
               ['Kind', unit.kind],
               ['Form', unit.form],
-              ['Area', `${unit.area.toFixed(2)} sq`],
+              ['Area', formatUnitArea(unit.area, unit.areaUnitCode)],
               ['Dimensions (mm)', `${unit.lengthMm} × ${unit.widthMm} × ${unit.thicknessMm}`],
               ['Grade', unit.grade || ''],
               ['Finish', unit.finish || ''],
@@ -108,6 +118,16 @@ export default function UnitDetailPage() {
               ['Bin', unit.binPath || ''],
               ['Lot', unit.lot || ''],
               ['Block ID', unit.blockId || ''],
+            ],
+          },
+          {
+            title: 'Consumption',
+            rows: [
+              ['State', consumptionState(unit)],
+              ['Fabrication Job', usageOf(unit).jobNumber || ''],
+              ['Used', formatUnitArea(usageOf(unit).usedArea, unit.areaUnitCode)],
+              ['Recovered As Offcuts', formatUnitArea(usageOf(unit).recoveredArea, unit.areaUnitCode)],
+              ['Offcuts Kept', String(usageOf(unit).offcutCount)],
             ],
           },
         ],
@@ -122,7 +142,7 @@ export default function UnitDetailPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <CrmPageHeader
-        backLabel="Units"
+        backLabel="Inventory"
         onBack={() => navigate('/inventory/unit')}
         icon={Layers}
         title={unit.serial}
@@ -141,16 +161,16 @@ export default function UnitDetailPage() {
       )}
 
       <div className="flex shrink-0 overflow-x-auto border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {(['overview', 'history'] as const).map((t) => (
-          <button key={t} type="button" onClick={() => setActiveTab(t)} className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors capitalize ${activeTab === t ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
-            {t}
+        {TABS.map((t) => (
+          <button key={t.key} type="button" onClick={() => setActiveTab(t.key)} className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${activeTab === t.key ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
+            {t.label}
           </button>
         ))}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         <div className="flex-1 space-y-3 min-w-0">
-          {activeTab === 'overview' && (
+          {activeTab === 'usage' && (
             <>
               {inTransit && (
                 <div className="flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
@@ -158,47 +178,11 @@ export default function UnitDetailPage() {
                   <p className="text-xs text-indigo-700">This unit is on a truck between warehouses. Receive the transfer to bring it back into stock before moving, cutting or scrapping it.</p>
                 </div>
               )}
-              <ModernSection title="Unit Information" index={0}>
-                <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <ReadonlyField label="Item" value={unit.inventoryItemName} />
-                  <ReadonlyField label="Kind" value={unit.kind} />
-                  <ReadonlyField label="Form" value={unit.form} />
-                  <ReadonlyField label="Area" value={`${unit.area.toFixed(2)} sq`} />
-                  <ReadonlyField label="Dimensions (mm)" value={`${unit.lengthMm} × ${unit.widthMm} × ${unit.thicknessMm}`} />
-                  <ReadonlyField label="Grade" value={unit.grade} />
-                  <ReadonlyField label="Finish" value={unit.finish} />
-                  <ReadonlyField label="Warehouse" value={unit.warehouseName} />
-                  <ReadonlyField label="Bin" value={unit.binPath} />
-                  <ReadonlyField label="Lot" value={unit.lot} />
-                  <ReadonlyField label="Block ID" value={unit.blockId} />
-                  <ReadonlyField label="Barcode" value={unit.barcode} />
-                </div>
-              </ModernSection>
-
-              {(unit.parentUnitId || unit.rootUnitId) && (
-                <ModernSection title="Lineage" index={1}>
-                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-                    {unit.parentUnitId && (
-                      <div className="space-y-1">
-                        <label className={fieldLabelCls}>Parent Unit</label>
-                        <button type="button" onClick={() => navigate(`/inventory/unit/${unit.parentUnitId}`)} className={`${readonlyCls} block text-left hover:bg-stone-100 transition-colors`}>
-                          {unit.parentUnitId}
-                        </button>
-                      </div>
-                    )}
-                    {unit.rootUnitId && (
-                      <div className="space-y-1">
-                        <label className={fieldLabelCls}>Root Unit</label>
-                        <button type="button" onClick={() => navigate(`/inventory/unit/${unit.rootUnitId}`)} className={`${readonlyCls} block text-left hover:bg-stone-100 transition-colors`}>
-                          {unit.rootUnitId}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </ModernSection>
-              )}
+              <UnitUsageTab unit={unit} />
             </>
           )}
+
+          {activeTab === 'details' && <UnitDetailsTab unit={unit} />}
 
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
@@ -278,15 +262,6 @@ export default function UnitDetailPage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-function ReadonlyField({ label, value }: { label: string; value?: string }) {
-  return (
-    <div className="space-y-1">
-      <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
     </div>
   );
 }
