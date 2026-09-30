@@ -26,6 +26,10 @@ export interface Tenant {
   createdAt: string;
   hardDeleteAfter?: string | null;
   metadata?: Record<string, unknown>;
+  // The workspace the platform admin signs in to. The backend refuses to
+  // suspend or delete it; both fields are absent on an older backend.
+  isPlatformOwner?: boolean;
+  r2Bucket?: string;
 }
 
 export interface CreateTenantResult {

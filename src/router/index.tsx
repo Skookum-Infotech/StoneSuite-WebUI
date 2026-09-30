@@ -34,6 +34,7 @@ const SsoCallbackPage = lazyWithRetry(() => import("@/pages/auth/SsoCallbackPage
 const DashboardPage = lazyWithRetry(() => import("@/pages/dashboard/DashboardPage"));
 const SearchResultsPage = lazyWithRetry(() => import("@/pages/search/SearchResultsPage"));
 const OnboardingPage = lazyWithRetry(() => import("@/pages/customer/OnboardingPage"));
+const TenantDetailPage = lazyWithRetry(() => import("@/pages/customer/TenantDetailPage"));
 const AddCustomerPage = lazyWithRetry(() => import("@/pages/customer/AddCustomerPage"));
 const OnboardingApplyPage = lazyWithRetry(
   () => import("@/pages/onboarding/OnboardingApplyPage"),
@@ -1481,6 +1482,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard platformAdminOnly>
             <AddCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "customer/onboarding/:tenantId",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <TenantDetailPage />
           </PermissionGuard>,
         ),
       },

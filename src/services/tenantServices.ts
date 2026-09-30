@@ -91,6 +91,14 @@ export const platformService = {
     tenantClient.post(`/platform/tenants/${tenantId}/reject`).then((r) => r.data),
   lifecycle: (tenantId: string, action: 'suspend' | 'restore' | 'delete') =>
     tenantClient.post(`/platform/tenants/${tenantId}/${action}`).then((r) => r.data),
+  // Irreversibly removes the tenant: its storage bucket, database and records.
+  // The backend re-checks confirmSlug against the tenant's real slug and
+  // refuses the platform owner, so the typed-slug UI is a convenience, not the
+  // safeguard.
+  purgeTenant: (tenantId: string, confirmSlug: string) =>
+    tenantClient
+      .post<{ success: boolean }>(`/platform/tenants/${tenantId}/purge`, { confirmSlug })
+      .then((r) => r.data),
 
   // Invite management (keys / expiry / retry).
   listInvites: (tenantId: string) =>
