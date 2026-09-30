@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { crmService, type AuditEntry } from '@/services/crmService';
 import { attachmentService, type Attachment } from '@/services/attachmentService';
 import { Spinner } from '@/components/tenant/ui';
+import { AuditChanges } from '@/components/tenant/AuditChanges';
 import { apiErrorMessage } from '@/api/tenantClient';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -222,10 +223,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
       {expanded && hasChanges && (
         <tr className="bg-stone-50">
           <td colSpan={6} className="px-2 pb-3 pt-1">
-            <div className="grid grid-cols-2 gap-3">
-              {entry.oldValue && <ChangesBlock label="Before" data={entry.oldValue} />}
-              {entry.newValue && <ChangesBlock label="After" data={entry.newValue} />}
-            </div>
+            <AuditChanges oldValue={entry.oldValue} newValue={entry.newValue} />
           </td>
         </tr>
       )}
@@ -246,35 +244,7 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
-function ChangesBlock({ label, data }: { label: string; data: Record<string, unknown> }) {
-  const entries = flattenChanges(data);
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400 mb-1.5">{label}</p>
-      <div className="space-y-0.5">
-        {entries.map(([key, val]) => (
-          <div key={key} className="flex gap-2 text-2xs">
-            <span className="text-stone-400 shrink-0 min-w-[80px] font-medium">{key}</span>
-            <span className="text-stone-600 break-all">{val}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function flattenChanges(obj: Record<string, unknown>, prefix = ''): [string, string][] {
-  const result: [string, string][] = [];
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}.${k}` : k;
-    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
-      result.push(...flattenChanges(v as Record<string, unknown>, key));
-    } else {
-      result.push([key, v === null || v === undefined ? '—' : String(v)]);
-    }
-  }
-  return result;
-}
 
 // ── Files tab ─────────────────────────────────────────────────────────────────
 

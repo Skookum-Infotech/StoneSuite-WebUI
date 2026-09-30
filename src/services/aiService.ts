@@ -127,10 +127,14 @@ export async function askAssistantStream(
     if (res.status === 401) {
       // The access token expired mid-session: refresh once (sharing any
       // refresh already in flight) and retry, exactly like apiClient does.
-      if (!(await attemptRefresh())) {
+      const outcome = await attemptRefresh();
+      if (outcome === 'rejected') {
         forceLogout();
         throw new AskStreamHTTPError(401, SESSION_EXPIRED_MESSAGE);
       }
+      // 'transient': the backend was unreachable, not a dead session — surface
+      // the request as unreachable (caught below) without ending the session.
+      if (outcome === 'transient') throw new TypeError('refresh unreachable');
       res = await send();
     }
   } catch (err) {

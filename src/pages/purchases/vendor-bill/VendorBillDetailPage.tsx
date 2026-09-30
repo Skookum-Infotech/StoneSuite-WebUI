@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileCheck, Upload, Pencil, FileDown, Loader2, Send, Ban, Wallet } from 'lucide-react';
+import { FileCheck, Upload, Pencil, FileDown, Loader2, Ban, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -27,7 +26,6 @@ import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
 import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import { VendorBillStatusControl } from './components/VendorBillStatusControl';
-import { VendorBillHeaderActions } from './components/VendorBillHeaderActions';
 import { ConfirmVendorBillStatusDialog } from './components/ConfirmVendorBillStatusDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -61,8 +59,6 @@ export default function VendorBillDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendSuccess, setSendSuccess] = useState<string>();
   // The terminal move (Paid / Void) awaiting confirmation, if any.
   const [confirmCode, setConfirmCode] = useState<VbConfirmedCode | null>(null);
   // Stable so the dialog's focus effect doesn't re-run (and re-steal focus) on
@@ -143,10 +139,10 @@ export default function VendorBillDetailPage() {
   // should never go negative in practice.
   const creditsApplied = Math.max(0, bill.grandTotal - bill.amountPaid - bill.balanceDue);
   const canDeleteHere = canDelete && VB_DELETABLE_STATUSES.has(bill.statusCode);
-  // Each status move has one home: Mark Overdue / Partially Paid / Paid are
-  // header buttons, Void is a Danger Zone button at the bottom of the sidebar,
-  // and the approval moves (Submit, Approve, Recall) are all the sidebar pill
-  // keeps. When none of those is left — a paid or void bill, or a user without
+  // Settlement moves (Overdue / Partially Paid / Paid) have no manual button —
+  // payment status follows Record Payment. Void is a Danger Zone button at the
+  // bottom of the sidebar, and the approval moves (Submit, Approve, Recall) are
+  // all the sidebar pill keeps. When none of those is left — a paid or void bill, or a user without
   // `vendor_bill:transition` — the pill would render nothing, so the card would
   // be an empty "Actions" header; hide it then (mirrors PurchaseOrderDetailPage).
   const pillCodes = canTransition ? vbDropdownTransitions(bill) : [];
@@ -239,12 +235,6 @@ export default function VendorBillDetailPage() {
               Record Payment
             </button>
           )}
-          <VendorBillHeaderActions
-            order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: bill.nextStatusCodes }}
-            canTransition={canTransition}
-            onTransition={requestTransition}
-            pendingCode={transition.isPending ? transition.variables : undefined}
-          />
           </>
         )}
       />
@@ -381,7 +371,7 @@ export default function VendorBillDetailPage() {
           )}
 
           {activeTab === 'payments' && (
-            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} />
+            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} vendor={bill.vendor} />
           )}
           {activeTab === 'audit' && <VendorBillAuditTab vendorBillId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
@@ -412,17 +402,6 @@ export default function VendorBillDetailPage() {
                   Edit vendor bill
                 </button>
               )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => setSendDialogOpen(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send vendor bill to vendor"
-                >
-                  <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Vendor
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -436,9 +415,6 @@ export default function VendorBillDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -527,20 +503,6 @@ export default function VendorBillDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
-
-      <SendToCustomerDialog
-        recordId={id}
-        open={sendDialogOpen}
-        onOpenChange={setSendDialogOpen}
-        recipientEmail=""
-        recipientKind="vendor"
-        label={`Vendor Bill ${bill.vendorBillNumber}`}
-        onSent={(result) =>
-          setSendSuccess(
-            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
-      />
 
       {confirmCode && (
         <ConfirmVendorBillStatusDialog

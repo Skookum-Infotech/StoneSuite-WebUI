@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
 
 import { apiClient, attemptRefresh } from './client';
+import { clearAuthNotice, peekAuthNotice } from '@/lib/authNotice';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const CSRF_COOKIE = 'csrf_token';
@@ -151,8 +152,73 @@ describe('attemptRefresh (staff session)', () => {
 
     const ok = await attemptRefresh();
 
-    expect(ok).toBe(true);
+    expect(ok).toBe('ok');
     expect(useAuthStore.getState().token).toBe('fresh-jwt');
     expect(useAuthStore.getState().sessionExpiresAt).toBe(expiresAt);
+  });
+
+  // A reload that lands on a cold (scale-to-zero) backend, or a blip mid-refresh,
+  // must never read as "the session is dead" — that is what logged users out.
+  describe('failed refresh', () => {
+    const failWith = (status?: number, data: unknown = { success: false }) => {
+      apiClient.defaults.adapter = async (config) => {
+        if (status === undefined) throw new Error('Network Error'); // no response at all
+        const response = { data, status, statusText: '', headers: {}, config };
+        throw Object.assign(new Error(`HTTP ${status}`), { isAxiosError: true, config, response });
+      };
+    };
+
+    afterEach(() => {
+      vi.useRealTimers();
+      clearAuthNotice();
+    });
+
+    it.each([401, 403])('is `rejected` on HTTP %i, so the caller logs out', async (status) => {
+      failWith(status);
+      expect(await attemptRefresh()).toBe('rejected');
+    });
+
+    it('leaves the login-page notice when the refresh is refused because the workspace is suspended', async () => {
+      failWith(403, { code: 'workspace_suspended', message: 'This workspace is suspended.' });
+      expect(await attemptRefresh()).toBe('rejected');
+      expect(peekAuthNotice()).toBe('This workspace is suspended.');
+    });
+
+    it('leaves no notice when the refresh is refused for an ordinary reason', async () => {
+      failWith(401, { code: 'invalid_token', message: 'Session expired.' });
+      expect(await attemptRefresh()).toBe('rejected');
+      expect(peekAuthNotice()).toBeNull();
+    });
+
+    it.each([
+      ['a network error', undefined],
+      ['a 502 from a cold start', 502],
+      ['a 503', 503],
+      ['a 500', 500],
+    ] as const)('is `transient` after retries on %s, never `rejected`', async (_label, status) => {
+      vi.useFakeTimers();
+      failWith(status);
+      const pending = attemptRefresh();
+      await vi.runAllTimersAsync();
+      expect(await pending).toBe('transient');
+    });
+
+    it('recovers when the backend comes up during the retry window', async () => {
+      vi.useFakeTimers();
+      let calls = 0;
+      apiClient.defaults.adapter = async (config) => {
+        calls += 1;
+        if (calls < 3) {
+          throw Object.assign(new Error('HTTP 502'), {
+            isAxiosError: true, config, response: { status: 502, data: {}, statusText: '', headers: {}, config },
+          });
+        }
+        return { data: { success: true, token: 'jwt', expiresAt: Date.now() + 60_000 }, status: 200, statusText: 'OK', headers: {}, config };
+      };
+      const pending = attemptRefresh();
+      await vi.runAllTimersAsync();
+      expect(await pending).toBe('ok');
+      expect(calls).toBe(3);
+    });
   });
 });

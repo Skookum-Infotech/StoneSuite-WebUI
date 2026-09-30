@@ -151,6 +151,7 @@ export function SOField({ field, value, set, lookups, dependsOnValue, disabled }
           placeholder={field.placeholder}
           min={field.min}
           max={field.max}
+          step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
         {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}

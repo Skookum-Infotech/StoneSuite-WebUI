@@ -1,5 +1,10 @@
 name: Frontend CI
 
+# Least privilege: every job only checks out code and runs npm, so the
+# GITHUB_TOKEN needs read access to contents and nothing else.
+permissions:
+  contents: read
+
 on:
   pull_request:
     paths:

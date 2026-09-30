@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authService } from '@/services/authService';
-import { apiClient } from '@/api/client';
+import { apiClient, isRefreshRejection } from '@/api/client';
 
 // Show the warning modal this many milliseconds before the access token expires.
 const WARNING_MS = 5 * 60 * 1000; // 5 minutes
@@ -143,8 +143,10 @@ export function useSessionTimer(): SessionTimerState {
         // Refresh failed — both tokens expired. Logout.
         performLogout();
       }
-    } catch {
-      performLogout();
+    } catch (err) {
+      // Only an explicit refusal ends the session; on a network error or 5xx
+      // keep the warning open so the user can press Stay signed in again.
+      if (isRefreshRejection(err)) performLogout();
     } finally {
       setIsExtending(false);
     }
