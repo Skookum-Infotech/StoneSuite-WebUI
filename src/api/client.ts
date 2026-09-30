@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from 'axios';
+import axios, { isAxiosError, type AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
 /** Base URL every API call goes to — shared by apiClient and by `fetch`-based
@@ -47,7 +47,26 @@ apiClient.interceptors.request.use((config) => {
 
 // Track whether a token refresh is already in flight so concurrent 401s
 // don't each spawn a separate refresh request.
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<RefreshOutcome> | null = null;
+
+/** How a refresh attempt ended. Only `rejected` means the server said the
+ *  session is over; `transient` means we could not find out (network error,
+ *  timeout, 5xx — e.g. a Fly/Neon cold start) and the session may be fine. */
+export type RefreshOutcome = 'ok' | 'rejected' | 'transient';
+
+// Waits between retries of a transient refresh failure. Sized to outlast a
+// scale-to-zero cold start (~1-2s) so a reload that lands on a stopped backend
+// recovers instead of logging the user out.
+const TRANSIENT_RETRY_DELAYS_MS = [1000, 2000, 4000];
+
+/** True when a failed refresh call is the server definitively refusing the
+ *  session (401/403 or another non-retryable 4xx), as opposed to a failure to
+ *  reach or complete the request. */
+export function isRefreshRejection(err: unknown): boolean {
+  if (!isAxiosError(err) || !err.response) return false;
+  const { status } = err.response;
+  return status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
 
 // Track whether a logout is already in progress so multiple concurrent 401s
 // each hitting the logout path don't each fire window.location redirects.
@@ -55,73 +74,89 @@ let isLoggingOut = false;
 
 // Exported so notifyClient can reuse the exact same refresh (one shared
 // in-flight promise via refreshPromise) instead of racing it with a second
-// /auth/refresh of its own.
-export async function attemptRefresh(): Promise<boolean> {
+// /auth/refresh of its own. Retries transient failures before giving up, so a
+// `transient` result means the backend stayed unreachable for the whole window.
+export async function attemptRefresh(): Promise<RefreshOutcome> {
   // Only one refresh at a time — share the promise across concurrent callers.
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const { kind, activeTenantId } = useAuthStore.getState();
-        // A customer-portal session refreshes at a different endpoint and
-        // must resend the active workspace's tenantId: the access token is
-        // already expired by the time refresh runs, so the server has
-        // nothing else to recover which workspace to resume (see
-        // controllers/portal_auth.go's Refresh). Omitting it would silently
-        // resume the customer's first linked workspace instead of the one
-        // they were actually using.
-        if (kind === 'portal') {
-          if (!activeTenantId) return false;
-          const res = await apiClient.post<{
-            success: boolean; token?: string; expiresAt?: number; tenantId?: string;
-          }>('/portal/auth/refresh', { tenantId: activeTenantId });
-          if (res.data.success && res.data.token && res.data.expiresAt) {
-            useAuthStore.getState().applyWorkspaceSwitch(
-              res.data.tenantId ?? activeTenantId,
-              res.data.token,
-              res.data.expiresAt,
-            );
-            broadcastSessionExtended(res.data.expiresAt);
-          }
-          return res.data.success === true;
+        let outcome = await refreshOnce();
+        for (const delay of TRANSIENT_RETRY_DELAYS_MS) {
+          if (outcome !== 'transient') break;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          outcome = await refreshOnce();
         }
-
-        // Goes through apiClient so the request interceptor still attaches the
-        // Authorization fallback and X-CSRF-Token. Safe from recursion: the
-        // response interceptor below skips 401 handling for /auth/refresh.
-        //
-        // Re-sends the caller's selected role (if any) so a silent refresh
-        // doesn't quietly widen an intentionally-narrowed session back to
-        // the full aggregate of every role held — RefreshSession otherwise
-        // has no way to know a role was ever selected, since the old token
-        // isn't decoded client-side. selectedRoleId is the right source: set
-        // on login, updated on every switch-role, and persisted across a
-        // reload (unlike the in-memory token itself).
-        const { user } = useAuthStore.getState();
-        const res = await apiClient.post<{ success: boolean; token?: string; expiresAt?: number }>(
-          '/auth/refresh',
-          user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : undefined,
-        );
-        if (res.data.success && res.data.expiresAt) {
-          // /auth/refresh re-issues the access token (RefreshSession returns
-          // it in the body). Store it, not just the expiry — cross-origin
-          // clients (notifyClient) have no cookie to fall back on and would
-          // otherwise stay unauthenticated until the next full login.
-          if (res.data.token) {
-            useAuthStore.getState().setSession(res.data.token, res.data.expiresAt);
-          } else {
-            useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
-          }
-          broadcastSessionExtended(res.data.expiresAt);
-        }
-        return res.data.success === true;
-      } catch {
-        return false;
+        return outcome;
       } finally {
         refreshPromise = null;
       }
     })();
   }
   return refreshPromise;
+}
+
+// A single refresh request, classified into a RefreshOutcome.
+async function refreshOnce(): Promise<RefreshOutcome> {
+  try {
+    const { kind, activeTenantId } = useAuthStore.getState();
+    // A customer-portal session refreshes at a different endpoint and
+    // must resend the active workspace's tenantId: the access token is
+    // already expired by the time refresh runs, so the server has
+    // nothing else to recover which workspace to resume (see
+    // controllers/portal_auth.go's Refresh). Omitting it would silently
+    // resume the customer's first linked workspace instead of the one
+    // they were actually using.
+    if (kind === 'portal') {
+      if (!activeTenantId) return 'rejected';
+      const res = await apiClient.post<{
+        success: boolean; token?: string; expiresAt?: number; tenantId?: string;
+      }>('/portal/auth/refresh', { tenantId: activeTenantId });
+      if (res.data.success && res.data.token && res.data.expiresAt) {
+        useAuthStore.getState().applyWorkspaceSwitch(
+          res.data.tenantId ?? activeTenantId,
+          res.data.token,
+          res.data.expiresAt,
+        );
+        broadcastSessionExtended(res.data.expiresAt);
+      }
+      return res.data.success === true ? 'ok' : 'rejected';
+    }
+
+    // Goes through apiClient so the request interceptor still attaches the
+    // Authorization fallback and X-CSRF-Token. Safe from recursion: the
+    // response interceptor below skips 401 handling for /auth/refresh.
+    //
+    // Re-sends the caller's selected role (if any) so a silent refresh
+    // doesn't quietly widen an intentionally-narrowed session back to
+    // the full aggregate of every role held — RefreshSession otherwise
+    // has no way to know a role was ever selected, since the old token
+    // isn't decoded client-side. selectedRoleId is the right source: set
+    // on login, updated on every switch-role, and persisted across a
+    // reload (unlike the in-memory token itself).
+    const { user } = useAuthStore.getState();
+    const res = await apiClient.post<{ success: boolean; token?: string; expiresAt?: number }>(
+      '/auth/refresh',
+      user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : undefined,
+    );
+    if (res.data.success && res.data.expiresAt) {
+      // /auth/refresh re-issues the access token (RefreshSession returns
+      // it in the body). Store it, not just the expiry — cross-origin
+      // clients (notifyClient) have no cookie to fall back on and would
+      // otherwise stay unauthenticated until the next full login.
+      if (res.data.token) {
+        useAuthStore.getState().setSession(res.data.token, res.data.expiresAt);
+      } else {
+        useAuthStore.getState().setSessionExpiry(res.data.expiresAt);
+      }
+      broadcastSessionExtended(res.data.expiresAt);
+    }
+    return res.data.success === true ? 'ok' : 'rejected';
+  } catch (err) {
+    // Only an explicit refusal ends the session. A network error, timeout or
+    // 5xx says nothing about the refresh token, so it must not log anyone out.
+    return isRefreshRejection(err) ? 'rejected' : 'transient';
+  }
 }
 
 // Broadcasts the new expiry to all other tabs. Shared by both the staff and
@@ -191,12 +226,15 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retried = true;
 
-      const refreshed = await attemptRefresh();
-      if (refreshed) {
+      const outcome = await attemptRefresh();
+      if (outcome === 'ok') {
         return apiClient(originalRequest);
       }
 
-      forceLogout();
+      // Log out only when the server refused the refresh. If it could not be
+      // reached (outcome 'transient'), the session may still be valid — fail
+      // this one request and leave the user signed in to retry.
+      if (outcome === 'rejected') forceLogout();
     }
 
     return Promise.reject(error as Error);

@@ -296,7 +296,7 @@ describe('askAssistantStream', () => {
   });
 
   it('refreshes the session once on a 401 and retries the stream', async () => {
-    vi.mocked(attemptRefresh).mockResolvedValue(true);
+    vi.mocked(attemptRefresh).mockResolvedValue('ok');
     vi.mocked(global.fetch)
       .mockResolvedValueOnce(new Response('{}', { status: 401 }))
       .mockResolvedValueOnce(sseResponse('event: done\ndata: {"answer":"ok","citations":[]}\n\n'));
@@ -311,7 +311,7 @@ describe('askAssistantStream', () => {
   });
 
   it('ends the session when the 401 survives a failed refresh', async () => {
-    vi.mocked(attemptRefresh).mockResolvedValue(false);
+    vi.mocked(attemptRefresh).mockResolvedValue('rejected');
     vi.mocked(global.fetch).mockResolvedValue(new Response('{}', { status: 401 }));
 
     await expect(askAssistantStream('q', undefined, collect(), new AbortController().signal)).rejects.toMatchObject({ status: 401 });
