@@ -72,15 +72,7 @@ describe('stash and peek', () => {
     expect(peekRequisitionPrefill()).toBeNull();
   });
 
-  // Skipped: fails on jsdom 30 + Node 22 regardless of this branch's changes
-  // (reproduces identically on origin/master). Node 22 ships its own global
-  // Storage/localStorage; something in this environment resolves
-  // window.localStorage off that instead of jsdom's Storage.prototype, so the
-  // vi.spyOn(Storage.prototype, ...) mocks below never intercept the call and
-  // stashRequisitionPrefill's try/catch has nothing to catch. Needs a real fix
-  // to the test's storage mocking (or vitest environment config), not a
-  // CI-workflow change -- tracked separately.
-  it.skip('copes with storage being unavailable', () => {
+  it('copes with storage being unavailable', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
 
