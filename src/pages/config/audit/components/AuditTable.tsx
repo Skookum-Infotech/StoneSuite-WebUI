@@ -1,7 +1,9 @@
 import { Fragment, useState } from 'react';
 import { ChevronDown, ChevronRight, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { actorLabel, isRawActorId, formatAuditTime, formatDetails, resourceLabel, actionLabel } from '@/lib/auditLog';
+import { actorLabel, isRawActorId, formatAuditTime, resourceLabel, actionLabel } from '@/lib/auditLog';
+import { extractSnapshots } from '@/lib/auditDiff';
+import { AuditChanges } from '@/components/tenant/AuditChanges';
 import type { AuditEntry } from '@/types/audit';
 
 const COLUMN_COUNT = 6;
@@ -76,7 +78,7 @@ function AuditRow({
   onToggle: () => void;
 }) {
   const rawActor = isRawActorId(entry, names);
-  const details = formatDetails(entry.details);
+  const snapshots = extractSnapshots(entry.details);
 
   return (
     <Fragment>
@@ -118,13 +120,7 @@ function AuditRow({
       {expanded && (
         <tr className="bg-stone-50/60">
           <td colSpan={COLUMN_COUNT} className="px-4 py-3">
-            {details ? (
-              <pre className="max-h-64 overflow-auto rounded-lg bg-stone-900 px-3 py-2 text-2xs text-stone-100 whitespace-pre-wrap">
-                {details}
-              </pre>
-            ) : (
-              <p className="text-2xs text-stone-400">No additional details.</p>
-            )}
+            <AuditChanges oldValue={snapshots.old} newValue={snapshots.new} />
           </td>
         </tr>
       )}

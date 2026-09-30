@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Wallet, Upload, Pencil, FileDown, Loader2, Send, Ban } from 'lucide-react';
+import { Wallet, Upload, Pencil, FileDown, Loader2, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -60,8 +59,6 @@ export default function VendorPaymentDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendSuccess, setSendSuccess] = useState<string>();
   const [confirmVoid, setConfirmVoid] = useState(false);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
@@ -329,9 +326,6 @@ export default function VendorPaymentDetailPage() {
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
-            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
@@ -410,20 +404,6 @@ export default function VendorPaymentDetailPage() {
           onCancel={() => setConfirmVoid(false)}
         />
       )}
-
-      <SendToCustomerDialog
-        recordId={id}
-        open={sendDialogOpen}
-        onOpenChange={setSendDialogOpen}
-        recipientEmail=""
-        recipientKind="vendor"
-        label={`Vendor Payment ${payment.vendorPaymentNumber}`}
-        onSent={(result) =>
-          setSendSuccess(
-            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
-      />
     </div>
   );
 }

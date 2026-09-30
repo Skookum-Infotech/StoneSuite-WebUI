@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FileCheck, Upload, Pencil, FileDown, Loader2, Send, Ban, Wallet } from 'lucide-react';
+import { FileCheck, Upload, Pencil, FileDown, Loader2, Ban, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
-import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
@@ -60,8 +59,6 @@ export default function VendorBillDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [sendSuccess, setSendSuccess] = useState<string>();
   // The terminal move (Paid / Void) awaiting confirmation, if any.
   const [confirmCode, setConfirmCode] = useState<VbConfirmedCode | null>(null);
   // Stable so the dialog's focus effect doesn't re-run (and re-steal focus) on
@@ -432,9 +429,6 @@ export default function VendorBillDetailPage() {
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
             )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
-            )}
           </div>
 
           {showActions && (
@@ -522,20 +516,6 @@ export default function VendorBillDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
-
-      <SendToCustomerDialog
-        recordId={id}
-        open={sendDialogOpen}
-        onOpenChange={setSendDialogOpen}
-        recipientEmail=""
-        recipientKind="vendor"
-        label={`Vendor Bill ${bill.vendorBillNumber}`}
-        onSent={(result) =>
-          setSendSuccess(
-            result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
-      />
 
       {confirmCode && (
         <ConfirmVendorBillStatusDialog

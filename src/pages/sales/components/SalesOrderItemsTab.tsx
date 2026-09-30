@@ -252,9 +252,9 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
       <td className="px-2 py-1.5"><input type="number" min="0" value={draft.quantity} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Quantity" /></td>
       <td className="px-2 py-1.5"><input type="text" value={draft.units} onChange={(e) => onChange('units', e.target.value)} placeholder="ea" className={cn(inlineCls, 'w-14')} aria-label="Units" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(e) => onChange('unitPrice', e.target.value)} placeholder="0.00" className={cn(inlineCls, 'w-20 text-right')} aria-label="Unit Price" /></td>
-      <td className="px-2 py-1.5"><input type="number" min="0" max="100" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
+      <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? `$${draft.amount}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-500 cursor-default text-right')} aria-label="Amount" /></td>
-      <td className="px-2 py-1.5"><input type="number" min="0" max="100" value={draft.tax} onChange={(e) => onChange('tax', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Tax %" /></td>
+      <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.tax} onChange={(e) => onChange('tax', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Tax %" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.total ? `$${draft.total}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-800 font-semibold cursor-default text-right')} aria-label="Total" /></td>
     </>
   );

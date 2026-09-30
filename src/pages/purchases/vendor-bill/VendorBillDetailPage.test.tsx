@@ -19,7 +19,6 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('./components/BillPaymentsTab', () => ({ BillPaymentsTab: () => null }));
 vi.mock('./components/VendorBillAuditTab', () => ({ VendorBillAuditTab: () => null }));
 vi.mock('@/components/crm/CrmSubTabsPanel', () => ({ FilesContent: () => null }));
-vi.mock('@/components/tenant/SendToCustomerDialog', () => ({ SendToCustomerDialog: () => null }));
 
 import VendorBillDetailPage from './VendorBillDetailPage';
 import { vendorBillService } from '@/services/vendorBillService';

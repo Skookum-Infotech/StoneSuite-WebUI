@@ -10,7 +10,7 @@ import type { CreateTenantResult } from '@/types/tenant';
 
 const inviteSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
-  recipientName: z.string().optional(),
+  recipientName: z.string().trim().min(1, 'Recipient name is required'),
   contactEmail: z.string().min(1, 'Email is required').email('Enter a valid email'),
 });
 type InviteFields = z.infer<typeof inviteSchema>;
@@ -35,7 +35,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
     mutationFn: (vars: InviteFields) =>
       platformService.inviteCustomer({
         companyName: vars.companyName,
-        recipientName: vars.recipientName ?? '',
+        recipientName: vars.recipientName,
         contactEmail: vars.contactEmail,
       }),
     onSuccess: (res) => {
@@ -96,8 +96,8 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
             <Field label="Company Name" required error={errors.companyName?.message}>
               <input {...register('companyName')} autoFocus placeholder="Acme Corp" className={inputClass} aria-invalid={Boolean(errors.companyName)} />
             </Field>
-            <Field label="Recipient Name">
-              <input {...register('recipientName')} placeholder="Jane Doe" className={inputClass} />
+            <Field label="Recipient Name" required error={errors.recipientName?.message}>
+              <input {...register('recipientName')} placeholder="Jane Doe" className={inputClass} aria-invalid={Boolean(errors.recipientName)} />
             </Field>
             <Field label="Recipient Email" required error={errors.contactEmail?.message}>
               <input {...register('contactEmail')} type="email" placeholder="jane@acme.com" className={inputClass} aria-invalid={Boolean(errors.contactEmail)} />

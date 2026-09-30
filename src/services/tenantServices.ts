@@ -80,7 +80,7 @@ export const platformService = {
   // Lightweight invite → customer self-fills the form (approval path).
   inviteCustomer: (payload: {
     companyName: string;
-    recipientName?: string;
+    recipientName: string;
     contactEmail: string;
   }) => tenantClient.post<CreateTenantResult>('/platform/invites', payload).then((r) => r.data),
   approveTenant: (tenantId: string) =>
