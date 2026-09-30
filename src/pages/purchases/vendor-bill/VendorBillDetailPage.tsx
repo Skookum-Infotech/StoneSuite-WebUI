@@ -27,7 +27,6 @@ import { BillPaymentsTab } from './components/BillPaymentsTab';
 import { DeleteVendorBillDialog } from './components/DeleteVendorBillDialog';
 import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import { VendorBillStatusControl } from './components/VendorBillStatusControl';
-import { VendorBillHeaderActions } from './components/VendorBillHeaderActions';
 import { ConfirmVendorBillStatusDialog } from './components/ConfirmVendorBillStatusDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 
@@ -143,10 +142,10 @@ export default function VendorBillDetailPage() {
   // should never go negative in practice.
   const creditsApplied = Math.max(0, bill.grandTotal - bill.amountPaid - bill.balanceDue);
   const canDeleteHere = canDelete && VB_DELETABLE_STATUSES.has(bill.statusCode);
-  // Each status move has one home: Mark Overdue / Partially Paid / Paid are
-  // header buttons, Void is a Danger Zone button at the bottom of the sidebar,
-  // and the approval moves (Submit, Approve, Recall) are all the sidebar pill
-  // keeps. When none of those is left — a paid or void bill, or a user without
+  // Settlement moves (Overdue / Partially Paid / Paid) have no manual button —
+  // payment status follows Record Payment. Void is a Danger Zone button at the
+  // bottom of the sidebar, and the approval moves (Submit, Approve, Recall) are
+  // all the sidebar pill keeps. When none of those is left — a paid or void bill, or a user without
   // `vendor_bill:transition` — the pill would render nothing, so the card would
   // be an empty "Actions" header; hide it then (mirrors PurchaseOrderDetailPage).
   const pillCodes = canTransition ? vbDropdownTransitions(bill) : [];
@@ -239,12 +238,6 @@ export default function VendorBillDetailPage() {
               Record Payment
             </button>
           )}
-          <VendorBillHeaderActions
-            order={{ statusCode: bill.statusCode, approvalStatus: bill.approvalStatus, gated: bill.gated, nextStatusCodes: bill.nextStatusCodes }}
-            canTransition={canTransition}
-            onTransition={requestTransition}
-            pendingCode={transition.isPending ? transition.variables : undefined}
-          />
           </>
         )}
       />
