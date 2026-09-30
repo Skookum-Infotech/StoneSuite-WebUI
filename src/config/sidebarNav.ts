@@ -9,6 +9,7 @@ import {
   UserPlus,
   UsersRound,
   Hash,
+  Mail,
   ScrollText,
   TrendingUp,
   FileSpreadsheet,
@@ -556,6 +557,15 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/config/record-numbering",
               icon: Hash,
               iconColor: "text-amber-500 dark:text-amber-400",
+              permission: { resource: "workflow_config", action: "configure" },
+            },
+            {
+              type: "link",
+              id: "crm-notifications",
+              label: "CRM Email Recipients",
+              path: "/config/crm-notifications",
+              icon: Mail,
+              iconColor: "text-sky-500 dark:text-sky-400",
               permission: { resource: "workflow_config", action: "configure" },
             },
             {
