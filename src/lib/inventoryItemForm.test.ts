@@ -3,12 +3,12 @@ import { itemDefaults, toItemPayload, fromItem, validateItem } from './inventory
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory'
 import type { InventoryItem, Warehouse } from '@/types/inventory'
 
-// Warehouse lookups only expose the uuid today — `warehouseId` is the
-// not-yet-shipped numeric id `toNumericWarehouseId` is written to pick up
-// once the backend attaches it (see lib/inventoryWarehouse.ts).
-const warehouseWithNumericId: Warehouse & { warehouseId: number } = {
-  id: 'wh-uuid-8', name: 'Main', code: 'MAIN', addrLine1: '', addrLine2: '', addrCity: '',
-  addrZip: '', isDefault: true, isActive: true, isSystem: false, warehouseId: 8,
+// A location as the lookups return it: the uuid (`id`) a picker binds to plus
+// the numeric `warehouseId` the write contracts take (see lib/inventoryWarehouse.ts).
+const warehouseWithNumericId: Warehouse = {
+  id: 'wh-uuid-8', warehouseId: 8, name: 'Main', phone: '',
+  address: { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' },
+  isDefault: true,
 }
 
 describe('toItemPayload (whole-object write — PATCH has PUT semantics)', () => {

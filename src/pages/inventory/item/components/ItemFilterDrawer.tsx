@@ -97,8 +97,8 @@ export function ItemFilterDrawer({ onClose, value, onApply }: {
               {(crmLookups?.countries ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </FilterField>
-          <FilterField label="Default Warehouse">
-            <select value={draft.defaultWarehouseId} onChange={(e) => set('defaultWarehouseId', e.target.value)} className={fieldCls} aria-label="Default Warehouse">
+          <FilterField label="Default Location">
+            <select value={draft.defaultWarehouseId} onChange={(e) => set('defaultWarehouseId', e.target.value)} className={fieldCls} aria-label="Default Location">
               <option value="">— Any —</option>
               {(lookups?.warehouses ?? []).map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>

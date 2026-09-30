@@ -66,7 +66,7 @@ export default function TransferListPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-stone-900">Transfers</h1>
-              <p className="text-sm text-stone-500">Ship and receive stock between warehouses.</p>
+              <p className="text-sm text-stone-500">Ship and receive stock between locations.</p>
             </div>
           </div>
           {canCreate && (
@@ -79,7 +79,7 @@ export default function TransferListPage() {
         {inTransit.length > 0 && (
           <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
             <p className="flex items-center gap-2 text-xs font-semibold text-indigo-700 mb-2">
-              <Truck className="size-3.5" /> {inTransit.length} transfer(s) currently in transit — stock shows in neither warehouse until received.
+              <Truck className="size-3.5" /> {inTransit.length} transfer(s) currently in transit — stock shows in neither location until received.
             </p>
             <div className="flex flex-wrap gap-2">
               {inTransit.map((t) => (

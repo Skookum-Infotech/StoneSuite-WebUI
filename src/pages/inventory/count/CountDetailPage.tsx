@@ -99,8 +99,8 @@ export default function CountDetailPage() {
 
           <ModernSection title="Header" index={1}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              <ReadonlyField label="Warehouse" value={c.warehouseName} />
-              <ReadonlyField label="Bin Scope" value={c.binPath || 'Whole warehouse'} />
+              <ReadonlyField label="Location" value={c.warehouseName} />
+              <ReadonlyField label="Bin Scope" value={c.binPath || 'Whole location'} />
               <ReadonlyField label="Date" value={c.date} />
               <ReadonlyField label="Frozen" value={c.frozenAt ? new Date(c.frozenAt).toLocaleString() : undefined} />
               {c.notes && <ReadonlyField label="Notes" value={c.notes} />}

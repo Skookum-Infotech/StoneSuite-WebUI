@@ -1,10 +1,14 @@
 import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Send, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { portalAccessService } from "@/services/portalAccessService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
+
+// Long enough to read and act on: a failed invite is something staff must fix.
+const EMAIL_FAILURE_TOAST_MS = 12000;
 
 // Confirmation dialog for granting this customer a portal login. The login is
 // always the customer record's own contact email (customer_contact_email,
@@ -29,8 +33,18 @@ export function GrantPortalAccessModal({
         email: contactEmail,
         fullName: contactName,
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["portal-users", customerUuid] });
+      // Access is granted either way, so the dialog closes — but never with a
+      // silent "success" when the invitation email did not go out.
+      if (result.emailSent === false) {
+        toast.warning("Portal access was granted, but the invitation email was not sent.", {
+          description: `${result.emailError ?? "The email could not be delivered."} Use Resend on the login to try again.`,
+          duration: EMAIL_FAILURE_TOAST_MS,
+        });
+      } else if (result.emailSent) {
+        toast.success("Portal access granted. Invitation email sent.");
+      }
       onClose();
     },
   });

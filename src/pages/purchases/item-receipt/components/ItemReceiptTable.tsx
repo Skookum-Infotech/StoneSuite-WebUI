@@ -33,7 +33,7 @@ const PAGE_SIZE = 25;
 const SORT_LABELS: Record<SortField, string> = {
   recordNumber: 'Receipt #',
   receiptDate: 'Receipt Date',
-  warehouseId: 'Warehouse',
+  warehouseId: 'Location',
 };
 
 const SORT_KEY: Record<SortField, string> = {
@@ -158,7 +158,7 @@ export function ItemReceiptTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => itemReceiptService.searchItemReceipts({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Receipt #', 'PO #', 'Vendor', 'Status', 'Receipt Date', 'Warehouse', 'Owner'],
+        ['Receipt #', 'PO #', 'Vendor', 'Status', 'Receipt Date', 'Location', 'Owner'],
         (ir) => [
           ir.itemReceiptNumber ?? '',
           ir.purchaseOrder?.number ?? '',
@@ -268,7 +268,7 @@ export function ItemReceiptTable() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Receipt Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Warehouse</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
                 {canEdit && (
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>

@@ -84,7 +84,7 @@ export default function AdjustmentListPage() {
               <thead className="border-b border-stone-200 bg-table-header">
                 <tr>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Number</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Warehouse</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Date</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Net Delta</th>

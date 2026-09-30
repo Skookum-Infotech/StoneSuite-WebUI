@@ -39,3 +39,16 @@ export interface GrantPortalAccessPayload {
   email: string;
   fullName: string;
 }
+
+// What granting access or resending an invite returns: the login, plus what
+// really happened to the invitation email. The backend sends mail through
+// stonesuite-notify asynchronously and waits for the first delivery attempt
+// before answering, so emailSent === false is a real failure, not a guess.
+// Both fields are absent when no invite was sent (the customer already has a
+// password), so only an explicit `false` means "the email did not go".
+export interface PortalInviteResult {
+  portalUser: PortalUser;
+  emailSent?: boolean;
+  // Client-safe explanation, present only when emailSent is false.
+  emailError?: string;
+}

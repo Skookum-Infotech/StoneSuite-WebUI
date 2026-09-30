@@ -1,33 +1,40 @@
 import type { Warehouse } from '@/types/inventory';
 
-// KNOWN GAP: every document write contract (units, bundles, adjustments,
-// transfers, counts) takes `warehouseId` as the numeric lkp_warehouse SERIAL,
-// which no endpoint currently returns — GET /inventory/lookups and
-// /inventory/warehouses only expose the uuid. There is no client-side way to
-// bridge that. This is the single place the gap is handled: it returns 0 (an
-// invalid id) when only the uuid is known, which the server rejects with its
-// own clear validation message ("An adjustment needs a warehouse.") rather
-// than silently misrouting the write. Once the backend exposes a numeric id
-// alongside the uuid, wiring it through here is the only change needed.
+// A "warehouse" is one of the tenant's Company Info locations (see
+// types/inventory.ts). The pickers bind to the location's uuid (`id`); every
+// document write contract (units, bundles, adjustments, transfers, counts,
+// receipts) takes the numeric `warehouseId`. These helpers convert between the
+// two in one place.
 //
 // Kept out of components/inventory/WarehouseSelect.tsx so that file only
 // exports a component (eslint-plugin-react-refresh's `vite` preset errors on
 // a component file exporting a plain function too).
+
+/** The numeric id for a picked location's uuid. 0 (an invalid id) when it can't
+ *  be matched — the lookups haven't loaded yet — which the server rejects with
+ *  its own clear validation message rather than silently misrouting the write. */
 export function toNumericWarehouseId(warehouses: Warehouse[], uuid: string): number {
-  const w = warehouses.find((x) => x.id === uuid) as (Warehouse & { warehouseId?: number }) | undefined;
-  return w?.warehouseId ?? 0;
+  return warehouses.find((x) => x.id === uuid)?.warehouseId ?? 0;
 }
 
-/** The inverse of `toNumericWarehouseId`: a warehouse's uuid from the numeric id
+/** The inverse of `toNumericWarehouseId`: a location's uuid from the numeric id
  *  a receipt (or other saved document) carries. Empty when it can't be matched —
- *  the lookups haven't loaded yet, or the warehouse was since removed. */
+ *  the lookups haven't loaded yet, or the location was since removed. */
 export function toWarehouseUuid(warehouses: Warehouse[], numericId: number | null | undefined): string {
   if (numericId === null || numericId === undefined) return '';
   const w = warehouses.find((x) => x.warehouseId === numericId);
   return w?.id ?? '';
 }
 
-/** The tenant's default active warehouse (its uuid), or empty when none is set. */
+/** The tenant's default location (its uuid) — what a new record's location
+ *  picker starts on — or empty when none is set. */
 export function defaultWarehouseUuid(warehouses: Warehouse[]): string {
-  return warehouses.find((w) => w.isDefault && w.isActive)?.id ?? '';
+  return warehouses.find((w) => w.isDefault)?.id ?? '';
+}
+
+/** How a unit-history action code reads on screen. The codes are stored as-is
+ *  and shown as-is, except the one that names a warehouse: `warehouse_move` is a
+ *  move between locations now, so it reads `location_move`. */
+export function historyActionLabel(action: string): string {
+  return action.replace(/^warehouse_/, 'location_');
 }

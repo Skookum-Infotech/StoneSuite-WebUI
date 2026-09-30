@@ -1,4 +1,5 @@
 import type { FilterClause, SortKey } from '@/types/tenant';
+import type { CompanyLocation } from '@/types/companyProfile';
 
 // Shared types for the Inventory module — hand-mirrored from the Go structs
 // in the StoneSuite-Backend `inventory`, `inventoryadjustment`,
@@ -38,33 +39,15 @@ export interface LookupInput {
   hex?: string;
 }
 
-export interface Warehouse {
-  id: string; // warehouse_uuid
-  /** The numeric lkp_warehouse id — what document write contracts (units,
-   *  receipts, transfers, ...) take as a foreign key. Optional only so a record
-   *  that predates it still type-checks; see lib/inventoryWarehouse.ts. */
-  warehouseId?: number;
-  name: string;
-  code: string;
-  addrLine1: string;
-  addrLine2: string;
-  addrCity: string;
-  addrStateId?: number | null;
-  addrZip: string;
-  isDefault: boolean;
-  isActive: boolean;
-  isSystem: boolean;
-}
-
-export interface WarehouseInput {
-  name: string;
-  code: string;
-  addrLine1: string;
-  addrLine2: string;
-  addrCity: string;
-  addrStateId?: number | null;
-  addrZip: string;
-  isActive: boolean;
+// A place stock is held: one of the tenant's Company Info locations (Configuration
+// → Company Info → Locations), which is the only place they are created, edited,
+// made the default or deleted. The Inventory module calls them Locations; the
+// type keeps its old name so the document write contracts are untouched. Same
+// shape as CompanyLocation (types/companyProfile.ts) plus the numeric id.
+export interface Warehouse extends CompanyLocation {
+  /** The numeric company_location id — what document write contracts (units,
+   *  receipts, transfers, ...) take as a foreign key; `id` is the uuid. */
+  warehouseId: number;
 }
 
 // All vocabularies in one payload — what an item, unit or bin form loads on

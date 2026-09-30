@@ -198,10 +198,10 @@ export default function EditTransferPage() {
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             <ModernSection title="Header" index={0}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <ModernFieldShell label="From Warehouse" required>
+                <ModernFieldShell label="From Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={fromWarehouseId} onChange={setFromWarehouseId} required />
                 </ModernFieldShell>
-                <ModernFieldShell label="To Warehouse" required>
+                <ModernFieldShell label="To Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={toWarehouseId} onChange={setToWarehouseId} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="To Bin">

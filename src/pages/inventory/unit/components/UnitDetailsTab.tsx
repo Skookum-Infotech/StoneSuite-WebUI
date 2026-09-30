@@ -30,7 +30,7 @@ export function UnitDetailsTab({ unit }: { unit: InventoryUnit }) {
           <ReadonlyField label="Dimensions (mm)" value={`${unit.lengthMm} × ${unit.widthMm} × ${unit.thicknessMm}`} />
           <ReadonlyField label="Grade" value={unit.grade} />
           <ReadonlyField label="Finish" value={unit.finish} />
-          <ReadonlyField label="Warehouse" value={unit.warehouseName} />
+          <ReadonlyField label="Location" value={unit.warehouseName} />
           <ReadonlyField label="Bin" value={unit.binPath} />
           <ReadonlyField label="Lot" value={unit.lot} />
           <ReadonlyField label="Block ID" value={unit.blockId} />

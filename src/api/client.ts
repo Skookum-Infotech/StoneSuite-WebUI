@@ -1,5 +1,6 @@
 import axios, { isAxiosError, type AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
+import { setAuthNotice, workspaceUnavailableMessage } from '@/lib/authNotice';
 
 /** Base URL every API call goes to — shared by apiClient and by `fetch`-based
  *  callers that can't go through axios (aiService's streaming ask). */
@@ -155,7 +156,14 @@ async function refreshOnce(): Promise<RefreshOutcome> {
   } catch (err) {
     // Only an explicit refusal ends the session. A network error, timeout or
     // 5xx says nothing about the refresh token, so it must not log anyone out.
-    return isRefreshRejection(err) ? 'rejected' : 'transient';
+    if (!isRefreshRejection(err)) return 'transient';
+
+    // A refresh refused because the workspace itself is suspended or deleted:
+    // remember why, so the login page the caller is about to be sent to can
+    // say so instead of looking like a silent expiry.
+    const notice = workspaceUnavailableMessage(isAxiosError(err) ? err.response?.data : undefined);
+    if (notice) setAuthNotice(notice);
+    return 'rejected';
   }
 }
 
@@ -174,7 +182,7 @@ function broadcastSessionExtended(expiresAt: number): void {
 
 // Exported so a `fetch`-based caller (aiService's stream) whose 401 survives a
 // refresh ends the session exactly the way apiClient does.
-export function forceLogout(): void {
+export function forceLogout(notice?: string): void {
   // Guard: only one logout in flight — multiple concurrent 401s must not each
   // fire a redirect. isLoggingOut resets on hard navigation (page reload).
   if (isLoggingOut) return;
@@ -186,6 +194,9 @@ export function forceLogout(): void {
   // portal-kind token hit the staff endpoint instead.
   const wasPortal = useAuthStore.getState().kind === 'portal';
   useAuthStore.getState().logout();
+
+  // Shown on the login page the redirect below lands on.
+  if (notice) setAuthNotice(notice);
 
   // Clear server-side cookies (fire-and-forget). Uses apiClient so the request
   // still carries X-CSRF-Token; isLoggingOut above stops the response
@@ -204,12 +215,31 @@ export function forceLogout(): void {
   window.location.href = '/auth/login';
 }
 
+// Sign-in and refresh report a refused workspace themselves (the form shows the
+// message inline; attemptRefresh stores it), so the 403 handler below skips them.
+// '/auth/refresh' also matches '/portal/auth/refresh'.
+const WORKSPACE_NOTICE_SKIP_URLS = ['/auth/tenant-login', '/auth/refresh'];
+
 // Response interceptor: on 401, silently attempt one token refresh and retry
 // the original request. If the refresh also fails, perform a full logout.
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retried?: boolean };
+
+    // A 403 whose body says the workspace itself is unusable (suspended, deleted,
+    // ...) means every further request will fail the same way. End the session
+    // and say why on the login page, rather than leaving the user on a dashboard
+    // that silently shows nothing.
+    const workspaceNotice =
+      error.response?.status === 403 ? workspaceUnavailableMessage(error.response?.data) : null;
+    if (
+      workspaceNotice &&
+      !isLoggingOut &&
+      !WORKSPACE_NOTICE_SKIP_URLS.some((skip) => originalRequest.url?.includes(skip))
+    ) {
+      forceLogout(workspaceNotice);
+    }
 
     // Only intercept 401s on first attempt. Skip both refresh endpoints
     // themselves to prevent an infinite loop when the refresh token is also

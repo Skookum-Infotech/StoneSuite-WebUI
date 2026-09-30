@@ -43,9 +43,11 @@ export function currencyOptions(currencies: LookupItem[] | undefined, currentVal
 // Filtered by the country field's own current text, resolved against
 // countries[].id -- when that text matches no known country (blank, or a
 // legacy/unrecognized value), every state is offered rather than none, so
-// the field never strands the user with an empty dropdown.
+// the field never strands the user with an empty dropdown. Takes just the
+// countries + states (not the full CrmLookups) so the public onboarding form,
+// whose /onboarding/lookups carries only those, shares this same filtering.
 export function stateOptionsForCountry(
-  lookups: CrmLookups | undefined,
+  lookups: Pick<CrmLookups, 'countries' | 'states'> | undefined,
   countryValue: string,
   currentValue: string,
 ): SelectOption[] {

@@ -1,122 +1,64 @@
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
-import { Warehouse as WarehouseIcon, Plus, Pencil, Star, Trash2 } from 'lucide-react';
-import { inventoryLookupService } from '@/services/inventoryLookupService';
+import { Warehouse as LocationIcon, Building2 } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
-import type { Warehouse } from '@/types/inventory';
-import { WarehouseFormDialog } from './components/WarehouseFormDialog';
+import { LocationCard } from '@/pages/config/company-profile/components/LocationCard';
 
+// Inventory → Locations: the tenant's Company Info locations, read-only, laid
+// out exactly like Configuration → Company Info → Locations. A location is the
+// place stock is held, but it is created, edited, made the default and deleted
+// only in Company Info, so there is nothing to add or change here.
 export default function WarehouseListPage() {
-  const queryClient = useQueryClient();
-  const { hasPermission, isLoading: permsLoading } = useUserPermissions();
-  const canUpdate = permsLoading || hasPermission('warehouse', 'update');
-  const canCreate = permsLoading || hasPermission('warehouse', 'create');
-  const canDelete = permsLoading || hasPermission('warehouse', 'delete');
-
   const { lookups, isLoading, error } = useInventoryLookups();
-  const warehouses = lookups?.warehouses ?? [];
-  const [formTarget, setFormTarget] = useState<{ warehouse?: Warehouse } | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const { mutate: setDefault } = useMutation({
-    mutationFn: (uuid: string) => inventoryLookupService.setDefaultWarehouse(uuid),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory-lookups'] }),
-  });
-
-  const { mutate: remove } = useMutation({
-    mutationFn: (uuid: string) => inventoryLookupService.deleteWarehouse(uuid),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory-lookups'] }),
-    onError: (err) => setDeleteError(apiErrorMessage(err, 'Failed to delete warehouse.')),
-  });
+  const locations = lookups?.warehouses ?? [];
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <div className="p-4 sm:p-6 3xl:p-10 4xl:p-14 flex-1 flex flex-col min-h-0">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent ring-1 ring-accent-foreground/10 shrink-0">
-              <WarehouseIcon className="size-5 text-accent-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Warehouses</h1>
-              <p className="text-sm text-stone-500">Physical sites holding stock.</p>
-            </div>
+    <div className="flex flex-1 flex-col min-h-0 bg-stone-50/60">
+      <div className="bg-background border-b border-stone-200 px-4 py-3 sm:px-5 sm:py-4">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
+            <LocationIcon className="size-6" strokeWidth={2.5} />
           </div>
-          {canCreate && (
-            <button onClick={() => setFormTarget({})} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95">
-              <Plus className="size-3.5" /> New Warehouse
-            </button>
-          )}
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">Locations</h1>
+            <p className="text-sm text-stone-500 mt-0.5">The places your stock is held.</p>
+          </div>
         </div>
+      </div>
 
-        {deleteError && <p className="mt-3 text-xs text-destructive">{deleteError}</p>}
-
-        <div className="mt-5 flex-1 overflow-y-auto modal-scrollbar">
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto w-full max-w-[1500px] 3xl:max-w-[1800px] 4xl:max-w-full px-6 py-6">
           {isLoading ? (
-            <Spinner label="Loading warehouses…" />
+            <div className="flex items-center justify-center h-40">
+              <Spinner label="Loading locations…" />
+            </div>
           ) : error ? (
-            <ErrorNote>{apiErrorMessage(error, 'Failed to load warehouses.')}</ErrorNote>
+            <div className="max-w-lg">
+              <ErrorNote>{apiErrorMessage(error, 'Failed to load locations.')}</ErrorNote>
+            </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-stone-200 bg-table-header">
-                  <tr>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Code</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">City</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100">
-                  {warehouses.length === 0 ? (
-                    <tr><td colSpan={5} className="py-12 text-center text-stone-400">No warehouses yet.</td></tr>
-                  ) : warehouses.map((w) => (
-                    <tr key={w.id} className="hover:bg-accent/10 transition-colors">
-                      <td className="px-4 py-3.5 font-medium text-stone-800">
-                        <span className="flex items-center gap-1.5">
-                          {w.name}
-                          {w.isDefault && <Star className="size-3 fill-amber-400 text-amber-400" aria-label="Default warehouse" />}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 font-mono text-stone-500">{w.code}</td>
-                      <td className="px-4 py-3.5 text-stone-500">{w.addrCity || '—'}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={w.isActive ? 'text-emerald-600 font-semibold' : 'text-stone-400'}>{w.isActive ? 'Active' : 'Inactive'}</span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {canUpdate && !w.isDefault && (
-                            <button type="button" onClick={() => setDefault(w.id)} aria-label={`Set ${w.name} as default`} title="Set as default" className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground transition-colors">
-                              <Star className="size-3.5" />
-                            </button>
-                          )}
-                          {canUpdate && (
-                            <button type="button" onClick={() => setFormTarget({ warehouse: w })} aria-label={`Edit ${w.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground transition-colors">
-                              <Pencil className="size-3.5" />
-                            </button>
-                          )}
-                          {canDelete && !w.isSystem && (
-                            <button type="button" onClick={() => remove(w.id)} aria-label={`Delete ${w.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive transition-colors">
-                              <Trash2 className="size-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="w-full space-y-4 sm:space-y-5">
+              {locations.map((location) => (
+                <LocationCard key={location.id} location={location} />
+              ))}
+
+              {locations.length === 0 && (
+                <div className="w-full rounded-2xl border border-dashed border-stone-200 bg-white overflow-hidden">
+                  <div className="px-5 py-4 sm:px-6 sm:py-5">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="size-4 text-stone-400" />
+                      <h3 className="text-sm font-bold text-stone-900">No locations yet</h3>
+                    </div>
+                    <p className="mt-2 text-xs text-stone-500">
+                      Locations are set up in Company Info. Once one is added it appears here and in every location dropdown.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
-
-      {formTarget && <WarehouseFormDialog warehouse={formTarget.warehouse} onClose={() => setFormTarget(null)} onSaved={() => {}} />}
     </div>
   );
 }

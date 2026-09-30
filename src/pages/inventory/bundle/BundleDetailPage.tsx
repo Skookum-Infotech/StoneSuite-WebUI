@@ -112,7 +112,7 @@ export default function BundleDetailPage() {
           <ModernSection title="Bundle Information" index={0}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               <ReadonlyField label="Item" value={bundle.inventoryItemName} />
-              <ReadonlyField label="Warehouse" value={bundle.warehouseName} />
+              <ReadonlyField label="Location" value={bundle.warehouseName} />
               <ReadonlyField label="Bin" value={bundle.binPath} />
               <ReadonlyField label="Block ID" value={bundle.blockId} />
               <ReadonlyField label="Lot" value={bundle.lot} />
