@@ -11,6 +11,7 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } from '@/types/inventory';
+import { historyActionLabel } from '@/lib/inventoryWarehouse';
 import { MoveUnitDialog } from './components/MoveUnitDialog';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
@@ -198,7 +199,7 @@ export default function UnitDetailPage() {
                     <li key={i} className="flex items-start gap-3 border-b border-stone-100 pb-3 last:border-0 last:pb-0">
                       <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-stone-800">{h.action}</p>
+                        <p className="text-xs font-medium text-stone-800">{historyActionLabel(h.action)}</p>
                         {describeHistoryEntry(h) && <p className="text-2xs text-stone-500">{describeHistoryEntry(h)}</p>}
                         <p className="text-2xs text-stone-400">{fmtDateTime(h.at)} · {h.byName}</p>
                       </div>

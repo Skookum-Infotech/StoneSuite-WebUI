@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toNumericWarehouseId, toWarehouseUuid, defaultWarehouseUuid } from './inventoryWarehouse'
+import { toNumericWarehouseId, toWarehouseUuid, defaultWarehouseUuid, historyActionLabel } from './inventoryWarehouse'
 import type { Warehouse } from '@/types/inventory'
 
 const EMPTY_ADDRESS = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' }
@@ -54,5 +54,16 @@ describe('defaultWarehouseUuid', () => {
   it('is empty when none is the default, or there are no locations', () => {
     expect(defaultWarehouseUuid([location({ isDefault: false })])).toBe('')
     expect(defaultWarehouseUuid([])).toBe('')
+  })
+})
+
+describe('historyActionLabel', () => {
+  it.each([
+    ['warehouse_move', 'location_move'],
+    ['bin_move', 'bin_move'],
+    ['status_change', 'status_change'],
+    ['', ''],
+  ])('shows %s as %s', (code, label) => {
+    expect(historyActionLabel(code)).toBe(label)
   })
 })

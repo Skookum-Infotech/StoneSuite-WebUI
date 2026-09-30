@@ -31,3 +31,10 @@ export function toWarehouseUuid(warehouses: Warehouse[], numericId: number | nul
 export function defaultWarehouseUuid(warehouses: Warehouse[]): string {
   return warehouses.find((w) => w.isDefault)?.id ?? '';
 }
+
+/** How a unit-history action code reads on screen. The codes are stored as-is
+ *  and shown as-is, except the one that names a warehouse: `warehouse_move` is a
+ *  move between locations now, so it reads `location_move`. */
+export function historyActionLabel(action: string): string {
+  return action.replace(/^warehouse_/, 'location_');
+}
