@@ -1,5 +1,10 @@
 name: Frontend CI
 
+# Least privilege: every job only checks out code and runs npm, so the
+# GITHUB_TOKEN needs read access to contents and nothing else.
+permissions:
+  contents: read
+
 on:
   pull_request:
     paths:
@@ -53,3 +58,54 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_NOTIFY_BASE_URL: ${{ vars.VITE_NOTIFY_BASE_URL }}
         run: npm run build
+
+  audit:
+    name: Dependency vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      # Production dependencies only, high/critical only. Dev-only tooling
+      # (jsdom's vendored undici, wrangler's transitive deps) carries several
+      # unfixable-without-a-major-bump high findings that never reach the
+      # shipped Vite bundle -- gating on those would make this job permanently
+      # red for risk nobody ships, exactly the "guard that fires on known-good
+      # content gets ignored" trap CLAUDE.md warns about. This mirrors
+      # govulncheck's "only fail on what's actually callable" posture in
+      # ci-backend.yml. Production-path findings ARE gated: the fast-uri SSRF
+      # chain (ajv <- @hookform/resolvers) was fixed via a package.json
+      # "overrides" pin rather than excluded.
+      - name: npm audit (production deps, high + critical)
+        run: npm audit --omit=dev --audit-level=high
+
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history, not just the tip commit -- a secret committed and
+          # then removed a commit later is still a leak.
+          fetch-depth: 0
+      # The gitleaks CLI itself is free and unrestricted; only the gitleaks/
+      # gitleaks-action wrapper requires a paid org license (this repo is
+      # under the Skookum-Infotech org, so that wrapper would need
+      # GITLEAKS_LICENSE). Installing the CLI directly avoids that -- same
+      # approach as ci-backend.yml's gitleaks job.
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          sha256sum -c --ignore-missing "gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+      - name: Run gitleaks
+        run: gitleaks detect --source . --redact -v

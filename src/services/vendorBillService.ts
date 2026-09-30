@@ -112,8 +112,13 @@ export const vendorBillService = {
         success: boolean; recordId: string;
         payments: VendorBillPaymentLedger['payments'];
         refunds: VendorBillPaymentLedger['refunds'];
+        billPayments: VendorBillPaymentLedger['billPayments'];
       }>(`${BASE}/${uuid}/payments`)
-      .then((r) => ({ payments: r.data.payments ?? [], refunds: r.data.refunds ?? [] })),
+      .then((r) => ({
+        payments: r.data.payments ?? [],
+        refunds: r.data.refunds ?? [],
+        billPayments: r.data.billPayments ?? [],
+      })),
 
   getAudit: (uuid: string): Promise<AuditEntry[]> =>
     tenantClient

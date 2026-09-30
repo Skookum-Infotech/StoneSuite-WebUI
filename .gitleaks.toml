@@ -1,0 +1,20 @@
+title = "StoneSuite WebUI gitleaks config"
+
+[extend]
+useDefault = true
+
+# The generic-api-key rule's entropy heuristic false-positives on the
+# truncated example JWT ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...") used as
+# illustrative "Expected Response" sample output in these docs -- there is no
+# real credential in any of these paths (DEPLOY_BACKEND.md and
+# API_TESTING_GUIDE.md were already deleted from HEAD before this check
+# existed; OAUTH_SETUP.md is still current). Path-based allowlist entries
+# apply to every commit gitleaks scans (not just the current tree), so this
+# also clears the historical findings in these files' past revisions.
+[allowlist]
+description = "Placeholder JWT in deleted API docs (illustrative example output, not a credential)"
+paths = [
+  '''DEPLOY_BACKEND\.md''',
+  '''API_TESTING_GUIDE\.md''',
+  '''OAUTH_SETUP\.md''',
+]

@@ -381,7 +381,7 @@ export default function VendorBillDetailPage() {
           )}
 
           {activeTab === 'payments' && (
-            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} />
+            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} vendor={bill.vendor} />
           )}
           {activeTab === 'audit' && <VendorBillAuditTab vendorBillId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}

@@ -71,7 +71,10 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
               <VendorBillPicker
                 vendor={payment.vendor}
                 value={bill}
-                onChange={setBill}
+                onChange={(b) => {
+                  setBill(b);
+                  if (b) setAmount(String(Math.min(payment.unappliedAmount, b.balanceDue)));
+                }}
                 excludeIds={payment.applications.map((a) => a.vendorBillId)}
               />
             </div>

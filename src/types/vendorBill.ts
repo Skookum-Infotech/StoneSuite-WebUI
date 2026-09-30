@@ -116,6 +116,18 @@ export interface VendorBillRefundEntry {
 export interface VendorBillPaymentLedger {
   payments: VendorBillPaymentEntry[];
   refunds: VendorBillRefundEntry[];
+  /** Settlements recorded on the bill itself (e.g. "Marked as paid"). */
+  billPayments: VendorBillOwnPayment[];
+}
+
+/** A settlement owned by the bill rather than a vendor payment. */
+export interface VendorBillOwnPayment {
+  id: string;
+  amount: number;
+  method?: string;
+  referenceNumber: string;
+  memo: string;
+  paidAt: string;
 }
 
 /** `lkp_record_status` code for the VBIL record type — the state machine
