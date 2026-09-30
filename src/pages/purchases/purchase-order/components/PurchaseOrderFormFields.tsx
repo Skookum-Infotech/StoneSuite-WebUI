@@ -125,6 +125,7 @@ export function PurchaseOrderField({ field, value, set, lookups, dependsOnValue 
           placeholder={field.placeholder}
           min={field.min}
           max={field.max}
+          step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
         {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
