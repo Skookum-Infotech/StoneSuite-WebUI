@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   VB_ALLOWED_TRANSITIONS, VB_HEADER_TRANSITION_CODES, VB_VOID_CODE, VB_CONFIRMED_TRANSITION_CODES,
   isVbTransitionBlocked, vbTransitionLabel, vbStatusLabel,
-  vbNextCodes, vbCanVoid, vbDropdownTransitions, isVbConfirmedTransition,
+  vbNextCodes, vbHeaderTransitions, vbCanVoid, vbDropdownTransitions, isVbConfirmedTransition,
   calcLineItem, calcHeaderTotals, toCreatePayload, fromVendorBill, validateVendorBillCustomFields,
 } from './vendorBillForm'
 import type { FieldDefinition } from '@/types/tenant'
@@ -212,6 +212,18 @@ describe('where each status move lives on the detail page', () => {
   const statuses = Object.keys(VB_ALLOWED_TRANSITIONS)
 
   it.each([
+    ['APPV', ['ODUE', 'PART', 'PAID']],
+    ['PART', ['ODUE', 'PAID']],
+    ['ODUE', ['PART', 'PAID']],
+    ['DRFT', []],
+    ['PAPV', []],
+    ['PAID', []],
+    ['VOID', []],
+  ])('%s offers the header buttons %j, in Overdue → Partially Paid → Paid order', (statusCode, want) => {
+    expect(vbHeaderTransitions({ statusCode })).toEqual(want)
+  })
+
+  it.each([
     ['DRFT', true], ['PAPV', true], ['APPV', true], ['PART', true], ['ODUE', true],
     ['PAID', false], ['VOID', false],
   ])('%s can void: %s', (statusCode, want) => {
@@ -242,17 +254,18 @@ describe('where each status move lives on the detail page', () => {
 
   it('treats an unknown status as having no moves rather than throwing', () => {
     expect(vbNextCodes({ statusCode: 'NOPE' })).toEqual([])
+    expect(vbHeaderTransitions({ statusCode: 'NOPE' })).toEqual([])
     expect(vbCanVoid({ statusCode: 'NOPE' })).toBe(false)
   })
 
-  it.each(statuses)('%s: every legal move is Void, a pill move, or a settlement move with no button', (statusCode) => {
+  it.each(statuses)('%s: every legal move has exactly one home (header, Void, or pill)', (statusCode) => {
     const order = { statusCode }
     const homes = [
+      ...vbHeaderTransitions(order),
       ...(vbCanVoid(order) ? [VB_VOID_CODE] : []),
       ...vbDropdownTransitions(order),
     ]
-    const settlement = vbNextCodes(order).filter((c) => VB_HEADER_TRANSITION_CODES.includes(c))
-    expect([...homes, ...settlement].sort()).toEqual([...vbNextCodes(order)].sort())
+    expect([...homes].sort()).toEqual([...vbNextCodes(order)].sort())
   })
 
   it('confirms exactly the terminal statuses — those no legal move leaves', () => {

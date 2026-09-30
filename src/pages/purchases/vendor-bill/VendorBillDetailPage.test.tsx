@@ -68,6 +68,7 @@ const buttonsNamed = (name: string) => screen.queryAllByRole('button', { name })
 const firstButton = async (name: string) => (await screen.findAllByRole('button', { name }))[0];
 // The sidebar's mobile sheet is a permanent role="dialog" ("Vendor Bill Details"),
 // so the confirmation is told apart by its title.
+const PAID_DIALOG = 'Mark VB-1001 as Paid?';
 const VOID_DIALOG = 'Void VB-1001?';
 const anyConfirmDialog = () => screen.queryByRole('dialog', { name: /^(Mark .+ as Paid|Void .+)\?$/ });
 // The vendor's name also appears in the header and sidebar; waiting on it just
@@ -77,17 +78,57 @@ const loaded = () => screen.findAllByText('Marble Supply Co');
 beforeEach(() => vi.clearAllMocks());
 
 describe('VendorBillDetailPage — status buttons', () => {
-  it('shows no settlement buttons, only Void in the Danger Zone, not the pill', async () => {
+  it('shows the settlement moves as header buttons and Void in the Danger Zone, not the pill', async () => {
     vi.mocked(vendorBillService.getVendorBill).mockResolvedValue(bill());
     renderPage();
 
-    await loaded();
-    for (const name of ['Mark Overdue', 'Mark Partially Paid', 'Mark Paid']) {
-      expect(buttonsNamed(name)).toHaveLength(0);
-    }
+    expect(await firstButton('Mark Overdue')).toBeInTheDocument();
+    expect(await firstButton('Mark Partially Paid')).toBeInTheDocument();
+    expect(await firstButton('Mark Paid')).toBeInTheDocument();
     expect(buttonsNamed(VOID_NAME).length).toBeGreaterThan(0);
     // Nothing left for the pill from Approved, so its card is not an empty "Actions" header.
     expect(screen.queryAllByText('Actions')).toHaveLength(0);
+  });
+
+  it('fires Overdue straight away, with no confirmation', async () => {
+    vi.mocked(vendorBillService.getVendorBill).mockResolvedValue(bill());
+    vi.mocked(vendorBillService.transition).mockResolvedValue(bill({ status: 'Overdue', statusCode: 'ODUE' }));
+    renderPage();
+
+    await userEvent.setup().click(await firstButton('Mark Overdue'));
+
+    await waitFor(() => expect(vendorBillService.transition).toHaveBeenCalledWith('vb-1', 'ODUE'));
+    expect(anyConfirmDialog()).not.toBeInTheDocument();
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Moved to Overdue.'));
+  });
+
+  it('asks before marking Paid, and only moves the bill once confirmed', async () => {
+    vi.mocked(vendorBillService.getVendorBill).mockResolvedValue(bill());
+    vi.mocked(vendorBillService.transition).mockResolvedValue(bill({ status: 'Paid', statusCode: 'PAID', balanceDue: 0 }));
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await firstButton('Mark Paid'));
+
+    const dialog = await screen.findByRole('dialog', { name: PAID_DIALOG });
+    expect(vendorBillService.transition).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Mark Paid' }));
+
+    await waitFor(() => expect(vendorBillService.transition).toHaveBeenCalledWith('vb-1', 'PAID'));
+    await waitFor(() => expect(anyConfirmDialog()).not.toBeInTheDocument());
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Moved to Paid.'));
+  });
+
+  it('does nothing when the Paid confirmation is cancelled', async () => {
+    vi.mocked(vendorBillService.getVendorBill).mockResolvedValue(bill());
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await firstButton('Mark Paid'));
+    await user.click(within(await screen.findByRole('dialog', { name: PAID_DIALOG })).getByRole('button', { name: 'Cancel' }));
+
+    expect(anyConfirmDialog()).not.toBeInTheDocument();
+    expect(vendorBillService.transition).not.toHaveBeenCalled();
   });
 
   it('voids from the Danger Zone, after confirming', async () => {
@@ -108,14 +149,14 @@ describe('VendorBillDetailPage — status buttons', () => {
 
   it('closes the dialog and shows the server error under the header when the move fails', async () => {
     vi.mocked(vendorBillService.getVendorBill).mockResolvedValue(bill());
-    vi.mocked(vendorBillService.transition).mockRejectedValue(new Error('Cannot void this bill.'));
+    vi.mocked(vendorBillService.transition).mockRejectedValue(new Error('Cannot mark this bill paid.'));
     renderPage();
     const user = userEvent.setup();
 
-    await user.click(await firstButton(VOID_NAME));
-    await user.click(within(await screen.findByRole('dialog', { name: VOID_DIALOG })).getByRole('button', { name: 'Void vendor bill' }));
+    await user.click(await firstButton('Mark Paid'));
+    await user.click(within(await screen.findByRole('dialog', { name: PAID_DIALOG })).getByRole('button', { name: 'Mark Paid' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot void this bill.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot mark this bill paid.');
     expect(anyConfirmDialog()).not.toBeInTheDocument();
   });
 
