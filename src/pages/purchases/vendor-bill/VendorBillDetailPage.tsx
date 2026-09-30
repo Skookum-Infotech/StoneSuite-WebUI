@@ -403,18 +403,7 @@ export default function VendorBillDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit vendor bill
                 </button>
-              )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => setSendDialogOpen(true)}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send vendor bill to vendor"
-                >
-                  <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Vendor
-                </button>
-              )}
+              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
