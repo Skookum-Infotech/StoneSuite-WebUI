@@ -14,7 +14,7 @@ import { FabricationSourceOrderPicker, type FabricationSourceOrder } from './Fab
 import { FabricationPiecesEditor } from './FabricationPiecesEditor';
 import { FabricationPiecesEditableTab } from './FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './FabricationPiecesTable';
-import { FabricationSlabsTab } from './FabricationSlabsTab';
+import { FabricationMaterialsTab } from './FabricationMaterialsTab';
 import { FabricationStepsTab } from './FabricationStepsTab';
 import type { CrmLookups } from '@/services/lookupService';
 import type { FabricationJob } from '@/types/fabrication';
@@ -179,10 +179,10 @@ export function FabricationJobFormBody({
               : <FabricationPiecesEditor pieces={pieces} onUpdate={(v) => setPieces?.(v)} sourceOrderItems={sourceOrderItems} />
           )}
 
-          {activeTab === 'slabs' && (
+          {activeTab === 'materials' && (
             isEdit && job
-              ? <FabricationSlabsTab jobId={jobId!} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
-              : <p className="py-8 text-center text-xs text-stone-400">Slab allocation will be available after saving the job.</p>
+              ? <FabricationMaterialsTab jobId={jobId!} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
+              : <p className="py-8 text-center text-xs text-stone-400">Material allocation will be available after saving the job.</p>
           )}
 
           {activeTab === 'checklist' && (

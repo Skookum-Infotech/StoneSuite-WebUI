@@ -9,6 +9,7 @@ import type {
   FabricationJobPieceInput,
   FabricationJobStep,
   FabricationSlab,
+  FabricationMaterial,
   CreateSlabInput,
   SlabDispositionInput,
 } from '@/types/fabrication';
@@ -173,6 +174,13 @@ export const fabricationService = {
     tenantClient
       .get<{ success: boolean; slabs: FabricationSlab[] }>(`${BASE}/${uuid}/slabs`)
       .then((r) => r.data.slabs ?? []),
+
+  // What each slab material on the job needs against what is allocated. Needs
+  // installation:read AND inventory_item:read, like the slab list.
+  getJobMaterials: (uuid: string): Promise<FabricationMaterial[]> =>
+    tenantClient
+      .get<{ success: boolean; materials: FabricationMaterial[] }>(`${BASE}/${uuid}/materials`)
+      .then((r) => r.data.materials ?? []),
 
   // Reserves an existing slab (by uuid) against the job. Legal from MALC
   // onward, including after CUTG (replacing a broken slab on a live job).

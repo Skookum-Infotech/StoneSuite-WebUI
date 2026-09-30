@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
@@ -55,9 +56,11 @@ export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent }: {
 
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
+  const unitCodeFor = useItemUnitCode();
   const applyCatalogItem = (prev: Omit<VendorBillLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
     ...prev,
     itemName: item.name,
+    units: unitCodeFor(item),
     itemDescription: item.description,
     itemSku: item.sku,
     unitPrice: String(item.unitPrice),

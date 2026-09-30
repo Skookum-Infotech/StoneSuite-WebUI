@@ -323,7 +323,6 @@ const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPa
 const EditItemPage = lazyWithRetry(() => import("@/pages/inventory/item/EditItemPage"));
 const ItemDetailPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemDetailPage"));
 const UnitListPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitListPage"));
-const AddUnitPage = lazyWithRetry(() => import("@/pages/inventory/unit/AddUnitPage"));
 const UnitDetailPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitDetailPage"));
 const BinListPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinListPage"));
 const WarehouseListPage = lazyWithRetry(() => import("@/pages/inventory/warehouse/WarehouseListPage"));
@@ -1167,14 +1166,6 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="inventory_unit" action="read">
             <UnitListPage />
-          </PermissionGuard>,
-        ),
-      },
-      {
-        path: "inventory/unit/new",
-        element: lazy_(
-          <PermissionGuard resource="inventory_unit" action="create">
-            <AddUnitPage />
           </PermissionGuard>,
         ),
       },

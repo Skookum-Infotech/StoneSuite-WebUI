@@ -154,6 +154,30 @@ export interface FabricationJobPage {
   scope: string;
 }
 
+/** One slab-tracked material on a job: what the sales order calls for, what the
+ *  blueprint (the pieces) needs, and the slab area allocated to cover it. */
+export interface FabricationMaterial {
+  /** inventory_item uuid */
+  itemId: string;
+  sku: string;
+  name: string;
+  unitCode: string;
+  /** What the sales order asks for. */
+  ordered: number;
+  /** What cutting must be covered for: the pieces drawn for this material, or the
+   *  ordered quantity while there are none (see `basis`). */
+  needed: number;
+  basis: 'blueprint' | 'order';
+  pieceCount: number;
+  /** Slab area held for this job (reserved or already cut). */
+  allocated: number;
+  consumed: number;
+  /** Slab area of this material on the shelf and free to allocate. */
+  inStock: number;
+  /** needed - allocated, never negative. */
+  shortfall: number;
+}
+
 /** A serialized physical slab (inventory_slab). */
 export interface FabricationSlab {
   id: string;
