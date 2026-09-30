@@ -13,10 +13,12 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { ItemReceiptFormBody } from './components/ItemReceiptFormBody';
+import { toNumericWarehouseId, toWarehouseUuid } from '@/lib/inventoryWarehouse';
 import {
-  fromItemReceipt, toUpdatePayload, validateReceiptLines, validateReceiptLineErrors, mergeReceiptLines,
-  IR_EDITABLE_STATUSES, irStatusLabel, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
+  fromItemReceipt, toUpdatePayload, validateReceiptLines, validateReceiptLineErrors, validateReceiptHeader,
+  mergeReceiptLines, IR_EDITABLE_STATUSES, irStatusLabel, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
 const EMPTY_CUSTOM: Record<string, unknown> = {};
@@ -62,43 +64,56 @@ export default function EditItemReceiptPage() {
     }
   }, [id, ir?.itemReceiptNumber, setLabel, clearLabel]);
 
+  const { lookups: inventoryLookups } = useInventoryLookups();
+  const warehouses = inventoryLookups?.warehouses;
+
   const mapped = useMemo(() => (ir ? fromItemReceipt(ir) : null), [ir]);
+  // The receipt carries its warehouse as a numeric id; the picker binds to the uuid.
+  const baseData = useMemo<Record<string, unknown>>(
+    () => (mapped && ir ? { ...mapped.data, warehouse_id: toWarehouseUuid(warehouses ?? [], ir.warehouseId) } : {}),
+    [mapped, ir, warehouses],
+  );
   const mergedLines = useMemo(
     () => (po && ir ? mergeReceiptLines(po.items, ir.items ?? []) : []),
     [po, ir],
   );
-  const data = localData ?? mapped?.data ?? {};
+  const data = localData ?? baseData;
   const lines = localLines ?? mergedLines;
   const customFieldValues = localCustomFields ?? mapped?.customFieldValues ?? EMPTY_CUSTOM;
   const isLocked = ir ? !IR_EDITABLE_STATUSES.has(ir.statusCode) : false;
 
   const set = useCallback(
-    (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? mapped?.data ?? {}), [key]: value })),
-    [mapped],
+    (key: string, value: unknown) => setLocalData((prev) => ({ ...(prev ?? baseData), [key]: value })),
+    [baseData],
   );
   const setCustomField = useCallback(
     (key: string, value: unknown) => setLocalCustomFields((prev) => ({ ...(prev ?? mapped?.customFieldValues ?? {}), [key]: value })),
     [mapped],
   );
 
-  const validationErrors = validateReceiptLines(lines);
+  const validationErrors = [...validateReceiptHeader(data), ...validateReceiptLines(lines)];
   const lineErrors = useMemo(() => validateReceiptLineErrors(lines), [lines]);
 
-  // Both the receipt and its source PO feed the baseline — lines are merged from
-  // the two, so waiting on `po` avoids flagging the merge itself as an edit.
+  // The receipt, its source PO and the warehouse lookups all feed the baseline
+  // — lines are merged from the first two and the picker is filled from the
+  // third, so waiting on them avoids flagging that assembly as an edit.
   const guard = useUnsavedChangesGuard(
     { data, lines, customFieldValues },
-    Boolean(mapped) && Boolean(po) && !isLocked,
+    Boolean(mapped) && Boolean(po) && Boolean(inventoryLookups) && !isLocked,
   );
 
   const save = useMutation({
     mutationFn: () => {
       if (validationErrors.length > 0) throw new Error(validationErrors[0]);
-      return itemReceiptService.updateItemReceipt(id, toUpdatePayload(data, lines, customFieldValues));
+      return itemReceiptService.updateItemReceipt(id, toUpdatePayload(
+        data, lines, customFieldValues,
+        toNumericWarehouseId(warehouses ?? [], String(data.warehouse_id)),
+      ));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['item-receipt', id] });
       queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['slab-sequence', po?.id] });
       guard.markClean();
       navigate(`/purchases/item_receipt/${id}`);
     },

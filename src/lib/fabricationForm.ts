@@ -8,7 +8,7 @@ import type { FabricationJob, FabricationJobFields, FabricationJobPiece } from '
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
   { key: 'pieces', label: 'Pieces' },
-  { key: 'slabs', label: 'Slabs' },
+  { key: 'materials', label: 'Materials' },
   { key: 'checklist', label: 'Checklist' },
   { key: 'files', label: 'Files' },
 ] as const;

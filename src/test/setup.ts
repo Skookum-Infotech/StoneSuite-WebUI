@@ -4,51 +4,75 @@ import '@testing-library/jest-dom/vitest'
 import { afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
-// Node 22+ exposes Web Storage (`localStorage`/`sessionStorage`) as own properties
-// of globalThis. Without `--localstorage-file` they evaluate to `undefined`, and
-// because they are own properties they shadow the working implementations jsdom
-// installs on its window. Any module that reads storage during evaluation — the
-// zustand store in src/store/useAuthStore.ts does — then throws at import time and
-// takes the whole test file down before it collects.
+// Node 22+ exposes Web Storage (`localStorage`/`sessionStorage`, and the
+// `Storage` constructor itself) as own properties of globalThis. Without
+// `--localstorage-file` the instances evaluate to `undefined`, and because
+// they are own properties they shadow the working implementations jsdom
+// installs on its window. Any module that reads storage during evaluation —
+// the zustand store in src/store/useAuthStore.ts does — then throws at import
+// time and takes the whole test file down before it collects.
 //
 // Restored here rather than guarded at the call sites: the tests assert real
 // browser persistence (AuthLayout.test.tsx calls localStorage.clear() and expects
 // setAuth/logout to round-trip), so a no-op stub would make them pass for the wrong
 // reason. Vitest isolates each test file, so no state leaks between files.
-function createStorage(): Storage {
-  let entries = new Map<string, string>()
-  return {
-    get length() {
-      return entries.size
-    },
-    key(index: number): string | null {
-      return Array.from(entries.keys())[index] ?? null
-    },
-    getItem(key: string): string | null {
-      return entries.get(String(key)) ?? null
-    },
-    setItem(key: string, value: string): void {
-      entries.set(String(key), String(value))
-    },
-    removeItem(key: string): void {
-      entries.delete(String(key))
-    },
-    clear(): void {
-      entries = new Map()
-    },
+//
+// MemoryStorage's methods live on the PROTOTYPE, not as own properties on each
+// instance (an earlier version returned a `{ getItem() {...}, ... }` object
+// literal, whose own `setItem`/`getItem` always shadow the prototype no
+// matter what it is). requisitionPrefill.test.ts's "copes with storage being
+// unavailable" case does `vi.spyOn(Storage.prototype, 'setItem')` — for that
+// to actually intercept a call to `window.localStorage.setItem(...)`, this
+// instance must inherit setItem rather than own it, and the global `Storage`
+// binding the test reads must be the same class this instance was built
+// from. Both are handled below: methods are on MemoryStorage.prototype, and
+// globalThis.Storage is replaced with MemoryStorage whenever the native one
+// isn't usable, so `Storage` in a test file resolves to this class.
+class MemoryStorage implements Storage {
+  #entries = new Map<string, string>()
+
+  get length(): number {
+    return this.#entries.size
+  }
+  key(index: number): string | null {
+    return Array.from(this.#entries.keys())[index] ?? null
+  }
+  getItem(key: string): string | null {
+    return this.#entries.get(String(key)) ?? null
+  }
+  setItem(key: string, value: string): void {
+    this.#entries.set(String(key), String(value))
+  }
+  removeItem(key: string): void {
+    this.#entries.delete(String(key))
+  }
+  clear(): void {
+    this.#entries.clear()
   }
 }
 
-// No-op where the environment already supplies a real Storage (Node 20 and the
-// GitHub Actions runners), so this only engages on Node builds that shadow it.
+// No-op where the environment already supplies a real Storage (older Node,
+// or a future Node/jsdom pairing that stops colliding), so this only engages
+// on runtimes that shadow it.
 function isUsableStorage(candidate: Storage | undefined): boolean {
   return typeof candidate?.getItem === 'function'
+}
+
+const needsFallback =
+  !isUsableStorage(globalThis.localStorage) || !isUsableStorage(globalThis.sessionStorage)
+
+if (needsFallback) {
+  Object.defineProperty(globalThis, 'Storage', {
+    value: MemoryStorage,
+    configurable: true,
+    writable: true,
+  })
 }
 
 for (const name of ['localStorage', 'sessionStorage'] as const) {
   if (!isUsableStorage(globalThis[name])) {
     Object.defineProperty(globalThis, name, {
-      value: createStorage(),
+      value: new MemoryStorage(),
       configurable: true,
       writable: true,
     })

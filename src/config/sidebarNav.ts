@@ -382,7 +382,7 @@ export const sidebarNav: SidebarNavConfig = {
             {
               type: "link",
               id: "units-slabs",
-              label: "Units / Slabs",
+              label: "Inventory",
               path: "/inventory/unit",
               icon: Layers,
               iconColor: "text-fuchsia-500 dark:text-fuchsia-400",

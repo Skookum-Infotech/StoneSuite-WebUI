@@ -7,13 +7,16 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { workflowService } from '@/services/tenantServices';
+import { itemReceiptService } from '@/services/itemReceiptService';
 import { activeCustomFields } from '@/lib/customFields';
+import { previewSerials } from '@/lib/itemReceiptSlabs';
 import { ItemReceiptSectionGrid } from './ItemReceiptFormFields';
 import { ReceiptLinesTable } from './ReceiptLinesTable';
 import { ItemReceiptAuditTab } from './ItemReceiptAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
 import {
-  RECEIPT_HEADER_FIELDS, PAGE_TABS, type PageTab, type ItemReceiptDraftLine, type ReceiptLineError,
+  RECEIPT_HEADER_FIELDS, PAGE_TABS, isSerializedLine,
+  type PageTab, type ItemReceiptDraftLine, type ReceiptLineError,
 } from '@/lib/itemReceiptForm';
 
 // Shared tab bar + tab content for both the Receive and Edit Item Receipt
@@ -52,6 +55,29 @@ export function ItemReceiptFormBody({
     enabled: Boolean(irWorkflow?.id),
   });
   const customFieldDefs = activeCustomFields(irDef);
+
+  // Slab serials are previewed before saving so the receiver can see (and label
+  // the physical slabs with) what each will be called. The server assigns the
+  // real ones at post, so this is only asked for when a slab line exists.
+  const { data: slabSequence } = useQuery({
+    queryKey: ['slab-sequence', sourcePurchaseOrder.id],
+    queryFn: () => itemReceiptService.nextSlabSerial(sourcePurchaseOrder.id),
+    enabled: lines.some(isSerializedLine),
+    staleTime: 0,
+  });
+  const serials = previewSerials(lines, slabSequence);
+  const warehouseId = typeof data.warehouse_id === 'string' ? data.warehouse_id : '';
+
+  // A bin belongs to exactly one warehouse, so choosing a different warehouse
+  // clears every slab's bin rather than leaving it pointing across warehouses.
+  function handleSet(key: string, value: unknown) {
+    if (key === 'warehouse_id' && value !== data.warehouse_id) {
+      setLines(lines.map((l) => (
+        l.slabs.length > 0 ? { ...l, slabs: l.slabs.map((s) => ({ ...s, binId: '' })) } : l
+      )));
+    }
+    set(key, value);
+  }
 
   return (
     <>
@@ -101,8 +127,8 @@ export function ItemReceiptFormBody({
 
               <ModernSection title="Receipt Information" index={1}>
                 <ItemReceiptSectionGrid
-                  fields={RECEIPT_HEADER_FIELDS.filter((f) => Boolean(itemReceiptId) || (f.key !== 'ir_doc_num' && f.key !== 'warehouse_name'))}
-                  data={data} set={set} lookups={lookups}
+                  fields={RECEIPT_HEADER_FIELDS.filter((f) => Boolean(itemReceiptId) || f.key !== 'ir_doc_num')}
+                  data={data} set={handleSet} lookups={lookups}
                 />
               </ModernSection>
 
@@ -122,7 +148,10 @@ export function ItemReceiptFormBody({
               )}
 
               <ModernSection title="Lines" index={3}>
-                <ReceiptLinesTable lines={lines} onChange={setLines} lineErrors={lineErrors} />
+                <ReceiptLinesTable
+                  lines={lines} onChange={setLines} lineErrors={lineErrors}
+                  serials={serials} warehouseId={warehouseId}
+                />
               </ModernSection>
             </>
           )}

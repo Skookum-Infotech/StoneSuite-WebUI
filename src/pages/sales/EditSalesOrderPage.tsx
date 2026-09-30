@@ -13,6 +13,8 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
+import { StockShortageGate } from './components/StockShortageGate';
+import { stockShortagesFrom } from '@/lib/stockShortage';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import type { CustomerRef } from './components/CustomerPicker';
 import { shipSameAsBillFields } from '@/lib/shipToDefaults';
@@ -190,7 +192,9 @@ export default function EditSalesOrderPage() {
           )}
         />
 
-        {saveError && (
+        {/* A refusal for lack of stock has its own dialog; everything else is a banner. */}
+        <StockShortageGate error={saveError} />
+        {saveError && !stockShortagesFrom(saveError) && (
           <div
             ref={errorRef}
             tabIndex={-1}

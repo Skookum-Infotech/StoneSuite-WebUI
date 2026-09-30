@@ -6,6 +6,13 @@ import { salesOrderService } from '@/services/salesOrderService';
 // Live stock/allocation data only exists once the order (and its lines) are
 // persisted server-side (design §10 GET .../inventory) — orderId is undefined
 // while creating a brand-new order.
+//
+// Saving an order reserves the stock it needs, so "Held for this order" is real
+// and "Free" is what is still left to promise after every order's hold —
+// including this one's. An order that holds all there is therefore shows Free 0,
+// not a shortage; Free is only red if the holds add up to more than is on hand.
+const HEADERS = ['SKU', 'On Hand', 'Ordered', 'Held for this order', 'Held by all orders', 'Free'];
+
 export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
   const { data: items = [], isLoading, error } = useQuery({
     queryKey: ['sales-order-inventory', orderId],
@@ -35,7 +42,7 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
       <table className="w-full text-left text-xs">
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr>
-            {['SKU', 'On Hand', 'Available', 'SO Qty', 'Allocated'].map((h) => (
+            {HEADERS.map((h) => (
               <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
             ))}
           </tr>
@@ -44,14 +51,26 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
           {items.map((row) => (
             <tr key={row.itemId} className="hover:bg-stone-50/50">
               <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{row.sku}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.onHand.toLocaleString()}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right">
-                <span className={cn('font-medium', row.available > 0 ? 'text-emerald-700' : 'text-red-600')}>
-                  {row.available.toLocaleString()}
-                </span>
-              </td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
-              <td className="px-3 py-2.5 tabular-nums text-right text-amber-700 font-medium">{row.allocated.toLocaleString()}</td>
+              {row.tracked === false ? (
+                <>
+                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
+                  <td colSpan={4} className="px-3 py-2.5 text-stone-400">Stock is not tracked for this item.</td>
+                </>
+              ) : (
+                <>
+                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.onHand.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 tabular-nums text-right text-amber-700 font-medium">
+                    {(row.reservedForOrder ?? 0).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.allocated.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 tabular-nums text-right">
+                    <span className={cn('font-medium', row.available < 0 ? 'text-red-600' : 'text-emerald-700')}>
+                      {row.available.toLocaleString()}
+                    </span>
+                  </td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>

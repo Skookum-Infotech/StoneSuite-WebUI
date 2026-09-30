@@ -3,9 +3,10 @@ import {
   PO_ALLOWED_TRANSITIONS, isPoTransitionBlocked, poTransitionLabel, poStatusLabel,
   poNextCodes, poHeaderTransitions, poDropdownTransitions,
   billableQuantity, poBillableLines, PO_BILLABLE_STATUSES,
-  calcLineItem, calcHeaderTotals, toCreatePayload, validatePurchaseOrderCustomFields,
+  calcLineItem, calcHeaderTotals, toCreatePayload, validatePurchaseOrderCustomFields, fromPurchaseOrder,
 } from './purchaseOrderForm'
 import type { FieldDefinition } from '@/types/tenant'
+import type { PurchaseOrder } from '@/types/purchaseOrder'
 
 describe('PO_ALLOWED_TRANSITIONS', () => {
   it.each([
@@ -256,5 +257,72 @@ describe('poBillableLines', () => {
 
   it('agrees with the statuses the backend converts', () => {
     expect([...PO_BILLABLE_STATUSES].sort()).toEqual(['CLSD', 'PART', 'RCVD'])
+  })
+})
+
+describe('expected slabs on a purchase order line', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', order_date: '2026-09-29' }
+  const line = (over: Record<string, unknown>) => ({
+    id: 'a', lineNo: 1, itemName: 'Absolute Black', itemDescription: '', quantity: '600', unitPrice: '18',
+    discount: '0', amount: '10800.00', total: '10800.00', inventoryItemUuid: 'inv-slab', ...over,
+  })
+
+  it('sends the count for a slab line', () => {
+    const payload = toCreatePayload(baseData, [line({ tracking: 'serialized', expectedSlabs: '12' })])
+    expect(payload.items[0].expectedSlabs).toBe(12)
+    expect(payload.items[0].quantity).toBe(600)
+  })
+
+  it.each([
+    ['a blank count', { tracking: 'serialized', expectedSlabs: '' }],
+    ['a zero count', { tracking: 'serialized', expectedSlabs: '0' }],
+    ['a negative count', { tracking: 'serialized', expectedSlabs: '-4' }],
+    ['text', { tracking: 'serialized', expectedSlabs: 'abc' }],
+    ['a quantity item that kept a stale count', { tracking: 'quantity', expectedSlabs: '12' }],
+    ['a line with no tracking', { expectedSlabs: '12' }],
+    ['a free-text line', { tracking: 'serialized', expectedSlabs: '12', inventoryItemUuid: undefined }],
+  ])('sends no count for %s', (_name, over) => {
+    const payload = toCreatePayload(baseData, [line(over)])
+    expect(payload.items[0].expectedSlabs).toBeUndefined()
+  })
+
+  it('reads the count and tracking back when a saved order is edited', () => {
+    const po = {
+      status: 'Draft', purchaseOrderNumber: 'PORD-1', orderDate: '2026-09-29', shipTo: {},
+      items: [{
+        id: 'l1', lineNumber: 1, sku: 'AB-30', itemName: 'Absolute Black', description: '', unitCode: 'SQFT',
+        quantity: 600, qtyReceived: 0, qtyBilled: 0, unitPrice: 18, discountPercent: 0, taxPercent: 0,
+        lineSubtotal: 10800, lineDiscount: 0, lineTax: 0, lineTotal: 10800, inventoryItemId: 'inv-slab',
+        tracking: 'serialized', expectedSlabs: 12,
+      }, {
+        id: 'l2', lineNumber: 2, sku: 'S-1', itemName: 'Sealer', description: '', unitCode: 'EA',
+        quantity: 3, qtyReceived: 0, qtyBilled: 0, unitPrice: 5, discountPercent: 0, taxPercent: 0,
+        lineSubtotal: 15, lineDiscount: 0, lineTax: 0, lineTotal: 15, inventoryItemId: 'inv-each', tracking: 'quantity',
+      }],
+      vendor: { id: 'v1', name: 'Nero' },
+    } as unknown as PurchaseOrder
+
+    const { lineItems } = fromPurchaseOrder(po)
+
+    expect(lineItems[0]).toMatchObject({ tracking: 'serialized', expectedSlabs: '12', units: 'SQFT' })
+    expect(lineItems[1]).toMatchObject({ tracking: 'quantity', expectedSlabs: '' })
+  })
+
+  it('round-trips a saved slab line back into the same payload', () => {
+    const po = {
+      status: 'Draft', purchaseOrderNumber: 'PORD-1', orderDate: '2026-09-29', shipTo: {},
+      items: [{
+        id: 'l1', lineNumber: 1, sku: 'AB-30', itemName: 'Absolute Black', description: '', unitCode: 'SQFT',
+        quantity: 600, qtyReceived: 0, qtyBilled: 0, unitPrice: 18, discountPercent: 0, taxPercent: 0,
+        lineSubtotal: 10800, lineDiscount: 0, lineTax: 0, lineTotal: 10800, inventoryItemId: 'inv-slab',
+        tracking: 'serialized', expectedSlabs: 12,
+      }],
+      vendor: { id: 'v1', name: 'Nero' },
+    } as unknown as PurchaseOrder
+    const { lineItems } = fromPurchaseOrder(po)
+
+    const payload = toCreatePayload(baseData, lineItems)
+
+    expect(payload.items[0]).toMatchObject({ inventoryItemUuid: 'inv-slab', quantity: 600, expectedSlabs: 12 })
   })
 })

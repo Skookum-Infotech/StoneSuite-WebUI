@@ -40,6 +40,10 @@ export interface LookupInput {
 
 export interface Warehouse {
   id: string; // warehouse_uuid
+  /** The numeric lkp_warehouse id — what document write contracts (units,
+   *  receipts, transfers, ...) take as a foreign key. Optional only so a record
+   *  that predates it still type-checks; see lib/inventoryWarehouse.ts. */
+  warehouseId?: number;
   name: string;
   code: string;
   addrLine1: string;
@@ -111,6 +115,11 @@ export interface InventoryItem {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  /** Whether a sales order line for this item is checked against stock and
+   *  reserves it. Off for a service/delivery/labour item; always on for a slab
+   *  item. The API always sends it; optional here so a hand-built item (a test
+   *  fixture) still type-checks — absent reads as on. */
+  trackStock?: boolean;
 
   createdAt: string;
   updatedAt: string;
@@ -136,6 +145,7 @@ export interface InventoryItemInput {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  trackStock?: boolean;
 }
 
 export interface InventoryItemPage {
@@ -170,6 +180,25 @@ export const UNIT_STATUS_CONSUMED = 'consumed';
 export const UNIT_STATUS_SCRAPPED = 'scrapped';
 export const UNIT_STATUS_IN_TRANSIT = 'in_transit';
 
+/** Consumption picture for one unit. A unit is cut whole: its area leaves stock
+ *  in full, `recoveredArea` comes back as offcut units, and `usedArea` — what
+ *  did not come back — went into finished product and saw kerf. Recovered and
+ *  used are only non-zero on a consumed unit. */
+export interface UnitUsage {
+  /** Fabrication job holding (reserved) or that cut (consumed) the unit. */
+  jobId?: string;
+  jobNumber?: string;
+  /** The customer's sales order that job is for. */
+  salesOrderId?: string;
+  salesOrderNumber?: string;
+  reservedAt?: string | null;
+  consumedAt?: string | null;
+  scrappedAt?: string | null;
+  offcutCount: number;
+  recoveredArea: number;
+  usedArea: number;
+}
+
 export interface InventoryUnit {
   id: string;
   serial: string;
@@ -197,11 +226,20 @@ export interface InventoryUnit {
   thicknessMm: number;
   area: number;
   areaUnitId: number;
+  /** Code of `areaUnitId` (SQFT, SQM…) — what `area` is measured in. */
+  areaUnitCode?: string;
 
   form: string; // full | cut
   status: string; // available | reserved | consumed | scrapped | in_transit
   parentUnitId?: string | null;
+  /** Serial of the parent / root unit, to show lineage by name. */
+  parentSerial?: string;
   rootUnitId?: string | null;
+  rootSerial?: string;
+
+  /** What has become of this unit's stone. Always sent by the API; optional
+   *  here so a hand-built unit (a test fixture) still type-checks. */
+  usage?: UnitUsage;
 
   isUsableRemnant: boolean;
   grade?: string;
@@ -209,30 +247,14 @@ export interface InventoryUnit {
   finishId?: number | null;
   photoKey?: string;
 
+  /** The item receipt that brought this unit into stock — a unit only enters
+   *  inventory by receiving it against a purchase order. Absent for a
+   *  remnant cut in the yard and for units that predate receipt-linked slabs. */
+  receiptId?: string | null;
+  receiptNumber?: string;
+
   createdAt: string;
   updatedAt: string;
-}
-
-// Offcuts minted by a cut are never created through this path — only whole
-// pieces received into stock. `area`, if sent, is ignored: it's always
-// computed server-side from the mm dimensions into the item's own unit.
-export interface CreateUnitInput {
-  serial: string;
-  vendorId?: string | null;
-  supplierCode?: string;
-  barcode?: string;
-  inventoryItemId: string;
-  warehouseId: number;
-  binId?: string | null;
-  bundleUuid?: string | null;
-  bundleId?: string;
-  blockId?: string;
-  lot?: string;
-  lengthMm: number;
-  widthMm: number;
-  thicknessMm: number;
-  grade?: string;
-  finishId?: number | null;
 }
 
 export interface UnitPage {

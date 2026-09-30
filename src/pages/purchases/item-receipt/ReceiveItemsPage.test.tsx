@@ -13,6 +13,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
+vi.mock('@/hooks/useInventoryLookups', () => ({ useInventoryLookups: vi.fn() }));
 // The guard blocks navigation via a data router; this page is exercised under a
 // plain MemoryRouter, and the guard itself is not what is being tested here.
 vi.mock('@/hooks/useUnsavedChangesGuard', () => ({ useUnsavedChangesGuard: () => ({ markClean: vi.fn() }) }));
@@ -28,10 +29,12 @@ import ReceiveItemsPage from './ReceiveItemsPage';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { OVER_RECEIPT_MESSAGE } from '@/lib/itemReceiptErrors';
 import { toast } from 'sonner';
 import type { PurchaseOrder } from '@/types/purchaseOrder';
 import type { ItemReceipt } from '@/types/itemReceipt';
+import type { Warehouse } from '@/types/inventory';
 
 const SAVE_LABEL = 'Save & Post Receipt';
 
@@ -56,12 +59,28 @@ function overReceiptError(): AxiosError {
   } as AxiosResponse);
 }
 
-function renderPage({ canApprove = false } = {}) {
+const warehouse = (over: Partial<Warehouse>): Warehouse => ({
+  id: 'wh-uuid-1', warehouseId: 1, name: 'Main Yard', code: 'MAIN', addrLine1: '', addrLine2: '', addrCity: '', addrZip: '',
+  isDefault: true, isActive: true, isSystem: false, ...over,
+});
+
+// A tenant with a default warehouse (numeric id 1) and a second one (id 2).
+const DEFAULT_WAREHOUSES = [warehouse({}), warehouse({ id: 'wh-uuid-2', warehouseId: 2, name: 'Annex', isDefault: false })];
+
+const slabOrder = {
+  ...sentOrder,
+  items: [{ ...sentOrder.items[0], id: 'poi-slab', unitCode: 'SQFT', quantity: 500, tracking: 'serialized' }],
+} as unknown as PurchaseOrder;
+
+function renderPage({ canApprove = false, warehouses = DEFAULT_WAREHOUSES, order = sentOrder } = {}) {
+  vi.mocked(useInventoryLookups).mockReturnValue({
+    lookups: { warehouses }, isLoading: false, error: null,
+  } as unknown as ReturnType<typeof useInventoryLookups>);
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [], isLoading: false, activeRoleId: '', isSuperAdmin: false,
     hasPermission: (resource: string, action: string) => resource === 'item_receipt' && action === 'approve' ? canApprove : true,
   } as ReturnType<typeof useUserPermissions>);
-  vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+  vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(order);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
@@ -102,6 +121,35 @@ describe('ReceiveItemsPage — saving posts the receipt', () => {
     expect(payload.items[0]).toMatchObject({ qtyReceived: 10 });
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/purchases/item_receipt/ir-1'));
     expect(toast.success).toHaveBeenCalledWith('Item receipt IRCT-000001 posted.');
+  });
+
+  it('receives into the tenant default warehouse, sent as its numeric id', async () => {
+    vi.mocked(itemReceiptService.createItemReceipt).mockResolvedValue(posted);
+    renderPage();
+
+    await clickSave(userEvent.setup());
+
+    await waitFor(() => expect(itemReceiptService.createItemReceipt).toHaveBeenCalledOnce());
+    expect(vi.mocked(itemReceiptService.createItemReceipt).mock.calls[0][0].warehouseId).toBe(1);
+  });
+
+  it('refuses to save when no warehouse is chosen and none is the default', async () => {
+    renderPage({ warehouses: [warehouse({ isDefault: false })] });
+
+    await clickSave(userEvent.setup());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('A warehouse is required.');
+    expect(itemReceiptService.createItemReceipt).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it('skips a slab line that has no slabs, so a receipt of only that line is refused', async () => {
+    renderPage({ order: slabOrder });
+
+    await clickSave(userEvent.setup());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('At least one line item is required.');
+    expect(itemReceiptService.createItemReceipt).not.toHaveBeenCalled();
   });
 
   it('says up front that saving posts and moves stock', async () => {

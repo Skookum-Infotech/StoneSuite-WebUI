@@ -32,3 +32,11 @@ export function findUnit(units: LookupItem[], unitId: number | null | undefined)
   if (unitId === null || unitId === undefined) return undefined;
   return units.find((u) => u.id === unitId);
 }
+
+/** The unit code (SQFT, EA, ...) for an item's `unitId`, or '' when the lookups
+ *  haven't loaded or the id is unknown. A document line snapshots this when an
+ *  inventory item is picked, so its Units column can say what the quantity is
+ *  measured in. */
+export function unitCodeFor(units: LookupItem[], unitId: number | null | undefined): string {
+  return findUnit(units, unitId)?.code ?? '';
+}

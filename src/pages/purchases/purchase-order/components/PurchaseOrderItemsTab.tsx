@@ -1,11 +1,15 @@
+import { Fragment } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // Inventory catalog picker is tenant-wide, not sales-specific — reused as-is
 // from its current home rather than duplicated (mirrors EstimateItemsTab's
 // usage one folder over).
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
-import type { InventoryItem } from '@/types/inventory';
+import { TRACKING_SERIALIZED, type InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useItemUnitCode } from '@/hooks/useItemUnitCode';
+import { unitLabel } from '@/lib/unitLabels';
+import { SlabEstimateRow } from './SlabEstimateRow';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type PurchaseOrderLineItem,
 } from '@/lib/purchaseOrderForm';
@@ -53,9 +57,13 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
 
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
+  const unitCodeFor = useItemUnitCode();
   const applyCatalogItem = (prev: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
     ...prev,
     itemName: item.name,
+    units: unitCodeFor(item),
+    tracking: item.tracking,
+    expectedSlabs: item.tracking === TRACKING_SERIALIZED ? prev.expectedSlabs : '',
     itemDescription: item.description,
     itemSku: item.sku,
     unitPrice: String(item.unitPrice),
@@ -66,7 +74,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
   } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
 
-  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => {
+  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'expectedSlabs', val: string) => {
     const nextVal = key === 'discount' ? clampPercent(val) : val;
     setDraft((prev) => recalc({ ...prev, [key]: nextVal }));
   };
@@ -75,7 +83,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   // inventory item — a fresh pick is required before the line can be saved.
   // The description is left untouched — it's independent of the item name.
   const onItemNameText = (text: string) => {
-    setDraft((prev) => recalc({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' }));
+    setDraft((prev) => recalc({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '', tracking: undefined, expectedSlabs: '' }));
   };
 
   const picker: InventoryItemPickerHandlers = {
@@ -123,6 +131,21 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
 
   const activeDraft = isAdding || editId !== null;
 
+  // A slab line is ordered by count and size; the helper fills in its area quantity.
+  const slabEstimate = draft.tracking === TRACKING_SERIALIZED ? (
+    <tr className="bg-brand/5">
+      <td colSpan={ITEM_COLS.length} className="border-t border-brand/10">
+        <SlabEstimateRow
+          key={editId ?? 'new'}
+          quantity={draft.quantity}
+          units={draft.units ?? ''}
+          expectedSlabs={draft.expectedSlabs ?? ''}
+          onChange={updateDraft}
+        />
+      </td>
+    </tr>
+  ) : null;
+
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
       <div className="overflow-x-auto modal-scrollbar">
@@ -139,7 +162,8 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
           <tbody className="divide-y divide-stone-100">
             {items.map((row) =>
               editId === row.id ? (
-                <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
+                <Fragment key={row.id}>
+                <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
@@ -147,14 +171,19 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
                     </button>
                   </td>
                 </tr>
+                {slabEstimate}
+                </Fragment>
               ) : (
                 <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
                   <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
-                  <td className="px-2.5 py-2.5 text-stone-500">{row.units || '—'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
+                  <td className="px-2.5 py-2.5 text-stone-500 whitespace-nowrap" title={row.units || undefined}>{unitLabel(row.units) || '—'}</td>
+                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">
+                    {row.quantity}
+                    {row.expectedSlabs && <span className="block text-2xs font-normal text-stone-400">≈{row.expectedSlabs} slabs</span>}
+                  </td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.unitPrice ? `$${parseFloat(row.unitPrice).toFixed(2)}` : '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{row.discount ? `${row.discount}%` : '0%'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-700 font-medium">{row.amount ? `$${row.amount}` : '—'}</td>
@@ -174,10 +203,13 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
               ),
             )}
             {isAdding && (
-              <tr className="bg-brand/5 divide-x divide-stone-100">
-                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
-                <td className="px-2 py-1.5" />
-              </tr>
+              <>
+                <tr className="bg-brand/5 divide-x divide-stone-100">
+                  <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
+                  <td className="px-2 py-1.5" />
+                </tr>
+                {slabEstimate}
+              </>
             )}
           </tbody>
         </table>
@@ -228,7 +260,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
 function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
   draft: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'>;
-  onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => void;
+  onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'expectedSlabs', val: string) => void;
   picker: InventoryItemPickerHandlers;
 }) {
   return (
@@ -241,8 +273,8 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
       <td className="px-2 py-1.5 text-stone-400 font-mono text-2xs">{draft.itemSku || '—'}</td>
-      <td className="px-2 py-1.5 text-stone-400 text-2xs">{draft.units || '—'}</td>
-      <td className="px-2 py-1.5"><input type="number" min="0" value={draft.quantity} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Quantity" /></td>
+      <td className="px-2 py-1.5 text-stone-400 text-2xs whitespace-nowrap" title={draft.units || undefined}>{unitLabel(draft.units) || '—'}</td>
+      <td className="px-2 py-1.5"><input type="number" min="0" step="any" value={draft.quantity} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Quantity" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(e) => onChange('unitPrice', e.target.value)} placeholder="0.00" className={cn(inlineCls, 'w-20 text-right')} aria-label="Unit Price" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? `$${draft.amount}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-500 cursor-default text-right')} aria-label="Amount" /></td>
