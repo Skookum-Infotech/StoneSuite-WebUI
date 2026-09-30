@@ -322,12 +322,6 @@ export function vbNextCodes(order: VbNextMoves): string[] {
   return order.nextStatusCodes ?? VB_ALLOWED_TRANSITIONS[order.statusCode] ?? [];
 }
 
-/** Header-button moves legal for this bill right now, in button order. */
-export function vbHeaderTransitions(order: VbNextMoves): string[] {
-  const next = vbNextCodes(order);
-  return VB_HEADER_TRANSITION_CODES.filter((code) => next.includes(code));
-}
-
 /** Whether Void is a legal move right now (the Danger Zone button). */
 export function vbCanVoid(order: VbNextMoves): boolean {
   return vbNextCodes(order).includes(VB_VOID_CODE);

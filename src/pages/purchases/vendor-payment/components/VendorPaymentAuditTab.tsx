@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/tenant/ui';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
+import { AuditChanges } from '@/components/tenant/AuditChanges';
 import type { AuditEntry } from '@/services/crmService';
 
 // Mirrors VendorBillAuditTab, reading from vendorPaymentService.getAudit
@@ -63,10 +64,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
       {expanded && hasChanges && (
         <tr className="bg-stone-50">
           <td colSpan={5} className="px-3 pb-3 pt-1">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {entry.oldValue && <ChangesBlock label="Before" data={entry.oldValue} />}
-              {entry.newValue && <ChangesBlock label="After" data={entry.newValue} />}
-            </div>
+            <AuditChanges oldValue={entry.oldValue} newValue={entry.newValue} />
           </td>
         </tr>
       )}
@@ -87,18 +85,3 @@ function ActionBadge({ action }: { action: string }) {
   );
 }
 
-function ChangesBlock({ label, data }: { label: string; data: Record<string, unknown> }) {
-  return (
-    <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400 mb-1.5">{label}</p>
-      <div className="space-y-0.5">
-        {Object.entries(data).map(([key, val]) => (
-          <div key={key} className="flex gap-2 text-2xs">
-            <span className="text-stone-400 shrink-0 min-w-[80px] font-medium">{key}</span>
-            <span className="text-stone-600 break-all">{val === null || val === undefined ? '—' : String(val)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

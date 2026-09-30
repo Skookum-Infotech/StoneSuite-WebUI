@@ -87,7 +87,7 @@ describe('notifyClient', () => {
     it('refreshes once and retries when the refresh restores a token', async () => {
       refreshMock.mockImplementation(async () => {
         useAuthStore.setState({ token: 'jwt-refreshed' });
-        return true;
+        return 'ok';
       });
 
       const res = await get('/api/notifications/summary', [
@@ -101,7 +101,7 @@ describe('notifyClient', () => {
     });
 
     it('does not retry when the refresh succeeds but no token comes back', async () => {
-      refreshMock.mockResolvedValue(true); // token deliberately left null
+      refreshMock.mockResolvedValue('ok'); // token deliberately left null
 
       await expect(
         get('/api/notifications/summary', [{ status: 401, data: { success: false } }]),
@@ -111,7 +111,7 @@ describe('notifyClient', () => {
     });
 
     it('rejects without retrying when the refresh fails', async () => {
-      refreshMock.mockResolvedValue(false);
+      refreshMock.mockResolvedValue('rejected');
 
       await expect(
         get('/api/notifications/summary', [{ status: 401 }]),
@@ -123,7 +123,7 @@ describe('notifyClient', () => {
     it('retries at most once even if the retry also 401s', async () => {
       refreshMock.mockImplementation(async () => {
         useAuthStore.setState({ token: 'jwt-refreshed' });
-        return true;
+        return 'ok';
       });
 
       await expect(
