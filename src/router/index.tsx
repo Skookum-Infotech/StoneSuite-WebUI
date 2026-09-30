@@ -87,9 +87,6 @@ const CompanyProfilePage = lazyWithRetry(
 const AIAssistantConfigPage = lazyWithRetry(
   () => import("@/pages/config/ai-assistant/AIAssistantConfigPage"),
 );
-const CrmNotificationsPage = lazyWithRetry(
-  () => import("@/pages/config/crm-notifications/CrmNotificationsPage"),
-);
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
@@ -1383,14 +1380,6 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="company_profile" action="read">
             <AIAssistantConfigPage />
-          </PermissionGuard>,
-        ),
-      },
-      {
-        path: "config/crm-notifications",
-        element: lazy_(
-          <PermissionGuard resource="workflow_config" action="configure">
-            <CrmNotificationsPage />
           </PermissionGuard>,
         ),
       },
