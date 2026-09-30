@@ -8,7 +8,7 @@ vi.mock('@/store/useAuthStore', () => ({ isPortalSession: vi.fn() }));
 
 import { tenantClient } from '@/api/tenantClient';
 import { isPortalSession } from '@/store/useAuthStore';
-import { workflowService } from './tenantServices';
+import { platformService, workflowService } from './tenantServices';
 
 function notFound(): AxiosError {
   const err = new AxiosError('Not Found');
@@ -21,6 +21,25 @@ function serverError(): AxiosError {
   err.response = { status: 500, data: {}, statusText: 'Server Error', headers: {}, config: {} } as never;
   return err;
 }
+
+describe('platformService.purgeTenant', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('POSTs the typed slug to the purge endpoint', async () => {
+    vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true } });
+
+    const result = await platformService.purgeTenant('t-1', 'acme');
+
+    expect(tenantClient.post).toHaveBeenCalledWith('/platform/tenants/t-1/purge', { confirmSlug: 'acme' });
+    expect(result).toEqual({ success: true });
+  });
+
+  it('lets a backend refusal propagate to the caller', async () => {
+    vi.mocked(tenantClient.post).mockRejectedValue(serverError());
+
+    await expect(platformService.purgeTenant('t-1', 'acme')).rejects.toThrow();
+  });
+});
 
 describe('workflowService.listEnabled', () => {
   beforeEach(() => vi.clearAllMocks());

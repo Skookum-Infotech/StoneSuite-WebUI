@@ -151,7 +151,7 @@ export function consumptionSentence(unit: InventoryUnit): string {
     return use.jobNumber ? `Whole slab, ${area(unit.area)}, held for job ${use.jobNumber}.` : `Whole slab, ${area(unit.area)}, held for a job.`;
   }
   if (unit.status === UNIT_STATUS_SCRAPPED) return `Scrapped: ${area(unit.area)} written off.`;
-  if (unit.status === UNIT_STATUS_IN_TRANSIT) return `${area(unit.area)} in transit between warehouses.`;
+  if (unit.status === UNIT_STATUS_IN_TRANSIT) return `${area(unit.area)} in transit between locations.`;
   return `Untouched: ${area(unit.area)} still whole.`;
 }
 
@@ -268,7 +268,7 @@ export function lifecycleSteps(unit: InventoryUnit): LifecycleStep[] {
       steps.push({ key: 'scrapped', title: 'Scrapped', detail: `${area(unit.area)} written off`, at: use.scrappedAt });
       break;
     case UNIT_STATUS_IN_TRANSIT:
-      steps.push({ key: 'transit', title: 'In transit', detail: 'Between warehouses' });
+      steps.push({ key: 'transit', title: 'In transit', detail: 'Between locations' });
       break;
     case UNIT_STATUS_AVAILABLE:
       steps.push({

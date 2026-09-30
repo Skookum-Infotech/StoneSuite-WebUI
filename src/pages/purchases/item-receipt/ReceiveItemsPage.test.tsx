@@ -60,11 +60,12 @@ function overReceiptError(): AxiosError {
 }
 
 const warehouse = (over: Partial<Warehouse>): Warehouse => ({
-  id: 'wh-uuid-1', warehouseId: 1, name: 'Main Yard', code: 'MAIN', addrLine1: '', addrLine2: '', addrCity: '', addrZip: '',
-  isDefault: true, isActive: true, isSystem: false, ...over,
+  id: 'wh-uuid-1', warehouseId: 1, name: 'Main Yard', phone: '',
+  address: { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' },
+  isDefault: true, ...over,
 });
 
-// A tenant with a default warehouse (numeric id 1) and a second one (id 2).
+// A tenant with a default location (numeric id 1) and a second one (id 2).
 const DEFAULT_WAREHOUSES = [warehouse({}), warehouse({ id: 'wh-uuid-2', warehouseId: 2, name: 'Annex', isDefault: false })];
 
 const slabOrder = {
@@ -123,7 +124,7 @@ describe('ReceiveItemsPage — saving posts the receipt', () => {
     expect(toast.success).toHaveBeenCalledWith('Item receipt IRCT-000001 posted.');
   });
 
-  it('receives into the tenant default warehouse, sent as its numeric id', async () => {
+  it('receives into the tenant default location, sent as its numeric id', async () => {
     vi.mocked(itemReceiptService.createItemReceipt).mockResolvedValue(posted);
     renderPage();
 
@@ -133,12 +134,12 @@ describe('ReceiveItemsPage — saving posts the receipt', () => {
     expect(vi.mocked(itemReceiptService.createItemReceipt).mock.calls[0][0].warehouseId).toBe(1);
   });
 
-  it('refuses to save when no warehouse is chosen and none is the default', async () => {
+  it('refuses to save when no location is chosen and none is the default', async () => {
     renderPage({ warehouses: [warehouse({ isDefault: false })] });
 
     await clickSave(userEvent.setup());
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('A warehouse is required.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('A location is required.');
     expect(itemReceiptService.createItemReceipt).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
   });

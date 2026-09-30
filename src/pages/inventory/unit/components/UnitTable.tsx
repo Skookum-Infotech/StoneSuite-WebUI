@@ -98,7 +98,7 @@ export function UnitTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => inventoryUnitService.searchUnits({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['Serial', 'Item', 'Kind', 'Status', 'Sales Order', 'Fabrication Job', 'Area', 'Unit', 'Used', 'Recovered', 'Warehouse', 'Bin'],
+        ['Serial', 'Item', 'Kind', 'Status', 'Sales Order', 'Fabrication Job', 'Area', 'Unit', 'Used', 'Recovered', 'Location', 'Bin'],
         (u) => [
           u.serial, u.inventoryItemName ?? '', u.kind, u.status,
           usageOf(u).salesOrderNumber ?? '', usageOf(u).jobNumber ?? '',
@@ -178,7 +178,7 @@ export function UnitTable() {
               ) : records.length > 0 ? (
                 records.map((u) => {
                   const inTransit = u.status === UNIT_STATUS_IN_TRANSIT;
-                  const disabledReason = inTransit ? 'This unit is in transit between warehouses.' : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status}.` : undefined;
+                  const disabledReason = inTransit ? 'This unit is in transit between locations.' : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status}.` : undefined;
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">

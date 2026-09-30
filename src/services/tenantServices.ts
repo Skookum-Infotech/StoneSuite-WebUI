@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
 import { isPortalSession } from '@/store/useAuthStore';
 import { normalizeScope, normalizeScopeList } from '@/lib/scope';
-import type { LookupItem } from '@/services/lookupService';
+import type { LookupItem, StateLookupItem } from '@/services/lookupService';
 import type { UserRole } from '@/types/auth';
 import type {
   Tenant,
@@ -34,6 +34,7 @@ export type OnboardingFormData = Record<string, unknown>;
 
 export interface OnboardingLookups {
   countries: LookupItem[];
+  states: StateLookupItem[];
   currencies: LookupItem[];
 }
 
@@ -44,13 +45,18 @@ export const onboardingService = {
     tenantClient
       .get<{ success: boolean; fields: FieldDefinition[] }>('/onboarding/form-schema')
       .then((r) => r.data.fields ?? []),
-  // Read-only country/currency reference lists for the public form's
-  // Country/Currency dropdowns — separate from services/lookupService.ts's
+  // Read-only country/state/currency reference lists for the public form's
+  // Country/State/Currency dropdowns — separate from services/lookupService.ts's
   // getCrmLookups, which requires a tenant JWT this pre-auth flow doesn't have.
+  // `states` is absent from a backend that predates it, hence the fallback.
   lookups: (): Promise<OnboardingLookups> =>
     tenantClient
-      .get<{ success: boolean; countries: LookupItem[]; currencies: LookupItem[] }>('/onboarding/lookups')
-      .then((r) => ({ countries: r.data.countries ?? [], currencies: r.data.currencies ?? [] })),
+      .get<{ success: boolean } & Partial<OnboardingLookups>>('/onboarding/lookups')
+      .then((r) => ({
+        countries: r.data.countries ?? [],
+        states: r.data.states ?? [],
+        currencies: r.data.currencies ?? [],
+      })),
   getApply: (token: string) =>
     tenantClient.get<OnboardingApplyDetails>(`/onboarding/apply/${token}`).then((r) => r.data),
   submitApply: (token: string, formData: OnboardingFormData) =>
@@ -91,6 +97,14 @@ export const platformService = {
     tenantClient.post(`/platform/tenants/${tenantId}/reject`).then((r) => r.data),
   lifecycle: (tenantId: string, action: 'suspend' | 'restore' | 'delete') =>
     tenantClient.post(`/platform/tenants/${tenantId}/${action}`).then((r) => r.data),
+  // Irreversibly removes the tenant: its storage bucket, database and records.
+  // The backend re-checks confirmSlug against the tenant's real slug and
+  // refuses the platform owner, so the typed-slug UI is a convenience, not the
+  // safeguard.
+  purgeTenant: (tenantId: string, confirmSlug: string) =>
+    tenantClient
+      .post<{ success: boolean }>(`/platform/tenants/${tenantId}/purge`, { confirmSlug })
+      .then((r) => r.data),
 
   // Invite management (keys / expiry / retry).
   listInvites: (tenantId: string) =>

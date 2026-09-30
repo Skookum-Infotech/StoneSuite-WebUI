@@ -176,7 +176,7 @@ export default function EditAdjustmentPage() {
           <div className="px-4 py-3 pb-24 space-y-2 3xl:px-10 3xl:py-5 4xl:px-16 4xl:py-8">
             <ModernSection title="Header" index={0}>
               <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                <ModernFieldShell label="Warehouse" required>
+                <ModernFieldShell label="Location" required>
                   <WarehouseSelect warehouses={lookups?.warehouses ?? []} value={warehouseId} onChange={setWarehouseId} required />
                 </ModernFieldShell>
                 <ModernFieldShell label="Date" required>

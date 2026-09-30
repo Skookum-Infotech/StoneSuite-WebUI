@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import type { SelectOption } from '@/lib/companyInfoLookupOptions';
 
 // Searchable Popover-trigger picker over real lookup-table data (Country,
-// Currency) for the onboarding form -- matching PhoneNumberInput/DatePicker's
+// State, Currency) for the onboarding form -- matching PhoneNumberInput/DatePicker's
 // trigger+Popover pattern rather than a bare native <select>, per
 // feedback_prefer_real_data_and_app_patterns. `options` is expected to
 // already include the current value as its own entry when it doesn't match

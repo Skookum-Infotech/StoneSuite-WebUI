@@ -4,12 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Lock,
   Shield,
   CheckCircle2,
   Check,
   Loader2,
-  Mail,
   AlertCircle,
   KeyRound,
   UserCircle,
@@ -30,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types/auth'
 import type { Grant } from '@/types/tenant'
+import { ProfileNameForm } from './components/ProfileNameForm'
 
 // ── Password schema ──────────────────────────────────────────────────────────
 
@@ -50,29 +49,6 @@ const passwordSchema = z
 
 type PasswordFields = z.infer<typeof passwordSchema>
 type Tab = 'profile' | 'password' | 'roles'
-
-// ── Read-only field ──────────────────────────────────────────────────────────
-
-function ReadOnlyField({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string
-  value: string
-  icon?: React.ElementType
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-semibold text-stone-500">{label}</Label>
-      <div className="flex h-11 items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3.5">
-        {Icon && <Icon className="size-4 shrink-0 text-stone-300" />}
-        <span className="flex-1 text-xs text-stone-600 select-all">{value || '—'}</span>
-        <Lock className="size-3.5 shrink-0 text-stone-300" />
-      </div>
-    </div>
-  )
-}
 
 // ── Role card ────────────────────────────────────────────────────────────────
 
@@ -233,9 +209,6 @@ export default function AccountSettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [passwordSuccess, setPasswordSuccess] = useState(false)
 
-  const [firstName, ...lastParts] = (user?.fullName ?? '').split(' ')
-  const lastName = lastParts.join(' ')
-
   // Server's active-role claim is the source of truth; user?.selectedRoleId
   // (persisted locally) and the first assigned role are fallbacks only for
   // while permissions are still loading — no separate state to reconcile.
@@ -367,26 +340,12 @@ export default function AccountSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-stone-900">Profile Information</h2>
-                      <p className="text-xs text-stone-500 mt-0.5">View-only — managed by your workspace administrator</p>
+                      <p className="text-xs text-stone-500 mt-0.5">Update the name shown across your workspace</p>
                     </div>
                   </div>
                 </div>
                 <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
-                  <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
-                    <ReadOnlyField label="First Name" value={firstName} />
-                    <ReadOnlyField label="Last Name" value={lastName} />
-                  </div>
-                  <ReadOnlyField label="Email Address" value={user?.email ?? ''} icon={Mail} />
-
-                  <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3.5">
-                    <AlertCircle className="size-4 shrink-0 text-amber-500 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-semibold text-amber-800">Read-only fields</p>
-                      <p className="text-xs text-amber-700 mt-0.5">
-                        Profile fields can only be edited by a <strong>super-admin</strong>. Contact your workspace admin to request changes.
-                      </p>
-                    </div>
-                  </div>
+                  <ProfileNameForm fullName={user?.fullName ?? ''} email={user?.email ?? ''} />
 
                   {/* Account meta */}
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t border-stone-100">

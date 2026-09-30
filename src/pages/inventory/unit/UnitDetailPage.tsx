@@ -11,6 +11,7 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } from '@/types/inventory';
+import { historyActionLabel } from '@/lib/inventoryWarehouse';
 import { MoveUnitDialog } from './components/MoveUnitDialog';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
@@ -89,7 +90,7 @@ export default function UnitDetailPage() {
   const inTransit = unit.status === UNIT_STATUS_IN_TRANSIT;
   const actionable = unit.status === UNIT_STATUS_AVAILABLE;
   const disabledReason = inTransit
-    ? 'This unit is in transit between warehouses — refuses bin moves, cuts and scraps until received.'
+    ? 'This unit is in transit between locations — refuses bin moves, cuts and scraps until received.'
     : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
 
   async function handleExportPdf() {
@@ -115,7 +116,7 @@ export default function UnitDetailPage() {
               ['Dimensions (mm)', `${unit.lengthMm} × ${unit.widthMm} × ${unit.thicknessMm}`],
               ['Grade', unit.grade || ''],
               ['Finish', unit.finish || ''],
-              ['Warehouse', unit.warehouseName || ''],
+              ['Location', unit.warehouseName || ''],
               ['Bin', unit.binPath || ''],
               ['Lot', unit.lot || ''],
               ['Block ID', unit.blockId || ''],
@@ -179,7 +180,7 @@ export default function UnitDetailPage() {
               {inTransit && (
                 <div className="flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
                   <ArrowLeftRight className="mt-0.5 size-4 shrink-0 text-indigo-500" />
-                  <p className="text-xs text-indigo-700">This unit is on a truck between warehouses. Receive the transfer to bring it back into stock before moving, cutting or scrapping it.</p>
+                  <p className="text-xs text-indigo-700">This unit is on a truck between locations. Receive the transfer to bring it back into stock before moving, cutting or scrapping it.</p>
                 </div>
               )}
               <UnitUsageTab unit={unit} />
@@ -198,7 +199,7 @@ export default function UnitDetailPage() {
                     <li key={i} className="flex items-start gap-3 border-b border-stone-100 pb-3 last:border-0 last:pb-0">
                       <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-stone-800">{h.action}</p>
+                        <p className="text-xs font-medium text-stone-800">{historyActionLabel(h.action)}</p>
                         {describeHistoryEntry(h) && <p className="text-2xs text-stone-500">{describeHistoryEntry(h)}</p>}
                         <p className="text-2xs text-stone-400">{fmtDateTime(h.at)} · {h.byName}</p>
                       </div>

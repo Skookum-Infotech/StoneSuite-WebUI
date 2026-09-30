@@ -10,8 +10,9 @@ import { RECEIPT_HEADER_FIELDS } from '@/lib/itemReceiptForm';
 import type { Warehouse } from '@/types/inventory';
 
 const wh = (over: Partial<Warehouse>): Warehouse => ({
-  id: 'w1', warehouseId: 1, name: 'Main Yard', code: 'MAIN', addrLine1: '', addrLine2: '', addrCity: '', addrZip: '',
-  isDefault: false, isActive: true, isSystem: false, ...over,
+  id: 'w1', warehouseId: 1, name: 'Main Yard', phone: '',
+  address: { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' },
+  isDefault: false, ...over,
 });
 
 const found = RECEIPT_HEADER_FIELDS.find((f) => f.key === 'warehouse_id');
@@ -28,34 +29,34 @@ function renderField(value: string, warehouses: Warehouse[]) {
 }
 
 describe('ReceiptWarehouseField', () => {
-  it('is a required warehouse picker', () => {
-    expect(field).toMatchObject({ type: 'warehouse', required: true });
+  it('is a required location picker', () => {
+    expect(field).toMatchObject({ type: 'warehouse', required: true, label: 'Location' });
     renderField('', [wh({})]);
-    expect(screen.getByRole('combobox', { name: 'Warehouse' })).toBeRequired();
+    expect(screen.getByRole('combobox', { name: 'Location' })).toBeRequired();
   });
 
-  it('lists active warehouses, marking the default', () => {
+  it('lists every location, marking the default', () => {
     renderField('', [wh({ id: 'a', name: 'Main Yard', isDefault: true }), wh({ id: 'b', name: 'Annex' })]);
     expect(screen.getByRole('option', { name: 'Main Yard (Default)' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Annex' })).toBeInTheDocument();
   });
 
-  it('does not offer an inactive warehouse', () => {
-    renderField('', [wh({ id: 'a', name: 'Main Yard' }), wh({ id: 'b', name: 'Closed Yard', isActive: false })]);
-    expect(screen.queryByRole('option', { name: 'Closed Yard' })).not.toBeInTheDocument();
+  it('shows the location the receipt already points at as selected', () => {
+    renderField('b', [wh({ id: 'a', name: 'Main Yard' }), wh({ id: 'b', name: 'Annex' })]);
+    expect(screen.getByRole('combobox', { name: 'Location' })).toHaveValue('b');
   });
 
-  it('keeps showing an inactive warehouse the receipt already points at', () => {
-    renderField('b', [wh({ id: 'a', name: 'Main Yard' }), wh({ id: 'b', name: 'Closed Yard', isActive: false })]);
-    expect(screen.getByRole('option', { name: 'Closed Yard' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Warehouse' })).toHaveValue('b');
-  });
-
-  it('reports the chosen warehouse\'s uuid under the field key', async () => {
+  it("reports the chosen location's uuid under the field key", async () => {
     const { set } = renderField('', [wh({ id: 'a', name: 'Main Yard' }), wh({ id: 'b', name: 'Annex' })]);
 
-    await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Warehouse' }), 'Annex');
+    await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Location' }), 'Annex');
 
     expect(set).toHaveBeenCalledWith('warehouse_id', 'b');
+  });
+
+  it('is disabled and points at Company Info when the tenant has no locations yet', () => {
+    renderField('', []);
+    expect(screen.getByRole('combobox', { name: 'Location' })).toBeDisabled();
+    expect(screen.getByRole('option', { name: /add one in Company Info/ })).toBeInTheDocument();
   });
 });

@@ -408,9 +408,9 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
-              id: "warehouses",
-              label: "Warehouses",
-              path: "/inventory/warehouse",
+              id: "locations",
+              label: "Locations",
+              path: "/inventory/location",
               icon: Warehouse,
               iconColor: "text-teal-600 dark:text-teal-400",
               permission: { resource: "warehouse", action: "read" },

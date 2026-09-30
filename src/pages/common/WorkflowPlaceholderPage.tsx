@@ -111,12 +111,12 @@ const MODULE_META: Record<string, ModuleMeta> = {
   // Inventory
   bin: {
     title: 'Bin Management',
-    description: 'Organize warehouse locations and bin storage.',
+    description: 'Organize locations and bin storage.',
     icon: MapPin,
   },
   bin_transfer: {
     title: 'Bin Transfer',
-    description: 'Move stock between bins within a warehouse.',
+    description: 'Move stock between bins within a location.',
     icon: ArrowLeftRight,
   },
   adjustment: {
@@ -126,7 +126,7 @@ const MODULE_META: Record<string, ModuleMeta> = {
   },
   transfer: {
     title: 'Transfer Inventory',
-    description: 'Ship and receive stock between warehouses.',
+    description: 'Ship and receive stock between locations.',
     icon: Repeat,
   },
   count: {

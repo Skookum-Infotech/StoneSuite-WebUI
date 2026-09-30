@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
 
 import { apiClient, attemptRefresh } from './client';
+import { clearAuthNotice, peekAuthNotice } from '@/lib/authNotice';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const CSRF_COOKIE = 'csrf_token';
@@ -159,21 +160,34 @@ describe('attemptRefresh (staff session)', () => {
   // A reload that lands on a cold (scale-to-zero) backend, or a blip mid-refresh,
   // must never read as "the session is dead" — that is what logged users out.
   describe('failed refresh', () => {
-    const failWith = (status?: number) => {
+    const failWith = (status?: number, data: unknown = { success: false }) => {
       apiClient.defaults.adapter = async (config) => {
         if (status === undefined) throw new Error('Network Error'); // no response at all
-        const response = { data: { success: false }, status, statusText: '', headers: {}, config };
+        const response = { data, status, statusText: '', headers: {}, config };
         throw Object.assign(new Error(`HTTP ${status}`), { isAxiosError: true, config, response });
       };
     };
 
     afterEach(() => {
       vi.useRealTimers();
+      clearAuthNotice();
     });
 
     it.each([401, 403])('is `rejected` on HTTP %i, so the caller logs out', async (status) => {
       failWith(status);
       expect(await attemptRefresh()).toBe('rejected');
+    });
+
+    it('leaves the login-page notice when the refresh is refused because the workspace is suspended', async () => {
+      failWith(403, { code: 'workspace_suspended', message: 'This workspace is suspended.' });
+      expect(await attemptRefresh()).toBe('rejected');
+      expect(peekAuthNotice()).toBe('This workspace is suspended.');
+    });
+
+    it('leaves no notice when the refresh is refused for an ordinary reason', async () => {
+      failWith(401, { code: 'invalid_token', message: 'Session expired.' });
+      expect(await attemptRefresh()).toBe('rejected');
+      expect(peekAuthNotice()).toBeNull();
     });
 
     it.each([

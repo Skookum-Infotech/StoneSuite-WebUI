@@ -10,6 +10,7 @@ import { samlProviderLabel } from '@/lib/ssoConfigForm'
 import { SAML_PENDING_PROVIDER_KEY } from '@/lib/samlSession'
 import { EmailStep } from './components/EmailStep'
 import { PasswordStep } from './components/PasswordStep'
+import { AuthNotice } from './components/AuthNotice'
 import { LoginHero } from './components/LoginHero'
 import type { UserRole, AuthResponse, IdentifyResult } from '@/types/auth'
 import type { SAMLProvider } from '@/types/tenant'
@@ -215,6 +216,8 @@ export default function LoginPage() {
                 </>
               )}
             </div>
+
+            {step === 'email' && <AuthNotice />}
 
             {step === 'email' && loggedOut && (
               <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700">

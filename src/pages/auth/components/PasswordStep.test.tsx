@@ -101,6 +101,23 @@ describe('PasswordStep', () => {
     expect(onSuccess).not.toHaveBeenCalled()
   })
 
+  it('tells a user of a suspended workspace why they cannot sign in', async () => {
+    const user = userEvent.setup()
+    const message = 'This workspace is suspended. Please contact your account administrator.'
+    const err = new AxiosError('fail', undefined, undefined, undefined, {
+      status: 403,
+      data: { success: false, code: 'workspace_suspended', message },
+    } as never)
+    vi.mocked(authService.login).mockRejectedValue(err)
+    const { onSuccess } = renderStep()
+
+    await user.type(screen.getByLabelText('Password'), 'hunter2')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(await screen.findByText(message)).toBeInTheDocument()
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
   it('calls onBack when "Change" is clicked', async () => {
     const user = userEvent.setup()
     const { onBack } = renderStep()
