@@ -21,6 +21,33 @@ export interface ItemReceiptLineInput {
   qtyReceived: number;
   qtyRejected?: number;
   lineNotes?: string;
+  /** Required for a slab-tracked (serialized) item, refused for any other. The
+   *  server then computes the line's received quantity from these slabs and
+   *  ignores `qtyReceived`; there is no rejected quantity on such a line. */
+  slabs?: ItemReceiptSlabInput[];
+}
+
+/** One physical slab arriving on a serialized line. The serial is never sent —
+ *  the server assigns it when the receipt posts (PO number + running suffix) —
+ *  and neither is the area, which it computes from the millimetres. */
+export interface ItemReceiptSlabInput {
+  lengthMm: number;
+  widthMm: number;
+  thicknessMm: number;
+  /** Bin uuid; omitted when the slab isn't binned yet. */
+  binId?: string;
+  blockId?: string;
+  lot?: string;
+  grade?: string;
+  supplierCode?: string;
+}
+
+/** GET /purchase-orders/{uuid}/next-slab-serial — how the next slabs received
+ *  against this order will be numbered: `prefix` + `next` zero-padded to three
+ *  digits. Advisory; the real serials are assigned at post. */
+export interface SlabSequence {
+  prefix: string;
+  next: number;
 }
 
 /** Header payload shared by create and update (everything except the
@@ -105,6 +132,27 @@ export interface ItemReceiptLine {
   qtyOrdered: number;
   qtyReceivedToDate: number;
   lineNotes?: string;
+  /** Present only on a serialized line. */
+  slabs?: ItemReceiptLineSlab[];
+}
+
+/** A slab on a received line. `serial`, `unitId` and `unitStatus` stay empty
+ *  until the receipt posts; `unitStatus` is then the slab's LIVE inventory
+ *  status (it may have been reserved, cut or scrapped since). */
+export interface ItemReceiptLineSlab {
+  serial?: string;
+  lengthMm: number;
+  widthMm: number;
+  thicknessMm: number;
+  area: number;
+  binId?: string | null;
+  binPath?: string;
+  blockId?: string;
+  lot?: string;
+  grade?: string;
+  supplierCode?: string;
+  unitId?: string | null;
+  unitStatus?: string;
 }
 
 // Full detail response (GET/Create/Update/Post/Void/Transition). Every field

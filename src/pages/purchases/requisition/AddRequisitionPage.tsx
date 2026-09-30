@@ -15,6 +15,7 @@ import { type VendorRef } from '../purchase-order/components/VendorPicker';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { clearRequisitionPrefill, peekRequisitionPrefill } from '@/lib/requisitionPrefill';
 import { RequisitionFormBody } from './components/RequisitionFormBody';
 import {
   requisitionDefaults, toCreatePayload, calcHeaderTotals, invalidLinePositions,
@@ -42,9 +43,14 @@ export default function AddRequisitionPage() {
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? requisitionDefaults());
-  const [lineItems, setLineItems] = useState<RequisitionLineItem[]>(restored?.lineItems ?? []);
+  // A shortfall handed over from a Sales Order (opened in this tab from its "not
+  // enough stock" dialog) starts the requisition with the missing items filled in.
+  const [lineItems, setLineItems] = useState<RequisitionLineItem[]>(() => restored?.lineItems ?? peekRequisitionPrefill() ?? []);
   const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+
+  // The handed-over lines are used up once this page goes away.
+  useEffect(() => clearRequisitionPrefill, []);
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(

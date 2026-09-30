@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { unitCategory, requiresDimensions, isAreaUnit, findUnit } from './inventoryUnits'
+import { unitCategory, requiresDimensions, isAreaUnit, findUnit, unitCodeFor } from './inventoryUnits'
 import type { LookupItem } from '@/types/inventory'
 
 function unit(category: unknown): Pick<LookupItem, 'extra'> {
@@ -64,5 +64,25 @@ describe('findUnit', () => {
     expect(findUnit(units, 999)).toBeUndefined()
     expect(findUnit(units, null)).toBeUndefined()
     expect(findUnit(units, undefined)).toBeUndefined()
+  })
+})
+
+describe('unitCodeFor', () => {
+  const units = [
+    { id: 1, name: 'Each', code: 'EA', isActive: true, isSystem: true },
+    { id: 6, name: 'Square Foot', code: 'SQFT', isActive: true, isSystem: true },
+  ] as LookupItem[]
+
+  it('gives the code for an item\'s unit id', () => {
+    expect(unitCodeFor(units, 6)).toBe('SQFT')
+    expect(unitCodeFor(units, 1)).toBe('EA')
+  })
+
+  it.each([[99], [null], [undefined]])('is blank for %s', (id) => {
+    expect(unitCodeFor(units, id)).toBe('')
+  })
+
+  it('is blank before the lookups load', () => {
+    expect(unitCodeFor([], 6)).toBe('')
   })
 })

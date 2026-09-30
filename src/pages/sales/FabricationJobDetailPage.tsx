@@ -21,7 +21,7 @@ import {
 import { statusToastLabel } from '@/lib/statusToast';
 import { FabricationPiecesEditableTab } from './components/FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './components/FabricationPiecesTable';
-import { FabricationSlabsTab } from './components/FabricationSlabsTab';
+import { FabricationMaterialsTab } from './components/FabricationMaterialsTab';
 import { FabricationStepsTab } from './components/FabricationStepsTab';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
@@ -50,14 +50,14 @@ export default function FabricationJobDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('installation', 'update');
   const canDelete = permissionsLoading || hasPermission('installation', 'delete');
-  // Slabs tab needs BOTH grants — installation:read and inventory_item:read.
+  // Materials tab needs BOTH grants — installation:read and inventory_item:read.
   const canReadSlabs = permissionsLoading || (hasPermission('installation', 'read') && hasPermission('inventory_item', 'read'));
   const canAllocateSlabs = hasPermission('installation', 'update') && hasPermission('inventory_item', 'update');
 
   const TABS = [
     { key: 'overview', label: 'Overview' },
     { key: 'pieces', label: 'Pieces' },
-    ...(canReadSlabs ? [{ key: 'slabs', label: 'Slabs' }] as const : []),
+    ...(canReadSlabs ? [{ key: 'materials', label: 'Materials' }] as const : []),
     { key: 'checklist', label: 'Checklist' },
     { key: 'files', label: 'Files' },
   ] as const;
@@ -290,8 +290,8 @@ export default function FabricationJobDetailPage() {
               ? <FabricationPiecesEditableTab jobId={id} pieces={job.pieces ?? []} sourceOrderItems={sourceOrderItems} />
               : <FabricationPiecesTable pieces={job.pieces ?? []} />
           )}
-          {activeTab === 'slabs' && canReadSlabs && (
-            <FabricationSlabsTab jobId={id} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
+          {activeTab === 'materials' && canReadSlabs && (
+            <FabricationMaterialsTab jobId={id} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
           )}
           {activeTab === 'checklist' && (
             <FabricationStepsTab jobId={id} steps={job.steps ?? []} canEdit={canEdit} />

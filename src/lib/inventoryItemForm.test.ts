@@ -24,7 +24,7 @@ describe('toItemPayload (whole-object write — PATCH has PUT semantics)', () =>
       sku: 'GRAN-001', name: 'Absolute Black', description: 'desc', unitId: 6, unitPrice: 42.5,
       currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 30, originCountryId: 7,
-      barcode: '012345', defaultWarehouseId: 8,
+      barcode: '012345', defaultWarehouseId: 8, trackStock: true,
     })
   })
 
@@ -58,6 +58,35 @@ describe('toItemPayload (whole-object write — PATCH has PUT semantics)', () =>
   })
 })
 
+describe('trackStock', () => {
+  it('is on for a new item', () => {
+    expect(itemDefaults().track_stock).toBe(true)
+    expect(toItemPayload(itemDefaults()).trackStock).toBe(true)
+  })
+
+  it('sends off when the item is switched off', () => {
+    expect(toItemPayload({ tracking: TRACKING_QUANTITY, track_stock: false }).trackStock).toBe(false)
+  })
+
+  it('reads as on when the form never set it', () => {
+    expect(toItemPayload({ tracking: TRACKING_QUANTITY }).trackStock).toBe(true)
+  })
+
+  it('is always on for a slab item, whatever was chosen', () => {
+    expect(toItemPayload({ tracking: TRACKING_SERIALIZED, track_stock: false }).trackStock).toBe(true)
+  })
+
+  it('loads an item as it was saved, and an item without the field as on', () => {
+    const base: InventoryItem = {
+      id: 'u', sku: 'S', name: 'N', description: '', unitId: 1, unitPrice: 0, isActive: true, customFields: {},
+      tracking: TRACKING_QUANTITY, thicknessMm: 0, barcode: '', createdAt: 'a', updatedAt: 'b',
+    }
+    expect(fromItem({ ...base, trackStock: false }).track_stock).toBe(false)
+    expect(fromItem({ ...base, trackStock: true }).track_stock).toBe(true)
+    expect(fromItem(base).track_stock).toBe(true)
+  })
+})
+
 describe('fromItem / toItemPayload round-trip', () => {
   it('preserves every field through fromItem then toItemPayload', () => {
     const item: InventoryItem = {
@@ -72,7 +101,7 @@ describe('fromItem / toItemPayload round-trip', () => {
       sku: 'SKU', name: 'Name', description: 'Desc', unitId: 6, unitPrice: 10,
       currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 20, originCountryId: 7,
-      barcode: 'BC1', defaultWarehouseId: 8,
+      barcode: 'BC1', defaultWarehouseId: 8, trackStock: true,
     })
   })
 

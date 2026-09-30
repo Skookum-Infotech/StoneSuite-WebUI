@@ -83,6 +83,7 @@ export function itemDefaults(): Record<string, unknown> {
     origin_country_id: '',
     default_warehouse_id: '',
     barcode: '',
+    track_stock: true,
   };
 }
 
@@ -105,6 +106,9 @@ export function toItemPayload(data: Record<string, unknown>, warehouses: Warehou
     originCountryId: toIntOrNull(data.origin_country_id),
     barcode: toStr(data.barcode).trim(),
     defaultWarehouseId: warehouseIdOrNull(warehouses, data.default_warehouse_id),
+    // Always sent: PATCH overwrites every field. A slab item is always tracked,
+    // and a form that never set it (older state) reads as tracked.
+    trackStock: data.tracking === TRACKING_SERIALIZED ? true : data.track_stock !== false,
   };
 }
 
@@ -127,6 +131,7 @@ export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Rec
     origin_country_id: idOrEmpty(item.originCountryId),
     default_warehouse_id: warehouseUuidOrEmpty(warehouses, item.defaultWarehouseId),
     barcode: item.barcode ?? '',
+    track_stock: item.trackStock ?? true,
   };
 }
 

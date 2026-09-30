@@ -21,6 +21,8 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useI
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
+import { StockShortageGate } from './components/StockShortageGate';
+import { stockShortagesFrom } from '@/lib/stockShortage';
 import {
   soDefaults, toCreatePayload, PAGE_TABS, SO_STATUS_CODES, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
   type SOLineItem, type SODrawing,
@@ -186,7 +188,9 @@ export default function AddSalesOrderPage() {
           )}
         />
 
-        {saveError && (
+        {/* A refusal for lack of stock has its own dialog; everything else is a banner. */}
+        <StockShortageGate error={saveError} />
+        {saveError && !stockShortagesFrom(saveError) && (
           <div
             ref={errorRef}
             tabIndex={-1}

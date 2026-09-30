@@ -15,6 +15,7 @@ import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/unitLabels';
 import {
   VB_STATUS_COLORS, VB_STATUS_CODES, VB_DELETABLE_STATUSES, VB_VOID_CODE, VB_PAYABLE_STATUSES,
   isVbTransitionBlocked, isVbConfirmedTransition, vbCanVoid, vbDropdownTransitions,
@@ -341,6 +342,7 @@ export default function VendorBillDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
                       { label: 'Disc %', right: true },
@@ -360,6 +362,9 @@ export default function VendorBillDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
+                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                      </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
@@ -368,7 +373,7 @@ export default function VendorBillDetailPage() {
                     </tr>
                   ))}
                   {bill.items.length === 0 && (
-                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

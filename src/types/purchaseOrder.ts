@@ -43,6 +43,10 @@ export interface PurchaseOrderLineInput {
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  /** How many slabs a slab-tracked line is expected to bring — optional and
+   *  informational (the quantity, in the item's area unit, is what is priced
+   *  and received). Refused for any other line. */
+  expectedSlabs?: number;
 }
 
 export interface PurchaseOrderCreatePayload {
@@ -101,6 +105,14 @@ export interface PurchaseOrderLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** The catalogue item's tracking mode — `serialized` items are received slab
+   *  by slab (Item Receipt), anything else by quantity. Empty on a free-text
+   *  line. Live catalogue data, not part of the line's frozen snapshot. */
+  tracking?: string;
+  /** The buyer's slab count for a slab line, when stated. */
+  expectedSlabs?: number | null;
+  /** Slabs that live (non-void) receipts have brought in against this line so far. */
+  slabsReceived?: number;
 }
 
 /** `lkp_record_status` code for the PORD record type — the fixed, mostly
