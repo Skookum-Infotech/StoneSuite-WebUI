@@ -112,7 +112,7 @@ export default function ItemReceiptDetailPage() {
           {
             title: 'Receipt Information',
             rows: [
-              ['Warehouse', ir.warehouseName || ''],
+              ['Location', ir.warehouseName || ''],
               ['Packing Slip #', ir.packingSlip || ''],
               ['Carrier', ir.carrier || ''],
               ['Tracking #', ir.trackingNumber || ''],
@@ -204,7 +204,7 @@ export default function ItemReceiptDetailPage() {
               <ModernSection title="Receipt Information" index={1}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Receipt Date" value={fmtDate(ir.receiptDate)} />
-                  <ReadonlyField label="Warehouse" value={ir.warehouseName} />
+                  <ReadonlyField label="Location" value={ir.warehouseName} />
                   <ReadonlyField label="Packing Slip #" value={ir.packingSlip} />
                   <ReadonlyField label="Carrier" value={ir.carrier} />
                   <ReadonlyField label="Tracking #" value={ir.trackingNumber} />

@@ -110,12 +110,12 @@ export function ItemFormBody({ data, set }: {
               aria-label="Barcode"
             />
           </ModernFieldShell>
-          <ModernFieldShell label="Default Warehouse">
+          <ModernFieldShell label="Default Location">
             <WarehouseSelect
               warehouses={lookups?.warehouses ?? []}
               value={String(data.default_warehouse_id ?? '')}
               onChange={(v) => set('default_warehouse_id', v)}
-              label="Default Warehouse"
+              label="Default Location"
             />
           </ModernFieldShell>
           <div className="flex items-center gap-2 pt-6">

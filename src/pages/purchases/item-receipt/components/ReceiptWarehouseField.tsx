@@ -3,8 +3,8 @@ import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import type { ItemReceiptFormField } from '@/lib/itemReceiptForm';
 
-// The receiving warehouse — mandatory, since it is where the goods (and every
-// slab's bin) live. Bound to the warehouse uuid; the page turns it into the
+// The receiving location — mandatory, since it is where the goods (and every
+// slab's bin) live. Bound to the location uuid; the page turns it into the
 // numeric id the receipt payload takes (lib/inventoryWarehouse.ts).
 export function ReceiptWarehouseField({ field, value, set }: {
   field: ItemReceiptFormField;
@@ -13,9 +13,7 @@ export function ReceiptWarehouseField({ field, value, set }: {
 }) {
   const { lookups } = useInventoryLookups();
   const selected = typeof value === 'string' ? value : '';
-  // An inactive warehouse can't be newly chosen, but a receipt already
-  // pointing at one keeps showing it.
-  const warehouses = (lookups?.warehouses ?? []).filter((w) => w.isActive || w.id === selected);
+  const warehouses = lookups?.warehouses ?? [];
 
   return (
     <ModernFieldShell label={field.label} required={field.required}>

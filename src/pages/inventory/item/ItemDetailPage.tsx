@@ -99,7 +99,7 @@ export default function ItemDetailPage() {
               ['Unit', nameOf(lookups?.units, item.unitId) || ''],
               ['Unit Price', `$${item.unitPrice.toFixed(2)}`],
               ['Barcode', item.barcode || ''],
-              ['Default Warehouse', lookups?.warehouses.find((w) => w.id === String(item.defaultWarehouseId))?.name || ''],
+              ['Default Location', lookups?.warehouses.find((w) => w.warehouseId === item.defaultWarehouseId)?.name || ''],
               ['Track Stock', item.tracking === TRACKING_SERIALIZED || item.trackStock !== false ? 'Yes' : 'No'],
             ],
           },
@@ -162,7 +162,7 @@ export default function ItemDetailPage() {
                   <ReadonlyField label="Currency" value={nameOf(crmLookups?.currencies, item.currencyId)} />
                   <ReadonlyField label="Tax Rate" value={nameOf(lookups?.['tax-rates'], item.taxRateId)} />
                   <ReadonlyField label="Barcode" value={item.barcode} />
-                  <ReadonlyField label="Default Warehouse" value={lookups?.warehouses.find((w) => w.id === String(item.defaultWarehouseId))?.name} />
+                  <ReadonlyField label="Default Location" value={lookups?.warehouses.find((w) => w.warehouseId === item.defaultWarehouseId)?.name} />
                   <ReadonlyField label="Track Stock" value={item.tracking === TRACKING_SERIALIZED || item.trackStock !== false ? 'Yes' : 'No'} />
                 </div>
               </ModernSection>

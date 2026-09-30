@@ -75,7 +75,7 @@ export default function AdjustmentDetailPage() {
           <ModernSection title="Header" index={0}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               <ReadonlyField label="Date" value={a.date} />
-              <ReadonlyField label="Warehouse" value={a.warehouseName} />
+              <ReadonlyField label="Location" value={a.warehouseName} />
               <ReadonlyField label="Document Reason" value={a.reasonName} />
               <ReadonlyField label="Net Delta" value={a.netDelta.toFixed(2)} />
               {a.notes && <ReadonlyField label="Notes" value={a.notes} />}

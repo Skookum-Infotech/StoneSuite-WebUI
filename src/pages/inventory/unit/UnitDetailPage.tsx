@@ -89,7 +89,7 @@ export default function UnitDetailPage() {
   const inTransit = unit.status === UNIT_STATUS_IN_TRANSIT;
   const actionable = unit.status === UNIT_STATUS_AVAILABLE;
   const disabledReason = inTransit
-    ? 'This unit is in transit between warehouses — refuses bin moves, cuts and scraps until received.'
+    ? 'This unit is in transit between locations — refuses bin moves, cuts and scraps until received.'
     : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
 
   async function handleExportPdf() {
@@ -115,7 +115,7 @@ export default function UnitDetailPage() {
               ['Dimensions (mm)', `${unit.lengthMm} × ${unit.widthMm} × ${unit.thicknessMm}`],
               ['Grade', unit.grade || ''],
               ['Finish', unit.finish || ''],
-              ['Warehouse', unit.warehouseName || ''],
+              ['Location', unit.warehouseName || ''],
               ['Bin', unit.binPath || ''],
               ['Lot', unit.lot || ''],
               ['Block ID', unit.blockId || ''],
@@ -179,7 +179,7 @@ export default function UnitDetailPage() {
               {inTransit && (
                 <div className="flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
                   <ArrowLeftRight className="mt-0.5 size-4 shrink-0 text-indigo-500" />
-                  <p className="text-xs text-indigo-700">This unit is on a truck between warehouses. Receive the transfer to bring it back into stock before moving, cutting or scrapping it.</p>
+                  <p className="text-xs text-indigo-700">This unit is on a truck between locations. Receive the transfer to bring it back into stock before moving, cutting or scrapping it.</p>
                 </div>
               )}
               <UnitUsageTab unit={unit} />
