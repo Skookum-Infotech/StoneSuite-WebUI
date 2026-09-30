@@ -120,6 +120,23 @@ export default function AddVendorPaymentPage() {
     guard.markClean,
   );
 
+  // Picking a bill pre-fills what's knowable: the application amount (capped at
+  // the payment's not-yet-allocated amount when one is entered) and, while the
+  // payment amount is still blank, the payment amount itself.
+  function pickPendingBill(bill: VendorBillRef | null) {
+    setPendingBill(bill);
+    if (!bill) return;
+    const paymentAmount = parseFloat(String(data.amount ?? ''));
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+      setData((d) => ({ ...d, amount: String(bill.balanceDue) }));
+      setPendingAmount(String(bill.balanceDue));
+      return;
+    }
+    const allocated = applications.reduce((sum, a) => sum + a.amount, 0);
+    const remaining = Math.max(0, Math.round((paymentAmount - allocated) * 100) / 100);
+    setPendingAmount(String(Math.min(remaining, bill.balanceDue)));
+  }
+
   function addApplication() {
     if (!pendingBill) return;
     const amount = parseFloat(pendingAmount);
@@ -245,7 +262,7 @@ export default function AddVendorPaymentPage() {
                   <VendorBillPicker
                     vendor={vendor}
                     value={pendingBill}
-                    onChange={setPendingBill}
+                    onChange={pickPendingBill}
                     excludeIds={applications.map((a) => a.vendorBillUuid)}
                   />
                 </div>
