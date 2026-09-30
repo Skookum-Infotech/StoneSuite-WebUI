@@ -76,7 +76,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
           <div className="space-y-4 px-5 py-5">
             <p className="text-xs text-stone-500">
               Invite created{result.emailSent ? ' and emailed' : ''}. Share this link so the customer can complete
-              their onboarding{result.emailSent ? '' : ' (email not configured — copy it)'}:
+              their onboarding{result.emailSent ? '' : ' (the email could not be sent — copy it)'}:
             </p>
             <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
               <code className="flex-1 truncate px-2 text-label text-stone-700">{result.inviteLink}</code>

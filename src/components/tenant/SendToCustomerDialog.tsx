@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Send } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
@@ -43,9 +43,27 @@ export function SendToCustomerDialog({
   recipientKind = 'customer',
 }: SendToCustomerDialogProps) {
   const copy = RECIPIENT_COPY[recipientKind];
+  // Set when the request succeeded but the email did not go out (see
+  // DocumentSendResult.emailSent), which is not an HTTP error.
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  // A failure from an earlier attempt must not greet the next opening of the
+  // dialog: reset it when `open` flips on (state adjusted during render, the
+  // React-recommended way to reset state on a prop change — not an effect).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setDeliveryError(null);
+  }
   const send = useMutation({
     mutationFn: () => documentService.sendToCustomer(recordId),
+    onMutate: () => setDeliveryError(null),
     onSuccess: (result) => {
+      if (result.emailSent === false) {
+        // The send is recorded, but reporting "Sent to …" here would be false.
+        // Keep the dialog open with the reason so the user can see it and retry.
+        setDeliveryError(result.emailError ?? 'The email could not be delivered.');
+        return;
+      }
       onOpenChange(false);
       onSent(result);
       // The page-local success text below the action buttons (see each
@@ -131,6 +149,11 @@ export function SendToCustomerDialog({
         {send.error && (
           <p className="mb-3 text-xs text-destructive">
             {apiErrorMessage(send.error, 'Failed to send document.')}
+          </p>
+        )}
+        {deliveryError && (
+          <p role="alert" className="mb-3 text-xs text-destructive">
+            {deliveryError}
           </p>
         )}
 

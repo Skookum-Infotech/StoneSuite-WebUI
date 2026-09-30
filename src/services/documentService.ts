@@ -10,6 +10,12 @@ export interface DocumentSendPayload {
 export interface DocumentSendResult {
   sendId: string;
   sentTo: string[];
+  // What really happened to the email. The backend confirms the first delivery
+  // attempt before answering, so `false` is a real failure — the send is
+  // recorded, but the email did not go out. Absent only from older backends.
+  emailSent?: boolean;
+  // Client-safe explanation, present only when emailSent is false.
+  emailError?: string;
 }
 
 // Generic record-keyed document endpoints (`/api/tenant/records/{id}/...`),
@@ -22,9 +28,14 @@ export const documentService = {
   // billing email server-side if omitted. RBAC: <type>:update.
   sendToCustomer: (recordId: string, payload: DocumentSendPayload = {}): Promise<DocumentSendResult> =>
     tenantClient
-      .post<{ success: boolean; sendId: string; sentTo: string[] }>(
+      .post<{ success: boolean } & DocumentSendResult>(
         `/tenant/records/${recordId}/document/send`,
         payload,
       )
-      .then((r) => ({ sendId: r.data.sendId, sentTo: r.data.sentTo })),
+      .then((r) => ({
+        sendId: r.data.sendId,
+        sentTo: r.data.sentTo,
+        emailSent: r.data.emailSent,
+        emailError: r.data.emailError,
+      })),
 };

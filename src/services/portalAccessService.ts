@@ -2,6 +2,7 @@ import { tenantClient } from '@/api/tenantClient';
 import type {
   PortalUser,
   PortalUserRosterEntry,
+  PortalInviteResult,
   GrantPortalAccessPayload,
 } from '@/types/portalUser';
 
@@ -19,17 +20,17 @@ export const portalAccessService = {
       .get<{ success: boolean; portalUsers: PortalUser[] }>(customerBase(customerUuid))
       .then((r) => r.data.portalUsers ?? []),
 
-  grant: (customerUuid: string, payload: GrantPortalAccessPayload): Promise<PortalUser> =>
+  grant: (customerUuid: string, payload: GrantPortalAccessPayload): Promise<PortalInviteResult> =>
     tenantClient
-      .post<{ success: boolean; portalUser: PortalUser }>(customerBase(customerUuid), payload)
-      .then((r) => r.data.portalUser),
+      .post<{ success: boolean } & PortalInviteResult>(customerBase(customerUuid), payload)
+      .then((r) => ({ portalUser: r.data.portalUser, emailSent: r.data.emailSent, emailError: r.data.emailError })),
 
   // Mints a new invite token, so a previously leaked or forwarded link stops
   // working — the same call doubles as "resend" and "invalidate".
-  resendInvite: (customerUuid: string, id: string): Promise<PortalUser> =>
+  resendInvite: (customerUuid: string, id: string): Promise<PortalInviteResult> =>
     tenantClient
-      .post<{ success: boolean; portalUser: PortalUser }>(`${customerBase(customerUuid)}/${id}/resend`, {})
-      .then((r) => r.data.portalUser),
+      .post<{ success: boolean } & PortalInviteResult>(`${customerBase(customerUuid)}/${id}/resend`, {})
+      .then((r) => ({ portalUser: r.data.portalUser, emailSent: r.data.emailSent, emailError: r.data.emailError })),
 
   // Reversible — see resume(). Kills the customer's live session immediately.
   suspend: (customerUuid: string, id: string): Promise<void> =>
