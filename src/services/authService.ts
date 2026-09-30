@@ -4,7 +4,6 @@ import type {
   LoginCredentials,
   RegisterData,
   AuthResponse,
-  RefreshResponse,
   UserProfile,
   IdentifyResult,
   PortalWorkspace,
@@ -46,13 +45,6 @@ export const authService = {
 
   getCurrentUser: async (): Promise<{ success: boolean; user: UserProfile }> => {
     const response = await apiClient.get('/auth/me');
-    return response.data;
-  },
-
-  // Exchange the refresh_token httpOnly cookie for a new access token.
-  // Called by useSessionTimer ("Stay") and by the Axios 401 interceptor.
-  refreshSession: async (): Promise<RefreshResponse> => {
-    const response = await apiClient.post<RefreshResponse>('/auth/refresh');
     return response.data;
   },
 
