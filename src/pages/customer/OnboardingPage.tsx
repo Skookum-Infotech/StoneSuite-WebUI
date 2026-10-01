@@ -8,12 +8,19 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { InviteCustomerModal } from '@/components/customer/InviteCustomerModal';
 import { TenantRow } from '@/components/customer/TenantRow';
+import { OnboardingStatusCards } from '@/components/customer/OnboardingStatusCards';
+import {
+  countByFilter,
+  filterTenants,
+  type OnboardingFilterKey,
+} from '@/lib/onboardingStatusFilter';
 import type { Tenant } from '@/types/tenant';
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [showInvite, setShowInvite] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<OnboardingFilterKey | null>(null);
 
   const tenantsQ = useQuery({
     queryKey: ['tenants'],
@@ -27,6 +34,9 @@ export default function OnboardingPage() {
 
   const tenants = tenantsQ.data ?? [];
   const pending = tenants.filter((t) => t.status === 'submitted');
+  const counts = countByFilter(tenants);
+  const visibleTenants = filterTenants(tenants, statusFilter);
+  const showApprovals = statusFilter === null || statusFilter === 'pending';
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -66,8 +76,14 @@ export default function OnboardingPage() {
           {tenantsQ.isLoading && <Spinner label="Loading customers…" />}
           {tenantsQ.isError && <ErrorNote>{apiErrorMessage(tenantsQ.error, 'Failed to load customers.')}</ErrorNote>}
 
+          {tenants.length > 0 && (
+            <div className="mb-5">
+              <OnboardingStatusCards counts={counts} active={statusFilter} onSelect={setStatusFilter} />
+            </div>
+          )}
+
           {/* Pending approvals */}
-          {pending.length > 0 && (
+          {showApprovals && pending.length > 0 && (
             <section className="mb-6">
               <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">
                 Pending approvals ({pending.length})
@@ -84,11 +100,14 @@ export default function OnboardingPage() {
           {!tenantsQ.isLoading && !tenantsQ.isError && tenants.length === 0 && (
             <EmptyState>No customers yet — invite or onboard your first one.</EmptyState>
           )}
-          {tenants.length > 0 && (
+          {tenants.length > 0 && visibleTenants.length === 0 && (
+            <EmptyState>No customers with this status.</EmptyState>
+          )}
+          {visibleTenants.length > 0 && (
             <>
               <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">Customers</h2>
               <div className="space-y-2">
-                {tenants.map((t) => (
+                {visibleTenants.map((t) => (
                   <TenantRow key={t.id} tenant={t} />
                 ))}
               </div>
