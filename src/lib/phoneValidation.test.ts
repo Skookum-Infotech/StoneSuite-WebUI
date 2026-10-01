@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isInvalidPhoneValue, firstInvalidPhoneLabel } from './phoneValidation';
+import { isInvalidPhoneValue, firstInvalidPhoneLabel, detectCountryCode } from './phoneValidation';
 
 describe('isInvalidPhoneValue', () => {
   it('treats an empty value as not invalid', () => {
@@ -68,5 +68,19 @@ describe('firstInvalidPhoneLabel', () => {
   it('ignores a non-string value rather than throwing', () => {
     const values = { bill_phone: 12345 };
     expect(firstInvalidPhoneLabel(fields, values)).toBeNull();
+  });
+});
+
+describe('detectCountryCode', () => {
+  it.each([
+    ['+1 8745968425', '+1'],
+    ['+44 20 7946 0958', '+44'],
+    ['+91 98765 43210', '+91'],
+    ['+351 912345678', '+351'],
+    ['8745968425', null],
+    ['', null],
+    ['+', null],
+  ])('%j -> %j', (input, expected) => {
+    expect(detectCountryCode(input)).toBe(expected);
   });
 });

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
-import { authService } from '@/services/authService';
-import { apiClient, isRefreshRejection } from '@/api/client';
+import { apiClient, attemptRefresh } from '@/api/client';
 
 // Show the warning modal this many milliseconds before the access token expires.
 const WARNING_MS = 5 * 60 * 1000; // 5 minutes
@@ -129,28 +128,24 @@ export function useSessionTimer(): SessionTimerState {
   const onStay = useCallback(async () => {
     setIsExtending(true);
     try {
-      const res = await authService.refreshSession();
-      if (res.success && res.expiresAt) {
-        setSessionExpiry(res.expiresAt);
+      // The same refresh the 401 interceptor uses. It stores the new access token
+      // and expiry, tells other tabs, re-sends the selected role, retries a cold
+      // start, and refreshes a customer-portal session at its own endpoint — a
+      // bare POST /auth/refresh did none of that (and always failed for portal
+      // sessions, whose refresh cookie is scoped to /api/portal/auth).
+      const outcome = await attemptRefresh();
+      if (outcome === 'ok') {
         setShowWarning(false);
-        // Notify other tabs.
-        try {
-          const ch = new BroadcastChannel(SYNC_CHANNEL);
-          ch.postMessage({ type: 'SESSION_EXTENDED', expiresAt: res.expiresAt });
-          ch.close();
-        } catch { /* ignore */ }
-      } else {
-        // Refresh failed — both tokens expired. Logout.
-        performLogout();
+      } else if (outcome === 'rejected') {
+        // Only an explicit refusal ends the session.
+        await performLogout();
       }
-    } catch (err) {
-      // Only an explicit refusal ends the session; on a network error or 5xx
-      // keep the warning open so the user can press Stay signed in again.
-      if (isRefreshRejection(err)) performLogout();
+      // 'transient': the backend was unreachable — keep the warning open so the
+      // user can press Stay signed in again instead of being signed out.
     } finally {
       setIsExtending(false);
     }
-  }, [performLogout, setSessionExpiry]);
+  }, [performLogout]);
 
   const onLogout = useCallback(() => {
     try {
