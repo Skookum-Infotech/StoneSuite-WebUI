@@ -7,7 +7,7 @@
 // (crmValidation, vendorForm, the document-module field-def files) can use it
 // without importing from `components` — formUtils.ts's sanitize/country-code
 // helpers are a separate, live-typing concern from this validity check.
-import { isValidPhoneNumber } from 'libphonenumber-js';
+import { getCountries, getCountryCallingCode, isValidPhoneNumber } from 'libphonenumber-js';
 
 /** True when `raw` is a non-empty value that isn't a real, dialable phone
  *  number. Empty is never "invalid" here — pair with a field's own
@@ -35,6 +35,27 @@ export function firstInvalidPhoneLabel(
     if (f.type !== 'tel') continue;
     const v = values[f.key];
     if (typeof v === 'string' && isInvalidPhoneValue(v)) return f.label;
+  }
+  return null;
+}
+
+const CALLING_CODES: ReadonlySet<string> = new Set(
+  getCountries().map((iso) => getCountryCallingCode(iso)),
+);
+const MAX_CALLING_CODE_DIGITS = 3;
+
+/** Reads the dial code (e.g. '+44') off the front of a stored phone value, or
+ *  null when the value has no leading '+' or no recognised code. Calling codes
+ *  are prefix-free, so the first match of 1–3 digits is the code. Lets
+ *  PhoneNumberInput show the code a saved number was actually entered with
+ *  rather than always defaulting its selector to +1. */
+export function detectCountryCode(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('+')) return null;
+  const digits = trimmed.slice(1).replace(/\D/g, '');
+  for (let len = 1; len <= MAX_CALLING_CODE_DIGITS; len++) {
+    const candidate = digits.slice(0, len);
+    if (candidate.length === len && CALLING_CODES.has(candidate)) return `+${candidate}`;
   }
   return null;
 }

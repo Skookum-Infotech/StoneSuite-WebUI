@@ -16,7 +16,7 @@ import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
-import { crmCoreDefaults, primaryAddressFields } from '@/lib/crmFields';
+import { crmCoreDefaults, applyAddressMirroring } from '@/lib/crmFields';
 import { validateCrmRecord, type CrmFieldError } from '@/lib/crmValidation';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { cn } from '@/lib/utils';
@@ -44,13 +44,7 @@ export default function AddLeadPage() {
   const set = (key: string, value: unknown) => {
     if (validationErrors.length > 0) setValidationErrors([]);
     setCoreFields((d) => {
-      if (key === 'customer_is_bill_as_primary' && value === true) {
-        return { ...d, ...primaryAddressFields(d, 'bill'), [key]: value };
-      }
-      if (key === 'customer_is_ship_as_primary' && value === true) {
-        return { ...d, ...primaryAddressFields(d, 'ship'), [key]: value };
-      }
-      return { ...d, [key]: value };
+      return applyAddressMirroring(d, key, value);
     });
   };
 
