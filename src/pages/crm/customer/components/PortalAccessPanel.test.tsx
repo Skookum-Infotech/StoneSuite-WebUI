@@ -282,3 +282,54 @@ describe('PortalAccessPanel — grant preconditions', () => {
     expect(screen.queryByRole('button', { name: 'Grant portal access' })).not.toBeInTheDocument();
   });
 });
+
+describe('PortalAccessPanel — real invitation email status', () => {
+  const BOUNCE_MESSAGE = "The recipient's mail server rejected this email. Check the address and try again.";
+
+  it('tells staff when a pending invitation bounced, and why', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'pending', emailStatus: 'bounced', emailStatusMessage: BOUNCE_MESSAGE }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText('Bounced')).toBeInTheDocument();
+    expect(screen.getByText(BOUNCE_MESSAGE)).toBeVisible();
+  });
+
+  it('shows an expired invitation whose email was delivered', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'expired', emailStatus: 'delivered' }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText('Delivered')).toBeInTheDocument();
+  });
+
+  it('shows no email status once the invitation was accepted', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'accepted', emailStatus: 'delivered' }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText(CONTACT_NAME)).toBeInTheDocument();
+    expect(document.querySelector('[data-email-status]')).toBeNull();
+  });
+
+  it('shows nothing for an unknown status', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'pending', emailStatus: 'unknown' }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText(CONTACT_NAME)).toBeInTheDocument();
+    expect(document.querySelector('[data-email-status]')).toBeNull();
+  });
+});

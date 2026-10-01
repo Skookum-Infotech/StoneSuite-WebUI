@@ -5,6 +5,7 @@ import { platformService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { TENANT_STATUS_COLOR } from '@/lib/tenantDisplay';
 import { Badge, Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
+import { EmailStatusBadge } from '@/components/tenant/EmailStatusBadge';
 import type { Tenant } from '@/types/tenant';
 
 const COPIED_RESET_MS = 2000;
@@ -105,6 +106,11 @@ export function TenantInvitesPanel({ tenant }: { tenant: Tenant }) {
                 Expires {new Date(inv.expiresAt).toLocaleString()}
                 {inv.acceptedAt && ` · accepted ${new Date(inv.acceptedAt).toLocaleDateString()}`}
               </p>
+              {inv.status === 'pending' && (
+                <div className="mt-1.5">
+                  <EmailStatusBadge source={inv} showMessage />
+                </div>
+              )}
             </div>
           );
         })}

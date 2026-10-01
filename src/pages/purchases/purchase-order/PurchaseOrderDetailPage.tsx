@@ -26,6 +26,8 @@ import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
+import { documentSendsKey } from '@/lib/documentSends';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
@@ -93,6 +95,8 @@ export default function PurchaseOrderDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['purchase-order', id], updated);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      // A move to Sent emails the vendor, which adds to the email history.
+      queryClient.invalidateQueries({ queryKey: documentSendsKey(id) });
       // Label the actual resulting status, not the one requested -- a move
       // onto an unconfigured approval gate auto-skips server-side (see
       // purchaseorder/store_transition.go), so the two can differ.
@@ -446,6 +450,8 @@ export default function PurchaseOrderDetailPage() {
               <span className="text-stone-700">{fmtDate(po.updatedAt)}</span>
             </div>
           </div>
+
+          <DocumentSendHistory recordId={id} />
 
           {canDeleteHere && (
             <DangerZoneCard>

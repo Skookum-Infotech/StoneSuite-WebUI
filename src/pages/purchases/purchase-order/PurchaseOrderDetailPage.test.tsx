@@ -14,6 +14,9 @@ vi.mock('@/services/purchaseOrderService', () => ({
     convertToBill: vi.fn(),
   },
 }));
+vi.mock('@/services/documentService', () => ({
+  documentService: { sendToCustomer: vi.fn(), listSends: vi.fn().mockResolvedValue([]) },
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 

@@ -22,6 +22,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { QuoteStatusControl } from './components/QuoteStatusControl';
@@ -447,6 +448,8 @@ export default function QuoteDetailPage() {
               <span className="text-stone-700">{fmtDate(quote.updatedAt)}</span>
             </div>
           </div>
+
+          <DocumentSendHistory recordId={id} />
 
           {canDelete && (
             <DangerZoneCard>

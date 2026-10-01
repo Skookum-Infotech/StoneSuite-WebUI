@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Send } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { documentService } from '@/services/documentService';
+import { documentSendsKey } from '@/lib/documentSends';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { DocumentSendResult } from '@/services/documentService';
 
@@ -54,10 +55,14 @@ export function SendToCustomerDialog({
     setWasOpen(open);
     if (open) setDeliveryError(null);
   }
+  const queryClient = useQueryClient();
   const send = useMutation({
     mutationFn: () => documentService.sendToCustomer(recordId),
     onMutate: () => setDeliveryError(null),
     onSuccess: (result) => {
+      // The send is recorded whether or not the email went, so the email
+      // history changes either way.
+      void queryClient.invalidateQueries({ queryKey: documentSendsKey(recordId) });
       if (result.emailSent === false) {
         // The send is recorded, but reporting "Sent to …" here would be false.
         // Keep the dialog open with the reason so the user can see it and retry.

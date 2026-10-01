@@ -4,12 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('@/services/documentService', () => ({
-  documentService: { sendToCustomer: vi.fn() },
+  documentService: { sendToCustomer: vi.fn(), listSends: vi.fn() },
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), warning: vi.fn(), error: vi.fn() } }));
 
 import { toast } from 'sonner';
 import { SendToCustomerDialog } from './SendToCustomerDialog';
+import { documentSendsKey } from '@/lib/documentSends';
 import { documentService } from '@/services/documentService';
 
 const RECORD_ID = 'rec-1';
@@ -134,5 +135,45 @@ describe('SendToCustomerDialog — email outcome', () => {
 
     expect(await screen.findByText('Failed to send email.')).toBeInTheDocument();
     expect(onSent).not.toHaveBeenCalled();
+  });
+});
+
+function renderWithClientSpy() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const spy = vi.spyOn(queryClient, 'invalidateQueries');
+  render(
+    <QueryClientProvider client={queryClient}>
+      <SendToCustomerDialog
+        recordId={RECORD_ID}
+        open
+        onOpenChange={vi.fn()}
+        recipientEmail="buyer@acme.com"
+        label="Invoice INV-1"
+        onSent={vi.fn()}
+      />
+    </QueryClientProvider>,
+  );
+  return spy;
+}
+
+describe('SendToCustomerDialog — refreshes the email history', () => {
+  it('refreshes the history after a send that went out', async () => {
+    vi.mocked(documentService.sendToCustomer).mockResolvedValue({ sendId: 's1', sentTo: ['buyer@acme.com'], emailSent: true });
+    const spy = renderWithClientSpy();
+
+    await userEvent.click(confirm());
+
+    await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: documentSendsKey(RECORD_ID) }));
+  });
+
+  it('refreshes the history even when the email failed — the send is recorded either way', async () => {
+    vi.mocked(documentService.sendToCustomer).mockResolvedValue({
+      sendId: 's1', sentTo: ['buyer@acme.com'], emailSent: false, emailError: EMAIL_ERROR,
+    });
+    const spy = renderWithClientSpy();
+
+    await userEvent.click(confirm());
+
+    await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: documentSendsKey(RECORD_ID) }));
   });
 });
