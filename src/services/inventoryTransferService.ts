@@ -18,7 +18,7 @@ export interface TransferWithNext {
 
 // Warehouse-to-warehouse movement (ITRF) — `inventory_transfer` RBAC
 // resource, `approve` its own grant. DRFT -> PAPV -> APPV -> TRNS -> RCVD.
-// After shipping, stock shows in neither warehouse (genuinely two-legged) —
+// After shipping, stock shows in neither location (genuinely two-legged) —
 // GET /in-transit is how that's explained rather than hunted as missing.
 const BASE = '/tenant/inventory/transfers';
 

@@ -13,10 +13,10 @@ import type { InventoryUnit } from '@/types/inventory';
 // in_transit/consumed/scrapped/sealed-bundle units with its own explanatory
 // message, surfaced verbatim rather than paraphrased.
 //
-// Bins are scoped to a warehouse by uuid; a Unit's warehouseId is the numeric
-// SERIAL, and no endpoint maps one to the other (see WarehouseSelect's KNOWN
-// GAP note). Until that gap closes, this loads the full bin tree unscoped —
-// still correct, just not pre-filtered to the unit's own warehouse.
+// Bins are scoped to a location by uuid; a Unit's warehouseId is the numeric
+// id (lib/inventoryWarehouse.ts converts between the two). This loads the full
+// bin tree unscoped — still correct, just not pre-filtered to the unit's own
+// location.
 export function MoveUnitDialog({ unit, onClose, onMoved }: {
   unit: InventoryUnit;
   onClose: () => void;

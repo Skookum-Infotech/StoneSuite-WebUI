@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 vi.mock('@/services/authService', () => ({
-  authService: { changePassword: vi.fn() },
+  authService: { changePassword: vi.fn(), updateMyName: vi.fn() },
 }))
 vi.mock('@/services/tenantServices', () => ({
   rbacService: { switchRole: vi.fn() },
@@ -22,9 +22,11 @@ vi.mock('@/api/tenantClient', () => ({
 
 import AccountSettingsPage from './AccountSettingsPage'
 import { authService } from '@/services/authService'
+import { useAuthStore } from '@/store/useAuthStore'
 
 const CURRENT = 'OldPass1!'
 const STRONG = 'Abcdef1!'
+const SIGNED_IN = { id: 'identity-1', email: 'ada@example.com', fullName: 'Ada Lovelace' }
 
 function renderPage() {
   const queryClient = new QueryClient({
@@ -57,6 +59,149 @@ async function fillAndSubmit(
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(authService.changePassword).mockResolvedValue({ success: true, message: 'ok' })
+  vi.mocked(authService.updateMyName).mockResolvedValue({ success: true })
+  useAuthStore.setState({ user: { ...SIGNED_IN } })
+})
+
+describe('AccountSettingsPage profile name', () => {
+  const firstNameInput = () => screen.getByLabelText('First Name')
+  const lastNameInput = () => screen.getByLabelText('Last Name')
+  const saveButton = () => screen.getByRole('button', { name: 'Save Changes' })
+  const editButton = () => screen.getByRole('button', { name: 'Edit name' })
+  const cancelButton = () => screen.getByRole('button', { name: 'Cancel editing' })
+  const startEditing = (user: ReturnType<typeof userEvent.setup>) => user.click(editButton())
+
+  it('shows the name and email locked, with an Edit button and no Save', () => {
+    renderPage()
+
+    expect(firstNameInput()).toHaveValue('Ada')
+    expect(lastNameInput()).toHaveValue('Lovelace')
+    expect(firstNameInput()).toHaveAttribute('readonly')
+    expect(lastNameInput()).toHaveAttribute('readonly')
+    // Only the two name fields are inputs; the email is a locked display.
+    expect(screen.getAllByRole('textbox')).toHaveLength(2)
+    expect(screen.getAllByText('ada@example.com').length).toBeGreaterThan(0)
+    expect(editButton()).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument()
+  })
+
+  it('does not let the name change until Edit is clicked', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.type(lastNameInput(), 'xyz')
+
+    expect(lastNameInput()).toHaveValue('Lovelace')
+    expect(authService.updateMyName).not.toHaveBeenCalled()
+  })
+
+  it('unlocks the names, swaps Edit for Cancel/Save, and focuses the first name on Edit', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+
+    expect(firstNameInput()).not.toHaveAttribute('readonly')
+    expect(lastNameInput()).not.toHaveAttribute('readonly')
+    expect(firstNameInput()).toHaveFocus()
+    expect(cancelButton()).toBeInTheDocument()
+    expect(saveButton()).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit name' })).not.toBeInTheDocument()
+  })
+
+  it('keeps Save disabled until the name actually changes', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+    expect(saveButton()).toBeDisabled()
+
+    await user.type(lastNameInput(), 'x')
+    expect(saveButton()).toBeEnabled()
+
+    await user.type(lastNameInput(), '{Backspace}')
+    expect(saveButton()).toBeDisabled()
+  })
+
+  it('Cancel discards the edit, restores the saved name, and locks the fields again', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+    await user.clear(lastNameInput())
+    await user.type(lastNameInput(), 'Byron')
+    await user.click(cancelButton())
+
+    expect(lastNameInput()).toHaveValue('Lovelace')
+    expect(lastNameInput()).toHaveAttribute('readonly')
+    expect(editButton()).toBeInTheDocument()
+    expect(authService.updateMyName).not.toHaveBeenCalled()
+    expect(useAuthStore.getState().user?.fullName).toBe('Ada Lovelace')
+  })
+
+  it('saves the joined name, updates the signed-in profile, and locks the fields again', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+    await user.clear(lastNameInput())
+    await user.type(lastNameInput(), 'Byron')
+    await user.click(saveButton())
+
+    expect(await screen.findByText('Name updated')).toBeInTheDocument()
+    expect(authService.updateMyName).toHaveBeenCalledWith('Ada Byron')
+    expect(useAuthStore.getState().user?.fullName).toBe('Ada Byron')
+    expect(lastNameInput()).toHaveValue('Byron')
+    expect(lastNameInput()).toHaveAttribute('readonly')
+    expect(screen.queryByRole('button', { name: 'Save Changes' })).not.toBeInTheDocument()
+    expect(editButton()).toBeInTheDocument()
+  })
+
+  it('trims what it sends', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+    await user.clear(firstNameInput())
+    await user.type(firstNameInput(), '  Augusta  ')
+    await user.click(saveButton())
+
+    await screen.findByText('Name updated')
+    expect(authService.updateMyName).toHaveBeenCalledWith('Augusta Lovelace')
+  })
+
+  it('allows a blank last name and sends just the first name', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+    await user.clear(lastNameInput())
+    await user.click(saveButton())
+
+    await screen.findByText('Name updated')
+    expect(authService.updateMyName).toHaveBeenCalledWith('Ada')
+  })
+
+  it('rejects a blank first name without calling the API', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+    await user.clear(firstNameInput())
+    await user.click(saveButton())
+
+    expect(await screen.findByText('First name is required')).toBeInTheDocument()
+    expect(authService.updateMyName).not.toHaveBeenCalled()
+  })
+
+  it('shows a failure and leaves the signed-in profile alone when the save fails', async () => {
+    vi.mocked(authService.updateMyName).mockRejectedValue(new Error('boom'))
+    const user = userEvent.setup()
+    renderPage()
+    await startEditing(user)
+    await user.clear(lastNameInput())
+    await user.type(lastNameInput(), 'Byron')
+    await user.click(saveButton())
+
+    expect(await screen.findByText('Failed to update name')).toBeInTheDocument()
+    expect(screen.queryByText('Name updated')).not.toBeInTheDocument()
+    expect(useAuthStore.getState().user?.fullName).toBe('Ada Lovelace')
+    // Still editing and still dirty, so the user can retry without retyping.
+    expect(lastNameInput()).not.toHaveAttribute('readonly')
+    expect(saveButton()).toBeEnabled()
+  })
 })
 
 describe('AccountSettingsPage new-password validation', () => {

@@ -7,6 +7,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
+import { defaultWarehouseUuid } from '@/lib/inventoryWarehouse';
 import { BIN_TYPES } from '@/types/inventory';
 import type { Bin, BinInput, Warehouse } from '@/types/inventory';
 
@@ -26,7 +27,10 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
   const queryClient = useQueryClient();
   const isEdit = Boolean(bin);
 
-  const [warehouseId, setWarehouseId] = useState(bin?.warehouseId ?? defaultWarehouseId ?? '');
+  // A new bin starts in the location the list was filtered to, else the tenant's default.
+  const [warehouseId, setWarehouseId] = useState(
+    bin?.warehouseId ?? (defaultWarehouseId || defaultWarehouseUuid(warehouses)),
+  );
   const [code, setCode] = useState(bin?.code ?? '');
   const [name, setName] = useState(bin?.name ?? '');
   const [type, setType] = useState(bin?.type ?? BIN_TYPES[0]);
@@ -68,7 +72,7 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <label className={fieldLabelCls}>Warehouse *</label>
+            <label className={fieldLabelCls}>Location *</label>
             <WarehouseSelect warehouses={warehouses} value={warehouseId} onChange={(v) => { setWarehouseId(v); setParentId(''); }} required />
           </div>
           <div className="grid grid-cols-2 gap-3">

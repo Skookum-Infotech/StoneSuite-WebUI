@@ -23,6 +23,7 @@ import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
@@ -472,6 +473,8 @@ export default function SalesOrderDetailPage() {
               <span className="text-stone-700">{fmtDate(order.updatedAt)}</span>
             </div>
           </div>
+
+          <DocumentSendHistory recordId={id} />
 
           {canDelete && (
             <DangerZoneCard>

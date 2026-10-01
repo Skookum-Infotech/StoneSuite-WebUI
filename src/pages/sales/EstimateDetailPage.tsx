@@ -22,6 +22,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { EstimateStatusControl } from './components/EstimateStatusControl';
@@ -435,6 +436,8 @@ export default function EstimateDetailPage() {
               <span className="text-stone-700">{fmtDate(estimate.updatedAt)}</span>
             </div>
           </div>
+
+          <DocumentSendHistory recordId={id} />
 
           {canDelete && (
             <DangerZoneCard>

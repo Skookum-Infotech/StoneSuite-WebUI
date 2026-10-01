@@ -1,5 +1,7 @@
 // Shared types for the multi-tenant platform (Phases 1–3).
 
+import type { EmailStatusFields } from '@/types/emailStatus';
+
 export interface TenantUser {
   id: string;
   email: string;
@@ -26,6 +28,10 @@ export interface Tenant {
   createdAt: string;
   hardDeleteAfter?: string | null;
   metadata?: Record<string, unknown>;
+  // The workspace the platform admin signs in to. The backend refuses to
+  // suspend or delete it; both fields are absent on an older backend.
+  isPlatformOwner?: boolean;
+  r2Bucket?: string;
 }
 
 export interface CreateTenantResult {
@@ -63,7 +69,7 @@ export interface AsyncJob {
 }
 
 // An onboarding invite (the token is the shareable "invite key").
-export interface TenantInvite {
+export interface TenantInvite extends EmailStatusFields {
   id: string;
   contactEmail: string;
   token: string;
@@ -505,7 +511,7 @@ export interface AssignableUser {
 }
 
 // Serialized from tenancy.UserInvite (no json tags → Go default PascalCase keys).
-export interface UserInvite {
+export interface UserInvite extends EmailStatusFields {
   ID: string;
   TenantID: string;
   Email: string;

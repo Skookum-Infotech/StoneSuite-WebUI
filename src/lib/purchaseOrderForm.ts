@@ -430,6 +430,12 @@ export function isPoTransitionBlocked(toCode: string, approvalStatus: string, ga
  *  super-admin dropdown option. */
 export const PO_HEADER_TRANSITION_CODES: readonly string[] = ['PAPV', 'SENT'];
 
+/** Statuses in which the vendor already holds the order, so emailing it again
+ *  is a retry or a reminder (backend purchaseorder.CanResendToVendor). Earlier
+ *  statuses never offer it: sending an unapproved order is "Send to Vendor"'s
+ *  job, behind the approval flow. */
+export const PO_RESENDABLE_STATUSES: ReadonlySet<string> = new Set(['SENT', 'PART', 'RCVD']);
+
 /** The record's legal next-moves: its own `nextStatusCodes` when loaded (the
  *  backend's view, with an unconfigured approval checkpoint collapsed out),
  *  else the static map. */

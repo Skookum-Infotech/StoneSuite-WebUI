@@ -15,7 +15,9 @@ vi.mock('@/services/portalAccessService', () => ({
   },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), warning: vi.fn(), error: vi.fn() } }));
 
+import { toast } from 'sonner';
 import { PortalAccessPanel } from './PortalAccessPanel';
 import { portalAccessService } from '@/services/portalAccessService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -113,7 +115,7 @@ describe('PortalAccessPanel — grant uses the record contact email', () => {
     const user = userEvent.setup();
     mockPermissions();
     vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([]);
-    vi.mocked(portalAccessService.grant).mockResolvedValue(makeUser());
+    vi.mocked(portalAccessService.grant).mockResolvedValue({ portalUser: makeUser(), emailSent: true });
 
     renderPanel();
 
@@ -155,6 +157,102 @@ describe('PortalAccessPanel — grant uses the record contact email', () => {
   });
 });
 
+// The backend sends mail through stonesuite-notify and reports what really
+// happened; the UI must never show a plain success when the email did not go.
+describe('PortalAccessPanel — invitation email outcome', () => {
+  const EMAIL_ERROR = 'The email could not be delivered. Please try again, or contact support if the problem continues.';
+
+  async function grantFromDialog() {
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Grant portal access' }));
+    const dialog = screen.getByRole('dialog', { name: 'Grant portal access' });
+    await user.click(within(dialog).getByRole('button', { name: 'Grant access' }));
+    return dialog;
+  }
+
+  it('warns with the reason when granting succeeds but the email was not sent', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([]);
+    vi.mocked(portalAccessService.grant).mockResolvedValue({
+      portalUser: makeUser(), emailSent: false, emailError: EMAIL_ERROR,
+    });
+
+    renderPanel();
+    await grantFromDialog();
+
+    await waitFor(() =>
+      expect(toast.warning).toHaveBeenCalledWith(
+        'Portal access was granted, but the invitation email was not sent.',
+        expect.objectContaining({ description: expect.stringContaining(EMAIL_ERROR) }),
+      ),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
+    // Access itself was granted, so the dialog closes.
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Grant portal access' })).not.toBeInTheDocument());
+  });
+
+  it('confirms delivery when the email was sent', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([]);
+    vi.mocked(portalAccessService.grant).mockResolvedValue({ portalUser: makeUser(), emailSent: true });
+
+    renderPanel();
+    await grantFromDialog();
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Portal access granted. Invitation email sent.'));
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  it('says nothing about email when no invite was sent (customer already has a password)', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([]);
+    vi.mocked(portalAccessService.grant).mockResolvedValue({ portalUser: makeUser({ inviteStatus: 'none' }) });
+
+    renderPanel();
+    await grantFromDialog();
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Grant portal access' })).not.toBeInTheDocument());
+    expect(toast.warning).not.toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('shows a persistent error when a resend re-issues the invite but the email fails', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([makeUser({ inviteStatus: 'pending' })]);
+    vi.mocked(portalAccessService.resendInvite).mockResolvedValue({
+      portalUser: makeUser(), emailSent: false, emailError: EMAIL_ERROR,
+    });
+
+    renderPanel();
+    await user.click(await screen.findByRole('button', { name: `Resend invitation to ${CONTACT_EMAIL}` }));
+
+    expect(
+      await screen.findByText(`The invitation was re-issued, but the email was not sent. ${EMAIL_ERROR}`),
+    ).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('clears the error and confirms when a resend succeeds', async () => {
+    const user = userEvent.setup();
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([makeUser({ inviteStatus: 'pending' })]);
+    vi.mocked(portalAccessService.resendInvite)
+      .mockResolvedValueOnce({ portalUser: makeUser(), emailSent: false, emailError: EMAIL_ERROR })
+      .mockResolvedValueOnce({ portalUser: makeUser(), emailSent: true });
+
+    renderPanel();
+    const resend = () => screen.findByRole('button', { name: `Resend invitation to ${CONTACT_EMAIL}` });
+    await user.click(await resend());
+    await screen.findByText(/the email was not sent/);
+
+    await user.click(await resend());
+
+    await waitFor(() => expect(screen.queryByText(/the email was not sent/)).not.toBeInTheDocument());
+    expect(toast.success).toHaveBeenCalledWith('Invitation email sent.');
+  });
+});
+
 describe('PortalAccessPanel — grant preconditions', () => {
   it('disables Grant access until the customer record is approved', async () => {
     mockPermissions();
@@ -182,5 +280,56 @@ describe('PortalAccessPanel — grant preconditions', () => {
 
     expect(await screen.findByText('No portal logins granted yet.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Grant portal access' })).not.toBeInTheDocument();
+  });
+});
+
+describe('PortalAccessPanel — real invitation email status', () => {
+  const BOUNCE_MESSAGE = "The recipient's mail server rejected this email. Check the address and try again.";
+
+  it('tells staff when a pending invitation bounced, and why', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'pending', emailStatus: 'bounced', emailStatusMessage: BOUNCE_MESSAGE }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText('Not delivered')).toBeInTheDocument();
+    expect(screen.getByText(BOUNCE_MESSAGE)).toBeVisible();
+  });
+
+  it('shows an expired invitation whose email was delivered', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'expired', emailStatus: 'delivered' }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText('Delivered')).toBeInTheDocument();
+  });
+
+  it('shows no email status once the invitation was accepted', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'accepted', emailStatus: 'delivered' }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText(CONTACT_NAME)).toBeInTheDocument();
+    expect(document.querySelector('[data-email-status]')).toBeNull();
+  });
+
+  it('shows nothing for an unknown status', async () => {
+    mockPermissions();
+    vi.mocked(portalAccessService.listForCustomer).mockResolvedValue([
+      makeUser({ inviteStatus: 'pending', emailStatus: 'unknown' }),
+    ]);
+
+    renderPanel();
+
+    expect(await screen.findByText(CONTACT_NAME)).toBeInTheDocument();
+    expect(document.querySelector('[data-email-status]')).toBeNull();
   });
 });

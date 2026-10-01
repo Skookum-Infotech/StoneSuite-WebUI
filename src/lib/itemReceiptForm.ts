@@ -38,7 +38,7 @@ export interface ItemReceiptFormField {
 export const RECEIPT_HEADER_FIELDS: ItemReceiptFormField[] = [
   { key: 'ir_status', label: 'Item Receipt Status', type: 'readonly', placeholder: 'Pending' },
   { key: 'ir_doc_num', label: 'Item Receipt #', type: 'readonly', placeholder: 'Auto-generated' },
-  { key: 'warehouse_id', label: 'Warehouse', type: 'warehouse', required: true, hint: 'Where the received goods are stored. Slab bins are chosen from this warehouse.' },
+  { key: 'warehouse_id', label: 'Location', type: 'warehouse', required: true, hint: 'Where the received goods are stored. Slab bins are chosen from this location.' },
   { key: 'receipt_date', label: 'Receipt Date', type: 'date', required: true },
   { key: 'packing_slip', label: 'Packing Slip #', type: 'text', placeholder: 'Enter a packing slip number' },
   { key: 'carrier', label: 'Carrier', type: 'text', placeholder: 'e.g. FedEx, UPS' },
@@ -236,7 +236,7 @@ export function validateReceiptLines(lines: ItemReceiptDraftLine[]): string[] {
 /** Header-level checks the line validators can't see. The warehouse is
  *  mandatory: it's where the received goods (and every slab's bin) live. */
 export function validateReceiptHeader(data: Record<string, unknown>): string[] {
-  return toStr(data.warehouse_id).trim() ? [] : ['A warehouse is required.'];
+  return toStr(data.warehouse_id).trim() ? [] : ['A location is required.'];
 }
 
 // ── Payload mapping (UI form state -> backend create/update contract) ────────

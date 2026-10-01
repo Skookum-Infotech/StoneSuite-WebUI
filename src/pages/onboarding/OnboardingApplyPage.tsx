@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { CheckCircle2, ArrowRight, Building2, MapPin, ShieldCheck, Banknote } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Building2, MapPin, ShieldCheck, Banknote, Warehouse } from 'lucide-react';
 import { onboardingService, type OnboardingFormData } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { OnboardingForm } from '@/components/customer/OnboardingForm';
@@ -9,7 +9,8 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 
 const STEPS = [
   { icon: Building2,  label: 'Company details & legal info' },
-  { icon: MapPin,     label: 'Business address' },
+  { icon: Warehouse,  label: 'Primary location' },
+  { icon: MapPin,     label: 'Billing, shipping & return addresses' },
   { icon: ShieldCheck,label: 'Primary admin contact' },
   { icon: Banknote,   label: 'Finance contact' },
 ];

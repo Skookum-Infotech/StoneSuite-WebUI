@@ -170,7 +170,7 @@ describe('fromItemReceipt', () => {
       customFields: { color: 'blue' },
     }
     const { data, customFieldValues } = fromItemReceipt(ir)
-    // The warehouse picker is filled from the lookups (by numeric id), not from the receipt.
+    // The location picker is filled from the lookups (by numeric id), not from the receipt.
     expect(data).not.toHaveProperty('warehouse_id')
     expect(data.packing_slip).toBe('PS-1')
     expect(data.owner_employee).toBe('7')
@@ -322,9 +322,9 @@ describe('validateReceiptLineErrors — slab lines', () => {
 })
 
 describe('validateReceiptHeader', () => {
-  it('requires a warehouse', () => {
-    expect(validateReceiptHeader({})).toEqual(['A warehouse is required.'])
-    expect(validateReceiptHeader({ warehouse_id: '  ' })).toEqual(['A warehouse is required.'])
+  it('requires a location', () => {
+    expect(validateReceiptHeader({})).toEqual(['A location is required.'])
+    expect(validateReceiptHeader({ warehouse_id: '  ' })).toEqual(['A location is required.'])
   })
 
   it('passes once one is chosen', () => {

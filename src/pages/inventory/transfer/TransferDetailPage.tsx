@@ -81,14 +81,14 @@ export default function TransferDetailPage() {
           {isInTransit && (
             <div className="flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
               <Truck className="mt-0.5 size-4 shrink-0 text-indigo-500" />
-              <p className="text-xs text-indigo-700">This transfer has shipped — stock shows in neither warehouse until it is received. This is expected, not missing stock.</p>
+              <p className="text-xs text-indigo-700">This transfer has shipped — stock shows in neither location until it is received. This is expected, not missing stock.</p>
             </div>
           )}
 
           <ModernSection title="Header" index={0}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              <ReadonlyField label="From Warehouse" value={t.fromWarehouseName} />
-              <ReadonlyField label="To Warehouse" value={t.toWarehouseName} />
+              <ReadonlyField label="From Location" value={t.fromWarehouseName} />
+              <ReadonlyField label="To Location" value={t.toWarehouseName} />
               <ReadonlyField label="To Bin" value={t.toBinPath} />
               <ReadonlyField label="Date" value={t.date} />
               <ReadonlyField label="Expected Date" value={t.expectedDate ?? undefined} />

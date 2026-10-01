@@ -18,6 +18,9 @@ vi.mock('@/services/lookupService', () => ({
     getCrmLookups: vi.fn().mockResolvedValue({ currencies: [], paymentTerms: [], priceLevels: [] }),
   },
 }));
+vi.mock('@/services/documentService', () => ({
+  documentService: { sendToCustomer: vi.fn(), listSends: vi.fn().mockResolvedValue([]) },
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/components/crm/CrmSubTabsPanel', () => ({ FilesContent: () => null }));

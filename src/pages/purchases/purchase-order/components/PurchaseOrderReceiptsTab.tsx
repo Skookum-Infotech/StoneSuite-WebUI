@@ -40,7 +40,7 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
       <table className="w-full text-left text-xs">
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr>
-            {['Receipt #', 'Status', 'Receipt Date', 'Warehouse', 'Posted', 'Voided'].map((h) => (
+            {['Receipt #', 'Status', 'Receipt Date', 'Location', 'Posted', 'Voided'].map((h) => (
               <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
             ))}
           </tr>

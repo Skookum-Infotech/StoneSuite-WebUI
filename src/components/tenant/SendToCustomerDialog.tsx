@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Send } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { documentService } from '@/services/documentService';
+import { documentSendsKey } from '@/lib/documentSends';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { DocumentSendResult } from '@/services/documentService';
 
@@ -18,11 +19,22 @@ interface SendToCustomerDialogProps {
    *  customer-facing (sales side) and vendor-facing (purchase side) wording.
    *  Defaults to 'customer' so existing sales-page callers need no changes. */
   recipientKind?: 'customer' | 'vendor';
+  /** Replaces the request made on confirm. Defaults to the generic record-keyed
+   *  send; a purchase order resends through its own endpoint. */
+  send?: () => Promise<DocumentSendResult>;
+  /** The document already went out once: the copy says "again" and the success
+   *  toast says "Resent". */
+  resend?: boolean;
 }
 
 const RECIPIENT_COPY = {
   customer: { title: 'Send to customer?', confirm: 'Send to Customer', verb: 'customer' },
   vendor: { title: 'Send to vendor?', confirm: 'Send to Vendor', verb: 'vendor' },
+} as const;
+
+const RESEND_COPY = {
+  customer: { title: 'Resend to customer?', confirm: 'Resend to Customer' },
+  vendor: { title: 'Resend to vendor?', confirm: 'Resend to Vendor' },
 } as const;
 
 // Shared across every document detail page that gates a "Send to
@@ -41,11 +53,35 @@ export function SendToCustomerDialog({
   label,
   onSent,
   recipientKind = 'customer',
+  send: sendRequest,
+  resend = false,
 }: SendToCustomerDialogProps) {
-  const copy = RECIPIENT_COPY[recipientKind];
+  const copy = { ...RECIPIENT_COPY[recipientKind], ...(resend ? RESEND_COPY[recipientKind] : {}) };
+  // Set when the request succeeded but the email did not go out (see
+  // DocumentSendResult.emailSent), which is not an HTTP error.
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  // A failure from an earlier attempt must not greet the next opening of the
+  // dialog: reset it when `open` flips on (state adjusted during render, the
+  // React-recommended way to reset state on a prop change — not an effect).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setDeliveryError(null);
+  }
+  const queryClient = useQueryClient();
   const send = useMutation({
-    mutationFn: () => documentService.sendToCustomer(recordId),
+    mutationFn: () => (sendRequest ? sendRequest() : documentService.sendToCustomer(recordId)),
+    onMutate: () => setDeliveryError(null),
     onSuccess: (result) => {
+      // The send is recorded whether or not the email went, so the email
+      // history changes either way.
+      void queryClient.invalidateQueries({ queryKey: documentSendsKey(recordId) });
+      if (result.emailSent === false) {
+        // The send is recorded, but reporting "Sent to …" here would be false.
+        // Keep the dialog open with the reason so the user can see it and retry.
+        setDeliveryError(result.emailError ?? 'The email could not be delivered.');
+        return;
+      }
       onOpenChange(false);
       onSent(result);
       // The page-local success text below the action buttons (see each
@@ -54,7 +90,7 @@ export function SendToCustomerDialog({
       // actual "you did it" confirmation, visible regardless of scroll
       // position and independent of the page staying mounted.
       toast.success(
-        result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
+        result.sentTo.length ? `${resend ? 'Resent' : 'Sent'} to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
       );
     },
   });
@@ -111,7 +147,7 @@ export function SendToCustomerDialog({
             <h3 id="send-to-recipient-dialog-title" className="text-sm font-bold text-stone-900">
               {copy.title}
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">An email with this order will be sent.</p>
+            <p className="text-xs text-stone-400 mt-0.5">{resend ? 'An email with this order will be sent again.' : 'An email with this order will be sent.'}</p>
           </div>
         </div>
 
@@ -133,6 +169,11 @@ export function SendToCustomerDialog({
             {apiErrorMessage(send.error, 'Failed to send document.')}
           </p>
         )}
+        {deliveryError && (
+          <p role="alert" className="mb-3 text-xs text-destructive">
+            {deliveryError}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <button
@@ -140,7 +181,7 @@ export function SendToCustomerDialog({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={send.isPending}
-            aria-label={`Cancel sending to ${copy.verb}`}
+            aria-label={`Cancel ${resend ? 'resending' : 'sending'} to ${copy.verb}`}
             className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
           >
             Cancel
@@ -150,10 +191,10 @@ export function SendToCustomerDialog({
             type="button"
             onClick={() => send.mutate()}
             disabled={send.isPending}
-            aria-label={`Confirm send to ${copy.verb}`}
+            aria-label={`Confirm ${resend ? 'resend' : 'send'} to ${copy.verb}`}
             className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
           >
-            {send.isPending ? 'Sending…' : copy.confirm}
+            {send.isPending ? (resend ? 'Resending…' : 'Sending…') : copy.confirm}
           </button>
         </div>
       </div>

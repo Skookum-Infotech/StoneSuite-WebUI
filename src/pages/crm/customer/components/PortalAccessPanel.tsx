@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   KeyRound, Plus, Send, PauseCircle, PlayCircle, XCircle, Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { portalAccessService } from "@/services/portalAccessService";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, EmptyState } from "@/components/tenant/ui";
@@ -10,6 +11,7 @@ import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { GrantPortalAccessModal } from "@/components/customer/GrantPortalAccessModal";
 import { PortalUserStatusBadge } from "@/components/customer/PortalUserStatusBadge";
 import { PortalInviteStatusBadge } from "@/components/customer/PortalInviteStatusBadge";
+import { EmailStatusBadge } from "@/components/tenant/EmailStatusBadge";
 import { cn } from "@/lib/utils";
 import type { PortalUser } from "@/types/portalUser";
 
@@ -81,7 +83,19 @@ export function PortalAccessPanel({
 
   const resendMut = useMutation({
     mutationFn: (id: string) => portalAccessService.resendInvite(customerUuid, id),
-    onSuccess: () => { setActionError(null); invalidate(); },
+    onSuccess: (result) => {
+      invalidate();
+      // The invite was re-issued (the old link is dead) even if the email did
+      // not go, so say exactly that rather than reporting a plain success.
+      if (result.emailSent === false) {
+        setActionError(
+          `The invitation was re-issued, but the email was not sent. ${result.emailError ?? "The email could not be delivered."}`,
+        );
+        return;
+      }
+      setActionError(null);
+      if (result.emailSent) toast.success("Invitation email sent.");
+    },
     onError: (err) => setActionError(apiErrorMessage(err, "Failed to resend invitation.")),
   });
   const suspendMut = useMutation({
@@ -258,6 +272,11 @@ function PortalUserRow({
           <p className="text-2xs text-stone-400 mt-0.5">
             Granted {fmtDate(user.createdAt)}
           </p>
+          {(user.inviteStatus === "pending" || user.inviteStatus === "expired") && (
+            <div className="mt-1">
+              <EmailStatusBadge source={user} showMessage />
+            </div>
+          )}
         </div>
 
         {!confirmingRevoke && (

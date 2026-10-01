@@ -77,6 +77,17 @@ export const authService = {
     return response.data;
   },
 
+  // Rename the signed-in user themselves. Staff hit a self-service route that
+  // needs no user:update permission (PATCH /tenant/users/{id} does, and can
+  // also change status); a portal customer edits the same field on their own
+  // /portal/me profile. Either way the caller can only ever reach their own
+  // record — the target comes from the token, never from the request.
+  updateMyName: async (fullName: string): Promise<{ success: boolean }> => {
+    const path = isPortalSession() ? '/portal/me' : '/tenant/users/me';
+    const response = await apiClient.patch(path, { fullName });
+    return response.data;
+  },
+
   // Lists the workspaces the caller may switch between. setPortalAuth carries
   // this at login, but it lives in memory only (see useAuthStore) — a hard
   // refresh wipes it, so MainLayout re-fetches it on mount for a portal
