@@ -1,4 +1,5 @@
 import { tenantClient } from '@/api/tenantClient';
+import type { EmailStatusFields } from '@/types/emailStatus';
 
 export interface DocumentSendPayload {
   to?: string[];
@@ -16,6 +17,20 @@ export interface DocumentSendResult {
   emailSent?: boolean;
   // Client-safe explanation, present only when emailSent is false.
   emailError?: string;
+}
+
+// One row of a record's email history (GET …/document/sends). The email status
+// fields report what the provider says happened to the email, not just that we
+// handed it over; they are absent for sends that predate delivery tracking.
+export interface DocumentSendRecord extends EmailStatusFields {
+  id: string;
+  recordId: string;
+  workflowKey: string;
+  // Comma-separated recipient list, as stored.
+  sentTo: string;
+  cc?: string;
+  subject?: string;
+  sentAt: string;
 }
 
 // Generic record-keyed document endpoints (`/api/tenant/records/{id}/...`),
@@ -38,4 +53,10 @@ export const documentService = {
         emailSent: r.data.emailSent,
         emailError: r.data.emailError,
       })),
+
+  // A record's email history, newest first. RBAC: <type>:read.
+  listSends: (recordId: string): Promise<DocumentSendRecord[]> =>
+    tenantClient
+      .get<{ success: boolean; sends?: DocumentSendRecord[] | null }>(`/tenant/records/${recordId}/document/sends`)
+      .then((r) => r.data.sends ?? []),
 };

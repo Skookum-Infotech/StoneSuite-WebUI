@@ -1,5 +1,7 @@
 // Shared types for the multi-tenant platform (Phases 1–3).
 
+import type { EmailStatusFields } from '@/types/emailStatus';
+
 export interface TenantUser {
   id: string;
   email: string;
@@ -67,7 +69,7 @@ export interface AsyncJob {
 }
 
 // An onboarding invite (the token is the shareable "invite key").
-export interface TenantInvite {
+export interface TenantInvite extends EmailStatusFields {
   id: string;
   contactEmail: string;
   token: string;
@@ -509,7 +511,7 @@ export interface AssignableUser {
 }
 
 // Serialized from tenancy.UserInvite (no json tags → Go default PascalCase keys).
-export interface UserInvite {
+export interface UserInvite extends EmailStatusFields {
   ID: string;
   TenantID: string;
   Email: string;
