@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { unitLabel } from '@/lib/unitLabels';
 import { slabProgressText } from '@/lib/itemReceiptSlabs';
 import {
-  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES,
+  PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES, PO_RESENDABLE_STATUSES,
   poBillableLines, poDropdownTransitions,
 } from '@/lib/purchaseOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
@@ -27,6 +27,7 @@ import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab'
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
+import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { documentSendsKey } from '@/lib/documentSends';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
@@ -64,6 +65,7 @@ export default function PurchaseOrderDetailPage() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [convertOpen, setConvertOpen] = useState(false);
+  const [resendOpen, setResendOpen] = useState(false);
 
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
@@ -144,6 +146,8 @@ export default function PurchaseOrderDetailPage() {
   // hidden) until something has been received, and again once it's all billed.
   const billableLines = poBillableLines(po);
   const canCreateBillHere = canConvertToBill && billableLines.length > 0;
+  // Same grant as Send to Vendor, and only once the vendor already has the order.
+  const canResendHere = canTransition && PO_RESENDABLE_STATUSES.has(po.statusCode);
 
   async function handleExportPdf() {
     if (!po) return;
@@ -235,6 +239,7 @@ export default function PurchaseOrderDetailPage() {
             actions={{
               onReceive: canReceiveHere ? () => navigate(`/purchases/item_receipt/new?po=${id}`) : undefined,
               onCreateBill: canCreateBillHere ? () => setConvertOpen(true) : undefined,
+              onResend: canResendHere ? () => setResendOpen(true) : undefined,
             }}
           />
         )}
@@ -467,6 +472,18 @@ export default function PurchaseOrderDetailPage() {
           )}
         </SalesDetailSidebar>
       </div>
+
+      <SendToCustomerDialog
+        recordId={id}
+        open={resendOpen}
+        onOpenChange={setResendOpen}
+        recipientEmail=""
+        label={po.purchaseOrderNumber || 'This purchase order'}
+        recipientKind="vendor"
+        resend
+        send={() => purchaseOrderService.resendToVendor(id)}
+        onSent={() => {}}
+      />
 
       {convertOpen && (
         <ConvertToBillDialog

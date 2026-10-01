@@ -136,7 +136,7 @@ describe('InviteDetail — real email status', () => {
   it('explains a bounced invitation in words', () => {
     renderDetail({ ...PENDING_INVITE, emailStatus: 'bounced', emailStatusMessage: BOUNCE_MESSAGE });
 
-    expect(screen.getByText('Bounced')).toBeInTheDocument();
+    expect(screen.getByText('Not delivered')).toBeInTheDocument();
     expect(screen.getByText(BOUNCE_MESSAGE)).toBeVisible();
   });
 

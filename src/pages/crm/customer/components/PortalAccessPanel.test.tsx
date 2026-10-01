@@ -294,7 +294,7 @@ describe('PortalAccessPanel — real invitation email status', () => {
 
     renderPanel();
 
-    expect(await screen.findByText('Bounced')).toBeInTheDocument();
+    expect(await screen.findByText('Not delivered')).toBeInTheDocument();
     expect(screen.getByText(BOUNCE_MESSAGE)).toBeVisible();
   });
 

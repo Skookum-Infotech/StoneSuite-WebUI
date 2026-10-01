@@ -53,11 +53,28 @@ describe('DocumentSendHistory', () => {
 
     expect(await screen.findByText('buyer@acme.com')).toBeInTheDocument();
     expect(screen.getByText('Delivered')).toBeInTheDocument();
-    expect(screen.getByText('Bounced')).toBeInTheDocument();
+    expect(screen.getByText('Not delivered')).toBeInTheDocument();
     expect(screen.getByText(/old@acme\.com/)).toBeInTheDocument();
     // A problem is explained in words on the page, not only in a tooltip.
     expect(screen.getByText(/rejected this email/i)).toBeVisible();
     expect(screen.getAllByText(/5m ago/i).length).toBeGreaterThan(0);
+  });
+
+  it('says a just-sent email is awaiting delivery, and explains what that means', async () => {
+    vi.mocked(documentService.listSends).mockResolvedValue([send({ emailStatus: 'sent' })]);
+    renderCard();
+
+    expect(await screen.findByText('Awaiting delivery')).toBeInTheDocument();
+    expect(screen.queryByText('Sent')).not.toBeInTheDocument();
+    expect(screen.getByText(/delivery isn.t confirmed yet/i)).toBeVisible();
+  });
+
+  it('keeps a delivered send to one line: no explanatory paragraph', async () => {
+    vi.mocked(documentService.listSends).mockResolvedValue([send({ emailStatus: 'delivered' })]);
+    renderCard();
+
+    expect(await screen.findByText('Delivered')).toBeInTheDocument();
+    expect(screen.queryByText(/mail server accepted/i)).not.toBeInTheDocument();
   });
 
   it('shows no badge for a send with no status (an older send, or notify unreachable)', async () => {

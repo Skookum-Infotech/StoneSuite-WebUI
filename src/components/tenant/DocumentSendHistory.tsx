@@ -4,6 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { documentService } from '@/services/documentService';
 import { EmailStatusBadge } from '@/components/tenant/EmailStatusBadge';
 import { relativeTime } from '@/lib/recentRecordRoute';
+import { emailStatusExplanation } from '@/lib/emailStatus';
 import { documentSendsKey } from '@/lib/documentSends';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,7 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
   const hidden = rows.length - visible.length;
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
+    <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-3 space-y-2 mb-4">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-stone-400">Email history</p>
         <button
@@ -43,19 +44,23 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
       {sends.isSuccess && rows.length === 0 && <p className="text-2xs text-stone-500">Not emailed yet.</p>}
 
       {visible.length > 0 && (
-        <ul className="space-y-3">
-          {visible.map((s) => (
-            <li key={s.id} className="space-y-1 border-b border-stone-100 pb-3 last:border-0 last:pb-0">
-              <p className="text-xs text-stone-700 break-words">{s.sentTo}</p>
-              {s.cc && <p className="text-2xs text-stone-400 break-words">cc {s.cc}</p>}
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <EmailStatusBadge source={s} showMessage />
-                <span className="text-2xs text-stone-400" title={new Date(s.sentAt).toLocaleString()}>
+        <ul className="space-y-2">
+          {visible.map((s) => {
+            const explanation = emailStatusExplanation(s);
+            return (
+              <li key={s.id} className="space-y-0.5 border-b border-stone-100 pb-2 last:border-0 last:pb-0">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 text-xs text-stone-700 break-words">{s.sentTo}</p>
+                  <EmailStatusBadge source={s} />
+                </div>
+                <p className="text-2xs text-stone-400 break-words" title={new Date(s.sentAt).toLocaleString()}>
+                  {s.cc ? `cc ${s.cc} · ` : ''}
                   {relativeTime(s.sentAt)}
-                </span>
-              </div>
-            </li>
-          ))}
+                </p>
+                {explanation && <p className="text-2xs text-stone-500">{explanation}</p>}
+              </li>
+            );
+          })}
         </ul>
       )}
 
