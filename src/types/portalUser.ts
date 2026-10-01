@@ -5,6 +5,8 @@
 // /api/tenant/customers/{uuid}/portal-users* (per customer) and
 // /api/tenant/portal-users (tenant-wide roster).
 
+import type { EmailStatusFields } from '@/types/emailStatus';
+
 // 'active' may sign in. 'suspended' is a reversible pause — resuming it does
 // not require the owning customer record to be re-approved. 'revoked' is
 // permanent; re-granting access goes through the same eligibility check as a
@@ -13,7 +15,7 @@ export type PortalUserStatus = 'active' | 'suspended' | 'revoked';
 
 export type PortalInviteStatus = 'none' | 'pending' | 'expired' | 'accepted' | 'revoked';
 
-export interface PortalUser {
+export interface PortalUser extends EmailStatusFields {
   id: string;
   email: string;
   fullName: string;

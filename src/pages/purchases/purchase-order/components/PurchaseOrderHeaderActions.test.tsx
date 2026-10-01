@@ -169,3 +169,27 @@ describe('PurchaseOrderHeaderActions', () => {
     expect(screen.queryByRole('button', { name: 'Send to Vendor' })).not.toBeInTheDocument();
   });
 });
+
+describe('PurchaseOrderHeaderActions — Resend email', () => {
+  it('shows Resend email only when the page passes a handler, and calls it', async () => {
+    const onResend = vi.fn();
+    renderActions(sent, { actions: { onResend } });
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Resend email' }));
+
+    expect(onResend).toHaveBeenCalledOnce();
+  });
+
+  it('is absent without a handler', () => {
+    renderActions(sent);
+    expect(screen.queryByRole('button', { name: 'Resend email' })).not.toBeInTheDocument();
+  });
+
+  it('is not a status move: it never fires a transition', async () => {
+    const { onTransition } = renderActions(sent, { actions: { onResend: vi.fn() } });
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Resend email' }));
+
+    expect(onTransition).not.toHaveBeenCalled();
+  });
+});

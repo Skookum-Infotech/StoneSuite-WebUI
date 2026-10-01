@@ -1,6 +1,7 @@
 import { tenantClient } from '@/api/tenantClient';
 import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
+import type { DocumentSendResult } from '@/services/documentService';
 import type {
   PurchaseOrder,
   PurchaseOrderCreatePayload,
@@ -86,6 +87,19 @@ export const purchaseOrderService = {
         { toStatusCode },
       )
       .then((r) => ({ ...r.data.purchaseOrder, emailSent: r.data.emailSent, emailError: r.data.emailError })),
+
+  // Emails the order to its vendor again without changing its status. Only an
+  // order the vendor already holds (Sent, Partially Received, Received) may be
+  // resent -- anything earlier is refused with 409. RBAC: purchase_order:transition.
+  resendToVendor: (uuid: string): Promise<DocumentSendResult> =>
+    tenantClient
+      .post<{ success: boolean } & DocumentSendResult>(`${BASE}/${uuid}/resend`, {})
+      .then((r) => ({
+        sendId: r.data.sendId,
+        sentTo: r.data.sentTo,
+        emailSent: r.data.emailSent,
+        emailError: r.data.emailError,
+      })),
 
   // Records one configured approver's sign-off on the PO's current status
   // (AD-6). Rejected with 409 if the status has no approvers configured, or

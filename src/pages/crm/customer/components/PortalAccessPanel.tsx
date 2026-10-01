@@ -11,6 +11,7 @@ import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { GrantPortalAccessModal } from "@/components/customer/GrantPortalAccessModal";
 import { PortalUserStatusBadge } from "@/components/customer/PortalUserStatusBadge";
 import { PortalInviteStatusBadge } from "@/components/customer/PortalInviteStatusBadge";
+import { EmailStatusBadge } from "@/components/tenant/EmailStatusBadge";
 import { cn } from "@/lib/utils";
 import type { PortalUser } from "@/types/portalUser";
 
@@ -271,6 +272,11 @@ function PortalUserRow({
           <p className="text-2xs text-stone-400 mt-0.5">
             Granted {fmtDate(user.createdAt)}
           </p>
+          {(user.inviteStatus === "pending" || user.inviteStatus === "expired") && (
+            <div className="mt-1">
+              <EmailStatusBadge source={user} showMessage />
+            </div>
+          )}
         </div>
 
         {!confirmingRevoke && (

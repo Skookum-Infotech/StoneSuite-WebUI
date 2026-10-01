@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { initials, avatarColor } from "./userHelpers";
 import { StatusBadge } from "./components/StatusBadge";
 import { InviteStatusBadge } from "./components/InviteStatusBadge";
+import { EmailStatusBadge } from "@/components/tenant/EmailStatusBadge";
 import { InviteModal } from "./components/InviteModal";
 import { UserDetail } from "./components/UserDetail";
 import { InviteDetail } from "./components/InviteDetail";
@@ -230,8 +231,9 @@ export default function UsersPage() {
                           >
                             {inv.Email}
                           </p>
-                          <div className="mt-0.5">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1">
                             <InviteStatusBadge invite={inv} />
+                            {inv.Status === "pending" && <EmailStatusBadge source={inv} />}
                           </div>
                         </div>
                       </div>
