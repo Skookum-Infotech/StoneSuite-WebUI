@@ -21,6 +21,7 @@ import { AccountHistoryTab } from './components/AccountHistoryTab';
 import { BlockingSlotsDialog } from './components/BlockingSlotsDialog';
 import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -30,7 +31,7 @@ type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 export default function AccountDetailPage() {

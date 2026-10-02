@@ -28,6 +28,7 @@ import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZone
 import { VendorBillStatusControl } from './components/VendorBillStatusControl';
 import { ConfirmVendorBillStatusDialog } from './components/ConfirmVendorBillStatusDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -45,7 +46,7 @@ type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {

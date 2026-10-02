@@ -7,6 +7,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { VP_BLOCKS_APPLY } from '@/lib/vendorPaymentForm';
 import { ApplyToBillDialog } from './ApplyToBillDialog';
 import type { VendorPayment } from '@/types/vendorPayment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
@@ -14,7 +15,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // The payment's application ledger — which vendor bills this money settled and

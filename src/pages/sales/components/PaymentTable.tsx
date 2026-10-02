@@ -12,6 +12,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { PaymentStatusControl } from './PaymentStatusControl';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { PaymentSearchRequest } from '@/types/payment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -282,7 +283,7 @@ export function PaymentTable() {
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {p.paymentDate
-                          ? new Date(p.paymentDate).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(p.paymentDate, undefined, { year: '2-digit', month: 'short', day: 'numeric' })
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">

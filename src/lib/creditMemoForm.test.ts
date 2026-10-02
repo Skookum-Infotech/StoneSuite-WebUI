@@ -124,6 +124,13 @@ describe('fromCreditMemo', () => {
     expect(fromCreditMemo(memo()).sourcePayment).toBeNull()
   })
 
+  it.each([
+    ['the time.Time form the detail API sends', '2026-01-02T00:00:00Z'],
+    ['an already date-only value', '2026-01-02'],
+  ])('maps the credit memo date from %s to yyyy-mm-dd', (_name, creditMemoDate) => {
+    expect(fromCreditMemo(memo({ creditMemoDate })).data.credit_memo_date).toBe('2026-01-02')
+  })
+
   it('does not return line items', () => {
     expect(fromCreditMemo(memo())).not.toHaveProperty('lineItems')
   })

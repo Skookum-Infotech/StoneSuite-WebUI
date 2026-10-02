@@ -1,3 +1,5 @@
+import { formatDateValue } from './dateUtils';
+
 const EMPTY_VALUE = '—';
 const INITIALS_MAX_WORDS = 2;
 const DATE_LOCALE = 'en-US';
@@ -61,7 +63,7 @@ export function tenantInitials(name: string): string {
 
 export function formatTenantDate(iso: string | null | undefined): string {
   if (!iso) return EMPTY_VALUE;
-  return new Date(iso).toLocaleDateString(DATE_LOCALE, { month: 'short', day: 'numeric', year: 'numeric' });
+  return formatDateValue(iso, DATE_LOCALE, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function formatTenantDateTime(iso: string | null | undefined): string {
