@@ -1,6 +1,7 @@
 import type jsPDF from "jspdf";
 import type { ImageCompression } from "jspdf";
 import { companyProfileService } from "@/services/companyProfileService";
+import { formatDateValue } from "./dateUtils";
 
 /** Shared StoneSuite masthead/footer branding for exported PDFs (CRM records,
  *  Sales documents). One source of truth so every exported PDF looks the same. */
@@ -29,10 +30,7 @@ const IMAGE_COMPRESSION: ImageCompression = "SLOW";
 type LoadedLogo = { dataUrl: string; width: number; height: number };
 
 export function fmtDate(iso: string): string {
-  if (!iso) return "—";
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "—";
-  return parsed.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return formatDateValue(iso, undefined, { year: "numeric", month: "short", day: "numeric" }) || "—";
 }
 
 async function loadPngDataUrl(url: string): Promise<LoadedLogo | null> {

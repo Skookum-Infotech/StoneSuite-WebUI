@@ -5,6 +5,7 @@
 // backend verbatim).
 
 import type { CrmLookups } from '@/services/lookupService';
+import { datePart } from './dateUtils';
 import type { CreditMemo, CreditMemoCreatePayload, CreditMemoUpdatePayload } from '@/types/creditMemo';
 
 /** Cents — the precision of every money field. */
@@ -394,7 +395,9 @@ export function fromCreditMemo(creditMemo: CreditMemo): {
     credit_memo_status: creditMemo.status,
     credit_memo_doc_num: creditMemo.creditMemoNumber,
     reference_number: creditMemo.referenceNumber ?? '',
-    credit_memo_date: creditMemo.creditMemoDate,
+    // The detail API sends a time.Time (`2026-01-02T00:00:00Z`); a date input
+    // and the update payload both want the bare `yyyy-mm-dd`.
+    credit_memo_date: datePart(creditMemo.creditMemoDate),
     // A legacy memo's lines are not editable any more; its net subtotal stands
     // in as the amount. An amount-only memo has no discount, so this is its amount.
     amount: (creditMemo.subtotal - creditMemo.discountTotal).toFixed(2),

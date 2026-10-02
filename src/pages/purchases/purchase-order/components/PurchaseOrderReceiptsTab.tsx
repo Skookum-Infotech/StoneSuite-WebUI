@@ -4,10 +4,11 @@ import { Inbox } from 'lucide-react';
 import { Spinner } from '@/components/tenant/ui';
 import { itemReceiptService } from '@/services/itemReceiptService';
 import { IR_STATUS_COLORS } from '@/lib/itemReceiptForm';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // GET /api/tenant/purchase-orders/{uuid}/receipts — every item receipt ever

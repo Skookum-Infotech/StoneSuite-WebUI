@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { formatDateValue } from "./dateUtils";
 
 const CSV_ESCAPE_PATTERN = /[",\r\n]/;
 
@@ -8,12 +9,10 @@ export function csvEscapeValue(value: unknown): string {
   return CSV_ESCAPE_PATTERN.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
 }
 
-/** Formats an ISO timestamp as a plain date for spreadsheet columns. */
+/** Formats an ISO timestamp or date-only value as a plain date for spreadsheet
+ *  columns; date-only values keep their calendar day in every timezone. */
 export function fmtCsvDate(iso: string | undefined): string {
-  if (!iso) return "";
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return formatDateValue(iso, undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
 /** Builds CSV text (with header row) from a header list and pre-formatted rows. */

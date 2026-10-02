@@ -17,6 +17,7 @@ import {
 } from '@/lib/journalEntryFilters';
 import { JournalEntryFilterDrawer } from './JournalEntryFilterDrawer';
 import type { JournalEntrySearchRequest } from '@/types/journalEntry';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -46,7 +47,7 @@ const SORT_KEY: Record<SortField, string> = {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number): string {

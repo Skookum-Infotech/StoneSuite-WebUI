@@ -29,6 +29,7 @@ import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
 import type { PaymentApplication } from '@/types/payment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -49,7 +50,7 @@ const FALLBACK_CURRENCY_CODE = 'USD';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {

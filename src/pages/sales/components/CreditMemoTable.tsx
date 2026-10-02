@@ -12,6 +12,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CREDIT_MEMO_STATUS_COLORS } from '@/lib/creditMemoForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { CreditMemoSearchRequest } from '@/types/creditMemo';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -274,7 +275,7 @@ export function CreditMemoTable() {
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {cm.creditMemoDate
-                          ? new Date(cm.creditMemoDate).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(cm.creditMemoDate, undefined, { year: '2-digit', month: 'short', day: 'numeric' })
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">

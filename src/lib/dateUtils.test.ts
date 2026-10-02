@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { toISODate, fromISODate, formatDisplayDate } from './dateUtils';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { toISODate, fromISODate, formatDisplayDate, parseDateValue, formatDateValue, datePart } from './dateUtils';
 
 describe('toISODate', () => {
   it.each([
@@ -46,5 +46,84 @@ describe('formatDisplayDate', () => {
 
   it('returns an empty string for a malformed input', () => {
     expect(formatDisplayDate('not-a-date')).toBe('');
+  });
+});
+
+// Pinned to a zone west of UTC, where a bare `yyyy-mm-dd` parsed by `new Date`
+// (UTC midnight) renders as the previous day. Node re-reads TZ on assignment.
+describe('date values in America/Chicago', () => {
+  const SHORT: Intl.DateTimeFormatOptions = { year: '2-digit', month: 'short', day: 'numeric' };
+  let originalTZ: string | undefined;
+
+  beforeAll(() => {
+    originalTZ = process.env.TZ;
+    process.env.TZ = 'America/Chicago';
+  });
+
+  afterAll(() => {
+    if (originalTZ === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTZ;
+  });
+
+  it('reproduces the off-by-one with a naive new Date (guards the TZ pin)', () => {
+    expect(new Date('2026-01-02').getDate()).toBe(1);
+  });
+
+  describe('parseDateValue', () => {
+    it.each([
+      ['a date-only value lands on its calendar day', '2026-01-02', [2026, 0, 2]],
+      ['a date-only value at a year boundary', '2026-01-01', [2026, 0, 1]],
+      ['a DATE sent as UTC midnight keeps its calendar day', '2026-01-02T00:00:00Z', [2026, 0, 2]],
+      ['UTC midnight with milliseconds', '2026-01-02T00:00:00.000Z', [2026, 0, 2]],
+      ['UTC midnight with a +00:00 offset', '2026-01-02T00:00:00+00:00', [2026, 0, 2]],
+      ['a UTC timestamp converts to the local instant', '2026-01-02T03:00:00Z', [2026, 0, 1]],
+      ['one microsecond past UTC midnight is a real instant', '2026-01-02T00:00:00.000001Z', [2026, 0, 1]],
+      ['local midnight in another offset is a real instant', '2026-01-02T00:00:00-06:00', [2026, 0, 2]],
+      ['an offset timestamp converts to the local instant', '2026-01-02T12:00:00-06:00', [2026, 0, 2]],
+    ])('%s', (_name, value, [y, m, d]) => {
+      const date = parseDateValue(value);
+      expect([date?.getFullYear(), date?.getMonth(), date?.getDate()]).toEqual([y, m, d]);
+    });
+
+    it.each([
+      ['undefined', undefined],
+      ['null', null],
+      ['an empty string', ''],
+      ['garbage', 'not-a-date'],
+      ['an impossible calendar date', '2026-02-30'],
+    ])('returns null for %s', (_name, value) => {
+      expect(parseDateValue(value)).toBeNull();
+    });
+  });
+
+  describe('datePart', () => {
+    it.each([
+      ['a DATE serialised through time.Time', '2026-01-02T00:00:00Z', '2026-01-02'],
+      ['an already date-only value', '2026-01-02', '2026-01-02'],
+      ['undefined', undefined, ''],
+      ['an empty string', '', ''],
+      ['garbage', 'not-a-date', ''],
+    ])('%s', (_name, value, expected) => {
+      expect(datePart(value)).toBe(expected);
+    });
+
+    it('formats on the stored day where new Date would slip a day', () => {
+      const value = '2026-01-02T00:00:00Z';
+      expect(new Date(value).getDate()).toBe(1);
+      expect(formatDateValue(datePart(value), 'en-US', SHORT)).toBe('Jan 2, 26');
+    });
+  });
+
+  describe('formatDateValue', () => {
+    it.each([
+      ['a sales-order date-only value', '2026-01-02', 'en-US', SHORT, 'Jan 2, 26'],
+      ['a long-form date-only value', '2026-12-31', 'en-US', { year: 'numeric', month: 'short', day: 'numeric' } as const, 'Dec 31, 2026'],
+      ['a payment date sent as UTC midnight', '2026-01-02T00:00:00Z', 'en-US', SHORT, 'Jan 2, 26'],
+      ['a UTC timestamp just after midnight', '2026-01-02T03:00:00Z', 'en-US', SHORT, 'Jan 1, 26'],
+      ['an empty value', '', 'en-US', SHORT, ''],
+      ['an unparseable value', 'nope', 'en-US', SHORT, ''],
+    ])('%s', (_name, value, locale, options, expected) => {
+      expect(formatDateValue(value, locale, options)).toBe(expected);
+    });
   });
 });

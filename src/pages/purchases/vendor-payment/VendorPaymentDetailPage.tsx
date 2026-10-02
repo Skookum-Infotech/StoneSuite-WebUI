@@ -28,6 +28,7 @@ import { ConfirmVendorPaymentVoidDialog } from './components/ConfirmVendorPaymen
 import { DeleteVendorPaymentDialog } from './components/DeleteVendorPaymentDialog';
 import { DangerZoneCard, DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 import type { VendorPayment } from '@/types/vendorPayment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -45,7 +46,7 @@ type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
