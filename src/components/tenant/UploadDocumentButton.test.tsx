@@ -56,7 +56,7 @@ describe('UploadDocumentButton', () => {
 
   it('rejects an unsupported file type with an error toast and does not call onFileSelected', async () => {
     // applyAccept: false — the input's accept attribute already keeps a real
-    // OS picker to PDF/PNG/JPG, but a picker can still be switched to "All
+    // OS picker to PDF/DOCX, but a picker can still be switched to "All
     // files"; this simulates that bypass so validateDocumentFile is exercised
     // as the defense-in-depth it's for.
     const user = userEvent.setup({ applyAccept: false });
@@ -66,7 +66,7 @@ describe('UploadDocumentButton', () => {
 
     expect(onFileSelected).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith(
-      `"sheet.csv" isn't a supported file type — upload a PDF, PNG, or JPG.`,
+      `sheet.csv is not a PDF or Word (.docx) file — scanned images aren't supported yet.`,
     );
   });
 
@@ -79,7 +79,7 @@ describe('UploadDocumentButton', () => {
     await user.upload(fileInput, oversized);
 
     expect(onFileSelected).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith('"big.pdf" is larger than the 25 MB limit.');
+    expect(toast.error).toHaveBeenCalledWith('big.pdf is larger than 10 MB — split it or enter the order manually.');
   });
 
   it('lets the same file be picked twice in a row', async () => {
