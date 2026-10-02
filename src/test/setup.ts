@@ -69,8 +69,13 @@ if (needsFallback) {
   })
 }
 
+// Once `Storage` is swapped, BOTH instances must be MemoryStorage — not just the
+// broken one. A native instance left in place (Node can shadow only
+// localStorage) doesn't inherit from MemoryStorage.prototype, so
+// `vi.spyOn(Storage.prototype, ...)` would silently miss it (authNotice.test.ts
+// spies that way on sessionStorage).
 for (const name of ['localStorage', 'sessionStorage'] as const) {
-  if (!isUsableStorage(globalThis[name])) {
+  if (needsFallback || !isUsableStorage(globalThis[name])) {
     Object.defineProperty(globalThis, name, {
       value: new MemoryStorage(),
       configurable: true,
