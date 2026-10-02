@@ -28,6 +28,15 @@ import { cleanup } from '@testing-library/react'
 // from. Both are handled below: methods are on MemoryStorage.prototype, and
 // globalThis.Storage is replaced with MemoryStorage whenever the native one
 // isn't usable, so `Storage` in a test file resolves to this class.
+//
+// The fallback is all-or-nothing. Node 25+ enables Web Storage by default:
+// without `--localstorage-file` its `localStorage` is unusable but its
+// `sessionStorage` is a working, native in-memory Storage. Swapping `Storage`
+// while keeping that native `sessionStorage` leaves it an instance of a class
+// the tests cannot see, so `vi.spyOn(Storage.prototype, ...)` silently misses
+// every sessionStorage call (authNotice.test.ts's "storage is unavailable"
+// case). Replacing both instances together keeps `Storage` and the instances
+// one class.
 class MemoryStorage implements Storage {
   #entries = new Map<string, string>()
 
@@ -69,8 +78,8 @@ if (needsFallback) {
   })
 }
 
-for (const name of ['localStorage', 'sessionStorage'] as const) {
-  if (!isUsableStorage(globalThis[name])) {
+if (needsFallback) {
+  for (const name of ['localStorage', 'sessionStorage'] as const) {
     Object.defineProperty(globalThis, name, {
       value: new MemoryStorage(),
       configurable: true,
