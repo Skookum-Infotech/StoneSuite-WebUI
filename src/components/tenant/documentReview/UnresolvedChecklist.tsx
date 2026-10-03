@@ -4,19 +4,25 @@ import type { ReviewItem } from '@/lib/salesOrderDocumentHandoff';
 
 interface UnresolvedChecklistProps {
   pending: ReviewItem[];
-  /** Why Save is disabled ("2 items need review"), or '' when it isn't. */
-  blockedReason: string;
   onJump: (key: string) => void;
+}
+
+/** "5 to review (4 required)" — the same total the header's "Needs review (n)"
+ *  shows, with the part that blocks Save called out. */
+function checklistTitle(pending: ReviewItem[]): string {
+  if (pending.length === 0) return 'Nothing left to review';
+  const required = pending.filter((i) => i.required).length;
+  return required > 0 ? `${pending.length} to review (${required} required)` : `${pending.length} optional ${pending.length === 1 ? 'check' : 'checks'} left`;
 }
 
 /** Inline list of everything still unresolved; each entry jumps to its field.
  *  The reason Save is disabled is announced by ReviewFooter's live region (the
  *  single one), so this list stays silent. */
-export function UnresolvedChecklist({ pending, blockedReason, onJump }: UnresolvedChecklistProps): React.JSX.Element {
+export function UnresolvedChecklist({ pending, onJump }: UnresolvedChecklistProps): React.JSX.Element {
   return (
     <section aria-label="Items to review" className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 text-xs">
       <p className="font-semibold text-stone-900 dark:text-stone-100">
-        {pending.length === 0 ? 'Nothing left to review' : blockedReason || `${pending.length} optional checks left`}
+        {checklistTitle(pending)}
       </p>
       {pending.length > 0 && (
         <ul className="mt-2 space-y-1.5">

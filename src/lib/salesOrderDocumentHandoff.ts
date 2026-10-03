@@ -10,6 +10,11 @@ import { applyAddress, NO_GEO, type HandoffGeo } from '@/lib/documentAddress';
 const MILLI = 1000;
 const CENTS = 100;
 const WRONG_TYPE_PREFIX = 'document_looks_like_';
+const WARN_NOT_RECOGNIZED = 'document_not_recognized';
+const WARN_NO_LINE_TABLE = 'no_line_table';
+const WARN_MISSING_PO = 'missing_po_number';
+/** Markers that introduce an add-on row on a PO ("+ Sink cutout", "w/ Installation"). */
+const ADDON_MARKER = /^\s*(?:\+|w\/|with\s|add\s)\s*/i;
 const LINE_FLAG_PRICE_DIFFERS = 'price_differs_from_catalog';
 const LINE_FLAG_INACTIVE = 'item_inactive';
 const US_DATE = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/;
@@ -77,6 +82,11 @@ function orderLines(lines: ExtractedLine[]): number[] {
   return out;
 }
 
+/** An add-on's text without its "+ " / "w/ " marker; other lines unchanged. */
+export function stripAddonMarker(text: string, kind: ExtractedLine['kind']): string {
+  return kind === 'addon' ? text.replace(ADDON_MARKER, '').trim() || text : text;
+}
+
 function lineDocText(l: ExtractedLine): string {
   return [l.sku.value, l.description.value].filter(Boolean).join(' - ');
 }
@@ -131,15 +141,17 @@ function buildLine(
     quantity: String(qty),
     unitPrice: money(price),
   };
+  const description = stripAddonMarker(l.description.value, l.kind);
   const row = usable
-    ? { ...base, itemName: item.name, itemSku: item.sku, itemDescription: l.description.value, units: item.unitCode, inventoryItemUuid: item.uuid }
-    : { ...base, itemName: l.description.value || l.sku.value, itemSku: l.sku.value, itemDescription: l.description.value, units: l.uom.value };
+    ? { ...base, itemName: item.name, itemSku: item.sku, itemDescription: description, units: item.unitCode, inventoryItemUuid: item.uuid }
+    : { ...base, itemName: description || l.sku.value, itemSku: l.sku.value, itemDescription: description, units: l.uom.value };
   const calc = calcLineItem(row);
   return {
     item: { ...row, ...calc, id: docLineId(docIndex), lineNo },
     meta: {
       id: docLineId(docIndex), docIndex, lineNo, docSku: l.sku.value, docDescription: l.description.value, docText: text,
       docAmount: l.amount.value ? l.amountCents / CENTS : null, parentLineNo, pills, requiresItem: !usable, conversionNote,
+      docUom: conv ? conv.toUom : l.uom.value, docQty: conv || l.qty.value ? qty : null,
     },
     review,
     converted: conv !== undefined,
@@ -159,14 +171,15 @@ function headerFlag(items: ReviewItem[], key: string, f: ExtractedField): void {
 }
 
 /** StoneSuite computes tax from the Sales Tax %, never from the document, so a
- *  document that charges tax gets an optional check quoting the implied rate. */
+ *  document that charges tax gets a required check quoting the implied rate:
+ *  without it an order silently saves without the PO's tax. */
 export function taxReviewItem(docTax: number, docSubtotal: number | null): ReviewItem | null {
   if (docTax <= 0) return null;
   const rate = docSubtotal && docSubtotal > 0 ? Math.round((docTax / docSubtotal) * 100 * MILLI) / MILLI : null;
   const implied = rate === null ? '' : ` (about ${rate}% of the subtotal)`;
   return {
-    key: HEADER_KEYS.tax, label: HEADER_LABELS.tax, required: false,
-    reason: `The document charges $${money(docTax)} tax${implied}. Confirm the Sales Tax % gives the same amount.`,
+    key: HEADER_KEYS.tax, label: HEADER_LABELS.tax, required: true, resolvedByReview: true,
+    reason: `The document charges $${money(docTax)} tax${implied}. Set the lines' Tax % so the order charges the same tax, then mark it reviewed.`,
   };
 }
 
@@ -237,15 +250,17 @@ export function buildSalesOrderHandoff(doc: ExtractionResultDoc, fileName: strin
     adjustment: discount === null || discount === 0 ? 0 : -Math.abs(discount),
   };
 
-  // Lines.
-  const matches = new Map<number, LineMatch>(res.lines.map((m) => [m.index, m]));
-  const order = orderLines(ex.lines);
+  // Lines. Results stored before the backend stopped emitting null lists may
+  // carry `lines: null`, so both lists are guarded.
+  const exLines = ex.lines ?? [];
+  const matches = new Map<number, LineMatch>((res.lines ?? []).map((m) => [m.index, m]));
+  const order = orderLines(exLines);
   const lineNoByDoc = new Map<number, number>(order.map((docIndex, i) => [docIndex, i + 1]));
   const lineItems: SOLineItem[] = [];
   const lines: HandoffLine[] = [];
   let convertedUnits = false;
   order.forEach((docIndex) => {
-    const l = ex.lines[docIndex];
+    const l = exLines[docIndex];
     const lineNo = lineNoByDoc.get(docIndex) as number;
     const parentLineNo = l.kind === 'addon' && l.parentLine ? lineNoByDoc.get(l.parentLine - 1) : undefined;
     const built = buildLine(l, docIndex, lineNo, matches.get(docIndex), parentLineNo);
@@ -260,8 +275,21 @@ export function buildSalesOrderHandoff(doc: ExtractionResultDoc, fileName: strin
   const docTax = parseMoney(h.tax.value) ?? 0;
   const total = rawTotal === null ? null : Math.round((rawTotal - docTax) * CENTS) / CENTS;
   const taxCheck = taxReviewItem(docTax, parseMoney(h.subtotal.value));
-  if (taxCheck) reviewItems.push(taxCheck);
-  const wrong = (ex.warnings ?? []).find((w) => w.startsWith(WRONG_TYPE_PREFIX));
+  if (taxCheck) {
+    reviewItems.push(taxCheck);
+    provenance[HEADER_KEYS.tax] = provenanceOf(h.tax);
+  }
+  const warnings = ex.warnings ?? [];
+  const wrong = warnings.find((w) => w.startsWith(WRONG_TYPE_PREFIX));
+  const notRecognized = warnings.includes(WARN_NOT_RECOGNIZED);
+  if (notRecognized) {
+    reviewItems.push({ key: 'document', label: 'Document', required: false, reason: "This doesn't look like a purchase order - no item table, PO number or customer was found. Check you uploaded the right file." });
+  } else if (warnings.includes(WARN_NO_LINE_TABLE) && order.length === 0) {
+    reviewItems.push({ key: 'document', label: 'Document', required: false, reason: 'No item table was found in the document - add the lines below by hand.' });
+  }
+  if (warnings.includes(WARN_MISSING_PO) && !h.poNumber.value) {
+    reviewItems.push({ key: HEADER_KEYS.poNumber, label: HEADER_LABELS.poNumber, required: false, reason: 'No PO number was found in the document - enter it if the customer gave one.' });
+  }
   const injected = (ex.injection ?? []).length > 0;
   if (injected) {
     reviewItems.push({ key: 'document', label: 'Document', required: false, reason: 'The document contains text that looks like instructions to an AI assistant. Check every extracted value carefully.' });
@@ -271,11 +299,13 @@ export function buildSalesOrderHandoff(doc: ExtractionResultDoc, fileName: strin
     customer: { resolved, extractedText: h.customerName.value, candidates: cust.candidates ?? [], inactive },
     data, extras, lineItems, lines, provenance, reviewItems,
     docTotal: total,
+    docTax,
     badges: {
       signed: ex.signed,
       revision: ex.revision?.label ?? '',
       convertedUnits,
       wrongType: wrong ? wrong.slice(WRONG_TYPE_PREFIX.length).replace(/_/g, ' ') : '',
+      notRecognized,
     },
   };
 }

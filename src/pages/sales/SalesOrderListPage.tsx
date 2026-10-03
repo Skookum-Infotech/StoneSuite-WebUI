@@ -8,9 +8,8 @@ import { UploadDocumentButton } from '@/components/tenant/UploadDocumentButton';
 import { CreateFromDocumentDialog } from '@/components/tenant/documentExtraction/CreateFromDocumentDialog';
 import { DropOverlay } from '@/components/tenant/documentExtraction/DropOverlay';
 import { PendingDocumentsChip } from '@/components/tenant/documentExtraction/PendingDocumentsChip';
+import { uploadDisabledReason } from '@/lib/documentUploadAvailability';
 import { SalesOrderTable } from './components/SalesOrderTable';
-
-const AI_OFF_REASON = 'AI features are turned off for your workspace';
 
 export default function SalesOrderListPage() {
   const navigate = useNavigate();
@@ -19,17 +18,26 @@ export default function SalesOrderListPage() {
   // no such endpoint under /api/portal/*, so the button would always 404.
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
   const { hasPermission } = useUserPermissions();
-  const { data: aiStatus, isLoading: aiLoading } = useAIStatus();
+  const { data: aiStatus, isLoading: aiLoading, isError: aiFailed } = useAIStatus();
 
   const canCreate = !isCustomer && hasPermission('sales_order', 'create');
   const extractionOn = aiStatus?.documentExtraction === true;
   // The flow needs the AI feature on; until the status loads the button stays
-  // disabled without a reason rather than flashing "turned off".
+  // disabled without a reason rather than flashing "turned off". The reason
+  // names the switch that is actually off (platform vs workspace vs flag).
   const uploadDisabled = !extractionOn;
-  const uploadReason = !aiLoading && !extractionOn ? AI_OFF_REASON : undefined;
+  const uploadReason = uploadDisabledReason(aiStatus, aiLoading, aiFailed) || undefined;
 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const closeDialog = useCallback(() => setPendingFile(null), []);
+  // A drop is always swallowed on this page (the browser would otherwise open
+  // the file and lose the list); this is what the user is told when it can't
+  // start the flow. '' = swallow silently (portal, or AI status still loading).
+  const dropBlockedReason = isCustomer ? ''
+    : !canCreate ? "You don't have permission to create sales orders."
+    : !extractionOn ? uploadReason ?? ''
+    : pendingFile !== null ? 'Finish or close the current document first.'
+    : undefined;
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -75,7 +83,7 @@ export default function SalesOrderListPage() {
       </div>
 
       <DropOverlay
-        enabled={canCreate && extractionOn && pendingFile === null}
+        blockedReason={dropBlockedReason}
         documentLabel="Sales Order"
         onFileDropped={setPendingFile}
       />

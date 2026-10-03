@@ -66,7 +66,7 @@ describe('UploadDocumentButton', () => {
 
     expect(onFileSelected).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith(
-      `sheet.csv is not a PDF or Word (.docx) file — scanned images aren't supported yet.`,
+      `sheet.csv isn't a PDF or Word (.docx) file. Save it as a PDF or .docx and try again.`,
     );
   });
 

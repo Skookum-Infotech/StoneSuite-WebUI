@@ -166,15 +166,15 @@ describe('taxReviewItem', () => {
   it.each([
     { docTax: 0, subtotal: 2034.5, want: null },
     { docTax: -5, subtotal: 100, want: null },
-    { docTax: 167.85, subtotal: 2034.5, want: 'The document charges $167.85 tax (about 8.25% of the subtotal). Confirm the Sales Tax % gives the same amount.' },
-    { docTax: 10, subtotal: null, want: 'The document charges $10.00 tax. Confirm the Sales Tax % gives the same amount.' },
-    { docTax: 10, subtotal: 0, want: 'The document charges $10.00 tax. Confirm the Sales Tax % gives the same amount.' },
+    { docTax: 167.85, subtotal: 2034.5, want: 'The document charges $167.85 tax (about 8.25% of the subtotal). Set the lines\' Tax % so the order charges the same tax, then mark it reviewed.' },
+    { docTax: 10, subtotal: null, want: 'The document charges $10.00 tax. Set the lines\' Tax % so the order charges the same tax, then mark it reviewed.' },
+    { docTax: 10, subtotal: 0, want: 'The document charges $10.00 tax. Set the lines\' Tax % so the order charges the same tax, then mark it reviewed.' },
   ])('tax $docTax on subtotal $subtotal', ({ docTax, subtotal, want }) => {
     const item = taxReviewItem(docTax, subtotal);
     if (want === null) {
       expect(item).toBeNull();
       return;
     }
-    expect(item).toEqual({ key: 'tax', label: 'Sales tax', required: false, reason: want });
+    expect(item).toEqual({ key: 'tax', label: 'Sales tax', required: true, resolvedByReview: true, reason: want });
   });
 });

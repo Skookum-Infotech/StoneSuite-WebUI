@@ -28,7 +28,7 @@ export function ReviewDialogs({ review, onCreateAnyway, markClean }: ReviewDialo
       )}
       {review.confirmingDiscard && (
         <ConfirmLeaveDialog
-          variant="unsaved-changes"
+          variant="discard-document"
           onConfirm={() => review.confirmDiscard(markClean)}
           onCancel={review.cancelDiscard}
         />

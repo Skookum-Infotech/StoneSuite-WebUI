@@ -98,10 +98,24 @@ describe('CreateFromDocumentDialog', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('failed state shows the file name, the reason, Retry and Enter manually', async () => {
+  it('offers Choose another file instead of Retry when retrying cannot help', async () => {
+    mockHook({ stage: 'failed', failedAt: 'read', failure: { code: 'scanned', message: 'This looks like a scan.' } });
+    renderDialog();
+    expect(screen.queryByRole('button', { name: 'Retry with this document' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Choose another file' })).toBeInTheDocument();
+    const next = new File(['%PDF'], 'PO-4472.pdf', { type: 'application/pdf' });
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await userEvent.upload(input, next);
+    expect(handlers.start).toHaveBeenLastCalledWith(next);
+    expect(screen.getByRole('dialog')).toHaveTextContent('PO-4472.pdf');
+  });
+
+  it('failed state shows the reason once, Retry and Enter manually', async () => {
     mockHook({ stage: 'failed', failedAt: 'read', failure: { code: 'upload_corrupted', message: 'The file was damaged during upload.' } });
     const onClose = renderDialog();
-    expect(screen.getByRole('alert')).toHaveTextContent('PO-4471.pdf');
+    // The file name is in the dialog header; the alert doesn't repeat it.
+    expect(screen.getByRole('alert')).not.toHaveTextContent('PO-4471.pdf');
+    expect(screen.getByRole('dialog')).toHaveTextContent('PO-4471.pdf');
     expect(screen.getByRole('alert')).toHaveTextContent('The file was damaged during upload.');
     await userEvent.click(screen.getByRole('button', { name: 'Retry with this document' }));
     expect(handlers.retry).toHaveBeenCalled();

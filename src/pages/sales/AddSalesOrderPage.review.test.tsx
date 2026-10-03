@@ -126,7 +126,7 @@ describe('AddSalesOrderPage review mode', () => {
   it('keeps Save disabled with a reason until the customer is resolved', async () => {
     vi.mocked(svc.get).mockResolvedValue(extraction(unresolvedCustomer));
     renderPage();
-    const save = await screen.findByRole('button', { name: /Save Order\. Disabled: 1 item needs review/ });
+    const save = await screen.findByRole('button', { name: /Save Order\. Disabled: 1 required item to review/ });
     expect(save).toBeDisabled();
     expect(saveButtons().every((b) => b.hasAttribute('disabled'))).toBe(true);
     await userEvent.click(screen.getByRole('button', { name: 'Use customer Acme Stoneworks' }));
@@ -206,7 +206,7 @@ describe('AddSalesOrderPage review mode', () => {
     vi.mocked(svc.get).mockResolvedValue(extraction(resultDoc()));
     renderPage();
     await userEvent.click(await screen.findByRole('button', { name: 'Discard this document and its changes' }));
-    await userEvent.click(await screen.findByRole('button', { name: /Discard changes/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Discard document' }));
     await waitFor(() => expect(svc.discard).toHaveBeenCalledWith('ex-1'));
     expect(await screen.findByText('Sales order list')).toBeInTheDocument();
   });

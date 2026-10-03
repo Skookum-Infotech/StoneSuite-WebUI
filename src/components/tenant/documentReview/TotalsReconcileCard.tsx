@@ -10,16 +10,23 @@ interface TotalsReconcileCardProps {
   formTotal: number;
   lines: HandoffLine[];
   formAmounts: Map<string, number>;
+  /** Document tax vs the form's computed tax, in dollars; omitted when the document charged none. */
+  tax?: { doc: number; form: number };
 }
+
+const TAX_EPSILON = 0.005;
 
 function usd(n: number): string {
   return `$${Math.abs(n).toFixed(2)}`;
 }
 
 /** Document total vs the live form total, recomputed as the form is edited:
- *  a check mark when they agree, otherwise "Off by $X - check line N". */
-export function TotalsReconcileCard({ docTotal, formTotal, lines, formAmounts }: TotalsReconcileCardProps): React.JSX.Element {
+ *  a check mark when they agree, otherwise "Off by $X - check line N". The
+ *  document's tax is compared separately, since StoneSuite computes tax from
+ *  the Sales Tax % and a matching pre-tax total says nothing about it. */
+export function TotalsReconcileCard({ docTotal, formTotal, lines, formAmounts, tax }: TotalsReconcileCardProps): React.JSX.Element {
   const rec = docTotal === null ? null : reconcileTotals(docTotal, formTotal, lines, formAmounts);
+  const taxOff = tax !== undefined && Math.abs(tax.doc - tax.form) >= TAX_EPSILON;
   return (
     <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 text-xs">
       <p className="font-semibold text-stone-900 dark:text-stone-100">Totals check (before tax)</p>
@@ -28,6 +35,14 @@ export function TotalsReconcileCard({ docTotal, formTotal, lines, formAmounts }:
         <dd className="text-right tabular-nums">{docTotal === null ? 'Not found' : usd(docTotal)}</dd>
         <dt>Form total</dt>
         <dd className="text-right tabular-nums">{usd(formTotal)}</dd>
+        {tax && (
+          <>
+            <dt>Document tax</dt>
+            <dd className="text-right tabular-nums">{usd(tax.doc)}</dd>
+            <dt>Form tax</dt>
+            <dd className="text-right tabular-nums">{usd(tax.form)}</dd>
+          </>
+        )}
       </dl>
       <div role="status" aria-live="polite">
       {rec && rec.ok && (
@@ -43,6 +58,12 @@ export function TotalsReconcileCard({ docTotal, formTotal, lines, formAmounts }:
         </p>
       )}
       {!rec && <p className="mt-2 text-stone-500 dark:text-stone-400">The document total couldn't be read, so it can't be checked.</p>}
+      {taxOff && (
+        <p className="mt-1 flex items-center gap-1 font-semibold text-warning dark:text-amber-400">
+          <TriangleAlert className="size-3.5" aria-hidden="true" />
+          Tax differs by {usd(tax.doc - tax.form)} — set the lines' Tax % to match
+        </p>
+      )}
       </div>
     </div>
   );

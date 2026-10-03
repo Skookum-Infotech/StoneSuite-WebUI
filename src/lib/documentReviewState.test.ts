@@ -30,7 +30,7 @@ describe('pendingReviewItems', () => {
 });
 
 describe('saveBlockedReason', () => {
-  it.each([[0, ''], [1, '1 item needs review'], [2, '2 items need review']])('%i blocking -> %s', (n, want) => {
+  it.each([[0, ''], [1, '1 required item to review'], [2, '2 required items to review']])('%i blocking -> %s', (n, want) => {
     const pending = Array.from({ length: n }, (_, i) => ({ key: `k${i}`, label: '', reason: '', required: true }));
     expect(saveBlockedReason(pending)).toBe(want);
   });
