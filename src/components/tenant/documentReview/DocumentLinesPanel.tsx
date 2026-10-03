@@ -7,6 +7,7 @@ import { ReviewFieldFrame } from './ReviewFieldFrame';
 import { calcLineItem, type SOLineItem } from '@/lib/salesOrderForm';
 import { visiblePills } from '@/lib/documentReviewState';
 import { lineReviewKey, type HandoffLine } from '@/lib/salesOrderDocumentHandoff';
+import { convertLine, sameUnit } from '@/lib/unitConversion';
 import type { SalesOrderReviewMode } from '@/hooks/useSalesOrderReviewMode';
 import type { InventoryItem } from '@/types/inventory';
 
@@ -26,16 +27,29 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
   const unitCodeFor = useItemUnitCode();
   const [text, setText] = useState(line.itemName);
   const [pickedPrice, setPickedPrice] = useState<number | null>(null);
+  const [pickNote, setPickNote] = useState('');
   const hasItem = Boolean(line.inventoryItemUuid);
   const key = lineReviewKey(meta.lineNo);
   const prov = review.handoff?.provenance[key];
   const label = `Line ${meta.lineNo}`;
 
   const onPick = (item: InventoryItem): void => {
-    // The document's quantity and price are kept; only the item identity changes.
-    const next = { ...line, itemName: item.name, itemSku: item.sku, units: unitCodeFor(item), inventoryItemUuid: item.id };
+    // The item identity changes; the document's quantity, price and description
+    // are kept. When the item is sold in another unit of the same kind (SQM vs
+    // SQFT) the quantity and price convert so the line amount stays the same;
+    // otherwise the review keeps a required "check the quantity" item open.
+    const toUnit = unitCodeFor(item);
+    const fromUnit = meta.docUom || line.units;
+    const qty = parseFloat(line.quantity) || 0;
+    const price = parseFloat(line.unitPrice) || 0;
+    const conv = fromUnit && toUnit && !sameUnit(fromUnit, toUnit) ? convertLine(qty, price, fromUnit, toUnit) : null;
+    const next = {
+      ...line, itemName: item.name, itemSku: item.sku, units: toUnit, inventoryItemUuid: item.id,
+      ...(conv ? { quantity: String(conv.quantity), unitPrice: conv.unitPrice.toFixed(2) } : {}),
+    };
     review.updateLine(line.id, { ...next, ...calcLineItem(next) });
     setPickedPrice(item.unitPrice);
+    setPickNote(conv ? `Converted ${qty} ${fromUnit} to ${conv.quantity} ${toUnit}` : '');
     setText(item.name);
   };
 
@@ -53,8 +67,8 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
         <p className="text-stone-800 dark:text-stone-200">{line.itemName} {'·'} {line.quantity} {line.units} {'×'} ${line.unitPrice}</p>
       )}
       <p className="text-stone-500 dark:text-stone-400">Document: {meta.docText || '(no text)'}</p>
-      {meta.conversionNote && <p className="text-stone-500 dark:text-stone-400">{meta.conversionNote}</p>}
-      {!meta.requiresItem && (
+      {(pickNote || meta.conversionNote) && <p className="text-stone-500 dark:text-stone-400">{pickNote || meta.conversionNote}</p>}
+      {(!meta.requiresItem || hasItem) && (
         <button
           type="button"
           aria-pressed={reviewed}

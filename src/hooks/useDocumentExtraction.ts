@@ -11,7 +11,7 @@ import {
   type ExtractionState,
 } from '@/lib/documentExtractionMachine';
 import { deleteDocumentFile, setDocumentFile } from '@/lib/documentFileRegistry';
-import { validateDocumentFile } from '@/lib/documentUploadValidation';
+import { validateDocumentFile, withDocumentContentType } from '@/lib/documentUploadValidation';
 import { UploadError } from '@/services/attachmentService';
 import { ExtractionApiError, documentExtractionService, sha256Hex } from '@/services/documentExtractionService';
 import { IN_FLIGHT_STATUSES, type DocumentExtraction, type DocumentExtractionDocType } from '@/types/documentExtraction';
@@ -76,17 +76,20 @@ export function useDocumentExtraction(docType: DocumentExtractionDocType = 'sale
     return dispatch({ type: 'FAIL', code: 'unknown', message, at });
   }, []);
 
-  const start = useCallback(async (file: File) => {
+  const start = useCallback(async (picked: File) => {
     runRef.current += 1;
     const run = runRef.current;
-    fileRef.current = file;
-    dispatch({ type: 'PICK', fileName: file.name });
+    fileRef.current = picked;
+    dispatch({ type: 'PICK', fileName: picked.name });
 
-    const invalid = validateDocumentFile(file);
+    const invalid = validateDocumentFile(picked);
     if (invalid) {
       dispatch({ type: 'FAIL', code: 'invalid_file', message: invalid, at: 'upload' });
       return;
     }
+    // Uploaded (and registered) with a concrete type even when the OS reported none.
+    const file = withDocumentContentType(picked);
+    fileRef.current = file;
     try {
       shaRef.current = await sha256Hex(file);
       const created = await documentExtractionService.create({

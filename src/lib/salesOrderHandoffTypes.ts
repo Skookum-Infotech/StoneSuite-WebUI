@@ -59,6 +59,9 @@ export interface ReviewItem {
   label: string;
   reason: string;
   required: boolean;
+  /** Resolved only by "Mark reviewed" — even a required line item, which is
+   *  otherwise resolved by picking a catalog item. */
+  resolvedByReview?: boolean;
 }
 
 export type LinePillKind = 'matched' | 'learned' | 'pick_item' | 'addon' | 'converted' | 'price_differs';
@@ -80,6 +83,9 @@ export interface HandoffLine {
   docText: string;
   /** Line amount on the document in dollars, or null when it had none. */
   docAmount: number | null;
+  /** The document's own unit and quantity for the line ('' / null when absent). */
+  docUom: string;
+  docQty: number | null;
   parentLineNo?: number;
   pills: LinePill[];
   requiresItem: boolean;
@@ -107,6 +113,8 @@ export interface HandoffBadges {
   revision: string;
   convertedUnits: boolean;
   wrongType: string;
+  /** The document has no title, table, PO number or customer (not a PO at all). */
+  notRecognized: boolean;
 }
 
 export interface SalesOrderHandoff {
@@ -121,5 +129,7 @@ export interface SalesOrderHandoff {
   /** Document grand total minus its tax, in dollars (StoneSuite computes tax
    *  itself), or null when the total wasn't found. */
   docTotal: number | null;
+  /** Tax the document charges, in dollars (0 when none). */
+  docTax: number;
   badges: HandoffBadges;
 }

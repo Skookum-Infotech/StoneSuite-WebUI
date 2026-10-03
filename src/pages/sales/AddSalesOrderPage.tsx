@@ -24,6 +24,7 @@ import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import { SalesOrderReviewShell } from './components/SalesOrderReviewShell';
 import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
 import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
+import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentUsedNotice';
 import { useSalesOrderReviewMode, type ReviewPatch } from '@/hooks/useSalesOrderReviewMode';
 import { StockShortageGate } from './components/StockShortageGate';
 import { stockShortagesFrom } from '@/lib/stockShortage';
@@ -124,11 +125,13 @@ export default function AddSalesOrderPage() {
     geo,
   });
 
-  // A document-prefilled form is unsaved work from the start, so leaving prompts.
+  // A document-prefilled form is unsaved work from the start, so leaving prompts
+  // — except for a document that was already used, which shows no form at all.
+  const documentUsed = review.active && review.phase === 'used';
   const guard = useUnsavedChangesGuard(
     { data, lineItems, drawings, customer, customFieldValues },
     !review.active || review.hydrated,
-    inventoryReturn.isRestored || customerReturn.isRestored || review.active,
+    inventoryReturn.isRestored || customerReturn.isRestored || (review.active && !documentUsed),
   );
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -235,6 +238,9 @@ export default function AddSalesOrderPage() {
           </div>
         )}
 
+        {documentUsed ? (
+          <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} listPath="/sales/sales_order" />
+        ) : (<>
         <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           {withReviewShell(
           <SalesOrderFormBody
@@ -247,7 +253,7 @@ export default function AddSalesOrderPage() {
             drawings={drawings}
             setDrawings={setDrawings}
             customer={customer}
-            setCustomer={handleCustomerChange}
+            setCustomer={review.active ? review.pickCustomer : handleCustomerChange}
             onCreateCustomer={startCreateCustomer}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
@@ -273,6 +279,7 @@ export default function AddSalesOrderPage() {
             submitLabel="Save Order"
           />
         )}
+        </>)}
       </form>
     </div>
   );

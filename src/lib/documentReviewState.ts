@@ -1,4 +1,6 @@
-import type { HandoffLine, LinePill, ProvenanceInfo, ReviewItem } from '@/lib/salesOrderDocumentHandoff';
+import { lineReviewKey, type HandoffLine, type LinePill, type ProvenanceInfo, type ReviewItem } from '@/lib/salesOrderDocumentHandoff';
+import type { SOLineItem } from '@/lib/salesOrderForm';
+import { sameUnit } from '@/lib/unitConversion';
 
 // Pure review-progress helpers shared by the review header, navigator,
 // checklist and the Save gate.
@@ -15,9 +17,27 @@ export interface ReviewContext {
 }
 
 function isResolved(item: ReviewItem, ctx: ReviewContext): boolean {
+  if (item.resolvedByReview) return ctx.reviewed.has(item.key);
   if (item.key === 'customer' && item.required) return ctx.hasCustomer;
   if (item.key.startsWith('line:') && item.required) return ctx.lineHasItem(item.key);
   return ctx.reviewed.has(item.key);
+}
+
+/** Required checks for lines whose picked item is sold in a different unit than
+ *  the document states while the quantity is still the document's — i.e. it was
+ *  never converted ("4 EA" saved as "4 SQFT"). Derived from the live form, so
+ *  it covers an item picked in the review panel or in the items table and
+ *  survives a reload. Cleared only by "Mark reviewed". */
+export function unitCheckItems(lines: HandoffLine[], formLines: SOLineItem[]): ReviewItem[] {
+  return lines.flatMap((meta) => {
+    const line = formLines.find((l) => l.id === meta.id);
+    if (!line?.inventoryItemUuid || !meta.docUom || !line.units || sameUnit(meta.docUom, line.units)) return [];
+    if (meta.docQty === null || (parseFloat(line.quantity) || 0) !== meta.docQty) return [];
+    return [{
+      key: lineReviewKey(meta.lineNo), label: `Line ${meta.lineNo}`, required: true, resolvedByReview: true,
+      reason: `The document says ${meta.docQty} ${meta.docUom}, but ${line.itemName} is sold in ${line.units} - check the quantity, then mark it reviewed.`,
+    }];
+  });
 }
 
 /** Unresolved items, one per field key (reasons joined), in checklist order. */
@@ -42,7 +62,7 @@ export function blockingItems(pending: ReviewItem[]): ReviewItem[] {
 export function saveBlockedReason(pending: ReviewItem[]): string {
   const n = blockingItems(pending).length;
   if (n === 0) return '';
-  return `${n} ${n === 1 ? 'item needs' : 'items need'} review`;
+  return `${n} required ${n === 1 ? 'item' : 'items'} to review`;
 }
 
 /** Provenance keys that "Confirm all high-confidence" may mark reviewed:

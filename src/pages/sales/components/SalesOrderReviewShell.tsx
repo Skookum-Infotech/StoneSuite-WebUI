@@ -16,7 +16,7 @@ interface SalesOrderReviewShellProps {
   children: React.ReactNode;
 }
 
-const EMPTY_BADGES = { signed: false, revision: '', convertedUnits: false, wrongType: '' };
+const EMPTY_BADGES = { signed: false, revision: '', convertedUnits: false, wrongType: '', notRecognized: false };
 
 /** Review-mode wrapper for the Add Sales Order page: document pane on the left;
  *  on the right the review header, banner, extracted-field and line rows,
@@ -46,7 +46,7 @@ export function SalesOrderReviewShell({ review, children }: SalesOrderReviewShel
       />
       {handoff && (
         <div className="max-h-[45%] shrink-0 space-y-3 overflow-y-auto border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-white/[0.03] p-3 modal-scrollbar">
-          <UnresolvedChecklist pending={review.pending} blockedReason={review.blockedReason} onJump={review.jumpTo} />
+          <UnresolvedChecklist pending={review.pending} onJump={review.jumpTo} />
           <ReviewFieldsPanel review={review} />
           <DocumentLinesPanel review={review} />
           <TotalsReconcileCard
@@ -54,6 +54,7 @@ export function SalesOrderReviewShell({ review, children }: SalesOrderReviewShel
             formTotal={review.preTaxTotal}
             lines={handoff.lines}
             formAmounts={review.formAmounts}
+            tax={handoff.docTax > 0 ? { doc: handoff.docTax, form: review.formTax } : undefined}
           />
         </div>
       )}

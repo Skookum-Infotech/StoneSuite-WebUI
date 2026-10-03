@@ -12,7 +12,7 @@ import { clearDuplicateAck, isDuplicateAcknowledged } from '@/lib/documentDuplic
 import { deleteDocumentFile, getDocumentFile } from '@/lib/documentFileRegistry';
 import { focusReviewTarget } from '@/lib/documentReviewFocus';
 import {
-  blockingItems, confirmableKeys, pendingReviewItems, reviewProgress, saveBlockedReason, type ReviewContext,
+  blockingItems, confirmableKeys, pendingReviewItems, reviewProgress, saveBlockedReason, unitCheckItems, type ReviewContext,
 } from '@/lib/documentReviewState';
 import {
   buildSalesOrderHandoff, lineReviewKey, type HandoffExtras, type HandoffGeo, type SalesOrderHandoff,
@@ -134,10 +134,16 @@ export function useSalesOrderReviewMode({ form, apply, onCustomerChange, geo }: 
     reviewed,
   }), [form.customer, form.lineItems, lineIdByKey, reviewed]);
 
-  const pending = useMemo(() => (handoff ? pendingReviewItems(handoff.reviewItems, ctx) : []), [handoff, ctx]);
+  // The handoff's checklist plus live checks derived from the form (a picked
+  // item sold in a different unit than the document's).
+  const reviewItems = useMemo(
+    () => (handoff ? [...handoff.reviewItems, ...unitCheckItems(handoff.lines, form.lineItems)] : []),
+    [handoff, form.lineItems],
+  );
+  const pending = useMemo(() => (handoff ? pendingReviewItems(reviewItems, ctx) : []), [handoff, reviewItems, ctx]);
   const progress = useMemo(
-    () => (handoff ? reviewProgress(handoff.provenance, handoff.reviewItems, ctx) : { done: 0, total: 0 }),
-    [handoff, ctx],
+    () => (handoff ? reviewProgress(handoff.provenance, reviewItems, ctx) : { done: 0, total: 0 }),
+    [handoff, reviewItems, ctx],
   );
   const usedBlock = phase === 'used' ? 'This document was already used' : '';
   const blockedReason = active ? usedBlock || saveBlockedReason(pending) : '';
@@ -145,6 +151,10 @@ export function useSalesOrderReviewMode({ form, apply, onCustomerChange, geo }: 
 
   const formAmounts = useMemo(
     () => new Map(form.lineItems.map((l) => [l.id, parseFloat(l.amount) || 0])),
+    [form.lineItems],
+  );
+  const formTax = useMemo(
+    () => form.lineItems.reduce((s, l) => s + (parseFloat(l.total) || 0) - (parseFloat(l.amount) || 0), 0),
     [form.lineItems],
   );
   const preTaxTotal = useMemo(
@@ -166,10 +176,15 @@ export function useSalesOrderReviewMode({ form, apply, onCustomerChange, geo }: 
     if (handoff) markReviewed(confirmableKeys(handoff.provenance, handoff.reviewItems));
   }, [handoff, markReviewed]);
 
-  const pickCustomer = useCallback((c: CustomerRef) => {
+  /** A customer picked during review — from the panel or the form's own picker.
+   *  Its defaults are merged, then the document's values (addresses, terms, PO)
+   *  go back on top, exactly as for a customer the server resolved. */
+  const pickCustomer = useCallback((c: CustomerRef | null) => {
     onCustomerChange(c);
+    if (!c) return;
+    if (handoff) apply({ data: (d) => overlayDocumentValues(d, handoff.data, soDefaults()) });
     markReviewed(['customer']);
-  }, [onCustomerChange, markReviewed]);
+  }, [onCustomerChange, handoff, apply, markReviewed]);
   const updateLine = useCallback((id: string, patch: Partial<SOLineItem>) => {
     apply({ lineItems: form.lineItems.map((l) => (l.id === id ? { ...l, ...patch } : l)) });
   }, [apply, form.lineItems]);
@@ -266,7 +281,7 @@ export function useSalesOrderReviewMode({ form, apply, onCustomerChange, geo }: 
 
   return {
     active, phase, fileName, file, handoff, pages: result?.extracted.pages ?? NO_PAGES, hydrated, form, extras, reviewed,
-    pending, requiredPending, blockedReason, progress, preTaxTotal, formAmounts, focus,
+    pending, requiredPending, blockedReason, progress, preTaxTotal, formTax, formAmounts, focus,
     banner: {
       usedRecordUuid: doc.usedRecordUuid,
       aiUnavailable: (result?.extracted.warnings ?? []).includes(AI_UNAVAILABLE_WARNING),
