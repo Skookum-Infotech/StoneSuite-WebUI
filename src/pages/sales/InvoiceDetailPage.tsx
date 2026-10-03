@@ -22,9 +22,11 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -41,7 +43,7 @@ const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
@@ -434,6 +436,8 @@ export default function InvoiceDetailPage() {
               <span className="text-stone-700">{fmtDate(invoice.updatedAt)}</span>
             </div>
           </div>
+
+          <DocumentSendHistory recordId={id} />
 
           {canDelete && (
             <DangerZoneCard>

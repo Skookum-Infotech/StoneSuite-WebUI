@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getCountries, getCountryCallingCode, type CountryCode } from 'libphonenumber-js';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { applyCountryCode, stripCountryCode } from './formUtils';
+import { detectCountryCode } from '@/lib/phoneValidation';
 
 interface DialCode {
   iso: CountryCode;
@@ -50,7 +51,7 @@ export function PhoneNumberInput({
   className?: string;
   disabled?: boolean;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'disabled'>) {
-  const [selected, setSelected] = useState<DialCode>(DEFAULT_DIAL_CODE);
+  const [picked, setPicked] = useState<DialCode | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -59,6 +60,23 @@ export function PhoneNumberInput({
     if (!q) return DIAL_CODES;
     return DIAL_CODES.filter((d) => d.name.toLowerCase().includes(q) || d.code.includes(q));
   }, [query]);
+
+  // The selector follows the stored value's own code (so a saved +44 number
+  // shows +44, not the +1 default); a code the user picked wins while it
+  // still matches, and +1 is the fallback for a code-less value.
+  const detected = detectCountryCode(value);
+  const selected: DialCode =
+    (picked && (detected === null || picked.code === detected) ? picked : null)
+    ?? (detected ? DIAL_CODES.find((d) => d.code === detected && d.iso === 'US') ?? DIAL_CODES.find((d) => d.code === detected) : undefined)
+    ?? DEFAULT_DIAL_CODE;
+
+  // A code-less value would show the default code without ever storing it —
+  // write it through so what's visible is what's saved.
+  useEffect(() => {
+    if (!disabled && value.trim() !== '' && !value.trim().startsWith('+')) {
+      onChange(applyCountryCode(selected.code, value));
+    }
+  }, [value, disabled, selected.code, onChange]);
 
   // The code lives in the trigger only — strip it back off `value` for
   // display so it isn't shown a second time inside the text box.
@@ -105,7 +123,7 @@ export function PhoneNumberInput({
                 role="option"
                 aria-selected={d.iso === selected.iso}
                 onClick={() => {
-                  setSelected(d);
+                  setPicked(d);
                   onChange(applyCountryCode(d.code, displayValue));
                   setOpen(false);
                   setQuery('');

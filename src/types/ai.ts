@@ -60,6 +60,9 @@ export interface AIStatus {
   platformEnabled: boolean;
   tenantEnabled: boolean;
   available: boolean;
+  /** Create-from-document is on (feature flag AND the assistant is available).
+   *  Optional so a backend that predates the flag reads as off. */
+  documentExtraction?: boolean;
 }
 
 /** Self-hosted Ollama's coarse run state across however many Fly machines

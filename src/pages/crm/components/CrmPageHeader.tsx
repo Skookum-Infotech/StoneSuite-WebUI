@@ -78,7 +78,7 @@ export function CrmPageHeader({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-sm font-bold tracking-tight text-stone-900 truncate max-w-[160px]">
+              <h1 className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate max-w-[160px]">
                 {title}
               </h1>
               {recordNumber && (
@@ -105,7 +105,7 @@ export function CrmPageHeader({
         {/* Title block */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold tracking-tight text-stone-900 truncate">
+            <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
               {title}
             </h1>
             {recordNumber && (

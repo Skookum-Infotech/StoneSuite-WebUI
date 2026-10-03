@@ -19,6 +19,7 @@ import { VendorCreditFilterDrawer } from './VendorCreditFilterDrawer';
 import { VendorCreditStatusControl } from './VendorCreditStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { VendorCreditSearchRequest } from '@/types/vendorCredit';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
@@ -57,7 +58,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
 export function VendorCreditTable() {

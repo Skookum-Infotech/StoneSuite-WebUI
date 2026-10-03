@@ -3,10 +3,11 @@ import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
 import type { Vendor } from '@/types/vendor';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function ReadonlyField({ label, value, full, link, multiline }: {

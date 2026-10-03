@@ -1,10 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { relativeTime } from '@/lib/recentRecordRoute';
+import { relativeDay } from '@/lib/recentRecordRoute';
+import { datePart, formatDateValue } from '@/lib/dateUtils';
 import { WidgetCard } from './WidgetCard';
 import { MoreHint } from './MoreHint';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import type { AccountingSnapshotData } from '@/types/dashboardData';
+
+// Entry dates are calendar days (a DATE column), so the tooltip has no time.
+const ENTRY_DATE_FORMAT: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
 
 // Matches the other half-size widgets' row count (inventoryAlertsLimit,
 // topCustomersLimit are both 5 server-side) now that this card is the same
@@ -96,8 +100,8 @@ export function AccountingSnapshot({
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-xs font-bold text-stone-950 tabular-nums">{currency(e.amount)}</div>
-                  <time dateTime={e.date} title={new Date(e.date).toLocaleString()} className="text-2xs text-stone-500">
-                    {relativeTime(e.date)}
+                  <time dateTime={datePart(e.date)} title={formatDateValue(datePart(e.date), undefined, ENTRY_DATE_FORMAT)} className="text-2xs text-stone-500">
+                    {relativeDay(datePart(e.date))}
                   </time>
                 </div>
               </div>

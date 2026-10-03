@@ -28,13 +28,13 @@ const PENDING_INVITE: UserInvite = {
   CreatedAt: new Date().toISOString(),
 };
 
-function renderDetail() {
+function renderDetail(invite: UserInvite = PENDING_INVITE) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <InviteDetail invite={PENDING_INVITE} />
+      <InviteDetail invite={invite} />
     </QueryClientProvider>,
   );
 }
@@ -127,5 +127,31 @@ describe('InviteDetail resend', () => {
 
     expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /yes, resend/i })).toBeInTheDocument();
+  });
+});
+
+describe('InviteDetail — real email status', () => {
+  const BOUNCE_MESSAGE = "The recipient's mail server rejected this email. Check the address and try again.";
+
+  it('explains a bounced invitation in words', () => {
+    renderDetail({ ...PENDING_INVITE, emailStatus: 'bounced', emailStatusMessage: BOUNCE_MESSAGE });
+
+    expect(screen.getByText('Not delivered')).toBeInTheDocument();
+    expect(screen.getByText(BOUNCE_MESSAGE)).toBeVisible();
+  });
+
+  it('shows delivery of a pending invitation', () => {
+    renderDetail({ ...PENDING_INVITE, emailStatus: 'delivered' });
+    expect(screen.getByText('Delivered')).toBeInTheDocument();
+  });
+
+  it('shows nothing when the status is unknown (older invite, or notify unreachable)', () => {
+    renderDetail({ ...PENDING_INVITE, emailStatus: 'unknown' });
+    expect(document.querySelector('[data-email-status]')).toBeNull();
+  });
+
+  it('shows no email status once the invitation was accepted', () => {
+    renderDetail({ ...PENDING_INVITE, Status: 'accepted', AcceptedAt: new Date().toISOString(), emailStatus: 'bounced' });
+    expect(document.querySelector('[data-email-status]')).toBeNull();
   });
 });

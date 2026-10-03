@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ShoppingCart, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -21,6 +21,11 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useI
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
+import { SalesOrderReviewShell } from './components/SalesOrderReviewShell';
+import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
+import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
+import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentUsedNotice';
+import { useSalesOrderReviewMode, type ReviewPatch } from '@/hooks/useSalesOrderReviewMode';
 import { StockShortageGate } from './components/StockShortageGate';
 import { stockShortagesFrom } from '@/lib/stockShortage';
 import {
@@ -105,10 +110,28 @@ export default function AddSalesOrderPage() {
     };
   }, [data, lookups]);
 
+  // "Create from document" review mode (?fromDocument=<id>) — inert otherwise.
+  const applyReviewForm = useCallback((next: ReviewPatch) => {
+    if (next.data) setData(next.data);
+    if (next.lineItems) setLineItems(next.lineItems);
+    if (next.customer !== undefined) setCustomer(next.customer);
+    if (next.customFieldValues) setCustomFieldValues(next.customFieldValues);
+  }, []);
+  const geo = useMemo(() => (lookups ? { countries: lookups.countries, states: lookups.states } : undefined), [lookups]);
+  const review = useSalesOrderReviewMode({
+    form: { data, lineItems, customer, customFieldValues },
+    apply: applyReviewForm,
+    onCustomerChange: handleCustomerChange,
+    geo,
+  });
+
+  // A document-prefilled form is unsaved work from the start, so leaving prompts
+  // — except for a document that was already used, which shows no form at all.
+  const documentUsed = review.active && review.phase === 'used';
   const guard = useUnsavedChangesGuard(
     { data, lineItems, drawings, customer, customFieldValues },
-    true,
-    inventoryReturn.isRestored || customerReturn.isRestored,
+    !review.active || review.hydrated,
+    inventoryReturn.isRestored || customerReturn.isRestored || (review.active && !documentUsed),
   );
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -126,13 +149,17 @@ export default function AddSalesOrderPage() {
   const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
-    mutationFn: () => {
+    mutationFn: (opts?: { allowDuplicate?: boolean }) => {
       if (!customer) throw new Error('A billing customer is required.');
       const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], formData);
       if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
-      const payload = toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues);
+      const payload = {
+        ...toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues),
+        ...review.payloadExtras(Boolean(opts?.allowDuplicate)),
+      };
       return salesOrderService.createOrder(payload);
     },
+    onError: (err) => { review.handleSaveError(err, () => save({ allowDuplicate: true })); },
     onSuccess: async (order) => {
       const panel = panelRef.current;
       const hadStagedFiles = panel?.hasStagedFiles() ?? false;
@@ -160,7 +187,8 @@ export default function AddSalesOrderPage() {
           }
         } catch { /* non-fatal — order was created; it just stays in Draft */ }
       }
-      if (!autoSubmitted) toast.success('Sales order created.');
+      if (review.active) await review.afterCreate(order);
+      else if (!autoSubmitted) toast.success('Sales order created.');
 
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       guard.markClean();
@@ -168,21 +196,24 @@ export default function AddSalesOrderPage() {
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
+  const withReviewShell = (body: ReactNode) => (
+    review.active ? <SalesOrderReviewShell review={review}>{body}</SalesOrderReviewShell> : body
+  );
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+    <div className="flex flex-col flex-1 min-h-0 bg-stone-50 dark:bg-stone-950">
       <UnsavedChangesPrompt guard={guard} />
-      <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
+      <form onSubmit={(e) => { e.preventDefault(); if (review.blockedReason) review.focusFirstPending(); else save({}); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Sales Orders"
           onBack={() => navigate('/sales/sales_order')}
           icon={ShoppingCart}
-          title="New Sales Order"
+          title={review.active ? 'New Sales Order from Document' : 'New Sales Order'}
           subtitle="Fields marked * are required."
-          actions={(
+          actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
-              {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
+              {isPending ? <Loader2 className="size-3 motion-safe:animate-spin" aria-hidden="true" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Order'}
             </button>
           )}
@@ -190,24 +221,28 @@ export default function AddSalesOrderPage() {
 
         {/* A refusal for lack of stock has its own dialog; everything else is a banner. */}
         <StockShortageGate error={saveError} />
-        {saveError && !stockShortagesFrom(saveError) && (
+        {saveError && !stockShortagesFrom(saveError) && !review.duplicate && (
           <div
             ref={errorRef}
             tabIndex={-1}
             role="alert"
-            className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
+            className="shrink-0 flex items-start gap-3 border-b border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="size-3 text-red-600" />
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20">
+              <AlertCircle className="size-3 text-red-600 dark:text-red-400" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="text-xs text-red-700 dark:text-red-300">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save sales order.')}
             </p>
           </div>
         )}
 
+        {documentUsed ? (
+          <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} listPath="/sales/sales_order" />
+        ) : (<>
         <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
+          {withReviewShell(
           <SalesOrderFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -218,7 +253,7 @@ export default function AddSalesOrderPage() {
             drawings={drawings}
             setDrawings={setDrawings}
             customer={customer}
-            setCustomer={handleCustomerChange}
+            setCustomer={review.active ? review.pickCustomer : handleCustomerChange}
             onCreateCustomer={startCreateCustomer}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
@@ -228,14 +263,23 @@ export default function AddSalesOrderPage() {
             taxTotal={taxTotal}
             total={total}
             filesPanelRef={panelRef}
-          />
+          />,
+          )}
         </InventoryItemReturnContext.Provider>
 
-        <FormActionBar
-          onCancel={() => navigate('/sales/sales_order')}
-          isPending={isPending}
-          submitLabel="Save Order"
-        />
+        {review.active ? (
+          <>
+            <ReviewFooter reason={review.blockedReason} isPending={isPending} onDiscard={review.requestDiscard} />
+            <ReviewDialogs review={review} onCreateAnyway={() => save({ allowDuplicate: true })} markClean={guard.markClean} />
+          </>
+        ) : (
+          <FormActionBar
+            onCancel={() => navigate('/sales/sales_order')}
+            isPending={isPending}
+            submitLabel="Save Order"
+          />
+        )}
+        </>)}
       </form>
     </div>
   );

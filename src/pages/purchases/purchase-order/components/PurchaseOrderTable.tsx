@@ -19,6 +19,7 @@ import { PurchaseOrderStatusControl } from './PurchaseOrderStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -61,7 +62,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
 export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactNode }) {

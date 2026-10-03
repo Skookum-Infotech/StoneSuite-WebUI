@@ -23,10 +23,12 @@ import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
+import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -44,7 +46,7 @@ const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
@@ -472,6 +474,8 @@ export default function SalesOrderDetailPage() {
               <span className="text-stone-700">{fmtDate(order.updatedAt)}</span>
             </div>
           </div>
+
+          <DocumentSendHistory recordId={id} />
 
           {canDelete && (
             <DangerZoneCard>

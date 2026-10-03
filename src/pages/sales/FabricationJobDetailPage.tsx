@@ -31,10 +31,11 @@ import { CancelFabricationJobDialog } from './components/CancelFabricationJobDia
 import { DeleteFabricationJobDialog } from './components/DeleteFabricationJobDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { FabricationJob } from '@/types/fabrication';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // Poll the primary record so status/approval changes made by another user or

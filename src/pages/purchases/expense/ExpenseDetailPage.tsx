@@ -25,6 +25,7 @@ import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { ExpenseStatusControl } from './components/ExpenseStatusControl';
 import { RejectExpenseDialog } from './components/RejectExpenseDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -41,7 +42,7 @@ const DETAIL_POLL_MS = 60_000;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {

@@ -4,6 +4,7 @@ import { Mail, Send, X, Loader2, Copy, Check, MailWarning } from "lucide-react";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
+import { EmailStatusBadge } from "@/components/tenant/EmailStatusBadge";
 import { cn } from "@/lib/utils";
 import type { UserInvite } from "@/types/tenant";
 import { fmtDate } from "../userHelpers";
@@ -96,6 +97,12 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
       </div>
 
       <div className="mb-6 space-y-1.5 text-xs">
+        {invite.Status === "pending" && invite.emailStatus && invite.emailStatus !== "unknown" && (
+          <div className="flex justify-between gap-3">
+            <span className="text-stone-400">Email</span>
+            <EmailStatusBadge source={invite} showMessage />
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-stone-400">Expires</span>
           <span

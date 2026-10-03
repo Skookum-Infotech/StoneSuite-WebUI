@@ -12,7 +12,11 @@ vi.mock('@/services/purchaseOrderService', () => ({
     reject: vi.fn(),
     transition: vi.fn(),
     convertToBill: vi.fn(),
+    resendToVendor: vi.fn(),
   },
+}));
+vi.mock('@/services/documentService', () => ({
+  documentService: { sendToCustomer: vi.fn(), listSends: vi.fn().mockResolvedValue([]) },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -396,5 +400,70 @@ describe('PurchaseOrderDetailPage — Items tab units', () => {
     await openItemsTab();
     expect(within(screen.getByText('Item 3').closest('tr') as HTMLElement).getByText('4 slabs')).toBeInTheDocument();
     expect(within(screen.getByText('Item 1').closest('tr') as HTMLElement).queryByText(/slab/)).not.toBeInTheDocument();
+  });
+});
+
+describe('PurchaseOrderDetailPage — Resend email', () => {
+  it('offers Resend email on an order the vendor already holds', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage();
+
+    expect(await screen.findAllByRole('button', { name: 'Resend email' })).toHaveLength(HEADER_COPIES);
+  });
+
+  it.each([
+    ['a draft', { statusCode: 'DRFT', status: 'Draft', approvalStatus: 'none', nextStatusCodes: ['PAPV', 'CANC'] }],
+    ['awaiting approval', { statusCode: 'PAPV', status: 'Pending Approval' }],
+    ['approved but not yet sent', { statusCode: 'APPV', status: 'Approved', approvalStatus: 'approved', nextStatusCodes: ['SENT', 'DRFT', 'CANC'] }],
+  ])('does not offer Resend email on %s order: the vendor has not been sent it yet', async (_label, patch) => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({ ...pendingOrder, ...patch } as unknown as PurchaseOrder);
+    renderPage();
+
+    await screen.findAllByText('PO-000001');
+    expect(screen.queryAllByRole('button', { name: 'Resend email' })).toHaveLength(0);
+  });
+
+  it('does not offer Resend email to someone who cannot send to the vendor', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage({ denied: ['purchase_order:transition'] });
+
+    await screen.findAllByText('PO-000001');
+    expect(screen.queryAllByRole('button', { name: 'Resend email' })).toHaveLength(0);
+  });
+
+  it('asks first, then resends through the purchase-order endpoint and says so', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    vi.mocked(purchaseOrderService.resendToVendor).mockResolvedValue({
+      sendId: 's1', sentTo: ['vendor@nero.example'], emailSent: true,
+    });
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Resend email' }))[0]);
+    expect(purchaseOrderService.resendToVendor).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Resend to vendor?' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Confirm resend to vendor' }));
+
+    await waitFor(() => expect(purchaseOrderService.resendToVendor).toHaveBeenCalledWith('po-1'));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Resent to vendor@nero.example.'));
+    // The status is untouched by a resend.
+    expect(purchaseOrderService.transition).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog open with the reason when the email did not go', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    vi.mocked(purchaseOrderService.resendToVendor).mockResolvedValue({
+      sendId: 's1', sentTo: ['vendor@nero.example'], emailSent: false, emailError: 'The email could not be delivered.',
+    });
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Resend email' }))[0]);
+    await user.click(screen.getByRole('button', { name: 'Confirm resend to vendor' }));
+
+    expect(await screen.findByText('The email could not be delivered.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Resend to vendor?' })).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });

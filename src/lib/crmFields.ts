@@ -217,3 +217,25 @@ export function primaryAddressFields(coreFields: Record<string, unknown>, target
   }
   return out;
 }
+
+const BILL_FLAG_KEY = 'customer_is_bill_as_primary';
+const SHIP_FLAG_KEY = 'customer_is_ship_as_primary';
+
+/** Applies a single field change and keeps any "Same as Primary" address in
+ *  sync: when a flag is on, billing/shipping is re-copied from the primary
+ *  address whenever the flag flips on *or* a primary address field changes —
+ *  not just once at tick time, which left them stale after later edits. */
+export function applyAddressMirroring(
+  fields: Record<string, unknown>,
+  key: string,
+  value: unknown,
+): Record<string, unknown> {
+  let next: Record<string, unknown> = { ...fields, [key]: value };
+  if (next[BILL_FLAG_KEY] === true && (key === BILL_FLAG_KEY || key in PRIMARY_TO_BILL_ADDR_KEYS)) {
+    next = { ...next, ...primaryAddressFields(next, 'bill') };
+  }
+  if (next[SHIP_FLAG_KEY] === true && (key === SHIP_FLAG_KEY || key in PRIMARY_TO_SHIP_ADDR_KEYS)) {
+    next = { ...next, ...primaryAddressFields(next, 'ship') };
+  }
+  return next;
+}

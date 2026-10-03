@@ -17,6 +17,7 @@ import {
 import { VendorPaymentFilterDrawer } from './VendorPaymentFilterDrawer';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { VendorPaymentSearchRequest } from '@/types/vendorPayment';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
@@ -63,7 +64,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
 export function VendorPaymentTable() {

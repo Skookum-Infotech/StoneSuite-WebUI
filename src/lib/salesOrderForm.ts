@@ -568,14 +568,16 @@ function toStr(v: unknown): string {
 
 /** Maps one editable line row to the create/update contract's line shape.
  *  A row with `inventoryItemUuid` set is a catalog line (server snapshots its
- *  sku/name/description/unit/price/tax, ignoring sku/itemName/unitCode/
- *  taxPercent below); otherwise it's free-text and needs `itemDescription`,
- *  with sku/itemName/unitCode/taxPercent taken as typed. */
+ *  sku/name/unit/price/tax, ignoring sku/itemName/unitCode/taxPercent below,
+ *  and keeps a sent description over the catalog's); otherwise it's free-text
+ *  and needs `itemDescription`, with sku/itemName/unitCode/taxPercent taken as
+ *  typed. A catalog line never sends its name as the description. */
 function toLineInput(item: SOLineItem): SalesOrderLineInput {
+  const description = item.inventoryItemUuid ? item.itemDescription : item.itemDescription || item.itemName;
   return {
     lineNumber: item.lineNo,
     inventoryItemUuid: item.inventoryItemUuid || undefined,
-    description: item.itemDescription || item.itemName || undefined,
+    description: description || undefined,
     sku: item.itemSku || undefined,
     itemName: item.itemName || undefined,
     unitCode: item.units || undefined,
