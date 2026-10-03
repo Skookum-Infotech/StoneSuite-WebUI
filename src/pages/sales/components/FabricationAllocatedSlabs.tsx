@@ -1,4 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
+import { useFabricationAction } from '@/hooks/useFabricationAction';
+import { tenantClient } from '@/api/tenantClient';
 import { Unlink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -9,14 +12,14 @@ import { fabricationService } from '@/services/fabricationService';
 // the job-allocation status (reserved/consumed/released), not the slab's own
 // physical status — see the FabricationSlab type's doc comment. A reserved slab
 // can be released; a consumed one cannot.
-export function FabricationAllocatedSlabs({ jobId, canRelease }: { jobId: string; canRelease: boolean }) {
+export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, version }: { jobId: string; canRelease: boolean; workflowVersion?: number; version?: number }) {
   const queryClient = useQueryClient();
   const { data: slabs = [], isLoading, error } = useQuery({
     queryKey: ['fabrication-job-slabs', jobId],
     queryFn: () => fabricationService.getJobSlabs(jobId),
   });
 
-  const release = useMutation({
+  const legacyRelease = useMutation({
     mutationFn: (slabId: string) => fabricationService.deallocateSlab(jobId, slabId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabrication-job-slabs', jobId] });
@@ -25,6 +28,16 @@ export function FabricationAllocatedSlabs({ jobId, canRelease }: { jobId: string
       queryClient.invalidateQueries({ queryKey: ['inventory-units'] });
     },
   });
+
+  const actionRelease = useFabricationAction({
+    version: version ?? 0,
+    execute: (meta, input: { slabId: string }) => tenantClient.post(`/tenant/fabrication-jobs/${encodeURIComponent(jobId)}/material-releases`, { ...meta, ...input }),
+    onSuccess: () => {
+      for (const queryKey of [['fabrication-job-slabs', jobId], ['fabrication-job-materials', jobId], ['fabrication-job', jobId], ['fabrication-wip-options', jobId], ['inventory-units']]) void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+  const release = workflowVersion === 2 ? actionRelease : legacyRelease;
+  const conflict = isAxiosError(release.error) && release.error.response?.status === 409;
 
   if (isLoading) return <div className="flex justify-center py-6"><Spinner label="Loading slabs…" /></div>;
   if (error) return <p className="py-6 text-center text-xs text-destructive/70">Failed to load slabs.</p>;
@@ -52,11 +65,11 @@ export function FabricationAllocatedSlabs({ jobId, canRelease }: { jobId: string
                 <td className="px-3 py-2.5 text-stone-500">{slab.grade || '—'}</td>
                 <td className="px-3 py-2.5 text-stone-500">{slab.finish || '—'}</td>
                 <td className="px-3 py-2.5 text-right">
-                  {canRelease && slab.status === 'reserved' && (
+                  {canRelease && (workflowVersion !== 2 || version !== undefined) && slab.status === 'reserved' && (
                     <button
                       type="button"
-                      onClick={() => release.mutate(slab.id)}
-                      disabled={release.isPending}
+                      onClick={() => workflowVersion === 2 ? actionRelease.run({ slabId: slab.id }) : legacyRelease.mutate(slab.id)}
+                      disabled={release.isPending || conflict}
                       aria-label={`Release slab ${slab.serial}`}
                       className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
                     >
@@ -72,6 +85,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease }: { jobId: string
           </tbody>
         </table>
       </div>
+      {conflict && workflowVersion === 2 && <button type="button" className="min-h-11 text-sm underline" onClick={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['fabrication-job', jobId] }), queryClient.invalidateQueries({ queryKey: ['fabrication-job-slabs', jobId] })]); actionRelease.resetForLatest(); }}>Refresh job and review again</button>}
       {release.isError && (
         <p role="alert" className="mt-1.5 text-2xs text-destructive">{apiErrorMessage(release.error, 'Failed to release the slab.')}</p>
       )}

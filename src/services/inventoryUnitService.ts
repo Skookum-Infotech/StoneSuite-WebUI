@@ -13,6 +13,7 @@ import type {
 const BASE = '/tenant/inventory/units';
 
 export const inventoryUnitService = {
+  inspect: (id: string, input: { decision: 'accepted' | 'rejected'; reason: string }) => tenantClient.post(`${BASE}/${id}/inspection`, input),
   searchUnits: (req: UnitSearchRequest): Promise<UnitPage> =>
     tenantClient
       .post<{ success: boolean; records: InventoryUnit[]; nextCursor: string; hasMore: boolean }>(

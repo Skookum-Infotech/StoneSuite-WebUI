@@ -101,6 +101,8 @@ export interface FabricationJobCreatePayload extends FabricationJobFields {
 export type FabricationJobUpdatePayload = FabricationJobFields;
 
 export interface FabricationJob {
+  workflowVersion?: number;
+  version?: number;
   id: string;
   jobNumber: string;
   status: string;

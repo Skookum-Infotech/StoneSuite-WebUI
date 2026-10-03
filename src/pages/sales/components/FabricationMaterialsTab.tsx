@@ -1,3 +1,7 @@
+import { FabricationProcurement } from './FabricationProcurement';
+import { FabricationShortagePurchase } from './FabricationShortagePurchase';
+import { FabricationLayoutAllocation } from './FabricationLayoutAllocation';
+import { FabricationWipTransfers } from './FabricationWipTransfers';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Spinner } from '@/components/tenant/ui';
@@ -17,8 +21,10 @@ import { FabricationMaterialCard } from './FabricationMaterialCard';
 //
 // Needs installation:read AND inventory_item:read server-side; the Detail page
 // only renders this tab when the caller holds both grants.
-export function FabricationMaterialsTab({ jobId, pieces, canAllocate }: {
+export function FabricationMaterialsTab({ jobId, pieces, canAllocate, workflowVersion, version }: {
   jobId: string;
+  workflowVersion?: number;
+  version?: number;
   pieces: FabricationJobPiece[];
   canAllocate: boolean;
 }) {
@@ -49,9 +55,11 @@ export function FabricationMaterialsTab({ jobId, pieces, canAllocate }: {
       ) : (
         <>
           <p className="text-xs text-stone-500" aria-live="polite">
-            {uncovered === 0
-              ? 'Every material is covered — this job has the stone it needs to be cut.'
-              : `${uncovered} ${uncovered === 1 ? 'material needs' : 'materials need'} more slab allocated before this job can move to Cutting.`}
+            {workflowVersion === 2
+              ? 'Order-area totals are a purchasing reference. Reserve measured pieces using the reviewed layout below; area coverage alone does not confirm cutting readiness.'
+              : uncovered === 0
+                ? 'Every material is covered — this job has the stone it needs to be cut.'
+                : `${uncovered} ${uncovered === 1 ? 'material needs' : 'materials need'} more slab allocated before this job can move to Cutting.`}
           </p>
           <div className="space-y-3">
             {materials.map((m) => {
@@ -60,8 +68,8 @@ export function FabricationMaterialsTab({ jobId, pieces, canAllocate }: {
                 <FabricationMaterialCard
                   key={m.itemId}
                   material={m}
-                  onAllocate={canPick ? () => setPicking(m) : undefined}
-                  onRestock={canRestock && shortage ? () => openRequisitionForShortages([shortage]) : undefined}
+                  onAllocate={canPick && workflowVersion !== 2 ? () => setPicking(m) : undefined}
+                  onRestock={workflowVersion !== 2 && canRestock && shortage ? () => openRequisitionForShortages([shortage]) : undefined}
                 />
               );
             })}
@@ -69,10 +77,18 @@ export function FabricationMaterialsTab({ jobId, pieces, canAllocate }: {
         </>
       )}
 
+      {workflowVersion === 2 && version !== undefined && canPick && hasPermission('inventory_unit', 'update') && <FabricationLayoutAllocation jobId={jobId} version={version} />}
+
+      {workflowVersion === 2 && hasPermission('purchase_order', 'read') && <FabricationProcurement jobId={jobId} />}
+
+      {workflowVersion === 2 && version !== undefined && canAllocate && hasPermission('purchase_order', 'create') && hasPermission('vendor', 'read') && <FabricationShortagePurchase jobId={jobId} version={version} materials={materials} canReadPurchase={hasPermission('purchase_order', 'read')} />}
+
       <div>
         <h4 className="mb-2 text-xs font-semibold text-stone-500">Allocated slabs</h4>
-        <FabricationAllocatedSlabs jobId={jobId} canRelease={canAllocate} />
+        <FabricationAllocatedSlabs jobId={jobId} canRelease={canAllocate && (workflowVersion !== 2 || hasPermission('inventory_unit', 'update'))} workflowVersion={workflowVersion} version={version} />
       </div>
+
+      {workflowVersion === 2 && version && hasPermission('inventory_unit', 'read') && hasPermission('inventory_bin', 'read') && <FabricationWipTransfers jobId={jobId} version={version} />}
 
       {picking && (
         <AllocateSlabsDialog jobId={jobId} material={picking} pieces={pieces} onClose={() => setPicking(null)} />
