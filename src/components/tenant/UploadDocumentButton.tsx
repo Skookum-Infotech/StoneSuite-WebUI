@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent } from 'react';
+import { useId, useRef, type ChangeEvent } from 'react';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,13 +15,19 @@ interface UploadDocumentButtonProps {
   /** Receives the picked file once it has passed client-side validation. */
   onFileSelected: (file: File) => void;
   disabled?: boolean;
+  /** Why the button is disabled — shown as visible text beside it and as its tooltip. */
+  disabledReason?: string;
 }
 
 /** Opens the system file picker for a Sales Order / Purchase Order / Vendor
  *  Bill document. It only picks and validates the file — what happens to it
  *  next (upload, extraction, …) is up to the caller's `onFileSelected`. Styled
  *  to sit in a list-table toolbar next to "Download CSV". */
-export function UploadDocumentButton({ documentLabel, onFileSelected, disabled = false }: UploadDocumentButtonProps) {
+export function UploadDocumentButton({
+  documentLabel, onFileSelected, disabled = false, disabledReason,
+}: UploadDocumentButtonProps) {
+  const reasonId = useId();
+  const showReason = disabled && Boolean(disabledReason);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -43,12 +49,19 @@ export function UploadDocumentButton({ documentLabel, onFileSelected, disabled =
         type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={disabled}
+        title={showReason ? disabledReason : undefined}
+        aria-describedby={showReason ? reasonId : undefined}
         aria-label={`Upload ${documentLabel} file`}
         className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <Upload className="size-3.5" aria-hidden="true" />
         {`Upload ${documentLabel}`}
       </button>
+      {showReason && (
+        <span id={reasonId} className="text-[11px] text-stone-500">
+          {disabledReason}
+        </span>
+      )}
       <input
         ref={fileInputRef}
         type="file"

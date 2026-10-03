@@ -1,9 +1,16 @@
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Plus } from 'lucide-react';
-import { toast } from 'sonner';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useAIStatus } from '@/hooks/useAIStatus';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { UploadDocumentButton } from '@/components/tenant/UploadDocumentButton';
+import { CreateFromDocumentDialog } from '@/components/tenant/documentExtraction/CreateFromDocumentDialog';
+import { DropOverlay } from '@/components/tenant/documentExtraction/DropOverlay';
+import { PendingDocumentsChip } from '@/components/tenant/documentExtraction/PendingDocumentsChip';
 import { SalesOrderTable } from './components/SalesOrderTable';
+
+const AI_OFF_REASON = 'AI features are turned off for your workspace';
 
 export default function SalesOrderListPage() {
   const navigate = useNavigate();
@@ -11,13 +18,18 @@ export default function SalesOrderListPage() {
   // merged-login design) but never creates a sales order — the backend has
   // no such endpoint under /api/portal/*, so the button would always 404.
   const isCustomer = useAuthStore((s) => s.kind === 'portal');
+  const { hasPermission } = useUserPermissions();
+  const { data: aiStatus, isLoading: aiLoading } = useAIStatus();
 
-  // TODO(backend): there is no upload endpoint yet, so a picked file is only
-  // acknowledged, never sent. To wire it up, add the call to salesOrderService,
-  // run it through a useMutation, and invalidate ['sales-orders'] on success.
-  function handleFileSelected(file: File) {
-    toast.info(`"${file.name}" selected — sending it to the backend isn't wired up yet.`);
-  }
+  const canCreate = !isCustomer && hasPermission('sales_order', 'create');
+  const extractionOn = aiStatus?.documentExtraction === true;
+  // The flow needs the AI feature on; until the status loads the button stays
+  // disabled without a reason rather than flashing "turned off".
+  const uploadDisabled = !extractionOn;
+  const uploadReason = !aiLoading && !extractionOn ? AI_OFF_REASON : undefined;
+
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const closeDialog = useCallback(() => setPendingFile(null), []);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -46,13 +58,28 @@ export default function SalesOrderListPage() {
         <div className="mt-5 border-t border-stone-100 pt-4 flex-1 flex flex-col min-h-0">
           <SalesOrderTable
             toolbarActions={
-              !isCustomer && (
-                <UploadDocumentButton documentLabel="Sales Order" onFileSelected={handleFileSelected} />
+              canCreate && (
+                <>
+                  <PendingDocumentsChip docType="sales_order" enabled={extractionOn} />
+                  <UploadDocumentButton
+                    documentLabel="Sales Order"
+                    onFileSelected={setPendingFile}
+                    disabled={uploadDisabled}
+                    disabledReason={uploadReason}
+                  />
+                </>
               )
             }
           />
         </div>
       </div>
+
+      <DropOverlay
+        enabled={canCreate && extractionOn && pendingFile === null}
+        documentLabel="Sales Order"
+        onFileDropped={setPendingFile}
+      />
+      {pendingFile && <CreateFromDocumentDialog file={pendingFile} onClose={closeDialog} />}
     </div>
   );
 }

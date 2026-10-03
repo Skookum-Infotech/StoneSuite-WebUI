@@ -74,6 +74,8 @@ export interface SalesOrderCreatePayload {
   shippingCharge?: number;
   adjustment?: number;
   customFields?: Record<string, unknown>;
+  /** Create anyway past a live same-customer, same-PO order (409 duplicate_document). */
+  allowDuplicate?: boolean;
   items: SalesOrderLineInput[];
 }
 

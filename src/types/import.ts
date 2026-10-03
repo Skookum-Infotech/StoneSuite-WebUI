@@ -11,7 +11,7 @@ export interface ImportPresignResult {
   uploadUrl: string;
 }
 
-export type ImportJobStatus = 'pending' | 'running' | 'succeeded' | 'failed';
+export type ImportJobStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'dead';
 
 export interface ImportJobProgress {
   step?: string;
