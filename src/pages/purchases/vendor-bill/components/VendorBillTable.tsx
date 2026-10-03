@@ -19,6 +19,7 @@ import { VendorBillStatusControl } from './VendorBillStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
 import type { VendorBillSearchRequest } from '@/types/vendorBill';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -65,7 +66,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
 export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode }) {

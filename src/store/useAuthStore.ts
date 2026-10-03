@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { UserProfile, PortalCustomer, PortalWorkspace } from '@/types/auth';
 import { queryClient } from '@/lib/queryClient';
+import { clearAllDrafts } from '@/lib/documentReviewDraft';
 
 // Token is set as httpOnly cookie by the backend on login.
 // Do not store in localStorage — any XSS script can read localStorage.
@@ -158,6 +159,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.setItem(SESSION_EXPIRY_KEY, String(expiresAt));
     const workspaces = get().workspaces.map((w) => ({ ...w, active: w.tenantId === tenantId }));
     queryClient.clear();
+    clearAllDrafts();
     set({ activeTenantId: tenantId, token, sessionExpiresAt: expiresAt, workspaces });
   },
   setSessionExpiry: (expiresAt) => {
@@ -186,6 +188,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // design), so anything less would risk one tenant's cached sales-order/
     // invoice/etc. data surviving into the next session signed into this tab.
     queryClient.clear();
+    clearAllDrafts();
     set({
       user: null, token: null, sessionExpiresAt: null, isAuthenticated: false,
       kind: undefined, customer: null, workspaces: [], activeTenantId: null,

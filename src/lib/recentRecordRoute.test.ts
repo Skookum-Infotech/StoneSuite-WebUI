@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { recordRoute, relativeTime } from './recentRecordRoute'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { recordRoute, relativeTime, relativeDay } from './recentRecordRoute'
 
 describe('recordRoute', () => {
   it.each([
@@ -47,4 +47,53 @@ describe('relativeTime', () => {
   it('returns an em dash for an unparseable timestamp instead of "Invalid Date"', () => {
     expect(relativeTime('not-a-date', now)).toBe('—')
   })
+})
+
+// Pinned west of UTC so a UTC-midnight reading of the date would land a day
+// early and fail these. Node re-reads TZ on assignment.
+describe('relativeDay in America/Chicago', () => {
+  let originalTZ: string | undefined
+
+  beforeAll(() => {
+    originalTZ = process.env.TZ
+    process.env.TZ = 'America/Chicago'
+  })
+
+  afterAll(() => {
+    if (originalTZ === undefined) delete process.env.TZ
+    else process.env.TZ = originalTZ
+  })
+
+  // 8 PM on Jan 2 in Chicago -- already Jan 3 in UTC.
+  const evening = () => new Date(2026, 0, 2, 20, 0)
+
+  it.each([
+    ['the same calendar day', '2026-01-02', 'Today'],
+    ['the previous day', '2026-01-01', 'Yesterday'],
+    ['a few days back, across a year boundary', '2025-12-29', '4d ago'],
+    ['the last day inside the window', '2025-12-27', '6d ago'],
+  ])('%s', (_name, value, expected) => {
+    expect(relativeDay(value, evening())).toBe(expected)
+  })
+
+  it.each([
+    ['a week or more back', '2025-12-26'],
+    ['a future date', '2026-01-05'],
+  ])('falls back to the calendar date for %s', (_name, value) => {
+    const [y, m, d] = value.split('-').map(Number)
+    const expected = new Date(y, m - 1, d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+    expect(relativeDay(value, evening())).toBe(expected)
+  })
+
+  it('counts a DST-shortened day as one day', () => {
+    // US spring-forward is 2026-03-08: that local day is 23 hours long.
+    expect(relativeDay('2026-03-08', new Date(2026, 2, 9, 9, 0))).toBe('Yesterday')
+  })
+
+  it.each([['an empty string', ''], ['garbage', 'not-a-date'], ['a timestamp', '2026-01-02T00:00:00Z']])(
+    'returns an em dash for %s',
+    (_name, value) => {
+      expect(relativeDay(value, evening())).toBe('—')
+    },
+  )
 })

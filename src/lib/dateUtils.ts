@@ -1,4 +1,8 @@
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+// A Postgres DATE the backend scanned into a Go time.Time arrives as exact UTC
+// midnight. A real timestamptz carries microseconds, so landing precisely on
+// 00:00:00.000 UTC is the date-only signature in practice.
+const UTC_MIDNIGHT_RE = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.0+)?(?:Z|[+-]00:?00)$/;
 
 /** Format a Date as a local `yyyy-mm-dd` string (no UTC conversion, unlike
  *  `toISOString()`, which would shift the date near a timezone boundary). */
@@ -29,4 +33,41 @@ export function formatDisplayDate(iso: string): string {
   const date = fromISODate(iso);
   if (!date) return '';
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/** Parse a date value from the API. A Postgres DATE -- a bare `yyyy-mm-dd`,
+ *  or the exact-UTC-midnight form the Go modules emit via time.Time
+ *  (`2026-01-02T00:00:00Z`) -- becomes local midnight on that calendar day via
+ *  `fromISODate`; any other timestamp goes through `new Date` unchanged, since
+ *  it names an instant and should render in the viewer's zone. Null for an
+ *  empty or unparseable value. */
+export function parseDateValue(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  if (ISO_DATE_RE.test(value)) return fromISODate(value);
+  const midnight = UTC_MIDNIGHT_RE.exec(value);
+  if (midnight) return fromISODate(midnight[1]);
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** `toLocaleDateString` for an API date value that keeps date-only values on
+ *  their calendar day in every timezone. Mirrors the native argument order so
+ *  `new Date(v).toLocaleDateString(locale, opts)` swaps in directly. Empty
+ *  string for an empty or unparseable value. */
+export function formatDateValue(
+  value: string | null | undefined,
+  locale?: string,
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const date = parseDateValue(value);
+  return date ? date.toLocaleDateString(locale, options) : '';
+}
+
+/** The `yyyy-mm-dd` part of a Postgres DATE that the backend serialised
+ *  through `time.Time` (`2026-01-02T00:00:00Z`). Only for values known to be
+ *  DATE columns: on a real timestamp this keeps the UTC day, not the viewer's.
+ *  Empty string when the value doesn't start with a date. */
+export function datePart(value: string | null | undefined): string {
+  const head = value?.slice(0, 10) ?? '';
+  return ISO_DATE_RE.test(head) ? head : '';
 }

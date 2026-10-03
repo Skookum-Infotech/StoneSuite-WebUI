@@ -11,6 +11,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import { FabricationStatusControl } from './FabricationStatusControl';
 import type { FabricationJobSearchRequest } from '@/types/fabrication';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -40,7 +41,7 @@ const SORT_KEY: Record<SortField, string> = {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
 }
 
 export function FabricationJobTable() {

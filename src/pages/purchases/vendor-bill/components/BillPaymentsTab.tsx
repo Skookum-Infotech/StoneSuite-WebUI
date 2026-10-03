@@ -7,6 +7,7 @@ import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ApplyExistingPaymentDialog } from './ApplyExistingPaymentDialog';
+import { formatDateValue } from '@/lib/dateUtils';
 
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
@@ -14,7 +15,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // The bill's AP reconciliation view — GET /vendor-bills/{id}/payments, which

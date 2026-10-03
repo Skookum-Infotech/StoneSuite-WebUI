@@ -12,6 +12,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { InvoiceStatusControl } from './InvoiceStatusControl';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { InvoiceSearchRequest } from '@/types/invoice';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -289,7 +290,7 @@ export function InvoiceTable() {
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {inv.invoiceDate
-                          ? new Date(inv.invoiceDate).toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(inv.invoiceDate, undefined, { year: '2-digit', month: 'short', day: 'numeric' })
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">

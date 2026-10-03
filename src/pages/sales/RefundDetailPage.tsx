@@ -24,6 +24,7 @@ import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { RefundStatusControl } from './components/RefundStatusControl';
+import { formatDateValue } from '@/lib/dateUtils';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -40,7 +41,7 @@ type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function currency(n: number | undefined): string {
