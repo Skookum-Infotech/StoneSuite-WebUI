@@ -37,10 +37,10 @@ const ORDER: SalesOrderSummary = {
   grandTotal: 1200,
 };
 
-const AI_OFF_REASON = 'AI features are turned off for your workspace';
+const AI_OFF_REASON = 'AI features are turned off for your workspace. A workspace admin can turn them on in Settings.';
 
-function mockSession(kind?: 'portal', opts: { canCreate?: boolean; extraction?: boolean | undefined; aiLoading?: boolean } = {}) {
-  const { canCreate = true, extraction = true, aiLoading = false } = opts;
+function mockSession(kind?: 'portal', opts: { canCreate?: boolean; extraction?: boolean | undefined; aiLoading?: boolean; tenantEnabled?: boolean } = {}) {
+  const { canCreate = true, extraction = true, aiLoading = false, tenantEnabled = true } = opts;
   vi.mocked(useAuthStore).mockImplementation((selector) => (selector as (s: unknown) => unknown)({ kind }));
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
@@ -49,7 +49,7 @@ function mockSession(kind?: 'portal', opts: { canCreate?: boolean; extraction?: 
     hasPermission: (resource: string, action: string) => (resource === 'sales_order' && action === 'create' ? canCreate : true),
   } as ReturnType<typeof useUserPermissions>);
   vi.mocked(useAIStatus).mockReturnValue({
-    data: aiLoading ? undefined : { platformEnabled: true, tenantEnabled: true, available: true, documentExtraction: extraction },
+    data: aiLoading ? undefined : { platformEnabled: true, tenantEnabled, available: tenantEnabled, documentExtraction: extraction },
     isLoading: aiLoading,
   } as ReturnType<typeof useAIStatus>);
 }
@@ -88,7 +88,8 @@ describe('SalesOrderListPage upload button', () => {
 
     const download = await screen.findByRole('button', { name: 'Download all sales orders as CSV' });
 
-    expect(screen.getByRole('button', { name: UPLOAD_BUTTON }).parentElement).toBe(download.parentElement);
+    // The upload control is wrapped (button + reason popover) inside the same toolbar.
+    expect(download.parentElement).toContainElement(screen.getByRole('button', { name: UPLOAD_BUTTON }));
   });
 
   it('is hidden for a customer-portal session', async () => {
@@ -107,8 +108,8 @@ describe('SalesOrderListPage upload button', () => {
     expect(screen.queryByRole('button', { name: UPLOAD_BUTTON })).not.toBeInTheDocument();
   });
 
-  it('is disabled with a visible reason when AI features are off', async () => {
-    mockSession(undefined, { extraction: false });
+  it('is disabled with a reason when AI features are off for the workspace', async () => {
+    mockSession(undefined, { extraction: false, tenantEnabled: false });
     renderPage();
 
     const button = await screen.findByRole('button', { name: UPLOAD_BUTTON });

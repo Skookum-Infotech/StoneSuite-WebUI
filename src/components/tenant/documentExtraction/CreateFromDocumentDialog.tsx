@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { AlertCircle, FileText, Loader2, WifiOff, X } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { useDocumentExtraction } from '@/hooks/useDocumentExtraction';
 import { acknowledgeDuplicates } from '@/lib/documentDuplicateAck';
+import { DOCUMENT_ACCEPT_ATTRIBUTE } from '@/lib/documentUploadValidation';
 import { MAX_AUTO_RETRIES, canRetryFailure, willAutoRetry, type ExtractionStage } from '@/lib/documentExtractionMachine';
 import {
   BLOCKING_DUPLICATE_KINDS,
@@ -52,6 +53,10 @@ export function CreateFromDocumentDialog({
   const { state, extraction, canContinueInBackground, start, retry, cancel, continueInBackground } =
     useDocumentExtraction(docType);
   const { stage } = state;
+  // The file being processed: the one dropped/picked, or a replacement chosen
+  // after a failure that retrying the same file can't fix.
+  const [current, setCurrent] = useState(file);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const startedRef = useRef(false);
   useEffect(() => {
@@ -91,9 +96,17 @@ export function CreateFromDocumentDialog({
 
   async function handleBackground() {
     const ok = await continueInBackground();
-    if (ok) toast.info(`We'll notify you when ${file.name} is ready`);
+    if (ok) toast.info(`We'll notify you when ${current.name} is ready`);
     else toast.error("Couldn't set up the notification — keep this window open instead.");
     if (ok) onClose();
+  }
+
+  function chooseAnother(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = e.target.files?.[0];
+    e.target.value = '';
+    if (!next) return;
+    setCurrent(next);
+    void start(next);
   }
 
   function enterManually() {
@@ -120,8 +133,8 @@ export function CreateFromDocumentDialog({
               <h2 id="create-from-document-title" className="text-sm font-bold text-stone-900 dark:text-stone-100">
                 Create Sales Order from document
               </h2>
-              <p className="truncate text-xs text-stone-500 dark:text-stone-400" title={file.name}>
-                {file.name} · {formatSize(file.size)}
+              <p className="truncate text-xs text-stone-500 dark:text-stone-400" title={current.name}>
+                {current.name} · {formatSize(current.size)}
               </p>
             </div>
           </div>
@@ -231,8 +244,9 @@ export function CreateFromDocumentDialog({
             <div className="space-y-3" role="alert">
               <div className="flex items-start gap-2 text-xs text-stone-700 dark:text-stone-300">
                 <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden="true" />
+                {/* The file name is in the header (and often in the message) — not repeated here. */}
                 <p>
-                  <span className="font-semibold">We couldn't read {state.fileName || file.name}.</span>{' '}
+                  <span className="font-semibold">We couldn't use this document.</span>{' '}
                   {state.failure.message}
                 </p>
               </div>
@@ -240,10 +254,25 @@ export function CreateFromDocumentDialog({
                 <button type="button" onClick={enterManually} className={SECONDARY_BTN}>
                   Enter manually
                 </button>
-                {canRetryFailure(state.failure.code) && (
+                {canRetryFailure(state.failure.code) ? (
                   <button type="button" onClick={retry} aria-label="Retry with this document" className={PRIMARY_BTN}>
                     Retry
                   </button>
+                ) : (
+                  <>
+                    <input
+                      ref={replaceInputRef}
+                      type="file"
+                      accept={DOCUMENT_ACCEPT_ATTRIBUTE}
+                      onChange={chooseAnother}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+                    <button type="button" onClick={() => replaceInputRef.current?.click()} className={PRIMARY_BTN}>
+                      Choose another file
+                    </button>
+                  </>
                 )}
               </div>
             </div>

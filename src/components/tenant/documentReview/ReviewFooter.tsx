@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
 
 interface ReviewFooterProps {
-  /** Why Save is disabled ("2 items need review"), or ''. */
+  /** Why Save is disabled ("2 required items to review"), or ''. */
   reason: string;
   isPending: boolean;
   onDiscard: () => void;

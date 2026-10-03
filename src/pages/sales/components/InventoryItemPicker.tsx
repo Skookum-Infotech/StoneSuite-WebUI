@@ -78,8 +78,11 @@ export function InventoryItemPicker({ value, onPick, onTextChange, onAddToInvent
     },
   });
 
-  const notInInventory = !isFetching && results.length === 0;
-  const showAddAction = Boolean(onAddToInventory) && !isFetching && !hasExactItemName(results, debounced);
+  // While the typed text is still debouncing, `results` belong to the previous
+  // term; judging "not in inventory" then would warn about text already replaced.
+  const settled = debounced === value.trim();
+  const notInInventory = settled && !isFetching && results.length === 0;
+  const showAddAction = Boolean(onAddToInventory) && settled && !isFetching && !hasExactItemName(results, debounced);
   const optionCount = results.length + (showAddAction ? 1 : 0);
   const optionId = (index: number) => `${listboxId}-option-${index}`;
 
@@ -148,7 +151,7 @@ export function InventoryItemPicker({ value, onPick, onTextChange, onAddToInvent
           style={{ left: position.left, top: position.top, bottom: position.bottom, width: PANEL_WIDTH }}
         >
           <div role="status">
-            {results.length === 0 && isFetching && (
+            {results.length === 0 && (isFetching || !settled) && (
               <p className="px-3 py-2 text-2xs text-stone-400">Searching inventory…</p>
             )}
             {notInInventory && (

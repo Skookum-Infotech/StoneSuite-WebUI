@@ -5,8 +5,11 @@ import { toast } from 'sonner';
 import { validateDocumentFile } from '@/lib/documentUploadValidation';
 
 interface DropOverlayProps {
-  /** Listen for drags only while the flow is available to this user. */
-  enabled: boolean;
+  /** Why a drop can't start the flow right now (AI off, no permission, a
+   *  document already in progress), or undefined when it can. While blocked
+   *  the drop is still swallowed — otherwise the browser would navigate away
+   *  to the file and lose the page — and this message is toasted instead. */
+  blockedReason?: string;
   /** What the dropped file becomes, e.g. "Sales Order". */
   documentLabel: string;
   /** Receives a dropped file once it passed client-side validation. */
@@ -20,15 +23,15 @@ function carriesFiles(e: DragEvent): boolean {
 /** Full-page drag-and-drop target. Mouse-only by nature: keyboard users reach
  *  the same flow through the Upload button, so the overlay is hidden from
  *  assistive tech and never takes focus. */
-export function DropOverlay({ enabled, documentLabel, onFileDropped }: DropOverlayProps): React.JSX.Element | null {
+export function DropOverlay({ blockedReason, documentLabel, onFileDropped }: DropOverlayProps): React.JSX.Element | null {
   const [dragging, setDragging] = useState(false);
   // dragenter/dragleave fire for every child element; a counter avoids flicker.
   const depth = useRef(0);
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    const blocked = blockedReason !== undefined;
     const onEnter = (e: DragEvent) => {
-      if (!carriesFiles(e)) return;
+      if (!carriesFiles(e) || blocked) return;
       depth.current += 1;
       setDragging(true);
     };
@@ -45,8 +48,14 @@ export function DropOverlay({ enabled, documentLabel, onFileDropped }: DropOverl
       e.preventDefault();
       depth.current = 0;
       setDragging(false);
-      const file = e.dataTransfer?.files?.[0];
+      if (blocked) {
+        if (blockedReason) toast.error(blockedReason);
+        return;
+      }
+      const files = e.dataTransfer?.files;
+      const file = files?.[0];
       if (!file) return;
+      if (files.length > 1) toast.info(`Only ${file.name} was used — drop one document at a time.`);
       const error = validateDocumentFile(file);
       if (error) toast.error(error);
       else onFileDropped(file);
@@ -63,7 +72,7 @@ export function DropOverlay({ enabled, documentLabel, onFileDropped }: DropOverl
       depth.current = 0;
       setDragging(false);
     };
-  }, [enabled, onFileDropped]);
+  }, [blockedReason, onFileDropped]);
 
   if (!dragging) return null;
   return (

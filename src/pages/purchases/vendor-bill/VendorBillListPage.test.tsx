@@ -82,7 +82,8 @@ describe('VendorBillListPage upload button', () => {
 
     const download = await screen.findByRole('button', { name: 'Download all vendor bills as CSV' });
 
-    expect(screen.getByRole('button', { name: UPLOAD_BUTTON }).parentElement).toBe(download.parentElement);
+    // The upload control is wrapped (button + reason popover) inside the same toolbar.
+    expect(download.parentElement).toContainElement(screen.getByRole('button', { name: UPLOAD_BUTTON }));
   });
 
   it('is hidden without permission to create vendor bills', async () => {

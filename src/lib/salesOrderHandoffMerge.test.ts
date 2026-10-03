@@ -30,4 +30,31 @@ describe('overlayDocumentValues', () => {
     });
     expect(out).not.toBe(merged);
   });
+
+  // The E2E bug: picking a customer left "Address 123 / Dallas 75063" from the
+  // customer record mixed with the document's "Plano Yard" line 2.
+  it('takes a document address block whole — no customer street or zip mixes in', () => {
+    const merged = {
+      bill_address1: 'Address 123', bill_suite: '9', bill_city: 'Dallas', bill_zip: '75063', bill_phone: '+1 555',
+      ship_address1: 'Address 123', ship_address2: '', ship_city: 'Dallas', ship_zip: '75063', ship_same_as_bill: true,
+    };
+    const doc = {
+      ...baseline,
+      bill_address1: '12 Main Street', bill_city: 'Dallas', bill_zip: '75201',
+      ship_address1: '900 Quarry Road', ship_address2: 'ACME Stone - Plano Yard', ship_city: 'Plano', ship_zip: '75024',
+      ship_same_as_bill: false,
+    };
+    const out = overlayDocumentValues(merged, doc, { ...baseline, ship_same_as_bill: false });
+    expect(out).toMatchObject({
+      bill_address1: '12 Main Street', bill_suite: '', bill_zip: '75201', bill_phone: '+1 555',
+      ship_address1: '900 Quarry Road', ship_address2: 'ACME Stone - Plano Yard', ship_city: 'Plano', ship_zip: '75024',
+      ship_same_as_bill: false,
+    });
+  });
+
+  it('keeps the customer address when the document had none', () => {
+    const merged = { ship_address1: 'Address 123', ship_zip: '75063' };
+    const out = overlayDocumentValues(merged, { ...baseline }, baseline);
+    expect(out).toMatchObject({ ship_address1: 'Address 123', ship_zip: '75063' });
+  });
 });

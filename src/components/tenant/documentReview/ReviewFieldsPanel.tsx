@@ -11,6 +11,7 @@ interface ReviewFieldsPanelProps {
 const ORDER = [
   HEADER_KEYS.customer, HEADER_KEYS.poNumber, HEADER_KEYS.orderDate, HEADER_KEYS.expectedDelivery,
   HEADER_KEYS.paymentTerms, HEADER_KEYS.billTo, HEADER_KEYS.shipTo, HEADER_KEYS.shippingCharge, HEADER_KEYS.adjustment,
+  HEADER_KEYS.tax,
 ];
 const CUSTOMER_SEARCH_SELECTOR = 'input[aria-label="Search billing customer"], button[aria-label="Change billing customer"]';
 
@@ -28,6 +29,7 @@ function formValue(review: SalesOrderReviewMode, key: string): string {
     case HEADER_KEYS.expectedDelivery: return review.extras.expectedDelivery;
     case HEADER_KEYS.shippingCharge: return signedUsd(review.extras.shippingCharge);
     case HEADER_KEYS.adjustment: return signedUsd(review.extras.adjustment);
+    case HEADER_KEYS.tax: return signedUsd(review.formTax);
     default: return '';
   }
 }
