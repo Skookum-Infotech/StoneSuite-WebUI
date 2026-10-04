@@ -15,6 +15,7 @@ import { historyActionLabel } from '@/lib/inventoryWarehouse';
 import { MoveUnitDialog } from './components/MoveUnitDialog';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
+import { UnitInspectionPanel } from './components/UnitInspectionPanel';
 import { UnitAllocationBanner } from './components/UnitAllocationBanner';
 import { UnitUsageTab } from './components/UnitUsageTab';
 import { UnitDetailsTab } from './components/UnitDetailsTab';
@@ -56,7 +57,7 @@ export default function UnitDetailPage() {
   const [cutMessage, setCutMessage] = useState<string | null>(null);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canUpdate = permissionsLoading || hasPermission('inventory_unit', 'update');
+  const canUpdate = !permissionsLoading && hasPermission('inventory_unit', 'update');
 
   const { data: unit, isLoading, error } = useQuery({
     queryKey: ['inventory-unit', id],
@@ -154,6 +155,7 @@ export default function UnitDetailPage() {
       />
 
       <UnitAllocationBanner unit={unit} />
+      <UnitInspectionPanel unit={unit} canInspect={canUpdate} />
 
       {cutMessage && (
         <div className="shrink-0 flex items-start gap-3 border-b border-emerald-200 bg-emerald-50 px-5 py-2.5">
@@ -231,7 +233,7 @@ export default function UnitDetailPage() {
               <button type="button" disabled={Boolean(disabledReason)} onClick={() => setDialog('move')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <ArrowLeftRight className="size-4 text-stone-400 shrink-0" /> Move Bin
               </button>
-              <button type="button" disabled={Boolean(disabledReason)} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+              <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <Scissors className="size-4 text-stone-400 shrink-0" /> Cut
               </button>
               <button type="button" disabled={Boolean(disabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">

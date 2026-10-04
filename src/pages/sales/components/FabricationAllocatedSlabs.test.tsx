@@ -7,6 +7,10 @@ vi.mock('@/services/fabricationService', () => ({
   fabricationService: { getJobSlabs: vi.fn(), deallocateSlab: vi.fn() },
 }));
 
+import type * as TenantClientModule from '@/api/tenantClient';
+import { tenantClient } from '@/api/tenantClient';
+vi.mock('@/api/tenantClient', async (importOriginal) => ({ ...await importOriginal<typeof TenantClientModule>(), tenantClient: { post: vi.fn() } }));
+
 import { FabricationAllocatedSlabs } from './FabricationAllocatedSlabs';
 import { fabricationService } from '@/services/fabricationService';
 import type { FabricationSlab } from '@/types/fabrication';
@@ -16,12 +20,12 @@ const slab = (over: Partial<FabricationSlab>): FabricationSlab => ({
   lengthMm: 3000, widthMm: 1400, thicknessMm: 30, area: 45.208, form: 'full', status: 'reserved', ...over,
 });
 
-function renderList(slabs: FabricationSlab[], canRelease = true) {
+function renderList(slabs: FabricationSlab[], canRelease = true, workflowVersion?: number) {
   vi.mocked(fabricationService.getJobSlabs).mockResolvedValue(slabs);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <FabricationAllocatedSlabs jobId="job-1" canRelease={canRelease} />
+      <FabricationAllocatedSlabs jobId="job-1" canRelease={canRelease} workflowVersion={workflowVersion} version={8} />
     </QueryClientProvider>,
   );
 }
@@ -55,6 +59,20 @@ describe('FabricationAllocatedSlabs', () => {
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Release slab PO-1-001' }));
     await waitFor(() => expect(fabricationService.deallocateSlab).toHaveBeenCalledWith('job-1', 's1'));
+  });
+
+  it('releases v2 material through a versioned command and retains its identity on retry', async () => {
+    vi.mocked(tenantClient.post).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: {} });
+    renderList([slab({})], true, 2);
+    const button = await screen.findByRole('button', { name: 'Release slab PO-1-001' });
+    await userEvent.setup().click(button);
+    await screen.findByRole('alert');
+    const first = vi.mocked(tenantClient.post).mock.calls[0];
+    expect(first).toEqual(['/tenant/fabrication-jobs/job-1/material-releases', expect.objectContaining({ slabId: 's1', expectedVersion: 8, requestId: expect.any(String) })]);
+    await userEvent.setup().click(button);
+    await waitFor(() => expect(tenantClient.post).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(tenantClient.post).mock.calls[1]).toEqual(first);
+    expect(fabricationService.deallocateSlab).not.toHaveBeenCalled();
   });
 
   it('offers no release to a user who may not allocate', async () => {

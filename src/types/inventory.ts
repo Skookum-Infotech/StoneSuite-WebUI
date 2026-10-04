@@ -183,6 +183,7 @@ export interface UnitUsage {
 }
 
 export interface InventoryUnit {
+  inspectionStatus?: 'legacy' | 'pending' | 'accepted' | 'rejected';
   id: string;
   serial: string;
   kind: string; // slab | remnant
@@ -323,6 +324,8 @@ export interface Bin {
   capacityUnits: number;
   capacityArea: number;
   isActive: boolean;
+  isWip?: boolean;
+  machineLabel?: string;
   isSystem: boolean;
   notes: string;
   createdAt: string;
@@ -344,6 +347,8 @@ export interface BinInput {
   capacityUnits: number;
   capacityArea: number;
   isActive: boolean;
+  isWip?: boolean;
+  machineLabel?: string;
   notes: string;
 }
 
