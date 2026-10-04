@@ -25,6 +25,7 @@ function lazyWithRetry<T extends React.ComponentType<unknown>>(
 
 import { PermissionGuard } from "@/components/PermissionGuard";
 
+const FabricationApprovalPage = lazyWithRetry(() => import("@/pages/customer/FabricationApprovalPage"));
 const LoginPage = lazyWithRetry(() => import("@/pages/auth/LoginPage"));
 const ForgotPasswordPage = lazyWithRetry(
   () => import("@/pages/auth/ForgotPasswordPage"),
@@ -426,6 +427,10 @@ export const router = createBrowserRouter([
             <AddProspectPage />
           </PermissionGuard>,
         ),
+      },
+      {
+        path: "customer/fabrication-approvals/:job/:revision",
+        element: lazy_(<FabricationApprovalPage />),
       },
       {
         path: "crm/prospect/:id",

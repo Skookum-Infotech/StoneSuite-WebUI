@@ -16,5 +16,6 @@ export const CUSTOMER_ALLOWED_PATH_PREFIXES: readonly string[] = [
   '/sales/payment',
   '/sales/refund',
   '/account/settings',
+  '/customer/fabrication-approvals',
   SUPPORT_PATH,
 ];

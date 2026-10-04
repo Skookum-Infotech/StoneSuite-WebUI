@@ -22,6 +22,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { FabricationPiecesEditableTab } from './components/FabricationPiecesEditableTab';
 import { FabricationPiecesTable } from './components/FabricationPiecesTable';
 import { FabricationMaterialsTab } from './components/FabricationMaterialsTab';
+import { FabricationTemplatesPanel } from './components/FabricationTemplatesPanel';
 import { FabricationStepsTab } from './components/FabricationStepsTab';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
@@ -58,6 +59,7 @@ export default function FabricationJobDetailPage() {
   const TABS = [
     { key: 'overview', label: 'Overview' },
     { key: 'pieces', label: 'Pieces' },
+    { key: 'templates', label: 'Template & approvals' },
     ...(canReadSlabs ? [{ key: 'materials', label: 'Materials' }] as const : []),
     { key: 'checklist', label: 'Checklist' },
     { key: 'files', label: 'Files' },
@@ -250,6 +252,7 @@ export default function FabricationJobDetailPage() {
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         <div className="flex-1 space-y-3 min-w-0">
+          {activeTab === 'templates' && <FabricationTemplatesPanel jobId={id} />}
           {activeTab === 'overview' && (
             <>
               <ModernSection title="Sales Order" index={0}>
@@ -292,7 +295,7 @@ export default function FabricationJobDetailPage() {
               : <FabricationPiecesTable pieces={job.pieces ?? []} />
           )}
           {activeTab === 'materials' && canReadSlabs && (
-            <FabricationMaterialsTab jobId={id} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
+            <FabricationMaterialsTab workflowVersion={job.workflowVersion} version={job.version} jobId={id} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
           )}
           {activeTab === 'checklist' && (
             <FabricationStepsTab jobId={id} steps={job.steps ?? []} canEdit={canEdit} />
