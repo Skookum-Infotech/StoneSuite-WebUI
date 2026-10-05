@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { dashboardWidgetService } from '@/services/dashboardWidgetService';
 import { dashboardDataService } from '@/services/dashboardDataService';
 import { getVisibleWidgetIds } from '@/lib/dashboardWidgets';
-import { Spinner, EmptyState } from '@/components/tenant/ui';
+import { Spinner, EmptyState, ErrorNote } from '@/components/tenant/ui';
 import type { WidgetDefinition, WidgetSize } from '@/types/dashboardWidgets';
 import type { DashboardRange, RecentRecord } from '@/types/dashboardData';
 import { ConsoleHeader } from './components/ConsoleHeader';
@@ -95,12 +95,16 @@ export default function DashboardPage() {
     },
   });
 
-  const preference = preferenceQ.data;
+  // A preference that failed to load (or has no user to load for) must not
+  // block the console: fall back to "nothing hidden" so every allocated widget
+  // still shows. Only the catalog and allocation are required to render.
+  const hiddenWidgetIds = preferenceQ.data?.hidden ?? [];
   const catalog: WidgetDefinition[] = catalogQ.data ?? [];
-  const isLoading = catalogQ.isLoading || allocationQ.isLoading || preferenceQ.isLoading || !preference;
+  const isLoading = catalogQ.isLoading || allocationQ.isLoading || (preferenceQ.isLoading && Boolean(userId));
+  const loadFailed = !isLoading && (catalogQ.isError || allocationQ.isError);
 
   const allocatedWidgetIds = allocationQ.data ?? [];
-  const visibleWidgetIds = preference ? getVisibleWidgetIds(allocatedWidgetIds, preference.hidden) : [];
+  const visibleWidgetIds = getVisibleWidgetIds(allocatedWidgetIds, hiddenWidgetIds);
   const visibleWidgets = catalog.filter((w) => visibleWidgetIds.includes(w.id));
   const allocatedWidgets = catalog.filter((w) => allocatedWidgetIds.includes(w.id));
 
@@ -243,10 +247,10 @@ export default function DashboardPage() {
   }
 
   function handleTogglePreference(widgetId: string, next: boolean) {
-    if (!preference) return;
+    if (!userId) return;
     const nextHidden = next
-      ? preference.hidden.filter((id) => id !== widgetId) // next=true means "show"
-      : [...preference.hidden, widgetId]; // next=false means "hide"
+      ? hiddenWidgetIds.filter((id) => id !== widgetId) // next=true means "show"
+      : [...hiddenWidgetIds, widgetId]; // next=false means "hide"
     preferenceMutation.mutate(nextHidden);
   }
 
@@ -263,7 +267,23 @@ export default function DashboardPage() {
 
         {isLoading && <Spinner label="Loading dashboard…" />}
 
-        {!isLoading && visibleWidgets.length === 0 && (
+        {loadFailed && (
+          <div className="flex flex-col items-start gap-2">
+            <ErrorNote>Couldn't load your dashboard. Check your connection and try again.</ErrorNote>
+            <button
+              type="button"
+              onClick={() => {
+                void catalogQ.refetch();
+                void allocationQ.refetch();
+              }}
+              className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-800"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {!isLoading && !loadFailed && visibleWidgets.length === 0 && (
           <EmptyState>
             {allocatedWidgetIds.length === 0
               ? 'Ask your admin to allocate dashboard widgets to your role.'
@@ -271,7 +291,7 @@ export default function DashboardPage() {
           </EmptyState>
         )}
 
-        {!isLoading && visibleWidgets.length > 0 && (
+        {!isLoading && !loadFailed && visibleWidgets.length > 0 && (
           <div className="grid grid-cols-12 gap-3.5">
             {visibleWidgets.map((w, i) => (
               <div
@@ -286,7 +306,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {showCustomize && preference && (
+      {showCustomize && !loadFailed && (
         <CustomizePanel
           widgets={allocatedWidgets}
           enabledIds={visibleWidgetIds}
