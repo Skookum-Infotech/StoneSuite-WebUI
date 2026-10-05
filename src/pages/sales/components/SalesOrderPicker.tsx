@@ -14,10 +14,8 @@ export interface SalesOrderRef {
 
 // Sales Order picker for Credit Memo's optional lineage field — scoped to one
 // customer, mirroring InvoicePicker's debounced-search dropdown pattern
-// exactly (including the same client-side narrowing trick: the SO resolver's
-// customer filter isn't UUID-based, so this searches by the customer's name
-// via the existing global `search` term and then filters results client-side
-// to an exact `customer.id` match).
+// exactly, but narrows server-side (customer_uuid filter + global search) so
+// the result cap never hides this customer's orders.
 //
 // Disabled until a customer is chosen.
 export function SalesOrderPicker({
@@ -55,15 +53,12 @@ export function SalesOrderPicker({
     staleTime: 30 * 1000,
     queryFn: async (): Promise<SalesOrderRef[]> => {
       const page = await salesOrderService.searchOrders({
-        search: customer!.name,
+        search: debounced || undefined,
+        filters: [{ field: 'customer_uuid', op: 'eq', value: customer!.id }],
         sort: [{ field: 'created_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
-      const scoped = page.records.filter((r) => r.customer?.id === customer!.id);
-      const narrowed = debounced
-        ? scoped.filter((r) => r.salesOrderNumber.toLowerCase().includes(debounced.toLowerCase()))
-        : scoped;
-      return narrowed.map((r) => ({ id: r.id, number: r.salesOrderNumber }));
+      return page.records.map((r) => ({ id: r.id, number: r.salesOrderNumber }));
     },
   });
 

@@ -1,10 +1,15 @@
 import { toast } from "sonner";
 
 const CSV_ESCAPE_PATTERN = /[",\r\n]/;
+const CSV_FORMULA_PREFIX_PATTERN = /^[=+\-@\t\r]/;
+const CSV_PLAIN_NUMBER_PATTERN = /^[+-]?\d+(\.\d+)?$/;
 
-/** Escapes a single value for CSV — quotes it (doubling embedded quotes) only when needed. */
+/** Escapes a single value for CSV — quotes it (doubling embedded quotes) only when needed.
+ *  Values a spreadsheet would run as a formula (leading = + - @ tab CR) get a leading
+ *  apostrophe so they open as text; plain numbers such as -12.50 are left alone. */
 export function csvEscapeValue(value: unknown): string {
-  const str = value === null || value === undefined ? "" : String(value);
+  let str = value === null || value === undefined ? "" : String(value);
+  if (CSV_FORMULA_PREFIX_PATTERN.test(str) && !CSV_PLAIN_NUMBER_PATTERN.test(str)) str = `'${str}`;
   return CSV_ESCAPE_PATTERN.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
 }
 
