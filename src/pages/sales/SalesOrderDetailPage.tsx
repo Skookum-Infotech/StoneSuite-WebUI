@@ -153,42 +153,8 @@ export default function SalesOrderDetailPage() {
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
-      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
-      await exportSalesDocToPdf({
-        docType: 'sales_order',
-        title: order.salesOrderNumber || 'Sales Order',
-        recordNumber: order.salesOrderNumber,
-        statusLabel: order.status,
-        customerName: order.customer.name,
-        issueDate: fmtDate(order.orderDate),
-        dueDate: order.paymentDueDate ? fmtDate(order.paymentDueDate) : undefined,
-        dueDateLabel: 'Payment Due Date',
-        billTo: order.billing,
-        shipTo: order.shipping,
-        notesText: order.memo || undefined,
-        sections: [],
-        itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: order.items.map((line) => [
-            String(line.lineNumber),
-            line.itemName || line.description || '—',
-            line.sku || '—',
-            String(line.quantity),
-            currency(line.unitPrice),
-            `${line.discountPercent}%`,
-            `${line.taxPercent}%`,
-            currency(line.lineTotal),
-          ]),
-          descriptions: order.items.map((line) => line.description || undefined),
-          numericFrom: 3,
-        },
-        totals: [
-          { label: 'Subtotal', value: currency(order.subtotal) },
-          { label: 'Discount', value: currency(order.discountTotal) },
-          { label: 'Tax', value: currency(order.taxTotal) },
-          { label: 'Grand Total', value: currency(order.grandTotal), bold: true },
-        ],
-      });
+      const { downloadServerDocPdf } = await import('@/lib/serverDocPdf');
+      await downloadServerDocPdf({ recordId: id, docType: 'sales_order', recordNumber: order.salesOrderNumber });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
     } finally {

@@ -142,42 +142,8 @@ export default function QuoteDetailPage() {
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
-      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
-      await exportSalesDocToPdf({
-        docType: 'quote',
-        title: quote.quoteNumber || 'Quote',
-        recordNumber: quote.quoteNumber,
-        statusLabel: quote.status,
-        customerName: quote.customer.name,
-        issueDate: fmtDate(quote.quoteDate),
-        dueDate: quote.validUntil ? fmtDate(quote.validUntil) : undefined,
-        dueDateLabel: 'Valid Until',
-        billTo: quote.billing,
-        shipTo: quote.shipping,
-        notesText: quote.memo || undefined,
-        sections: [],
-        itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: quote.items.map((line) => [
-            String(line.lineNumber),
-            line.itemName || line.description || '—',
-            line.sku || '—',
-            String(line.quantity),
-            currency(line.unitPrice),
-            `${line.discountPercent}%`,
-            `${line.taxPercent}%`,
-            currency(line.lineTotal),
-          ]),
-          descriptions: quote.items.map((line) => line.description || undefined),
-          numericFrom: 3,
-        },
-        totals: [
-          { label: 'Subtotal', value: currency(quote.subtotal) },
-          { label: 'Discount', value: currency(quote.discountTotal) },
-          { label: 'Tax', value: currency(quote.taxTotal) },
-          { label: 'Grand Total', value: currency(quote.grandTotal), bold: true },
-        ],
-      });
+      const { downloadServerDocPdf } = await import('@/lib/serverDocPdf');
+      await downloadServerDocPdf({ recordId: id, docType: 'quote', recordNumber: quote.quoteNumber });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
     } finally {
