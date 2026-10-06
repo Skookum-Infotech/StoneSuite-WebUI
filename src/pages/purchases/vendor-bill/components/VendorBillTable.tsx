@@ -20,6 +20,7 @@ import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill'
 import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
 import type { VendorBillSearchRequest } from '@/types/vendorBill';
 import { formatDateValue } from '@/lib/dateUtils';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -59,10 +60,6 @@ const APPROVAL_COLORS: Record<string, string> = {
   pending: '#f59e0b',
   approved: '#22c55e',
 };
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -105,6 +102,8 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
     queryFn: lookupService.getCrmLookups,
     staleTime: 10 * 60 * 1000,
   });
+  const currency = (n: number | undefined, currencyId: number | null | undefined) =>
+    formatMoney(n, currencyCodeFor(lookups, currencyId));
   const employeeNames = new Map((lookups?.employees ?? []).map((e) => [String(e.id), e.name]));
 
   useEffect(() => {
@@ -381,10 +380,10 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                         {ownerName ?? '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(bill.grandTotal)}
+                        {currency(bill.grandTotal, bill.currencyId)}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(bill.balanceDue)}
+                        {currency(bill.balanceDue, bill.currencyId)}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">

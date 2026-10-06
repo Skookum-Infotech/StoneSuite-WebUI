@@ -171,7 +171,7 @@ export interface Invoice {
 export type InvoiceSummary = Pick<
   Invoice,
   'id' | 'invoiceNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes' | 'customer' | 'invoiceDate' | 'grandTotal' | 'balanceDue' | 'createdAt' | 'updatedAt'
->;
+> & { currencyId?: number | null };
 
 /** Search request = the shared `query.Request` plus the optional global-search
  *  term the invoice resolver supports (SearchPredicate over invoice #/PO/memo/

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { lookupService } from '@/services/lookupService';
+import { currencyCodeFor } from '@/lib/formatMoney';
 import { FileMinus, Upload, Pencil, DollarSign, Unlink, Loader2, FileDown, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { creditMemoService } from '@/services/creditMemoService';
@@ -67,6 +69,12 @@ export default function CreditMemoDetailPage() {
     queryFn: () => creditMemoService.getCreditMemo(id),
     enabled: Boolean(id),
     refetchInterval: DETAIL_POLL_MS,
+  });
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
   });
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
@@ -469,6 +477,7 @@ export default function CreditMemoDetailPage() {
           customer={creditMemo.customer}
           unappliedAmount={creditMemo.unappliedAmount}
           excludeIds={creditMemo.applications.map((a) => a.invoiceId)}
+          currencyCode={currencyCodeFor(lookups, creditMemo.currencyId)}
           onClose={() => setApplyOpen(false)}
           onApplied={() => {
             setApplyOpen(false);

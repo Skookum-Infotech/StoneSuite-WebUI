@@ -8,10 +8,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ApplyExistingPaymentDialog } from './ApplyExistingPaymentDialog';
 import { formatDateValue } from '@/lib/dateUtils';
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
+import { formatMoney } from '@/lib/formatMoney';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -27,11 +24,14 @@ function fmtDate(iso?: string): string {
 // transaction. So there's nothing to record or remove here — the action is
 // "record a vendor payment", which is why the empty state links out to it
 // rather than opening a dialog.
-export function BillPaymentsTab({ vendorBillId, balanceDue, vendor }: {
+export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode }: {
   vendorBillId?: string;
   balanceDue: number;
   vendor?: { id: string; name: string };
+  /** ISO currency code of the bill; falls back to the default currency. */
+  currencyCode?: string;
 }) {
+  const currency = (n: number | undefined) => formatMoney(n, currencyCode);
   const [applyOpen, setApplyOpen] = useState(false);
   const navigate = useNavigate();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
@@ -178,6 +178,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor }: {
           vendorBillId={vendorBillId}
           vendor={vendor}
           balanceDue={balanceDue}
+          currencyCode={currencyCode}
           onClose={() => setApplyOpen(false)}
         />
       )}

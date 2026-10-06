@@ -155,8 +155,8 @@ export interface VendorBillLineItem {
   inventoryItemUuid?: string;
   itemSku?: string;
   units?: string;
-  /** Read-only lineage — set only when this line came from a purchase-order
-   *  convert; never sent back to the server (there is no input field for it). */
+  /** Lineage — set only when this line came from a purchase-order convert;
+   *  echoed back as `purchaseOrderItemId` on update so the link survives. */
   purchaseOrderItemId?: string | null;
 }
 
@@ -442,6 +442,7 @@ function toLineInput(item: VendorBillLineItem, lineNo: number): VendorBillLineIn
   return {
     lineNumber: lineNo,
     inventoryItemUuid: item.inventoryItemUuid || undefined,
+    purchaseOrderItemId: item.purchaseOrderItemId || undefined,
     description: (item.itemDescription || '').trim()
       || (item.inventoryItemUuid ? undefined : (item.itemName || undefined)),
     quantity: toNum(item.quantity),

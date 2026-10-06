@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Wallet } from 'lucide-react';
 import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -8,10 +8,8 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { VendorBillPicker, type VendorBillRef } from './VendorBillPicker';
 import type { VendorPayment } from '@/types/vendorPayment';
-
-function currency(n: number): string {
-  return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { lookupService } from '@/services/lookupService';
 
 // Applies part of a payment's unapplied balance to one vendor bill. Takes the
 // whole `payment` rather than five separate scalars — it needs the id, vendor,
@@ -28,7 +26,11 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
   onApplied: (updated: VendorPayment) => void;
 }) {
   const contentRef = useModalDialog(onClose);
+  const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups, staleTime: 10 * 60 * 1000 });
   const [bill, setBill] = useState<VendorBillRef | null>(null);
+  // The bill's currency governs once picked; until then the payment's own.
+  const currencyCode = currencyCodeFor(lookups, bill?.currencyId ?? payment.currencyId);
+  const currency = (n: number) => formatMoney(n, currencyCode);
   const [amount, setAmount] = useState('');
 
   const apply = useMutation({

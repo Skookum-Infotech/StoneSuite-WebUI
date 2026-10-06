@@ -11,6 +11,7 @@ import { VendorPicker, type VendorRef } from '@/pages/purchases/purchase-order/c
 import { PurchaseOrderPicker } from './PurchaseOrderPicker';
 import { VendorBillSectionGrid } from './VendorBillFormFields';
 import { VendorBillSummaryCard } from './VendorBillSummaryCard';
+import { currencyCodeFor } from '@/lib/formatMoney';
 import { VendorBillItemsTab } from './VendorBillItemsTab';
 import { VendorBillAuditTab } from './VendorBillAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
@@ -62,6 +63,7 @@ export function VendorBillFormBody({
   adjustment: number; total: number;
   filesPanelRef?: Ref<EditableFilesPanelHandle>;
 }) {
+  const currencyCode = currencyCodeFor(lookups, data.currency_id as string | number | undefined);
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
@@ -136,7 +138,7 @@ export function VendorBillFormBody({
                   <div className="w-full lg:w-56 shrink-0">
                     <VendorBillSummaryCard
                       subtotal={subtotal} discountAmt={discountAmt} taxTotal={taxTotal}
-                      adjustment={adjustment} total={total}
+                      adjustment={adjustment} total={total} currencyCode={currencyCode}
                     />
                   </div>
                 </div>
@@ -156,7 +158,7 @@ export function VendorBillFormBody({
                 </ModernSection>
               )}
               <ModernSection title="Items" index={2}>
-                <VendorBillItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} />
+                <VendorBillItemsTab items={lineItems} onUpdate={setLineItems} headerTaxPercent={headerTaxPercent} currencyCode={currencyCode} />
               </ModernSection>
             </>
           )}

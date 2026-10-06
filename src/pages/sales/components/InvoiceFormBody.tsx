@@ -13,6 +13,7 @@ import { InvoiceSummaryCard } from './InvoiceSummaryCard';
 import { InvoiceItemsTab } from './InvoiceItemsTab';
 import { InvoiceAuditTab } from './InvoiceAuditTab';
 import type { CrmLookups } from '@/services/lookupService';
+import { currencyCodeFor } from '@/lib/formatMoney';
 import {
   PRIMARY_INFO_FIELDS, BILL_TO_FIELDS, SHIP_TO_FIELDS, SALES_INFO_FIELDS,
   PAGE_TABS, type PageTab, type InvoiceLineItem,
@@ -57,6 +58,7 @@ export function InvoiceFormBody({
    *  display. */
   statusControl?: ReactNode;
 }) {
+  const currencyCode = currencyCodeFor(lookups, data.currency_id as string | number | undefined);
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
@@ -111,7 +113,7 @@ export function InvoiceFormBody({
                     />
                   </div>
                   <div className="w-full lg:w-56 shrink-0">
-                    <InvoiceSummaryCard subtotal={subtotal} discountAmt={discountAmt} taxTotal={taxTotal} total={total} amountPaid={amountPaid} />
+                    <InvoiceSummaryCard subtotal={subtotal} discountAmt={discountAmt} taxTotal={taxTotal} total={total} amountPaid={amountPaid} currencyCode={currencyCode} />
                   </div>
                 </div>
               </ModernSection>
