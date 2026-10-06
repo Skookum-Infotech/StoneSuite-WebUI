@@ -24,6 +24,7 @@ import { SalesOrderFormBody } from './components/SalesOrderFormBody';
 import { SalesOrderReviewShell } from './components/SalesOrderReviewShell';
 import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
 import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
+import { DocumentFailedNotice } from '@/components/tenant/documentReview/DocumentFailedNotice';
 import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentUsedNotice';
 import { useSalesOrderReviewMode, type ReviewPatch } from '@/hooks/useSalesOrderReviewMode';
 import { StockShortageGate } from './components/StockShortageGate';
@@ -126,12 +127,14 @@ export default function AddSalesOrderPage() {
   });
 
   // A document-prefilled form is unsaved work from the start, so leaving prompts
-  // — except for a document that was already used, which shows no form at all.
+  // — except for a document that was already used or couldn't be read, which
+  // shows no form at all.
   const documentUsed = review.active && review.phase === 'used';
+  const documentFailed = review.active && review.phase === 'failed';
   const guard = useUnsavedChangesGuard(
     { data, lineItems, drawings, customer, customFieldValues },
     !review.active || review.hydrated,
-    inventoryReturn.isRestored || customerReturn.isRestored || (review.active && !documentUsed),
+    inventoryReturn.isRestored || customerReturn.isRestored || (review.active && !documentUsed && !documentFailed),
   );
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -240,6 +243,8 @@ export default function AddSalesOrderPage() {
 
         {documentUsed ? (
           <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} listPath="/sales/sales_order" />
+        ) : documentFailed ? (
+          <DocumentFailedNotice fileName={review.fileName} reason={review.banner.failureMessage} listPath="/sales/sales_order" />
         ) : (<>
         <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           {withReviewShell(

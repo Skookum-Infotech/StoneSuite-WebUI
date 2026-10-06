@@ -10,8 +10,9 @@ export const FROM_DOCUMENT_PARAM = 'fromDocument';
 const DRAFT_DEBOUNCE_MS = 500;
 const HTTP_NOT_FOUND = 404;
 
-/** off: manual create. unavailable: failed / discarded / not found. */
-export type ReviewPhase = 'off' | 'loading' | 'ready' | 'expired' | 'used' | 'unavailable';
+/** off: manual create. failed: the document couldn't be read (the reason is on
+ *  the extraction). unavailable: discarded / not found. */
+export type ReviewPhase = 'off' | 'loading' | 'ready' | 'expired' | 'used' | 'failed' | 'unavailable';
 
 export interface UseDocumentReview<S> {
   /** The extraction id from ?fromDocument, or null in manual-create mode. */
@@ -41,6 +42,7 @@ export function derivePhase(
   if (data) {
     if (data.recordUuid || data.status === 'used' || data.status === 'attached') return 'used';
     if (data.status === 'ready') return 'ready';
+    if (data.status === 'failed') return 'failed';
     if ((IN_FLIGHT_STATUSES as readonly string[]).includes(data.status)) return 'loading';
     return 'unavailable';
   }
