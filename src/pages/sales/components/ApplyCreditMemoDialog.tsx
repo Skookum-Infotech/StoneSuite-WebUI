@@ -6,23 +6,23 @@ import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { InvoicePicker, type InvoiceRef } from './InvoicePicker';
-
-function currency(n: number): string {
-  return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
+import { formatMoney } from '@/lib/formatMoney';
 
 // Applies part of a credit memo's unapplied balance to an invoice — mirrors
 // Payment's ApplyDialog (kept as its own file rather than inlined at the
 // bottom of the Detail page, unlike PaymentDetailPage's original).
-export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount, excludeIds, onClose, onApplied }: {
+export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount, excludeIds, currencyCode, onClose, onApplied }: {
   creditMemoId: string;
   customer: { id: string; name: string };
   unappliedAmount: number;
   excludeIds: string[];
+  /** ISO currency code of the credit memo; falls back to the default currency. */
+  currencyCode?: string;
   onClose: () => void;
   onApplied: () => void;
 }) {
   const [invoice, setInvoice] = useState<InvoiceRef | null>(null);
+  const currency = (n: number) => formatMoney(n, currencyCode);
   const [amount, setAmount] = useState('');
 
   const apply = useMutation({
@@ -60,7 +60,7 @@ export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount,
           <div>
             <label className={fieldLabelCls}>Invoice</label>
             <div className="mt-1.5">
-              <InvoicePicker customer={customer} value={invoice} onChange={setInvoice} excludeIds={excludeIds} />
+              <InvoicePicker customer={customer} value={invoice} onChange={setInvoice} excludeIds={excludeIds} currencyCode={currencyCode} />
             </div>
           </div>
           <div>

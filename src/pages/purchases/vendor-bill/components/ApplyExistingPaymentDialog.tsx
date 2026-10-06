@@ -7,26 +7,26 @@ import { vendorPaymentService } from '@/services/vendorPaymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
+import { formatMoney } from '@/lib/formatMoney';
 
 const MIN_UNAPPLIED = 0.01;
 const SEARCH_LIMIT = 100;
 const VOID_CODE = 'VOID';
-
-function currency(n: number): string {
-  return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
 
 // Applies an already-recorded vendor payment that still has an unapplied
 // balance to this bill. The list is the vendor's non-void payments with
 // unapplied money left; the search has no vendor-uuid filter, so it narrows by
 // vendor name and confirms the vendor id client-side (as VendorBillPicker
 // does). The server enforces the real cap and vendor match.
-export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, onClose }: {
+export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, currencyCode, onClose }: {
   vendorBillId: string;
   vendor: { id: string; name: string };
   balanceDue: number;
+  /** ISO currency code of the bill; falls back to the default currency. */
+  currencyCode?: string;
   onClose: () => void;
 }) {
+  const currency = (n: number) => formatMoney(n, currencyCode);
   const contentRef = useModalDialog(onClose);
   const queryClient = useQueryClient();
   const [paymentId, setPaymentId] = useState('');

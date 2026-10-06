@@ -1,15 +1,17 @@
 import { cn } from '@/lib/utils';
+import { formatMoney } from '@/lib/formatMoney';
 
 // Mirrors SalesOrderSummaryCard, extended with amountPaid/balanceDue —
 // Invoice (unlike Sales Order) tracks payments directly on the header.
-export function InvoiceSummaryCard({ subtotal, discountAmt, taxTotal, total, amountPaid }: {
+export function InvoiceSummaryCard({ subtotal, discountAmt, taxTotal, total, amountPaid, currencyCode }: {
   subtotal: number; discountAmt: number; taxTotal: number; total: number;
   /** Read-only — only `invoiceService.recordPayment` (via RecordPaymentDialog)
    *  changes this; there's no free-text "amount paid" field in the form. */
   amountPaid: number;
+  /** ISO currency code of the document; falls back to the default currency. */
+  currencyCode?: string;
 }) {
-  const fmt = (n: number) =>
-    '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fmt = (n: number) => formatMoney(n, currencyCode);
 
   const balanceDue = total - amountPaid;
 

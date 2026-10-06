@@ -1,14 +1,16 @@
 import { cn } from '@/lib/utils';
+import { formatMoney } from '@/lib/formatMoney';
 
 // Mirrors PurchaseOrderSummaryCard, minus the Shipping row — a vendor bill
 // carries only an Adjustment (no shipping charge).
 export function VendorBillSummaryCard({
-  subtotal, discountAmt, taxTotal, adjustment, total,
+  subtotal, discountAmt, taxTotal, adjustment, total, currencyCode,
 }: {
   subtotal: number; discountAmt: number; taxTotal: number; adjustment: number; total: number;
+  /** ISO currency code of the document; falls back to the default currency. */
+  currencyCode?: string;
 }) {
-  const fmt = (n: number) =>
-    (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const fmt = (n: number) => formatMoney(n, currencyCode);
 
   const rows = [
     { label: 'Sub Total', value: fmt(subtotal), muted: true },

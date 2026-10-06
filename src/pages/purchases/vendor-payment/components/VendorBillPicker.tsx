@@ -5,6 +5,8 @@ import { vendorBillService } from '@/services/vendorBillService';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
 import { VP_PAYABLE_BILL_STATUSES } from '@/lib/vendorPaymentForm';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { lookupService } from '@/services/lookupService';
 
 const RESULT_LIMIT = 50;
 
@@ -12,6 +14,8 @@ export interface VendorBillRef {
   id: string;
   number: string;
   balanceDue: number;
+  /** Lookup currency id of the bill, so callers can format its amounts. */
+  currencyId?: number | null;
 }
 
 // Vendor bill picker for applying a payment's balance — scoped to one vendor
@@ -36,6 +40,7 @@ export function VendorBillPicker({
   excludeIds?: string[];
   disabled?: boolean;
 }) {
+  const { data: lookups } = useQuery({ queryKey: ['crm-lookups'], queryFn: lookupService.getCrmLookups, staleTime: 10 * 60 * 1000 });
   const [term, setTerm] = useState('');
   const [debounced, setDebounced] = useState('');
   const [open, setOpen] = useState(false);
@@ -73,7 +78,9 @@ export function VendorBillPicker({
       const narrowed = debounced
         ? scoped.filter((r) => r.vendorBillNumber.toLowerCase().includes(debounced.toLowerCase()))
         : scoped;
-      return narrowed.map((r) => ({ id: r.id, number: r.vendorBillNumber, balanceDue: r.balanceDue }));
+      return narrowed.map((r) => ({
+        id: r.id, number: r.vendorBillNumber, balanceDue: r.balanceDue, currencyId: r.currencyId,
+      }));
     },
   });
 
@@ -92,7 +99,7 @@ export function VendorBillPicker({
         <FileCheck className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="flex-1 truncate font-medium text-stone-800">{value.number}</span>
         <span className="shrink-0 text-xs text-stone-400 tabular-nums">
-          {value.balanceDue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })} due
+          {formatMoney(value.balanceDue, currencyCodeFor(lookups, value.currencyId))} due
         </span>
         <button
           type="button"
@@ -146,7 +153,7 @@ export function VendorBillPicker({
                 <span className="truncate">{bill.number}</span>
               </span>
               <span className="shrink-0 tabular-nums text-stone-400">
-                {bill.balanceDue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                {formatMoney(bill.balanceDue, currencyCodeFor(lookups, bill.currencyId))}
               </span>
             </button>
           ))}

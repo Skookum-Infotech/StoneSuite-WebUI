@@ -29,6 +29,8 @@ import { VendorBillStatusControl } from './components/VendorBillStatusControl';
 import { ConfirmVendorBillStatusDialog } from './components/ConfirmVendorBillStatusDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
+import { lookupService } from '@/services/lookupService';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -47,10 +49,6 @@ type Tab = (typeof TABS)[number]['key'];
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
 export default function VendorBillDetailPage() {
@@ -78,6 +76,14 @@ export default function VendorBillDetailPage() {
     enabled: Boolean(id),
     refetchInterval: DETAIL_POLL_MS,
   });
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
+  });
+  const currencyCode = currencyCodeFor(lookups, bill?.currencyId);
+  const currency = (n: number | undefined) => formatMoney(n, currencyCode);
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -310,14 +316,14 @@ export default function VendorBillDetailPage() {
               </ModernSection>
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-8">
-                  <Total label="Subtotal" value={bill.subtotal} />
-                  <Total label="Discount" value={bill.discountTotal} />
-                  <Total label="Tax" value={bill.taxTotal} />
-                  <Total label="Adjustment" value={bill.adjustment} />
-                  <Total label="Grand Total" value={bill.grandTotal} bold />
-                  <Total label="Amount Paid" value={bill.amountPaid} />
-                  <Total label="Credits Applied" value={creditsApplied} />
-                  <Total label="Balance Due" value={bill.balanceDue} bold />
+                  <Total currencyCode={currencyCode} label="Subtotal" value={bill.subtotal} />
+                  <Total currencyCode={currencyCode} label="Discount" value={bill.discountTotal} />
+                  <Total currencyCode={currencyCode} label="Tax" value={bill.taxTotal} />
+                  <Total currencyCode={currencyCode} label="Adjustment" value={bill.adjustment} />
+                  <Total currencyCode={currencyCode} label="Grand Total" value={bill.grandTotal} bold />
+                  <Total currencyCode={currencyCode} label="Amount Paid" value={bill.amountPaid} />
+                  <Total currencyCode={currencyCode} label="Credits Applied" value={creditsApplied} />
+                  <Total currencyCode={currencyCode} label="Balance Due" value={bill.balanceDue} bold />
                 </div>
               </div>
             </>
@@ -372,7 +378,7 @@ export default function VendorBillDetailPage() {
           )}
 
           {activeTab === 'payments' && (
-            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} vendor={bill.vendor} />
+            <BillPaymentsTab vendorBillId={id} balanceDue={bill.balanceDue} vendor={bill.vendor} currencyCode={currencyCode} />
           )}
           {activeTab === 'audit' && <VendorBillAuditTab vendorBillId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
@@ -527,12 +533,12 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   );
 }
 
-function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+function Total({ label, value, bold, currencyCode }: { label: string; value: number; bold?: boolean; currencyCode?: string }) {
   return (
     <div>
       <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
-        {currency(value)}
+        {formatMoney(value, currencyCode)}
       </p>
     </div>
   );
