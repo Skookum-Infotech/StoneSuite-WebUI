@@ -123,6 +123,19 @@ describe('AddSalesOrderPage review mode', () => {
     expect(screen.getByTestId('form-customer')).toHaveTextContent('none');
   });
 
+  it('shows why a document failed instead of an empty review', async () => {
+    vi.mocked(svc.get).mockResolvedValue(extraction(undefined, {
+      status: 'failed', failureCode: 'scanned',
+      failureMessage: 'PO-4471.pdf looks like a scanned image with no readable text.',
+    }));
+    renderPage();
+    expect(await screen.findByRole('heading', { name: "We couldn't read this document" })).toHaveFocus();
+    expect(screen.getByText('PO-4471.pdf looks like a scanned image with no readable text.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Enter the order manually' })).toHaveAttribute('href', '/sales/sales_order/new');
+    expect(screen.queryByText(/no longer available/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Discard this document and its changes' })).not.toBeInTheDocument();
+  });
+
   it('keeps Save disabled with a reason until the customer is resolved', async () => {
     vi.mocked(svc.get).mockResolvedValue(extraction(unresolvedCustomer));
     renderPage();
