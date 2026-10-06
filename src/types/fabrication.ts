@@ -231,11 +231,14 @@ export type SlabDisposition = 'recovered' | 'scrapped' | 'delivered';
 
 /** Declares the fate of one consumed slab while a job is cancel-requested
  *  (§4.4.1). Write-once per slab; `recovered` mints a child offcut capped at
- *  the parent's remaining area, so `recoveredArea` is required for it. */
+ *  the parent's remaining area, so it requires `recoveredArea`, all three
+ *  dimensions, and the bin the offcut is put away in (same location as the
+ *  slab). The server rejects a recovered disposition missing any of them. */
 export interface SlabDispositionInput {
   disposition: SlabDisposition;
   recoveredArea?: number;
   lengthMm?: number;
   widthMm?: number;
   thicknessMm?: number;
+  destinationBinUuid?: string;
 }
