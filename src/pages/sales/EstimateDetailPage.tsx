@@ -142,42 +142,8 @@ export default function EstimateDetailPage() {
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
-      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
-      await exportSalesDocToPdf({
-        docType: 'estimate',
-        title: estimate.estimateNumber || 'Estimate',
-        recordNumber: estimate.estimateNumber,
-        statusLabel: estimate.status,
-        customerName: estimate.customer.name,
-        issueDate: fmtDate(estimate.estimateDate),
-        dueDate: estimate.validUntil ? fmtDate(estimate.validUntil) : undefined,
-        dueDateLabel: 'Valid Until',
-        billTo: estimate.billing,
-        shipTo: estimate.shipping,
-        notesText: estimate.memo || undefined,
-        sections: [],
-        itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: estimate.items.map((line) => [
-            String(line.lineNumber),
-            line.itemName || line.description || '—',
-            line.sku || '—',
-            String(line.quantity),
-            currency(line.unitPrice),
-            `${line.discountPercent}%`,
-            `${line.taxPercent}%`,
-            currency(line.lineTotal),
-          ]),
-          descriptions: estimate.items.map((line) => line.description || undefined),
-          numericFrom: 3,
-        },
-        totals: [
-          { label: 'Subtotal', value: currency(estimate.subtotal) },
-          { label: 'Discount', value: currency(estimate.discountTotal) },
-          { label: 'Tax', value: currency(estimate.taxTotal) },
-          { label: 'Grand Total', value: currency(estimate.grandTotal), bold: true },
-        ],
-      });
+      const { downloadServerDocPdf } = await import('@/lib/serverDocPdf');
+      await downloadServerDocPdf({ recordId: id, docType: 'estimate', recordNumber: estimate.estimateNumber });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
     } finally {
