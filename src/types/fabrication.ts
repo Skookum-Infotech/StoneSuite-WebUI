@@ -42,12 +42,14 @@ export interface FabricationJobPiece {
 }
 
 /** One row of the 16-step checklist. Piece-grain steps (templating, cutting,
- *  edging, etc.) are seeded once per piece — the backend returns one row per
- *  (step code, piece) with no piece id on the row, so several rows can share
- *  a code. `PATCH .../steps/{stepCode}` updates every row sharing that code
- *  in one call; there is no way to target a single piece's row yet. */
+ *  edging, etc.) are seeded once per piece, so several rows can share a code;
+ *  `pieceUuid` tells them apart. `PATCH .../steps/{stepCode}` must send it for
+ *  a piece-grain step (the server rejects an ambiguous update) and omit it for
+ *  a whole-job step, which has none. */
 export interface FabricationJobStep {
   code: string;
+  /** Present on piece-grain rows only. */
+  pieceUuid?: string;
   sequence: number;
   status: 'pending' | 'in_progress' | 'blocked' | 'skipped' | 'completed';
   notes?: string;
