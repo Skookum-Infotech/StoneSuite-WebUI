@@ -42,12 +42,14 @@ export interface FabricationJobPiece {
 }
 
 /** One row of the 16-step checklist. Piece-grain steps (templating, cutting,
- *  edging, etc.) are seeded once per piece — the backend returns one row per
- *  (step code, piece) with no piece id on the row, so several rows can share
- *  a code. `PATCH .../steps/{stepCode}` updates every row sharing that code
- *  in one call; there is no way to target a single piece's row yet. */
+ *  edging, etc.) are seeded once per piece, so several rows can share a code;
+ *  `pieceUuid` tells them apart. `PATCH .../steps/{stepCode}` must send it for
+ *  a piece-grain step (the server rejects an ambiguous update) and omit it for
+ *  a whole-job step, which has none. */
 export interface FabricationJobStep {
   code: string;
+  /** Present on piece-grain rows only. */
+  pieceUuid?: string;
   sequence: number;
   status: 'pending' | 'in_progress' | 'blocked' | 'skipped' | 'completed';
   notes?: string;
@@ -95,6 +97,9 @@ export interface FabricationJobFields {
 
 export interface FabricationJobCreatePayload extends FabricationJobFields {
   salesOrderUuid: string;
+  /** Idempotency key: a retry carrying the same key for the same order returns
+   *  the job the first attempt made instead of opening a duplicate. */
+  requestId?: string;
   pieces?: FabricationJobPieceInput[];
 }
 
@@ -226,11 +231,14 @@ export type SlabDisposition = 'recovered' | 'scrapped' | 'delivered';
 
 /** Declares the fate of one consumed slab while a job is cancel-requested
  *  (§4.4.1). Write-once per slab; `recovered` mints a child offcut capped at
- *  the parent's remaining area, so `recoveredArea` is required for it. */
+ *  the parent's remaining area, so it requires `recoveredArea`, all three
+ *  dimensions, and the bin the offcut is put away in (same location as the
+ *  slab). The server rejects a recovered disposition missing any of them. */
 export interface SlabDispositionInput {
   disposition: SlabDisposition;
   recoveredArea?: number;
   lengthMm?: number;
   widthMm?: number;
   thicknessMm?: number;
+  destinationBinUuid?: string;
 }

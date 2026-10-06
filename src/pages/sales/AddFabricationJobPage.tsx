@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Wrench, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
 import { fabricationService } from '@/services/fabricationService';
 import { salesOrderService } from '@/services/salesOrderService';
 import { lookupService } from '@/services/lookupService';
@@ -53,18 +54,23 @@ export default function AddFabricationJobPage() {
     label: `#${line.lineNumber} ${line.itemName || line.description || ''}`.trim(),
   }));
 
+  const createKey = useIdempotencyKey();
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!sourceOrder) throw new Error('A sales order is required to open a fabrication job.');
       const badPhone = firstInvalidPhoneLabel(SITE_FIELDS, data);
       if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
-      return fabricationService.createJob({
+      const payload = {
         salesOrderUuid: sourceOrder.id,
         ...toJobFields(data, customFieldValues),
         pieces: pieces.map(toPieceInput),
-      });
+      };
+      // A retry of the same form (e.g. after a timeout) reuses the key, so the
+      // server returns the job the first attempt made instead of a duplicate.
+      return fabricationService.createJob({ ...payload, requestId: createKey.keyFor(JSON.stringify(payload)) });
     },
     onSuccess: async (job) => {
+      createKey.reset();
       toast.success('Fabrication job created.');
       queryClient.invalidateQueries({ queryKey: ['fabrication-jobs'] });
       if (panelRef.current?.hasStagedFiles()) {

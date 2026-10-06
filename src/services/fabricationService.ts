@@ -68,6 +68,8 @@ export const fabricationService = {
 
   // A job always originates from a sales order — this create path takes an
   // explicit salesOrderUuid in the payload (used by the standalone Add page).
+  // Send `requestId` (see useIdempotencyKey) so a retry after a timeout returns
+  // the job already created rather than a second one.
   createJob: (payload: FabricationJobCreatePayload): Promise<FabricationJob> =>
     tenantClient
       .post<{ success: boolean; fabricationJob: FabricationJob }>(BASE, payload)
@@ -75,12 +77,17 @@ export const fabricationService = {
 
   // Spawn a job directly from a Sales Order's own "Create Fabrication Job"
   // action (POST /sales-orders/{uuid}/fabricate) — the path segment fixes
-  // the sales order, so the body needs no salesOrderUuid.
-  fabricateFromOrder: (salesOrderUuid: string, fields?: Partial<FabricationJobUpdatePayload>): Promise<FabricationJob> =>
+  // the sales order, so the body needs no salesOrderUuid. `requestId` makes a
+  // retry idempotent, as for createJob.
+  fabricateFromOrder: (
+    salesOrderUuid: string,
+    fields?: Partial<FabricationJobUpdatePayload>,
+    requestId?: string,
+  ): Promise<FabricationJob> =>
     tenantClient
       .post<{ success: boolean; fabricationJob: FabricationJob }>(
         `/tenant/sales-orders/${salesOrderUuid}/fabricate`,
-        fields ?? {},
+        { ...(fields ?? {}), ...(requestId ? { requestId } : {}) },
       )
       .then((r) => r.data.fabricationJob),
 
@@ -157,12 +164,13 @@ export const fabricationService = {
       .get<{ success: boolean; steps: FabricationJobStep[] }>(`${BASE}/${uuid}/steps`)
       .then((r) => r.data.steps ?? []),
 
-  // Updates every step row sharing this code (piece-grain steps have one row
-  // per piece, all patched together — there is no per-piece target yet).
+  // Updates one step row. Piece-grain steps have one row per piece, so send
+  // `pieceUuid` (from the row) to say which; omit it for a whole-job step. The
+  // server rejects (400) an update to a multi-piece step that names no piece.
   updateStep: (
     uuid: string,
     stepCode: string,
-    body: { status: string; notes?: string; payload?: Record<string, unknown> },
+    body: { status: string; notes?: string; payload?: Record<string, unknown>; pieceUuid?: string },
   ): Promise<FabricationJobStep> =>
     tenantClient
       .patch<{ success: boolean; step: FabricationJobStep }>(`${BASE}/${uuid}/steps/${stepCode}`, body)
