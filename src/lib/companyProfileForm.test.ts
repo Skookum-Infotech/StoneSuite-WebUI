@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { companyProfileSchema, MAX_FIELD_LENGTH } from './companyProfileForm';
+import { companyProfileSchema, MAX_FIELD_LENGTH, MAX_WORDING_LENGTH } from './companyProfileForm';
 
 describe('companyProfileSchema', () => {
   const address = {
@@ -119,5 +119,33 @@ describe('companyProfileSchema', () => {
   it.each(['bankName', 'accountNumber', 'routingNumber'] as const)('rejects a %s over the max length', (field) => {
     const paymentDetails = { ...payment, [field]: 'a'.repeat(MAX_FIELD_LENGTH + 1) };
     expect(companyProfileSchema.safeParse({ ...valid, paymentDetails }).success).toBe(false);
+  });
+});
+
+describe('companyProfileSchema document defaults', () => {
+  it('defaults every document type to empty terms and notes when omitted', () => {
+    const result = companyProfileSchema.safeParse({ companyName: 'Acme' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.documentDefaults.invoice).toEqual({ terms: '', notes: '' });
+      expect(result.data.documentDefaults.sales_order).toEqual({ terms: '', notes: '' });
+    }
+  });
+
+  it('keeps the wording it is given', () => {
+    const result = companyProfileSchema.safeParse({
+      companyName: 'Acme',
+      documentDefaults: { invoice: { terms: 'Net 30', notes: 'Thanks' } },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.documentDefaults.invoice).toEqual({ terms: 'Net 30', notes: 'Thanks' });
+  });
+
+  it.each(['terms', 'notes'])('rejects %s over the max length', (field) => {
+    const result = companyProfileSchema.safeParse({
+      companyName: 'Acme',
+      documentDefaults: { quote: { [field]: 'a'.repeat(MAX_WORDING_LENGTH + 1) } },
+    });
+    expect(result.success).toBe(false);
   });
 });
