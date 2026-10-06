@@ -55,6 +55,26 @@ describe("csvEscapeValue", () => {
   });
 });
 
+describe("csvEscapeValue formula-injection guard", () => {
+  it.each([
+    ["=cmd|' /C calc'!A0", "'=cmd|' /C calc'!A0"],
+    ["+1+1", "'+1+1"],
+    ["-2+3", "'-2+3"],
+    ["@SUM(A1)", "'@SUM(A1)"],
+    ["	Tabbed", "'	Tabbed"],
+  ])("prefixes %j with an apostrophe", (input, expected) => {
+    expect(csvEscapeValue(input)).toBe(expected);
+  });
+
+  it("prefixes before quoting", () => {
+    expect(csvEscapeValue("=A1,B1")).toBe(`"'=A1,B1"`);
+  });
+
+  it.each(["-12.50", "+7", "42", "Acme -1", "a=b"])("leaves %j untouched", (input) => {
+    expect(csvEscapeValue(input)).toBe(input);
+  });
+});
+
 describe("fmtCsvDate", () => {
   it("formats a valid ISO date", () => {
     expect(fmtCsvDate("2026-01-15T00:00:00Z")).toMatch(/2026/);
