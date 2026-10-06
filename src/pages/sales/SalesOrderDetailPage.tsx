@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
 import { fabricationService } from '@/services/fabricationService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -102,9 +103,15 @@ export default function SalesOrderDetailPage() {
     onSuccess: ({ invoice }) => navigate(`/sales/invoice/${invoice.id}`),
   });
 
+  // The request id is stable across retries for this order, so a second click
+  // after a timeout returns the job already created rather than opening another.
+  const fabricateKey = useIdempotencyKey();
   const fabricate = useMutation({
-    mutationFn: () => fabricationService.fabricateFromOrder(id),
-    onSuccess: (job) => navigate(`/sales/installation/${job.id}`),
+    mutationFn: () => fabricationService.fabricateFromOrder(id, undefined, fabricateKey.keyFor(id)),
+    onSuccess: (job) => {
+      fabricateKey.reset();
+      navigate(`/sales/installation/${job.id}`);
+    },
   });
 
   // Inline status change from the sidebar's Status row — mirrors the Edit

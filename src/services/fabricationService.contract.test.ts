@@ -25,4 +25,19 @@ describe('fabricationService request contract', () => {
       status: 'completed', pieceUuid: 'piece-2',
     });
   });
+
+  it('sends requestId when creating a job', async () => {
+    await fabricationService.createJob({ salesOrderUuid: 'so-1', requestId: 'req-1' } as never);
+    expect(post).toHaveBeenCalledWith('/tenant/fabrication-jobs', expect.objectContaining({
+      salesOrderUuid: 'so-1', requestId: 'req-1',
+    }));
+  });
+
+  it('sends requestId when fabricating from an order, and nothing extra without one', async () => {
+    await fabricationService.fabricateFromOrder('so-1', undefined, 'req-2');
+    expect(post).toHaveBeenLastCalledWith('/tenant/sales-orders/so-1/fabricate', { requestId: 'req-2' });
+
+    await fabricationService.fabricateFromOrder('so-1');
+    expect(post).toHaveBeenLastCalledWith('/tenant/sales-orders/so-1/fabricate', {});
+  });
 });

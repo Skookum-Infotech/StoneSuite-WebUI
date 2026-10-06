@@ -68,6 +68,8 @@ export const fabricationService = {
 
   // A job always originates from a sales order — this create path takes an
   // explicit salesOrderUuid in the payload (used by the standalone Add page).
+  // Send `requestId` (see useIdempotencyKey) so a retry after a timeout returns
+  // the job already created rather than a second one.
   createJob: (payload: FabricationJobCreatePayload): Promise<FabricationJob> =>
     tenantClient
       .post<{ success: boolean; fabricationJob: FabricationJob }>(BASE, payload)
@@ -75,12 +77,17 @@ export const fabricationService = {
 
   // Spawn a job directly from a Sales Order's own "Create Fabrication Job"
   // action (POST /sales-orders/{uuid}/fabricate) — the path segment fixes
-  // the sales order, so the body needs no salesOrderUuid.
-  fabricateFromOrder: (salesOrderUuid: string, fields?: Partial<FabricationJobUpdatePayload>): Promise<FabricationJob> =>
+  // the sales order, so the body needs no salesOrderUuid. `requestId` makes a
+  // retry idempotent, as for createJob.
+  fabricateFromOrder: (
+    salesOrderUuid: string,
+    fields?: Partial<FabricationJobUpdatePayload>,
+    requestId?: string,
+  ): Promise<FabricationJob> =>
     tenantClient
       .post<{ success: boolean; fabricationJob: FabricationJob }>(
         `/tenant/sales-orders/${salesOrderUuid}/fabricate`,
-        fields ?? {},
+        { ...(fields ?? {}), ...(requestId ? { requestId } : {}) },
       )
       .then((r) => r.data.fabricationJob),
 

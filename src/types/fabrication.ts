@@ -97,6 +97,9 @@ export interface FabricationJobFields {
 
 export interface FabricationJobCreatePayload extends FabricationJobFields {
   salesOrderUuid: string;
+  /** Idempotency key: a retry carrying the same key for the same order returns
+   *  the job the first attempt made instead of opening a duplicate. */
+  requestId?: string;
   pieces?: FabricationJobPieceInput[];
 }
 
