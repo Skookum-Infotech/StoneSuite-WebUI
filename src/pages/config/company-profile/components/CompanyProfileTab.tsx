@@ -20,6 +20,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CompanyInfoTextField, CompanyInfoReadonlyField, type CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import { CompanyInfoSelectField } from './CompanyInfoSelectField';
 import { PaymentDetailsSection } from './PaymentDetailsSection';
+import { DocumentDefaultsSection } from './DocumentDefaultsSection';
 import { CompanyLogoCard } from './CompanyLogoCard';
 
 const EMPTY_ADDRESS: Address = { line1: '', line2: '', suite: '', city: '', country: '', state: '', zip: '' };
@@ -38,6 +39,12 @@ const DEFAULT_VALUES: CompanyProfileFormValues = {
   shippingAddress: EMPTY_ADDRESS,
   returnAddress: EMPTY_ADDRESS,
   paymentDetails: EMPTY_PAYMENT_DETAILS,
+  documentDefaults: {
+    estimate: { terms: '', notes: '' },
+    quote: { terms: '', notes: '' },
+    sales_order: { terms: '', notes: '' },
+    invoice: { terms: '', notes: '' },
+  },
 };
 
 // Spans chosen by how much text each field typically holds, not uniformly:
@@ -336,6 +343,14 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
 
         <PaymentDetailsSection
           index={ADDRESS_GROUPS.length + 1}
+          isEditing={isEditing}
+          values={values}
+          register={register}
+          errors={errors}
+        />
+
+        <DocumentDefaultsSection
+          index={ADDRESS_GROUPS.length + 2}
           isEditing={isEditing}
           values={values}
           register={register}

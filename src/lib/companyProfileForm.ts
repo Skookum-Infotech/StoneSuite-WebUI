@@ -39,6 +39,27 @@ const paymentDetailsSchema = z.object({
 
 const EMPTY_PAYMENT_DETAILS = { bankName: '', accountNumber: '', routingNumber: '' } as const;
 
+// Mirrors the backend's companyprofile.MaxWordingLength.
+export const MAX_WORDING_LENGTH = 5000;
+
+const wordingField = z.string().max(MAX_WORDING_LENGTH, `Must be at most ${MAX_WORDING_LENGTH} characters`).default('');
+
+const wordingSchema = z.object({ terms: wordingField, notes: wordingField });
+
+const EMPTY_WORDING = { terms: '', notes: '' } as const;
+
+// Default Terms & Notes per document type (see types/companyProfile.ts).
+const documentDefaultsSchema = z.object({
+  estimate: wordingSchema.default(EMPTY_WORDING),
+  quote: wordingSchema.default(EMPTY_WORDING),
+  sales_order: wordingSchema.default(EMPTY_WORDING),
+  invoice: wordingSchema.default(EMPTY_WORDING),
+});
+
+const EMPTY_DOCUMENT_DEFAULTS = {
+  estimate: EMPTY_WORDING, quote: EMPTY_WORDING, sales_order: EMPTY_WORDING, invoice: EMPTY_WORDING,
+} as const;
+
 export const companyProfileSchema = z.object({
   companyName: z
     .string()
@@ -58,6 +79,7 @@ export const companyProfileSchema = z.object({
   shippingAddress: addressSchema.default(EMPTY_ADDRESS),
   returnAddress: addressSchema.default(EMPTY_ADDRESS),
   paymentDetails: paymentDetailsSchema.default(EMPTY_PAYMENT_DETAILS),
+  documentDefaults: documentDefaultsSchema.default(EMPTY_DOCUMENT_DEFAULTS),
 });
 
 export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
