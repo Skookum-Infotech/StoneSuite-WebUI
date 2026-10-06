@@ -131,43 +131,8 @@ export default function InvoiceDetailPage() {
     setExportPdfError(undefined);
     setExportingPdf(true);
     try {
-      const { exportSalesDocToPdf } = await import('@/lib/salesPdfExport');
-      await exportSalesDocToPdf({
-        docType: 'invoice',
-        title: invoice.invoiceNumber || 'Invoice',
-        recordNumber: invoice.invoiceNumber,
-        statusLabel: invoice.status,
-        customerName: invoice.customer.name,
-        issueDate: fmtDate(invoice.invoiceDate),
-        dueDate: invoice.dueDate ? fmtDate(invoice.dueDate) : undefined,
-        keyAmount: { label: 'Amount Due', value: currency(invoice.balanceDue) },
-        billTo: invoice.billing,
-        shipTo: invoice.shipping,
-        notesText: invoice.memo || undefined,
-        sections: [],
-        itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
-          rows: invoice.items.map((line) => [
-            String(line.lineNumber),
-            line.itemName || line.description || '—',
-            line.sku || '—',
-            String(line.quantity),
-            currency(line.unitPrice),
-            `${line.discountPercent}%`,
-            `${line.taxPercent}%`,
-            currency(line.lineTotal),
-          ]),
-          descriptions: invoice.items.map((line) => line.description || undefined),
-          numericFrom: 3,
-        },
-        totals: [
-          { label: 'Subtotal', value: currency(invoice.subtotal) },
-          { label: 'Discount', value: currency(invoice.discountTotal) },
-          { label: 'Tax', value: currency(invoice.taxTotal) },
-          { label: 'Grand Total', value: currency(invoice.grandTotal), bold: true },
-          { label: 'Amount Paid', value: currency(invoice.amountPaid) },
-        ],
-      });
+      const { downloadServerDocPdf } = await import('@/lib/serverDocPdf');
+      await downloadServerDocPdf({ recordId: id, docType: 'invoice', recordNumber: invoice.invoiceNumber });
     } catch (err) {
       setExportPdfError(apiErrorMessage(err, 'Failed to export PDF.'));
     } finally {

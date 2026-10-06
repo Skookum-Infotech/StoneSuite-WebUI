@@ -67,12 +67,13 @@ export function FabricationSourceOrderPicker({ value, onChange, disabled }: {
     queryFn: async (): Promise<FabricationSourceOrder[]> => {
       const page = await salesOrderService.searchOrders({
         search: debounced || undefined,
+        // Filter server-side: filtering the page client-side hid eligible
+        // orders whenever the newest RESULT_LIMIT orders were ineligible.
+        filters: [{ field: 'status_code', op: 'in', value: [...SO_CONVERTIBLE_STATUSES] }],
         sort: [{ field: 'created_at', dir: 'desc' }],
         limit: RESULT_LIMIT,
       });
-      return page.records
-        .filter((r) => !r.statusCode || SO_CONVERTIBLE_STATUSES.has(r.statusCode))
-        .map((r) => ({ id: r.id, number: r.salesOrderNumber, customerName: r.customer?.name ?? '' }));
+      return page.records.map((r) => ({ id: r.id, number: r.salesOrderNumber, customerName: r.customer?.name ?? '' }));
     },
   });
 

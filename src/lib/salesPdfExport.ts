@@ -91,8 +91,6 @@ const DOC_TYPE_LABEL: Record<SalesDocType, string> = {
   fabrication_job: "Fabrication Job",
 };
 
-const TERMS_PLACEHOLDER = "Terms will be available in a future update.";
-const PAYMENT_DETAILS_PLACEHOLDER = "Bank and payment details will be available in a future update.";
 const FOOTER_COLUMN_GAP = 24;
 const WHITE: [number, number, number] = [255, 255, 255];
 
@@ -214,11 +212,12 @@ export async function buildSalesDocPdf(params: SalesExportParams): Promise<DocWi
   const footerColWidth = (pageWidth - MARGIN_X * 2 - FOOTER_COLUMN_GAP) / 2;
   const footerRightX = MARGIN_X + footerColWidth + FOOTER_COLUMN_GAP;
 
-  let footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, cursorY, "Terms & Conditions", TERMS_PLACEHOLDER, {
-    placeholder: true,
-  });
+  // No Terms & Conditions / Payment Details cards: this client export has
+  // neither the record's terms nor the tenant's bank details. Types the backend
+  // renders (invoice, quote, estimate, sales order) use serverDocPdf instead.
+  let footerLeftY = cursorY;
   if (notesText) {
-    footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, footerLeftY + 12, "Notes", notesText);
+    footerLeftY = drawTextCard(doc, MARGIN_X, footerColWidth, footerLeftY, "Notes", notesText);
   }
 
   let footerRightY = cursorY;
@@ -230,12 +229,6 @@ export async function buildSalesDocPdf(params: SalesExportParams): Promise<DocWi
   }
 
   cursorY = Math.max(footerLeftY, footerRightY) + 8;
-
-  ensureSpace(70);
-  cursorY =
-    drawTextCard(doc, MARGIN_X, pageWidth - MARGIN_X * 2, cursorY, "Payment Details", PAYMENT_DETAILS_PLACEHOLDER, {
-      placeholder: true,
-    }) + 10;
 
   drawFooterOnAllPages(doc, pageHeight, `StoneSuite Sales — ${DOC_TYPE_LABEL[docType]}`);
 
