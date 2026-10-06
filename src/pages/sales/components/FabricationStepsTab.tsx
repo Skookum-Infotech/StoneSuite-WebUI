@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Save, Info } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fieldCls } from '@/components/crm/formUtils';
 import { fabricationService } from '@/services/fabricationService';
@@ -9,12 +9,17 @@ import { STEP_LABELS, STEP_STATUS_OPTIONS, STEP_STATUS_LABELS, STEP_STATUS_COLOR
 import type { FabricationJobStep } from '@/types/fabrication';
 
 // The 16-step checklist. Piece-grain steps (templating, cutting, edging,
-// etc.) are seeded once per piece, so several rows can share the same step
-// code with no piece id to tell them apart — every row as the backend
-// returns it is rendered here rather than collapsed, since collapsing would
-// hide that ambiguity rather than fix it. `PATCH .../steps/{code}` updates
-// EVERY row sharing that code in one call, which this tab surfaces with an
-// inline note rather than pretending each row edits independently.
+// etc.) are seeded once per piece, so several rows share a step code and are
+// told apart by `pieceUuid`. Each row saves independently: the PATCH carries
+// that row's pieceUuid, so completing a step for one piece leaves the others
+// untouched. Whole-job steps have no pieceUuid and omit it.
+//
+// Drafts and errors are keyed per row (`rowKey`), not per step code — keying
+// by code would make every piece's row of a step share one draft.
+function rowKey(step: Pick<FabricationJobStep, 'code' | 'pieceUuid'>): string {
+  return `${step.code}:${step.pieceUuid ?? ''}`;
+}
+
 export function FabricationStepsTab({ jobId, steps, canEdit }: {
   jobId: string;
   steps: FabricationJobStep[];
@@ -25,33 +30,43 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
 
   const update = useMutation({
-    mutationFn: ({ code, status, notes }: { code: string; status: string; notes: string }) =>
-      fabricationService.updateStep(jobId, code, { status, notes: notes || undefined }),
-    onSuccess: (_step, { code }) => {
+    mutationFn: ({ step, status, notes }: { step: FabricationJobStep; status: string; notes: string }) =>
+      fabricationService.updateStep(jobId, step.code, {
+        status,
+        notes: notes || undefined,
+        pieceUuid: step.pieceUuid,
+      }),
+    onSuccess: (_step, { step }) => {
       queryClient.invalidateQueries({ queryKey: ['fabrication-job', jobId] });
-      setRowErrors((prev) => { const n = { ...prev }; delete n[code]; return n; });
+      // Drop the saved draft so the row shows the server's value again.
+      setDrafts((prev) => { const n = { ...prev }; delete n[rowKey(step)]; return n; });
+      setRowErrors((prev) => { const n = { ...prev }; delete n[rowKey(step)]; return n; });
     },
-    onError: (err, { code }) => {
-      setRowErrors((prev) => ({ ...prev, [code]: apiErrorMessage(err, 'Failed to update step.') }));
+    onError: (err, { step }) => {
+      setRowErrors((prev) => ({ ...prev, [rowKey(step)]: apiErrorMessage(err, 'Failed to update step.') }));
     },
   });
 
   function draftFor(step: FabricationJobStep) {
-    return drafts[step.code] ?? { status: step.status, notes: step.notes ?? '' };
+    return drafts[rowKey(step)] ?? { status: step.status, notes: step.notes ?? '' };
   }
 
-  function setDraft(code: string, patch: Partial<{ status: string; notes: string }>) {
-    setDrafts((prev) => ({ ...prev, [code]: { ...(prev[code] ?? { status: '', notes: '' }), ...patch } }));
+  function setDraft(step: FabricationJobStep, patch: Partial<{ status: string; notes: string }>) {
+    const key = rowKey(step);
+    setDrafts((prev) => ({ ...prev, [key]: { ...(prev[key] ?? draftFor(step)), ...patch } }));
   }
 
   function save(step: FabricationJobStep) {
     const draft = draftFor(step);
     if (draft.status === 'skipped' && !draft.notes.trim()) {
-      setRowErrors((prev) => ({ ...prev, [step.code]: 'A skipped step requires a note explaining why.' }));
+      setRowErrors((prev) => ({ ...prev, [rowKey(step)]: 'A skipped step requires a note explaining why.' }));
       return;
     }
-    update.mutate({ code: step.code, status: draft.status, notes: draft.notes });
+    update.mutate({ step, status: draft.status, notes: draft.notes });
   }
+
+  const isSaving = (step: FabricationJobStep) =>
+    update.isPending && update.variables !== undefined && rowKey(update.variables.step) === rowKey(step);
 
   // Running per-code counter so duplicate piece-grain rows read as "2 of 4"
   // rather than looking like unexplained repeats.
@@ -61,14 +76,6 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-2 rounded-lg bg-stone-50 px-3 py-2.5 text-2xs text-stone-500">
-        <Info className="size-3.5 shrink-0 mt-0.5" />
-        <p>
-          Steps seeded per piece share one status per step code — saving a row updates every row with that
-          same code, since the backend has no per-piece target yet.
-        </p>
-      </div>
-
       <div className="overflow-x-auto modal-scrollbar rounded-lg border border-stone-200 bg-white">
         <table className="w-full text-left text-xs">
           <thead className="bg-stone-50 border-b border-stone-200">
@@ -90,7 +97,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
               // would announce identically to a screen reader.
               const rowLabel = dup ? `${stepLabel} (piece ${seenCounts[step.code]} of ${totalByCode[step.code]})` : stepLabel;
               return (
-                <tr key={`${step.code}-${i}`} className="hover:bg-stone-50/50 align-top">
+                <tr key={`${rowKey(step)}-${i}`} className="hover:bg-stone-50/50 align-top">
                   <td className="px-3 py-2.5">
                     <p className="font-medium text-stone-800">{stepLabel}</p>
                     {dup && <p className="text-2xs text-stone-400">piece {seenCounts[step.code]} of {totalByCode[step.code]}</p>}
@@ -99,7 +106,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                     {canEdit ? (
                       <select
                         value={draft.status}
-                        onChange={(e) => setDraft(step.code, { status: e.target.value })}
+                        onChange={(e) => setDraft(step, { status: e.target.value })}
                         className={cn(fieldCls, 'h-8 py-1 w-36')}
                         aria-label={`Status for ${rowLabel}`}
                       >
@@ -116,7 +123,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                       <input
                         type="text"
                         value={draft.notes}
-                        onChange={(e) => setDraft(step.code, { notes: e.target.value })}
+                        onChange={(e) => setDraft(step, { notes: e.target.value })}
                         placeholder={draft.status === 'skipped' ? 'Required — why was this skipped?' : 'Optional note'}
                         className={cn(fieldCls, 'h-8 py-1')}
                         aria-label={`Notes for ${rowLabel}`}
@@ -124,7 +131,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                     ) : (
                       <span className="text-stone-500">{step.notes || '—'}</span>
                     )}
-                    {rowErrors[step.code] && <p className="mt-1 text-2xs text-destructive">{rowErrors[step.code]}</p>}
+                    {rowErrors[rowKey(step)] && <p className="mt-1 text-2xs text-destructive">{rowErrors[rowKey(step)]}</p>}
                   </td>
                   <td className="px-3 py-2.5 text-stone-400 whitespace-nowrap">
                     {step.startedAt ? new Date(step.startedAt).toLocaleDateString() : '—'}
@@ -137,11 +144,11 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                       <button
                         type="button"
                         onClick={() => save(step)}
-                        disabled={!dirty || (update.isPending && update.variables?.code === step.code)}
+                        disabled={!dirty || isSaving(step)}
                         aria-label={`Save ${rowLabel}`}
                         className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-2xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-40 transition-colors"
                       >
-                        {update.isPending && update.variables?.code === step.code
+                        {isSaving(step)
                           ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
                         Save
                       </button>
