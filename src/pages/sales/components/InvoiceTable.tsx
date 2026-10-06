@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { invoiceService } from '@/services/invoiceService';
+import { lookupService } from '@/services/lookupService';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { InvoiceStatusControl } from './InvoiceStatusControl';
@@ -40,10 +42,6 @@ const SORT_KEY: Record<SortField, string> = {
   grandTotal: 'grand_total',
   balanceDue: 'balance_due',
 };
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-}
 
 export function InvoiceTable() {
   const navigate = useNavigate();
@@ -94,6 +92,12 @@ export function InvoiceTable() {
     queryKey: ['invoices', req],
     queryFn: () => invoiceService.searchInvoices(req),
     placeholderData: (prev) => prev,
+  });
+
+  const { data: lookups } = useQuery({
+    queryKey: ['crm-lookups'],
+    queryFn: lookupService.getCrmLookups,
+    staleTime: 10 * 60 * 1000,
   });
 
   const records = data?.records ?? [];
@@ -294,10 +298,10 @@ export function InvoiceTable() {
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
-                        {currency(inv.grandTotal)}
+                        {formatMoney(inv.grandTotal, currencyCodeFor(lookups, inv.currencyId))}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
-                        {currency(inv.balanceDue)}
+                        {formatMoney(inv.balanceDue, currencyCodeFor(lookups, inv.currencyId))}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">

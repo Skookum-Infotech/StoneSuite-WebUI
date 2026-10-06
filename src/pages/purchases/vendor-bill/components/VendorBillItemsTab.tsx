@@ -1,5 +1,6 @@
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatMoney } from '@/lib/formatMoney';
 // Inventory catalog picker is tenant-wide, not sales-specific — reused as-is
 // from its current home rather than duplicated (mirrors PurchaseOrderItemsTab's
 // usage two folders over).
@@ -44,10 +45,12 @@ const ITEM_COLS = [
 // from a purchase order (purchaseOrderItemId set) is otherwise editable the
 // same as any other — the backend accepts edits to converted lines, it just
 // never re-derives the lineage FK from client input.
-export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent }: {
+export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent, currencyCode }: {
   items: VendorBillLineItem[];
   onUpdate: (v: VendorBillLineItem[]) => void;
   headerTaxPercent: number;
+  /** ISO currency code of the bill; falls back to the default currency. */
+  currencyCode?: string;
 }) {
   const recalc = (next: Omit<VendorBillLineItem, 'id' | 'lineNo'>) => {
     const { amount, total } = calcLineItem(next, headerTaxPercent);
@@ -145,7 +148,7 @@ export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent }: {
             {items.map((row) =>
               editId === row.id ? (
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
-                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
+                  <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} currencyCode={currencyCode} />
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
@@ -160,11 +163,11 @@ export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent }: {
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.unitPrice ? `$${parseFloat(row.unitPrice).toFixed(2)}` : '—'}</td>
+                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.unitPrice ? formatMoney(parseFloat(row.unitPrice), currencyCode) : '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{row.discount ? `${row.discount}%` : '0%'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-700 font-medium">{row.amount ? `$${row.amount}` : '—'}</td>
+                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-700 font-medium">{row.amount ? formatMoney(parseFloat(row.amount), currencyCode) : '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-400">{headerTaxPercent}%</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.total ? `$${row.total}` : '—'}</td>
+                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.total ? formatMoney(parseFloat(row.total), currencyCode) : '—'}</td>
                   <td className="px-2 py-2.5">
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
                       <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
@@ -180,7 +183,7 @@ export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent }: {
             )}
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
-                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
+                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} currencyCode={currencyCode} />
                 <td className="px-2 py-1.5" />
               </tr>
             )}
@@ -230,11 +233,12 @@ export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent }: {
   );
 }
 
-function InlineItemRow({ lineNo, draft, onChange, picker }: {
+function InlineItemRow({ lineNo, draft, onChange, picker, currencyCode }: {
   lineNo: number;
   draft: Omit<VendorBillLineItem, 'id' | 'lineNo'>;
   onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => void;
   picker: InventoryItemPickerHandlers;
+  currencyCode?: string;
 }) {
   return (
     <>
@@ -250,9 +254,9 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
       <td className="px-2 py-1.5"><input type="number" min="0" value={draft.quantity} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Quantity" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(e) => onChange('unitPrice', e.target.value)} placeholder="0.00" className={cn(inlineCls, 'w-20 text-right')} aria-label="Unit Price" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
-      <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? `$${draft.amount}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-500 cursor-default text-right')} aria-label="Amount" /></td>
+      <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? formatMoney(parseFloat(draft.amount), currencyCode) : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-500 cursor-default text-right')} aria-label="Amount" /></td>
       <td className="px-2 py-1.5 text-stone-400 text-2xs text-right">—</td>
-      <td className="px-2 py-1.5"><input type="text" readOnly value={draft.total ? `$${draft.total}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-800 font-semibold cursor-default text-right')} aria-label="Total" /></td>
+      <td className="px-2 py-1.5"><input type="text" readOnly value={draft.total ? formatMoney(parseFloat(draft.total), currencyCode) : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-800 font-semibold cursor-default text-right')} aria-label="Total" /></td>
     </>
   );
 }

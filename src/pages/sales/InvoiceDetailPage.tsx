@@ -27,6 +27,7 @@ import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
 import { formatDateValue } from '@/lib/dateUtils';
+import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -44,10 +45,6 @@ const DETAIL_POLL_MS = 60_000;
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function currency(n: number | undefined): string {
-  return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
 
 export default function InvoiceDetailPage() {
@@ -79,6 +76,9 @@ export default function InvoiceDetailPage() {
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
   });
+
+  const currencyCode = currencyCodeFor(lookups, invoice?.currencyId);
+  const currency = (n: number | undefined) => formatMoney(n, currencyCode);
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -213,6 +213,7 @@ export default function InvoiceDetailPage() {
           {activeTab === 'overview' && (
             <>
               <AmountsStrip
+                currencyCode={currencyCode}
                 items={[
                   { label: 'Subtotal', value: invoice.subtotal },
                   { label: 'Discount', value: invoice.discountTotal },

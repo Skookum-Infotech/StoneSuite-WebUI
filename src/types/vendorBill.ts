@@ -14,12 +14,15 @@ import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@
 
 /** One billed line. `inventoryItemUuid` selects a catalog item (server
  *  snapshots its sku/name/description/unit/price/tax); omit it for a
- *  free-text line, in which case `description` is required. There is no
- *  `purchaseOrderItemUuid` input field — that lineage FK is set exclusively
- *  by the convert path, never by manual create/update input. */
+ *  free-text line, in which case `description` is required. On update, echo
+ *  back `purchaseOrderItemId` for lines of a converted bill so the PO link and
+ *  billed quantity stay correct. */
 export interface VendorBillLineInput {
   lineNumber: number;
   inventoryItemUuid?: string;
+  /** Source PO line of a converted bill, echoed back on update so editing
+   *  keeps the link. Omit for manually added lines; rejected by the backend on create. */
+  purchaseOrderItemId?: string;
   description?: string;
   quantity: number;
   unitPrice: number;
@@ -204,7 +207,7 @@ export type VendorBillSummary = Pick<
   | 'vendor' | 'purchaseOrder' | 'vendorInvoiceNumber' | 'billDate' | 'dueDate'
   | 'grandTotal' | 'amountPaid' | 'balanceDue' | 'ownerEmployeeId'
   | 'createdAt' | 'updatedAt'
->;
+> & { currencyId?: number | null };
 
 /** Search request = the shared `query.Request` plus the optional global-search
  *  term the vendor bill resolver supports. */
