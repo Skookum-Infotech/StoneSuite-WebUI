@@ -23,6 +23,7 @@ import { soDefaults } from '@/lib/salesOrderForm';
 import { duplicateFrom, type DuplicateConflict } from '@/lib/salesOrderDuplicate';
 import { buildCompleteInput, learnedCustomerNote } from '@/lib/salesOrderReviewSave';
 import type { SOLineItem } from '@/lib/salesOrderForm';
+import { failureText } from '@/lib/documentExtractionMachine';
 import { ExtractionApiError, documentExtractionService } from '@/services/documentExtractionService';
 import type { ExtractedPageRows } from '@/types/documentExtraction';
 import type { SalesOrder, SalesOrderCreatePayload } from '@/types/salesOrder';
@@ -99,7 +100,7 @@ export function useSalesOrderReviewMode({ form, apply, onCustomerChange, geo }: 
       setExtras(handoff.extras);
       setDefaultsFor(handoff.customer.resolved?.id);
       markHydrated();
-    } else if (phase === 'expired' || phase === 'used' || phase === 'unavailable') {
+    } else if (phase === 'expired' || phase === 'used' || phase === 'failed' || phase === 'unavailable') {
       markHydrated();
     }
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -284,6 +285,7 @@ export function useSalesOrderReviewMode({ form, apply, onCustomerChange, geo }: 
     pending, requiredPending, blockedReason, progress, preTaxTotal, formTax, formAmounts, focus,
     banner: {
       usedRecordUuid: doc.usedRecordUuid,
+      failureMessage: phase === 'failed' ? failureText(extraction?.failureCode, extraction?.failureMessage) : '',
       aiUnavailable: (result?.extracted.warnings ?? []).includes(AI_UNAVAILABLE_WARNING),
       injection: (result?.extracted.injection ?? []).length > 0,
     },

@@ -40,6 +40,7 @@ describe('derivePhase', () => {
     ['expired keeps data', true, ready, new ExtractionApiError(404, 'gone', 'expired'), false, 'expired'],
     ['other failure', true, undefined, new ExtractionApiError(500, 'boom'), false, 'unavailable'],
     ['discarded', true, { ...ready, status: 'discarded' as const }, null, false, 'unavailable'],
+    ['failed to read', true, { ...ready, status: 'failed' as const }, null, false, 'failed'],
   ])('%s', (_n, hasId, data, error, pending, want) => {
     expect(derivePhase(hasId, data, error, pending)).toBe(want);
   });
