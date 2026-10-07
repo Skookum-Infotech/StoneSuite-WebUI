@@ -14,6 +14,9 @@ export interface ParsedAddress {
 }
 
 const CITY_STATE_ZIP = /^(.+?),?\s+([A-Za-z]{2})\.?\s+(\d{5}(?:-\d{4})?)$/;
+/** "Celina 75009" - an order form's City / Zip with no state. A box, suite or
+ *  unit line ("PO Box 75009", "Suite 12345") is never a city. */
+const CITY_ZIP = /^(?!(?:p\.?\s*o\.?\s*)?box\b|suite\b|ste\b|unit\b|apt\b|bldg\b|building\b|floor\b|fl\b)([A-Za-z][A-Za-z .'-]*?),?\s+(\d{5}(?:-\d{4})?)$/i;
 const STREET_START = /^\d/;
 
 const normalize = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -26,12 +29,18 @@ export function parseUsAddress(text: string, partyName = ''): ParsedAddress {
   const party = normalize(partyName);
   const lines = text.split(/\r?\n|;/).map((l) => l.trim()).filter(Boolean)
     .filter((l) => !party || normalize(l) !== party);
-  const last = lines.length > 0 ? CITY_STATE_ZIP.exec(lines[lines.length - 1]) : null;
+  const lastLine = lines.length > 0 ? lines[lines.length - 1] : '';
+  const last = CITY_STATE_ZIP.exec(lastLine);
+  const cityZip = last ? null : CITY_ZIP.exec(lastLine);
   if (last) {
     lines.pop();
     out.city = last[1].trim();
     out.stateCode = last[2].toUpperCase();
     out.zip = last[3];
+  } else if (cityZip && lines.length > 1) {
+    lines.pop();
+    out.city = cityZip[1].trim();
+    out.zip = cityZip[2];
   }
   const streetAt = lines.findIndex((l) => STREET_START.test(l));
   const at = streetAt >= 0 ? streetAt : 0;
@@ -66,9 +75,11 @@ export function applyAddress(data: Record<string, unknown>, items: ReviewItem[],
   if (a.zip) data[`${prefix}_zip`] = a.zip;
   const us = geo.countries.find((c) => US_CODES.includes(c.code.toUpperCase()));
   const stateId = resolveStateId(geo.states, a.stateCode, us?.id);
+  const key = prefix === 'bill' ? HEADER_KEYS.billTo : HEADER_KEYS.shipTo;
   if (stateId) data[`${prefix}_state`] = stateId;
   else if (a.stateCode) {
-    const key = prefix === 'bill' ? HEADER_KEYS.billTo : HEADER_KEYS.shipTo;
     items.push({ key, label: HEADER_LABELS[key], required: false, reason: `State "${a.stateCode}" wasn't recognized - pick the state.` });
+  } else if (a.city) {
+    items.push({ key, label: HEADER_LABELS[key], required: false, reason: 'The document gives no state - pick the state.' });
   }
 }

@@ -53,6 +53,35 @@ describe('buildSalesOrderHandoff', () => {
     expect(h.reviewItems).toContainEqual(expect.objectContaining({ key: 'shipTo', required: false }));
   });
 
+  it('maps an unpriced order form: job notes in the memo, area details on the lines', () => {
+    const h = buildSalesOrderHandoff(resultDoc({
+      header: {
+        poNumber: f(''), orderDate: f(''), total: f(''),
+        shipTo: f('418 Willow Bend\nCelina 75009'),
+        notes: f('Special instructions: NO POP-UP OUTLET\nBuilder contact: Dana Reyes'),
+      },
+      lines: [
+        line({ description: f('CALACATTA LUX'), detail: 'Kitchen - Finish POLISHED', unitPrice: f(''), amount: f(''), unitPriceCents: 0, amountCents: 0 }),
+        line({ description: f('MISTERIO'), detail: 'Island - Edge FLAT', unitPrice: f(''), amount: f(''), unitPriceCents: 0, amountCents: 0 }),
+      ],
+      matches: [match(0), match(1, { item: undefined, matchedBy: undefined })],
+      extracted: { warnings: ['no_prices', 'missing_po_number'] },
+    }), FILE);
+    expect(h.data.memo).toBe('Created from document PO-4471.pdf.\n\nSpecial instructions: NO POP-UP OUTLET\nBuilder contact: Dana Reyes');
+    expect(h.data).toMatchObject({ ship_address1: '418 Willow Bend', ship_city: 'Celina', ship_zip: '75009' });
+    expect(h.reviewItems).toContainEqual(expect.objectContaining({ key: 'shipTo', reason: 'The document gives no state - pick the state.' }));
+    expect(h.lineItems[0].itemDescription).toBe('CALACATTA LUX - Kitchen - Finish POLISHED');
+    expect(h.lineItems[1]).toMatchObject({ itemName: 'MISTERIO', itemDescription: 'MISTERIO - Island - Edge FLAT' });
+    expect(h.lines[1].docText).toContain('Island - Edge FLAT');
+    expect(h.reviewItems).toContainEqual(expect.objectContaining({ key: 'document', required: false, reason: expect.stringContaining('no prices') }));
+  });
+
+  it('keeps the plain memo and descriptions for a priced PO', () => {
+    const h = buildSalesOrderHandoff(resultDoc(), FILE);
+    expect(h.data.memo).toBe('Created from document PO-4471.pdf.');
+    expect(h.reviewItems.some((r) => r.reason.includes('no prices'))).toBe(false);
+  });
+
   it('resolved customer needs no review; unresolved one is required with candidates', () => {
     const ok = buildSalesOrderHandoff(resultDoc(), FILE);
     expect(ok.customer.resolved).toEqual({ id: 'cust-1', name: 'ACME Stone' });

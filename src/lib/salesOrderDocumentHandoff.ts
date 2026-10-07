@@ -13,6 +13,7 @@ const WRONG_TYPE_PREFIX = 'document_looks_like_';
 const WARN_NOT_RECOGNIZED = 'document_not_recognized';
 const WARN_NO_LINE_TABLE = 'no_line_table';
 const WARN_MISSING_PO = 'missing_po_number';
+const WARN_NO_PRICES = 'no_prices';
 /** Markers that introduce an add-on row on a PO ("+ Sink cutout", "w/ Installation"). */
 const ADDON_MARKER = /^\s*(?:\+|w\/|with\s|add\s)\s*/i;
 const LINE_FLAG_PRICE_DIFFERS = 'price_differs_from_catalog';
@@ -88,7 +89,7 @@ export function stripAddonMarker(text: string, kind: ExtractedLine['kind']): str
 }
 
 function lineDocText(l: ExtractedLine): string {
-  return [l.sku.value, l.description.value].filter(Boolean).join(' - ');
+  return [l.sku.value, l.description.value, l.detail].filter(Boolean).join(' - ');
 }
 
 interface BuiltLine {
@@ -142,9 +143,10 @@ function buildLine(
     unitPrice: money(price),
   };
   const description = stripAddonMarker(l.description.value, l.kind);
+  const fullDescription = [description, l.detail].filter(Boolean).join(' - ');
   const row = usable
-    ? { ...base, itemName: item.name, itemSku: item.sku, itemDescription: description, units: item.unitCode, inventoryItemUuid: item.uuid }
-    : { ...base, itemName: description || l.sku.value, itemSku: l.sku.value, itemDescription: description, units: l.uom.value };
+    ? { ...base, itemName: item.name, itemSku: item.sku, itemDescription: fullDescription, units: item.unitCode, inventoryItemUuid: item.uuid }
+    : { ...base, itemName: description || l.sku.value, itemSku: l.sku.value, itemDescription: fullDescription, units: l.uom.value };
   const calc = calcLineItem(row);
   return {
     item: { ...row, ...calc, id: docLineId(docIndex), lineNo },
@@ -239,7 +241,7 @@ export function buildSalesOrderHandoff(doc: ExtractionResultDoc, fileName: strin
     data.ship_same_as_bill = false;
     applyAddress(data, reviewItems, 'ship', h.shipTo.value, h.customerName.value, geo);
   }
-  data.memo = noteFor(fileName, ex.revision);
+  data.memo = [noteFor(fileName, ex.revision), h.notes?.value].filter(Boolean).join('\n\n');
 
   const shipping = parseMoney(h.shipping.value);
   const discount = parseMoney(h.discount.value);
@@ -286,6 +288,9 @@ export function buildSalesOrderHandoff(doc: ExtractionResultDoc, fileName: strin
     reviewItems.push({ key: 'document', label: 'Document', required: false, reason: "This doesn't look like a purchase order - no item table, PO number or customer was found. Check you uploaded the right file." });
   } else if (warnings.includes(WARN_NO_LINE_TABLE) && order.length === 0) {
     reviewItems.push({ key: 'document', label: 'Document', required: false, reason: 'No item table was found in the document - add the lines below by hand.' });
+  }
+  if (warnings.includes(WARN_NO_PRICES)) {
+    reviewItems.push({ key: 'document', label: 'Document', required: false, reason: 'This order form has no prices - set the price on each line.' });
   }
   if (warnings.includes(WARN_MISSING_PO) && !h.poNumber.value) {
     reviewItems.push({ key: HEADER_KEYS.poNumber, label: HEADER_LABELS.poNumber, required: false, reason: 'No PO number was found in the document - enter it if the customer gave one.' });

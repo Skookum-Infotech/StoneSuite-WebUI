@@ -65,6 +65,9 @@ export interface ExtractedLine {
   unitPriceCents: number;
   amountCents: number;
   flags?: string[];
+  /** Extra description that isn't part of the item name (an order form
+   *  area's finish, edge, cutouts); never used to match the item. */
+  detail?: string;
 }
 
 /** docextract.Header. */
@@ -82,6 +85,9 @@ export interface ExtractedHeader {
   discount: ExtractedField;
   total: ExtractedField;
   currency: ExtractedField;
+  /** Job notes for the order memo (an order form's special instructions and
+   *  builder contact). Absent on results stored before it existed. */
+  notes?: ExtractedField;
 }
 
 export interface ExtractedRevision {
