@@ -120,11 +120,14 @@ export const invoiceService = {
   // Only accepts a positive `amount` — the backend has no date/method fields
   // for a recorded payment (spec §12). Rejected with 409 unless the invoice
   // is currently SENT/PART/ODUE, and rejected if it would overpay.
-  recordPayment: (uuid: string, amount: number): Promise<Invoice> =>
+  // `idempotencyKey` is sent as the Idempotency-Key header so a retry of the
+  // same payment returns the recorded result instead of recording it twice.
+  recordPayment: (uuid: string, amount: number, idempotencyKey?: string): Promise<Invoice> =>
     tenantClient
       .post<{ success: boolean; invoice: Invoice }>(
         `${BASE}/${uuid}/payment`,
         { amount },
+        idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
       )
       .then((r) => r.data.invoice),
 
