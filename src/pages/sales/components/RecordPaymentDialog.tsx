@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { DollarSign } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '@/services/invoiceService';
+import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { fieldCls } from '@/components/crm/formUtils';
 import { INVOICE_PAYABLE_STATUSES } from '@/lib/invoiceForm';
@@ -20,12 +21,18 @@ export function RecordPaymentDialog({ invoiceId, statusCode, balanceDue, onRecor
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const queryClient = useQueryClient();
+  const paymentKey = useIdempotencyKey();
 
   const payable = INVOICE_PAYABLE_STATUSES.has(statusCode);
 
   const record = useMutation({
-    mutationFn: () => invoiceService.recordPayment(invoiceId, parseFloat(amount)),
+    // A retry of the same amount (after a timeout) reuses the key, so the server
+    // returns the payment the first attempt recorded instead of a duplicate.
+    mutationFn: () => invoiceService.recordPayment(
+      invoiceId, parseFloat(amount), paymentKey.keyFor(`${invoiceId}:${amount}`),
+    ),
     onSuccess: () => {
+      paymentKey.reset();
       setOpen(false);
       setAmount('');
       queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
