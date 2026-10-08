@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
@@ -11,7 +11,10 @@ import { cn } from '@/lib/utils';
 // unread-reply poll, cheap enough to run continuously while a session is
 // open.
 const UNREAD_POLL_MS = 60_000;
-const LIST_LIMIT = 10;
+// Fetch enough to cover the expanded view; only COLLAPSED_COUNT rows are
+// shown until the user clicks "N more".
+const LIST_LIMIT = 30;
+const COLLAPSED_COUNT = 3;
 
 const SUMMARY_KEY = ['notifications-summary'];
 const LIST_KEY = ['notifications-list'];
@@ -28,6 +31,12 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
+
+  // Always reopen collapsed to the 3 most recent.
+  useEffect(() => {
+    if (!open) setExpanded(false);
+  }, [open]);
 
   const enabled = isAuthenticated;
 
@@ -90,6 +99,10 @@ export function NotificationBell() {
 
   if (!enabled) return null;
 
+  const items = listQ.data ?? [];
+  const visible = expanded ? items : items.slice(0, COLLAPSED_COUNT);
+  const hiddenCount = items.length - COLLAPSED_COUNT;
+
   return (
     <div className="relative">
       <button
@@ -145,7 +158,7 @@ export function NotificationBell() {
             {listQ.data?.length === 0 && (
               <p className="px-3 py-4 text-center text-2xs text-stone-500">You're all caught up.</p>
             )}
-            {listQ.data?.map((n) => (
+            {visible.map((n) => (
               <button
                 key={n.id}
                 type="button"
@@ -171,6 +184,25 @@ export function NotificationBell() {
                 </span>
               </button>
             ))}
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                className="flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 text-2xs font-medium text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 cursor-pointer"
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="size-3" />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="size-3" />
+                    {hiddenCount} more {hiddenCount === 1 ? 'notification' : 'notifications'}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}
