@@ -21,6 +21,9 @@ import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill'
 import type { VendorCreditSearchRequest } from '@/types/vendorCredit';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
+// Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
+const PHONE_COLUMNS = new Set([0, 1, 2, 6]);
+
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
 
@@ -294,19 +297,19 @@ export function VendorCreditTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[980px] text-left text-xs">
+          <table className="w-full sm:min-w-[980px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Reason</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Reason</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Credit Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Owner</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Unapplied</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -315,7 +318,7 @@ export function VendorCreditTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -324,7 +327,7 @@ export function VendorCreditTable() {
                   const ownerName = credit.ownerEmployeeId ? employeeNames.get(String(credit.ownerEmployeeId)) : undefined;
                   return (
                     <tr key={credit.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/vendor_credit/${credit.id}`)}
@@ -333,10 +336,10 @@ export function VendorCreditTable() {
                           {credit.vendorCreditNumber || '—'}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
                         {credit.vendor?.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         {isSuperAdmin ? (
                           <VendorCreditStatusControl
                             order={{ statusCode: credit.statusCode }}
@@ -348,23 +351,23 @@ export function VendorCreditTable() {
                           <ReadOnlyStatusPill label={credit.status} color={VC_STATUS_COLORS[credit.statusCode]} />
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[200px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[200px] max-sm:hidden">
                         {credit.reason || '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(credit.creditDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
                         {ownerName ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(credit.grandTotal)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap max-sm:hidden">
                         {currency(credit.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           {VC_EDITABLE_STATUSES.has(credit.statusCode) ? (
                             <button
                               type="button"

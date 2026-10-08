@@ -19,6 +19,9 @@ import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill'
 import type { VendorPaymentSearchRequest } from '@/types/vendorPayment';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
+// Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
+const PHONE_COLUMNS = new Set([0, 1, 2, 6]);
+
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
 
@@ -283,19 +286,19 @@ export function VendorPaymentTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[1020px] text-left text-xs">
+          <table className="w-full sm:min-w-[1020px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Method</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Payment #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Approval</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Method</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Payment Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Unapplied</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -304,7 +307,7 @@ export function VendorPaymentTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -313,7 +316,7 @@ export function VendorPaymentTable() {
                   const approvalLabel = APPROVAL_LABELS[payment.approvalStatus];
                   return (
                     <tr key={payment.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/vendor_payment/${payment.id}`)}
@@ -322,13 +325,13 @@ export function VendorPaymentTable() {
                           {payment.vendorPaymentNumber || '—'}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
                         {payment.vendor?.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <ReadOnlyStatusPill label={payment.status} color={VP_STATUS_COLORS[payment.statusCode]} />
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
                           <span
                             className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
@@ -341,20 +344,20 @@ export function VendorPaymentTable() {
                           <span className="text-2xs text-stone-300">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 whitespace-nowrap max-sm:hidden">
                         {payment.method || '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(payment.paymentDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(payment.amount)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap max-sm:hidden">
                         {currency(payment.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           {VP_EDITABLE_STATUSES.has(payment.statusCode) ? (
                             <button
                               type="button"

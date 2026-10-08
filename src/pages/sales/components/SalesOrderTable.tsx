@@ -240,16 +240,16 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[640px] text-left text-xs">
+          <table className="w-full sm:min-w-[640px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Order #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Order Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Order #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Order Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Amount</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -257,19 +257,19 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    {canEdit && <td className="px-4 py-3" />}
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    {canEdit && <td className="px-4 max-sm:px-2 py-3 max-sm:hidden" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
                 records.map((order) => {
                   return (
                     <tr key={order.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <button
                           type="button"
                           onClick={() => navigate(`/sales/sales_order/${order.id}`)}
@@ -278,10 +278,10 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
                           {order.salesOrderNumber || '—'}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
                         {order.customer?.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <SalesOrderStatusControl
                           order={{ statusCode: order.statusCode ?? '', approvalStatus: order.approvalStatus ?? 'none', nextStatusCodes: order.nextStatusCodes }}
                           onChange={(code) => transition.mutate({ id: order.id, toStatusCode: code })}
@@ -289,16 +289,16 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
                           variant="pill"
                         />
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {order.orderDate
                           ? formatDateValue(order.orderDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(order.grandTotal)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/sales/sales_order/${order.id}/edit`)}

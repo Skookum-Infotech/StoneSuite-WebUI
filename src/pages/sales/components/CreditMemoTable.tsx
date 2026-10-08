@@ -228,19 +228,19 @@ export function CreditMemoTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[820px] text-left text-xs">
+          <table className="w-full sm:min-w-[820px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit Memo #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Reason</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Grand Total</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Applied Total</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unapplied Amount</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Credit Memo #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Customer</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Reason</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Grand Total</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Applied Total</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Unapplied Amount</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -248,15 +248,15 @@ export function CreditMemoTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    <td className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
-                    {canEdit && <td className="px-4 py-3" />}
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-36" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-20" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-24" /></td>
+                    <td className="px-4 max-sm:px-2 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    <td className="px-4 max-sm:px-2 py-3 max-sm:hidden"><div className="animate-pulse h-3 rounded bg-stone-100 w-16 ml-auto" /></td>
+                    {canEdit && <td className="px-4 max-sm:px-2 py-3 max-sm:hidden" />}
                   </tr>
                 ))
               ) : records.length > 0 ? (
@@ -264,7 +264,7 @@ export function CreditMemoTable() {
                   const color = CREDIT_MEMO_STATUS_COLORS[cm.status] ?? '#a8a29e';
                   return (
                     <tr key={cm.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <button
                           type="button"
                           onClick={() => navigate(`/sales/credit_memo/${cm.id}`)}
@@ -273,15 +273,15 @@ export function CreditMemoTable() {
                           {cm.creditMemoNumber || '—'}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {cm.creditMemoDate
                           ? formatDateValue(cm.creditMemoDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
                         {cm.customer?.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <span
                           className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
                           style={{ backgroundColor: `${color}18` }}
@@ -290,20 +290,20 @@ export function CreditMemoTable() {
                           {cm.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-600 truncate max-w-[160px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-600 truncate max-w-[160px] max-sm:hidden">
                         {cm.reason || <span className="text-stone-300">—</span>}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(cm.grandTotal)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap max-sm:hidden">
                         {currency(cm.appliedTotal)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-medium text-stone-600 tabular-nums text-right whitespace-nowrap max-sm:hidden">
                         {currency(cm.unappliedAmount)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/sales/credit_memo/${cm.id}/edit`)}
