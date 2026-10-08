@@ -12,7 +12,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { SalesOrderStatusControl } from './SalesOrderStatusControl';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { SalesOrderSearchRequest } from '@/types/salesOrder';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 // Larger page size for CSV export — fewer round trips while paging through
 // every matching record (vs. the 25-row page size used for on-screen browsing).
@@ -273,7 +273,7 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
                         <button
                           type="button"
                           onClick={() => navigate(`/sales/sales_order/${order.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {order.salesOrderNumber || '—'}
                         </button>
@@ -291,7 +291,7 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {order.orderDate
-                          ? formatDateValue(order.orderDate, undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(order.orderDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">

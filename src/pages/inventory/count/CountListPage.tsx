@@ -8,13 +8,13 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Badge } from '@/components/tenant/ui';
 import { docStatusLabel, DOC_STATUS_COLORS } from '@/lib/inventoryDocumentStatus';
 import type { CountSearchRequest } from '@/services/inventoryCountService';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const PAGE_SIZE = 25;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export default function CountListPage() {

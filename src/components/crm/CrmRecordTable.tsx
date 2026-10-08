@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { crmService, CRM_WORKFLOW_KEYS } from '@/services/crmService';
 import { userService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -457,9 +458,7 @@ export function CrmRecordTable({ config }: Props) {
                         <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">{email}</td>
                       )}
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
-                        {new Date(record.createdAt).toLocaleDateString(undefined, {
-                          year: '2-digit', month: 'short', day: 'numeric',
-                        })}
+                        {new Date(record.createdAt).toLocaleDateString(undefined, LIST_DATE_OPTIONS)}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">

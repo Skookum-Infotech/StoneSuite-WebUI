@@ -23,6 +23,26 @@ describe('parseUsAddress', () => {
       text: 'PO Box 9\nSomewhere', party: '',
       want: { address1: 'PO Box 9', address2: 'Somewhere', city: '', stateCode: '', zip: '' },
     },
+    {
+      name: 'order form city and zip with no state',
+      text: '418 Willow Bend\nCelina 75009', party: '',
+      want: { address1: '418 Willow Bend', address2: '', city: 'Celina', stateCode: '', zip: '75009' },
+    },
+    {
+      name: 'a lone city-and-zip line stays the street line',
+      text: 'Celina 75009', party: '',
+      want: { address1: 'Celina 75009', address2: '', city: '', stateCode: '', zip: '' },
+    },
+    {
+      name: 'a PO box line is not a city',
+      text: '123 Main St\nPO Box 75009', party: '',
+      want: { address1: '123 Main St', address2: 'PO Box 75009', city: '', stateCode: '', zip: '' },
+    },
+    {
+      name: 'a suite line is not a city',
+      text: 'Smith Residence\nSuite 12345', party: '',
+      want: { address1: 'Smith Residence', address2: 'Suite 12345', city: '', stateCode: '', zip: '' },
+    },
     { name: 'empty', text: '', party: 'x', want: { address1: '', address2: '', city: '', stateCode: '', zip: '' } },
   ])('$name', ({ text, party, want }) => {
     expect(parseUsAddress(text, party)).toEqual(want);

@@ -17,7 +17,7 @@ import {
 } from '@/lib/journalEntryFilters';
 import { JournalEntryFilterDrawer } from './JournalEntryFilterDrawer';
 import type { JournalEntrySearchRequest } from '@/types/journalEntry';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -47,7 +47,7 @@ const SORT_KEY: Record<SortField, string> = {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 function currency(n: number): string {
@@ -302,7 +302,7 @@ export function JournalEntryTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/finance/journal-entries/${je.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {je.transferNumber || '—'}
                         </button>
