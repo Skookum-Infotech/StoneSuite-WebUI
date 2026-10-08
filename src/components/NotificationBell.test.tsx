@@ -17,6 +17,7 @@ vi.mock('@/services/notificationService', () => ({
 import { NotificationBell } from './NotificationBell';
 import { useAuthStore } from '@/store/useAuthStore';
 import { notificationService } from '@/services/notificationService';
+import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 
 function mockAuth(state: { isAuthenticated: boolean; kind?: 'portal' }) {
   vi.mocked(useAuthStore).mockImplementation((selector) =>
@@ -33,7 +34,10 @@ function renderBell(client = new QueryClient({ defaultOptions: { queries: { retr
   return render(<NotificationBell />, { wrapper });
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  useHeaderMenuStore.getState().setOpenMenu(null);
+});
 
 describe('NotificationBell', () => {
   it('renders for a portal (customer) session, not just staff', async () => {
@@ -86,5 +90,44 @@ describe('NotificationBell', () => {
     fireEvent.click(toggle); // re-open, well within the 2-minute staleTime window
 
     await waitFor(() => expect(notificationService.list).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows only the 3 newest, expands via "N more", and collapses again on reopen', async () => {
+    mockAuth({ isAuthenticated: true, kind: undefined });
+    vi.mocked(notificationService.unreadCount).mockResolvedValue(0);
+    const rows = Array.from({ length: 8 }, (_, i) => ({
+      id: `n${i}`,
+      title: `Note ${i}`,
+      createdAt: new Date().toISOString(),
+    }));
+    vi.mocked(notificationService.list).mockResolvedValue(rows as never);
+    renderBell();
+
+    const toggle = await screen.findByRole('button', { name: /notifications/i });
+    fireEvent.click(toggle);
+
+    expect(await screen.findByText('Note 2')).toBeInTheDocument();
+    expect(screen.queryByText('Note 3')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /5 more notifications/i }));
+    expect(screen.getByText('Note 7')).toBeInTheDocument();
+
+    fireEvent.click(toggle); // close
+    fireEvent.click(toggle); // reopen
+    expect(await screen.findByText('Note 2')).toBeInTheDocument();
+    expect(screen.queryByText('Note 3')).not.toBeInTheDocument();
+  });
+
+  it('shows no "more" row when there are 3 or fewer notifications', async () => {
+    mockAuth({ isAuthenticated: true, kind: undefined });
+    vi.mocked(notificationService.unreadCount).mockResolvedValue(0);
+    vi.mocked(notificationService.list).mockResolvedValue(
+      [{ id: 'a', title: 'Only one', createdAt: new Date().toISOString() }] as never,
+    );
+    renderBell();
+
+    fireEvent.click(await screen.findByRole('button', { name: /notifications/i }));
+    expect(await screen.findByText('Only one')).toBeInTheDocument();
+    expect(screen.queryByText(/more notification/i)).not.toBeInTheDocument();
   });
 });
