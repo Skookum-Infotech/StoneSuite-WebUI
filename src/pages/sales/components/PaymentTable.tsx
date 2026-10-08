@@ -10,6 +10,8 @@ import { paymentService } from '@/services/paymentService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { PaymentStatusControl } from './PaymentStatusControl';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { PAYMENT_STATUS_COLORS } from '@/lib/paymentForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { PaymentSearchRequest } from '@/types/payment';
 import { formatDateValue } from '@/lib/dateUtils';
@@ -43,11 +45,12 @@ export function PaymentTable() {
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('payment', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation.
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves a payment from its Detail
+  // page. Mirrors the Edit page's transition mutation.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => paymentService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -274,12 +277,16 @@ export function PaymentTable() {
                         {p.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <PaymentStatusControl
-                          payment={{ statusCode: p.statusCode, approvalStatus: p.approvalStatus ?? 'none' }}
-                          onChange={(code) => transition.mutate({ id: p.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === p.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <PaymentStatusControl
+                            payment={{ statusCode: p.statusCode, approvalStatus: p.approvalStatus ?? 'none' }}
+                            onChange={(code) => transition.mutate({ id: p.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === p.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={p.status} color={PAYMENT_STATUS_COLORS[p.status]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {p.paymentDate

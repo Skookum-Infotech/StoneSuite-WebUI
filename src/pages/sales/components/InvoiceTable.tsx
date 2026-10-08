@@ -12,6 +12,8 @@ import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { InvoiceStatusControl } from './InvoiceStatusControl';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { InvoiceSearchRequest } from '@/types/invoice';
 import { formatDateValue } from '@/lib/dateUtils';
@@ -48,11 +50,12 @@ export function InvoiceTable() {
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('invoice', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation.
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves an invoice from its Detail
+  // page. Mirrors the Edit page's transition mutation.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => invoiceService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -285,12 +288,16 @@ export function InvoiceTable() {
                         {inv.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <InvoiceStatusControl
-                          invoice={{ statusCode: inv.statusCode, approvalStatus: inv.approvalStatus ?? 'none', nextStatusCodes: inv.nextStatusCodes }}
-                          onChange={(code) => transition.mutate({ id: inv.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === inv.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <InvoiceStatusControl
+                            invoice={{ statusCode: inv.statusCode, approvalStatus: inv.approvalStatus ?? 'none', nextStatusCodes: inv.nextStatusCodes }}
+                            onChange={(code) => transition.mutate({ id: inv.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === inv.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={inv.status} color={INVOICE_STATUS_COLORS[inv.status]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {inv.invoiceDate

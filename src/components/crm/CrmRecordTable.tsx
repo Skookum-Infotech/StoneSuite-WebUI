@@ -87,13 +87,20 @@ export function CrmRecordTable({ config }: Props) {
 
   // Show the Edit action while permissions are still loading (avoids a flash
   // of a hidden button), then hide it once we know the user lacks update rights.
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission(config.workflowKey, 'update');
 
-  // Inline status change from the list row's status pill. Mirrors the Edit
-  // page's transition mutation (see EditLeadPage.tsx) — persists the moment a
-  // status is picked, no separate save. A converting transition (e.g. Lead ->
-  // Prospect) navigates to the new record, same as the Edit page does today.
+  // The list row's status is a dropdown only for a super admin; everyone else
+  // sees a plain badge and moves a lead or prospect from its Detail or Edit
+  // page. A customer's status is changed with the Quick Action buttons on its
+  // detail page, never from a dropdown, so its row is a badge for everyone.
+  const canChangeStatusInList = isSuperAdmin && config.workflowKey !== CRM_WORKFLOW_KEYS.CUSTOMER;
+
+  // Inline status change from the list row's status pill (see
+  // canChangeStatusInList). Mirrors the Edit page's transition mutation (see
+  // EditLeadPage.tsx) — persists the moment a status is picked, no separate
+  // save. A converting transition (e.g. Lead -> Prospect) navigates to the new
+  // record, same as the Edit page does today.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStateId: string }) =>
       crmService.transitionRecord(vars.id, vars.toStateId, config.workflowKey),
@@ -428,10 +435,7 @@ export function CrmRecordTable({ config }: Props) {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        {statusInfo && config.workflowKey === CRM_WORKFLOW_KEYS.CUSTOMER ? (
-                          // A customer's status is changed with the Quick Action
-                          // buttons on its detail page, never from a dropdown, so
-                          // the list shows it as a plain badge.
+                        {statusInfo && !canChangeStatusInList ? (
                           <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
                         ) : statusInfo ? (
                           <StatusDropdown

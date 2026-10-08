@@ -10,6 +10,8 @@ import { refundService } from '@/services/refundService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { RefundStatusControl } from './RefundStatusControl';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { REFUND_STATUS_COLORS } from '@/lib/refundForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { RefundSearchRequest } from '@/types/refund';
 import { formatDateValue } from '@/lib/dateUtils';
@@ -46,11 +48,12 @@ export function RefundTable() {
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('refund', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation.
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves a refund from its Detail
+  // page. Mirrors the Edit page's transition mutation.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => refundService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -288,12 +291,16 @@ export function RefundTable() {
                         {r.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3.5">
-                        <RefundStatusControl
-                          refund={{ statusCode: r.statusCode, approvalStatus: r.approvalStatus ?? 'none' }}
-                          onChange={(code) => transition.mutate({ id: r.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === r.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <RefundStatusControl
+                            refund={{ statusCode: r.statusCode, approvalStatus: r.approvalStatus ?? 'none' }}
+                            onChange={(code) => transition.mutate({ id: r.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === r.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={r.status} color={REFUND_STATUS_COLORS[r.status]} />
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {r.refundDate
