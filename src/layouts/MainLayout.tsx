@@ -17,6 +17,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles';
 import { useExitConfirmation } from '@/hooks/useExitConfirmation';
 import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { CUSTOMER_ALLOWED_PATH_PREFIXES } from '@/config/customerPortal';
 import { formatBreadcrumbSegment, isRegisteredPath } from '@/lib/breadcrumb';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
@@ -59,6 +60,7 @@ export default function MainLayout(): React.JSX.Element {
   const roles = useCurrentUserRoles();
   const queryClient = useQueryClient();
   const location = useLocation();
+  useDocumentTitle(location.pathname, breadcrumbLabels);
   const navigate = useNavigate();
   // The route table of the router this layout is mounted in. The router module
   // imports this layout, so it cannot be imported back here (circular); and

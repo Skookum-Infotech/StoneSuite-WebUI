@@ -14,7 +14,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { InvoiceStatusControl } from './InvoiceStatusControl';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { InvoiceSearchRequest } from '@/types/invoice';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -276,7 +276,7 @@ export function InvoiceTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/sales/invoice/${inv.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {inv.invoiceNumber || '—'}
                         </button>
@@ -294,7 +294,7 @@ export function InvoiceTable() {
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {inv.invoiceDate
-                          ? formatDateValue(inv.invoiceDate, undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(inv.invoiceDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">

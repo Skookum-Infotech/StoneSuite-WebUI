@@ -35,6 +35,10 @@ export function formatDisplayDate(iso: string): string {
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+/** Date format for list and table columns, e.g. "Aug 19, 2026". A four-digit year
+ *  keeps "Sep 5, 30" from being read as 2030 or 1930. */
+export const LIST_DATE_OPTIONS: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+
 /** Parse a date value from the API. A Postgres DATE -- a bare `yyyy-mm-dd`,
  *  or the exact-UTC-midnight form the Go modules emit via time.Time
  *  (`2026-01-02T00:00:00Z`) -- becomes local midnight on that calendar day via

@@ -12,7 +12,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { PaymentStatusControl } from './PaymentStatusControl';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { PaymentSearchRequest } from '@/types/payment';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -265,7 +265,7 @@ export function PaymentTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/sales/payment/${p.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {p.paymentNumber || '—'}
                         </button>
@@ -283,7 +283,7 @@ export function PaymentTable() {
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {p.paymentDate
-                          ? formatDateValue(p.paymentDate, undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(p.paymentDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">

@@ -12,7 +12,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { CREDIT_MEMO_STATUS_COLORS } from '@/lib/creditMemoForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { CreditMemoSearchRequest } from '@/types/creditMemo';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -268,14 +268,14 @@ export function CreditMemoTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/sales/credit_memo/${cm.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {cm.creditMemoNumber || '—'}
                         </button>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
                         {cm.creditMemoDate
-                          ? formatDateValue(cm.creditMemoDate, undefined, { year: '2-digit', month: 'short', day: 'numeric' })
+                          ? formatDateValue(cm.creditMemoDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
