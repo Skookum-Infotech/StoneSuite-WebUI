@@ -19,7 +19,7 @@ import { VendorBillStatusControl } from './VendorBillStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import { VB_STATUS_COLORS } from '@/lib/vendorBillForm';
 import type { VendorBillSearchRequest } from '@/types/vendorBill';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 
 const EXPORT_PAGE_SIZE = 200;
@@ -63,7 +63,7 @@ const APPROVAL_COLORS: Record<string, string> = {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode }) {
@@ -337,7 +337,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/vendor_bill/${bill.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {bill.vendorBillNumber || '—'}
                         </button>

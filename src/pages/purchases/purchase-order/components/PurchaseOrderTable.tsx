@@ -19,7 +19,7 @@ import { PurchaseOrderStatusControl } from './PurchaseOrderStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -62,7 +62,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactNode }) {
@@ -331,7 +331,7 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/purchase_order/${po.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {po.purchaseOrderNumber || '—'}
                         </button>

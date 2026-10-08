@@ -462,8 +462,8 @@ export const INVOICE_STATUS_COLORS: Record<string, string> = {
   Void: '#78716c',
 };
 
-/** Statuses `invoiceService.recordPayment` will accept (invoice/store.go
- *  `payableStatuses`) — an invoice must be sent before it can take money. */
+/** Statuses a payment can be recorded against (invoice/store.go `payableStatuses`) —
+ *  an invoice must be sent before it can take money. */
 export const INVOICE_PAYABLE_STATUSES = new Set(['SENT', 'PART', 'ODUE']);
 
 /** Statuses `invoiceService.updateInvoice` rejects edits against

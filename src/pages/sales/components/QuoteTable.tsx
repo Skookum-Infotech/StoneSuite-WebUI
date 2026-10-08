@@ -12,7 +12,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { QuoteStatusControl } from './QuoteStatusControl';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { QuoteSearchRequest } from '@/types/quote';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -45,7 +45,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
-  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export function QuoteTable() {
@@ -275,7 +275,7 @@ export function QuoteTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/sales/quote/${q.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {q.quoteNumber || '—'}
                         </button>

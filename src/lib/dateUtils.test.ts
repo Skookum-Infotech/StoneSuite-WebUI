@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { toISODate, fromISODate, formatDisplayDate, parseDateValue, formatDateValue, datePart } from './dateUtils';
+import { toISODate, fromISODate, formatDisplayDate, parseDateValue, formatDateValue, datePart, LIST_DATE_OPTIONS } from './dateUtils';
 
 describe('toISODate', () => {
   it.each([
@@ -52,7 +52,7 @@ describe('formatDisplayDate', () => {
 // Pinned to a zone west of UTC, where a bare `yyyy-mm-dd` parsed by `new Date`
 // (UTC midnight) renders as the previous day. Node re-reads TZ on assignment.
 describe('date values in America/Chicago', () => {
-  const SHORT: Intl.DateTimeFormatOptions = { year: '2-digit', month: 'short', day: 'numeric' };
+  const SHORT: Intl.DateTimeFormatOptions = LIST_DATE_OPTIONS;
   let originalTZ: string | undefined;
 
   beforeAll(() => {
@@ -110,20 +110,30 @@ describe('date values in America/Chicago', () => {
     it('formats on the stored day where new Date would slip a day', () => {
       const value = '2026-01-02T00:00:00Z';
       expect(new Date(value).getDate()).toBe(1);
-      expect(formatDateValue(datePart(value), 'en-US', SHORT)).toBe('Jan 2, 26');
+      expect(formatDateValue(datePart(value), 'en-US', SHORT)).toBe('Jan 2, 2026');
     });
   });
 
   describe('formatDateValue', () => {
     it.each([
-      ['a sales-order date-only value', '2026-01-02', 'en-US', SHORT, 'Jan 2, 26'],
+      ['a sales-order date-only value', '2026-01-02', 'en-US', SHORT, 'Jan 2, 2026'],
       ['a long-form date-only value', '2026-12-31', 'en-US', { year: 'numeric', month: 'short', day: 'numeric' } as const, 'Dec 31, 2026'],
-      ['a payment date sent as UTC midnight', '2026-01-02T00:00:00Z', 'en-US', SHORT, 'Jan 2, 26'],
-      ['a UTC timestamp just after midnight', '2026-01-02T03:00:00Z', 'en-US', SHORT, 'Jan 1, 26'],
+      ['a payment date sent as UTC midnight', '2026-01-02T00:00:00Z', 'en-US', SHORT, 'Jan 2, 2026'],
+      ['a UTC timestamp just after midnight', '2026-01-02T03:00:00Z', 'en-US', SHORT, 'Jan 1, 2026'],
       ['an empty value', '', 'en-US', SHORT, ''],
       ['an unparseable value', 'nope', 'en-US', SHORT, ''],
     ])('%s', (_name, value, locale, options, expected) => {
       expect(formatDateValue(value, locale, options)).toBe(expected);
     });
+  });
+});
+
+describe('LIST_DATE_OPTIONS', () => {
+  it.each([
+    ['a current-century date', '2026-09-05', 'Sep 5, 2026'],
+    ['a far-future date a two-digit year would blur', '2030-09-05', 'Sep 5, 2030'],
+    ['a last-century date a two-digit year would blur', '1997-08-16', 'Aug 16, 1997'],
+  ])('keeps the full year for %s', (_name, iso, expected) => {
+    expect(formatDateValue(iso, 'en-US', LIST_DATE_OPTIONS)).toBe(expected);
   });
 });

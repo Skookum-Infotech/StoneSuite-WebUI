@@ -19,7 +19,7 @@ import { VendorCreditFilterDrawer } from './VendorCreditFilterDrawer';
 import { VendorCreditStatusControl } from './VendorCreditStatusControl';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import type { VendorCreditSearchRequest } from '@/types/vendorCredit';
-import { formatDateValue } from '@/lib/dateUtils';
+import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
@@ -58,7 +58,7 @@ function currency(n: number | undefined): string {
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—';
-  return formatDateValue(iso, undefined, { year: '2-digit', month: 'short', day: 'numeric' });
+  return formatDateValue(iso, undefined, LIST_DATE_OPTIONS);
 }
 
 export function VendorCreditTable() {
@@ -328,7 +328,7 @@ export function VendorCreditTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/vendor_credit/${credit.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {credit.vendorCreditNumber || '—'}
                         </button>
