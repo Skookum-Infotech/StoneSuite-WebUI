@@ -19,6 +19,9 @@ import { ItemReceiptFilterDrawer } from './ItemReceiptFilterDrawer';
 import type { ItemReceiptSearchRequest } from '@/types/itemReceipt';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
+// Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
+const PHONE_COLUMNS = new Set([0, 2, 3]);
+
 const EXPORT_PAGE_SIZE = 200;
 
 // Item Receipts are a dedicated relational module, not a generic CRM/JSONB
@@ -261,18 +264,18 @@ export function ItemReceiptTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[920px] text-left text-xs">
+          <table className="w-full sm:min-w-[920px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Receipt #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">PO #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Receipt Date</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Receipt #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">PO #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Receipt Date</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Location</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Owner</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -281,7 +284,7 @@ export function ItemReceiptTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 8 : 7 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -292,7 +295,7 @@ export function ItemReceiptTable() {
                   const editable = canEdit && IR_EDITABLE_STATUSES.has(ir.statusCode);
                   return (
                     <tr key={ir.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/item_receipt/${ir.id}`)}
@@ -301,13 +304,13 @@ export function ItemReceiptTable() {
                           {ir.itemReceiptNumber || '—'}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 max-sm:hidden">
                         {ir.purchaseOrder?.number ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">
                         {ir.vendor?.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <span
                           className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
                           style={{ backgroundColor: `${color}18` }}
@@ -316,17 +319,17 @@ export function ItemReceiptTable() {
                           {ir.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(ir.receiptDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
                         {ir.warehouseName || '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
                         {ownerName ?? '—'}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           {editable && (
                             <button
                               type="button"

@@ -21,6 +21,9 @@ import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill'
 import type { RequisitionSearchRequest } from '@/types/requisition';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
+// Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
+const PHONE_COLUMNS = new Set([0, 1, 3, 8]);
+
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
 
@@ -302,20 +305,20 @@ export function RequisitionTable() {
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full min-w-[980px] text-left text-xs">
+          <table className="w-full sm:min-w-[980px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Requisition #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Requested By</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Department</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Approval</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Priority</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Needed By</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Suggested Vendor</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Est. Total</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Requisition #</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Requested By</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Department</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Approval</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Priority</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Needed By</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Suggested Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Est. Total</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
                 )}
               </tr>
             </thead>
@@ -324,7 +327,7 @@ export function RequisitionTable() {
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
                     {Array.from({ length: canEdit ? 10 : 9 }, (_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
+                      <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
                 ))
@@ -337,7 +340,7 @@ export function RequisitionTable() {
                   const priorityColor = PRIORITY_COLORS[reqn.priority] ?? '#a8a29e';
                   return (
                     <tr key={reqn.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/requisition/${reqn.id}`)}
@@ -350,13 +353,13 @@ export function RequisitionTable() {
                           )}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
                         {requesterName ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[120px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[120px] max-sm:hidden">
                         {reqn.department || '—'}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5">
                         {isSuperAdmin ? (
                           <RequisitionStatusControl
                             order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, nextStatusCodes: reqn.nextStatusCodes }}
@@ -368,7 +371,7 @@ export function RequisitionTable() {
                           <ReadOnlyStatusPill label={reqn.status} color={REQUISITION_STATUS_COLORS[reqn.statusCode]} />
                         )}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
                           <span
                             className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
@@ -381,7 +384,7 @@ export function RequisitionTable() {
                           <span className="text-2xs text-stone-300">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         <span
                           className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
                           style={{ backgroundColor: `${priorityColor}18`, color: priorityColor }}
@@ -389,17 +392,17 @@ export function RequisitionTable() {
                           {priorityLabel(reqn.priority)}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(reqn.neededByDate)}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[160px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[160px] max-sm:hidden">
                         {reqn.vendor?.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
                         {currency(reqn.estimatedTotal)}
                       </td>
                       {canEdit && (
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 max-sm:px-2 py-3.5 text-right max-sm:hidden">
                           <button
                             type="button"
                             onClick={() => navigate(`/purchases/requisition/${reqn.id}/edit`)}
