@@ -33,10 +33,14 @@ export function NotificationBell() {
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
 
-  // Always reopen collapsed to the 3 most recent.
-  useEffect(() => {
+  // Always reopen collapsed to the 3 most recent. Adjusting state during
+  // render (not in an effect) is React's recommended pattern for resetting
+  // state when a prop/derived value changes.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
     if (!open) setExpanded(false);
-  }, [open]);
+  }
 
   const enabled = isAuthenticated;
 
