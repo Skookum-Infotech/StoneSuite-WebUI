@@ -58,6 +58,10 @@ export interface SalesOrderCreatePayload {
   /** ISO date "yyyy-mm-dd". Optional — if omitted and paymentTermsId is set,
    *  the server derives it as orderDate + the term's net-days (AD-8). */
   paymentDueDate?: string;
+  /** ISO date "yyyy-mm-dd" the order is to be installed. Mandatory: the server
+   *  refuses a blank one (400) and a past one, and saving it (re)plans the
+   *  order's production schedule. */
+  scheduledInstallDate: string;
   paymentTermsId?: number | null;
   priceLevelId?: number | null;
   currencyId?: number | null;
@@ -137,6 +141,8 @@ export interface SalesOrder {
   orderDate: string;
   expectedDelivery?: string;
   paymentDueDate?: string;
+  /** Absent on orders created before the field existed. */
+  scheduledInstallDate?: string;
   poNumber?: string;
   referenceNumber?: string;
   memo?: string;
@@ -176,6 +182,7 @@ export interface SalesOrderSummary {
   nextStatusCodes?: string[];
   customer?: SalesOrderCustomerRef;
   orderDate?: string;
+  scheduledInstallDate?: string;
   grandTotal?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -196,6 +203,75 @@ export interface SalesOrderPage {
   nextCursor: string;
   hasMore: boolean;
   scope: string;
+}
+
+// ── Scheduling tab (GET/PATCH /sales-orders/{uuid}/schedule) ─────────────────
+
+/** Stored status of one schedule row. "Overdue" is not a stored status — it is
+ *  derived client-side from a `scheduled` row whose time has passed. */
+export type ScheduleActivityStatus = 'scheduled' | 'completed';
+
+/** One planned activity. `scheduledAt` / `completedAt` are zone-less wall-clock
+ *  strings ("yyyy-mm-ddThh:mm:ss") — never feed them to `new Date()`, which
+ *  would read them in the viewer's zone and can shift them. */
+export interface SalesOrderScheduleActivity {
+  code: string;
+  /** 1-based position in the plan. */
+  sequence: number;
+  /** The phase the activity belongs to, e.g. "Template". */
+  group: string;
+  /** Full activity name, e.g. "Template In Progress". */
+  name: string;
+  status: ScheduleActivityStatus;
+  scheduledAt: string;
+  completedAt?: string;
+  notes: string;
+}
+
+/** A partial edit to one activity — omitted fields are left as they are. */
+export interface SalesOrderScheduleActivityPatch {
+  status?: ScheduleActivityStatus;
+  /** "yyyy-mm-ddThh:mm" */
+  scheduledAt?: string;
+  /** Only with `status: 'completed'`; the server defaults it to now. */
+  completedAt?: string;
+  notes?: string;
+}
+
+/** The order a calendar card belongs to (`GET /sales-orders/schedule`). */
+export interface ScheduleFeedOrder {
+  id: string;
+  /** The Sales Order number, e.g. "SO-1042". */
+  number: string;
+  customerName: string;
+  /** Status label, e.g. "Open". */
+  status: string;
+  /** lkp_record_status code, e.g. "OPEN". */
+  statusCode: string;
+  poNumber?: string;
+  /** `yyyy-mm-dd` */
+  scheduledInstallDate?: string;
+}
+
+/** One planned activity of one order, as the cross-order calendar lists it. */
+export interface ScheduleFeedEvent extends SalesOrderScheduleActivity {
+  order: ScheduleFeedOrder;
+}
+
+/** One window of the calendar feed for one activity group. */
+export interface ScheduleFeed {
+  events: ScheduleFeedEvent[];
+  /** The server stopped at its row cap — there are more events than listed. */
+  truncated: boolean;
+}
+
+export interface ScheduleFeedQuery {
+  /** Activity group, e.g. "Template" or "WIP Bin Transfer". */
+  group: string;
+  /** First day of the window, `yyyy-mm-dd`, inclusive. */
+  from: string;
+  /** Last day of the window, `yyyy-mm-dd`, inclusive. */
+  to: string;
 }
 
 /** One row of the Inventory tab (design §10 `/inventory`). */

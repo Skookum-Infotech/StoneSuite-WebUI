@@ -368,6 +368,11 @@ const AccountingPeriodsPage = lazyWithRetry(
   () => import("@/pages/finance/accounting-periods/AccountingPeriodsPage"),
 );
 
+// Calendar module
+const ActivityPlannerPage = lazyWithRetry(
+  () => import("@/pages/calendar/ActivityPlannerPage"),
+);
+
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -788,6 +793,18 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="refund" action="update" workflowKey="refund">
             <EditRefundPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Calendar: Activity Planner. It reads every order's schedule, so it is
+      // gated like the Sales Orders list (and hidden from customer sessions by
+      // CUSTOMER_ALLOWED_PATH_PREFIXES, which has no /calendar entry).
+      {
+        path: "calendar/activity-planner",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
+            <ActivityPlannerPage />
           </PermissionGuard>,
         ),
       },

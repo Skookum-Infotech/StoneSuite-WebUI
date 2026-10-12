@@ -41,6 +41,8 @@ import {
   Boxes,
   ArrowLeftRight,
   CalendarClock,
+  CalendarDays,
+  CalendarRange,
   LayoutGrid,
   KeyRound,
   LifeBuoy,
@@ -487,6 +489,31 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Settings2,
               iconColor: "text-slate-500 dark:text-slate-400",
               permission: { resource: "chart_of_account", action: "configure" },
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "calendar",
+          label: "Calendar",
+          icon: CalendarDays,
+          iconColor: "text-sky-600 dark:text-sky-400",
+          matchPaths: ["/calendar"],
+          children: [
+            {
+              type: "link",
+              id: "activity-planner",
+              label: "Activity Planner",
+              path: "/calendar/activity-planner",
+              icon: CalendarRange,
+              iconColor: "text-sky-500 dark:text-sky-400",
+              // A view over every order's schedule, so it reuses the Sales
+              // Order grant instead of naming a resource of its own. Keep this
+              // group AFTER Sales: buildPermModules keeps the first occurrence
+              // of a resource, and the role matrix must still list
+              // sales_order under Sales.
+              permission: { resource: "sales_order", action: "read" },
+              workflowKey: "sales_order",
             },
           ],
         },

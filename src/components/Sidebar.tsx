@@ -7,6 +7,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
 import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
 import { sidebarNav } from '@/config/sidebarNav';
+import { isCustomerAllowedPath } from '@/config/customerPortal';
 import type { NavLink as NavLinkItem, NavGroup, NavEntry, NavSection, NavBadge } from '@/config/sidebarNav';
 
 interface SidebarProps {
@@ -73,7 +74,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     // without the resource grant.
     if (item.workflowKey && !workflowsLoading && !isWorkflowEnabled(item.workflowKey)) return false;
     if (permissionsLoading) return true;
-    if (item.permission) return hasPermission(item.permission.resource, item.permission.action);
+    if (item.permission) {
+      if (!hasPermission(item.permission.resource, item.permission.action)) return false;
+      // A portal session is granted sales_order:read & co. for its document
+      // pages, but MainLayout bounces it from any path outside its allowlist —
+      // so a staff-only page that reuses one of those grants (the Calendar)
+      // must not be advertised to it.
+      return !isCustomer || isCustomerAllowedPath(item.path);
+    }
     // `alwaysVisible` means "every signed-in STAFF user" (Dashboard, Support)
     // — most have no /api/portal/* backing, so a customer session gets no
     // catch-all here. The document links a customer may reach

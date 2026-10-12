@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ import { unitLabel } from '@/lib/unitLabels';
 import { SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
+import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
@@ -30,15 +31,26 @@ import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import { formatDateValue } from '@/lib/dateUtils';
+import { isPortalSession } from '@/store/useAuthStore';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
   { key: 'inventory', label: 'Inventory' },
+  { key: 'scheduling', label: 'Scheduling' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// The tab a `?tab=` link asks for — the Activity Planner's cards open the
+// Scheduling tab. Anything unknown, or a tab this session doesn't have (a
+// customer has no Scheduling tab), falls back to Overview.
+function tabFromParam(raw: string | null): Tab {
+  const match = TABS.find((t) => t.key === raw);
+  if (!match || (match.key === 'scheduling' && isPortalSession())) return 'overview';
+  return match.key;
+}
 
 // Poll the primary record so status/approval changes made by another user or
 // tab show up without a manual reload — same cadence as NotificationBell's
@@ -58,7 +70,8 @@ export default function SalesOrderDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<Tab>(() => tabFromParam(searchParams.get('tab')));
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
@@ -154,6 +167,9 @@ export default function SalesOrderDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';
+  // The production schedule is internal bookkeeping with a staff-only endpoint,
+  // so a customer-portal session doesn't get its tab.
+  const visibleTabs = isPortalSession() ? TABS.filter((t) => t.key !== 'scheduling') : TABS;
 
   async function handleExportPdf() {
     if (!order) return;
@@ -245,7 +261,7 @@ export default function SalesOrderDetailPage() {
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -278,6 +294,10 @@ export default function SalesOrderDetailPage() {
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Order Date" value={fmtDate(order.orderDate)} />
+                  <ReadonlyField
+                    label="Scheduled Installation Date"
+                    value={order.scheduledInstallDate ? fmtDate(order.scheduledInstallDate) : undefined}
+                  />
                   <ReadonlyField label="PO Number" value={order.poNumber} />
                   <ReadonlyField label="Payment Due Date" value={order.paymentDueDate ? fmtDate(order.paymentDueDate) : undefined} />
                   <ReadonlyField label="Sales Tax %" value={`${order.salesTaxPercent}%`} />
@@ -355,6 +375,9 @@ export default function SalesOrderDetailPage() {
           )}
 
           {activeTab === 'inventory' && <SalesOrderInventoryTab orderId={id} />}
+          {activeTab === 'scheduling' && (
+            <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
+          )}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
