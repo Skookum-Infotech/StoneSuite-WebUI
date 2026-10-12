@@ -254,7 +254,7 @@ export function VendorTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/vendor/${vendor.id}`)}
-                          className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {vendor.vendorNumber || '—'}
                         </button>
