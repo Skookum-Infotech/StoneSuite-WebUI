@@ -24,7 +24,7 @@ describe('toItemPayload (whole-object write — PATCH has PUT semantics)', () =>
       sku: 'GRAN-001', name: 'Absolute Black', description: 'desc', unitId: 6, unitPrice: 42.5,
       purchaseUnitPrice: 30, currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 30, originCountryId: 7,
-      barcode: '012345', defaultWarehouseId: 8, trackStock: true, kitIds: [],
+      barcode: '012345', defaultWarehouseId: 8, trackStock: true, kitIds: [], dimensionUnit: 'in',
     })
   })
 
@@ -117,7 +117,7 @@ describe('fromItem / toItemPayload round-trip', () => {
       sku: 'SKU', name: 'Name', description: 'Desc', unitId: 6, unitPrice: 10,
       purchaseUnitPrice: 7, currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 20, originCountryId: 7,
-      barcode: 'BC1', defaultWarehouseId: 8, trackStock: true, kitIds: ['k1'],
+      barcode: 'BC1', defaultWarehouseId: 8, trackStock: true, kitIds: ['k1'], dimensionUnit: 'in',
     })
   })
 

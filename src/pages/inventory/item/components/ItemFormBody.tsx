@@ -10,6 +10,9 @@ import { lookupService } from '@/services/lookupService';
 import { findUnit, requiresDimensions } from '@/lib/inventoryUnits';
 import { TRACKING_OPTIONS } from '@/lib/inventoryItemForm';
 import { TRACKING_SERIALIZED, type KitRef } from '@/types/inventory';
+import { DIMENSION_UNITS, DIMENSION_UNIT_LABELS, normalizeUnit } from '@/lib/lineDimensions';
+
+const switchTileCls = 'flex flex-col gap-1 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2.5';
 
 // Shared field layout for Add/Edit Item — the item form is small enough
 // (no line items, no tabs) that a single body component covers both modes,
@@ -133,41 +136,60 @@ export function ItemFormBody({ data, set }: {
               label="Default Location"
             />
           </ModernFieldShell>
-          <div className="sm:col-span-2 lg:col-span-3">
-            <ModernFieldShell label="Kit/Packages">
-              <KitSelect
-                value={Array.isArray(data.kits) ? (data.kits as KitRef[]) : []}
-                onChange={(kits) => set('kits', kits)}
-              />
-            </ModernFieldShell>
-          </div>
-          <div className="flex items-center gap-2 pt-6">
-            <input
-              type="checkbox"
-              id="item-is-active"
-              checked={Boolean(data.is_active)}
-              onChange={(e) => set('is_active', e.target.checked)}
-              className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30"
+          <ModernFieldShell label="Kit/Packages">
+            <KitSelect
+              value={Array.isArray(data.kits) ? (data.kits as KitRef[]) : []}
+              onChange={(kits) => set('kits', kits)}
             />
-            <label htmlFor="item-is-active" className={checkboxLabelCls}>Active</label>
-          </div>
-          <div className="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="item-track-stock"
-                checked={slabTracked || data.track_stock !== false}
-                disabled={slabTracked}
-                onChange={(e) => set('track_stock', e.target.checked)}
-                className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30 disabled:opacity-60"
-              />
-              <label htmlFor="item-track-stock" className={checkboxLabelCls}>Track stock</label>
+          </ModernFieldShell>
+          {/* The unit length and width are measured in everywhere this item is used.
+              Always shown: which unit applies doesn't depend on the Unit chosen above. */}
+          <ModernFieldShell label="Length / Width Unit">
+            <select
+              value={normalizeUnit(String(data.dimension_unit ?? ''))}
+              onChange={(e) => set('dimension_unit', e.target.value)}
+              className={fieldCls}
+              aria-label="Length / Width Unit"
+            >
+              {DIMENSION_UNITS.map((u) => (
+                <option key={u} value={u}>{DIMENSION_UNIT_LABELS[u]}</option>
+              ))}
+            </select>
+          </ModernFieldShell>
+          {/* The two on/off switches sit together on a row of their own, each in a tile,
+              on the same three-column rhythm as the fields above. */}
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:col-span-2 sm:grid-cols-2 lg:col-span-3 lg:grid-cols-3">
+            <div className={switchTileCls}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="item-is-active"
+                  checked={Boolean(data.is_active)}
+                  onChange={(e) => set('is_active', e.target.checked)}
+                  className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30"
+                />
+                <label htmlFor="item-is-active" className={checkboxLabelCls}>Active</label>
+              </div>
             </div>
-            <p className="pl-6 text-2xs text-stone-500">
-              {slabTracked
-                ? 'Slab items are always tracked: a sales order for one is checked against the slabs in stock.'
-                : 'Sales orders for this item are checked against stock and hold it. Turn off for a service, delivery or labour charge.'}
-            </p>
+            <div className={cn(switchTileCls, 'lg:col-span-2')}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="item-track-stock"
+                  aria-describedby="item-track-stock-hint"
+                  checked={slabTracked || data.track_stock !== false}
+                  disabled={slabTracked}
+                  onChange={(e) => set('track_stock', e.target.checked)}
+                  className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30 disabled:opacity-60"
+                />
+                <label htmlFor="item-track-stock" className={checkboxLabelCls}>Track stock</label>
+              </div>
+              <p id="item-track-stock-hint" className="pl-6 text-2xs text-stone-500">
+                {slabTracked
+                  ? 'Slab items are always tracked: a sales order for one is checked against the slabs in stock.'
+                  : 'Sales orders for this item are checked against stock and hold it. Turn off for a service, delivery or labour charge.'}
+              </p>
+            </div>
           </div>
         </div>
         <label className={cn(fieldLabelCls, 'mt-4')}>Description</label>

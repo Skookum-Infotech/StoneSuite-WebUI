@@ -11,6 +11,7 @@ import type { InventoryItem, InventoryItemInput, KitRef, TrackingMode, Warehouse
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
 import { toNumericWarehouseId } from './inventoryWarehouse';
 import { itemPrice } from './itemPrice';
+import { DEFAULT_DIMENSION_UNIT, itemDimensionUnit, normalizeUnit } from './lineDimensions';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -84,6 +85,7 @@ export function itemDefaults(): Record<string, unknown> {
     color_id: '',
     finish_id: '',
     thickness_mm: '0',
+    dimension_unit: DEFAULT_DIMENSION_UNIT,
     origin_country_id: '',
     default_warehouse_id: '',
     barcode: '',
@@ -116,6 +118,8 @@ export function toItemPayload(data: Record<string, unknown>, warehouses: Warehou
     colorId: toIntOrNull(data.color_id),
     finishId: toIntOrNull(data.finish_id),
     thicknessMm: toNum(data.thickness_mm),
+    // Always sent, like every field of this whole-object write.
+    dimensionUnit: normalizeUnit(toStr(data.dimension_unit)),
     originCountryId: toIntOrNull(data.origin_country_id),
     barcode: toStr(data.barcode).trim(),
     defaultWarehouseId: warehouseIdOrNull(warehouses, data.default_warehouse_id),
@@ -145,6 +149,7 @@ export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Rec
     color_id: idOrEmpty(item.colorId),
     finish_id: idOrEmpty(item.finishId),
     thickness_mm: String(item.thicknessMm ?? 0),
+    dimension_unit: itemDimensionUnit(item),
     origin_country_id: idOrEmpty(item.originCountryId),
     default_warehouse_id: warehouseUuidOrEmpty(warehouses, item.defaultWarehouseId),
     barcode: item.barcode ?? '',

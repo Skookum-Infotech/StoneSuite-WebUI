@@ -20,6 +20,8 @@ import {
   PRIORITY_COLORS, priorityLabel, canConvertToPurchaseOrder,
 } from '@/lib/requisitionForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
 import { RequisitionAuditTab } from './components/RequisitionAuditTab';
 import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
@@ -150,6 +152,8 @@ export default function RequisitionDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
+      // The three size columns only appear when some line states a size.
+      const sized = anyDimensions(reqn.items);
       await exportPurchasesRecordToPdf({
         recordType: 'requisition',
         title: reqn.requisitionNumber || 'Requisition',
@@ -173,11 +177,12 @@ export default function RequisitionDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Est. Unit Price', 'Amount'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), 'Qty', 'Est. Unit Price', 'Amount'],
           rows: reqn.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            ...(sized ? dimensionCells(line) : []),
             String(line.quantity),
             currency(line.estimatedUnitPrice),
             currency(line.estimatedAmount),
@@ -279,6 +284,7 @@ export default function RequisitionDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      ...LINE_DIMENSION_COLS,
                       { label: 'Units' },
                       { label: 'Qty', right: true },
                       { label: 'Est. Unit Price', right: true },
@@ -297,6 +303,7 @@ export default function RequisitionDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500">{line.unitCode || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.estimatedUnitPrice)}</td>
@@ -304,7 +311,7 @@ export default function RequisitionDetailPage() {
                     </tr>
                   ))}
                   {reqn.items.length === 0 && (
-                    <tr><td colSpan={8} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={11} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

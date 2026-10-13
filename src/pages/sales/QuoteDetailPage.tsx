@@ -18,6 +18,8 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
 import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
@@ -288,6 +290,7 @@ export default function QuoteDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      ...LINE_DIMENSION_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -300,7 +303,7 @@ export default function QuoteDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  <KitLineRows lines={quote.items} colSpan={10} renderRow={(line, kitCls) => (
+                  <KitLineRows lines={quote.items} colSpan={13} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
@@ -308,6 +311,7 @@ export default function QuoteDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
                       </td>
@@ -319,7 +323,7 @@ export default function QuoteDetailPage() {
                     </tr>
                   )} />
                   {quote.items.length === 0 && (
-                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={13} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

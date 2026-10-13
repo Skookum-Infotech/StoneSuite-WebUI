@@ -16,6 +16,7 @@ import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { cn } from '@/lib/utils';
 import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
+import { DIMENSION_UNIT_LABELS, itemDimensionUnit } from '@/lib/lineDimensions';
 import { DeleteItemDialog } from './components/DeleteItemDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
@@ -103,6 +104,7 @@ export default function ItemDetailPage() {
               ['Barcode', item.barcode || ''],
               ['Default Location', lookups?.warehouses.find((w) => w.warehouseId === item.defaultWarehouseId)?.name || ''],
               ['Track Stock', item.tracking === TRACKING_SERIALIZED || item.trackStock !== false ? 'Yes' : 'No'],
+              ['Length / Width Unit', DIMENSION_UNIT_LABELS[itemDimensionUnit(item)]],
             ],
           },
           {
@@ -168,6 +170,7 @@ export default function ItemDetailPage() {
                   <ReadonlyField label="Default Location" value={lookups?.warehouses.find((w) => w.warehouseId === item.defaultWarehouseId)?.name} />
                   <ReadonlyField label="Track Stock" value={item.tracking === TRACKING_SERIALIZED || item.trackStock !== false ? 'Yes' : 'No'} />
                   <ReadonlyField label="Kit/Packages" value={(item.kits ?? []).map((k) => k.name).join(', ')} />
+                  <ReadonlyField label="Length / Width Unit" value={DIMENSION_UNIT_LABELS[itemDimensionUnit(item)]} />
                 </div>
               </ModernSection>
 

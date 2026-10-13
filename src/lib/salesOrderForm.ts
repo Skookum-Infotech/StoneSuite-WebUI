@@ -6,6 +6,7 @@
 import type { CrmLookups } from '@/services/lookupService';
 import type { SalesOrder, SalesOrderCreatePayload, SalesOrderLineInput } from '@/types/salesOrder';
 import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
+import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -318,7 +319,7 @@ export const SALES_INFO_FIELDS: SOFormField[] = [
 
 /** `kitId`/`kitName` (from KitLabeled) are set on a line added from a kit; such
  *  lines sit under that kit's heading. */
-export interface SOLineItem extends KitLabeled {
+export interface SOLineItem extends KitLabeled, LineDimensions {
   id: string;
   lineNo: number;
   itemName: string;
@@ -601,6 +602,7 @@ function toLineInput(item: SOLineItem): SalesOrderLineInput {
     taxRateId: item.taxRateId ?? undefined,
     taxPercent: item.taxRateId ? undefined : toNum(item.tax),
     ...kitPayload(item),
+    ...dimensionsPayload(item, item.units),
   };
 }
 
@@ -733,6 +735,7 @@ export function fromOrder(order: SalesOrder): {
     total: line.lineTotal.toFixed(2),
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     ...kitFromLine(line),
+    ...dimensionsFromLine(line),
     fulfilledQuantity: line.fulfilledQuantity,
     status: line.status,
   }));

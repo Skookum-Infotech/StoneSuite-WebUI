@@ -104,6 +104,11 @@ export interface InventoryItem {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  /** The unit this item's slabs' length and width are measured in: mm, cm, in, ft
+   *  or m. A document line copies it when the item is picked. The API always sends
+   *  it; optional here so a hand-built item (a test fixture) still type-checks —
+   *  read it through itemDimensionUnit(), where absent means cm. */
+  dimensionUnit?: string;
   /** Whether a sales order line for this item is checked against stock and
    *  reserves it. Off for a service/delivery/labour item; always on for a slab
    *  item. The API always sends it; optional here so a hand-built item (a test
@@ -139,6 +144,8 @@ export interface InventoryItemInput {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  /** mm, cm, in, ft or m. Omit to leave the item's unit as it is. */
+  dimensionUnit?: string;
   trackStock?: boolean;
   /** When present, makes exactly these kits (ids) the item's kits. Omit to
    *  leave its memberships alone; `[]` takes the item out of every kit. */

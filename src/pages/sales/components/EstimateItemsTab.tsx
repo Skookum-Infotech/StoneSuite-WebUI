@@ -6,6 +6,12 @@ import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
+import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInputCells';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import {
+  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+} from '@/lib/lineDimensions';
+import { blockEnterSubmit } from '@/lib/lineEntryKeys';
 import { KitHeadingRow, KIT_ROW_CLS } from '@/components/inventory/KitHeadingRow';
 import { kitHeadings, labelWithKit, removeKitRun } from '@/lib/kitLines';
 import {
@@ -13,7 +19,7 @@ import {
 } from '@/lib/estimateForm';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all no-spinner';
 
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `li-${rowCounter}`; }
@@ -26,8 +32,9 @@ const ITEM_COLS = [
   { label: 'Item Name *', w: 'min-w-[160px]' },
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
+  ...LINE_DIMENSION_COLS,
   { label: 'Units', w: 'w-16' },
-  { label: 'Qty', w: 'w-16', right: true },
+  { label: 'Qty', w: 'w-20', right: true },
   { label: 'Unit Price', w: 'w-20', right: true },
   { label: 'Disc %', w: 'w-16', right: true },
   { label: 'Amount', w: 'w-20', right: true },
@@ -48,14 +55,17 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
   headerTaxPercent: number;
 }) {
   const recalc = (next: Omit<EstimateLineItem, 'id' | 'lineNo'>) => {
-    const { amount, total } = calcLineItem(next, headerTaxPercent);
-    return { ...next, amount, total };
+    // Length x width x slabs, when stated, IS the quantity — worked out here
+    // before the amount is, so the two can never disagree.
+    const sized = withSizedQuantity(next);
+    const { amount, total } = calcLineItem(sized, headerTaxPercent);
+    return { ...sized, amount, total };
   };
 
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
   const unitCodeFor = useItemUnitCode();
-  const applyCatalogItem = (prev: Omit<EstimateLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
+  const applyCatalogItem = (prev: Omit<EstimateLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc(withoutUnsupportedSize({
     ...prev,
     itemName: item.name,
     units: unitCodeFor(item),
@@ -63,7 +73,8 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
     itemSku: item.sku,
     unitPrice: String(item.unitPrice),
     inventoryItemUuid: item.id,
-  });
+    dimensionUnit: itemDimensionUnit(item),
+  }));
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
@@ -83,8 +94,8 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
     returnedKit,
   });
 
-  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => {
-    const nextVal = key === 'discount' ? clampPercent(val) : val;
+  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'length' | 'width' | 'slabs', val: string) => {
+    const nextVal = key === 'discount' ? clampPercent(val) : clampDimensionField(key, val, draft.dimensionUnit);
     setDraft((prev) => recalc({ ...prev, [key]: nextVal }));
   };
 
@@ -92,7 +103,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
   // inventory item — a fresh pick is required before the line can be saved.
   // The description is left untouched — it's independent of the item name.
   const onItemNameText = (text: string) => {
-    setDraft((prev) => recalc({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' }));
+    setDraft((prev) => recalc(withoutUnsupportedSize({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' })));
   };
 
   const picker: InventoryItemPickerHandlers = {
@@ -155,7 +166,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
       <div className="overflow-x-auto modal-scrollbar">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-xs" onKeyDown={blockEnterSubmit}>
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {ITEM_COLS.map((c) => (
@@ -191,6 +202,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
+                  <LineDimensionViewCells length={row.length} width={row.width} slabs={row.slabs} unit={row.dimensionUnit} />
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.unitPrice ? `$${parseFloat(row.unitPrice).toFixed(2)}` : '—'}</td>
@@ -268,9 +280,12 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
 function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
   draft: Omit<EstimateLineItem, 'id' | 'lineNo'>;
-  onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => void;
+  onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'length' | 'width' | 'slabs', val: string) => void;
   picker: InventoryItemPickerHandlers;
 }) {
+  // Quantity is worked out from the dimensions while they are stated, so it is
+  // shown but not editable.
+  const sized = isSized(draft, draft.units);
   return (
     <>
       <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
@@ -281,8 +296,14 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
       <td className="px-2 py-1.5 text-stone-400 font-mono text-2xs">{draft.itemSku || '—'}</td>
+      <LineDimensionInputCells
+        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '' }}
+        unit={normalizeUnit(draft.dimensionUnit)}
+        enabled={isAreaUnit(draft.units)}
+        onChange={onChange}
+      />
       <td className="px-2 py-1.5 text-stone-400 text-2xs">{draft.units || '—'}</td>
-      <td className="px-2 py-1.5"><input type="number" min="0" value={draft.quantity} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Quantity" /></td>
+      <td className="px-2 py-1.5"><input type="number" min="0" step="any" value={draft.quantity} readOnly={sized} title={sized ? 'Worked out from length × width × slabs' : undefined} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-16 text-right', sized && 'cursor-default bg-stone-50 text-stone-500')} aria-label="Quantity" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(e) => onChange('unitPrice', e.target.value)} placeholder="0.00" className={cn(inlineCls, 'w-20 text-right')} aria-label="Unit Price" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? `$${draft.amount}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-500 cursor-default text-right')} aria-label="Amount" /></td>
