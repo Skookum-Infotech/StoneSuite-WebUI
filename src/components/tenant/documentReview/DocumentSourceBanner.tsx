@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
-import { salesOrderPath } from '@/lib/documentExtractionRoutes';
+import { documentRoutes } from '@/lib/documentExtractionRoutes';
 import type { ReviewPhase } from '@/hooks/useDocumentReview';
+import type { DocumentExtractionDocType } from '@/types/documentExtraction';
 
 interface DocumentSourceBannerProps {
+  docType: DocumentExtractionDocType;
   phase: ReviewPhase;
   fileName: string;
   usedRecordUuid: string | undefined;
@@ -15,22 +17,23 @@ interface DocumentSourceBannerProps {
  *  polite live region so a state change (e.g. the document expiring while the
  *  tab sat open) is announced. */
 export function DocumentSourceBanner({
-  phase, fileName, usedRecordUuid, aiUnavailable, injection,
+  docType, phase, fileName, usedRecordUuid, aiUnavailable, injection,
 }: DocumentSourceBannerProps): React.JSX.Element {
+  const routes = documentRoutes(docType);
   const messages: React.ReactNode[] = [];
   if (phase === 'expired') {
     messages.push('Source document expired after 24 h — your values are kept; the file won’t be attached.');
   } else if (phase === 'used') {
     messages.push(
       <>
-        Already used to create a sales order.{' '}
+        Already used to create a {routes.noun}.{' '}
         {usedRecordUuid && (
-          <Link to={salesOrderPath(usedRecordUuid)} className="font-semibold underline">Open it</Link>
+          <Link to={routes.recordPath(usedRecordUuid)} className="font-semibold underline">Open it</Link>
         )}
       </>,
     );
   } else if (phase === 'unavailable') {
-    messages.push(`${fileName} is no longer available. You can still fill in the order by hand.`);
+    messages.push(`${fileName} is no longer available. You can still fill in the ${routes.manualNoun} by hand.`);
   } else if (phase === 'ready') {
     messages.push(`Created from ${fileName}. Review every field before saving.`);
   }

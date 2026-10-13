@@ -5,6 +5,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() } }));
+vi.mock('@/hooks/useAIStatus', () => ({ useAIStatus: vi.fn() }));
+vi.mock('@/components/tenant/documentExtraction/PendingDocumentsChip', () => ({
+  PendingDocumentsChip: ({ docType }: { docType: string }) => <span>pending chip {docType}</span>,
+}));
+vi.mock('@/components/tenant/documentExtraction/CreateFromDocumentDialog', () => ({
+  CreateFromDocumentDialog: ({ file, docType }: { file: File; docType: string }) => (
+    <div role="dialog" aria-label="create from document">{docType}:{file.name}</div>
+  ),
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/vendorBillService', () => ({
   vendorBillService: { searchVendorBills: vi.fn(), transition: vi.fn() },
@@ -16,6 +25,8 @@ vi.mock('@/services/lookupService', () => ({
 import VendorBillListPage from './VendorBillListPage';
 import { vendorBillService } from '@/services/vendorBillService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useAIStatus } from '@/hooks/useAIStatus';
+import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 import type { VendorBillSummary } from '@/types/vendorBill';
 
@@ -62,8 +73,17 @@ function renderPage(records: VendorBillSummary[] = []) {
   );
 }
 
+function mockAI(over: Partial<{ data: object | undefined; isLoading: boolean; isError: boolean }> = {}) {
+  vi.mocked(useAIStatus).mockReturnValue({
+    data: { platformEnabled: true, tenantEnabled: true, available: true, documentExtraction: true },
+    isLoading: false, isError: false, ...over,
+  } as unknown as ReturnType<typeof useAIStatus>);
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mockAI();
+  useAuthStore.setState({ kind: 'staff' } as never);
 });
 
 describe('VendorBillListPage upload button', () => {
@@ -94,35 +114,52 @@ describe('VendorBillListPage upload button', () => {
     expect(screen.queryByRole('button', { name: UPLOAD_BUTTON })).not.toBeInTheDocument();
   });
 
-  it('acknowledges a picked file without sending anything yet', async () => {
+  it('opens the create-from-document dialog for a picked file with this page\'s doc type', async () => {
     const user = userEvent.setup();
     mockPermissions(true);
     const { container } = renderPage();
     await screen.findByText(EMPTY_LIST_TEXT);
 
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
-    await user.upload(fileInput, new File(['%PDF'], 'bill-77.pdf', { type: 'application/pdf' }));
+    await user.upload(fileInput, new File(['%PDF'], 'doc-1001.pdf', { type: 'application/pdf' }));
 
-    expect(toast.info).toHaveBeenCalledWith(expect.stringContaining('bill-77.pdf'));
-    expect(toast.error).not.toHaveBeenCalled();
-  });
-});
-
-// Only a super admin may change status from the list; everyone else sees the
-// status but gets no control for it.
-describe('VendorBillListPage status column', () => {
-  it('shows a super admin the status dropdown', async () => {
-    mockPermissions(true, true);
-    renderPage([{ ...BILL, nextStatusCodes: ['APPV', 'VOID'] }]);
-
-    expect(await screen.findByRole('button', { name: 'Draft' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'create from document' })).toHaveTextContent('vendor_bill:doc-1001.pdf');
+    expect(screen.getByText('pending chip vendor_bill')).toBeInTheDocument();
+    expect(toast.info).not.toHaveBeenCalled();
   });
 
-  it('shows everyone else the status as plain text', async () => {
-    mockPermissions(true, false);
-    renderPage([{ ...BILL, nextStatusCodes: ['APPV', 'VOID'] }]);
+  it('is disabled, with the reason, when document extraction is off', async () => {
+    mockPermissions(true);
+    mockAI({ data: { platformEnabled: true, tenantEnabled: false, available: true, documentExtraction: false } });
+    renderPage();
+    await screen.findByText(EMPTY_LIST_TEXT);
 
-    expect(await screen.findByText('Draft')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Draft' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: UPLOAD_BUTTON })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /why/i })).toBeInTheDocument();
+  });
+
+  it('hides the whole flow for a customer-portal session', async () => {
+    mockPermissions(true);
+    useAuthStore.setState({ kind: 'portal' } as never);
+    renderPage();
+    await screen.findByText(EMPTY_LIST_TEXT);
+
+    expect(screen.queryByRole('button', { name: UPLOAD_BUTTON })).not.toBeInTheDocument();
+    expect(screen.queryByText('pending chip vendor_bill')).not.toBeInTheDocument();
+  });
+
+  it('swallows a drop with the reason when the flow is unavailable', async () => {
+    mockPermissions(false);
+    renderPage();
+    await screen.findByText(EMPTY_LIST_TEXT);
+
+    const file = new File(['%PDF'], 'dropped.pdf', { type: 'application/pdf' });
+    const ev = new Event('drop', { bubbles: true, cancelable: true }) as Event & { dataTransfer: unknown };
+    ev.dataTransfer = { files: [file], types: ['Files'] };
+    window.dispatchEvent(ev);
+
+    expect(ev.defaultPrevented).toBe(true);
+    expect(screen.queryByRole('dialog', { name: 'create from document' })).not.toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('permission'));
   });
 });

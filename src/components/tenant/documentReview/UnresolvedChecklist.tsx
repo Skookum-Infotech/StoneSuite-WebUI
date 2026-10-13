@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { ReviewItem } from '@/lib/salesOrderDocumentHandoff';
 
@@ -38,6 +39,14 @@ export function UnresolvedChecklist({ pending, onJump }: UnresolvedChecklistProp
               >
                 <span className="font-medium">{item.label}</span> {'—'} {item.reason}
               </button>
+              {item.link && (
+                <Link
+                  to={item.link.to}
+                  className="shrink-0 font-medium text-stone-900 dark:text-stone-100 underline underline-offset-2 hover:no-underline"
+                >
+                  {item.link.label}
+                </Link>
+              )}
             </li>
           ))}
         </ul>

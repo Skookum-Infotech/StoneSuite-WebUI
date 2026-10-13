@@ -60,6 +60,8 @@ export interface CreateVendorBillPayload {
   adjustment?: number;
   customFields?: Record<string, unknown>;
   items: VendorBillLineInput[];
+  /** Save despite a 409 duplicate_document (same vendor invoice number). */
+  allowDuplicate?: boolean;
 }
 
 /** Update mirrors create minus the vendor and purchase order (a vendor bill's

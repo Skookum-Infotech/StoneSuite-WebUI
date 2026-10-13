@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
@@ -21,6 +21,14 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useI
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
+import { DocumentReviewShell } from '@/components/tenant/documentReview/DocumentReviewShell';
+import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
+import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
+import { DocumentFailedNotice } from '@/components/tenant/documentReview/DocumentFailedNotice';
+import { DocumentUsedNotice } from '@/components/tenant/documentReview/DocumentUsedNotice';
+import { usePurchaseOrderReviewMode } from '@/hooks/usePurchaseOrderReviewMode';
+import type { PurchaseOrderReviewPatch } from '@/hooks/purchaseReviewTypes';
+import { PURCHASE_ORDER_REVIEW_FIELDS } from '@/lib/reviewFieldConfigs';
 import {
   purchaseOrderDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, SHIP_TO_FIELDS, type PageTab,
   type PurchaseOrderLineItem,
@@ -69,6 +77,14 @@ export default function AddPurchaseOrderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendorReturn.createdRef]);
 
+  // "Create from document" review mode (?fromDocument=<id>) — inert otherwise.
+  const applyReviewForm = useCallback((next: PurchaseOrderReviewPatch) => {
+    if (next.data) setData(next.data);
+    if (next.lineItems) setLineItems(next.lineItems);
+    if (next.vendor !== undefined) setVendor(next.vendor);
+    if (next.customFieldValues) setCustomFieldValues(next.customFieldValues);
+  }, []);
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -99,9 +115,20 @@ export default function AddPurchaseOrderPage() {
   // New purchase orders default to United States / USD, and Ship To from the
   // company defaults above, once each loads — derived rather than copied
   // into state, so it never clobbers a value the user already set.
+  const geo = useMemo(() => (lookups ? { countries: lookups.countries, states: lookups.states } : undefined), [lookups]);
+  const review = usePurchaseOrderReviewMode({
+    form: { data, lineItems, vendor, customFieldValues },
+    apply: applyReviewForm,
+    onVendorChange: setVendor,
+    geo,
+  });
+  // A ship-to read from the document is used whole: the company's own street,
+  // city or zip must never fill the parts the document left out.
+  const documentShipTo = review.active && Boolean(data.ship_address1 || data.ship_city || data.ship_zip);
+
   const formData = useMemo(() => {
     if (!lookups) return data;
-    const shipDefaults = purchaseOrderShipToDefaults(companyProfile, defaultLocation);
+    const shipDefaults = documentShipTo ? {} as ReturnType<typeof purchaseOrderShipToDefaults> : purchaseOrderShipToDefaults(companyProfile, defaultLocation);
     return {
       ...data,
       ship_country: data.ship_country || defaultCountryId(lookups.countries),
@@ -115,12 +142,16 @@ export default function AddPurchaseOrderPage() {
       ship_zip: data.ship_zip || shipDefaults.ship_zip || '',
       ship_phone: data.ship_phone || shipDefaults.ship_phone || '',
     };
-  }, [data, lookups, companyProfile, defaultLocation]);
+  }, [data, lookups, companyProfile, defaultLocation, documentShipTo]);
 
+  // A document-prefilled form is unsaved work from the start — except for a
+  // document that was already used or couldn't be read, which shows no form.
+  const documentUsed = review.active && review.phase === 'used';
+  const documentFailed = review.active && review.phase === 'failed';
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
-    true,
-    inventoryReturn.isRestored || vendorReturn.isRestored,
+    !review.active || review.hydrated,
+    inventoryReturn.isRestored || vendorReturn.isRestored || (review.active && !documentUsed && !documentFailed),
   );
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
@@ -141,32 +172,40 @@ export default function AddPurchaseOrderPage() {
       if (!vendor) throw new Error('A vendor is required.');
       const badPhone = firstInvalidPhoneLabel(SHIP_TO_FIELDS, formData);
       if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
-      const payload = toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues);
+      const payload = {
+        ...toCreatePayload({ ...formData, vendor_uuid: vendor.id }, lineItems, customFieldValues),
+        ...review.payloadExtras(false),
+      };
       return purchaseOrderService.createPurchaseOrder(payload);
     },
+    onError: (err) => { review.handleSaveError(err, () => save()); },
     onSuccess: async (po) => {
-      toast.success('Purchase order created.');
+      if (!review.active) toast.success('Purchase order created.');
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(po.id); } catch { /* non-fatal */ }
       }
+      if (review.active) await review.afterCreate(po);
       guard.markClean();
       navigate('/purchases/purchase_order');
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
+  const withReviewShell = (body: ReactNode) => (
+    review.active ? <DocumentReviewShell review={review} fields={PURCHASE_ORDER_REVIEW_FIELDS}>{body}</DocumentReviewShell> : body
+  );
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
       <UnsavedChangesPrompt guard={guard} />
-      <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
+      <form onSubmit={(e) => { e.preventDefault(); if (review.blockedReason) review.focusFirstPending(); else save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Purchase Orders"
           onBack={() => navigate('/purchases/purchase_order')}
           icon={Package}
-          title="New Purchase Order"
+          title={review.active ? 'New Purchase Order from Document' : 'New Purchase Order'}
           subtitle="Fields marked * are required."
-          actions={(
+          actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
@@ -175,7 +214,7 @@ export default function AddPurchaseOrderPage() {
           )}
         />
 
-        {saveError && (
+        {saveError && !review.duplicate && (
           <div
             ref={errorRef}
             tabIndex={-1}
@@ -192,7 +231,13 @@ export default function AddPurchaseOrderPage() {
           </div>
         )}
 
+        {documentUsed ? (
+          <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} docType="purchase_order" />
+        ) : documentFailed ? (
+          <DocumentFailedNotice fileName={review.fileName} reason={review.banner.failureMessage} docType="purchase_order" />
+        ) : (<>
         <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
+          {withReviewShell(
           <PurchaseOrderFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -201,7 +246,7 @@ export default function AddPurchaseOrderPage() {
             lineItems={lineItems}
             setLineItems={setLineItems}
             vendor={vendor}
-            setVendor={setVendor}
+            setVendor={review.active ? review.pickParty : setVendor}
             onCreateVendor={startCreateVendor}
             customFieldValues={customFieldValues}
             setCustomField={setCustomField}
@@ -213,14 +258,23 @@ export default function AddPurchaseOrderPage() {
             adjustment={adjustment}
             total={total}
             filesPanelRef={panelRef}
-          />
+          />,
+          )}
         </InventoryItemReturnContext.Provider>
 
-        <FormActionBar
-          onCancel={() => navigate('/purchases/purchase_order')}
-          isPending={isPending}
-          submitLabel="Save Purchase Order"
-        />
+        {review.active ? (
+          <>
+            <ReviewFooter reason={review.blockedReason} isPending={isPending} onDiscard={review.requestDiscard} saveLabel="Save Purchase Order" />
+            <ReviewDialogs review={review} onCreateAnyway={() => save()} markClean={guard.markClean} />
+          </>
+        ) : (
+          <FormActionBar
+            onCancel={() => navigate('/purchases/purchase_order')}
+            isPending={isPending}
+            submitLabel="Save Purchase Order"
+          />
+        )}
+        </>)}
       </form>
     </div>
   );
