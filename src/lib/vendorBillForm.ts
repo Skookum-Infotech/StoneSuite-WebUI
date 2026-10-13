@@ -6,6 +6,7 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
+import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
 import type {
   VendorBill, CreateVendorBillPayload, VendorBillLineInput, VendorBillLine,
   VendorBillPurchaseOrderRef,
@@ -139,7 +140,7 @@ export const PRIMARY_INFO_FIELDS: VendorBillFormField[] = [
 // is accepted by the backend but has no lookup UI yet (matches every other
 // sales/purchases module), so every line's tax preview follows the header's
 // Sales Tax % rather than a per-line rate.
-export interface VendorBillLineItem {
+export interface VendorBillLineItem extends LineDimensions {
   id: string;
   lineNo: number;
   itemName: string;
@@ -448,6 +449,7 @@ function toLineInput(item: VendorBillLineItem, lineNo: number): VendorBillLineIn
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
+    ...dimensionsPayload(item, item.units),
   };
 }
 
@@ -509,6 +511,7 @@ function fromLine(line: VendorBillLine, i: number): VendorBillLineItem {
     total: line.lineTotal.toFixed(2),
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     purchaseOrderItemId: line.purchaseOrderItemId ?? undefined,
+    ...dimensionsFromLine(line),
   };
 }
 

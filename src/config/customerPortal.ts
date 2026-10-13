@@ -19,3 +19,12 @@ export const CUSTOMER_ALLOWED_PATH_PREFIXES: readonly string[] = [
   '/customer/fabrication-approvals',
   SUPPORT_PATH,
 ];
+
+/** Whether a customer-portal session may open `pathname`. The one test both
+ *  MainLayout's redirect and the sidebar apply, so a link is never offered to a
+ *  customer that the layout would bounce them away from — a staff-only page that
+ *  reuses a resource the portal is granted (the Activity Planner reads under
+ *  `sales_order:read`) must not show up in their menu. */
+export function isCustomerAllowedPath(pathname: string): boolean {
+  return CUSTOMER_ALLOWED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}

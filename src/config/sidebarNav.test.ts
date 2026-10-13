@@ -98,6 +98,24 @@ describe('sidebarNav access declarations', () => {
     }
   });
 
+  // buildPermModules keeps the first link to name a resource, so the Calendar
+  // group has to come after Sales or the role editor would list Sales Orders
+  // under Calendar.
+  it('puts the Calendar group after Sales', () => {
+    const entries = sidebarNav.sections.flatMap((s) => s.entries).filter((e) => e.type === 'group');
+    const ids = entries.map((e) => e.id);
+
+    expect(ids).toContain('calendar');
+    expect(ids.indexOf('calendar')).toBeGreaterThan(ids.indexOf('sales'));
+  });
+
+  it('points the Activity Planner at its route', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'activity-planner');
+
+    expect(entry?.link.path).toBe('/calendar/activity-planner');
+    expect(entry?.link.permission).toEqual({ resource: 'sales_order', action: 'read' });
+  });
+
   it('CRM and Sales links declare the workflow that backs their form', () => {
     const expected: Record<string, string> = {
       leads: 'lead',
@@ -107,6 +125,7 @@ describe('sidebarNav access declarations', () => {
       quotes: 'quote',
       'sales-orders': 'sales_order',
       installation: 'installation',
+      'activity-planner': 'sales_order',
       invoices: 'invoice',
       payments: 'payment',
       'credit-memos': 'credit_memo',

@@ -5,6 +5,8 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type { Estimate, EstimateCreatePayload, EstimateLineInput } from '@/types/estimate';
+import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
+import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -318,7 +320,7 @@ export const SALES_INFO_FIELDS: EstimateFormField[] = [
 // toLineInput). Per-line tax always follows the header's Sales Tax % (no
 // tax-rate picker UI yet), so `total` is computed from the header rate, not
 // a per-line one.
-export interface EstimateLineItem {
+export interface EstimateLineItem extends KitLabeled, LineDimensions {
   id: string;
   lineNo: number;
   itemName: string;
@@ -523,6 +525,8 @@ function toLineInput(item: EstimateLineItem, lineNo: number): EstimateLineInput 
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
+    ...kitPayload(item),
+    ...dimensionsPayload(item, item.units),
   };
 }
 
@@ -657,6 +661,8 @@ export function fromEstimate(estimate: Estimate): {
     amount: line.lineSubtotal.toFixed(2),
     total: line.lineTotal.toFixed(2),
     inventoryItemUuid: line.inventoryItemId ?? undefined,
+    ...kitFromLine(line),
+    ...dimensionsFromLine(line),
   }));
 
   return {

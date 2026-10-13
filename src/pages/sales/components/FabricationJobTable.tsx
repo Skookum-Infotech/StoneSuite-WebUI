@@ -8,8 +8,11 @@ import {
 import { cn } from '@/lib/utils';
 import { fabricationService } from '@/services/fabricationService';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import { FabricationStatusControl } from './FabricationStatusControl';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { FJ_STATUS_COLORS } from '@/lib/fabricationForm';
 import type { FabricationJobSearchRequest } from '@/types/fabrication';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
@@ -49,9 +52,12 @@ export function FabricationJobTable() {
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation. Forward-path moves only, same boundary as
-  // FabricationStatusControl everywhere else.
+  const { isSuperAdmin } = useUserPermissions();
+
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves a job from its Detail page.
+  // Mirrors the Edit page's transition mutation. Forward-path moves only, same
+  // boundary as FabricationStatusControl everywhere else.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => fabricationService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -269,12 +275,16 @@ export function FabricationJobTable() {
                         {job.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <FabricationStatusControl
-                          job={job}
-                          onChange={(code) => transition.mutate({ id: job.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === job.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <FabricationStatusControl
+                            job={job}
+                            onChange={(code) => transition.mutate({ id: job.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === job.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={job.status} color={FJ_STATUS_COLORS[job.status]} />
+                        )}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(job.promisedInstallDate)}

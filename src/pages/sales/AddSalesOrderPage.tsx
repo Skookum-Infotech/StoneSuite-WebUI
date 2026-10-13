@@ -35,6 +35,8 @@ import {
   type SOLineItem, type SODrawing,
 } from '@/lib/salesOrderForm';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { installDateError } from '@/lib/salesOrderSchedule';
+import { PLANNER_QUERY_KEY } from '@/lib/plannerCalendar';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface SalesOrderDraft {
@@ -157,6 +159,8 @@ export default function AddSalesOrderPage() {
       if (!customer) throw new Error('A billing customer is required.');
       const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], formData);
       if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      const badInstallDate = installDateError(formData.scheduled_install_date);
+      if (badInstallDate) throw new Error(badInstallDate);
       const payload = {
         ...toCreatePayload({ ...formData, customer_uuid: customer.id }, lineItems, customFieldValues),
         ...review.payloadExtras(Boolean(opts?.allowDuplicate)),
@@ -195,6 +199,8 @@ export default function AddSalesOrderPage() {
       else if (!autoSubmitted) toast.success('Sales order created.');
 
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      // A new order plans a schedule, which the Activity Planner lists.
+      queryClient.invalidateQueries({ queryKey: [PLANNER_QUERY_KEY] });
       guard.markClean();
       navigate('/sales/sales_order');
     },

@@ -16,7 +16,10 @@ import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
 import { INVOICE_PAYABLE_STATUSES, INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
@@ -273,6 +276,7 @@ export default function InvoiceDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
+                      ...LINE_DIMENSION_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -285,13 +289,14 @@ export default function InvoiceDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {invoice.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  <KitLineRows lines={invoice.items} colSpan={12} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
                       </td>
@@ -301,9 +306,9 @@ export default function InvoiceDetailPage() {
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {invoice.items.length === 0 && (
-                    <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={12} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

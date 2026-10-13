@@ -33,16 +33,18 @@ vi.mock('@/services/documentExtractionService', async () => {
 // The real form body pulls in workflow/lookup queries; the page logic under
 // test only needs the customer + line state it receives.
 vi.mock('./components/SalesOrderFormBody', () => ({
-  SalesOrderFormBody: ({ customer, setCustomer, lineItems, data }: {
+  SalesOrderFormBody: ({ customer, setCustomer, lineItems, data, set }: {
     customer: { name: string } | null; setCustomer: (c: { id: string; name: string }) => void; lineItems: unknown[];
-    data: Record<string, unknown>;
+    data: Record<string, unknown>; set: (key: string, value: unknown) => void;
   }) => (
     <div>
       <p data-testid="form-terms">{String(data.payment_terms ?? '')}</p>
       <p data-testid="form-bill">{String(data.bill_address1 ?? '')}</p>
       <p data-testid="form-customer">{customer?.name ?? 'none'}</p>
       <p data-testid="form-lines">{lineItems.length}</p>
+      <p data-testid="form-install-date">{String(data.scheduled_install_date ?? '')}</p>
       <button type="button" onClick={() => setCustomer({ id: 'c9', name: 'Picked Co' })}>Pick customer in form</button>
+      <button type="button" onClick={() => set('scheduled_install_date', '2099-12-31')}>Set installation date</button>
     </div>
   ),
 }));
@@ -65,6 +67,11 @@ function conflict() {
 
 /** The header and the footer both carry a Save button; the footer's is the one with the reason in its name. */
 const saveButtons = (): HTMLElement[] => screen.getAllByRole('button', { name: /^Save Order/ });
+
+/** A document carries no installation date, so the reviewer has to choose one before saving. */
+async function chooseInstallDate(): Promise<void> {
+  await userEvent.click(await screen.findByRole('button', { name: 'Set installation date' }));
+}
 
 function renderPage(url = '/sales/sales_order/new?fromDocument=ex-1') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -153,11 +160,13 @@ describe('AddSalesOrderPage review mode', () => {
     renderPage();
     await screen.findByRole('banner', { name: /Reviewing/ });
     await waitFor(() => expect(screen.getByTestId('form-lines')).toHaveTextContent('1'));
+    await chooseInstallDate();
     await userEvent.click(saveButtons()[0]);
 
     expect(await screen.findByText('This order may already exist')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open existing SO-1000' })).toBeInTheDocument();
     expect(vi.mocked(salesOrderService.createOrder).mock.calls[0][0]).not.toHaveProperty('allowDuplicate');
+    expect(vi.mocked(salesOrderService.createOrder).mock.calls[0][0]).toMatchObject({ scheduledInstallDate: '2099-12-31' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Create anyway' }));
     await waitFor(() => expect(salesOrderService.createOrder).toHaveBeenCalledTimes(2));
@@ -182,6 +191,7 @@ describe('AddSalesOrderPage review mode', () => {
     renderPage();
     await screen.findByRole('banner', { name: /Reviewing/ });
     await waitFor(() => expect(screen.getByTestId('form-lines')).toHaveTextContent('1'));
+    await chooseInstallDate();
     await userEvent.click(saveButtons()[0]);
 
     if (prompted) {
@@ -200,11 +210,32 @@ describe('AddSalesOrderPage review mode', () => {
     vi.mocked(salesOrderService.createOrder).mockResolvedValue(ORDER);
     renderPage();
     await userEvent.click(await screen.findByRole('button', { name: 'Pick customer in form' }));
+    await chooseInstallDate();
     await userEvent.click(saveButtons()[0]);
     await waitFor(() => expect(toast.success).toHaveBeenCalled());
     expect(vi.mocked(toast.success).mock.calls[0][1]).toMatchObject({
       description: "We'll remember ACME Stone Inc → Picked Co next time.",
     });
+  });
+
+  it('will not create the order until a scheduled installation date is chosen', async () => {
+    // jsdom has no scrollIntoView; the error banner scrolls itself into view.
+    const original = window.HTMLElement.prototype.scrollIntoView;
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    try {
+      vi.mocked(svc.get).mockResolvedValue(extraction(resultDoc()));
+      renderPage();
+      await screen.findByRole('banner', { name: /Reviewing/ });
+      await waitFor(() => expect(screen.getByTestId('form-lines')).toHaveTextContent('1'));
+      expect(screen.getByTestId('form-install-date')).toHaveTextContent('');
+
+      await userEvent.click(saveButtons()[0]);
+
+      expect(await screen.findByText('Select a scheduled installation date.')).toBeInTheDocument();
+      expect(salesOrderService.createOrder).not.toHaveBeenCalled();
+    } finally {
+      window.HTMLElement.prototype.scrollIntoView = original;
+    }
   });
 
   it('shows the expired banner and keeps the form usable', async () => {

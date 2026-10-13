@@ -227,3 +227,38 @@ describe('Sidebar workflow-enabled gating', () => {
     expect(screen.getByText('Payments')).toBeInTheDocument();
   });
 });
+
+describe('Sidebar Calendar group', () => {
+  const readOrders = [{ resource: 'sales_order', action: 'read' }];
+
+  it('shows Calendar > Activity Planner to anyone who can read sales orders', () => {
+    setup({ grants: readOrders });
+
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Activity Planner/ })).toHaveAttribute('href', '/calendar/activity-planner');
+  });
+
+  it('hides Calendar from a user who cannot read sales orders', () => {
+    setup({ grants: [{ resource: 'invoice', action: 'read' }] });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+  });
+
+  it('hides Calendar once the Sales Order workflow is disabled', () => {
+    setup({ grants: [{ resource: '*', action: '*' }], disabledWorkflows: ['sales_order'] });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+  });
+
+  // A portal session is granted sales_order:read for its own order pages, but
+  // the Planner is staff-only and MainLayout bounces customers away from it —
+  // so the menu must not offer it.
+  it('does not offer the Calendar to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: readOrders });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+    expect(screen.getByText('Sales Orders')).toBeInTheDocument();
+  });
+});

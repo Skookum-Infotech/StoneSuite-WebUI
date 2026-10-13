@@ -109,10 +109,10 @@ export function ItemFilterDrawer({ onClose, value, onApply }: {
               <input type="number" min={0} value={draft.thicknessMax} onChange={(e) => set('thicknessMax', e.target.value)} placeholder="Max" className={fieldCls} aria-label="Thickness max" />
             </div>
           </FilterField>
-          <FilterField label="Unit Price">
+          <FilterField label="Selling Unit Price">
             <div className="grid grid-cols-2 gap-2">
-              <input type="number" min={0} value={draft.unitPriceMin} onChange={(e) => set('unitPriceMin', e.target.value)} placeholder="Min" className={fieldCls} aria-label="Unit price min" />
-              <input type="number" min={0} value={draft.unitPriceMax} onChange={(e) => set('unitPriceMax', e.target.value)} placeholder="Max" className={fieldCls} aria-label="Unit price max" />
+              <input type="number" min={0} value={draft.unitPriceMin} onChange={(e) => set('unitPriceMin', e.target.value)} placeholder="Min" className={fieldCls} aria-label="Selling unit price min" />
+              <input type="number" min={0} value={draft.unitPriceMax} onChange={(e) => set('unitPriceMax', e.target.value)} placeholder="Max" className={fieldCls} aria-label="Selling unit price max" />
             </div>
           </FilterField>
         </div>

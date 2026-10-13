@@ -18,7 +18,7 @@ import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles';
 import { useExitConfirmation } from '@/hooks/useExitConfirmation';
 import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { CUSTOMER_ALLOWED_PATH_PREFIXES } from '@/config/customerPortal';
+import { isCustomerAllowedPath } from '@/config/customerPortal';
 import { formatBreadcrumbSegment, isRegisteredPath } from '@/lib/breadcrumb';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
@@ -195,7 +195,7 @@ export default function MainLayout(): React.JSX.Element {
   // Support). Everything else under this shell is staff-only. See that list
   // for why this is one allowlisted choke point rather than relying on every
   // route remembering its own PermissionGuard.
-  if (isCustomer && !CUSTOMER_ALLOWED_PATH_PREFIXES.some((p) => location.pathname.startsWith(p))) {
+  if (isCustomer && !isCustomerAllowedPath(location.pathname)) {
     return <Navigate to="/sales/sales_order" replace />;
   }
 

@@ -9,6 +9,11 @@ import type {
   SalesOrderSearchRequest,
   SalesOrderPage,
   SalesOrderInventoryRow,
+  SalesOrderScheduleActivity,
+  SalesOrderScheduleActivityPatch,
+  ScheduleFeed,
+  ScheduleFeedEvent,
+  ScheduleFeedQuery,
 } from '@/types/salesOrder';
 import type { Invoice } from '@/types/invoice';
 
@@ -128,6 +133,39 @@ export const salesOrderService = {
     tenantClient
       .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(`${BASE}/${uuid}/audit`)
       .then((r) => r.data.audit ?? []),
+
+  // The Activity Planner's feed: every planned activity of one group across the
+  // orders this caller can read, for an inclusive date window (at most ~3
+  // months). Scope-filtered by the server like the order list; cancelled
+  // orders are left out.
+  getScheduleFeed: ({ group, from, to }: ScheduleFeedQuery): Promise<ScheduleFeed> =>
+    tenantClient
+      .get<{ success: boolean; events: ScheduleFeedEvent[]; truncated?: boolean }>(
+        `${BASE}/schedule`,
+        { params: { group, from, to } },
+      )
+      .then((r) => ({ events: r.data.events ?? [], truncated: Boolean(r.data.truncated) })),
+
+  // The order's auto-planned production schedule, in plan order. Empty until a
+  // scheduled installation date has been saved on the order.
+  getSchedule: (uuid: string): Promise<SalesOrderScheduleActivity[]> =>
+    tenantClient
+      .get<{ success: boolean; activities: SalesOrderScheduleActivity[] }>(`${BASE}/${uuid}/schedule`)
+      .then((r) => r.data.activities ?? []),
+
+  // Partial edit of one activity (status / scheduled time / completed-on / notes).
+  // Gated on sales_order:update, like editing the order itself.
+  updateScheduleActivity: (
+    uuid: string,
+    code: string,
+    patch: SalesOrderScheduleActivityPatch,
+  ): Promise<SalesOrderScheduleActivity> =>
+    tenantClient
+      .patch<{ success: boolean; activity: SalesOrderScheduleActivity }>(
+        `${BASE}/${uuid}/schedule/${encodeURIComponent(code)}`,
+        patch,
+      )
+      .then((r) => r.data.activity),
 
   // Snapshot-copies this order into a new Invoice (idempotent — replaying
   // against an already-converted order returns the existing Invoice with

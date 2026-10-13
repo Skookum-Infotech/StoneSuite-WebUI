@@ -19,6 +19,38 @@ function renderBody(data: Record<string, unknown>) {
   return set;
 }
 
+describe('ItemFormBody — prices', () => {
+  it('asks for a purchasing and a selling unit price, both required', () => {
+    renderBody({ purchase_unit_price: '', unit_price: '' });
+
+    const purchasing = screen.getByRole('spinbutton', { name: 'Purchasing Unit Price' });
+    const selling = screen.getByRole('spinbutton', { name: 'Selling Unit Price' });
+    expect(purchasing).toBeRequired();
+    expect(selling).toBeRequired();
+    expect(purchasing).toHaveAttribute('step', '0.01');
+    expect(selling).toHaveAttribute('step', '0.01');
+    expect(screen.queryByRole('spinbutton', { name: 'Unit Price' })).not.toBeInTheDocument();
+  });
+
+  it('writes each price to its own field', async () => {
+    const set = renderBody({ purchase_unit_price: '', unit_price: '' });
+    const user = userEvent.setup();
+
+    await user.type(screen.getByRole('spinbutton', { name: 'Purchasing Unit Price' }), '7');
+    await user.type(screen.getByRole('spinbutton', { name: 'Selling Unit Price' }), '9');
+
+    expect(set).toHaveBeenCalledWith('purchase_unit_price', '7');
+    expect(set).toHaveBeenCalledWith('unit_price', '9');
+  });
+
+  it('shows the values an item was saved with', () => {
+    renderBody({ purchase_unit_price: '80.5', unit_price: '120' });
+
+    expect(screen.getByRole('spinbutton', { name: 'Purchasing Unit Price' })).toHaveValue(80.5);
+    expect(screen.getByRole('spinbutton', { name: 'Selling Unit Price' })).toHaveValue(120);
+  });
+});
+
 describe('ItemFormBody — Track stock', () => {
   it('is on by default and can be switched off for a service item', async () => {
     const set = renderBody({ tracking: 'quantity', track_stock: true });

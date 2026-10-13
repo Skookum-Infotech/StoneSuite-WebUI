@@ -56,6 +56,9 @@ export default function EditItemPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-item', id] });
+      // The item may have joined or left kits: their item counts and contents changed.
+      queryClient.invalidateQueries({ queryKey: ['inventory-kits'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-kit'] });
       guard.markClean();
       navigate(`/inventory/item/${id}`);
     },

@@ -35,7 +35,9 @@ const base = {
   thicknessMm: 30, barcode: '', createdAt: '', updatedAt: '',
 };
 const SLAB_ITEM = { ...base, id: 'item-slab', sku: 'AB-30', name: 'Absolute Black', unitId: 6, tracking: 'serialized' };
-const QUANTITY_ITEM = { ...base, id: 'item-each', sku: 'SEAL-1', name: 'Sealer', unitId: 1, unitPrice: 12, tracking: 'quantity' };
+const QUANTITY_ITEM = {
+  ...base, id: 'item-each', sku: 'SEAL-1', name: 'Sealer', unitId: 1, unitPrice: 12, purchaseUnitPrice: 7.5, tracking: 'quantity',
+};
 
 const noop = () => undefined;
 
@@ -56,6 +58,29 @@ function Harness({ initial = [] as PurchaseOrderLineItem[], onChange = noop }: {
 async function startAdding(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Add Line' }));
 }
+
+describe('PurchaseOrderItemsTab — the line price', () => {
+  it('defaults a picked item to its purchasing price, not its selling price', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await startAdding(user);
+
+    await user.click(screen.getByRole('button', { name: 'pick each item' }));
+
+    // Sealer sells for 12 and costs 7.5: a purchase line is what we pay.
+    expect(screen.getByRole('spinbutton', { name: 'Unit Price' })).toHaveValue(7.5);
+  });
+
+  it('uses the selling price for an item the API sent without a purchasing price', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await startAdding(user);
+
+    await user.click(screen.getByRole('button', { name: 'pick slab item' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Unit Price' })).toHaveValue(18);
+  });
+});
 
 describe('PurchaseOrderItemsTab — the Units column', () => {
   it('shows the unit as soon as an item is picked, not a dash', async () => {
