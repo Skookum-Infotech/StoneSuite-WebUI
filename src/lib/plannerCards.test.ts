@@ -8,11 +8,11 @@ const NOW = new Date(2026, 9, 14, 12, 0, 0);
 
 function event(over: Partial<ScheduleFeedEvent> = {}): ScheduleFeedEvent {
   return {
-    code: 'template_in_progress',
-    sequence: 3,
-    group: 'Template',
-    name: 'Template In Progress',
-    status: 'scheduled',
+    code: 'installation_ready',
+    sequence: 9,
+    group: 'Installation',
+    name: 'Installation Ready',
+    status: 'pending',
     scheduledAt: '2026-10-15T09:00:00',
     notes: '',
     order: {
@@ -33,19 +33,25 @@ describe('scheduleEventCard', () => {
     const card = scheduleEventCard(event(), NOW);
 
     expect(card).toMatchObject({
-      id: 'so-uuid-1:template_in_progress',
+      id: 'so-uuid-1:installation_ready',
       kind: 'schedule',
       at: '2026-10-15T09:00:00',
       allDay: false,
       timeLabel: '9:00 AM',
       title: 'SO-1042',
       customer: 'Acme Builders',
-      stage: 'Template In Progress',
-      statusLabel: 'Scheduled',
+      stage: 'Installation Ready',
+      statusLabel: 'Pending',
       meta: 'Installs Nov 10, 2026 · PO PO-5531',
       done: false,
       overdue: false,
     });
+  });
+
+  it('leaves the stage out when the activity is just its tab', () => {
+    const card = scheduleEventCard(event({ code: 'saw', group: 'Saw', name: 'Saw' }), NOW);
+
+    expect(card.stage).toBe('');
   });
 
   it('links to the order opened on its Scheduling tab', () => {
@@ -53,12 +59,18 @@ describe('scheduleEventCard', () => {
     expect(orderSchedulePath('abc')).toBe('/sales/sales_order/abc?tab=scheduling');
   });
 
-  it('flags a scheduled activity whose time has passed as overdue', () => {
+  it('flags a pending activity whose time has passed as overdue', () => {
     const card = scheduleEventCard(event({ scheduledAt: '2026-10-13T09:00:00' }), NOW);
 
     expect(card.overdue).toBe(true);
     expect(card.statusLabel).toBe('Overdue');
     expect(card.done).toBe(false);
+  });
+
+  it('shows a started activity as in progress, even past its scheduled time', () => {
+    const card = scheduleEventCard(event({ status: 'in_progress', scheduledAt: '2026-10-13T09:00:00' }), NOW);
+
+    expect(card).toMatchObject({ statusLabel: 'In Progress', overdue: false, done: false });
   });
 
   it('marks a completed activity done and says when', () => {

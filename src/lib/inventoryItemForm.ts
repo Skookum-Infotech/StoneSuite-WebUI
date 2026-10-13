@@ -10,6 +10,7 @@
 import type { InventoryItem, InventoryItemInput, KitRef, TrackingMode, Warehouse } from '@/types/inventory';
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
 import { toNumericWarehouseId } from './inventoryWarehouse';
+import { itemPrice } from './itemPrice';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -71,7 +72,10 @@ export function itemDefaults(): Record<string, unknown> {
     name: '',
     description: '',
     unit_id: '',
-    unit_price: '0',
+    // Both prices are required and start blank — a pre-filled 0 would let an
+    // item be saved without anyone having decided what it sells or costs.
+    unit_price: '',
+    purchase_unit_price: '',
     currency_id: '',
     tax_rate_id: '',
     is_active: true,
@@ -103,6 +107,7 @@ export function toItemPayload(data: Record<string, unknown>, warehouses: Warehou
     description: toStr(data.description),
     unitId: toIntOrNull(data.unit_id) ?? 0,
     unitPrice: toNum(data.unit_price),
+    purchaseUnitPrice: toNum(data.purchase_unit_price),
     currencyId: toIntOrNull(data.currency_id),
     taxRateId: toIntOrNull(data.tax_rate_id),
     customFields: {},
@@ -131,6 +136,7 @@ export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Rec
     description: item.description ?? '',
     unit_id: idOrEmpty(item.unitId),
     unit_price: String(item.unitPrice ?? 0),
+    purchase_unit_price: String(itemPrice(item, 'purchasing') ?? 0),
     currency_id: idOrEmpty(item.currencyId),
     tax_rate_id: idOrEmpty(item.taxRateId),
     is_active: item.isActive,
@@ -152,13 +158,26 @@ export interface ItemFieldError {
   label: string;
 }
 
-/** Required-field check the backend also enforces (sku/name/unitId) —
- *  catches the common miss before a round trip, not a substitute for
+/** A required price: filled in, and a number that is not negative. 0 is a valid
+ *  price (a service or labour item); a blank field is not. */
+function isValidPrice(v: unknown): boolean {
+  const s = toStr(v).trim();
+  if (!s) return false;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0;
+}
+
+/** Required-field check the backend also enforces (sku/name/unitId and both
+ *  prices) — catches the common miss before a round trip, not a substitute for
  *  server-side validation. */
 export function validateItem(data: Record<string, unknown>): ItemFieldError[] {
   const errors: ItemFieldError[] = [];
   if (!toStr(data.sku).trim()) errors.push({ key: 'sku', label: 'SKU' });
   if (!toStr(data.name).trim()) errors.push({ key: 'name', label: 'Item Name' });
   if (!toIntOrNull(data.unit_id)) errors.push({ key: 'unit_id', label: 'Unit' });
+  if (!isValidPrice(data.unit_price)) errors.push({ key: 'unit_price', label: 'Selling Unit Price' });
+  if (!isValidPrice(data.purchase_unit_price)) {
+    errors.push({ key: 'purchase_unit_price', label: 'Purchasing Unit Price' });
+  }
   return errors;
 }

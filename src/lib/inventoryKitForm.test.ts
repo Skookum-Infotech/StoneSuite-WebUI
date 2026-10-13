@@ -63,7 +63,7 @@ describe('fromKit / toKitPayload', () => {
 
 describe('validateKit', () => {
   it('needs a name', () => {
-    expect(validateKit(kitDefaults('   '))).toEqual([{ key: 'name', label: 'Kit Name' }]);
+    expect(validateKit(kitDefaults('   '))).toEqual([{ key: 'name', label: 'Kit/Package Name' }]);
   });
 
   it('refuses a zero, negative or blank quantity, naming the item', () => {

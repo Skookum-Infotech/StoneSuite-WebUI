@@ -5,6 +5,7 @@ import { formatMoney } from '@/lib/formatMoney';
 // from its current home rather than duplicated (mirrors PurchaseOrderItemsTab's
 // usage two folders over).
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
+import { itemPrice } from '@/lib/itemPrice';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
@@ -67,7 +68,7 @@ export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent, currency
     units: unitCodeFor(item),
     itemDescription: item.description,
     itemSku: item.sku,
-    unitPrice: String(item.unitPrice),
+    unitPrice: String(itemPrice(item, 'purchasing')),
     inventoryItemUuid: item.id,
   });
 
@@ -102,6 +103,7 @@ export function VendorBillItemsTab({ items, onUpdate, headerTaxPercent, currency
   };
 
   const picker: InventoryItemPickerHandlers = {
+    priceKind: 'purchasing',
     onTextChange: onItemNameText,
     onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
     onAddToInventory: addToInventory,

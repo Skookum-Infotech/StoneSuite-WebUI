@@ -82,10 +82,10 @@ export default function EditKitPage() {
       <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
-          backLabel="Kits"
+          backLabel="Kit/Packages"
           onBack={() => navigate(KITS_TAB_PATH)}
           icon={Boxes}
-          title={kit?.name || 'Edit Kit'}
+          title={kit?.name || 'Edit Kit/Package'}
           subtitle="Fields marked * are required."
           actions={(
             <button type="submit" disabled={isPending}

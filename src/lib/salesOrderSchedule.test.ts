@@ -19,11 +19,11 @@ const NOW = new Date(2026, 9, 12, 14, 30);
 
 function activity(over: Partial<SalesOrderScheduleActivity>): SalesOrderScheduleActivity {
   return {
-    code: 'saw_pending',
-    sequence: 11,
+    code: 'saw',
+    sequence: 6,
     group: 'Saw',
-    name: 'Saw Pending',
-    status: 'scheduled',
+    name: 'Saw',
+    status: 'pending',
     scheduledAt: '2026-10-25T09:00:00',
     notes: '',
     ...over,
@@ -91,32 +91,41 @@ describe('displayStatus', () => {
     expect(displayStatus(activity({ status: 'completed', scheduledAt: '2026-01-01T09:00:00' }), NOW)).toBe('completed');
   });
 
-  it('shows a future scheduled row as scheduled', () => {
-    expect(displayStatus(activity({ scheduledAt: '2026-10-25T09:00:00' }), NOW)).toBe('scheduled');
+  it('shows a future pending row as pending', () => {
+    expect(displayStatus(activity({ scheduledAt: '2026-10-25T09:00:00' }), NOW)).toBe('pending');
   });
 
-  it('shows a scheduled row whose time has passed as overdue', () => {
+  it('shows a pending row whose time has passed as overdue', () => {
     expect(displayStatus(activity({ scheduledAt: '2026-10-12T09:00:00' }), NOW)).toBe('overdue');
     expect(displayStatus(activity({ scheduledAt: '2026-10-11T17:00:00' }), NOW)).toBe('overdue');
   });
 
   it('is not overdue later the same day', () => {
-    expect(displayStatus(activity({ scheduledAt: '2026-10-12T17:00:00' }), NOW)).toBe('scheduled');
+    expect(displayStatus(activity({ scheduledAt: '2026-10-12T17:00:00' }), NOW)).toBe('pending');
+  });
+
+  it('keeps an in-progress row in progress even once its time has passed', () => {
+    expect(displayStatus(activity({ status: 'in_progress', scheduledAt: '2026-10-01T09:00:00' }), NOW)).toBe('in_progress');
+  });
+
+  it('falls back to pending for a pending row with no readable time', () => {
+    expect(displayStatus(activity({ scheduledAt: '' }), NOW)).toBe('pending');
   });
 });
 
 describe('scheduleProgress', () => {
-  it('counts completed and overdue rows', () => {
+  it('counts completed, in-progress and overdue rows', () => {
     const rows = [
       activity({ code: 'a', status: 'completed' }),
       activity({ code: 'b', status: 'completed' }),
       activity({ code: 'c', scheduledAt: '2026-10-01T09:00:00' }),
       activity({ code: 'd', scheduledAt: '2026-10-30T09:00:00' }),
+      activity({ code: 'e', status: 'in_progress', scheduledAt: '2026-10-01T09:00:00' }),
     ];
-    expect(scheduleProgress(rows, NOW)).toEqual({ total: 4, completed: 2, overdue: 1 });
+    expect(scheduleProgress(rows, NOW)).toEqual({ total: 5, completed: 2, inProgress: 1, overdue: 1 });
   });
 
   it('handles an empty schedule', () => {
-    expect(scheduleProgress([], NOW)).toEqual({ total: 0, completed: 0, overdue: 0 });
+    expect(scheduleProgress([], NOW)).toEqual({ total: 0, completed: 0, inProgress: 0, overdue: 0 });
   });
 });

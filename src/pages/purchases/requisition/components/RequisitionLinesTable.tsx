@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 // from its current home rather than duplicated (mirrors
 // PurchaseOrderItemsTab's usage one folder over).
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
+import { itemPrice } from '@/lib/itemPrice';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
@@ -57,7 +58,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
     units: unitCodeFor(item),
     itemDescription: item.description,
     itemSku: item.sku,
-    estimatedUnitPrice: String(item.unitPrice),
+    estimatedUnitPrice: String(itemPrice(item, 'purchasing')),
     inventoryItemUuid: item.id,
   });
 
@@ -91,6 +92,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
   };
 
   const picker: InventoryItemPickerHandlers = {
+    priceKind: 'purchasing',
     onTextChange: onItemNameText,
     onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
     onAddToInventory: addToInventory,

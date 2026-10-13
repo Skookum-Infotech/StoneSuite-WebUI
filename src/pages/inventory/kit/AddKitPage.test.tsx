@@ -41,9 +41,9 @@ function Landing({ label }: { label: string }) {
   );
 }
 
-// The header and the action bar each carry a Save Kit button.
+// The header and the action bar each carry a Save Kit/Package button.
 function saveButton() {
-  return screen.getAllByRole('button', { name: 'Save Kit' })[0];
+  return screen.getAllByRole('button', { name: 'Save Kit/Package' })[0];
 }
 
 function renderAdd(initialPath: string) {
@@ -78,7 +78,7 @@ describe('AddKitPage', () => {
   it('prefills the name a picker handed over', () => {
     renderAdd('/inventory/kit/new?name=Kitchen&returnTo=%2Fsales%2Fsales_order%2Fnew');
 
-    expect(screen.getByRole('textbox', { name: 'Kit Name' })).toHaveValue('Kitchen');
+    expect(screen.getByRole('textbox', { name: 'Kit/Package Name' })).toHaveValue('Kitchen');
     expect(screen.getAllByText(/You'll go back to your document after saving/).length).toBeGreaterThan(0);
   });
 
@@ -87,10 +87,10 @@ describe('AddKitPage', () => {
     renderAdd('/inventory/kit/new');
 
     // Spaces get past the field's native `required`, so the form's own check runs.
-    await user.type(screen.getByRole('textbox', { name: 'Kit Name' }), '   ');
+    await user.type(screen.getByRole('textbox', { name: 'Kit/Package Name' }), '   ');
     await user.click(saveButton());
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Kit Name');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Kit/Package Name');
     expect(inventoryService.createKit).not.toHaveBeenCalled();
   });
 
@@ -155,6 +155,6 @@ describe('AddKitPage', () => {
     await user.click(saveButton());
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/already exists/);
-    expect(screen.getByRole('textbox', { name: 'Kit Name' })).toHaveValue('Kitchen');
+    expect(screen.getByRole('textbox', { name: 'Kit/Package Name' })).toHaveValue('Kitchen');
   });
 });

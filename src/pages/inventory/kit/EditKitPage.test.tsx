@@ -73,7 +73,7 @@ describe('EditKitPage', () => {
   it('loads the kit with its items, quantities and an inactive item flagged', async () => {
     renderEdit();
 
-    expect(await screen.findByRole('textbox', { name: 'Kit Name' })).toHaveValue('Kitchen');
+    expect(await screen.findByRole('textbox', { name: 'Kit/Package Name' })).toHaveValue('Kitchen');
     expect(screen.getByRole('textbox', { name: 'Description' })).toHaveValue('Counters and splash');
     expect(screen.getByRole('spinbutton', { name: 'Quantity of Countertop' })).toHaveValue(2);
     expect(screen.getByRole('spinbutton', { name: 'Quantity of Old Faucet' })).toHaveValue(1);
@@ -83,7 +83,7 @@ describe('EditKitPage', () => {
   it('saves the whole kit — edited quantity, removed item — and returns to the Kits tab', async () => {
     const user = userEvent.setup();
     renderEdit();
-    await screen.findByRole('textbox', { name: 'Kit Name' });
+    await screen.findByRole('textbox', { name: 'Kit/Package Name' });
 
     const qty = screen.getByRole('spinbutton', { name: 'Quantity of Countertop' });
     await user.clear(qty);
@@ -102,7 +102,7 @@ describe('EditKitPage', () => {
   it('refuses a zero quantity before asking the server', async () => {
     const user = userEvent.setup();
     renderEdit();
-    await screen.findByRole('textbox', { name: 'Kit Name' });
+    await screen.findByRole('textbox', { name: 'Kit/Package Name' });
 
     await user.clear(screen.getByRole('spinbutton', { name: 'Quantity of Countertop' }));
     await user.type(screen.getByRole('spinbutton', { name: 'Quantity of Countertop' }), '0');
@@ -115,7 +115,7 @@ describe('EditKitPage', () => {
   it('deletes the kit after confirming, and returns to the Kits tab', async () => {
     const user = userEvent.setup();
     renderEdit();
-    await screen.findByRole('textbox', { name: 'Kit Name' });
+    await screen.findByRole('textbox', { name: 'Kit/Package Name' });
 
     await user.click(screen.getByRole('button', { name: 'Delete Kitchen' }));
     await user.click(await screen.findByRole('button', { name: 'Delete kit' }));
@@ -126,7 +126,7 @@ describe('EditKitPage', () => {
 
   it('offers no delete to someone without delete access', async () => {
     renderEdit(false);
-    await screen.findByRole('textbox', { name: 'Kit Name' });
+    await screen.findByRole('textbox', { name: 'Kit/Package Name' });
 
     expect(screen.queryByRole('button', { name: 'Delete Kitchen' })).not.toBeInTheDocument();
   });

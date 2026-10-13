@@ -67,10 +67,10 @@ export default function AddKitPage() {
       <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
-          backLabel={returnTo ? 'Back' : 'Kits'}
+          backLabel={returnTo ? 'Back' : 'Kit/Packages'}
           onBack={() => leave(null)}
           icon={Boxes}
-          title="New Kit"
+          title="New Kit/Package"
           subtitle={returnTo
             ? "Fields marked * are required. You'll go back to your document after saving."
             : 'Fields marked * are required.'}
@@ -78,7 +78,7 @@ export default function AddKitPage() {
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
-              {isPending ? 'Saving…' : 'Save Kit'}
+              {isPending ? 'Saving…' : 'Save Kit/Package'}
             </button>
           )}
         />
@@ -108,7 +108,7 @@ export default function AddKitPage() {
           </div>
         </div>
 
-        <FormActionBar onCancel={() => leave(null)} isPending={isPending} submitLabel="Save Kit" />
+        <FormActionBar onCancel={() => leave(null)} isPending={isPending} submitLabel="Save Kit/Package" />
       </form>
     </div>
   );

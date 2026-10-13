@@ -36,7 +36,8 @@ export interface PlannerCard {
   /** A second link — an invoice card's order. */
   origin?: { label: string; href: string };
   customer: string;
-  /** The activity stage this card is, e.g. "Template In Progress". */
+  /** The activity this card is, when its name says more than the tab already
+   *  does — "Installation Ready" on the Installation tab; empty for "Saw" on Saw. */
   stage: string;
   /** One muted line: install date and PO, or the amount due. */
   meta: string;
@@ -108,7 +109,7 @@ export function scheduleEventCard(event: ScheduleFeedEvent, now: Date = new Date
     title,
     href: orderSchedulePath(order.id),
     customer: order.customerName,
-    stage: event.name,
+    stage: event.name === event.group ? '' : event.name,
     meta,
     notes: event.notes,
     doneLabel: done && event.completedAt ? `Done ${formatWallClock(event.completedAt)}` : '',

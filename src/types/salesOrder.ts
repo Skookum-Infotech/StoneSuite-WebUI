@@ -216,8 +216,8 @@ export interface SalesOrderPage {
 // ── Scheduling tab (GET/PATCH /sales-orders/{uuid}/schedule) ─────────────────
 
 /** Stored status of one schedule row. "Overdue" is not a stored status — it is
- *  derived client-side from a `scheduled` row whose time has passed. */
-export type ScheduleActivityStatus = 'scheduled' | 'completed';
+ *  derived client-side from a `pending` row whose time has passed. */
+export type ScheduleActivityStatus = 'pending' | 'in_progress' | 'completed';
 
 /** One planned activity. `scheduledAt` / `completedAt` are zone-less wall-clock
  *  strings ("yyyy-mm-ddThh:mm:ss") — never feed them to `new Date()`, which
@@ -226,9 +226,10 @@ export interface SalesOrderScheduleActivity {
   code: string;
   /** 1-based position in the plan. */
   sequence: number;
-  /** The phase the activity belongs to, e.g. "Template". */
+  /** The phase the activity belongs to, e.g. "Installation". */
   group: string;
-  /** Full activity name, e.g. "Template In Progress". */
+  /** Activity name, e.g. "Saw" or "Installation Ready". Never carries a status —
+   *  that is `status`. */
   name: string;
   status: ScheduleActivityStatus;
   scheduledAt: string;

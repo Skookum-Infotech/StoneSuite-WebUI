@@ -67,16 +67,30 @@ export function ItemFormBody({ data, set }: {
               required
             />
           </ModernFieldShell>
-          <ModernFieldShell label="Unit Price">
+          <ModernFieldShell label="Purchasing Unit Price" required>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={String(data.purchase_unit_price ?? '')}
+              onChange={(e) => set('purchase_unit_price', e.target.value)}
+              placeholder="0.00 — what you pay"
+              className={fieldCls}
+              aria-label="Purchasing Unit Price"
+              required
+            />
+          </ModernFieldShell>
+          <ModernFieldShell label="Selling Unit Price" required>
             <input
               type="number"
               min={0}
               step="0.01"
               value={String(data.unit_price ?? '')}
               onChange={(e) => set('unit_price', e.target.value)}
-              placeholder="0.00"
+              placeholder="0.00 — what you charge"
               className={fieldCls}
-              aria-label="Unit Price"
+              aria-label="Selling Unit Price"
+              required
             />
           </ModernFieldShell>
           <ModernFieldShell label="Currency">
@@ -120,7 +134,7 @@ export function ItemFormBody({ data, set }: {
             />
           </ModernFieldShell>
           <div className="sm:col-span-2 lg:col-span-3">
-            <ModernFieldShell label="Kits">
+            <ModernFieldShell label="Kit/Packages">
               <KitSelect
                 value={Array.isArray(data.kits) ? (data.kits as KitRef[]) : []}
                 onChange={(kits) => set('kits', kits)}

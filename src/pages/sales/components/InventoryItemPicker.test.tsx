@@ -10,9 +10,12 @@ vi.mock('@/services/inventoryService', () => ({
 
 import { InventoryItemPicker } from './InventoryItemPicker';
 import { inventoryService } from '@/services/inventoryService';
+import type { ItemPriceKind } from '@/lib/itemPrice';
 import type { InventoryItem, InventoryKit } from '@/types/inventory';
 
-const GOLD = { id: 'item-1', name: 'Calacatta Gold', sku: 'CG-01', unitPrice: 120 } as InventoryItem;
+const GOLD = {
+  id: 'item-1', name: 'Calacatta Gold', sku: 'CG-01', unitPrice: 120, purchaseUnitPrice: 80,
+} as InventoryItem;
 const WHITE = { id: 'item-2', name: 'Calacatta White', sku: 'CW-01', unitPrice: 95 } as InventoryItem;
 const KITCHEN = {
   id: 'kit-1', name: 'Kitchen', description: '', isActive: true, itemCount: 4, createdAt: '', updatedAt: '',
@@ -29,11 +32,12 @@ function mockKits(records: InventoryKit[]) {
 
 // Mirrors how the items tables host the picker: a controlled value inside the
 // table's clipping overflow wrapper.
-function Harness({ onPick = vi.fn(), onAddToInventory, onPickKit, onAddKit }: {
+function Harness({ onPick = vi.fn(), onAddToInventory, onPickKit, onAddKit, priceKind }: {
   onPick?: (item: InventoryItem) => void;
   onAddToInventory?: (name: string) => void;
   onPickKit?: (kit: InventoryKit) => void;
   onAddKit?: (name: string) => void;
+  priceKind?: ItemPriceKind;
 }) {
   const [value, setValue] = useState('');
   return (
@@ -45,6 +49,7 @@ function Harness({ onPick = vi.fn(), onAddToInventory, onPickKit, onAddKit }: {
         onAddToInventory={onAddToInventory}
         onPickKit={onPickKit}
         onAddKit={onAddKit}
+        priceKind={priceKind}
       />
     </div>
   );
@@ -86,6 +91,26 @@ describe('InventoryItemPicker', () => {
 
     expect(onPick).toHaveBeenCalledWith(GOLD);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('shows the selling price by default, as on a sales document', async () => {
+    mockSearch([GOLD]);
+    const user = userEvent.setup();
+    renderPicker();
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Cala');
+
+    expect(await screen.findByRole('option', { name: /Calacatta Gold/ })).toHaveTextContent('CG-01 · $120.00');
+  });
+
+  it('shows the purchasing price on a purchase document', async () => {
+    mockSearch([GOLD]);
+    const user = userEvent.setup();
+    renderPicker({ priceKind: 'purchasing' });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Cala');
+
+    expect(await screen.findByRole('option', { name: /Calacatta Gold/ })).toHaveTextContent('CG-01 · $80.00');
   });
 
   it('warns and offers Add to Inventory when nothing matches', async () => {

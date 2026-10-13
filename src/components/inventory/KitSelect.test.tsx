@@ -60,24 +60,24 @@ describe('KitSelect', () => {
     const user = userEvent.setup();
     renderSelect({ onChange });
 
-    await user.click(screen.getByRole('textbox', { name: 'Add to a kit' }));
+    await user.click(screen.getByRole('textbox', { name: 'Add to a kit/package' }));
     expect(await screen.findByRole('button', { name: /Kitchen/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Retired/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Kitchen/ }));
 
     expect(onChange).toHaveBeenCalledWith([{ id: 'k1', name: 'Kitchen' }]);
-    expect(screen.getByRole('list', { name: 'Kits this item is in' })).toHaveTextContent('Kitchen');
+    expect(screen.getByRole('list', { name: 'Kit/Packages this item is in' })).toHaveTextContent('Kitchen');
   });
 
   it('does not offer a kit that is already chosen, and a chip can be removed', async () => {
     const user = userEvent.setup();
     renderSelect({ initial: [{ id: 'k1', name: 'Kitchen' }] });
 
-    await user.click(screen.getByRole('textbox', { name: 'Add to a kit' }));
+    await user.click(screen.getByRole('textbox', { name: 'Add to a kit/package' }));
     expect(await screen.findByRole('button', { name: /Bathroom/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Kitchen/ })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Remove from kit Kitchen' }));
+    await user.click(screen.getByRole('button', { name: 'Remove from kit/package Kitchen' }));
     expect(screen.getByTestId('chosen')).toHaveTextContent('');
   });
 
@@ -87,8 +87,8 @@ describe('KitSelect', () => {
     const user = userEvent.setup();
     renderSelect();
 
-    await user.type(screen.getByRole('textbox', { name: 'Add to a kit' }), 'Garage');
-    await user.click(await screen.findByRole('button', { name: 'Add “Garage” as a new kit' }));
+    await user.type(screen.getByRole('textbox', { name: 'Add to a kit/package' }), 'Garage');
+    await user.click(await screen.findByRole('button', { name: 'Add “Garage” as a new kit/package' }));
 
     expect(inventoryService.createKit).toHaveBeenCalledWith({ name: 'Garage', description: '', members: [] });
     expect(await screen.findByTestId('chosen')).toHaveTextContent('Garage');
@@ -105,8 +105,8 @@ describe('KitSelect', () => {
     const user = userEvent.setup();
     renderSelect();
 
-    await user.type(screen.getByRole('textbox', { name: 'Add to a kit' }), 'Retired');
-    await user.click(await screen.findByRole('button', { name: 'Add “Retired” as a new kit' }));
+    await user.type(screen.getByRole('textbox', { name: 'Add to a kit/package' }), 'Retired');
+    await user.click(await screen.findByRole('button', { name: 'Add “Retired” as a new kit/package' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/already exists/);
     expect(screen.getByTestId('chosen')).toHaveTextContent('');
@@ -115,7 +115,7 @@ describe('KitSelect', () => {
   it('does not offer to create when the name is already a kit, or the user cannot create', async () => {
     const user = userEvent.setup();
     renderSelect();
-    await user.type(screen.getByRole('textbox', { name: 'Add to a kit' }), 'kitchen');
+    await user.type(screen.getByRole('textbox', { name: 'Add to a kit/package' }), 'kitchen');
     await screen.findByRole('button', { name: /Kitchen/ });
     expect(screen.queryByRole('button', { name: /as a new kit/ })).not.toBeInTheDocument();
   });
@@ -126,8 +126,8 @@ describe('KitSelect', () => {
     const user = userEvent.setup();
     renderSelect();
 
-    await user.type(screen.getByRole('textbox', { name: 'Add to a kit' }), 'Garage');
-    expect(await screen.findByText(/No more kits match/)).toBeInTheDocument();
+    await user.type(screen.getByRole('textbox', { name: 'Add to a kit/package' }), 'Garage');
+    expect(await screen.findByText(/No more kit\/packages match/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /as a new kit/ })).not.toBeInTheDocument();
   });
 });

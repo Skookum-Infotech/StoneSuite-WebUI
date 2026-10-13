@@ -84,7 +84,13 @@ export interface InventoryItem {
   name: string;
   description: string;
   unitId: number;
+  /** The SELLING price — what a sales document line defaults to. */
   unitPrice: number;
+  /** What a purchase order, vendor bill or requisition line defaults to. The API
+   *  always sends it; optional here so a hand-built item (a test fixture) still
+   *  type-checks — read it through `itemPrice()`, where absent means the selling
+   *  price. */
+  purchaseUnitPrice?: number;
   currencyId?: number | null;
   taxRateId?: number | null;
   isActive: boolean;
@@ -118,7 +124,9 @@ export interface InventoryItemInput {
   name: string;
   description: string;
   unitId: number;
+  /** Selling price. Required by the API, as is `purchaseUnitPrice`. */
   unitPrice: number;
+  purchaseUnitPrice: number;
   currencyId?: number | null;
   taxRateId?: number | null;
   customFields: Record<string, unknown>;

@@ -69,7 +69,7 @@ export interface KitFieldError {
  *  caught here to save a round trip, not as a substitute for its validation. */
 export function validateKit(state: KitFormState): KitFieldError[] {
   const errors: KitFieldError[] = [];
-  if (!state.name.trim()) errors.push({ key: 'name', label: 'Kit Name' });
+  if (!state.name.trim()) errors.push({ key: 'name', label: 'Kit/Package Name' });
   for (const m of state.members) {
     if (parseQuantity(m.quantity) <= 0) {
       errors.push({ key: `member-${m.itemId}`, label: `Quantity of ${m.name}` });

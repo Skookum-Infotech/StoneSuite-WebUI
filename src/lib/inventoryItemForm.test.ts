@@ -15,14 +15,14 @@ describe('toItemPayload (whole-object write — PATCH has PUT semantics)', () =>
   it('maps every field the backend contract expects, never dropping one', () => {
     const data = {
       sku: ' GRAN-001 ', name: ' Absolute Black ', description: 'desc', unit_id: '6',
-      unit_price: '42.5', currency_id: '1', tax_rate_id: '2', is_active: true,
+      unit_price: '42.5', purchase_unit_price: '30', currency_id: '1', tax_rate_id: '2', is_active: true,
       tracking: TRACKING_SERIALIZED, material_id: '3', color_id: '4', finish_id: '5',
       thickness_mm: '30', origin_country_id: '7', default_warehouse_id: 'wh-uuid-8', barcode: ' 012345 ',
     }
     const payload = toItemPayload(data, [warehouseWithNumericId])
     expect(payload).toEqual({
       sku: 'GRAN-001', name: 'Absolute Black', description: 'desc', unitId: 6, unitPrice: 42.5,
-      currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
+      purchaseUnitPrice: 30, currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 30, originCountryId: 7,
       barcode: '012345', defaultWarehouseId: 8, trackStock: true, kitIds: [],
     })
@@ -106,7 +106,7 @@ describe('fromItem / toItemPayload round-trip', () => {
   it('preserves every field through fromItem then toItemPayload', () => {
     const item: InventoryItem = {
       id: 'uuid-1', sku: 'SKU', name: 'Name', description: 'Desc', unitId: 6, unitPrice: 10,
-      currencyId: 1, taxRateId: 2, isActive: true, customFields: {},
+      purchaseUnitPrice: 7, currencyId: 1, taxRateId: 2, isActive: true, customFields: {},
       tracking: TRACKING_SERIALIZED, materialId: 3, colorId: 4, finishId: 5,
       thicknessMm: 20, originCountryId: 7, barcode: 'BC1', defaultWarehouseId: 8,
       kits: [{ id: 'k1', name: 'Kitchen' }],
@@ -115,7 +115,7 @@ describe('fromItem / toItemPayload round-trip', () => {
     const payload = toItemPayload(fromItem(item, [warehouseWithNumericId]), [warehouseWithNumericId])
     expect(payload).toEqual({
       sku: 'SKU', name: 'Name', description: 'Desc', unitId: 6, unitPrice: 10,
-      currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
+      purchaseUnitPrice: 7, currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 20, originCountryId: 7,
       barcode: 'BC1', defaultWarehouseId: 8, trackStock: true, kitIds: ['k1'],
     })
@@ -141,28 +141,76 @@ describe('fromItem / toItemPayload round-trip', () => {
 })
 
 describe('itemDefaults', () => {
-  it('defaults to quantity tracking and zeroed numeric fields', () => {
+  it('defaults to quantity tracking, a zeroed thickness and both prices blank', () => {
     const d = itemDefaults()
     expect(d.tracking).toBe(TRACKING_QUANTITY)
-    expect(d.unit_price).toBe('0')
+    // Blank, not '0': a required price must be decided, not left at a default.
+    expect(d.unit_price).toBe('')
+    expect(d.purchase_unit_price).toBe('')
     expect(d.thickness_mm).toBe('0')
     expect(d.is_active).toBe(true)
     expect(d.kits).toEqual([])
   })
 })
 
-describe('validateItem', () => {
-  it('requires sku, name and unit', () => {
-    const errors = validateItem({})
-    expect(errors.map((e) => e.key)).toEqual(['sku', 'name', 'unit_id'])
+describe('the two prices', () => {
+  const base: InventoryItem = {
+    id: 'u', sku: 'S', name: 'N', description: '', unitId: 1, unitPrice: 120, isActive: true, customFields: {},
+    tracking: TRACKING_QUANTITY, thicknessMm: 0, barcode: '', createdAt: 'a', updatedAt: 'b',
+  }
+
+  it('loads each price into its own field', () => {
+    const form = fromItem({ ...base, purchaseUnitPrice: 80 })
+    expect(form.unit_price).toBe('120')
+    expect(form.purchase_unit_price).toBe('80')
   })
 
-  it('passes once all three are present', () => {
-    expect(validateItem({ sku: 'x', name: 'y', unit_id: '1' })).toEqual([])
+  it('loads a purchasing price of 0 as 0, not as the selling price', () => {
+    expect(fromItem({ ...base, purchaseUnitPrice: 0 }).purchase_unit_price).toBe('0')
+  })
+
+  it('loads an item from an API that predates the purchasing price with the selling price', () => {
+    expect(fromItem(base).purchase_unit_price).toBe('120')
+  })
+
+  it('sends both prices, as numbers', () => {
+    const payload = toItemPayload({ sku: 'x', name: 'y', unit_id: '1', unit_price: '9.5', purchase_unit_price: '4' })
+    expect(payload.unitPrice).toBe(9.5)
+    expect(payload.purchaseUnitPrice).toBe(4)
+  })
+})
+
+describe('validateItem', () => {
+  const filled = { sku: 'x', name: 'y', unit_id: '1', unit_price: '10', purchase_unit_price: '6' }
+
+  it('requires sku, name, unit and both prices', () => {
+    const errors = validateItem({})
+    expect(errors.map((e) => e.key)).toEqual(['sku', 'name', 'unit_id', 'unit_price', 'purchase_unit_price'])
+  })
+
+  it('passes once all of them are present', () => {
+    expect(validateItem(filled)).toEqual([])
   })
 
   it('treats whitespace-only sku/name as missing', () => {
-    const errors = validateItem({ sku: '   ', name: '  ', unit_id: '1' })
+    const errors = validateItem({ ...filled, sku: '   ', name: '  ' })
     expect(errors.map((e) => e.key)).toEqual(['sku', 'name'])
+  })
+
+  it('names each missing price by its own label', () => {
+    expect(validateItem({ ...filled, unit_price: '' })).toEqual([{ key: 'unit_price', label: 'Selling Unit Price' }])
+    expect(validateItem({ ...filled, purchase_unit_price: '' })).toEqual([
+      { key: 'purchase_unit_price', label: 'Purchasing Unit Price' },
+    ])
+  })
+
+  it('accepts 0 as a price (a service or labour item) but not a blank or a negative', () => {
+    expect(validateItem({ ...filled, unit_price: '0', purchase_unit_price: '0' })).toEqual([])
+    expect(validateItem({ ...filled, unit_price: '-1' }).map((e) => e.key)).toEqual(['unit_price'])
+    expect(validateItem({ ...filled, purchase_unit_price: '   ' }).map((e) => e.key)).toEqual(['purchase_unit_price'])
+  })
+
+  it('rejects text that is not a number', () => {
+    expect(validateItem({ ...filled, unit_price: 'abc' }).map((e) => e.key)).toEqual(['unit_price'])
   })
 })

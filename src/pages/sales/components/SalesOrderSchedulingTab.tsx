@@ -24,7 +24,8 @@ const ACTION_COLUMN_LABEL = 'Edit';
 
 function savedMessage(name: string, patch: SalesOrderScheduleActivityPatch): string {
   if (patch.status === 'completed') return `${name} marked completed.`;
-  if (patch.status === 'scheduled') return `${name} moved back to scheduled.`;
+  if (patch.status === 'in_progress') return `${name} marked in progress.`;
+  if (patch.status === 'pending') return `${name} moved back to pending.`;
   return `${name} updated.`;
 }
 
@@ -106,6 +107,11 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
         <span>
           <span className="font-semibold text-stone-900">{progress.completed}</span> of {progress.total} completed
         </span>
+        {progress.inProgress > 0 && (
+          <span>
+            <span className="font-semibold text-stone-900">{progress.inProgress}</span> in progress
+          </span>
+        )}
         {progress.overdue > 0 && (
           <span className="font-semibold text-destructive">{progress.overdue} overdue</span>
         )}
@@ -183,7 +189,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
       </div>
 
       <p className="text-2xs text-stone-400">
-        Dates were planned from the installation date. Changing that date re-plans every activity that isn&apos;t completed yet.
+        Dates were planned from the installation date. Changing that date re-plans every pending activity; ones that are in progress or completed stay where they are.
       </p>
     </div>
   );

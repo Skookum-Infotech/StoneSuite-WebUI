@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 // from its current home rather than duplicated (mirrors EstimateItemsTab's
 // usage one folder over).
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
+import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED, type InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
@@ -67,7 +68,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
     expectedSlabs: item.tracking === TRACKING_SERIALIZED ? prev.expectedSlabs : '',
     itemDescription: item.description,
     itemSku: item.sku,
-    unitPrice: String(item.unitPrice),
+    unitPrice: String(itemPrice(item, 'purchasing')),
     inventoryItemUuid: item.id,
   });
 
@@ -102,6 +103,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   };
 
   const picker: InventoryItemPickerHandlers = {
+    priceKind: 'purchasing',
     onTextChange: onItemNameText,
     onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
     onAddToInventory: addToInventory,

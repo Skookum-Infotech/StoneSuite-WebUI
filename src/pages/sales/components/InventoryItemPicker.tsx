@@ -6,6 +6,7 @@ import { inventoryService } from '@/services/inventoryService';
 import type { InventoryItem, InventoryKit } from '@/types/inventory';
 import { cn } from '@/lib/utils';
 import { hasExactItemName } from '@/lib/inventoryItemReturn';
+import { itemPrice, type ItemPriceKind } from '@/lib/itemPrice';
 import { useFloatingDropdownPosition } from '@/hooks/useFloatingDropdownPosition';
 
 const MIN_CHARS = 2;
@@ -30,6 +31,9 @@ export interface InventoryItemPickerHandlers {
   /** Sends the user to Inventory → New Kit for a name that is not a kit. Only
    *  offered alongside `onPickKit`, and omitted when the user can't create. */
   onAddKit?: (kitName: string) => void;
+  /** Which of an item's two prices the dropdown shows: 'purchasing' on a
+   *  purchase document, 'selling' (the default) on a sales one. */
+  priceKind?: ItemPriceKind;
 }
 
 function hasExactName(list: { name: string }[], term: string): boolean {
@@ -51,7 +55,7 @@ function hasExactName(list: { name: string }[], term: string): boolean {
 // would otherwise clip the panel underneath the table's edge (same approach
 // as StatusSelect's 'pill' variant).
 export function InventoryItemPicker({
-  value, onPick, onTextChange, onAddToInventory, onPickKit, onAddKit, className,
+  value, onPick, onTextChange, onAddToInventory, onPickKit, onAddKit, priceKind = 'selling', className,
 }: InventoryItemPickerHandlers & {
   value: string;
   className?: string;
@@ -238,7 +242,7 @@ export function InventoryItemPicker({
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-medium text-stone-800">{item.name}</span>
                   <span className="block truncate font-mono text-2xs text-stone-400">
-                    {item.sku} · ${item.unitPrice.toFixed(2)}
+                    {item.sku} · ${itemPrice(item, priceKind).toFixed(2)}
                   </span>
                 </span>
               </button>

@@ -28,11 +28,11 @@ const THURSDAY = addDays(WEEK.from, 3);
 function event(over: Partial<ScheduleFeedEvent> & { orderNumber?: string; orderId?: string } = {}): ScheduleFeedEvent {
   const { orderNumber = 'SO-1042', orderId = 'so-1', ...rest } = over;
   return {
-    code: 'template_scheduled',
+    code: 'template',
     sequence: 2,
     group: 'Template',
-    name: 'Template Scheduled',
-    status: 'scheduled',
+    name: 'Template',
+    status: 'pending',
     scheduledAt: `${TUESDAY}T09:00:00`,
     notes: '',
     order: {
@@ -154,16 +154,29 @@ describe('ActivityPlannerPage', () => {
     expect(within(cells[0]).queryByRole('article')).toBeNull();
   });
 
-  it('shows the customer, the stage and the status on a card, and links to the order', async () => {
+  it('shows the customer and the status on a card, and links to the order', async () => {
     vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: [event()], truncated: false });
     renderPlanner();
 
-    const link = await screen.findByRole('link', { name: /Open SO-1042, Template Scheduled/ });
+    const link = await screen.findByRole('link', { name: /Open SO-1042, Template,/ });
     expect(link).toHaveAttribute('href', '/sales/sales_order/so-1?tab=scheduling');
     const card = link.closest('article') as HTMLElement;
     expect(within(card).getByText('Acme Builders')).toBeInTheDocument();
-    expect(within(card).getByText('Template Scheduled')).toBeInTheDocument();
-    expect(within(card).getByText('Scheduled')).toBeInTheDocument();
+    expect(within(card).getByText('Pending')).toBeInTheDocument();
+    // "Template" is already the tab's name, so the card doesn't repeat it.
+    expect(within(card).queryByText('Template')).toBeNull();
+  });
+
+  it('names the activity on a card when it says more than the tab does', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({
+      events: [event({ code: 'installation_ready', group: 'Installation', name: 'Installation Ready' })],
+      truncated: false,
+    });
+    renderPlanner();
+
+    const link = await screen.findByRole('link', { name: /Open SO-1042, Installation Ready,/ });
+    const card = link.closest('article') as HTMLElement;
+    expect(within(card).getByText('Installation Ready')).toBeInTheDocument();
   });
 
   it('counts the jobs in view and says how many are overdue', async () => {
@@ -524,7 +537,7 @@ describe('ActivityPlannerPage on a phone', () => {
     vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: [event()], truncated: false });
     renderPlanner();
 
-    const link = await screen.findByRole('link', { name: /Open SO-1042, Template Scheduled/ });
+    const link = await screen.findByRole('link', { name: /Open SO-1042, Template,/ });
     expect(link).toHaveAttribute('href', '/sales/sales_order/so-1?tab=scheduling');
     expect(screen.getByRole('tab', { name: 'Template' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('button', { name: 'Next week' })).toBeInTheDocument();

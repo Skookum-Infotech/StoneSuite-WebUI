@@ -65,12 +65,12 @@ beforeEach(() => {
 });
 
 describe('Inventory Items page — Kits tab', () => {
-  it('opens on Items, with a New Kit button beside New Item', async () => {
+  it('opens on Items, with a New Kit/Package button beside New Item', async () => {
     renderList();
 
     expect(await screen.findByText('Absolute Black')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Items' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: 'New Kit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New Kit/Package' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Item' })).toBeInTheDocument();
     expect(inventoryService.searchKits).not.toHaveBeenCalled();
   });
@@ -80,7 +80,7 @@ describe('Inventory Items page — Kits tab', () => {
     renderList();
     await screen.findByText('Absolute Black');
 
-    await user.click(screen.getByRole('tab', { name: 'Kits' }));
+    await user.click(screen.getByRole('tab', { name: 'Kit/Packages' }));
 
     expect(await screen.findByText('Kitchen')).toBeInTheDocument();
     expect(screen.getByTestId('where')).toHaveTextContent('/inventory/item?tab=kits');
@@ -97,10 +97,10 @@ describe('Inventory Items page — Kits tab', () => {
     renderList('/inventory/item?tab=kits');
 
     expect(await screen.findByText('Kitchen')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Kits' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Kit/Packages' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('opens a kit on click, and New Kit goes to the new-kit page', async () => {
+  it('opens a kit on click, and New Kit/Package goes to the new-kit page', async () => {
     const user = userEvent.setup();
     const router = renderList('/inventory/item?tab=kits');
 
@@ -109,7 +109,7 @@ describe('Inventory Items page — Kits tab', () => {
     expect(router.state.location.pathname).toBe('/inventory/kit/k1');
 
     await router.navigate('/inventory/item?tab=kits');
-    await user.click(await screen.findByRole('button', { name: 'New Kit' }));
+    await user.click(await screen.findByRole('button', { name: 'New Kit/Package' }));
     expect(await screen.findByText('New kit page')).toBeInTheDocument();
   });
 
@@ -118,7 +118,7 @@ describe('Inventory Items page — Kits tab', () => {
     renderList('/inventory/item?tab=kits');
     await screen.findByText('Kitchen');
 
-    await user.type(screen.getByRole('textbox', { name: 'Search kits' }), 'Kit');
+    await user.type(screen.getByRole('textbox', { name: 'Search kit/packages' }), 'Kit');
 
     await vi.waitFor(() => expect(inventoryService.searchKits).toHaveBeenLastCalledWith(
       expect.objectContaining({ search: 'Kit', sort: [{ field: 'name', dir: 'asc' }] }),
@@ -129,7 +129,7 @@ describe('Inventory Items page — Kits tab', () => {
     vi.mocked(inventoryService.searchKits).mockResolvedValue({ records: [], nextCursor: '', hasMore: false });
     renderList('/inventory/item?tab=kits');
 
-    expect(await screen.findByText('No kits added yet.')).toBeInTheDocument();
+    expect(await screen.findByText('No kit/packages added yet.')).toBeInTheDocument();
   });
 
   it('hides the create buttons and the row actions from a read-only user', async () => {
@@ -137,8 +137,8 @@ describe('Inventory Items page — Kits tab', () => {
     renderList('/inventory/item?tab=kits');
 
     expect(await screen.findByText('Kitchen')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'New Kit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New Kit/Package' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New Item' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Edit kit Kitchen' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit kit/package Kitchen' })).not.toBeInTheDocument();
   });
 });

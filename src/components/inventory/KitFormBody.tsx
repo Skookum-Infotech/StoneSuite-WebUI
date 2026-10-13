@@ -25,9 +25,9 @@ export function KitFormBody({ data, onChange }: {
 
   return (
     <div className="space-y-2">
-      <ModernSection title="Kit Information" index={0}>
+      <ModernSection title="Kit/Package Information" index={0}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-          <ModernFieldShell label="Kit Name" required>
+          <ModernFieldShell label="Kit/Package Name" required>
             <input
               type="text"
               value={data.name}
@@ -35,7 +35,7 @@ export function KitFormBody({ data, onChange }: {
               onChange={(e) => onChange({ ...data, name: e.target.value })}
               placeholder="e.g. Kitchen"
               className={fieldCls}
-              aria-label="Kit Name"
+              aria-label="Kit/Package Name"
               required
             />
           </ModernFieldShell>
@@ -55,16 +55,16 @@ export function KitFormBody({ data, onChange }: {
           value={data.description}
           onChange={(e) => onChange({ ...data, description: e.target.value })}
           rows={2}
-          placeholder="What this kit is for…"
+          placeholder="What this kit/package is for…"
           className={cn(fieldCls, 'h-auto resize-none mt-1.5')}
           aria-label="Description"
         />
       </ModernSection>
 
-      <ModernSection title="Items in this kit" index={1}>
+      <ModernSection title="Items in this kit/package" index={1}>
         <p className="mb-3 text-xs text-stone-500">
-          Picking this kit on a document line adds each of these items, with the quantity shown. An inactive item is
-          skipped.
+          Picking this kit/package on a document line adds each of these items, with the quantity shown. An inactive
+          item is skipped.
         </p>
 
         <div className="max-w-md">

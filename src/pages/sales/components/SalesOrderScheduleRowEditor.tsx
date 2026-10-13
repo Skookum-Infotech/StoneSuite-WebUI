@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { fieldCls, textareaCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { toISODate } from '@/lib/dateUtils';
-import { joinWallClock, splitWallClock } from '@/lib/salesOrderSchedule';
+import { SCHEDULE_STATUS_LABELS, joinWallClock, splitWallClock } from '@/lib/salesOrderSchedule';
 import type {
   SalesOrderScheduleActivity,
   SalesOrderScheduleActivityPatch,
@@ -19,8 +19,9 @@ const TIME_INPUT_CLS =
   'h-8 w-28 shrink-0 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-900 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50';
 
 const STATUS_OPTIONS: { value: ScheduleActivityStatus; label: string }[] = [
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'pending', label: SCHEDULE_STATUS_LABELS.pending },
+  { value: 'in_progress', label: SCHEDULE_STATUS_LABELS.in_progress },
+  { value: 'completed', label: SCHEDULE_STATUS_LABELS.completed },
 ];
 
 /** The edit-mode row of the Scheduling tab: change one activity's status,

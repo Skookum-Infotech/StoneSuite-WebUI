@@ -81,7 +81,7 @@ export function KitSelect({ value, onChange }: {
   return (
     <div ref={containerRef} className="relative">
       {value.length > 0 && (
-        <ul aria-label="Kits this item is in" className="mb-2 flex flex-wrap gap-1.5">
+        <ul aria-label="Kit/Packages this item is in" className="mb-2 flex flex-wrap gap-1.5">
           {value.map((kit) => (
             <li
               key={kit.id}
@@ -92,7 +92,7 @@ export function KitSelect({ value, onChange }: {
               <button
                 type="button"
                 onClick={() => onChange(value.filter((k) => k.id !== kit.id))}
-                aria-label={`Remove from kit ${kit.name}`}
+                aria-label={`Remove from kit/package ${kit.name}`}
                 className="rounded p-0.5 text-violet-500 transition-colors hover:bg-violet-200 hover:text-violet-900"
               >
                 <X className="size-3" />
@@ -109,8 +109,8 @@ export function KitSelect({ value, onChange }: {
           value={term}
           onChange={(e) => { setTerm(e.target.value); setOpen(true); create.reset(); }}
           onFocus={() => setOpen(true)}
-          placeholder="Search kits to add this item to…"
-          aria-label="Add to a kit"
+          placeholder="Search kit/packages to add this item to…"
+          aria-label="Add to a kit/package"
           className={cn(fieldCls, 'pl-8')}
         />
         {(isFetching || create.isPending) && (
@@ -122,7 +122,7 @@ export function KitSelect({ value, onChange }: {
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {choices.length === 0 && !isFetching && !canAddNew && (
             <p className="px-3 py-2 text-xs text-stone-400">
-              {debounced ? 'No more kits match.' : 'No kits to add. Type a name to create one.'}
+              {debounced ? 'No more kit/packages match.' : 'No kit/packages to add. Type a name to create one.'}
             </p>
           )}
           {choices.map((kit) => (
@@ -144,16 +144,16 @@ export function KitSelect({ value, onChange }: {
               type="button"
               onClick={() => create.mutate(debounced)}
               disabled={create.isPending}
-              aria-label={`Add “${debounced}” as a new kit`}
+              aria-label={`Add “${debounced}” as a new kit/package`}
               className="flex w-full items-center gap-2 border-t border-stone-100 px-3 py-2 text-left text-xs font-semibold text-stone-800 transition-colors hover:bg-accent/10 disabled:opacity-50"
             >
               <Plus className="size-3.5 shrink-0 text-stone-500" aria-hidden="true" />
-              <span className="truncate">Add “{debounced}” as a new kit</span>
+              <span className="truncate">Add “{debounced}” as a new kit/package</span>
             </button>
           )}
           {create.error && (
             <p role="alert" className="border-t border-stone-100 px-3 py-2 text-xs font-medium text-destructive">
-              {apiErrorMessage(create.error, 'Could not add that kit.')}
+              {apiErrorMessage(create.error, 'Could not add that kit/package.')}
             </p>
           )}
         </div>

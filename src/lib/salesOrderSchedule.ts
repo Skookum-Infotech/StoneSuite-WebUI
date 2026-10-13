@@ -90,37 +90,44 @@ export function wallClockNow(now: Date = new Date()): string {
 
 // ── Row status ───────────────────────────────────────────────────────────────
 
-/** What a row shows: the stored status, or "overdue" for a still-scheduled row
- *  whose time has passed. */
+/** What a row shows: the stored status, or "overdue" for a pending row whose
+ *  time has passed. */
 export type ScheduleDisplayStatus = ScheduleActivityStatus | 'overdue';
 
 export const SCHEDULE_STATUS_LABELS: Record<ScheduleDisplayStatus, string> = {
-  scheduled: 'Scheduled',
+  pending: 'Pending',
+  in_progress: 'In Progress',
   completed: 'Completed',
   overdue: 'Overdue',
 };
 
 export const SCHEDULE_STATUS_COLORS: Record<ScheduleDisplayStatus, string> = {
-  scheduled: '#3b82f6',
+  pending: '#3b82f6',
+  in_progress: '#f59e0b',
   completed: '#10b981',
   overdue: '#ef4444',
 };
 
 /** Wall-clock strings sort the same as the moments they name, so comparing the
- *  `yyyy-mm-ddThh:mm` prefixes is a correct "has this time passed" check. */
+ *  `yyyy-mm-ddThh:mm` prefixes is a correct "has this time passed" check.
+ *
+ *  Only a `pending` row can be overdue: the scheduled time is when the activity
+ *  is meant to begin, so one that someone has started is on its way and one that
+ *  is completed is done. */
 export function displayStatus(
   activity: Pick<SalesOrderScheduleActivity, 'status' | 'scheduledAt'>,
   now: Date = new Date(),
 ): ScheduleDisplayStatus {
-  if (activity.status === 'completed') return 'completed';
+  if (activity.status !== 'pending') return activity.status;
   const parts = splitWallClock(activity.scheduledAt);
-  if (!parts) return 'scheduled';
-  return joinWallClock(parts.date, parts.time) < wallClockNow(now) ? 'overdue' : 'scheduled';
+  if (!parts) return 'pending';
+  return joinWallClock(parts.date, parts.time) < wallClockNow(now) ? 'overdue' : 'pending';
 }
 
 export interface ScheduleProgress {
   total: number;
   completed: number;
+  inProgress: number;
   overdue: number;
 }
 
@@ -129,11 +136,13 @@ export function scheduleProgress(
   now: Date = new Date(),
 ): ScheduleProgress {
   let completed = 0;
+  let inProgress = 0;
   let overdue = 0;
   for (const a of activities) {
     const status = displayStatus(a, now);
     if (status === 'completed') completed += 1;
+    else if (status === 'in_progress') inProgress += 1;
     else if (status === 'overdue') overdue += 1;
   }
-  return { total: activities.length, completed, overdue };
+  return { total: activities.length, completed, inProgress, overdue };
 }

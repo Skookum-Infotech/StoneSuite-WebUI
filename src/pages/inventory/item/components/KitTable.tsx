@@ -79,8 +79,8 @@ export function KitTable() {
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input
             type="text"
-            placeholder="Search kits by name…"
-            aria-label="Search kits"
+            placeholder="Search kit/packages by name…"
+            aria-label="Search kit/packages"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
@@ -98,14 +98,14 @@ export function KitTable() {
         )}
       </div>
 
-      {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load kits. Please try again.')}</p>}
+      {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load kit/packages. Please try again.')}</p>}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full min-w-[640px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kit</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kit/Package</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Items</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Description</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
@@ -154,7 +154,7 @@ export function KitTable() {
                         <button
                           type="button"
                           onClick={() => navigate(`/inventory/kit/${kit.id}`)}
-                          aria-label={`Edit kit ${kit.name}`}
+                          aria-label={`Edit kit/package ${kit.name}`}
                           className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                         >
                           <Pencil className="size-4" />
@@ -171,12 +171,12 @@ export function KitTable() {
                         {debounced ? <Search className="size-6 text-stone-400" /> : <Boxes className="size-6 text-violet-400" />}
                       </div>
                       <p className="text-sm font-semibold text-stone-700">
-                        {debounced ? 'No kits match the current search.' : 'No kits added yet.'}
+                        {debounced ? 'No kit/packages match the current search.' : 'No kit/packages added yet.'}
                       </p>
                       <p className="text-xs text-stone-400">
                         {debounced
                           ? 'Try a different name.'
-                          : 'A kit is a named group of items sold together, like “Kitchen”. Add your first with New Kit.'}
+                          : 'A kit/package is a named group of items sold together, like “Kitchen”. Add your first with New Kit/Package.'}
                       </p>
                     </div>
                   </td>
