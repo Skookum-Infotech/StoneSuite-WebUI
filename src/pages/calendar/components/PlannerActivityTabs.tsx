@@ -52,41 +52,45 @@ export function PlannerActivityTabs({ activities, activeKey, onSelect }: {
     buttons.current[next]?.focus();
   }
 
+  // Folder tabs: the rule sits on the scrolling child rather than the scroller,
+  // so the chosen tab can overlap it and open into the calendar below without
+  // the scroller clipping the overlap.
   return (
-    <div
-      ref={strip}
-      role="tablist"
-      aria-label="Activity"
-      className="relative flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 modal-scrollbar"
-    >
-      {activities.map((activity, index) => {
-        const selected = activity.key === activeKey;
-        return (
-          <button
-            key={activity.key}
-            ref={(el) => {
-              buttons.current[index] = el;
-            }}
-            type="button"
-            role="tab"
-            id={plannerTabId(activity.key)}
-            aria-selected={selected}
-            aria-controls={PLANNER_PANEL_ID}
-            tabIndex={selected ? 0 : -1}
-            onClick={() => onSelect(activity.key)}
-            onKeyDown={(event) => handleKeyDown(event, index)}
-            className={cn(
-              'shrink-0 whitespace-nowrap border-b-2 -mb-px px-4 py-3 text-sm font-semibold outline-none transition-colors duration-150',
-              'focus-visible:ring-2 focus-visible:ring-ring/50',
-              selected
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:border-stone-200 hover:text-stone-700',
-            )}
-          >
-            {activity.label}
-          </button>
-        );
-      })}
+    <div ref={strip} className="relative shrink-0 overflow-x-auto overflow-y-hidden modal-scrollbar">
+      <div
+        role="tablist"
+        aria-label="Activity"
+        className="flex w-max min-w-full items-end gap-1 border-b border-stone-300 pt-1"
+      >
+        {activities.map((activity, index) => {
+          const selected = activity.key === activeKey;
+          return (
+            <button
+              key={activity.key}
+              ref={(el) => {
+                buttons.current[index] = el;
+              }}
+              type="button"
+              role="tab"
+              id={plannerTabId(activity.key)}
+              aria-selected={selected}
+              aria-controls={PLANNER_PANEL_ID}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => onSelect(activity.key)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-t-lg border border-b-0 px-4 text-sm font-semibold outline-none transition-colors duration-150',
+                'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50',
+                selected
+                  ? '-mb-px border-b border-stone-300 border-b-background bg-background py-2.5 text-stone-950 shadow-[inset_0_3px_0_0_var(--color-brand-dark)]'
+                  : 'border-stone-200 bg-stone-200/60 py-2 text-stone-600 hover:bg-stone-200 hover:text-stone-800',
+              )}
+            >
+              {activity.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

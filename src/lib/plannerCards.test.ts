@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { cardNoun, countLabel, invoiceCard, orderSchedulePath, scheduleEventCard } from './plannerCards';
+import {
+  cardNoun,
+  countLabel,
+  invoiceCard,
+  orderSchedulePath,
+  scheduleEventCard,
+  visibleCardCount,
+} from './plannerCards';
+import { chipFillFor, contrastWithWhite } from './plannerChipColor';
 import type { InvoiceSummary } from '@/types/invoice';
 import type { ScheduleFeedEvent } from '@/types/salesOrder';
 
@@ -116,6 +124,56 @@ describe('scheduleEventCard', () => {
     const b = scheduleEventCard(event({ sequence: 12 }), NOW);
 
     expect(a.sortKey < b.sortKey).toBe(true);
+  });
+});
+
+describe('what the detail card says', () => {
+  it('gives a schedule card its full date and time, and says what it opens', () => {
+    const card = scheduleEventCard(event(), NOW);
+
+    expect(card.whenLabel).toBe('Oct 15, 2026, 9:00 AM');
+    expect(card.openLabel).toBe('Open sales order');
+  });
+
+  it('gives an invoice card its due date, and says what it opens', () => {
+    const card = invoiceCard(invoice());
+
+    expect(card?.whenLabel).toBe('Due Oct 20, 2026');
+    expect(card?.openLabel).toBe('Open invoice');
+  });
+
+  it('fills the chip with the status colour, darkened to carry white text', () => {
+    const pending = scheduleEventCard(event(), NOW);
+    const overdue = scheduleEventCard(event({ scheduledAt: '2026-10-13T09:00:00' }), NOW);
+
+    expect(pending.chipColor).toBe(chipFillFor(pending.statusColor));
+    expect(overdue.chipColor).toBe(chipFillFor(overdue.statusColor));
+    expect(pending.chipColor).not.toBe(overdue.chipColor);
+    expect(contrastWithWhite(pending.chipColor)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('visibleCardCount', () => {
+  it.each([
+    // [cards, max, shown]
+    [0, 4, 0],
+    [3, 4, 3],
+    [4, 4, 4], // exactly max: nothing folded
+    [5, 4, 3], // the "N more" button takes the last slot
+    [9, 4, 3],
+    [5, 5, 5],
+    [6, 5, 4],
+    [30, 24, 23],
+  ])('%i cards, room for %i → shows %i', (count, max, shown) => {
+    expect(visibleCardCount(count, max)).toBe(shown);
+  });
+
+  it('never hides just one card', () => {
+    for (let max = 2; max <= 6; max += 1) {
+      for (let count = 0; count <= 20; count += 1) {
+        expect(count - visibleCardCount(count, max)).not.toBe(1);
+      }
+    }
   });
 });
 

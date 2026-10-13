@@ -2,10 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   PLANNER_ACTIVITIES,
   addDays,
-  bucketByColumn,
-  columnKeyFor,
   columnName,
   columnsFor,
+  openDayLabel,
   parseAnchor,
   parseView,
   rangeFor,
@@ -13,12 +12,14 @@ import {
   shiftAnchor,
   showsToday,
   startOfWeek,
+  weeksOf,
 } from './plannerCalendar';
 
-// 2026-10-12 is a Monday, so Oct 12–18 is a Monday-to-Sunday week.
+// 2026-10-11 is a Sunday, so Oct 11–17 is a Sunday-to-Saturday week.
+const WEEK_START = '2026-10-11';
 const MONDAY = '2026-10-12';
 const THURSDAY = '2026-10-15';
-const SUNDAY = '2026-10-18';
+const WEEK_END = '2026-10-17';
 
 describe('PLANNER_ACTIVITIES', () => {
   it('lists the eight tabs in the order the planners asked for', () => {
@@ -73,21 +74,24 @@ describe('date arithmetic', () => {
     expect(addDays('2026-10-31', 2)).toBe('2026-11-02');
   });
 
-  it('finds the Monday a week starts on — Sunday belongs to the week before it', () => {
-    expect(startOfWeek(MONDAY)).toBe(MONDAY);
-    expect(startOfWeek(THURSDAY)).toBe(MONDAY);
-    expect(startOfWeek(SUNDAY)).toBe(MONDAY);
-    expect(startOfWeek('2026-10-19')).toBe('2026-10-19');
+  it('finds the Sunday a week starts on — Saturday belongs to the week it ends', () => {
+    expect(startOfWeek(WEEK_START)).toBe(WEEK_START);
+    expect(startOfWeek(THURSDAY)).toBe(WEEK_START);
+    expect(startOfWeek(WEEK_END)).toBe(WEEK_START);
+    expect(startOfWeek('2026-10-18')).toBe('2026-10-18');
   });
 });
 
 describe('rangeFor', () => {
   it.each([
     ['day', THURSDAY, { from: THURSDAY, to: THURSDAY }],
-    ['week', THURSDAY, { from: MONDAY, to: SUNDAY }],
-    ['month', THURSDAY, { from: '2026-10-01', to: '2026-10-31' }],
-    ['month', '2028-02-10', { from: '2028-02-01', to: '2028-02-29' }], // leap year
-    ['week', '2026-12-30', { from: '2026-12-28', to: '2027-01-03' }], // across New Year
+    ['week', THURSDAY, { from: WEEK_START, to: WEEK_END }],
+    ['week', '2026-12-30', { from: '2026-12-27', to: '2027-01-02' }], // across New Year
+    // A month is the whole grid: whole weeks, with the neighbouring days that fill them.
+    ['month', THURSDAY, { from: '2026-09-27', to: '2026-10-31' }],
+    ['month', '2028-02-10', { from: '2028-01-30', to: '2028-03-04' }], // leap year
+    ['month', '2026-02-10', { from: '2026-02-01', to: '2026-02-28' }], // exactly four weeks
+    ['month', '2026-08-15', { from: '2026-07-26', to: '2026-09-05' }], // six weeks
   ] as const)('%s around %s', (view, anchor, want) => {
     expect(rangeFor(view, anchor)).toEqual(want);
   });
@@ -113,127 +117,89 @@ describe('shiftAnchor', () => {
 describe('showsToday', () => {
   it('is true only while the window contains today', () => {
     expect(showsToday('week', THURSDAY, '2026-10-17')).toBe(true);
-    expect(showsToday('week', THURSDAY, '2026-10-19')).toBe(false);
+    expect(showsToday('week', THURSDAY, '2026-10-18')).toBe(false);
     expect(showsToday('month', THURSDAY, '2026-10-31')).toBe(true);
     expect(showsToday('day', THURSDAY, '2026-10-16')).toBe(false);
+  });
+
+  // The grid draws September's last days in October's first row, but those are
+  // not "this month": the Today button must stay live to take you to them.
+  it('does not count a neighbouring month’s days that the month grid pads with', () => {
+    expect(showsToday('month', THURSDAY, '2026-09-28')).toBe(false);
+    expect(showsToday('month', THURSDAY, '2026-10-01')).toBe(true);
   });
 });
 
 describe('rangeLabel', () => {
   it.each([
     ['day', THURSDAY, 'Thu, Oct 15, 2026'],
-    ['week', THURSDAY, 'Oct 12 – 18, 2026'],
-    ['week', '2026-10-28', 'Oct 26 – Nov 1, 2026'],
-    ['week', '2026-12-30', 'Dec 28, 2026 – Jan 3, 2027'],
+    ['week', THURSDAY, 'Oct 11 – 17, 2026'],
+    ['week', '2026-09-30', 'Sep 27 – Oct 3, 2026'],
+    ['week', '2026-12-30', 'Dec 27, 2026 – Jan 2, 2027'],
+    // Named for the month itself, not the September day its grid starts on.
     ['month', THURSDAY, 'October 2026'],
+    ['month', '2026-10-31', 'October 2026'],
   ] as const)('%s around %s reads "%s"', (view, anchor, want) => {
     expect(rangeLabel(view, anchor)).toBe(want);
   });
 });
 
 describe('columnsFor', () => {
-  it('lays a week out as seven days, Monday first, flagging today and the weekend', () => {
-    const cols = columnsFor('week', THURSDAY, '2026-10-15');
+  it('lays a week out as seven days, Sunday first, flagging today', () => {
+    const cols = columnsFor('week', THURSDAY, THURSDAY);
     expect(cols).toHaveLength(7);
-    expect(cols.map((c) => c.label)).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
-    expect(cols[0]).toMatchObject({ key: MONDAY, subLabel: 'Oct 12', date: MONDAY });
+    expect(cols.map((c) => c.label)).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+    expect(cols[0]).toMatchObject({
+      key: WEEK_START, subLabel: 'Oct 11', date: WEEK_START, dayOfMonth: 11, monthAbbr: 'Oct',
+    });
     expect(cols.filter((c) => c.isToday).map((c) => c.key)).toEqual([THURSDAY]);
-    expect(cols.filter((c) => c.isWeekend).map((c) => c.label)).toEqual(['Sat', 'Sun']);
+    expect(cols.every((c) => c.inMonth)).toBe(true);
   });
 
-  it('lays a month out as one column per day', () => {
-    expect(columnsFor('month', THURSDAY, '2026-10-15')).toHaveLength(31);
-    expect(columnsFor('month', '2026-02-10', '2026-10-15')).toHaveLength(28);
-    expect(columnsFor('month', '2028-02-10', '2026-10-15')).toHaveLength(29);
+  it('lays a month out as whole weeks, marking the days of the neighbouring months', () => {
+    const cols = columnsFor('month', THURSDAY, '2026-10-15');
+    expect(cols).toHaveLength(35);
+    expect(cols[0]).toMatchObject({ key: '2026-09-27', label: 'Sun', inMonth: false });
+    expect(cols[3]).toMatchObject({ key: '2026-09-30', inMonth: false });
+    expect(cols[4]).toMatchObject({ key: '2026-10-01', dayOfMonth: 1, monthAbbr: 'Oct', inMonth: true });
+    expect(cols[34]).toMatchObject({ key: '2026-10-31', label: 'Sat', inMonth: true });
+    expect(cols.filter((c) => c.inMonth)).toHaveLength(31);
   });
 
-  it('lays a day out as the working hours', () => {
+  it.each([
+    ['2026-02-10', 28],
+    ['2028-02-10', 35],
+    ['2026-08-15', 42],
+  ])('gives %s a grid of %i days', (anchor, count) => {
+    expect(columnsFor('month', anchor, '2026-10-15')).toHaveLength(count);
+  });
+
+  it('lays a day out as the one day', () => {
     const cols = columnsFor('day', THURSDAY, '2026-10-15');
-    expect(cols).toHaveLength(14);
-    expect(cols[0]).toMatchObject({ key: '2026-10-15T06', label: '6 AM' });
-    expect(cols[6]).toMatchObject({ key: '2026-10-15T12', label: '12 PM' });
-    expect(cols[13]).toMatchObject({ key: '2026-10-15T19', label: '7 PM' });
-  });
-
-  it('collapses the day to one "All day" column for events with no time', () => {
-    const cols = columnsFor('day', THURSDAY, '2026-10-15', false);
     expect(cols).toHaveLength(1);
-    expect(cols[0]).toMatchObject({ key: THURSDAY, label: 'All day' });
+    expect(cols[0]).toMatchObject({ key: THURSDAY, label: 'Thu', subLabel: 'Oct 15', isToday: true });
+  });
+});
+
+describe('weeksOf', () => {
+  it('cuts a month grid into rows of seven', () => {
+    const weeks = weeksOf(columnsFor('month', THURSDAY, THURSDAY));
+    expect(weeks).toHaveLength(5);
+    expect(weeks.every((w) => w.length === 7)).toBe(true);
+    expect(weeks[0][0].key).toBe('2026-09-27');
+    expect(weeks[4][6].key).toBe('2026-10-31');
   });
 });
 
 describe('columnName', () => {
-  it('names a day by weekday and date, and an hour or "All day" by its label alone', () => {
-    expect(columnName(columnsFor('week', THURSDAY, THURSDAY)[3])).toBe('Thu, Oct 15');
-    expect(columnName(columnsFor('day', THURSDAY, THURSDAY)[3])).toBe('9 AM');
-    expect(columnName(columnsFor('day', THURSDAY, THURSDAY, false)[0])).toBe('All day');
+  it('names a day by weekday and date', () => {
+    expect(columnName(columnsFor('week', THURSDAY, THURSDAY)[4])).toBe('Thu, Oct 15');
+    expect(columnName(columnsFor('day', THURSDAY, THURSDAY)[0])).toBe('Thu, Oct 15');
   });
 });
 
-describe('columnKeyFor', () => {
-  it.each([
-    ['week', '2026-10-14T09:00:00', undefined, '2026-10-14'],
-    ['week', '2026-10-14T09:00', undefined, '2026-10-14'],
-    ['month', '2026-10-14T17:00:00', undefined, '2026-10-14'],
-    ['day', '2026-10-15T09:00:00', undefined, '2026-10-15T09'],
-    ['day', '2026-10-15T13:45:00', undefined, '2026-10-15T13'],
-    // Outside working hours: the nearest edge column.
-    ['day', '2026-10-15T05:30:00', undefined, '2026-10-15T06'],
-    ['day', '2026-10-15T21:00:00', undefined, '2026-10-15T19'],
-    // A source with no time of day always lands in the day's one column.
-    ['day', '2026-10-15T00:00', false, '2026-10-15'],
-  ] as const)('%s view, %s', (view, at, timed, want) => {
-    expect(columnKeyFor(view, at, timed)).toBe(want);
-  });
-
-  it('is null for a value that is not a wall-clock time', () => {
-    expect(columnKeyFor('week', 'soon')).toBeNull();
-    expect(columnKeyFor('week', '')).toBeNull();
-  });
-});
-
-describe('bucketByColumn', () => {
-  const columns = columnsFor('week', THURSDAY, '2026-10-15');
-  const ev = (id: string, at: string, sortKey = id) => ({ id, at, sortKey });
-
-  it('gives every column a bucket, empty or not', () => {
-    const buckets = bucketByColumn([ev('a', '2026-10-14T09:00:00')], 'week', columns);
-    expect([...buckets.keys()]).toEqual(columns.map((c) => c.key));
-    expect(buckets.get('2026-10-14')?.map((e) => e.id)).toEqual(['a']);
-    expect(buckets.get(MONDAY)).toEqual([]);
-  });
-
-  it('orders a column soonest first, then by the tiebreak', () => {
-    const buckets = bucketByColumn(
-      [
-        ev('late', '2026-10-14T15:00:00'),
-        ev('b-nine', '2026-10-14T09:00:00', 'SO-2'),
-        ev('a-nine', '2026-10-14T09:00:00', 'SO-1'),
-      ],
-      'week',
-      columns,
-    );
-    expect(buckets.get('2026-10-14')?.map((e) => e.id)).toEqual(['a-nine', 'b-nine', 'late']);
-  });
-
-  it('drops an event outside the window and one it cannot place', () => {
-    const buckets = bucketByColumn(
-      [ev('before', '2026-10-11T09:00:00'), ev('after', '2026-10-19T09:00:00'), ev('junk', 'whenever'), ev('in', MONDAY + 'T09:00')],
-      'week',
-      columns,
-    );
-    const placed = [...buckets.values()].flat().map((e) => e.id);
-    expect(placed).toEqual(['in']);
-  });
-
-  it('places events into hour columns in the Day view', () => {
-    const dayCols = columnsFor('day', THURSDAY, '2026-10-15');
-    const buckets = bucketByColumn(
-      [ev('nine', '2026-10-15T09:00:00'), ev('nine-thirty', '2026-10-15T09:30:00'), ev('five', '2026-10-15T17:00:00')],
-      'day',
-      dayCols,
-    );
-    expect(buckets.get('2026-10-15T09')?.map((e) => e.id)).toEqual(['nine', 'nine-thirty']);
-    expect(buckets.get('2026-10-15T17')?.map((e) => e.id)).toEqual(['five']);
+describe('openDayLabel', () => {
+  it('says which day the control opens, and where', () => {
+    expect(openDayLabel(columnsFor('week', THURSDAY, THURSDAY)[4])).toBe('Open Thu, Oct 15 in Day view');
   });
 });
