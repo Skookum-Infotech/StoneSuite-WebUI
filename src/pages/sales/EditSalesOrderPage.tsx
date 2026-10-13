@@ -23,6 +23,8 @@ import {
   type SOLineItem, type SODrawing, SO_STATUS_CODES,
 } from '@/lib/salesOrderForm';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { installDateError } from '@/lib/salesOrderSchedule';
+import { PLANNER_QUERY_KEY } from '@/lib/plannerCalendar';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
@@ -153,10 +155,15 @@ export default function EditSalesOrderPage() {
     mutationFn: () => {
       const badPhone = firstInvalidPhoneLabel([...BILL_TO_FIELDS, ...SHIP_TO_FIELDS], data);
       if (badPhone) throw new Error(`Enter a valid phone number for ${badPhone}.`);
+      // The date already saved on the order stays valid untouched, even once past.
+      const badInstallDate = installDateError(data.scheduled_install_date, order?.scheduledInstallDate);
+      if (badInstallDate) throw new Error(badInstallDate);
       return salesOrderService.updateOrder(id, toCreatePayload(data, lineItems, customFieldValues));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-order-schedule', id] });
+      queryClient.invalidateQueries({ queryKey: [PLANNER_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       guard.markClean();
       navigate('/sales/sales_order');

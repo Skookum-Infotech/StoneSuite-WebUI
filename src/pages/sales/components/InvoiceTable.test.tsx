@@ -14,11 +14,13 @@ import { invoiceService } from '@/services/invoiceService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { InvoiceSummary } from '@/types/invoice';
 
+// The status pill dropdown is a super-admin control (everyone else gets a
+// read-only pill -- see SalesTablesStatusGate.test.tsx), so these run as one.
 function mockPermissions() {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
     isLoading: false,
-    activeRoleId: '', isSuperAdmin: false,
+    activeRoleId: '', isSuperAdmin: true,
     hasPermission: () => true,
   } as ReturnType<typeof useUserPermissions>);
 }

@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, Link, RouterProvider, useNavigate, useSearchParams } from 'react-router-dom';
 
 vi.mock('@/services/inventoryService', () => ({
-  inventoryService: { searchItems: vi.fn() },
+  inventoryService: { searchItems: vi.fn(), searchKits: vi.fn(), getKit: vi.fn() },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 
@@ -14,13 +14,23 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from './useInvento
 import { useUserPermissions } from './useUserPermissions';
 import { inventoryService } from '@/services/inventoryService';
 import { QuoteItemsTab } from '@/pages/sales/components/QuoteItemsTab';
-import { readReturnStash, returnRouterState, writeReturnStash } from '@/lib/inventoryItemReturn';
+import {
+  kitReturnRouterState, readReturnStash, returnRouterState, writeReturnStash,
+} from '@/lib/inventoryItemReturn';
 import type { QuoteLineItem } from '@/lib/quoteForm';
-import type { InventoryItem } from '@/types/inventory';
+import type { InventoryItem, InventoryKit } from '@/types/inventory';
 
 const CREATED = {
   id: 'item-new', name: 'Nero Marquina Polished', sku: 'NM-01', description: 'Black marble', unitPrice: 80,
 } as InventoryItem;
+// What New Kit hands back: the kit with its items, so no second request is made.
+const CREATED_KIT = {
+  id: 'kit-new', name: 'Bathroom', description: '', isActive: true, itemCount: 2, createdAt: '', updatedAt: '',
+  members: [
+    { quantity: 1, item: { id: 'i-vanity', name: 'Vanity Top', sku: 'VT-01', description: '', unitPrice: 300, isActive: true } },
+    { quantity: 2, item: { id: 'i-faucet', name: 'Faucet', sku: 'FC-01', description: '', unitPrice: 60, isActive: true } },
+  ],
+} as unknown as InventoryKit;
 const DOC_PATH = '/sales/quote/new';
 // Each flow crosses two routes and waits out the picker's search debounce
 // several times — comfortably fast alone, but past the 5s default when the
@@ -55,11 +65,26 @@ function NewItemPage() {
   );
 }
 
+// Stand-in for Inventory → New Kit, following AddKitPage's return contract.
+function NewKitPage() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const returnTo = params.get('returnTo') ?? '/';
+  return (
+    <div>
+      <p>New kit named {params.get('name')}</p>
+      <button type="button" onClick={() => navigate(returnTo, { state: kitReturnRouterState(CREATED_KIT) })}>Save Kit</button>
+      <button type="button" onClick={() => navigate(returnTo, { state: kitReturnRouterState(null) })}>Cancel Kit</button>
+    </div>
+  );
+}
+
 function renderApp(initialPath = DOC_PATH) {
   const router = createMemoryRouter(
     [
       { path: DOC_PATH, element: <DocumentPage /> },
       { path: '/inventory/item/new', element: <NewItemPage /> },
+      { path: '/inventory/kit/new', element: <NewKitPage /> },
       { path: '/elsewhere', element: <Link to={DOC_PATH}>Open quote</Link> },
     ],
     { initialEntries: [initialPath] },
@@ -98,6 +123,7 @@ beforeEach(() => {
     nextCursor: '',
     hasMore: false,
   }));
+  vi.mocked(inventoryService.searchKits).mockResolvedValue({ records: [], nextCursor: '', hasMore: false });
 });
 
 describe('Add to Inventory round trip', { timeout: ROUND_TRIP_TIMEOUT_MS }, () => {
@@ -152,5 +178,57 @@ describe('Add to Inventory round trip', { timeout: ROUND_TRIP_TIMEOUT_MS }, () =
 
     expect(await screen.findByText(/“Nero Marquina” isn't in inventory/)).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /to Inventory/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('Add as a Kit round trip', { timeout: ROUND_TRIP_TIMEOUT_MS }, () => {
+  async function startLineAndLeaveForNewKit(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(screen.getByLabelText('Notes'), 'Rush job');
+    await user.click(screen.getByRole('button', { name: 'Add Line' }));
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Bathroom');
+    await user.click(await screen.findByRole('option', { name: 'Add “Bathroom” as a Kit' }));
+    expect(await screen.findByText('New kit named Bathroom')).toBeInTheDocument();
+  }
+
+  it('returns to the document with its unsaved work and the new kit’s lines under its heading', async () => {
+    const user = userEvent.setup({ delay: null });
+    renderApp();
+
+    await startLineAndLeaveForNewKit(user);
+    await user.click(screen.getByRole('button', { name: 'Save Kit' }));
+
+    const heading = await screen.findByRole('row', { name: 'Kit Bathroom' });
+    expect(heading).toHaveTextContent('2 items');
+    expect(screen.getByLabelText('Notes')).toHaveValue('Rush job');
+    expect(screen.getByRole('row', { name: /Vanity Top/ })).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Faucet/ })).toBeInTheDocument();
+    // The kit came with its items: nothing was fetched again, and the row closed.
+    expect(inventoryService.getKit).not.toHaveBeenCalled();
+    expect(screen.queryByRole('combobox', { name: 'Item Name' })).not.toBeInTheDocument();
+    expect(readReturnStash()).toBeNull();
+  });
+
+  it('keeps the typed row after cancelling, with no kit lines added', async () => {
+    const user = userEvent.setup({ delay: null });
+    renderApp();
+
+    await startLineAndLeaveForNewKit(user);
+    await user.click(screen.getByRole('button', { name: 'Cancel Kit' }));
+
+    expect(await screen.findByLabelText('Notes')).toHaveValue('Rush job');
+    expect(screen.getByRole('combobox', { name: 'Item Name' })).toHaveValue('Bathroom');
+    expect(screen.queryByRole('row', { name: 'Kit Bathroom' })).not.toBeInTheDocument();
+  });
+
+  it('offers no way to add a kit to a user who cannot create inventory', async () => {
+    mockCanCreateItems(false);
+    const user = userEvent.setup({ delay: null });
+    renderApp();
+
+    await user.click(screen.getByRole('button', { name: 'Add Line' }));
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Bathroom');
+
+    expect(await screen.findByText(/“Bathroom” isn't in inventory/)).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /as a Kit/ })).not.toBeInTheDocument();
   });
 });

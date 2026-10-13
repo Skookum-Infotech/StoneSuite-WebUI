@@ -47,6 +47,14 @@ export interface PurchaseOrderLineInput {
    *  informational (the quantity, in the item's area unit, is what is priced
    *  and received). Refused for any other line. */
   expectedSlabs?: number;
+  /** Size of one slab. With length and width both set — and expectedSlabs
+   *  as the slab count — the server derives the quantity from them, so the
+   *  quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
 }
 
 export interface PurchaseOrderCreatePayload {
@@ -113,6 +121,12 @@ export interface PurchaseOrderLine {
   expectedSlabs?: number | null;
   /** Slabs that live (non-void) receipts have brought in against this line so far. */
   slabsReceived?: number;
+  /** The slab size the line was priced from, when entered that way;
+   *  quantity is then length x width x expectedSlabs. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
 }
 
 /** `lkp_record_status` code for the PORD record type — the fixed, mostly

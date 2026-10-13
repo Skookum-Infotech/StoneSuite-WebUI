@@ -15,6 +15,8 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { unitLabel } from '@/lib/unitLabels';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
 import {
   VB_STATUS_COLORS, VB_STATUS_CODES, VB_DELETABLE_STATUSES, VB_VOID_CODE, VB_PAYABLE_STATUSES,
   isVbTransitionBlocked, isVbConfirmedTransition, vbCanVoid, vbDropdownTransitions,
@@ -163,6 +165,8 @@ export default function VendorBillDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
+      // The three size columns only appear when some line states a size.
+      const sized = anyDimensions(bill.items);
       await exportPurchasesRecordToPdf({
         recordType: 'vendor_bill',
         title: bill.vendorBillNumber || 'Vendor Bill',
@@ -188,11 +192,12 @@ export default function VendorBillDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: bill.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            ...(sized ? dimensionCells(line) : []),
             String(line.quantity),
             currency(line.unitPrice),
             `${line.discountPercent}%`,
@@ -339,6 +344,7 @@ export default function VendorBillDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      ...LINE_DIMENSION_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -359,6 +365,7 @@ export default function VendorBillDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
                       </td>
@@ -370,7 +377,7 @@ export default function VendorBillDetailPage() {
                     </tr>
                   ))}
                   {bill.items.length === 0 && (
-                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={13} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

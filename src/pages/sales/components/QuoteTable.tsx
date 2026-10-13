@@ -10,6 +10,8 @@ import { quoteService } from '@/services/quoteService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { QuoteStatusControl } from './QuoteStatusControl';
+import { ReadOnlyStatusPill } from './ReadOnlyStatusPill';
+import { QUOTE_STATUS_COLORS } from '@/lib/quoteForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { QuoteSearchRequest } from '@/types/quote';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
@@ -53,11 +55,12 @@ export function QuoteTable() {
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('quote', 'update');
 
-  // Inline status change from the list row's status pill — mirrors the Edit
-  // page's transition mutation.
+  // Inline status change from the list row's status pill, super admin only —
+  // everyone else sees a read-only pill and moves a quote from its Detail
+  // page. Mirrors the Edit page's transition mutation.
   const transition = useMutation({
     mutationFn: (vars: { id: string; toStatusCode: string }) => quoteService.transition(vars.id, vars.toStatusCode),
     onSuccess: (updated) => {
@@ -284,12 +287,16 @@ export function QuoteTable() {
                         {q.customer?.name ?? '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <QuoteStatusControl
-                          quote={q}
-                          onChange={(code) => transition.mutate({ id: q.id, toStatusCode: code })}
-                          disabled={transition.isPending && transition.variables?.id === q.id}
-                          variant="pill"
-                        />
+                        {isSuperAdmin ? (
+                          <QuoteStatusControl
+                            quote={q}
+                            onChange={(code) => transition.mutate({ id: q.id, toStatusCode: code })}
+                            disabled={transition.isPending && transition.variables?.id === q.id}
+                            variant="pill"
+                          />
+                        ) : (
+                          <ReadOnlyStatusPill label={q.status} color={QUOTE_STATUS_COLORS[q.status]} />
+                        )}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(q.quoteDate)}

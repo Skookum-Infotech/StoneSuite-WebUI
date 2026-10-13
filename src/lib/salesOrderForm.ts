@@ -5,6 +5,8 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type { SalesOrder, SalesOrderCreatePayload, SalesOrderLineInput } from '@/types/salesOrder';
+import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
+import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -48,6 +50,9 @@ export interface SOFormField {
   /** Native min/max for type: 'number' fields (e.g. a 0–100 percent field). */
   min?: number;
   max?: number;
+  /** For type: 'date' fields: `'today'` disables every day before today in the
+   *  picker (a future-only date, like the installation date). */
+  minDate?: 'today';
 }
 
 // ── Form section field definitions ───────────────────────────────────────────
@@ -76,6 +81,14 @@ export const PRIMARY_INFO_FIELDS: SOFormField[] = [
     label: 'Date Created',
     type: 'date',
     required: true,
+  },
+  {
+    key: 'scheduled_install_date',
+    label: 'Scheduled Installation Date',
+    type: 'date',
+    required: true,
+    minDate: 'today',
+    hint: 'Saving plans the production schedule from this date.',
   },
   {
     key: 'sales_tax_pct',
@@ -304,7 +317,9 @@ export const SALES_INFO_FIELDS: SOFormField[] = [
 
 // ── Items sub-tab ─────────────────────────────────────────────────────────────
 
-export interface SOLineItem {
+/** `kitId`/`kitName` (from KitLabeled) are set on a line added from a kit; such
+ *  lines sit under that kit's heading. */
+export interface SOLineItem extends KitLabeled, LineDimensions {
   id: string;
   lineNo: number;
   itemName: string;
@@ -586,6 +601,8 @@ function toLineInput(item: SOLineItem): SalesOrderLineInput {
     discountPercent: toNum(item.discount),
     taxRateId: item.taxRateId ?? undefined,
     taxPercent: item.taxRateId ? undefined : toNum(item.tax),
+    ...kitPayload(item),
+    ...dimensionsPayload(item, item.units),
   };
 }
 
@@ -606,6 +623,7 @@ export function toCreatePayload(
     customerUuid: toStr(data.customer_uuid),
     poNumber: toStr(data.purchase_doc_num),
     orderDate: toStr(data.date_created),
+    scheduledInstallDate: toStr(data.scheduled_install_date),
     paymentDueDate: toStr(data.payment_due_date) || undefined,
     paymentTermsId: toIntOrNull(data.payment_terms),
     priceLevelId: toIntOrNull(data.price_level),
@@ -667,6 +685,7 @@ export function fromOrder(order: SalesOrder): {
     sales_doc_num: order.salesOrderNumber,
     purchase_doc_num: order.poNumber ?? '',
     date_created: order.orderDate,
+    scheduled_install_date: order.scheduledInstallDate ?? '',
     payment_due_date: order.paymentDueDate ?? '',
     sales_tax_pct: String(order.salesTaxPercent ?? 0),
     currency_id: idOrEmpty(order.currencyId),
@@ -715,6 +734,8 @@ export function fromOrder(order: SalesOrder): {
     tax: String(line.taxPercent),
     total: line.lineTotal.toFixed(2),
     inventoryItemUuid: line.inventoryItemId ?? undefined,
+    ...kitFromLine(line),
+    ...dimensionsFromLine(line),
     fulfilledQuantity: line.fulfilledQuantity,
     status: line.status,
   }));

@@ -4,6 +4,7 @@ import {
 } from '@/components/crm/formUtils';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { DatePicker } from '@/components/ui/date-picker';
+import { toISODate } from '@/lib/dateUtils';
 import type { CrmLookups } from '@/services/lookupService';
 import type { SOFormField } from '@/lib/salesOrderForm';
 
@@ -113,7 +114,14 @@ export function SOField({ field, value, set, lookups, dependsOnValue, disabled }
     return (
       <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <DatePicker value={str} onChange={(iso) => set(field.key, iso)} label={field.label} required={field.required} />
+          <DatePicker
+            value={str}
+            onChange={(iso) => set(field.key, iso)}
+            label={field.label}
+            required={field.required}
+            minDate={field.minDate === 'today' ? toISODate(new Date()) : undefined}
+          />
+          {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
