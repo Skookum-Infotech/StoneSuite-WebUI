@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError, AxiosHeaders } from 'axios';
 
@@ -73,6 +73,16 @@ function Probe() {
   return <span data-testid="search">{search}</span>;
 }
 
+// The browser's Back button.
+function BrowserBack() {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => void navigate(-1)}>
+      Browser back
+    </button>
+  );
+}
+
 function setPermissions(grants: { resource: string; action: string }[] | 'all' = 'all') {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [],
@@ -91,6 +101,7 @@ function renderPlanner(search = `?date=${ANCHOR}`) {
       <MemoryRouter initialEntries={[`/calendar/activity-planner${search}`]}>
         <ActivityPlannerPage />
         <Probe />
+        <BrowserBack />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -520,6 +531,59 @@ describe('ActivityPlannerPage columns and navigation', () => {
     expect(screen.getByRole('columnheader', { name: 'Wed, Mar 4' })).toBeInTheDocument();
   });
 
+  it('opens a day from its week header: that date in the Day view, same activity', async () => {
+    renderPlanner('?activity=saw&date=' + ANCHOR);
+    await screen.findByRole('table', { name: 'Saw calendar' });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Thu, Mar 5 in Day view' }));
+
+    await waitFor(() => expect(salesOrderService.getScheduleFeed).toHaveBeenLastCalledWith({
+      group: 'Saw', from: THURSDAY, to: THURSDAY,
+    }));
+    const search = screen.getByTestId('search');
+    expect(search).toHaveTextContent('activity=saw');
+    expect(search).toHaveTextContent('view=day');
+    expect(search).toHaveTextContent(`date=${THURSDAY}`);
+    expect(await screen.findByRole('columnheader', { name: 'Thu, Mar 5' })).toBeInTheDocument();
+    expect(screen.getAllByRole('rowheader')).toHaveLength(14);
+    // The day you are already on is plain text, not a button to itself.
+    expect(screen.queryByRole('button', { name: /in Day view/ })).toBeNull();
+  });
+
+  it('opens a day from its month cell, including a neighbouring month’s day', async () => {
+    renderPlanner('?view=month&date=' + ANCHOR);
+    await screen.findByRole('table');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Fri, Mar 6 in Day view' }));
+    await waitFor(() => expect(salesOrderService.getScheduleFeed).toHaveBeenLastCalledWith({
+      group: 'Template', from: '2099-03-06', to: '2099-03-06',
+    }));
+    expect(screen.getByTestId('search')).toHaveTextContent('view=day');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Browser back' }));
+    await screen.findByRole('cell', { name: 'Thu, Apr 2' });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Thu, Apr 2 in Day view' }));
+    await waitFor(() => expect(salesOrderService.getScheduleFeed).toHaveBeenLastCalledWith({
+      group: 'Template', from: '2099-04-02', to: '2099-04-02',
+    }));
+    expect(screen.getByTestId('search')).toHaveTextContent('date=2099-04-02');
+  });
+
+  it('returns to the week or month it was opened from when the browser goes back', async () => {
+    renderPlanner('?view=month&date=' + ANCHOR);
+    await screen.findByRole('table');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Tue, Mar 3 in Day view' }));
+    await waitFor(() => expect(screen.getByTestId('search')).toHaveTextContent('view=day'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Browser back' }));
+
+    await waitFor(() => expect(screen.getByTestId('search')).toHaveTextContent('view=month'));
+    expect(screen.getByTestId('search')).toHaveTextContent(`date=${ANCHOR}`);
+    expect(await screen.findAllByRole('cell')).toHaveLength(35);
+  });
+
   it('jumps to the day the date picker chooses', async () => {
     renderPlanner();
     await screen.findByRole('table');
@@ -555,7 +619,7 @@ function jobsAt(day: string, hour: number, count: number): ScheduleFeedEvent[] {
 }
 
 describe('ActivityPlannerPage busy days', () => {
-  it('folds a busy hour behind "N more" and opens it in place', async () => {
+  it('folds a busy hour behind "N more", which lists every job without growing the grid', async () => {
     vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsAt(TUESDAY, 9, 7), truncated: false });
     renderPlanner();
     await screen.findByText('SO-2000');
@@ -564,15 +628,60 @@ describe('ActivityPlannerPage busy days', () => {
     expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(3);
     expect(hour.queryByText('SO-2003')).toBeNull();
 
-    const more = hour.getByRole('button', { name: 'Show 4 more jobs for Tue, Mar 3, 9 AM' });
-    expect(more).toHaveAttribute('aria-expanded', 'false');
+    const more = hour.getByRole('button', { name: 'Show all 7 jobs for Tue, Mar 3, 9 AM' });
     expect(more).toHaveTextContent('4 more');
     await userEvent.click(more);
 
-    expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(7);
-    expect(hour.getByText('SO-2006')).toBeInTheDocument();
-    await userEvent.click(hour.getByRole('button', { name: 'Show fewer jobs for Tue, Mar 3, 9 AM' }));
+    const list = within(await screen.findByRole('dialog', { name: 'Tue, Mar 3, 9 AM, 7 jobs' }));
+    expect(list.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(7);
+    expect(list.getByText('SO-2006')).toBeInTheDocument();
+    // The cell itself is untouched, so the rows below it don't move.
     expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(3);
+  });
+
+  it('opens a job’s detail card from the list, and Escape closes the card before the list', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsAt(TUESDAY, 9, 7), truncated: false });
+    renderPlanner();
+    await screen.findByText('SO-2000');
+    const hour = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 9 AM' }));
+    await userEvent.click(hour.getByRole('button', { name: 'Show all 7 jobs for Tue, Mar 3, 9 AM' }));
+    const list = within(await screen.findByRole('dialog', { name: 'Tue, Mar 3, 9 AM, 7 jobs' }));
+
+    await userEvent.click(list.getByRole('button', { name: /^SO-2006,/ }));
+
+    const link = await screen.findByRole('link', { name: /Open SO-2006/ });
+    expect(link).toHaveAttribute('href', '/sales/sales_order/so-6?tab=scheduling');
+    expect(screen.getAllByRole('dialog')).toHaveLength(2);
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('link', { name: /Open SO-2006/ })).toBeNull());
+    expect(screen.getByRole('dialog', { name: 'Tue, Mar 3, 9 AM, 7 jobs' })).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('gives a wide Day view room: chips wrap, and a normal day shows without a click', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsAt(ANCHOR, 9, 20), truncated: false });
+    renderPlanner('?view=day&date=' + ANCHOR);
+    await screen.findByText('SO-2000');
+
+    const hour = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 9 AM' }));
+    expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(20);
+    expect(hour.queryByRole('button', { name: /Show all/ })).toBeNull();
+  });
+
+  it('still folds an extreme Day view hour, and the list holds all of it', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsAt(ANCHOR, 9, 30), truncated: false });
+    renderPlanner('?view=day&date=' + ANCHOR);
+    await screen.findByText('SO-2000');
+
+    const hour = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 9 AM' }));
+    expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(23);
+    await userEvent.click(hour.getByRole('button', { name: 'Show all 30 jobs for Wed, Mar 4, 9 AM' }));
+
+    const list = within(await screen.findByRole('dialog', { name: 'Wed, Mar 4, 9 AM, 30 jobs' }));
+    expect(list.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(30);
   });
 
   // The toggle takes a slot of its own, so folding four would hide only one.
@@ -593,8 +702,11 @@ describe('ActivityPlannerPage busy days', () => {
 
     const day = within(screen.getByRole('cell', { name: 'Tue, Mar 3' }));
     expect(day.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(3);
-    await userEvent.click(day.getByRole('button', { name: 'Show 3 more jobs for Tue, Mar 3' }));
-    expect(day.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(6);
+    await userEvent.click(day.getByRole('button', { name: 'Show all 6 jobs for Tue, Mar 3' }));
+
+    const list = within(await screen.findByRole('dialog', { name: 'Tue, Mar 3, 6 jobs' }));
+    expect(list.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(6);
+    expect(day.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(3);
   });
 
   it('counts the folded jobs too, in the page summary', async () => {
@@ -697,6 +809,23 @@ describe('ActivityPlannerPage on a phone', () => {
     expect(within(day).getAllByRole('article')).toHaveLength(4);
     await userEvent.click(within(day).getByRole('button', { name: /Show 2 more jobs/ }));
     expect(within(day).getAllByRole('article')).toHaveLength(6);
+  });
+
+  it('opens a day from its heading, and leaves the one day you are on as plain text', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsOn(TUESDAY, 2), truncated: false });
+    renderPlanner();
+    await screen.findByText('SO-2000');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Tue, Mar 3 in Day view' }));
+
+    await waitFor(() => expect(salesOrderService.getScheduleFeed).toHaveBeenLastCalledWith({
+      group: 'Template', from: TUESDAY, to: TUESDAY,
+    }));
+    expect(screen.getByTestId('search')).toHaveTextContent('view=day');
+    // The navigator's own heading also names the date, so look inside the list.
+    const day = within(await screen.findByRole('list', { name: 'Template by day' }));
+    expect(day.getByRole('heading', { name: /Tue, Mar 3/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /in Day view/ })).toBeNull();
   });
 
   it('says so when nothing is planned', async () => {

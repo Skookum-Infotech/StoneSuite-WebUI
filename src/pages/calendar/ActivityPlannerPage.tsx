@@ -81,10 +81,13 @@ export default function ActivityPlannerPage() {
   const settled = !loading && !error && !isPlaceholderData;
   const kind = activity.source === 'invoice' ? 'invoice' : 'schedule';
 
-  function update(changes: Record<string, string>) {
+  // Stepping, picking a date or switching view refines the one place you are, so
+  // it replaces the history entry. Opening a day from a week or month goes
+  // somewhere else, so it adds one (`replace: false`) and Back returns.
+  function update(changes: Record<string, string>, replace = true) {
     const next = new URLSearchParams(params);
     for (const [key, value] of Object.entries(changes)) next.set(key, value);
-    setParams(next, { replace: true });
+    setParams(next, { replace });
   }
 
   function handleStep(step: -1 | 0 | 1) {
@@ -95,15 +98,40 @@ export default function ActivityPlannerPage() {
     update({ [PARAM_VIEW]: next });
   }
 
+  function handleSelectDay(date: string) {
+    update({ [PARAM_VIEW]: 'day', [PARAM_DATE]: date }, false);
+  }
+
   function renderCalendar() {
-    if (stacked) return <PlannerAgenda columns={columns} buckets={buckets} label={activity.label} />;
+    // The Day view is already that one day, so its heading is not a button.
+    const selectDay = view === 'day' ? undefined : handleSelectDay;
+    if (stacked) {
+      return <PlannerAgenda columns={columns} buckets={buckets} label={activity.label} onSelectDay={selectDay} />;
+    }
     // Remounted for each window, so its scroll position and any opened "N more"
     // start fresh.
     const key = `${activity.key}:${view}:${range.from}`;
     if (view === 'month') {
-      return <PlannerMonthGrid key={key} columns={columns} buckets={buckets} label={activity.label} />;
+      return (
+        <PlannerMonthGrid
+          key={key}
+          columns={columns}
+          buckets={buckets}
+          label={activity.label}
+          onSelectDay={handleSelectDay}
+        />
+      );
     }
-    return <PlannerTimeGrid key={key} columns={columns} buckets={buckets} label={activity.label} timed={timed} />;
+    return (
+      <PlannerTimeGrid
+        key={key}
+        columns={columns}
+        buckets={buckets}
+        label={activity.label}
+        timed={timed}
+        onSelectDay={selectDay}
+      />
+    );
   }
 
   return (

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { columnName, weeksOf } from '@/lib/plannerCalendar';
+import { columnName, openDayLabel, weeksOf } from '@/lib/plannerCalendar';
 import type { PlannerColumn } from '@/lib/plannerCalendar';
 import type { PlannerCard } from '@/lib/plannerCards';
 import { PlannerChipStack } from './PlannerChipStack';
@@ -8,8 +8,14 @@ import { GRID_FRAME_CLS, SCROLL_BOX_CLS } from './plannerLayout';
 /** A cell holds this many chips; past it the rest fold behind "N more". */
 const MAX_CELL_CHIPS = 4;
 
-function MonthCell({ day, cards }: { day: PlannerColumn; cards: readonly PlannerCard[] }) {
+function MonthCell({ day, cards, onSelectDay }: {
+  day: PlannerColumn;
+  cards: readonly PlannerCard[];
+  onSelectDay: (date: string) => void;
+}) {
   const name = columnName(day);
+  // The first of a month names it, so the grid reads "30 31 1 Oct 2".
+  const number = day.dayOfMonth === 1 ? `${day.dayOfMonth} ${day.monthAbbr}` : day.dayOfMonth;
   return (
     <div
       role="cell"
@@ -22,15 +28,20 @@ function MonthCell({ day, cards }: { day: PlannerColumn; cards: readonly Planner
       )}
     >
       <p className="mb-1 flex justify-center">
-        <span
+        <button
+          type="button"
+          aria-label={openDayLabel(day)}
+          onClick={() => onSelectDay(day.date)}
           className={cn(
             'inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-medium',
-            day.isToday ? 'bg-brand font-semibold text-stone-900' : day.inMonth ? 'text-stone-900' : 'text-stone-500',
+            'outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+            day.isToday
+              ? 'bg-brand font-semibold text-stone-900 hover:bg-brand-hover'
+              : cn('hover:bg-stone-200', day.inMonth ? 'text-stone-900' : 'text-stone-500'),
           )}
         >
-          {/* The first of a month names the month, so the grid reads "30 31 1 Oct 2". */}
-          {day.dayOfMonth === 1 ? `${day.dayOfMonth} ${day.monthAbbr}` : day.dayOfMonth}
-        </span>
+          {number}
+        </button>
       </p>
       <PlannerChipStack cards={cards} columnLabel={name} max={MAX_CELL_CHIPS} />
     </div>
@@ -41,11 +52,13 @@ function MonthCell({ day, cards }: { day: PlannerColumn; cards: readonly Planner
  *  day's jobs as chips in its cell. The days of the neighbouring months that
  *  fill the first and last weeks are drawn dimmed, with their jobs. Scrolls in
  *  its own box when the weeks don't fit, keeping the weekday names in view. */
-export function PlannerMonthGrid({ columns, buckets, label }: {
+export function PlannerMonthGrid({ columns, buckets, label, onSelectDay }: {
   columns: readonly PlannerColumn[];
   buckets: ReadonlyMap<string, PlannerCard[]>;
   /** The activity's name, for the table's accessible name. */
   label: string;
+  /** Opens a day in the Day view: each cell's date number is a button for it. */
+  onSelectDay: (date: string) => void;
 }) {
   const weeks = weeksOf(columns);
 
@@ -67,7 +80,7 @@ export function PlannerMonthGrid({ columns, buckets, label }: {
         {weeks.map((week) => (
           <div key={week[0].key} role="row" className="grid grid-cols-7 border-b border-stone-200 last:border-b-0">
             {week.map((day) => (
-              <MonthCell key={day.key} day={day} cards={buckets.get(day.key) ?? []} />
+              <MonthCell key={day.key} day={day} cards={buckets.get(day.key) ?? []} onSelectDay={onSelectDay} />
             ))}
           </div>
         ))}

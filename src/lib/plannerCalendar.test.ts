@@ -4,6 +4,7 @@ import {
   addDays,
   columnName,
   columnsFor,
+  openDayLabel,
   parseAnchor,
   parseView,
   rangeFor,
@@ -194,5 +195,11 @@ describe('columnName', () => {
   it('names a day by weekday and date', () => {
     expect(columnName(columnsFor('week', THURSDAY, THURSDAY)[4])).toBe('Thu, Oct 15');
     expect(columnName(columnsFor('day', THURSDAY, THURSDAY)[0])).toBe('Thu, Oct 15');
+  });
+});
+
+describe('openDayLabel', () => {
+  it('says which day the control opens, and where', () => {
+    expect(openDayLabel(columnsFor('week', THURSDAY, THURSDAY)[4])).toBe('Open Thu, Oct 15 in Day view');
   });
 });

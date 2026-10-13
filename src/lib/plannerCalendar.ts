@@ -215,6 +215,12 @@ export function columnName(column: PlannerColumn): string {
   return `${column.label}, ${column.subLabel}`;
 }
 
+/** What the control that opens a column's day in the Day view is called:
+ *  "Open Tue, Oct 12 in Day view". */
+export function openDayLabel(column: PlannerColumn): string {
+  return `Open ${columnName(column)} in Day view`;
+}
+
 function dayColumn(iso: string, today: string, inMonth: boolean): PlannerColumn {
   const d = toDate(iso);
   return {

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { columnName } from '@/lib/plannerCalendar';
+import { columnName, openDayLabel } from '@/lib/plannerCalendar';
 import type { PlannerColumn } from '@/lib/plannerCalendar';
 import { countLabel } from '@/lib/plannerCards';
 import type { PlannerCard } from '@/lib/plannerCards';
@@ -8,11 +8,14 @@ import { PlannerColumnCards } from './PlannerColumnCards';
 /** The calendar for a phone: a day-by-day list instead of a grid. Only the days
  *  that have work are listed, each as a heading over its stacked cards, so a
  *  month isn't thirty screens of empty days. */
-export function PlannerAgenda({ columns, buckets, label }: {
+export function PlannerAgenda({ columns, buckets, label, onSelectDay }: {
   columns: readonly PlannerColumn[];
   buckets: ReadonlyMap<string, PlannerCard[]>;
   /** The activity's name, for the list's accessible name. */
   label: string;
+  /** Opens a day in the Day view: each day's name is a button for it. Leave it
+   *  out when the list already is that one day. */
+  onSelectDay?: (date: string) => void;
 }) {
   const busy = columns.filter((column) => (buckets.get(column.key)?.length ?? 0) > 0);
   if (busy.length === 0) return null;
@@ -34,7 +37,18 @@ export function PlannerAgenda({ columns, buckets, label }: {
                 column.isToday ? 'bg-brand/20' : 'bg-stone-50',
               )}
             >
-              <span className="text-sm font-semibold text-stone-800">{name}</span>
+              {onSelectDay ? (
+                <button
+                  type="button"
+                  aria-label={openDayLabel(column)}
+                  onClick={() => onSelectDay(column.date)}
+                  className="rounded text-left text-sm font-semibold text-stone-800 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {name}
+                </button>
+              ) : (
+                <span className="text-sm font-semibold text-stone-800">{name}</span>
+              )}
               <span className="text-xs text-stone-500">{countLabel(cards[0].kind, cards.length)}</span>
             </h3>
             <div className="p-2">
