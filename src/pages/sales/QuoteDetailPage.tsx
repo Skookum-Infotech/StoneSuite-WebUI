@@ -16,6 +16,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
 import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
 import { statusToastLabel } from '@/lib/statusToast';
@@ -299,8 +300,8 @@ export default function QuoteDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {quote.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  <KitLineRows lines={quote.items} colSpan={10} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
@@ -316,7 +317,7 @@ export default function QuoteDetailPage() {
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {quote.items.length === 0 && (
                     <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}

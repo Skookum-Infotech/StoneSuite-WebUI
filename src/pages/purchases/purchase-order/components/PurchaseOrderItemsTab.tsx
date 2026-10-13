@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
 import { TRACKING_SERIALIZED, type InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import { unitLabel } from '@/lib/unitLabels';
 import { SlabEstimateRow } from './SlabEstimateRow';
@@ -72,7 +73,21 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+    addNewKit, returnedKit, reportLineError,
   } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
+
+  // Picking a kit adds its items as ordinary lines — Purchases tables show no
+  // kit heading, so the lines carry no kit label.
+  const { addKit, isAddingKit } = useAddKitLines({
+    items,
+    onUpdate,
+    emptyDraft: EMPTY_LINE_ITEM,
+    applyItem: applyCatalogItem,
+    newId: genId,
+    onAdded: () => { setDraft(EMPTY_LINE_ITEM); setIsAdding(false); },
+    onError: reportLineError,
+    returnedKit,
+  });
 
   const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'expectedSlabs', val: string) => {
     const nextVal = key === 'discount' ? clampPercent(val) : val;
@@ -90,6 +105,9 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
     onTextChange: onItemNameText,
     onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
     onAddToInventory: addToInventory,
+    // Kits only join a new line; an existing row being edited stays an item.
+    onPickKit: editId ? undefined : (kit) => { void addKit(kit); },
+    onAddKit: editId ? undefined : addNewKit,
   };
 
   const commitAdd = () => {
@@ -251,6 +269,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
           className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
           <Trash2 className="size-3" /> Remove Last
         </button>
+        {isAddingKit && <p role="status" className="text-xs text-stone-500">Adding kit…</p>}
         {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
       </div>
     </div>

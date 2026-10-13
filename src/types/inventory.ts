@@ -103,6 +103,9 @@ export interface InventoryItem {
    *  item. The API always sends it; optional here so a hand-built item (a test
    *  fixture) still type-checks — absent reads as on. */
   trackStock?: boolean;
+  /** The kits this item is in. Sent by the single-item GET only; list and
+   *  search rows leave it out. */
+  kits?: KitRef[];
 
   createdAt: string;
   updatedAt: string;
@@ -129,6 +132,9 @@ export interface InventoryItemInput {
   barcode: string;
   defaultWarehouseId?: number | null;
   trackStock?: boolean;
+  /** When present, makes exactly these kits (ids) the item's kits. Omit to
+   *  leave its memberships alone; `[]` takes the item out of every kit. */
+  kitIds?: string[];
 }
 
 export interface InventoryItemPage {
@@ -150,6 +156,69 @@ export interface InventoryItemHistoryEntry {
   at: string;
   byName: string;
   details?: Record<string, unknown>;
+}
+
+// ── Kits ─────────────────────────────────────────────────────────────────────
+// A kit is a named group of catalogue items sold together ("Kitchen"). Picking
+// one on a document line adds its items as ordinary lines under a kit heading.
+// Served from `/api/tenant/inventory/kits*` under the `inventory_item` grant;
+// mirrors the Go structs in StoneSuite-Backend `inventory/kit_types.go`.
+
+/** The light kit reference an item carries. */
+export interface KitRef {
+  id: string;
+  name: string;
+}
+
+/** One item a kit holds and the quantity a line gets by default. `item` is the
+ *  full catalogue record — what an item search returns — so a kit is added to a
+ *  line table through the code that adds an item. */
+export interface KitMember {
+  quantity: number;
+  item: InventoryItem;
+}
+
+export interface InventoryKit {
+  id: string; // inventory_kit_uuid
+  name: string;
+  description: string;
+  isActive: boolean;
+  /** Live items in the kit; set on every read. */
+  itemCount: number;
+  /** Present on the single-kit GET only — list and search rows carry the count. */
+  members?: KitMember[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KitMemberInput {
+  /** The item's id (its uuid). */
+  itemId: string;
+  /** Omitted or 0 reads as 1 server-side. */
+  quantity: number;
+}
+
+// Whole-object write, like items. `members` omitted leaves the kit's items
+// alone; an explicit empty list empties it. `isActive` omitted leaves it as is.
+export interface KitInput {
+  name: string;
+  description: string;
+  isActive?: boolean;
+  members?: KitMemberInput[];
+}
+
+export interface KitPage {
+  records: InventoryKit[];
+  nextCursor: string;
+  hasMore: boolean;
+}
+
+export interface KitSearchRequest {
+  filters?: FilterClause[];
+  sort?: SortKey[];
+  limit?: number;
+  cursor?: string;
+  search?: string;
 }
 
 // ── Units (slabs / remnants) ─────────────────────────────────────────────────

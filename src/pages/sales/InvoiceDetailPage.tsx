@@ -16,6 +16,7 @@ import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
 import { INVOICE_PAYABLE_STATUSES, INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
 import { statusToastLabel } from '@/lib/statusToast';
@@ -285,8 +286,8 @@ export default function InvoiceDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {invoice.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  <KitLineRows lines={invoice.items} colSpan={9} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
@@ -301,7 +302,7 @@ export default function InvoiceDetailPage() {
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {invoice.items.length === 0 && (
                     <tr><td colSpan={9} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}

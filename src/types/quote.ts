@@ -44,6 +44,10 @@ export interface QuoteLineInput {
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface QuoteCreatePayload {
@@ -109,6 +113,10 @@ export interface QuoteLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** Set on a line added from a kit (see lib/kitLines.ts): the kit's id and the
+   *  name it had when the line was added. */
+  kitId?: string;
+  kitName?: string;
 }
 
 // Full detail response (GET/Create/Update/Transition/Approve). Every field the

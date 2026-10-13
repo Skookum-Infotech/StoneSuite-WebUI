@@ -136,6 +136,29 @@ describe('SalesOrderDetailPage ?tab=', () => {
     expect(await screen.findByText('Primary Information')).toBeInTheDocument();
   });
 
+  it('shows the Items tab with a kit heading above the lines that came from a kit', async () => {
+    const line = (id: string, itemName: string, kit?: { kitId: string; kitName: string }) => ({
+      id, lineNumber: 1, itemName, sku: id, description: '', unitCode: '', quantity: 1, unitPrice: 10,
+      discountPercent: 0, taxPercent: 0, lineSubtotal: 10, lineDiscount: 0, lineTax: 0, lineTotal: 10,
+      fulfilledQuantity: 0, status: 'open' as const, ...kit,
+    });
+    vi.mocked(salesOrderService.getOrder).mockResolvedValue(order({
+      items: [
+        line('l1', 'Loose Slab'),
+        line('l2', 'Countertop', { kitId: 'k1', kitName: 'Kitchen' }),
+        line('l3', 'Sink', { kitId: 'k1', kitName: 'Kitchen' }),
+      ],
+    }));
+    renderPage('?tab=items');
+
+    const heading = await screen.findByRole('row', { name: 'Kit Kitchen' });
+    expect(heading).toHaveTextContent('2 items');
+    const rows = screen.getAllByRole('row').map((r) => r.getAttribute('aria-label') ?? r.textContent ?? '');
+    expect(rows.findIndex((r) => r === 'Kit Kitchen')).toBeGreaterThan(rows.findIndex((r) => r.includes('Loose Slab')));
+    // Read-only here: a heading you cannot remove from the detail page.
+    expect(screen.queryByRole('button', { name: /Remove kit Kitchen/ })).not.toBeInTheDocument();
+  });
+
   it('never opens the staff-only Scheduling tab for a customer session', async () => {
     vi.mocked(isPortalSession).mockReturnValue(true);
     renderPage('?tab=scheduling');

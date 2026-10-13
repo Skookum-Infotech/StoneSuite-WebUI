@@ -47,6 +47,10 @@ export interface SalesOrderLineInput {
   taxRateId?: number | null;
   taxPercent?: number;
   warehouseId?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface SalesOrderCreatePayload {
@@ -109,6 +113,10 @@ export interface SalesOrderLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** Set on a line added from a kit (see lib/kitLines.ts): the kit's id and the
+   *  name it had when the line was added. */
+  kitId?: string;
+  kitName?: string;
   /** Stored rollup of this line's fulfilled allocations (AD-9). */
   fulfilledQuantity: number;
   /** Derived server-side from fulfilledQuantity vs quantity — never stored,

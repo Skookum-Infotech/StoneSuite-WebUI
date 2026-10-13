@@ -24,8 +24,23 @@ describe('toItemPayload (whole-object write — PATCH has PUT semantics)', () =>
       sku: 'GRAN-001', name: 'Absolute Black', description: 'desc', unitId: 6, unitPrice: 42.5,
       currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 30, originCountryId: 7,
-      barcode: '012345', defaultWarehouseId: 8, trackStock: true,
+      barcode: '012345', defaultWarehouseId: 8, trackStock: true, kitIds: [],
     })
+  })
+
+  it('sends the ids of the kits chosen on the form, always — even none', () => {
+    const base = { sku: 'x', name: 'y', unit_id: '1' }
+    expect(toItemPayload({ ...base, kits: [{ id: 'k1', name: 'Kitchen' }, { id: 'k2', name: 'Bath' }] }).kitIds)
+      .toEqual(['k1', 'k2'])
+    expect(toItemPayload({ ...base, kits: [] }).kitIds).toEqual([])
+    // A form that never set it (older state) sends the empty list, not nothing,
+    // so a save is always the whole truth about the item's kits.
+    expect(toItemPayload(base).kitIds).toEqual([])
+  })
+
+  it('ignores a kits value that is not a list of kits', () => {
+    expect(toItemPayload({ sku: 'x', name: 'y', unit_id: '1', kits: 'Kitchen' }).kitIds).toEqual([])
+    expect(toItemPayload({ sku: 'x', name: 'y', unit_id: '1', kits: [null, { name: 'no id' }] }).kitIds).toEqual([])
   })
 
   it('resolves default_warehouse_id to null rather than parsing the uuid as an int (regression)', () => {
@@ -94,6 +109,7 @@ describe('fromItem / toItemPayload round-trip', () => {
       currencyId: 1, taxRateId: 2, isActive: true, customFields: {},
       tracking: TRACKING_SERIALIZED, materialId: 3, colorId: 4, finishId: 5,
       thicknessMm: 20, originCountryId: 7, barcode: 'BC1', defaultWarehouseId: 8,
+      kits: [{ id: 'k1', name: 'Kitchen' }],
       createdAt: '2026-01-01', updatedAt: '2026-01-02',
     }
     const payload = toItemPayload(fromItem(item, [warehouseWithNumericId]), [warehouseWithNumericId])
@@ -101,8 +117,17 @@ describe('fromItem / toItemPayload round-trip', () => {
       sku: 'SKU', name: 'Name', description: 'Desc', unitId: 6, unitPrice: 10,
       currencyId: 1, taxRateId: 2, customFields: {}, tracking: TRACKING_SERIALIZED,
       materialId: 3, colorId: 4, finishId: 5, thicknessMm: 20, originCountryId: 7,
-      barcode: 'BC1', defaultWarehouseId: 8, trackStock: true,
+      barcode: 'BC1', defaultWarehouseId: 8, trackStock: true, kitIds: ['k1'],
     })
+  })
+
+  it('loads an item without kits as an empty list', () => {
+    const item: InventoryItem = {
+      id: 'uuid-1', sku: 'SKU', name: 'Name', description: '', unitId: 6, unitPrice: 10,
+      isActive: true, customFields: {}, tracking: TRACKING_QUANTITY, thicknessMm: 0,
+      barcode: '', createdAt: '2026-01-01', updatedAt: '2026-01-02',
+    }
+    expect(fromItem(item, []).kits).toEqual([])
   })
 
   it('falls back to an unselected warehouse when the numeric id has no matching uuid yet (KNOWN GAP)', () => {
@@ -122,6 +147,7 @@ describe('itemDefaults', () => {
     expect(d.unit_price).toBe('0')
     expect(d.thickness_mm).toBe('0')
     expect(d.is_active).toBe(true)
+    expect(d.kits).toEqual([])
   })
 })
 

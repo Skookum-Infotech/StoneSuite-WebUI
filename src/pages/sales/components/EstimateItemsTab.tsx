@@ -1,9 +1,13 @@
+import { Fragment } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from './InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
+import { KitHeadingRow, KIT_ROW_CLS } from '@/components/inventory/KitHeadingRow';
+import { kitHeadings, labelWithKit, removeKitRun } from '@/lib/kitLines';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type EstimateLineItem,
 } from '@/lib/estimateForm';
@@ -63,7 +67,21 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+    addNewKit, returnedKit, reportLineError,
   } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
+
+  // Picking a kit appends its items as lines under the kit's heading.
+  const { addKit, isAddingKit } = useAddKitLines({
+    items,
+    onUpdate,
+    emptyDraft: EMPTY_LINE_ITEM,
+    applyItem: applyCatalogItem,
+    label: labelWithKit,
+    newId: genId,
+    onAdded: () => { setDraft(EMPTY_LINE_ITEM); setIsAdding(false); },
+    onError: reportLineError,
+    returnedKit,
+  });
 
   const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription', val: string) => {
     const nextVal = key === 'discount' ? clampPercent(val) : val;
@@ -81,6 +99,9 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
     onTextChange: onItemNameText,
     onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
     onAddToInventory: addToInventory,
+    // Kits only join a new line; an existing row being edited stays an item.
+    onPickKit: editId ? undefined : (kit) => { void addKit(kit); },
+    onAddKit: editId ? undefined : addNewKit,
   };
 
   const commitAdd = () => {
@@ -111,15 +132,24 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
     if (editId === id) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
   };
 
+  // Takes a kit's whole run out at once (its heading's remove button).
+  const removeRun = (firstId: string) => {
+    const next = removeKitRun(items, firstId);
+    onUpdate(next);
+    if (editId && !next.some((r) => r.id === editId)) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
+  };
+
   const copyPrev = () => {
     if (!items.length) return;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, lineNo, ...rest } = items[items.length - 1];
-    setDraft(rest);
+    // A copy is a new line of its own, not another member of the kit.
+    setDraft({ ...rest, kitId: undefined, kitName: undefined });
     setIsAdding(true);
     setEditId(null);
   };
 
+  const headings = kitHeadings(items);
   const activeDraft = isAdding || editId !== null;
 
   return (
@@ -136,9 +166,18 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {items.map((row) =>
-              editId === row.id ? (
-                <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
+            {items.map((row) => (
+              <Fragment key={row.id}>
+                {headings.get(row.id) && (
+                  <KitHeadingRow
+                    name={headings.get(row.id)?.kitName ?? ''}
+                    count={headings.get(row.id)?.count ?? 0}
+                    colSpan={ITEM_COLS.length}
+                    onRemove={() => removeRun(row.id)}
+                  />
+                )}
+              {editId === row.id ? (
+                <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className="px-2 py-1.5">
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
@@ -147,7 +186,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
                   </td>
                 </tr>
               ) : (
-                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
+                <tr className={cn('hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100', row.kitId && KIT_ROW_CLS)}>
                   <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
@@ -170,8 +209,9 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
                     </div>
                   </td>
                 </tr>
-              ),
-            )}
+              )}
+              </Fragment>
+            ))}
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
@@ -218,6 +258,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
           className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
           <Trash2 className="size-3" /> Remove Last
         </button>
+        {isAddingKit && <p role="status" className="text-xs text-stone-500">Adding kit…</p>}
         {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
       </div>
     </div>

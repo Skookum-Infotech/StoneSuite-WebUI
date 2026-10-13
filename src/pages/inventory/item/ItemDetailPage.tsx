@@ -164,6 +164,7 @@ export default function ItemDetailPage() {
                   <ReadonlyField label="Barcode" value={item.barcode} />
                   <ReadonlyField label="Default Location" value={lookups?.warehouses.find((w) => w.warehouseId === item.defaultWarehouseId)?.name} />
                   <ReadonlyField label="Track Stock" value={item.tracking === TRACKING_SERIALIZED || item.trackStock !== false ? 'Yes' : 'No'} />
+                  <ReadonlyField label="Kits" value={(item.kits ?? []).map((k) => k.name).join(', ')} />
                 </div>
               </ModernSection>
 

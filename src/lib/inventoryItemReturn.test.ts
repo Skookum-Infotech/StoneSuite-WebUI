@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { InventoryItem } from '@/types/inventory';
+import type { InventoryItem, InventoryKit } from '@/types/inventory';
 import {
   INVENTORY_RETURN_STATE_KEY,
   applyReturnedLine,
   clearReturnStash,
   hasExactItemName,
   isSafeReturnPath,
+  kitReturnRouterState,
   newInventoryItemPath,
+  newInventoryKitPath,
   readReturnStash,
   resolveInventoryReturn,
   returnRouterState,
@@ -74,7 +76,7 @@ describe('resolveInventoryReturn', () => {
 
   it('restores with the created item when the New Item page sends the user back', () => {
     const result = resolveInventoryReturn(stash, '/sales/quote/new', returnRouterState(ITEM), false);
-    expect(result).toEqual({ page: stash.page, line: stash.line, createdItem: ITEM });
+    expect(result).toEqual({ page: stash.page, line: stash.line, createdItem: ITEM, createdKit: null });
   });
 
   it('restores without an item when the user cancelled out of New Item', () => {
@@ -102,6 +104,39 @@ describe('resolveInventoryReturn', () => {
   it('treats a malformed created item as no item', () => {
     const state = { [INVENTORY_RETURN_STATE_KEY]: { createdItem: { name: 'no id' } } };
     expect(resolveInventoryReturn(stash, '/sales/quote/new', state, false)?.createdItem).toBeNull();
+  });
+});
+
+describe('the New Kit trip', () => {
+  const stash = { returnTo: '/sales/sales_order/new', page: { data: { a: 1 } }, line: { draft: EMPTY_LINE, editId: null } };
+  const KIT = { id: 'kit-1', name: 'Kitchen', description: '', isActive: true, itemCount: 2, members: [] } as unknown as InventoryKit;
+
+  it('carries the return path and the trimmed kit name to New Kit', () => {
+    const url = new URL(newInventoryKitPath('/sales/sales_order/new', '  Kitchen '), 'http://x');
+    expect(url.pathname).toBe('/inventory/kit/new');
+    expect(url.searchParams.get('returnTo')).toBe('/sales/sales_order/new');
+    expect(url.searchParams.get('name')).toBe('Kitchen');
+  });
+
+  it('comes back with the created kit and no item', () => {
+    const result = resolveInventoryReturn(stash, '/sales/sales_order/new', kitReturnRouterState(KIT), false);
+    expect(result).toEqual({ page: stash.page, line: stash.line, createdItem: null, createdKit: KIT });
+  });
+
+  it('restores the page without a kit when the user cancelled out of New Kit', () => {
+    const result = resolveInventoryReturn(stash, '/sales/sales_order/new', kitReturnRouterState(null), false);
+    expect(result?.createdKit).toBeNull();
+    expect(result?.page).toEqual(stash.page);
+  });
+
+  it('treats a malformed created kit as no kit', () => {
+    const state = { [INVENTORY_RETURN_STATE_KEY]: { createdItem: null, createdKit: { name: 'no id' } } };
+    expect(resolveInventoryReturn(stash, '/sales/sales_order/new', state, false)?.createdKit).toBeNull();
+  });
+
+  it('an item trip carries no kit', () => {
+    const result = resolveInventoryReturn(stash, '/sales/sales_order/new', returnRouterState(ITEM), false);
+    expect(result?.createdKit).toBeNull();
   });
 });
 

@@ -7,7 +7,7 @@
 // field. toItemPayload always builds the whole object — never a partial —
 // so an edit save can never silently clear an attribute the form didn't
 // touch.
-import type { InventoryItem, InventoryItemInput, TrackingMode, Warehouse } from '@/types/inventory';
+import type { InventoryItem, InventoryItemInput, KitRef, TrackingMode, Warehouse } from '@/types/inventory';
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
 import { toNumericWarehouseId } from './inventoryWarehouse';
 
@@ -84,7 +84,15 @@ export function itemDefaults(): Record<string, unknown> {
     default_warehouse_id: '',
     barcode: '',
     track_stock: true,
+    kits: [],
   };
+}
+
+/** The kits chosen on the form. Form state holds {id, name} so the chips can be
+ *  drawn without a lookup; only the ids are sent. */
+function kitsOf(data: Record<string, unknown>): KitRef[] {
+  if (!Array.isArray(data.kits)) return [];
+  return (data.kits as KitRef[]).filter((k) => k && typeof k.id === 'string');
 }
 
 /** Maps the item form state to the whole-object write contract. */
@@ -109,6 +117,9 @@ export function toItemPayload(data: Record<string, unknown>, warehouses: Warehou
     // Always sent: PATCH overwrites every field. A slab item is always tracked,
     // and a form that never set it (older state) reads as tracked.
     trackStock: data.tracking === TRACKING_SERIALIZED ? true : data.track_stock !== false,
+    // Always sent: the server leaves an item's kits alone only when this is
+    // omitted, so the form's own list (possibly empty) is the truth on a save.
+    kitIds: kitsOf(data).map((k) => k.id),
   };
 }
 
@@ -132,6 +143,7 @@ export function fromItem(item: InventoryItem, warehouses: Warehouse[] = []): Rec
     default_warehouse_id: warehouseUuidOrEmpty(warehouses, item.defaultWarehouseId),
     barcode: item.barcode ?? '',
     track_stock: item.trackStock ?? true,
+    kits: (item.kits ?? []).map((k) => ({ id: k.id, name: k.name })),
   };
 }
 

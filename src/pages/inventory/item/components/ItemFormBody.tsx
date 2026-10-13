@@ -3,12 +3,13 @@ import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, fieldLabelCls, checkboxLabelCls } from '@/components/crm/formUtils';
 import { LookupSelect } from '@/components/inventory/LookupSelect';
+import { KitSelect } from '@/components/inventory/KitSelect';
 import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { lookupService } from '@/services/lookupService';
 import { findUnit, requiresDimensions } from '@/lib/inventoryUnits';
 import { TRACKING_OPTIONS } from '@/lib/inventoryItemForm';
-import { TRACKING_SERIALIZED } from '@/types/inventory';
+import { TRACKING_SERIALIZED, type KitRef } from '@/types/inventory';
 
 // Shared field layout for Add/Edit Item — the item form is small enough
 // (no line items, no tabs) that a single body component covers both modes,
@@ -118,6 +119,14 @@ export function ItemFormBody({ data, set }: {
               label="Default Location"
             />
           </ModernFieldShell>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <ModernFieldShell label="Kits">
+              <KitSelect
+                value={Array.isArray(data.kits) ? (data.kits as KitRef[]) : []}
+                onChange={(kits) => set('kits', kits)}
+              />
+            </ModernFieldShell>
+          </div>
           <div className="flex items-center gap-2 pt-6">
             <input
               type="checkbox"

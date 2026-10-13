@@ -324,6 +324,8 @@ const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemList
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
 const EditItemPage = lazyWithRetry(() => import("@/pages/inventory/item/EditItemPage"));
 const ItemDetailPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemDetailPage"));
+const AddKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/AddKitPage"));
+const EditKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/EditKitPage"));
 const UnitListPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitListPage"));
 const UnitDetailPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitDetailPage"));
 const BinListPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinListPage"));
@@ -1181,6 +1183,23 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="inventory_item" action="update">
             <EditItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      // Kits: named groups of items sold together. Same grant as the items.
+      {
+        path: "inventory/kit/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="create">
+            <AddKitPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/kit/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="update">
+            <EditKitPage />
           </PermissionGuard>,
         ),
       },
