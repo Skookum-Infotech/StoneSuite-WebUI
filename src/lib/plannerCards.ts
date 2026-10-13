@@ -6,6 +6,7 @@
 import { datePart, formatDisplayDate } from '@/lib/dateUtils';
 import { formatMoney } from '@/lib/formatMoney';
 import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
+import { chipFillFor } from '@/lib/plannerChipColor';
 import {
   SCHEDULE_STATUS_COLORS,
   SCHEDULE_STATUS_LABELS,
@@ -30,9 +31,17 @@ export interface PlannerCard {
   statusLabel: string;
   /** Hex colour of the status pill. */
   statusColor: string;
+  /** Hex fill of the card's chip on the calendar: the status colour, darkened
+   *  until white text on it is readable. */
+  chipColor: string;
+  /** Where and when, in full, for the detail card: "Oct 15, 2026, 9:00 AM", or
+   *  "Due Oct 20, 2026" for a date-only card. */
+  whenLabel: string;
   /** The main link's text: the Sales Order number, or the invoice number. */
   title: string;
   href: string;
+  /** The detail card's button, which opens `href`: "Open sales order". */
+  openLabel: string;
   /** A second link — an invoice card's order. */
   origin?: { label: string; href: string };
   customer: string;
@@ -55,6 +64,8 @@ const UNCONFIRMED_ORDER_CODES = new Set(['DRFT', 'PAPV']);
 const SALES_ORDER_FALLBACK_TITLE = 'Sales order';
 const INVOICE_FALLBACK_TITLE = 'Invoice';
 const DUE_LABEL = 'Due';
+const OPEN_ORDER_LABEL = 'Open sales order';
+const OPEN_INVOICE_LABEL = 'Open invoice';
 const PAID_STATUS_CODE = 'PAID';
 const OVERDUE_STATUS_CODE = 'ODUE';
 const VOID_STATUS_CODE = 'VOID';
@@ -72,6 +83,13 @@ export function cardNoun(kind: PlannerCard['kind'], count: number): string {
 /** "1 job", "3 jobs", "2 invoices" — how a column or the page counts its cards. */
 export function countLabel(kind: PlannerCard['kind'], count: number): string {
   return `${count} ${cardNoun(kind, count)}`;
+}
+
+/** How many of a stack's `count` cards to show, of the `max` the stack has room
+ *  for. Past `max` the rest fold behind an "N more" button that takes the last
+ *  slot — so a stack is never folded to hide just one card. */
+export function visibleCardCount(count: number, max: number): number {
+  return count <= max ? count : max - 1;
 }
 
 /** An order's own page, opened on its Scheduling tab. */
@@ -106,8 +124,11 @@ export function scheduleEventCard(event: ScheduleFeedEvent, now: Date = new Date
     timeLabel: formatWallClockTime(event.scheduledAt),
     statusLabel: SCHEDULE_STATUS_LABELS[status],
     statusColor: SCHEDULE_STATUS_COLORS[status],
+    chipColor: chipFillFor(SCHEDULE_STATUS_COLORS[status]),
+    whenLabel: formatWallClock(event.scheduledAt),
     title,
     href: orderSchedulePath(order.id),
+    openLabel: OPEN_ORDER_LABEL,
     customer: order.customerName,
     stage: event.name === event.group ? '' : event.name,
     meta,
@@ -132,6 +153,7 @@ export function invoiceCard(invoice: InvoiceSummary, currencyCode?: string): Pla
   const meta = paid
     ? `${formatMoney(invoice.grandTotal, currencyCode)} paid`
     : `${formatMoney(invoice.balanceDue, currencyCode)} due`;
+  const statusColor = INVOICE_STATUS_COLORS[invoice.status] ?? NEUTRAL_STATUS_COLOR;
 
   return {
     id: `invoice:${invoice.id}`,
@@ -141,9 +163,12 @@ export function invoiceCard(invoice: InvoiceSummary, currencyCode?: string): Pla
     allDay: true,
     timeLabel: DUE_LABEL,
     statusLabel: invoice.status,
-    statusColor: INVOICE_STATUS_COLORS[invoice.status] ?? NEUTRAL_STATUS_COLOR,
+    statusColor,
+    chipColor: chipFillFor(statusColor),
+    whenLabel: `${DUE_LABEL} ${formatDisplayDate(day)}`,
     title,
     href: invoicePath(invoice.id),
+    openLabel: OPEN_INVOICE_LABEL,
     origin: { label: order.number, href: orderSchedulePath(order.id) },
     customer: invoice.customer.name,
     stage: '',

@@ -13,12 +13,12 @@ export interface PlannerSpan {
   showsToday: boolean;
 }
 
-// Every control in the toolbar is 32px high and 14px type, to match the date
-// picker's own trigger.
+// Every control in the toolbar is 14px type and 32px high, to match the date
+// picker's own trigger — 36px on a phone, where a finger is the pointer.
 const NAV_BUTTON_CLS =
-  'inline-flex size-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-600 shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
+  'inline-flex size-9 items-center sm:size-8 justify-center rounded-lg border border-stone-200 bg-white text-stone-600 shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
 const TODAY_BUTTON_CLS =
-  'h-8 rounded-lg border border-stone-200 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-50';
+  'h-9 rounded-lg border border-stone-200 bg-white px-3 text-sm sm:h-8 font-medium text-stone-700 shadow-sm transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-50';
 
 /** Previous / next / Today, the window's heading and a jump-to-date picker.
  *  `onStep` takes -1 (back), 1 (forward) or 0 (today).
@@ -53,7 +53,7 @@ export function PlannerNavigator({ span, onStep, onPick }: {
       <h2 className="whitespace-nowrap text-sm font-semibold text-stone-900" aria-live="polite">
         {span.label}
       </h2>
-      <div className="min-w-32 flex-1 sm:w-36 sm:flex-none">
+      <div className="min-w-32 flex-1 sm:w-36 sm:flex-none [&>button]:h-9 sm:[&>button]:h-8">
         <DatePicker value={span.date} onChange={onPick} label="Jump to date" />
       </div>
     </>

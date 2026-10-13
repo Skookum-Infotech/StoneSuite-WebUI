@@ -9,7 +9,6 @@ import { toISODate } from '@/lib/dateUtils';
 import {
   PLANNER_ACTIVITIES,
   PLANNER_PANEL_ID,
-  bucketByColumn,
   columnsFor,
   parseAnchor,
   parseView,
@@ -21,10 +20,12 @@ import {
 } from '@/lib/plannerCalendar';
 import type { PlannerView } from '@/lib/plannerCalendar';
 import { cardNoun } from '@/lib/plannerCards';
+import { bucketByColumn } from '@/lib/plannerPlacement';
 import { PlannerActivityTabs } from './components/PlannerActivityTabs';
-import { PlannerAgenda } from './components/PlannerAgenda';
-import { PlannerGrid } from './components/PlannerGrid';
+import { PlannerMonthGrid } from './components/PlannerMonthGrid';
 import { PlannerNavigator } from './components/PlannerNavigator';
+import { PlannerPhoneCalendar } from './components/PlannerPhoneCalendar';
+import { PlannerTimeGrid } from './components/PlannerTimeGrid';
 import { PlannerViewSwitch } from './components/PlannerViewSwitch';
 
 // The tab, the columns and the date live in the URL, so a view can be
@@ -33,16 +34,18 @@ const PARAM_ACTIVITY = 'activity';
 const PARAM_VIEW = 'view';
 const PARAM_DATE = 'date';
 
-// Below Tailwind's `md` a sideways-scrolling grid is a poor fit for the screen,
-// so the calendar becomes a day-by-day list. Chosen in JS because it swaps the
-// whole component (one tree mounted, not two with one hidden).
+// Below Tailwind's `md` the hour-row grids are a poor fit for the screen, so the
+// calendar becomes a compact picture of the window with the chosen day's jobs
+// listed under it. Chosen in JS because it swaps the whole component (one tree
+// mounted, not two with one hidden).
 const STACKED_QUERY = '(max-width: 767px)';
 
 const INVOICE_NOTE =
   'Invoices made from an order are listed on their due date. Void invoices, and invoices with no due date, are not shown.';
 
-/** Calendar › Activity Planner: every order's planned activity laid out by day,
- *  one activity at a time, as stacked job cards that link to their order.
+/** Calendar › Activity Planner: every order's planned activity laid out on a
+ *  calendar, one activity at a time, as small status-coloured chips. Pressing a
+ *  chip opens a detail card with the way through to its order.
  *
  *  Type scale for the whole page: `text-xl` for the title, `text-sm` for
  *  controls and headings, `text-xs` for secondary detail. */
@@ -62,16 +65,16 @@ export default function ActivityPlannerPage() {
   const view = parseView(params.get(PARAM_VIEW));
   const anchor = parseAnchor(params.get(PARAM_DATE), today);
   const range = rangeFor(view, anchor);
-  // Invoices carry a due date but no time of day, so the Day view has no hours to offer.
+  // Invoices carry a due date but no time of day, so they have no hours to sit on.
   const timed = activity.source === 'schedule';
-  const columns = columnsFor(view, anchor, today, timed);
+  const columns = columnsFor(view, anchor, today);
 
   const { cards, truncated, isLoading, isFetching, isPlaceholderData, error, refetch } = usePlannerEvents(
     activity,
     range,
     !permissionsLoading,
   );
-  const buckets = bucketByColumn(cards, view, columns, timed);
+  const buckets = bucketByColumn(cards, columns);
   const overdue = cards.filter((c) => c.overdue).length;
   const loading = permissionsLoading || isLoading;
   // Counts are only worth stating once the cards on hand are the window asked
@@ -79,10 +82,13 @@ export default function ActivityPlannerPage() {
   const settled = !loading && !error && !isPlaceholderData;
   const kind = activity.source === 'invoice' ? 'invoice' : 'schedule';
 
-  function update(changes: Record<string, string>) {
+  // Stepping, picking a date or switching view refines the one place you are, so
+  // it replaces the history entry. Opening a day from a week or month goes
+  // somewhere else, so it adds one (`replace: false`) and Back returns.
+  function update(changes: Record<string, string>, replace = true) {
     const next = new URLSearchParams(params);
     for (const [key, value] of Object.entries(changes)) next.set(key, value);
-    setParams(next, { replace: true });
+    setParams(next, { replace });
   }
 
   function handleStep(step: -1 | 0 | 1) {
@@ -91,6 +97,56 @@ export default function ActivityPlannerPage() {
 
   function handleViewChange(next: PlannerView) {
     update({ [PARAM_VIEW]: next });
+  }
+
+  function handleSelectDay(date: string) {
+    update({ [PARAM_VIEW]: 'day', [PARAM_DATE]: date }, false);
+  }
+
+  // On a phone a tap only chooses the day to list below the calendar, so the
+  // view stays put and the history entry is replaced like any other date change.
+  function handleSelectDate(date: string) {
+    update({ [PARAM_DATE]: date });
+  }
+
+  function renderCalendar() {
+    if (stacked) {
+      return (
+        <PlannerPhoneCalendar
+          view={view}
+          columns={columns}
+          buckets={buckets}
+          selected={anchor}
+          onSelect={handleSelectDate}
+        />
+      );
+    }
+    // The Day view is already that one day, so its heading is not a button.
+    const selectDay = view === 'day' ? undefined : handleSelectDay;
+    // Remounted for each window, so its scroll position and any opened "N more"
+    // start fresh.
+    const key = `${activity.key}:${view}:${range.from}`;
+    if (view === 'month') {
+      return (
+        <PlannerMonthGrid
+          key={key}
+          columns={columns}
+          buckets={buckets}
+          label={activity.label}
+          onSelectDay={handleSelectDay}
+        />
+      );
+    }
+    return (
+      <PlannerTimeGrid
+        key={key}
+        columns={columns}
+        buckets={buckets}
+        label={activity.label}
+        timed={timed}
+        onSelectDay={selectDay}
+      />
+    );
   }
 
   return (
@@ -126,7 +182,9 @@ export default function ActivityPlannerPage() {
                 label: rangeLabel(view, anchor),
                 date: anchor,
                 unit: view,
-                showsToday: showsToday(view, anchor, today),
+                // On a phone the date is the selected day, so Today has work to do
+                // whenever that isn't today — even inside today's own week.
+                showsToday: stacked ? anchor === today : showsToday(view, anchor, today),
               }}
               onStep={handleStep}
               onPick={(date) => update({ [PARAM_DATE]: date })}
@@ -169,18 +227,7 @@ export default function ActivityPlannerPage() {
                     Only the first part of this window is shown. Switch to Week or Day to see everything.
                   </p>
                 )}
-                {stacked ? (
-                  <PlannerAgenda columns={columns} buckets={buckets} rowLabel={activity.label} />
-                ) : (
-                  // Remounted for each window, so its scroll position and any
-                  // opened "Show more" start fresh.
-                  <PlannerGrid
-                    key={`${activity.key}:${view}:${range.from}`}
-                    columns={columns}
-                    buckets={buckets}
-                    rowLabel={activity.label}
-                  />
-                )}
+                {renderCalendar()}
                 {settled && cards.length === 0 && (
                   <p className="text-xs text-stone-500">Nothing scheduled for {activity.label} in this view.</p>
                 )}
