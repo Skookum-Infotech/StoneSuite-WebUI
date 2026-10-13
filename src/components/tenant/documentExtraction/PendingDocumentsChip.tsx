@@ -6,7 +6,7 @@ import { FileClock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PENDING_DOCUMENTS_KEY } from '@/hooks/useDocumentExtraction';
-import { fromDocumentPath } from '@/lib/documentExtractionRoutes';
+import { documentRoutes } from '@/lib/documentExtractionRoutes';
 import { relativeTime } from '@/lib/recentRecordRoute';
 import { documentExtractionService } from '@/services/documentExtractionService';
 import type { DocumentExtraction, DocumentExtractionDocType } from '@/types/documentExtraction';
@@ -30,6 +30,7 @@ export function PendingDocumentsChip({ docType, enabled = true }: PendingDocumen
     enabled,
     staleTime: PENDING_STALE_MS,
   });
+  const { fromDocumentPath } = documentRoutes(docType);
   const items = (data ?? []).filter((e) => e.docType === docType);
   if (items.length === 0) return null;
 
@@ -38,7 +39,6 @@ export function PendingDocumentsChip({ docType, enabled = true }: PendingDocumen
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Pending documents, ${items.length}`}
           className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-accent-foreground/20 bg-accent px-2.5 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/70"
         >
           <FileClock className="size-3.5" aria-hidden="true" />
@@ -50,7 +50,7 @@ export function PendingDocumentsChip({ docType, enabled = true }: PendingDocumen
           Ready to review
         </p>
         <ul className="max-h-[60vh] overflow-y-auto modal-scrollbar">
-          {items.map((e) => <PendingRow key={e.id} extraction={e} onOpen={() => setOpen(false)} />)}
+          {items.map((e) => <PendingRow key={e.id} extraction={e} onOpen={() => setOpen(false)} fromDocumentPath={fromDocumentPath} />)}
         </ul>
       </PopoverContent>
     </Popover>
@@ -59,7 +59,9 @@ export function PendingDocumentsChip({ docType, enabled = true }: PendingDocumen
 
 /** One pending document: resume link, when it was uploaded, and a two-step
  *  discard (the staged file is deleted, so the first click only arms it). */
-function PendingRow({ extraction: e, onOpen }: { extraction: DocumentExtraction; onOpen: () => void }): React.JSX.Element {
+function PendingRow({ extraction: e, onOpen, fromDocumentPath }: {
+  extraction: DocumentExtraction; onOpen: () => void; fromDocumentPath: (id: string) => string;
+}): React.JSX.Element {
   const queryClient = useQueryClient();
   const [armed, setArmed] = useState(false);
   const discard = useMutation({

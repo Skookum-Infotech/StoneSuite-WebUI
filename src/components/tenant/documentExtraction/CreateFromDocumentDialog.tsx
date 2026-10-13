@@ -9,12 +9,7 @@ import { useDocumentExtraction } from '@/hooks/useDocumentExtraction';
 import { acknowledgeDuplicates } from '@/lib/documentDuplicateAck';
 import { DOCUMENT_ACCEPT_ATTRIBUTE } from '@/lib/documentUploadValidation';
 import { MAX_AUTO_RETRIES, canRetryFailure, willAutoRetry, type ExtractionStage } from '@/lib/documentExtractionMachine';
-import {
-  BLOCKING_DUPLICATE_KINDS,
-  SALES_ORDER_NEW_PATH,
-  fromDocumentPath,
-  salesOrderPath,
-} from '@/lib/documentExtractionRoutes';
+import { BLOCKING_DUPLICATE_KINDS, documentRoutes } from '@/lib/documentExtractionRoutes';
 import type { DocumentExtractionDocType } from '@/types/documentExtraction';
 import { DuplicateWarnings } from './DuplicateWarnings';
 import { ExtractionStepper } from './ExtractionStepper';
@@ -53,6 +48,7 @@ export function CreateFromDocumentDialog({
   const { state, extraction, canContinueInBackground, start, retry, cancel, continueInBackground } =
     useDocumentExtraction(docType);
   const { stage } = state;
+  const routes = documentRoutes(docType);
   // The file being processed: the one dropped/picked, or a replacement chosen
   // after a failure that retrying the same file can't fix.
   const [current, setCurrent] = useState(file);
@@ -90,9 +86,9 @@ export function CreateFromDocumentDialog({
   useEffect(() => {
     if (stage === 'ready' && extractionId && blocking.length === 0) {
       onClose();
-      navigate(fromDocumentPath(extractionId));
+      navigate(routes.fromDocumentPath(extractionId));
     }
-  }, [stage, extractionId, blocking.length, navigate, onClose]);
+  }, [stage, extractionId, blocking.length, navigate, onClose, routes]);
 
   async function handleBackground() {
     const ok = await continueInBackground();
@@ -111,7 +107,7 @@ export function CreateFromDocumentDialog({
 
   function enterManually() {
     onClose();
-    navigate(SALES_ORDER_NEW_PATH);
+    navigate(routes.newPath);
   }
 
   const offline = typeof navigator !== 'undefined' && !navigator.onLine;
@@ -131,7 +127,7 @@ export function CreateFromDocumentDialog({
             </div>
             <div className="min-w-0">
               <h2 id="create-from-document-title" className="text-sm font-bold text-stone-900 dark:text-stone-100">
-                Create Sales Order from document
+                Create {routes.label} from document
               </h2>
               <p className="truncate text-xs text-stone-500 dark:text-stone-400" title={current.name}>
                 {current.name} · {formatSize(current.size)}
@@ -227,11 +223,11 @@ export function CreateFromDocumentDialog({
           {stage === 'ready' && blocking.length > 0 && extractionId && (
             <DuplicateWarnings
               duplicates={blocking}
-              onOpenExisting={(uuid) => { onClose(); navigate(salesOrderPath(uuid)); }}
+              onOpenExisting={(uuid) => { onClose(); navigate(routes.recordPath(uuid)); }}
               onCreateAnyway={() => {
                 acknowledgeDuplicates(extractionId, blocking.flatMap((d) => (d.recordUuid ? [d.recordUuid] : [])));
                 onClose();
-                navigate(fromDocumentPath(extractionId));
+                navigate(routes.fromDocumentPath(extractionId));
               }}
             />
           )}
@@ -283,8 +279,8 @@ export function CreateFromDocumentDialog({
               <div className="flex items-start gap-2 text-xs text-stone-700 dark:text-stone-300">
                 <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-warning dark:text-amber-400" aria-hidden="true" />
                 <p>
-                  {stage === 'limit' && "You've reached today's limit for creating orders from documents. It resets tomorrow — you can enter this order manually now."}
-                  {stage === 'aiDisabled' && 'AI features are turned off for your workspace, so documents can’t be read. Enter the order manually, or ask an admin to turn them on.'}
+                  {stage === 'limit' && `You've reached today's limit for creating ${routes.manualNoun}s from documents. It resets tomorrow — you can enter this ${routes.manualNoun} manually now.`}
+                  {stage === 'aiDisabled' && `AI features are turned off for your workspace, so documents can’t be read. Enter the ${routes.manualNoun} manually, or ask an admin to turn them on.`}
                   {stage === 'storageFull' && 'Too many pending uploads — finish or discard some, or try later.'}
                 </p>
               </div>

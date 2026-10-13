@@ -1,27 +1,29 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
-import { salesOrderPath } from '@/lib/documentExtractionRoutes';
+import { documentRoutes } from '@/lib/documentExtractionRoutes';
 import { DuplicateCreateDialog } from './DuplicateCreateDialog';
-import type { SalesOrderReviewMode } from '@/hooks/useSalesOrderReviewMode';
+import type { DocumentReviewDialogState } from '@/hooks/documentReviewModeTypes';
 
 interface ReviewDialogsProps {
-  review: SalesOrderReviewMode;
+  review: DocumentReviewDialogState;
   /** Resubmits the create with allowDuplicate. */
   onCreateAnyway: () => void;
   /** Lets the unsaved-changes guard step aside before leaving. */
   markClean: () => void;
 }
 
-/** The two review-mode confirmations: the duplicate-PO 409 and Discard. */
+/** The two review-mode confirmations: the duplicate-document 409 and Discard. */
 export function ReviewDialogs({ review, onCreateAnyway, markClean }: ReviewDialogsProps): React.JSX.Element {
   const navigate = useNavigate();
+  const routes = documentRoutes(review.docType);
   return (
     <>
       {review.duplicate && (
         <DuplicateCreateDialog
           conflict={review.duplicate}
-          onOpenExisting={(uuid) => { review.dismissDuplicate(); markClean(); navigate(salesOrderPath(uuid)); }}
+          docType={review.docType}
+          onOpenExisting={(uuid) => { review.dismissDuplicate(); markClean(); navigate(routes.recordPath(uuid)); }}
           onCreateAnyway={() => { review.dismissDuplicate(); onCreateAnyway(); }}
           onCancel={review.dismissDuplicate}
         />

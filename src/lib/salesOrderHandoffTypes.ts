@@ -1,5 +1,5 @@
 import type { SOLineItem } from '@/lib/salesOrderForm';
-import type { FieldConfidence, FieldSource, MatchCandidate } from '@/types/documentExtraction';
+import { ADDRESS_KEYS, ADDRESS_LABELS, type HandoffLine, type HandoffParty, type ProvenanceInfo, type ReviewItem } from '@/lib/documentHandoffShared';
 
 // Shared keys, labels and result types of the Sales Order document handoff
 // (split out of salesOrderDocumentHandoff.ts, which re-exports all of it).
@@ -11,8 +11,7 @@ export const HEADER_KEYS = {
   orderDate: 'orderDate',
   expectedDelivery: 'expectedDelivery',
   paymentTerms: 'paymentTerms',
-  billTo: 'billTo',
-  shipTo: 'shipTo',
+  ...ADDRESS_KEYS,
   shippingCharge: 'shippingCharge',
   adjustment: 'adjustment',
   tax: 'tax',
@@ -25,81 +24,17 @@ export const HEADER_LABELS: Record<string, string> = {
   orderDate: 'Order date',
   expectedDelivery: 'Expected delivery',
   paymentTerms: 'Payment terms',
-  billTo: 'Bill to',
-  shipTo: 'Ship to',
+  ...ADDRESS_LABELS,
   shippingCharge: 'Shipping charge',
   adjustment: 'Adjustment (discount)',
   tax: 'Sales tax',
 };
 
-/** Review key of the doc line at a 1-based form line number. */
-export function lineReviewKey(lineNo: number): string {
-  return `line:${lineNo}`;
-}
+export type { HandoffLine, LinePill, LinePillKind, ProvenanceInfo, ReviewItem } from '@/lib/documentHandoffShared';
+export { docLineId, lineReviewKey } from '@/lib/documentHandoffShared';
 
-/** Stable SOLineItem id for an extracted line index. */
-export function docLineId(docIndex: number): string {
-  return `doc-line-${docIndex}`;
-}
-
-/** Where a value came from, shown in the provenance popover. */
-export interface ProvenanceInfo {
-  /** The value as the document states it. */
-  value?: string;
-  source: FieldSource;
-  confidence: FieldConfidence;
-  snippet?: string;
-  page?: number;
-  row?: number;
-}
-
-/** One thing the reviewer should look at; `required` blocks Save until resolved. */
-export interface ReviewItem {
-  key: string;
-  label: string;
-  reason: string;
-  required: boolean;
-  /** Resolved only by "Mark reviewed" — even a required line item, which is
-   *  otherwise resolved by picking a catalog item. */
-  resolvedByReview?: boolean;
-}
-
-export type LinePillKind = 'matched' | 'learned' | 'pick_item' | 'addon' | 'converted' | 'price_differs';
-
-export interface LinePill {
-  kind: LinePillKind;
-  label: string;
-}
-
-/** Review-side metadata for one form line created from the document. */
-export interface HandoffLine {
-  /** Matches the SOLineItem id. */
-  id: string;
-  docIndex: number;
-  lineNo: number;
-  docSku: string;
-  docDescription: string;
-  /** The document's own text for the line, kept visible under the item picker. */
-  docText: string;
-  /** Line amount on the document in dollars, or null when it had none. */
-  docAmount: number | null;
-  /** The document's own unit and quantity for the line ('' / null when absent). */
-  docUom: string;
-  docQty: number | null;
-  parentLineNo?: number;
-  pills: LinePill[];
-  requiresItem: boolean;
-  /** Original (pre-conversion) document unit and quantity, when converted. */
-  conversionNote?: string;
-}
-
-export interface HandoffCustomer {
-  resolved: { id: string; name: string } | null;
-  extractedText: string;
-  candidates: MatchCandidate[];
-  /** True when the match exists but the customer is inactive. */
-  inactive: boolean;
-}
+/** The resolved customer of a Sales Order handoff. */
+export type HandoffCustomer = HandoffParty;
 
 /** Header values the form has no input for; sent with the create payload. */
 export interface HandoffExtras {
@@ -115,6 +50,8 @@ export interface HandoffBadges {
   wrongType: string;
   /** The document has no title, table, PO number or customer (not a PO at all). */
   notRecognized: boolean;
+  /** Replaces the default "Not a purchase order?" badge text. */
+  notRecognizedLabel?: string;
 }
 
 export interface SalesOrderHandoff {

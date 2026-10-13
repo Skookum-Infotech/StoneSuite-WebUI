@@ -1,8 +1,8 @@
 import type { LookupItem, StateLookupItem } from '@/services/lookupService';
-import { HEADER_KEYS, HEADER_LABELS, type ReviewItem } from '@/lib/salesOrderHandoffTypes';
+import { ADDRESS_KEYS, ADDRESS_LABELS, type ReviewItem } from '@/lib/documentHandoffShared';
 
 // Pure parsing of a document's address block ("Name / Street / City, ST 12345")
-// into the Sales Order form's address fields. US only (single-entity policy).
+// into a document form's address fields. US only (single-entity policy).
 
 export interface ParsedAddress {
   address1: string;
@@ -75,11 +75,11 @@ export function applyAddress(data: Record<string, unknown>, items: ReviewItem[],
   if (a.zip) data[`${prefix}_zip`] = a.zip;
   const us = geo.countries.find((c) => US_CODES.includes(c.code.toUpperCase()));
   const stateId = resolveStateId(geo.states, a.stateCode, us?.id);
-  const key = prefix === 'bill' ? HEADER_KEYS.billTo : HEADER_KEYS.shipTo;
+  const key = prefix === 'bill' ? ADDRESS_KEYS.billTo : ADDRESS_KEYS.shipTo;
   if (stateId) data[`${prefix}_state`] = stateId;
   else if (a.stateCode) {
-    items.push({ key, label: HEADER_LABELS[key], required: false, reason: `State "${a.stateCode}" wasn't recognized - pick the state.` });
+    items.push({ key, label: ADDRESS_LABELS[key], required: false, reason: `State "${a.stateCode}" wasn't recognized - pick the state.` });
   } else if (a.city) {
-    items.push({ key, label: HEADER_LABELS[key], required: false, reason: 'The document gives no state - pick the state.' });
+    items.push({ key, label: ADDRESS_LABELS[key], required: false, reason: 'The document gives no state - pick the state.' });
   }
 }

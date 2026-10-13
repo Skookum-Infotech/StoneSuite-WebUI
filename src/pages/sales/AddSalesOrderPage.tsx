@@ -21,7 +21,8 @@ import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useI
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import { SalesOrderFormBody } from './components/SalesOrderFormBody';
-import { SalesOrderReviewShell } from './components/SalesOrderReviewShell';
+import { DocumentReviewShell } from '@/components/tenant/documentReview/DocumentReviewShell';
+import { SALES_ORDER_REVIEW_FIELDS } from '@/lib/reviewFieldConfigs';
 import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
 import { ReviewFooter } from '@/components/tenant/documentReview/ReviewFooter';
 import { DocumentFailedNotice } from '@/components/tenant/documentReview/DocumentFailedNotice';
@@ -206,7 +207,7 @@ export default function AddSalesOrderPage() {
   });
   const errorRef = useScrollToError<HTMLDivElement>(saveError);
   const withReviewShell = (body: ReactNode) => (
-    review.active ? <SalesOrderReviewShell review={review}>{body}</SalesOrderReviewShell> : body
+    review.active ? <DocumentReviewShell review={review} fields={SALES_ORDER_REVIEW_FIELDS}>{body}</DocumentReviewShell> : body
   );
 
   return (
@@ -248,9 +249,9 @@ export default function AddSalesOrderPage() {
         )}
 
         {documentUsed ? (
-          <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} listPath="/sales/sales_order" />
+          <DocumentUsedNotice fileName={review.fileName} usedRecordUuid={review.banner.usedRecordUuid} docType="sales_order" />
         ) : documentFailed ? (
-          <DocumentFailedNotice fileName={review.fileName} reason={review.banner.failureMessage} listPath="/sales/sales_order" />
+          <DocumentFailedNotice fileName={review.fileName} reason={review.banner.failureMessage} docType="sales_order" />
         ) : (<>
         <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           {withReviewShell(
