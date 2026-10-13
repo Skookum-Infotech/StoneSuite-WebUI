@@ -25,7 +25,7 @@ export function PlannerChipStack({ cards, columnLabel, max, wide = false }: {
 }) {
   if (cards.length === 0) return null;
 
-  const shown = visibleCardCount(cards.length, max, false);
+  const shown = visibleCardCount(cards.length, max);
   const hidden = cards.length - shown;
   const all = countLabel(cards[0].kind, cards.length);
 

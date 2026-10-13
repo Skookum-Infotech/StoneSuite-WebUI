@@ -12,7 +12,7 @@ export function PlannerViewSwitch({ view, onChange }: {
     <div
       role="group"
       aria-label="Calendar columns"
-      className="inline-flex h-8 items-stretch rounded-lg border border-stone-200 bg-white p-0.5 shadow-sm"
+      className="flex h-9 min-w-0 flex-1 items-stretch rounded-lg border border-stone-200 bg-white p-0.5 shadow-sm sm:inline-flex sm:h-8 sm:flex-none"
     >
       {PLANNER_VIEWS.map((option) => {
         const active = option.key === view;
@@ -23,7 +23,7 @@ export function PlannerViewSwitch({ view, onChange }: {
             aria-pressed={active}
             onClick={() => onChange(option.key)}
             className={cn(
-              'rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+              'flex-1 rounded-md px-3 text-sm font-medium transition-colors sm:flex-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
               active ? 'bg-brand text-stone-950 shadow-sm' : 'text-stone-600 hover:bg-stone-100',
             )}
           >

@@ -155,23 +155,23 @@ describe('what the detail card says', () => {
 
 describe('visibleCardCount', () => {
   it.each([
-    // [cards, max, expanded, shown]
-    [0, 4, false, 0],
-    [3, 4, false, 3],
-    [4, 4, false, 4], // exactly max: nothing folded
-    [5, 4, false, 3], // the toggle takes the last slot
-    [9, 4, false, 3],
-    [5, 5, false, 5],
-    [6, 5, false, 4],
-    [9, 4, true, 9], // opened
-  ])('%i cards, room for %i, expanded %s → shows %i', (count, max, expanded, shown) => {
-    expect(visibleCardCount(count, max, expanded)).toBe(shown);
+    // [cards, max, shown]
+    [0, 4, 0],
+    [3, 4, 3],
+    [4, 4, 4], // exactly max: nothing folded
+    [5, 4, 3], // the "N more" button takes the last slot
+    [9, 4, 3],
+    [5, 5, 5],
+    [6, 5, 4],
+    [30, 24, 23],
+  ])('%i cards, room for %i → shows %i', (count, max, shown) => {
+    expect(visibleCardCount(count, max)).toBe(shown);
   });
 
   it('never hides just one card', () => {
     for (let max = 2; max <= 6; max += 1) {
       for (let count = 0; count <= 20; count += 1) {
-        expect(count - visibleCardCount(count, max, false)).not.toBe(1);
+        expect(count - visibleCardCount(count, max)).not.toBe(1);
       }
     }
   });

@@ -22,9 +22,9 @@ import type { PlannerView } from '@/lib/plannerCalendar';
 import { cardNoun } from '@/lib/plannerCards';
 import { bucketByColumn } from '@/lib/plannerPlacement';
 import { PlannerActivityTabs } from './components/PlannerActivityTabs';
-import { PlannerAgenda } from './components/PlannerAgenda';
 import { PlannerMonthGrid } from './components/PlannerMonthGrid';
 import { PlannerNavigator } from './components/PlannerNavigator';
+import { PlannerPhoneCalendar } from './components/PlannerPhoneCalendar';
 import { PlannerTimeGrid } from './components/PlannerTimeGrid';
 import { PlannerViewSwitch } from './components/PlannerViewSwitch';
 
@@ -34,9 +34,10 @@ const PARAM_ACTIVITY = 'activity';
 const PARAM_VIEW = 'view';
 const PARAM_DATE = 'date';
 
-// Below Tailwind's `md` a calendar grid is a poor fit for the screen, so the
-// calendar becomes a day-by-day list. Chosen in JS because it swaps the
-// whole component (one tree mounted, not two with one hidden).
+// Below Tailwind's `md` the hour-row grids are a poor fit for the screen, so the
+// calendar becomes a compact picture of the window with the chosen day's jobs
+// listed under it. Chosen in JS because it swaps the whole component (one tree
+// mounted, not two with one hidden).
 const STACKED_QUERY = '(max-width: 767px)';
 
 const INVOICE_NOTE =
@@ -102,12 +103,26 @@ export default function ActivityPlannerPage() {
     update({ [PARAM_VIEW]: 'day', [PARAM_DATE]: date }, false);
   }
 
+  // On a phone a tap only chooses the day to list below the calendar, so the
+  // view stays put and the history entry is replaced like any other date change.
+  function handleSelectDate(date: string) {
+    update({ [PARAM_DATE]: date });
+  }
+
   function renderCalendar() {
+    if (stacked) {
+      return (
+        <PlannerPhoneCalendar
+          view={view}
+          columns={columns}
+          buckets={buckets}
+          selected={anchor}
+          onSelect={handleSelectDate}
+        />
+      );
+    }
     // The Day view is already that one day, so its heading is not a button.
     const selectDay = view === 'day' ? undefined : handleSelectDay;
-    if (stacked) {
-      return <PlannerAgenda columns={columns} buckets={buckets} label={activity.label} onSelectDay={selectDay} />;
-    }
     // Remounted for each window, so its scroll position and any opened "N more"
     // start fresh.
     const key = `${activity.key}:${view}:${range.from}`;
@@ -167,7 +182,9 @@ export default function ActivityPlannerPage() {
                 label: rangeLabel(view, anchor),
                 date: anchor,
                 unit: view,
-                showsToday: showsToday(view, anchor, today),
+                // On a phone the date is the selected day, so Today has work to do
+                // whenever that isn't today — even inside today's own week.
+                showsToday: stacked ? anchor === today : showsToday(view, anchor, today),
               }}
               onStep={handleStep}
               onPick={(date) => update({ [PARAM_DATE]: date })}

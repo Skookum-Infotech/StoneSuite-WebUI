@@ -86,11 +86,10 @@ export function countLabel(kind: PlannerCard['kind'], count: number): string {
 }
 
 /** How many of a stack's `count` cards to show, of the `max` the stack has room
- *  for. Past `max` the rest fold behind a toggle that takes the last slot — so a
- *  stack is never folded to hide just one card. `expanded` shows them all. */
-export function visibleCardCount(count: number, max: number, expanded: boolean): number {
-  if (expanded || count <= max) return count;
-  return max - 1;
+ *  for. Past `max` the rest fold behind an "N more" button that takes the last
+ *  slot — so a stack is never folded to hide just one card. */
+export function visibleCardCount(count: number, max: number): number {
+  return count <= max ? count : max - 1;
 }
 
 /** An order's own page, opened on its Scheduling tab. */

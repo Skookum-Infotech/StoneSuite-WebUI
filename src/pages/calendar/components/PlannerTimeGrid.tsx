@@ -9,11 +9,11 @@ import { GRID_FRAME_CLS, SCROLL_BOX_CLS } from './plannerLayout';
 
 // One literal class per column count a view can have (a day, a week): Tailwind's
 // scanner has to see each class whole, and inline styles are off the table. The
-// first track is the hour gutter. A day column is never narrower than 7rem,
-// which keeps a week inside a 1280px laptop.
+// first track is the hour gutter. A day column is never narrower than 6rem,
+// which keeps a week inside a 768px tablet (and, with room to spare, a laptop).
 const GRID_TEMPLATES: Record<number, string> = {
-  1: 'grid-cols-[4.5rem_minmax(14rem,1fr)]',
-  7: 'grid-cols-[4.5rem_repeat(7,minmax(7rem,1fr))]',
+  1: 'grid-cols-[4rem_minmax(14rem,1fr)]',
+  7: 'grid-cols-[4rem_repeat(7,minmax(6rem,1fr))]',
 };
 const FALLBACK_TEMPLATE = GRID_TEMPLATES[7];
 

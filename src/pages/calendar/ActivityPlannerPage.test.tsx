@@ -769,29 +769,51 @@ describe('ActivityPlannerPage on a phone', () => {
     window.matchMedia = originalMatchMedia;
   });
 
-  it('lists the days that have work, soonest first, instead of a grid', async () => {
-    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({
-      events: [
-        ...jobsOn(TUESDAY, 2),
-        event({ orderId: 'so-9', orderNumber: 'SO-2900', scheduledAt: `${THURSDAY}T09:00:00` }),
-      ],
-      truncated: false,
-    });
+  /** The compact calendar: a week's strip, or a month's grid, of day buttons. */
+  function pickADay() {
+    return within(screen.getByRole('group', { name: 'Pick a day' }));
+  }
+
+  function weekWithWork(): ScheduleFeedEvent[] {
+    return [
+      ...jobsOn(TUESDAY, 2),
+      event({ orderId: 'so-9', orderNumber: 'SO-2900', scheduledAt: `${THURSDAY}T09:00:00` }),
+    ];
+  }
+
+  it('shows a week strip with each day’s jobs counted, and no desktop grid', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: weekWithWork(), truncated: false });
     renderPlanner();
-    await screen.findByText('SO-2000');
+    await screen.findByRole('button', { name: 'Tue, Mar 3, 2 jobs' });
 
     expect(screen.queryByRole('table')).toBeNull();
-    const days = within(screen.getByRole('list', { name: 'Template by day' })).getAllByRole('listitem');
-    expect(days).toHaveLength(2);
-    expect(within(days[0]).getByRole('heading', { name: /Tue, Mar 3/ })).toHaveTextContent('2 jobs');
-    expect(within(days[0]).getAllByRole('article')).toHaveLength(2);
-    expect(within(days[1]).getByRole('heading', { name: /Thu, Mar 5/ })).toHaveTextContent('1 job');
-    expect(within(days[1]).getByText('SO-2900')).toBeInTheDocument();
+    expect(pickADay().getAllByRole('button').map((d) => d.getAttribute('aria-label'))).toEqual([
+      'Sun, Mar 1', 'Mon, Mar 2', 'Tue, Mar 3, 2 jobs', 'Wed, Mar 4', 'Thu, Mar 5, 1 job', 'Fri, Mar 6', 'Sat, Mar 7',
+    ]);
+    // The date in the address is the selected day.
+    expect(pickADay().getByRole('button', { name: 'Wed, Mar 4' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Nothing scheduled on Wed, Mar 4.')).toBeInTheDocument();
   });
 
-  it('keeps the toolbar, the tabs and the card links', async () => {
-    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: [event()], truncated: false });
+  it('lists the tapped day’s jobs as cards under the strip, without loading again', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: weekWithWork(), truncated: false });
     renderPlanner();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Tue, Mar 3, 2 jobs' }));
+
+    const list = within(screen.getByRole('region', { name: 'Tue, Mar 3' }));
+    expect(list.getAllByRole('article')).toHaveLength(2);
+    expect(list.getByText('SO-2000')).toBeInTheDocument();
+    expect(list.getByText('SO-2001')).toBeInTheDocument();
+    expect(pickADay().getByRole('button', { name: 'Tue, Mar 3, 2 jobs' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('search')).toHaveTextContent(`date=${TUESDAY}`);
+    // The same week is the same window, so the data on hand is enough.
+    expect(salesOrderService.getScheduleFeed).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the toolbar, the tabs and a direct link to the order', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: [event()], truncated: false });
+    renderPlanner('?date=' + TUESDAY);
 
     const link = await screen.findByRole('link', { name: /Open SO-1042, Template,/ });
     expect(link).toHaveAttribute('href', '/sales/sales_order/so-1?tab=scheduling');
@@ -800,38 +822,82 @@ describe('ActivityPlannerPage on a phone', () => {
     expect(screen.getByRole('button', { name: 'Week' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('folds a busy day there as well', async () => {
-    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsOn(TUESDAY, 6), truncated: false });
-    renderPlanner();
-    await screen.findByText('SO-2000');
+  it('opens a month as a compact grid, and tapping a day selects it in place', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({
+      events: [event({ scheduledAt: '2099-03-04T09:00:00' })],
+      truncated: false,
+    });
+    renderPlanner('?view=month&date=' + ANCHOR);
+    await screen.findByRole('button', { name: 'Wed, Mar 4, 1 job' });
 
-    const day = screen.getByRole('listitem');
-    expect(within(day).getAllByRole('article')).toHaveLength(4);
-    await userEvent.click(within(day).getByRole('button', { name: /Show 2 more jobs/ }));
-    expect(within(day).getAllByRole('article')).toHaveLength(6);
+    expect(pickADay().getAllByRole('button')).toHaveLength(35);
+    expect(screen.getByRole('link', { name: /Open SO-1042/ })).toBeInTheDocument();
+
+    await userEvent.click(pickADay().getByRole('button', { name: 'Fri, Mar 6' }));
+
+    const search = screen.getByTestId('search');
+    expect(search).toHaveTextContent('date=2099-03-06');
+    expect(search).toHaveTextContent('view=month');
+    expect(screen.queryByRole('link', { name: /Open SO-1042/ })).toBeNull();
+    expect(screen.getByText('Nothing scheduled on Fri, Mar 6.')).toBeInTheDocument();
+    expect(salesOrderService.getScheduleFeed).toHaveBeenCalledTimes(1);
   });
 
-  it('opens a day from its heading, and leaves the one day you are on as plain text', async () => {
-    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsOn(TUESDAY, 2), truncated: false });
-    renderPlanner();
+  it('moves to the neighbouring month when one of its dimmed days is tapped', async () => {
+    renderPlanner('?view=month&date=' + ANCHOR);
+    await screen.findByRole('group', { name: 'Pick a day' });
+
+    await userEvent.click(pickADay().getByRole('button', { name: 'Thu, Apr 2' }));
+
+    // April's own grid: Sun Mar 29 through Sat May 2.
+    await waitFor(() => expect(salesOrderService.getScheduleFeed).toHaveBeenLastCalledWith({
+      group: 'Template', from: '2099-03-29', to: '2099-05-02',
+    }));
+    expect(screen.getByTestId('search')).toHaveTextContent('date=2099-04-02');
+  });
+
+  it('lays a day out as its own list, with no strip to pick from', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: [event()], truncated: false });
+    renderPlanner('?view=day&date=' + TUESDAY);
+
+    expect(await screen.findByRole('link', { name: /Open SO-1042/ })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Pick a day' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Tue, Mar 3' })).toBeInTheDocument();
+  });
+
+  // The selection is the date, so "Today" has work to do whenever the chosen day
+  // isn't today — even inside today's own week.
+  it('lets Today bring the selection back after another day was picked', async () => {
+    const today = toISODate(new Date());
+    renderPlanner('?view=week');
+    await screen.findByRole('group', { name: 'Pick a day' });
+    expect(screen.getByRole('button', { name: 'Go to today' })).toBeDisabled();
+
+    const other = pickADay().getAllByRole('button').find((b) => b.getAttribute('aria-current') !== 'date') as HTMLElement;
+    await userEvent.click(other);
+    expect(screen.getByRole('button', { name: 'Go to today' })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Go to today' }));
+    await waitFor(() => expect(screen.getByTestId('search')).toHaveTextContent(`date=${today}`));
+    const current = pickADay().getAllByRole('button').find((b) => b.getAttribute('aria-current') === 'date');
+    expect(current).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('shows every job of a busy day, with nothing folded away', async () => {
+    vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsOn(TUESDAY, 12), truncated: false });
+    renderPlanner('?date=' + TUESDAY);
     await screen.findByText('SO-2000');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Open Tue, Mar 3 in Day view' }));
-
-    await waitFor(() => expect(salesOrderService.getScheduleFeed).toHaveBeenLastCalledWith({
-      group: 'Template', from: TUESDAY, to: TUESDAY,
-    }));
-    expect(screen.getByTestId('search')).toHaveTextContent('view=day');
-    // The navigator's own heading also names the date, so look inside the list.
-    const day = within(await screen.findByRole('list', { name: 'Template by day' }));
-    expect(day.getByRole('heading', { name: /Tue, Mar 3/ })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /in Day view/ })).toBeNull();
+    const list = within(screen.getByRole('region', { name: 'Tue, Mar 3' }));
+    expect(list.getAllByRole('article')).toHaveLength(12);
+    expect(list.queryByRole('button')).toBeNull();
   });
 
   it('says so when nothing is planned', async () => {
     renderPlanner();
 
     expect(await screen.findByText('Nothing scheduled for Template in this view.')).toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'Template by day' })).toBeNull();
+    // The one message, not one for the view and another for the day.
+    expect(screen.queryByText(/Nothing scheduled on/)).toBeNull();
   });
 });
