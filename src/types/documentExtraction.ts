@@ -88,6 +88,14 @@ export interface ExtractedHeader {
   /** Job notes for the order memo (an order form's special instructions and
    *  builder contact). Absent on results stored before it existed. */
   notes?: ExtractedField;
+  /** Vendor-side fields (purchase order, vendor bill). Absent on results
+   *  stored before they existed and on sales orders. */
+  vendorName?: ExtractedField;
+  /** The vendor's own invoice number on a bill. */
+  invoiceNumber?: ExtractedField;
+  /** Becomes the bill date. */
+  invoiceDate?: ExtractedField;
+  dueDate?: ExtractedField;
 }
 
 export interface ExtractedRevision {
@@ -194,9 +202,37 @@ export interface TermsMatch {
   code: string;
 }
 
-/** docextractjob.Resolution. */
+/** docextractjob.LinkedPOLine — one line of the PO a vendor bill references.
+ *  `billableQtyMilli` is received and not yet billed. */
+export interface LinkedPurchaseOrderLine {
+  id: string;
+  lineNumber: number;
+  inventoryItemUuid?: string;
+  description: string;
+  qtyMilli: number;
+  billableQtyMilli: number;
+  unitPriceCents: number;
+}
+
+/** docextractjob.LinkedPO — the PO a bill's PO reference resolved to. When
+ *  `billable` is false the bill may still reference it but its lines cannot
+ *  link; `reason` says why. `lines` is always an array on the wire. */
+export interface LinkedPurchaseOrder {
+  uuid?: string;
+  number?: string;
+  status?: string;
+  billable: boolean;
+  reason?: string;
+  lines: LinkedPurchaseOrderLine[];
+}
+
+/** docextractjob.Resolution. A sales order resolves `customer`; a purchase
+ *  order or vendor bill resolves `vendor` (and a bill its linked PO). The party
+ *  the doc type does not use is a zero value. */
 export interface ExtractionResolution {
   customer: CustomerMatch;
+  vendor?: CustomerMatch;
+  linkedPurchaseOrder?: LinkedPurchaseOrder;
   paymentTerms?: TermsMatch;
   lines: LineMatch[];
 }
@@ -206,7 +242,9 @@ export type DuplicateKind =
   | 'same_po'
   | 'revision'
   | 'quote_reference'
-  | 'estimate_reference';
+  | 'estimate_reference'
+  | 'same_invoice'
+  | 'same_reference';
 
 /** docextractjob.Duplicate. `recordUuid` is omitted when the caller's read
  *  scope doesn't cover the existing record (no "Open existing" then). */
@@ -270,9 +308,13 @@ export interface PresignExtractionResult {
 export interface CompleteExtractionInput {
   recordUuid: string;
   saved: {
-    customerUuid: string;
-    poNumber: string;
-    orderDate: string;
+    customerUuid?: string;
+    vendorUuid?: string;
+    poNumber?: string;
+    orderDate?: string;
+    /** Vendor bill: the vendor's invoice number and date as saved. */
+    invoiceNumber?: string;
+    invoiceDate?: string;
     lines: Array<{ docSku: string; docDescription: string; itemUuid: string }>;
   };
 }

@@ -4,28 +4,29 @@ import { InventoryItemPicker } from '@/pages/sales/components/InventoryItemPicke
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import { LineStatusPill } from './LineStatusPill';
 import { ReviewFieldFrame } from './ReviewFieldFrame';
-import { calcLineItem, type SOLineItem } from '@/lib/salesOrderForm';
+import { PoLineSelect } from './PoLineSelect';
 import { visiblePills } from '@/lib/documentReviewState';
-import { lineReviewKey, type HandoffLine } from '@/lib/salesOrderDocumentHandoff';
+import { lineReviewKey, type HandoffLine } from '@/lib/documentHandoffShared';
 import { convertLine, sameUnit } from '@/lib/unitConversion';
-import type { SalesOrderReviewMode } from '@/hooks/useSalesOrderReviewMode';
+import type { DocumentReviewView, ReviewLineLike } from '@/hooks/documentReviewView';
 import type { InventoryItem } from '@/types/inventory';
 
 interface DocumentLinesPanelProps {
-  review: SalesOrderReviewMode;
+  review: DocumentReviewView;
 }
 
 interface LineReviewRowProps {
   meta: HandoffLine;
-  line: SOLineItem;
+  line: ReviewLineLike;
   needsReview: boolean;
   reviewed: boolean;
-  review: SalesOrderReviewMode;
+  review: DocumentReviewView;
 }
 
 function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReviewRowProps): React.JSX.Element {
   const unitCodeFor = useItemUnitCode();
   const [text, setText] = useState(line.itemName);
+  const poChoices = review.poLineChoices?.(line.id) ?? [];
   const [pickedPrice, setPickedPrice] = useState<number | null>(null);
   const [pickNote, setPickNote] = useState('');
   const hasItem = Boolean(line.inventoryItemUuid);
@@ -47,7 +48,7 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
       ...line, itemName: item.name, itemSku: item.sku, units: toUnit, inventoryItemUuid: item.id,
       ...(conv ? { quantity: String(conv.quantity), unitPrice: conv.unitPrice.toFixed(2) } : {}),
     };
-    review.updateLine(line.id, { ...next, ...calcLineItem(next) });
+    review.updateLine(line.id, { ...next, ...review.calcLine(next) });
     setPickedPrice(item.unitPrice);
     setPickNote(conv ? `Converted ${qty} ${fromUnit} to ${conv.quantity} ${toUnit}` : '');
     setText(item.name);
@@ -68,11 +69,19 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
       )}
       <p className="text-stone-500 dark:text-stone-400">Document: {meta.docText || '(no text)'}</p>
       {(pickNote || meta.conversionNote) && <p className="text-stone-500 dark:text-stone-400">{pickNote || meta.conversionNote}</p>}
+      {poChoices.length > 1 && review.setPoLine && (
+        <PoLineSelect
+          label={label}
+          choices={poChoices}
+          value={review.poLineOf?.(line.id) ?? ''}
+          onChange={(poItemId) => review.setPoLine?.(line.id, poItemId)}
+        />
+      )}
       {(!meta.requiresItem || hasItem) && (
         <button
           type="button"
           aria-pressed={reviewed}
-          aria-label={`${reviewed ? 'Reviewed' : 'Mark reviewed'}, ${label}`}
+          aria-label={`Reviewed, ${label}`}
           onClick={() => review.toggleReviewed(key)}
           className="rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2 py-0.5 text-2xs font-medium text-stone-600 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10 aria-pressed:border-accent-foreground/30 aria-pressed:bg-accent aria-pressed:text-accent-foreground"
         >
@@ -91,7 +100,7 @@ export function DocumentLinesPanel({ review }: DocumentLinesPanelProps): React.J
   if (!handoff || handoff.lines.length === 0) return null;
   const pendingKeys = new Set(review.pending.map((p) => p.key));
   const rows = handoff.lines.flatMap((meta) => {
-    const line = review.form.lineItems.find((l) => l.id === meta.id);
+    const line = review.lineItems.find((l) => l.id === meta.id);
     return line ? [{ meta, line }] : [];
   });
   return (

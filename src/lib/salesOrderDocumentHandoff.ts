@@ -51,17 +51,19 @@ export function toIsoDate(raw: string): string {
   return `${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function provenanceOf(f: ExtractedField): ProvenanceInfo {
+/** A header field's provenance for the review UI. */
+export function provenanceOf(f: ExtractedField): ProvenanceInfo {
   return { value: f.value, source: f.source, confidence: f.confidence, snippet: f.snippet, page: f.page, row: f.row };
 }
 
 
-function money(n: number): string {
+/** Dollars with two decimals, e.g. "12.50". */
+export function money(n: number): string {
   return n.toFixed(2);
 }
 
 /** Add-ons follow their parent; a product's add-ons keep document order. */
-function orderLines(lines: ExtractedLine[]): number[] {
+export function orderLines(lines: ExtractedLine[]): number[] {
   const out: number[] = [];
   const children = new Map<number, number[]>();
   const validParent = (l: ExtractedLine): boolean =>
@@ -92,15 +94,20 @@ function lineDocText(l: ExtractedLine): string {
   return [l.sku.value, l.description.value, l.detail].filter(Boolean).join(' - ');
 }
 
-interface BuiltLine {
+/** One built form line with its review metadata. */
+export interface BuiltLine {
   item: SOLineItem;
   meta: HandoffLine;
   review: ReviewItem[];
   converted: boolean;
 }
 
-function buildLine(
+/** Builds one form line + review metadata from an extracted line. A purchase
+ *  document passes `comparePrice: false`: the catalog price is what the item
+ *  sells for, not what the vendor charges. */
+export function buildLine(
   l: ExtractedLine, docIndex: number, lineNo: number, match: LineMatch | undefined, parentLineNo: number | undefined,
+  { comparePrice = true }: { comparePrice?: boolean } = {},
 ): BuiltLine {
   const item = match?.item;
   const conv = match?.converted;
@@ -121,7 +128,7 @@ function buildLine(
   } else {
     pills.push(learned ? { kind: 'learned', label: 'Learned' } : { kind: 'matched', label: 'Matched' });
     const catalog = item.catalogPriceCents;
-    if (Math.round(price * CENTS) !== catalog) {
+    if (comparePrice && Math.round(price * CENTS) !== catalog) {
       pills.push({ kind: 'price_differs', label: `Price ≠ catalog $${money(catalog / CENTS)}` });
       review.push({ key, label: `Line ${lineNo}`, reason: `Document price differs from the catalog price ($${money(catalog / CENTS)}).`, required: false });
     }
@@ -160,7 +167,7 @@ function buildLine(
   };
 }
 
-function noteFor(fileName: string, revision?: { label: string; referencedNumber?: string }): string {
+export function noteFor(fileName: string, revision?: { label: string; referencedNumber?: string }): string {
   const rev = revision ? ` ${revision.label}${revision.referencedNumber ? ` (references ${revision.referencedNumber})` : ''}.` : '';
   return `Created from document ${fileName}.${rev}`;
 }

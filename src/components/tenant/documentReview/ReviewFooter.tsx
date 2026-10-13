@@ -6,11 +6,13 @@ interface ReviewFooterProps {
   reason: string;
   isPending: boolean;
   onDiscard: () => void;
+  /** The submit button's label; "Save Order" unless the page saves something else. */
+  saveLabel?: string;
 }
 
 /** Fixed footer of review mode: Discard, the inline reason Save is disabled,
  *  and the submit button. Mirrors FormActionBar's placement and styling. */
-export function ReviewFooter({ reason, isPending, onDiscard }: ReviewFooterProps): React.JSX.Element {
+export function ReviewFooter({ reason, isPending, onDiscard, saveLabel = 'Save Order' }: ReviewFooterProps): React.JSX.Element {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-end gap-3 border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-6 py-3 shadow-sm lg:left-56 3xl:left-60 4xl:left-64">
       <p role="status" aria-live="polite" className="mr-auto text-xs font-medium text-warning dark:text-amber-400">{reason}</p>
@@ -27,11 +29,11 @@ export function ReviewFooter({ reason, isPending, onDiscard }: ReviewFooterProps
       <button
         type="submit"
         disabled={isPending || reason !== ''}
-        aria-label={reason ? `Save Order. Disabled: ${reason}` : 'Save Order'}
+        aria-label={isPending ? undefined : reason ? `${saveLabel}. Disabled: ${reason}` : saveLabel}
         className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-all hover:bg-brand-hover active:scale-95 disabled:opacity-50"
       >
         {isPending && <Loader2 className="size-3 motion-safe:animate-spin" aria-hidden="true" />}
-        {isPending ? 'Saving…' : 'Save Order'}
+        {isPending ? 'Saving…' : saveLabel}
       </button>
     </div>
   );

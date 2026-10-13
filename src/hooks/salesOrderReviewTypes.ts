@@ -17,13 +17,7 @@ export interface DraftSnapshot {
   extras: HandoffExtras;
 }
 
-/** Which document row the focused field came from. `nonce` bumps only on an
- *  explicit "Show in document" so the pane can expand and switch page. */
-export interface DocFocus {
-  page?: number;
-  row?: number;
-  nonce: number;
-}
+export type { DocFocus } from './documentReviewModeTypes';
 
 /** A write to the page's form state; `data` may be an updater so it composes
  *  with the customer-change handler's own functional update. */
