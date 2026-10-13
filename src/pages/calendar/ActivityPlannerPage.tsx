@@ -9,7 +9,6 @@ import { toISODate } from '@/lib/dateUtils';
 import {
   PLANNER_ACTIVITIES,
   PLANNER_PANEL_ID,
-  bucketByColumn,
   columnsFor,
   parseAnchor,
   parseView,
@@ -21,10 +20,12 @@ import {
 } from '@/lib/plannerCalendar';
 import type { PlannerView } from '@/lib/plannerCalendar';
 import { cardNoun } from '@/lib/plannerCards';
+import { bucketByColumn } from '@/lib/plannerPlacement';
 import { PlannerActivityTabs } from './components/PlannerActivityTabs';
 import { PlannerAgenda } from './components/PlannerAgenda';
-import { PlannerGrid } from './components/PlannerGrid';
+import { PlannerMonthGrid } from './components/PlannerMonthGrid';
 import { PlannerNavigator } from './components/PlannerNavigator';
+import { PlannerTimeGrid } from './components/PlannerTimeGrid';
 import { PlannerViewSwitch } from './components/PlannerViewSwitch';
 
 // The tab, the columns and the date live in the URL, so a view can be
@@ -33,16 +34,17 @@ const PARAM_ACTIVITY = 'activity';
 const PARAM_VIEW = 'view';
 const PARAM_DATE = 'date';
 
-// Below Tailwind's `md` a sideways-scrolling grid is a poor fit for the screen,
-// so the calendar becomes a day-by-day list. Chosen in JS because it swaps the
+// Below Tailwind's `md` a calendar grid is a poor fit for the screen, so the
+// calendar becomes a day-by-day list. Chosen in JS because it swaps the
 // whole component (one tree mounted, not two with one hidden).
 const STACKED_QUERY = '(max-width: 767px)';
 
 const INVOICE_NOTE =
   'Invoices made from an order are listed on their due date. Void invoices, and invoices with no due date, are not shown.';
 
-/** Calendar › Activity Planner: every order's planned activity laid out by day,
- *  one activity at a time, as stacked job cards that link to their order.
+/** Calendar › Activity Planner: every order's planned activity laid out on a
+ *  calendar, one activity at a time, as small status-coloured chips. Pressing a
+ *  chip opens a detail card with the way through to its order.
  *
  *  Type scale for the whole page: `text-xl` for the title, `text-sm` for
  *  controls and headings, `text-xs` for secondary detail. */
@@ -62,16 +64,16 @@ export default function ActivityPlannerPage() {
   const view = parseView(params.get(PARAM_VIEW));
   const anchor = parseAnchor(params.get(PARAM_DATE), today);
   const range = rangeFor(view, anchor);
-  // Invoices carry a due date but no time of day, so the Day view has no hours to offer.
+  // Invoices carry a due date but no time of day, so they have no hours to sit on.
   const timed = activity.source === 'schedule';
-  const columns = columnsFor(view, anchor, today, timed);
+  const columns = columnsFor(view, anchor, today);
 
   const { cards, truncated, isLoading, isFetching, isPlaceholderData, error, refetch } = usePlannerEvents(
     activity,
     range,
     !permissionsLoading,
   );
-  const buckets = bucketByColumn(cards, view, columns, timed);
+  const buckets = bucketByColumn(cards, columns);
   const overdue = cards.filter((c) => c.overdue).length;
   const loading = permissionsLoading || isLoading;
   // Counts are only worth stating once the cards on hand are the window asked
@@ -91,6 +93,17 @@ export default function ActivityPlannerPage() {
 
   function handleViewChange(next: PlannerView) {
     update({ [PARAM_VIEW]: next });
+  }
+
+  function renderCalendar() {
+    if (stacked) return <PlannerAgenda columns={columns} buckets={buckets} label={activity.label} />;
+    // Remounted for each window, so its scroll position and any opened "N more"
+    // start fresh.
+    const key = `${activity.key}:${view}:${range.from}`;
+    if (view === 'month') {
+      return <PlannerMonthGrid key={key} columns={columns} buckets={buckets} label={activity.label} />;
+    }
+    return <PlannerTimeGrid key={key} columns={columns} buckets={buckets} label={activity.label} timed={timed} />;
   }
 
   return (
@@ -169,18 +182,7 @@ export default function ActivityPlannerPage() {
                     Only the first part of this window is shown. Switch to Week or Day to see everything.
                   </p>
                 )}
-                {stacked ? (
-                  <PlannerAgenda columns={columns} buckets={buckets} rowLabel={activity.label} />
-                ) : (
-                  // Remounted for each window, so its scroll position and any
-                  // opened "Show more" start fresh.
-                  <PlannerGrid
-                    key={`${activity.key}:${view}:${range.from}`}
-                    columns={columns}
-                    buckets={buckets}
-                    rowLabel={activity.label}
-                  />
-                )}
+                {renderCalendar()}
                 {settled && cards.length === 0 && (
                   <p className="text-xs text-stone-500">Nothing scheduled for {activity.label} in this view.</p>
                 )}

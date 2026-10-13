@@ -1,6 +1,6 @@
 // Pure date math and layout for the Activity Planner calendar: which activity
-// tabs exist, what date window and columns each view shows, and which column
-// an event lands in.
+// tabs exist, and what date window and day columns each view shows. Where an
+// event lands within them is lib/plannerPlacement.ts.
 //
 // Dates are `yyyy-mm-dd` strings and event times are zone-less wall-clock
 // strings ("yyyy-mm-ddThh:mm[:ss]") — the convention of the schedule itself
@@ -9,7 +9,6 @@
 // same day in every timezone.
 
 import { fromISODate, toISODate } from '@/lib/dateUtils';
-import { splitWallClock } from '@/lib/salesOrderSchedule';
 
 // ── Activities (the tabs) ────────────────────────────────────────────────────
 
@@ -66,16 +65,17 @@ export function parseAnchor(raw: string | null | undefined, fallback: string): s
 // ── Date arithmetic ──────────────────────────────────────────────────────────
 
 const DAYS_PER_WEEK = 7;
-/** Weeks run Monday to Sunday; set to 0 for a Sunday-first calendar. */
-const WEEK_STARTS_ON = 1;
-const SATURDAY = 6;
-const SUNDAY = 0;
+/** Weeks run Sunday to Saturday, like the calendars people already use; set to
+ *  1 for a Monday-first calendar. */
+const WEEK_STARTS_ON = 0;
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** Length of the `yyyy-mm` prefix that names a month. */
+const MONTH_KEY_LENGTH = 7;
 
 /** `iso` as a local-midnight Date; today if it isn't a real date, so a bad URL
  *  value can never throw while rendering. */
@@ -120,8 +120,9 @@ export interface DateRange {
   to: string;
 }
 
-/** The days a view shows around its anchor date. */
-export function rangeFor(view: PlannerView, anchor: string): DateRange {
+/** The days a view is *about* around its anchor date: the day, the week, or the
+ *  month itself — not the neighbouring days a month grid pads its weeks with. */
+function ownRange(view: PlannerView, anchor: string): DateRange {
   switch (view) {
     case 'day':
       return { from: anchor, to: anchor };
@@ -132,6 +133,15 @@ export function rangeFor(view: PlannerView, anchor: string): DateRange {
     case 'month':
       return { from: startOfMonth(anchor), to: endOfMonth(anchor) };
   }
+}
+
+/** The days a view lays out and loads. A month is the whole grid — whole weeks,
+ *  so the first and last rows carry the neighbouring months' days, and their
+ *  jobs, rather than blank cells. */
+export function rangeFor(view: PlannerView, anchor: string): DateRange {
+  const own = ownRange(view, anchor);
+  if (view !== 'month') return own;
+  return { from: startOfWeek(own.from), to: addDays(startOfWeek(own.to), DAYS_PER_WEEK - 1) };
 }
 
 /** Moves the anchor one view-unit back (-1) or forward (+1). A month step lands
@@ -147,15 +157,17 @@ export function shiftAnchor(view: PlannerView, anchor: string, direction: -1 | 1
   }
 }
 
-/** Whether `today` falls inside the window the view shows. */
+/** Whether `today` falls inside the window the view is about. A neighbouring
+ *  month's day drawn in a month grid doesn't count: "Today" should still take
+ *  you to that month. */
 export function showsToday(view: PlannerView, anchor: string, today: string): boolean {
-  const { from, to } = rangeFor(view, anchor);
+  const { from, to } = ownRange(view, anchor);
   return from <= today && today <= to;
 }
 
-/** The window's heading: "Mon, Oct 12, 2026", "Oct 12 – 18, 2026", "October 2026". */
+/** The window's heading: "Mon, Oct 12, 2026", "Oct 11 – 17, 2026", "October 2026". */
 export function rangeLabel(view: PlannerView, anchor: string): string {
-  const { from, to } = rangeFor(view, anchor);
+  const { from, to } = ownRange(view, anchor);
   const a = toDate(from);
   const b = toDate(to);
   switch (view) {
@@ -176,120 +188,62 @@ export function rangeLabel(view: PlannerView, anchor: string): string {
   }
 }
 
-// ── Columns ──────────────────────────────────────────────────────────────────
+// ── Day columns ──────────────────────────────────────────────────────────────
 
-/** The Day view's hourly columns: the shop's working hours. An event outside
- *  them lands in the nearest edge column — its card still shows the exact time. */
-const DAY_VIEW_FIRST_HOUR = 6;
-const DAY_VIEW_LAST_HOUR = 19;
-const HOURS_PER_HALF_DAY = 12;
-const ALL_DAY_LABEL = 'All day';
-
+/** One calendar day of a view: a column of the Week and Day views, a cell of the
+ *  Month grid. */
 export interface PlannerColumn {
-  /** Unique within a view: `yyyy-mm-dd`, or `yyyy-mm-ddThh` for an hour. */
+  /** The day, `yyyy-mm-dd`: unique within a view. */
   key: string;
-  /** Header line one: "Mon", "9 AM", "All day". */
+  /** "Sun", "Mon" … */
   label: string;
-  /** Header line two: "Oct 12" (blank for an hour). */
+  /** "Oct 12". */
   subLabel: string;
-  /** The calendar day the column belongs to. */
+  /** The calendar day the column belongs to (the same as `key`). */
   date: string;
+  dayOfMonth: number;
+  /** "Oct". */
+  monthAbbr: string;
   isToday: boolean;
-  isWeekend: boolean;
+  /** False for the days of a neighbouring month that a month grid pads its first
+   *  and last weeks with; always true outside the Month view. */
+  inMonth: boolean;
 }
 
-/** A column's name for people and screen readers: "Tue, Oct 12", "9 AM", "All day". */
+/** A column's name for people and screen readers: "Tue, Oct 12". */
 export function columnName(column: PlannerColumn): string {
-  return column.subLabel ? `${column.label}, ${column.subLabel}` : column.label;
+  return `${column.label}, ${column.subLabel}`;
 }
 
-function dayColumn(iso: string, today: string): PlannerColumn {
+function dayColumn(iso: string, today: string, inMonth: boolean): PlannerColumn {
   const d = toDate(iso);
-  const dow = d.getDay();
   return {
     key: iso,
-    label: WEEKDAY_ABBR[dow],
+    label: WEEKDAY_ABBR[d.getDay()],
     subLabel: `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`,
     date: iso,
+    dayOfMonth: d.getDate(),
+    monthAbbr: MONTH_ABBR[d.getMonth()],
     isToday: iso === today,
-    isWeekend: dow === SUNDAY || dow === SATURDAY,
+    inMonth,
   };
 }
 
-function hourLabel(hour: number): string {
-  const suffix = hour < HOURS_PER_HALF_DAY ? 'AM' : 'PM';
-  return `${hour % HOURS_PER_HALF_DAY || HOURS_PER_HALF_DAY} ${suffix}`;
-}
-
-function hourKey(date: string, hour: number): string {
-  return `${date}T${String(hour).padStart(2, '0')}`;
-}
-
-/** The columns a view lays out. `timed` is false for a source whose events have
- *  no time of day (invoices): its Day view is one "All day" column, not hours. */
-export function columnsFor(view: PlannerView, anchor: string, today: string, timed = true): PlannerColumn[] {
-  if (view === 'day') {
-    const base = dayColumn(anchor, today);
-    if (!timed) return [{ ...base, label: ALL_DAY_LABEL, subLabel: '' }];
-    const columns: PlannerColumn[] = [];
-    for (let hour = DAY_VIEW_FIRST_HOUR; hour <= DAY_VIEW_LAST_HOUR; hour += 1) {
-      columns.push({
-        ...base,
-        key: hourKey(anchor, hour),
-        label: hourLabel(hour),
-        subLabel: '',
-        isToday: false,
-        isWeekend: false,
-      });
-    }
-    return columns;
-  }
+/** The days a view lays out, one column each: one for Day, seven for Week, and a
+ *  whole number of weeks (28–42 days) for Month. */
+export function columnsFor(view: PlannerView, anchor: string, today: string): PlannerColumn[] {
   const { from, to } = rangeFor(view, anchor);
+  const month = anchor.slice(0, MONTH_KEY_LENGTH);
   const columns: PlannerColumn[] = [];
-  for (let day = from; day <= to; day = addDays(day, 1)) columns.push(dayColumn(day, today));
+  for (let day = from; day <= to; day = addDays(day, 1)) {
+    columns.push(dayColumn(day, today, view !== 'month' || day.startsWith(month)));
+  }
   return columns;
 }
 
-// ── Placing events ───────────────────────────────────────────────────────────
-
-/** The key of the column an event at `at` belongs to, or null when `at` isn't a
- *  wall-clock value. */
-export function columnKeyFor(view: PlannerView, at: string, timed = true): string | null {
-  const parts = splitWallClock(at);
-  if (!parts) return null;
-  if (view !== 'day' || !timed) return parts.date;
-  const hour = Number(parts.time.slice(0, 2));
-  return hourKey(parts.date, Math.min(Math.max(hour, DAY_VIEW_FIRST_HOUR), DAY_VIEW_LAST_HOUR));
-}
-
-export interface Placeable {
-  /** Wall-clock `yyyy-mm-ddThh:mm[:ss]`. */
-  at: string;
-  /** Tiebreak for events at the same minute. */
-  sortKey: string;
-}
-
-function compareText(a: string, b: string): number {
-  if (a < b) return -1;
-  return a > b ? 1 : 0;
-}
-
-/** Groups events by column, soonest first inside each. Every column has an entry
- *  (possibly empty); an event outside the window is dropped. */
-export function bucketByColumn<T extends Placeable>(
-  events: readonly T[],
-  view: PlannerView,
-  columns: readonly PlannerColumn[],
-  timed = true,
-): Map<string, T[]> {
-  const buckets = new Map<string, T[]>(columns.map((c) => [c.key, []]));
-  for (const event of events) {
-    const key = columnKeyFor(view, event.at, timed);
-    const bucket = key === null ? undefined : buckets.get(key);
-    if (bucket) bucket.push(event);
-  }
-  for (const bucket of buckets.values()) {
-    bucket.sort((a, b) => compareText(a.at, b.at) || compareText(a.sortKey, b.sortKey));
-  }
-  return buckets;
+/** `days` cut into rows of seven, for a month grid. */
+export function weeksOf<T>(days: readonly T[]): T[][] {
+  const weeks: T[][] = [];
+  for (let i = 0; i < days.length; i += DAYS_PER_WEEK) weeks.push(days.slice(i, i + DAYS_PER_WEEK));
+  return weeks;
 }

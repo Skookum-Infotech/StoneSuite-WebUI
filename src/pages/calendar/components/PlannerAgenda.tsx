@@ -5,19 +5,20 @@ import { countLabel } from '@/lib/plannerCards';
 import type { PlannerCard } from '@/lib/plannerCards';
 import { PlannerColumnCards } from './PlannerColumnCards';
 
-/** The calendar for a phone: a day-by-day list instead of a sideways-scrolling
- *  grid. Only the days (or hours) that have work are listed, each as a heading
- *  over its stacked cards, so a month isn't thirty screens of empty columns. */
-export function PlannerAgenda({ columns, buckets, rowLabel }: {
+/** The calendar for a phone: a day-by-day list instead of a grid. Only the days
+ *  that have work are listed, each as a heading over its stacked cards, so a
+ *  month isn't thirty screens of empty days. */
+export function PlannerAgenda({ columns, buckets, label }: {
   columns: readonly PlannerColumn[];
   buckets: ReadonlyMap<string, PlannerCard[]>;
-  rowLabel: string;
+  /** The activity's name, for the list's accessible name. */
+  label: string;
 }) {
   const busy = columns.filter((column) => (buckets.get(column.key)?.length ?? 0) > 0);
   if (busy.length === 0) return null;
 
   return (
-    <ol aria-label={`${rowLabel} by day`} className="flex flex-col gap-3">
+    <ol aria-label={`${label} by day`} className="flex flex-col gap-3">
       {busy.map((column) => {
         const cards = buckets.get(column.key) ?? [];
         const name = columnName(column);

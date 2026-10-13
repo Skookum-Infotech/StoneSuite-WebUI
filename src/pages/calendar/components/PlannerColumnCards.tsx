@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cardNoun } from '@/lib/plannerCards';
+import { cardNoun, visibleCardCount } from '@/lib/plannerCards';
 import type { PlannerCard } from '@/lib/plannerCards';
 import { PlannerEventCard } from './PlannerEventCard';
 
@@ -25,7 +25,7 @@ export function PlannerColumnCards({ cards, columnLabel, className = STACK_CLS }
   if (cards.length === 0) return null;
 
   const folds = cards.length > MAX_COLUMN_CARDS;
-  const visible = folds && !expanded ? cards.slice(0, MAX_COLUMN_CARDS - 1) : cards;
+  const visible = cards.slice(0, visibleCardCount(cards.length, MAX_COLUMN_CARDS, expanded));
   const hidden = cards.length - visible.length;
   const noun = cardNoun(cards[0].kind, hidden);
 
