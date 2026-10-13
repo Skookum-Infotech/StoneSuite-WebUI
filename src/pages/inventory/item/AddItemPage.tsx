@@ -82,6 +82,9 @@ export default function AddItemPage() {
       toast.success(returnTo ? 'Item created and added to your line. Click Save Line to keep it.' : 'Item created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-item-picker'] });
+      // The item may have joined kits: their item counts and contents changed.
+      queryClient.invalidateQueries({ queryKey: ['inventory-kits'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-kit'] });
       guard.markClean();
       leave(item);
     },

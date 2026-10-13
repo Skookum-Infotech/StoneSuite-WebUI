@@ -43,6 +43,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Number boxes inside a line-item row: the browser's stepper arrows sit on top of
+   the value, so they are hidden. The value is still typed (and stepped by the
+   arrow keys); only the clutter goes. */
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Modernistic thin custom scrollbar — used throughout the app */
 .modal-scrollbar {
   scrollbar-width: thin;

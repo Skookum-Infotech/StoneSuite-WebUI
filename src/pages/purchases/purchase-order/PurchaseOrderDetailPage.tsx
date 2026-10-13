@@ -15,6 +15,8 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { unitLabel } from '@/lib/unitLabels';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
 import { slabProgressText } from '@/lib/itemReceiptSlabs';
 import {
   PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES, PO_RESENDABLE_STATUSES,
@@ -156,6 +158,8 @@ export default function PurchaseOrderDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
+      // The three size columns only appear when some line states a size.
+      const sized = anyDimensions(po.items);
       await exportPurchasesRecordToPdf({
         recordType: 'purchase_order',
         title: po.purchaseOrderNumber || 'Purchase Order',
@@ -189,11 +193,12 @@ export default function PurchaseOrderDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', 'Unit', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), 'Unit', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: po.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
+            ...(sized ? dimensionCells(line, line.expectedSlabs) : []),
             unitLabel(line.unitCode) || '—',
             String(line.quantity),
             String(line.qtyReceived),
@@ -203,7 +208,7 @@ export default function PurchaseOrderDetailPage() {
             currency(line.lineTotal),
           ]),
           descriptions: po.items.map((line) => line.description || undefined),
-          numericFrom: 4,
+          numericFrom: sized ? 3 : 4,
         },
         totals: [
           { label: 'Subtotal', value: currency(po.subtotal) },
@@ -327,6 +332,7 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
+                      ...LINE_DIMENSION_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Received' },
@@ -348,6 +354,7 @@ export default function PurchaseOrderDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 min-w-[200px] max-w-md whitespace-pre-wrap break-words">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.expectedSlabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
                       </td>
@@ -365,7 +372,7 @@ export default function PurchaseOrderDetailPage() {
                     </tr>
                   ))}
                   {po.items.length === 0 && (
-                    <tr><td colSpan={11} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={14} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

@@ -9,6 +9,7 @@
 
 import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
+import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
 import type {
   Requisition, RequisitionCreatePayload, RequisitionLineInput, RequisitionLine,
   RequisitionPriority,
@@ -139,7 +140,7 @@ export const PRIMARY_INFO_FIELDS: RequisitionFormField[] = [
  *  (`inventoryItemUuid`; the server snapshots sku/name/unit/price) or free
  *  text — mirrors PurchaseOrderLineItem minus discount, per-line tax, and the
  *  post-tax `total` column (a requisition line has a single money value). */
-export interface RequisitionLineItem {
+export interface RequisitionLineItem extends LineDimensions {
   id: string;
   lineNo: number;
   itemName: string;
@@ -362,6 +363,7 @@ function toLineInput(item: RequisitionLineItem, lineNo: number): RequisitionLine
       || (item.inventoryItemUuid ? undefined : (item.itemName || undefined)),
     quantity: toNum(item.quantity),
     estimatedUnitPrice: toNum(item.estimatedUnitPrice),
+    ...dimensionsPayload(item, item.units),
   };
 }
 
@@ -411,6 +413,7 @@ function fromLine(line: RequisitionLine, i: number): RequisitionLineItem {
     estimatedUnitPrice: String(line.estimatedUnitPrice),
     amount: line.estimatedAmount.toFixed(2),
     inventoryItemUuid: line.inventoryItemId ?? undefined,
+    ...dimensionsFromLine(line),
   };
 }
 

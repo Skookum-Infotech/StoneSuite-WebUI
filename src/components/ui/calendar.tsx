@@ -30,6 +30,7 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
         day: "size-8 p-0 text-center text-sm",
         day_button: cn(
           "size-8 rounded-md font-normal text-stone-700 transition hover:bg-stone-100",
+          "disabled:cursor-not-allowed disabled:hover:bg-transparent",
           "aria-selected:bg-brand aria-selected:font-semibold aria-selected:text-stone-950 aria-selected:hover:bg-brand-hover"
         ),
         today: "font-semibold text-brand-hover",

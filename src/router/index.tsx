@@ -324,6 +324,8 @@ const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemList
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
 const EditItemPage = lazyWithRetry(() => import("@/pages/inventory/item/EditItemPage"));
 const ItemDetailPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemDetailPage"));
+const AddKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/AddKitPage"));
+const EditKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/EditKitPage"));
 const UnitListPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitListPage"));
 const UnitDetailPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitDetailPage"));
 const BinListPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinListPage"));
@@ -366,6 +368,11 @@ const AccountDefaultsPage = lazyWithRetry(
 );
 const AccountingPeriodsPage = lazyWithRetry(
   () => import("@/pages/finance/accounting-periods/AccountingPeriodsPage"),
+);
+
+// Calendar module
+const ActivityPlannerPage = lazyWithRetry(
+  () => import("@/pages/calendar/ActivityPlannerPage"),
 );
 
 const PageLoader = () => (
@@ -792,6 +799,18 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Calendar: Activity Planner. It reads every order's schedule, so it is
+      // gated like the Sales Orders list (and hidden from customer sessions by
+      // CUSTOMER_ALLOWED_PATH_PREFIXES, which has no /calendar entry).
+      {
+        path: "calendar/activity-planner",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
+            <ActivityPlannerPage />
+          </PermissionGuard>,
+        ),
+      },
+
       // Vendors (specific routes must come before the purchases catch-all)
       {
         path: "purchases/vendor",
@@ -1164,6 +1183,23 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="inventory_item" action="update">
             <EditItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      // Kits: named groups of items sold together. Same grant as the items.
+      {
+        path: "inventory/kit/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="create">
+            <AddKitPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/kit/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="update">
+            <EditKitPage />
           </PermissionGuard>,
         ),
       },

@@ -18,6 +18,18 @@ describe('buildPermModules', () => {
     expect(leadRows[0]?.label).toBe('Leads');
   });
 
+  // The Activity Planner is a view over order schedules and reuses
+  // sales_order:read for its sidebar gating. It must stay a gate only — not a
+  // second row, and not the row's owner (Sales is listed first, so it wins).
+  it('keeps "Sales Orders" for sales_order, not the Calendar link that reuses it for sidebar gating', () => {
+    const modules = buildPermModules();
+    const orderRows = modules.flatMap((m) => m.rows).filter((r) => r.resource === 'sales_order');
+
+    expect(orderRows).toHaveLength(1);
+    expect(orderRows[0]?.label).toBe('Sales Orders');
+    expect(modules.find((m) => m.id === 'calendar')).toBeUndefined();
+  });
+
   it('drops the Default Accounts row once chart_of_account is already covered by Chart of Accounts', () => {
     const modules = buildPermModules();
     const coaRows = modules

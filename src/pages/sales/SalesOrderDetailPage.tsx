@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,10 +17,14 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
 import { SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
+import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
@@ -30,15 +34,26 @@ import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import { formatDateValue } from '@/lib/dateUtils';
+import { isPortalSession } from '@/store/useAuthStore';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
   { key: 'inventory', label: 'Inventory' },
+  { key: 'scheduling', label: 'Scheduling' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
+
+// The tab a `?tab=` link asks for — the Activity Planner's cards open the
+// Scheduling tab. Anything unknown, or a tab this session doesn't have (a
+// customer has no Scheduling tab), falls back to Overview.
+function tabFromParam(raw: string | null): Tab {
+  const match = TABS.find((t) => t.key === raw);
+  if (!match || (match.key === 'scheduling' && isPortalSession())) return 'overview';
+  return match.key;
+}
 
 // Poll the primary record so status/approval changes made by another user or
 // tab show up without a manual reload — same cadence as NotificationBell's
@@ -58,7 +73,8 @@ export default function SalesOrderDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<Tab>(() => tabFromParam(searchParams.get('tab')));
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
@@ -154,6 +170,9 @@ export default function SalesOrderDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';
+  // The production schedule is internal bookkeeping with a staff-only endpoint,
+  // so a customer-portal session doesn't get its tab.
+  const visibleTabs = isPortalSession() ? TABS.filter((t) => t.key !== 'scheduling') : TABS;
 
   async function handleExportPdf() {
     if (!order) return;
@@ -245,7 +264,7 @@ export default function SalesOrderDetailPage() {
 
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -278,6 +297,10 @@ export default function SalesOrderDetailPage() {
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Order Date" value={fmtDate(order.orderDate)} />
+                  <ReadonlyField
+                    label="Scheduled Installation Date"
+                    value={order.scheduledInstallDate ? fmtDate(order.scheduledInstallDate) : undefined}
+                  />
                   <ReadonlyField label="PO Number" value={order.poNumber} />
                   <ReadonlyField label="Payment Due Date" value={order.paymentDueDate ? fmtDate(order.paymentDueDate) : undefined} />
                   <ReadonlyField label="Sales Tax %" value={`${order.salesTaxPercent}%`} />
@@ -311,6 +334,7 @@ export default function SalesOrderDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
+                      ...LINE_DIMENSION_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -324,13 +348,14 @@ export default function SalesOrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {order.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  <KitLineRows lines={order.items} colSpan={13} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-300">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
                       </td>
@@ -345,9 +370,9 @@ export default function SalesOrderDetailPage() {
                         </Badge>
                       </td>
                     </tr>
-                  ))}
+                  )} />
                   {order.items.length === 0 && (
-                    <tr><td colSpan={10} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={13} className="py-8 text-center text-stone-400">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -355,6 +380,9 @@ export default function SalesOrderDetailPage() {
           )}
 
           {activeTab === 'inventory' && <SalesOrderInventoryTab orderId={id} />}
+          {activeTab === 'scheduling' && (
+            <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
+          )}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 

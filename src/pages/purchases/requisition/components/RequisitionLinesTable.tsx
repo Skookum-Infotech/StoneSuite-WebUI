@@ -4,13 +4,21 @@ import { cn } from '@/lib/utils';
 // from its current home rather than duplicated (mirrors
 // PurchaseOrderItemsTab's usage one folder over).
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
+import { itemPrice } from '@/lib/itemPrice';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
+import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
+import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInputCells';
+import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import {
+  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+} from '@/lib/lineDimensions';
+import { blockEnterSubmit } from '@/lib/lineEntryKeys';
 import { EMPTY_LINE_ITEM, calcLineItem, type RequisitionLineItem } from '@/lib/requisitionForm';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all no-spinner';
 
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `reqnli-${rowCounter}`; }
@@ -23,8 +31,9 @@ const ITEM_COLS = [
   { label: 'Item Name *', w: 'min-w-[160px]' },
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
+  ...LINE_DIMENSION_COLS,
   { label: 'Units', w: 'w-16' },
-  { label: 'Qty', w: 'w-16', right: true },
+  { label: 'Qty', w: 'w-20', right: true },
   { label: 'Est. Unit Price', w: 'w-24', right: true },
   { label: 'Amount', w: 'w-20', right: true },
   { label: '', w: 'w-8' },
@@ -40,45 +49,66 @@ export function RequisitionLinesTable({ items, onUpdate }: {
   items: RequisitionLineItem[];
   onUpdate: (v: RequisitionLineItem[]) => void;
 }) {
-  const recalc = (next: Omit<RequisitionLineItem, 'id' | 'lineNo'>) => ({
-    ...next,
-    ...calcLineItem(next),
-  });
+  // Length x width x slabs, when stated, IS the quantity — worked out here
+  // before the amount is, so the two can never disagree.
+  const recalc = (next: Omit<RequisitionLineItem, 'id' | 'lineNo'>) => {
+    const sized = withSizedQuantity(next);
+    return { ...sized, ...calcLineItem(sized) };
+  };
 
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save
   // time. The item's unit price seeds the *estimate* — the requester is
   // free to overwrite it, since a requisition predates any vendor quote.
   const unitCodeFor = useItemUnitCode();
-  const applyCatalogItem = (prev: Omit<RequisitionLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc({
+  const applyCatalogItem = (prev: Omit<RequisitionLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc(withoutUnsupportedSize({
     ...prev,
     itemName: item.name,
     units: unitCodeFor(item),
     itemDescription: item.description,
     itemSku: item.sku,
-    estimatedUnitPrice: String(item.unitPrice),
+    estimatedUnitPrice: String(itemPrice(item, 'purchasing')),
     inventoryItemUuid: item.id,
-  });
+    dimensionUnit: itemDimensionUnit(item),
+  }));
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
+    addNewKit, returnedKit, reportLineError,
   } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
 
-  const updateDraft = (key: 'quantity' | 'estimatedUnitPrice' | 'itemDescription', val: string) => {
-    setDraft((prev) => recalc({ ...prev, [key]: val }));
+  // Picking a kit adds its items as ordinary lines — Purchases tables show no
+  // kit heading, so the lines carry no kit label.
+  const { addKit, isAddingKit } = useAddKitLines({
+    items,
+    onUpdate,
+    emptyDraft: EMPTY_LINE_ITEM,
+    applyItem: applyCatalogItem,
+    newId: genId,
+    onAdded: () => { setDraft(EMPTY_LINE_ITEM); setIsAdding(false); },
+    onError: reportLineError,
+    returnedKit,
+  });
+
+  const updateDraft = (key: DraftKey, val: string) => {
+    setDraft((prev) => recalc({ ...prev, [key]: clampDimensionField(key, val, draft.dimensionUnit) }));
   };
 
   // Typing the item name detaches the line from any previously picked
   // inventory item — a fresh pick is required before the line can be saved.
   // The description is left untouched — it's independent of the item name.
   const onItemNameText = (text: string) => {
-    setDraft((prev) => recalc({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' }));
+    setDraft((prev) => recalc(withoutUnsupportedSize({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '' })));
   };
 
   const picker: InventoryItemPickerHandlers = {
+    priceKind: 'purchasing',
     onTextChange: onItemNameText,
     onPick: (item) => setDraft((prev) => applyCatalogItem(prev, item)),
     onAddToInventory: addToInventory,
+    // Kits only join a new line; an existing row being edited stays an item.
+    onPickKit: editId ? undefined : (kit) => { void addKit(kit); },
+    onAddKit: editId ? undefined : addNewKit,
   };
 
   const commitAdd = () => {
@@ -123,7 +153,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
       <div className="overflow-x-auto modal-scrollbar">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-xs" onKeyDown={blockEnterSubmit}>
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {ITEM_COLS.map((c) => (
@@ -150,6 +180,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
+                  <LineDimensionViewCells length={row.length} width={row.width} slabs={row.slabs} unit={row.dimensionUnit} />
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.estimatedUnitPrice ? `$${parseFloat(row.estimatedUnitPrice).toFixed(2)}` : '—'}</td>
@@ -213,18 +244,24 @@ export function RequisitionLinesTable({ items, onUpdate }: {
           className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
           <Trash2 className="size-3" /> Remove Last
         </button>
+        {isAddingKit && <p role="status" className="text-xs text-stone-500">Adding kit…</p>}
         {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
       </div>
     </div>
   );
 }
 
+type DraftKey = 'quantity' | 'estimatedUnitPrice' | 'itemDescription' | 'length' | 'width' | 'slabs';
+
 function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
   draft: Omit<RequisitionLineItem, 'id' | 'lineNo'>;
-  onChange: (key: 'quantity' | 'estimatedUnitPrice' | 'itemDescription', val: string) => void;
+  onChange: (key: DraftKey, val: string) => void;
   picker: InventoryItemPickerHandlers;
 }) {
+  // Quantity is worked out from the dimensions while they are stated, so it is
+  // shown but not editable.
+  const sized = isSized(draft, draft.units);
   return (
     <>
       <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
@@ -235,8 +272,14 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
       <td className="px-2 py-1.5 text-stone-400 font-mono text-2xs">{draft.itemSku || '—'}</td>
+      <LineDimensionInputCells
+        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '' }}
+        unit={normalizeUnit(draft.dimensionUnit)}
+        enabled={isAreaUnit(draft.units)}
+        onChange={onChange}
+      />
       <td className="px-2 py-1.5 text-stone-400 text-2xs">{draft.units || '—'}</td>
-      <td className="px-2 py-1.5"><input type="number" min="0" value={draft.quantity} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Quantity" /></td>
+      <td className="px-2 py-1.5"><input type="number" min="0" step="any" value={draft.quantity} readOnly={sized} title={sized ? 'Worked out from length × width × slabs' : undefined} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-16 text-right', sized && 'cursor-default bg-stone-50 text-stone-500')} aria-label="Quantity" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.01" value={draft.estimatedUnitPrice} onChange={(e) => onChange('estimatedUnitPrice', e.target.value)} placeholder="0.00" className={cn(inlineCls, 'w-24 text-right')} aria-label="Estimated Unit Price" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? `$${draft.amount}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-800 font-semibold cursor-default text-right')} aria-label="Amount" /></td>
     </>
