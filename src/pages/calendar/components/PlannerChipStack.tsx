@@ -18,7 +18,7 @@ const MORE_CLS =
  *  `wide` lays the chips out in wrapping columns, for a cell with the room. */
 export function PlannerChipStack({ cards, columnLabel, max, wide = false }: {
   cards: readonly PlannerCard[];
-  /** Names the cell for people and screen readers: "Tue, Oct 12, 9 AM". */
+  /** Names the cell for people and screen readers: "Tue, Oct 12, 09:00". */
   columnLabel: string;
   max: number;
   wide?: boolean;

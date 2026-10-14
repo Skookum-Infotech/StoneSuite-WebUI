@@ -7,6 +7,7 @@ import { datePart, formatDisplayDate } from '@/lib/dateUtils';
 import { formatMoney } from '@/lib/formatMoney';
 import { INVOICE_STATUS_COLORS } from '@/lib/invoiceForm';
 import { chipFillFor } from '@/lib/plannerChipColor';
+import { PLANNER_CLOCK } from '@/lib/plannerPlacement';
 import {
   SCHEDULE_STATUS_COLORS,
   SCHEDULE_STATUS_LABELS,
@@ -26,7 +27,7 @@ export interface PlannerCard {
   sortKey: string;
   /** A date-only card (an invoice's due date) — no time of day. */
   allDay: boolean;
-  /** Top-left label: "9:00 AM", or "Due" for a date-only card. */
+  /** Top-left label: "09:00", or "Due" for a date-only card. */
   timeLabel: string;
   statusLabel: string;
   /** Hex colour of the status pill. */
@@ -34,7 +35,7 @@ export interface PlannerCard {
   /** Hex fill of the card's chip on the calendar: the status colour, darkened
    *  until white text on it is readable. */
   chipColor: string;
-  /** Where and when, in full, for the detail card: "Oct 15, 2026, 9:00 AM", or
+  /** Where and when, in full, for the detail card: "Oct 15, 2026, 09:00", or
    *  "Due Oct 20, 2026" for a date-only card. */
   whenLabel: string;
   /** The main link's text: the Sales Order number, or the invoice number. */
@@ -51,7 +52,7 @@ export interface PlannerCard {
   /** One muted line: install date and PO, or the amount due. */
   meta: string;
   notes: string;
-  /** "Done Oct 13, 2026, 10:30 AM" once finished. */
+  /** "Done Oct 13, 2026, 10:30" once finished. */
   doneLabel: string;
   done: boolean;
   overdue: boolean;
@@ -121,11 +122,11 @@ export function scheduleEventCard(event: ScheduleFeedEvent, now: Date = new Date
     at: event.scheduledAt,
     sortKey: `${title}:${String(event.sequence).padStart(2, '0')}`,
     allDay: false,
-    timeLabel: formatWallClockTime(event.scheduledAt),
+    timeLabel: formatWallClockTime(event.scheduledAt, PLANNER_CLOCK),
     statusLabel: SCHEDULE_STATUS_LABELS[status],
     statusColor: SCHEDULE_STATUS_COLORS[status],
     chipColor: chipFillFor(SCHEDULE_STATUS_COLORS[status]),
-    whenLabel: formatWallClock(event.scheduledAt),
+    whenLabel: formatWallClock(event.scheduledAt, PLANNER_CLOCK),
     title,
     href: orderSchedulePath(order.id),
     openLabel: OPEN_ORDER_LABEL,
@@ -133,10 +134,10 @@ export function scheduleEventCard(event: ScheduleFeedEvent, now: Date = new Date
     stage: event.name === event.group ? '' : event.name,
     meta,
     notes: event.notes,
-    doneLabel: done && event.completedAt ? `Done ${formatWallClock(event.completedAt)}` : '',
+    doneLabel: done && event.completedAt ? `Done ${formatWallClock(event.completedAt, PLANNER_CLOCK)}` : '',
     done,
     overdue: status === 'overdue',
-    ariaLabel: `Open ${title}, ${event.name}, ${formatWallClock(event.scheduledAt)}, ${SCHEDULE_STATUS_LABELS[status]}`,
+    ariaLabel: `Open ${title}, ${event.name}, ${formatWallClock(event.scheduledAt, PLANNER_CLOCK)}, ${SCHEDULE_STATUS_LABELS[status]}`,
   };
 }
 

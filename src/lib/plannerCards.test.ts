@@ -45,7 +45,7 @@ describe('scheduleEventCard', () => {
       kind: 'schedule',
       at: '2026-10-15T09:00:00',
       allDay: false,
-      timeLabel: '9:00 AM',
+      timeLabel: '09:00',
       title: 'SO-1042',
       customer: 'Acme Builders',
       stage: 'Installation Ready',
@@ -88,7 +88,7 @@ describe('scheduleEventCard', () => {
     );
 
     expect(card).toMatchObject({ done: true, overdue: false, statusLabel: 'Completed' });
-    expect(card.doneLabel).toBe('Done Oct 13, 2026, 10:30 AM');
+    expect(card.doneLabel).toBe('Done Oct 13, 2026, 10:30');
   });
 
   it('carries the planner notes', () => {
@@ -131,8 +131,20 @@ describe('what the detail card says', () => {
   it('gives a schedule card its full date and time, and says what it opens', () => {
     const card = scheduleEventCard(event(), NOW);
 
-    expect(card.whenLabel).toBe('Oct 15, 2026, 9:00 AM');
+    expect(card.whenLabel).toBe('Oct 15, 2026, 09:00');
     expect(card.openLabel).toBe('Open sales order');
+  });
+
+  it('reads times off a 24-hour clock, afternoon included', () => {
+    const card = scheduleEventCard(
+      event({ status: 'completed', scheduledAt: '2026-10-15T14:30:00', completedAt: '2026-10-15T16:45:00' }),
+      NOW,
+    );
+
+    expect(card.timeLabel).toBe('14:30');
+    expect(card.whenLabel).toBe('Oct 15, 2026, 14:30');
+    expect(card.doneLabel).toBe('Done Oct 15, 2026, 16:45');
+    expect(card.ariaLabel).toBe('Open SO-1042, Installation Ready, Oct 15, 2026, 14:30, Completed');
   });
 
   it('gives an invoice card its due date, and says what it opens', () => {

@@ -145,7 +145,7 @@ describe('ActivityPlannerPage', () => {
     expect(within(table).queryByText('Activity')).toBeNull();
     // The activity is named by the tab above the calendar, not by a row of it.
     expect(within(table).queryByRole('rowheader', { name: 'Template' })).toBeNull();
-    expect(within(table).getAllByRole('rowheader').map((h) => h.textContent).slice(0, 2)).toEqual(['6 AM', '7 AM']);
+    expect(within(table).getAllByRole('rowheader').map((h) => h.textContent).slice(0, 2)).toEqual(['00:00', '01:00']);
   });
 
   it('offers a tab for every activity', async () => {
@@ -170,14 +170,14 @@ describe('ActivityPlannerPage', () => {
     renderPlanner();
     await screen.findByText('SO-1042');
 
-    const nine = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 9 AM' }));
+    const nine = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 09:00' }));
     expect(nine.getByText('SO-1042')).toBeInTheDocument();
-    expect(nine.getByText('9:00 AM')).toBeInTheDocument();
-    const eleven = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 11 AM' }));
+    expect(nine.getByText('09:00')).toBeInTheDocument();
+    const eleven = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 11:00' }));
     expect(eleven.getByText('SO-1050')).toBeInTheDocument();
-    expect(eleven.getByText('11:30 AM')).toBeInTheDocument();
-    expect(within(screen.getByRole('cell', { name: 'Thu, Mar 5, 9 AM' })).getByText('SO-1061')).toBeInTheDocument();
-    expect(within(screen.getByRole('cell', { name: 'Mon, Mar 2, 9 AM' })).queryByRole('button')).toBeNull();
+    expect(eleven.getByText('11:30')).toBeInTheDocument();
+    expect(within(screen.getByRole('cell', { name: 'Thu, Mar 5, 09:00' })).getByText('SO-1061')).toBeInTheDocument();
+    expect(within(screen.getByRole('cell', { name: 'Mon, Mar 2, 09:00' })).queryByRole('button')).toBeNull();
     expect(screen.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(3);
   });
 
@@ -185,8 +185,8 @@ describe('ActivityPlannerPage', () => {
     vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: [event()], truncated: false });
     renderPlanner();
 
-    const chip = await screen.findByRole('button', { name: /SO-1042, Acme Builders, Mar 3, 2099, 9:00 AM, Pending/ });
-    expect(chip).toHaveTextContent('9:00 AM');
+    const chip = await screen.findByRole('button', { name: /SO-1042, Acme Builders, Mar 3, 2099, 09:00, Pending/ });
+    expect(chip).toHaveTextContent('09:00');
     expect(chip).toHaveTextContent('SO-1042');
     expect(chip).toHaveTextContent('Acme Builders');
     expect(chip.style.backgroundColor).not.toBe('');
@@ -208,7 +208,7 @@ describe('ActivityPlannerPage', () => {
     expect(card.getByText('SO-1042')).toBeInTheDocument();
     expect(card.getByText('Acme Builders')).toBeInTheDocument();
     expect(card.getByText('Pending')).toBeInTheDocument();
-    expect(card.getByText('Mar 3, 2099, 9:00 AM')).toBeInTheDocument();
+    expect(card.getByText('Mar 3, 2099, 09:00')).toBeInTheDocument();
     expect(card.getByText('Installs Apr 1, 2099')).toBeInTheDocument();
     expect(card.getByText('Customer on site')).toBeInTheDocument();
     // "Template" is already the tab's name, so the card doesn't repeat it.
@@ -500,8 +500,9 @@ describe('ActivityPlannerPage columns and navigation', () => {
       events: [
         event({ scheduledAt: `${ANCHOR}T09:00:00` }),
         event({ orderId: 'so-2', orderNumber: 'SO-1050', scheduledAt: `${ANCHOR}T14:00:00` }),
-        // Before the first row: it sits in 6 AM and keeps its own time.
+        // Off the working day, but the grid runs all 24 hours: its own row, its own minutes.
         event({ orderId: 'so-3', orderNumber: 'SO-1061', scheduledAt: `${ANCHOR}T05:30:00` }),
+        event({ orderId: 'so-4', orderNumber: 'SO-1072', scheduledAt: `${ANCHOR}T23:45:00` }),
       ],
       truncated: false,
     });
@@ -510,16 +511,37 @@ describe('ActivityPlannerPage columns and navigation', () => {
 
     expect(salesOrderService.getScheduleFeed).toHaveBeenCalledWith({ group: 'Template', from: ANCHOR, to: ANCHOR });
     const hours = screen.getAllByRole('rowheader').map((h) => h.textContent);
-    expect(hours).toHaveLength(14);
-    expect(hours.slice(0, 2)).toEqual(['6 AM', '7 AM']);
-    expect(hours[13]).toBe('7 PM');
-    expect(screen.getAllByRole('cell')).toHaveLength(14);
+    expect(hours).toHaveLength(24);
+    expect(hours.slice(0, 2)).toEqual(['00:00', '01:00']);
+    expect(hours[23]).toBe('23:00');
+    expect(screen.getAllByRole('cell')).toHaveLength(24);
     expect(screen.getByRole('columnheader', { name: 'Wed, Mar 4' })).toBeInTheDocument();
-    expect(within(screen.getByRole('cell', { name: 'Wed, Mar 4, 9 AM' })).getByText('SO-1042')).toBeInTheDocument();
-    expect(within(screen.getByRole('cell', { name: 'Wed, Mar 4, 2 PM' })).getByText('SO-1050')).toBeInTheDocument();
-    const early = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 6 AM' }));
+    expect(within(screen.getByRole('cell', { name: 'Wed, Mar 4, 09:00' })).getByText('SO-1042')).toBeInTheDocument();
+    expect(within(screen.getByRole('cell', { name: 'Wed, Mar 4, 14:00' })).getByText('SO-1050')).toBeInTheDocument();
+    const early = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 05:00' }));
     expect(early.getByText('SO-1061')).toBeInTheDocument();
-    expect(early.getByText('5:30 AM')).toBeInTheDocument();
+    expect(early.getByText('05:30')).toBeInTheDocument();
+    const late = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 23:00' }));
+    expect(late.getByText('SO-1072')).toBeInTheDocument();
+    expect(late.getByText('23:45')).toBeInTheDocument();
+  });
+
+  it('opens scrolled to the working day, with the small hours a scroll above it', async () => {
+    // jsdom lays nothing out, so give the 06:00 row a position under a 60px header.
+    const top = vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.textContent === '06:00' ? 480 : 0;
+    });
+    const height = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(60);
+    try {
+      renderPlanner('?view=day&date=' + ANCHOR);
+      const table = await screen.findByRole('table', { name: 'Template calendar' });
+
+      expect(table.parentElement?.scrollTop).toBe(420);
+      expect(within(table).getAllByRole('rowheader')[0]).toHaveTextContent('00:00');
+    } finally {
+      top.mockRestore();
+      height.mockRestore();
+    }
   });
 
   it('gives Invoicing one All day row, with no hours, in the Day view', async () => {
@@ -545,7 +567,7 @@ describe('ActivityPlannerPage columns and navigation', () => {
     expect(search).toHaveTextContent('view=day');
     expect(search).toHaveTextContent(`date=${THURSDAY}`);
     expect(await screen.findByRole('columnheader', { name: 'Thu, Mar 5' })).toBeInTheDocument();
-    expect(screen.getAllByRole('rowheader')).toHaveLength(14);
+    expect(screen.getAllByRole('rowheader')).toHaveLength(24);
     // The day you are already on is plain text, not a button to itself.
     expect(screen.queryByRole('button', { name: /in Day view/ })).toBeNull();
   });
@@ -596,7 +618,7 @@ describe('ActivityPlannerPage columns and navigation', () => {
   });
 });
 
-/** `count` jobs on one day, one an hour from 8 AM, each its own order. */
+/** `count` jobs on one day, one an hour from 08:00, each its own order. */
 function jobsOn(day: string, count: number): ScheduleFeedEvent[] {
   return Array.from({ length: count }, (_, i) =>
     event({
@@ -624,15 +646,15 @@ describe('ActivityPlannerPage busy days', () => {
     renderPlanner();
     await screen.findByText('SO-2000');
 
-    const hour = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 9 AM' }));
+    const hour = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 09:00' }));
     expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(3);
     expect(hour.queryByText('SO-2003')).toBeNull();
 
-    const more = hour.getByRole('button', { name: 'Show all 7 jobs for Tue, Mar 3, 9 AM' });
+    const more = hour.getByRole('button', { name: 'Show all 7 jobs for Tue, Mar 3, 09:00' });
     expect(more).toHaveTextContent('4 more');
     await userEvent.click(more);
 
-    const list = within(await screen.findByRole('dialog', { name: 'Tue, Mar 3, 9 AM, 7 jobs' }));
+    const list = within(await screen.findByRole('dialog', { name: 'Tue, Mar 3, 09:00, 7 jobs' }));
     expect(list.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(7);
     expect(list.getByText('SO-2006')).toBeInTheDocument();
     // The cell itself is untouched, so the rows below it don't move.
@@ -643,9 +665,9 @@ describe('ActivityPlannerPage busy days', () => {
     vi.mocked(salesOrderService.getScheduleFeed).mockResolvedValue({ events: jobsAt(TUESDAY, 9, 7), truncated: false });
     renderPlanner();
     await screen.findByText('SO-2000');
-    const hour = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 9 AM' }));
-    await userEvent.click(hour.getByRole('button', { name: 'Show all 7 jobs for Tue, Mar 3, 9 AM' }));
-    const list = within(await screen.findByRole('dialog', { name: 'Tue, Mar 3, 9 AM, 7 jobs' }));
+    const hour = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 09:00' }));
+    await userEvent.click(hour.getByRole('button', { name: 'Show all 7 jobs for Tue, Mar 3, 09:00' }));
+    const list = within(await screen.findByRole('dialog', { name: 'Tue, Mar 3, 09:00, 7 jobs' }));
 
     await userEvent.click(list.getByRole('button', { name: /^SO-2006,/ }));
 
@@ -655,7 +677,7 @@ describe('ActivityPlannerPage busy days', () => {
 
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('link', { name: /Open SO-2006/ })).toBeNull());
-    expect(screen.getByRole('dialog', { name: 'Tue, Mar 3, 9 AM, 7 jobs' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Tue, Mar 3, 09:00, 7 jobs' })).toBeInTheDocument();
 
     await userEvent.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -666,7 +688,7 @@ describe('ActivityPlannerPage busy days', () => {
     renderPlanner('?view=day&date=' + ANCHOR);
     await screen.findByText('SO-2000');
 
-    const hour = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 9 AM' }));
+    const hour = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 09:00' }));
     expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(20);
     expect(hour.queryByRole('button', { name: /Show all/ })).toBeNull();
   });
@@ -676,11 +698,11 @@ describe('ActivityPlannerPage busy days', () => {
     renderPlanner('?view=day&date=' + ANCHOR);
     await screen.findByText('SO-2000');
 
-    const hour = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 9 AM' }));
+    const hour = within(screen.getByRole('cell', { name: 'Wed, Mar 4, 09:00' }));
     expect(hour.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(23);
-    await userEvent.click(hour.getByRole('button', { name: 'Show all 30 jobs for Wed, Mar 4, 9 AM' }));
+    await userEvent.click(hour.getByRole('button', { name: 'Show all 30 jobs for Wed, Mar 4, 09:00' }));
 
-    const list = within(await screen.findByRole('dialog', { name: 'Wed, Mar 4, 9 AM, 30 jobs' }));
+    const list = within(await screen.findByRole('dialog', { name: 'Wed, Mar 4, 09:00, 30 jobs' }));
     expect(list.getAllByRole('button', { name: /Acme Builders/ })).toHaveLength(30);
   });
 
@@ -690,7 +712,7 @@ describe('ActivityPlannerPage busy days', () => {
     renderPlanner();
     await screen.findByText('SO-2000');
 
-    const hour = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 9 AM' }));
+    const hour = within(screen.getByRole('cell', { name: 'Tue, Mar 3, 09:00' }));
     expect(hour.getAllByRole('button')).toHaveLength(4);
     expect(hour.queryByRole('button', { name: /more/ })).toBeNull();
   });

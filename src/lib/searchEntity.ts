@@ -32,6 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
   inventory_adjustment: 'Inventory Adjustments',
   inventory_transfer: 'Inventory Transfers',
   inventory_count: 'Inventory Counts',
+  bin_transfer: 'Bin Transfers',
   chart_of_account: 'Accounts',
   cash_transfer: 'Journal Entries',
   user: 'Team Members',
@@ -43,7 +44,7 @@ const TYPE_ORDER = [
   'customer', 'lead', 'prospect', 'crm_activity', 'customer_note',
   'quote', 'estimate', 'sales_order', 'invoice', 'payment', 'credit_memo', 'refund', 'fabrication_job',
   'vendor', 'requisition', 'purchase_order', 'item_receipt', 'vendor_bill', 'vendor_payment', 'vendor_credit', 'expense',
-  'inventory_item', 'inventory_unit', 'inventory_adjustment', 'inventory_transfer', 'inventory_count',
+  'inventory_item', 'inventory_unit', 'inventory_adjustment', 'inventory_transfer', 'inventory_count', 'bin_transfer',
   'chart_of_account', 'cash_transfer',
   'user',
 ];

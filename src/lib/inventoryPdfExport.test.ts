@@ -17,7 +17,7 @@ vi.mock("jspdf", async (importOriginal) => {
   return { ...actual, default: TestJsPDF, jsPDF: TestJsPDF };
 });
 
-const { buildExportFilename, exportInventoryRecordToPdf } = await import("./inventoryPdfExport");
+const { buildExportFilename, buildInventoryRecordPdf, exportInventoryRecordToPdf } = await import("./inventoryPdfExport");
 
 describe("buildExportFilename", () => {
   it("prefers the record number when present", () => {
@@ -83,6 +83,28 @@ describe("exportInventoryRecordToPdf", () => {
         ],
       }),
     ).resolves.toBeUndefined();
+  });
+
+  it("names a Bin Transfer on the page and carries its slab moves", async () => {
+    const doc = await buildInventoryRecordPdf({
+      recordType: "bin_transfer",
+      title: "BTRF-000012",
+      recordNumber: "BTRF-000012",
+      statusLabel: "Approved",
+      createdAt: "2026-10-14T08:00:00Z",
+      updatedAt: "2026-10-14T09:00:00Z",
+      sections: [{ title: "Transfer Details", rows: [["Location", "Main Yard"], ["Destination", "RACK-B2/S3"]] }],
+      linesTable: {
+        title: "Slabs",
+        head: ["#", "Slab", "From", "To"],
+        rows: [["1", "SLB-000231", "YARD-A/A1", "RACK-B2/S3"]],
+      },
+    });
+
+    const text = doc.output();
+    expect(text).toMatch(/Bin Transfer/i);
+    expect(text).toContain("SLB-000231");
+    expect(text).not.toContain("undefined");
   });
 
   it("builds and saves a document-shaped record PDF with a lines table and description sublines", async () => {

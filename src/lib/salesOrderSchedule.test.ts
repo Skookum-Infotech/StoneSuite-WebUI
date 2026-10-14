@@ -6,6 +6,7 @@ import {
   displayStatus,
   earliestInstallDate,
   formatWallClock,
+  formatWallClockTime,
   installDateError,
   joinWallClock,
   scheduleProgress,
@@ -79,6 +80,20 @@ describe('wall-clock values', () => {
     ['2026-12-31T12:00:00', 'Dec 31, 2026, 12:00 PM'],
   ])('formats %s as %s without any timezone shift', (value, expected) => {
     expect(formatWallClock(value)).toBe(expected);
+  });
+
+  it.each([
+    ['2026-11-10T09:00:00', 'Nov 10, 2026, 09:00', '09:00'],
+    ['2026-11-10T17:05:00', 'Nov 10, 2026, 17:05', '17:05'],
+    ['2026-01-02T00:05:00', 'Jan 2, 2026, 00:05', '00:05'],
+    ['2026-12-31T12:00:00', 'Dec 31, 2026, 12:00', '12:00'],
+  ])('formats %s on a 24-hour clock as %s', (value, expected, expectedTime) => {
+    expect(formatWallClock(value, '24h')).toBe(expected);
+    expect(formatWallClockTime(value, '24h')).toBe(expectedTime);
+  });
+
+  it('keeps the 12-hour clock when none is asked for', () => {
+    expect(formatWallClockTime('2026-11-10T17:05:00')).toBe('5:05 PM');
   });
 
   it('reads the viewer\'s clock as a wall-clock string', () => {
