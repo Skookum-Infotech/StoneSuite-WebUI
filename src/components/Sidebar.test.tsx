@@ -262,3 +262,31 @@ describe('Sidebar Calendar group', () => {
     expect(screen.getByText('Sales Orders')).toBeInTheDocument();
   });
 });
+
+describe('Sidebar Created Orders link', () => {
+  // The portal-only entry: the countertop orders a customer files themselves.
+  it('shows Created Orders to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: [] });
+
+    expect(screen.getByRole('link', { name: /Created Orders/ })).toHaveAttribute(
+      'href',
+      '/sales/created-orders',
+    );
+  });
+
+  // `alwaysVisible` alone would show it to every staff user — customerOnly is
+  // what keeps a portal-only page out of the staff menu.
+  it('hides Created Orders from staff, even a super admin', () => {
+    setup({ grants: [{ resource: '*', action: '*' }] });
+
+    expect(screen.queryByText('Created Orders')).toBeNull();
+  });
+
+  // Sidebar shows every link while permissions load to avoid layout shift;
+  // the portal-only link must not ride that shortcut.
+  it('does not flash Created Orders at staff while permissions load', () => {
+    setup({ grants: [], isLoading: true });
+
+    expect(screen.queryByText('Created Orders')).toBeNull();
+  });
+});

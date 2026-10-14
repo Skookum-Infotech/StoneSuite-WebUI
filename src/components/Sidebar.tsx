@@ -69,6 +69,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   // While permissions are loading, show all items to avoid layout shift.
   function canShowLink(item: NavLinkItem): boolean {
     if (item.platformAdminOnly && !user?.isPlatformAdmin) return false;
+    // A portal-only page has no staff counterpart — checked before the
+    // permissions-loading shortcut below so staff never see it flash up.
+    if (item.customerOnly && !isCustomer) return false;
     // Independent of the viewer's permissions: a workflow an admin disabled
     // in Configuration > Workflows is hidden from every user, not just those
     // without the resource grant.
