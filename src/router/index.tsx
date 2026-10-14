@@ -24,6 +24,7 @@ function lazyWithRetry<T extends React.ComponentType<unknown>>(
 }
 
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { PortalOnlyGuard } from "@/components/PortalOnlyGuard";
 
 const FabricationApprovalPage = lazyWithRetry(() => import("@/pages/customer/FabricationApprovalPage"));
 const LoginPage = lazyWithRetry(() => import("@/pages/auth/LoginPage"));
@@ -160,6 +161,12 @@ const QuoteDetailPage = lazyWithRetry(
 );
 const EditQuotePage = lazyWithRetry(
   () => import("@/pages/sales/EditQuotePage"),
+);
+const CreatedOrderListPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/CreatedOrderListPage"),
+);
+const AddCreatedOrderPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/AddCreatedOrderPage"),
 );
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
@@ -597,6 +604,26 @@ export const router = createBrowserRouter([
           <PermissionGuard resource="quote" action="update" workflowKey="quote">
             <EditQuotePage />
           </PermissionGuard>,
+        ),
+      },
+
+      // Created Orders — countertop orders a customer-portal user files. Portal
+      // only: no staff module, so the guard is the session kind, not an RBAC
+      // resource (the API is /api/portal/created-orders).
+      {
+        path: "sales/created-orders",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <CreatedOrderListPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/new",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <AddCreatedOrderPage />
+          </PortalOnlyGuard>,
         ),
       },
 

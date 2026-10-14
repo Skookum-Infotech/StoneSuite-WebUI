@@ -37,6 +37,7 @@ import {
   ClipboardEdit,
   Repeat,
   ClipboardCheck,
+  ClipboardPlus,
   Layers,
   Boxes,
   ArrowLeftRight,
@@ -80,6 +81,11 @@ export interface NavLink {
    *  useUserPermissions' portal allowlist instead). The path must also be in
    *  CUSTOMER_ALLOWED_PATH_PREFIXES or MainLayout bounces the customer away. */
   customerVisible?: boolean;
+  /** Show the link to customer-portal sessions ONLY — staff never see it, not
+   *  even for the moment permissions are still loading. For a page that exists
+   *  purely for the portal (Created Orders) and has no staff-side module. Must
+   *  be paired with `alwaysVisible` + `customerVisible`. */
+  customerOnly?: boolean;
   /** Live counter shown as a pill beside the label. */
   badge?: NavBadge;
   /** Workflow key (Configuration > Workflows) backing this link's form, e.g.
@@ -192,6 +198,21 @@ export const sidebarNav: SidebarNavConfig = {
           iconColor: "text-emerald-600 dark:text-emerald-400",
           matchPaths: ["/sales"],
           children: [
+            {
+              type: "link",
+              id: "created-orders",
+              label: "Created Orders",
+              path: "/sales/created-orders",
+              icon: ClipboardPlus,
+              iconColor: "text-lime-600 dark:text-lime-400",
+              // The countertop orders a customer files from the portal. It has
+              // no staff module (and no resource in the role matrix), so like
+              // Support it declares no `permission` — `customerOnly` is what
+              // keeps it out of every staff sidebar.
+              alwaysVisible: true,
+              customerVisible: true,
+              customerOnly: true,
+            },
             {
               type: "link",
               id: "estimates",
