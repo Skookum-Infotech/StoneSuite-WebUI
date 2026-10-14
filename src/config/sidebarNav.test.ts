@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { sidebarNav } from './sidebarNav';
-import { CUSTOMER_ALLOWED_PATH_PREFIXES } from './customerPortal';
+import { CUSTOMER_ALLOWED_PATH_PREFIXES, isCustomerAllowedPath } from './customerPortal';
+import { CREATED_ORDERS_PATH, NEW_CREATED_ORDER_PATH } from '@/lib/createdOrderRoutes';
 import { SUPPORT_PATH } from '@/lib/feedback';
 import type { NavEntry, NavLink } from './sidebarNav';
 
@@ -143,5 +144,28 @@ describe('sidebarNav access declarations', () => {
     for (const [id, workflowKey] of Object.entries(expected)) {
       expect(byId.get(id)?.workflowKey, `${id} workflowKey`).toBe(workflowKey);
     }
+  });
+});
+
+describe('portal-only links', () => {
+  it('customerOnly links are also alwaysVisible and customerVisible', () => {
+    const misuse = allLinks()
+      .filter(({ link }) => link.customerOnly && !(link.alwaysVisible && link.customerVisible))
+      .map(({ trail }) => trail);
+
+    expect(misuse, `customerOnly without alwaysVisible + customerVisible:\n  ${misuse.join('\n  ')}`).toEqual([]);
+  });
+
+  it('Created Orders points at the shared route and is portal-only', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'created-orders');
+
+    expect(entry?.link.path).toBe(CREATED_ORDERS_PATH);
+    expect(entry?.link.customerOnly).toBe(true);
+    expect(entry?.link.permission).toBeUndefined();
+  });
+
+  it('lets a customer session reach the Created Orders pages', () => {
+    expect(isCustomerAllowedPath(CREATED_ORDERS_PATH)).toBe(true);
+    expect(isCustomerAllowedPath(NEW_CREATED_ORDER_PATH)).toBe(true);
   });
 });

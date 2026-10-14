@@ -1,9 +1,11 @@
 import { SUPPORT_PATH } from '@/lib/feedback';
+import { CREATED_ORDERS_PATH } from '@/lib/createdOrderRoutes';
 
 // Paths a customer-portal session may reach under MainLayout — its four
 // document types (List and Detail; Add/Edit already render "Access Denied" via
-// PermissionGuard), its own account settings, and Support. MainLayout redirects
-// everything else to Sales Orders.
+// PermissionGuard), the Created Orders list and form it files itself, its own
+// account settings, and Support. MainLayout redirects everything else to Sales
+// Orders.
 //
 // An explicit allowlist at one choke point, rather than relying on every route
 // remembering its own PermissionGuard: /dashboard, /transactions and
@@ -15,6 +17,7 @@ export const CUSTOMER_ALLOWED_PATH_PREFIXES: readonly string[] = [
   '/sales/invoice',
   '/sales/payment',
   '/sales/refund',
+  CREATED_ORDERS_PATH,
   '/account/settings',
   '/customer/fabrication-approvals',
   SUPPORT_PATH,
