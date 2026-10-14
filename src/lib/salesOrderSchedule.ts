@@ -58,27 +58,33 @@ export function joinWallClock(date: string, time: string): string {
   return `${date}T${time}`;
 }
 
-/** "9:00 AM" from a 24-hour `hh:mm`. */
-function formatTime(time: string): string {
+/** How a time of day reads: "9:00 AM" on a 12-hour clock, "09:00" on a 24-hour one. */
+export type ClockFormat = '12h' | '24h';
+
+/** "9:00 AM", or "09:00" for the 24-hour clock, from a 24-hour `hh:mm`. */
+function formatTime(time: string, clock: ClockFormat): string {
+  if (clock === '24h') return time;
   const [h, m] = time.split(':').map(Number);
   const suffix = h < HOURS_PER_HALF_DAY ? 'AM' : 'PM';
   return `${h % HOURS_PER_HALF_DAY || HOURS_PER_HALF_DAY}:${String(m).padStart(2, '0')} ${suffix}`;
 }
 
-/** "Nov 10, 2026, 9:00 AM", or '' when the value isn't a wall-clock string. */
-export function formatWallClock(value?: string): string {
+/** "Nov 10, 2026, 9:00 AM" ("Nov 10, 2026, 09:00" on the 24-hour clock), or ''
+ *  when the value isn't a wall-clock string. */
+export function formatWallClock(value?: string, clock: ClockFormat = '12h'): string {
   const parts = splitWallClock(value);
   if (!parts) return '';
   const [year, month, day] = parts.date.split('-').map(Number);
   const monthName = MONTH_ABBR[month - 1];
   if (!monthName) return '';
-  return `${monthName} ${day}, ${year}, ${formatTime(parts.time)}`;
+  return `${monthName} ${day}, ${year}, ${formatTime(parts.time, clock)}`;
 }
 
-/** "9:00 AM" from a wall-clock value, or '' when it isn't one. */
-export function formatWallClockTime(value?: string): string {
+/** "9:00 AM" ("09:00" on the 24-hour clock) from a wall-clock value, or '' when
+ *  it isn't one. */
+export function formatWallClockTime(value?: string, clock: ClockFormat = '12h'): string {
   const parts = splitWallClock(value);
-  return parts ? formatTime(parts.time) : '';
+  return parts ? formatTime(parts.time, clock) : '';
 }
 
 /** The viewer's current local time as a `yyyy-mm-ddThh:mm` wall-clock string. */

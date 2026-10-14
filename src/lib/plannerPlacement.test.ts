@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { columnsFor } from './plannerCalendar';
 import {
   PLANNER_HOUR_ROWS,
+  WORKDAY_START_HOUR,
   bucketByColumn,
   bucketByHour,
   columnKeyFor,
@@ -78,11 +79,16 @@ describe('bucketByColumn', () => {
 });
 
 describe('PLANNER_HOUR_ROWS', () => {
-  it('runs the shop’s working hours, 6 AM to 7 PM', () => {
-    expect(PLANNER_HOUR_ROWS).toHaveLength(14);
-    expect(PLANNER_HOUR_ROWS[0]).toEqual({ hour: 6, label: '6 AM' });
-    expect(PLANNER_HOUR_ROWS[6]).toEqual({ hour: 12, label: '12 PM' });
-    expect(PLANNER_HOUR_ROWS[13]).toEqual({ hour: 19, label: '7 PM' });
+  it('runs the whole day, 00:00 to 23:00, on a 24-hour clock', () => {
+    expect(PLANNER_HOUR_ROWS).toHaveLength(24);
+    expect(PLANNER_HOUR_ROWS[0]).toEqual({ hour: 0, label: '00:00' });
+    expect(PLANNER_HOUR_ROWS[6]).toEqual({ hour: 6, label: '06:00' });
+    expect(PLANNER_HOUR_ROWS[12]).toEqual({ hour: 12, label: '12:00' });
+    expect(PLANNER_HOUR_ROWS[23]).toEqual({ hour: 23, label: '23:00' });
+  });
+
+  it('opens scrolled to a row that exists', () => {
+    expect(PLANNER_HOUR_ROWS.map((r) => r.hour)).toContain(WORKDAY_START_HOUR);
   });
 });
 
@@ -90,10 +96,10 @@ describe('hourRowFor', () => {
   it.each([
     ['2026-10-15T09:00:00', 9],
     ['2026-10-15T13:45:00', 13],
-    // Outside working hours: the nearest edge row.
-    ['2026-10-15T05:30:00', 6],
-    ['2026-10-15T00:00', 6],
-    ['2026-10-15T21:00:00', 19],
+    // Outside the working day, but the grid runs all 24 hours: its own row.
+    ['2026-10-15T05:30:00', 5],
+    ['2026-10-15T00:00', 0],
+    ['2026-10-15T23:59:00', 23],
   ])('%s sits in the %i o’clock row', (at, want) => {
     expect(hourRowFor(at)).toBe(want);
   });
@@ -118,10 +124,10 @@ describe('bucketByHour', () => {
     expect(buckets.get(10)).toEqual([]);
   });
 
-  it('folds an early or late event into the edge row, and drops one it cannot place', () => {
-    const buckets = bucketByHour([ev('early', '2026-10-15T05:00:00'), ev('late', '2026-10-15T22:00:00'), ev('junk', 'x')]);
-    expect(buckets.get(6)?.map((e) => e.id)).toEqual(['early']);
-    expect(buckets.get(19)?.map((e) => e.id)).toEqual(['late']);
+  it('keeps the small hours and the late evening in their own rows, and drops one it cannot place', () => {
+    const buckets = bucketByHour([ev('early', '2026-10-15T00:30:00'), ev('late', '2026-10-15T23:00:00'), ev('junk', 'x')]);
+    expect(buckets.get(0)?.map((e) => e.id)).toEqual(['early']);
+    expect(buckets.get(23)?.map((e) => e.id)).toEqual(['late']);
     expect([...buckets.values()].flat()).toHaveLength(2);
   });
 });

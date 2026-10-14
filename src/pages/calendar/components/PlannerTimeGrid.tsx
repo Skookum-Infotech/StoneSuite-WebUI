@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { columnName, openDayLabel } from '@/lib/plannerCalendar';
 import type { PlannerColumn } from '@/lib/plannerCalendar';
-import { PLANNER_HOUR_ROWS, bucketByHour } from '@/lib/plannerPlacement';
+import { PLANNER_HOUR_ROWS, WORKDAY_START_HOUR, bucketByHour } from '@/lib/plannerPlacement';
 import type { PlannerCard } from '@/lib/plannerCards';
 import { PlannerChipStack } from './PlannerChipStack';
 import { GRID_FRAME_CLS, SCROLL_BOX_CLS } from './plannerLayout';
@@ -68,7 +68,8 @@ function DayHeading({ column, interactive = false }: { column: PlannerColumn; in
 /** The Week and Day views, laid out like a calendar: a day column per day under
  *  its weekday and date, and an hour gutter down the left with each job's chip in
  *  the row of its hour (a busy hour folds its extra chips behind "N more", which
- *  lists them all in a popover, so a row never stretches).
+ *  lists them all in a popover, so a row never stretches). The rows cover the
+ *  whole day, 00:00 to 23:00; a window opens scrolled to the working day's start.
  *
  *  Activities with no time of day — invoices, due on a date — have no hours to
  *  sit on, so their chips fill one "All day" row instead. Scrolls in its own box
@@ -89,16 +90,23 @@ export function PlannerTimeGrid({ columns, buckets, label, timed, onSelectDay }:
   const wide = columns.length === 1;
   const scroller = useRef<HTMLDivElement>(null);
   const todayHeader = useRef<HTMLDivElement>(null);
+  const gutterHeader = useRef<HTMLDivElement>(null);
+  const workdayRow = useRef<HTMLDivElement>(null);
   const hourBuckets = columns.map((column) => bucketByHour(buckets.get(column.key) ?? []));
 
   // A window opens with today centred, so a narrow screen never starts out of
-  // sight of it. The page remounts the grid for each window, so this runs once
-  // per window.
+  // sight of it, and with the working day's first hour just under the sticky day
+  // headers, so the small hours above it are a scroll away rather than the first
+  // thing on screen. The page remounts the grid for each window, so this runs
+  // once per window.
   useEffect(() => {
     const box = scroller.current;
+    if (!box) return;
     const cell = todayHeader.current;
-    if (!box || !cell) return;
-    box.scrollLeft = Math.max(0, cell.offsetLeft - (box.clientWidth - cell.offsetWidth) / 2);
+    if (cell) box.scrollLeft = Math.max(0, cell.offsetLeft - (box.clientWidth - cell.offsetWidth) / 2);
+    const row = workdayRow.current;
+    const header = gutterHeader.current;
+    if (row && header) box.scrollTop = Math.max(0, row.offsetTop - header.offsetHeight);
   }, []);
 
   return (
@@ -106,6 +114,7 @@ export function PlannerTimeGrid({ columns, buckets, label, timed, onSelectDay }:
       <div role="table" aria-label={`${label} calendar`} className={cn('grid w-full', template)}>
         <div role="row" className="contents">
           <div
+            ref={gutterHeader}
             role="columnheader"
             className="sticky left-0 top-0 z-30 border-b border-r border-stone-200 bg-white"
           >
@@ -139,7 +148,11 @@ export function PlannerTimeGrid({ columns, buckets, label, timed, onSelectDay }:
         {timed ? (
           PLANNER_HOUR_ROWS.map((row) => (
             <div key={row.hour} role="row" className="contents">
-              <div role="rowheader" className={ROW_HEADER_CLS}>
+              <div
+                ref={row.hour === WORKDAY_START_HOUR ? workdayRow : undefined}
+                role="rowheader"
+                className={ROW_HEADER_CLS}
+              >
                 {row.label}
               </div>
               {columns.map((column, i) => {
