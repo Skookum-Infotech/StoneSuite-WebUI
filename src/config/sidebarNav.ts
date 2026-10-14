@@ -410,6 +410,16 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
+              id: "bin-transfer",
+              label: "Bin Transfer",
+              path: "/inventory/bin_transfer",
+              icon: ArrowLeftRight,
+              iconColor: "text-violet-500 dark:text-violet-400",
+              permission: { resource: "bin_transfer", action: "read" },
+              workflowKey: "bin_transfer",
+            },
+            {
+              type: "link",
               id: "locations",
               label: "Locations",
               path: "/inventory/location",

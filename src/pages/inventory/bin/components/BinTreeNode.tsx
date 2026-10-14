@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronDown, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Bin } from '@/types/inventory';
@@ -21,6 +22,7 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
   onAddChild: (parent: Bin) => void;
   onDelete: (bin: Bin) => void;
 }) {
+  const navigate = useNavigate();
   const hasChildren = Boolean(bin.children?.length);
   const expanded = !collapsed.has(bin.id);
   const indentClass = INDENT_CLASSES[Math.min(depth, INDENT_CLASSES.length - 1)];
@@ -46,7 +48,15 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
         </button>
         <MapPin className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate text-sm text-stone-800">
-          <span className={cn(depth === 0 ? 'font-semibold' : 'font-medium')}>{bin.name}</span>
+          <button
+            type="button"
+            onClick={() => navigate(`/inventory/bin/${bin.id}`)}
+            aria-label={`Open ${bin.name}`}
+            title="See what is in this bin and what has moved through it"
+            className={cn('text-left transition-colors hover:text-accent-foreground hover:underline', depth === 0 ? 'font-semibold' : 'font-medium')}
+          >
+            {bin.name}
+          </button>
           <span className="ml-1.5 font-mono text-2xs text-stone-400">{bin.code}</span>
         </span>
         <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-500 capitalize">{bin.type}</span>

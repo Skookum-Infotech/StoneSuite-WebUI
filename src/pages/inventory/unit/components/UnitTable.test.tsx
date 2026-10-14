@@ -13,7 +13,6 @@ vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/inventoryUnitService', () => ({
   inventoryUnitService: { searchUnits: vi.fn() },
 }));
-vi.mock('./MoveUnitDialog', () => ({ MoveUnitDialog: () => null }));
 vi.mock('./ScrapUnitDialog', () => ({ ScrapUnitDialog: () => null }));
 vi.mock('./CutUnitDialog', () => ({ CutUnitDialog: () => null }));
 
@@ -57,6 +56,17 @@ beforeEach(() => {
 });
 
 describe('UnitTable', () => {
+  // A bin move is requested through a Bin Transfer, which can be approved and
+  // has a document; an instant move from a list row would walk around that.
+  it('has no instant move on a row — only cut and scrap', async () => {
+    renderTable();
+    const row = (await screen.findByText('PO-00012-001')).closest('tr') as HTMLElement;
+
+    expect(within(row).getByRole('button', { name: 'Cut PO-00012-001' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Scrap PO-00012-001' })).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: /move/i })).not.toBeInTheDocument();
+  });
+
   it('has a Consumption column that says what happened to each piece', async () => {
     renderTable();
 
