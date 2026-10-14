@@ -42,6 +42,7 @@ export const AUDIT_RESOURCES: { value: string; label: string }[] = [
   { value: 'vendor_payment', label: 'Vendor Payment' },
   { value: 'vendor_credit', label: 'Vendor Credit' },
   { value: 'expense', label: 'Expense' },
+  { value: 'bin_transfer', label: 'Bin Transfer' },
   { value: 'record_attachment', label: 'Attachment' },
 ];
 

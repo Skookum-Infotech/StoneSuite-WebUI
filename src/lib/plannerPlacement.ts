@@ -7,27 +7,32 @@
 // every timezone.
 
 import { splitWallClock } from '@/lib/salesOrderSchedule';
+import type { ClockFormat } from '@/lib/salesOrderSchedule';
 import type { PlannerColumn } from '@/lib/plannerCalendar';
+
+/** The planner reads times off a 24-hour clock ("09:00", "14:30"), everywhere
+ *  it shows one — hour rows, chips, detail cards and their accessible names. */
+export const PLANNER_CLOCK: ClockFormat = '24h';
 
 // ── Hour rows ────────────────────────────────────────────────────────────────
 
-/** The Week and Day views' rows: the shop's working hours. An event outside
- *  them sits in the nearest edge row — its chip still shows the exact time. */
-const FIRST_HOUR = 6;
-const LAST_HOUR = 19;
-const HOURS_PER_HALF_DAY = 12;
+/** The Week and Day views' rows: every hour of the day, 00:00 to 23:00. */
+const FIRST_HOUR = 0;
+const LAST_HOUR = 23;
+/** The row a window opens scrolled to: the start of the shop's working day. The
+ *  hours before and after it are a scroll away. */
+export const WORKDAY_START_HOUR = 6;
 /** The `hh` of a wall-clock `hh:mm`. */
 const HOUR_DIGITS = 2;
 
 export interface PlannerHourRow {
   hour: number;
-  /** "6 AM", "12 PM". */
+  /** "06:00", "14:00". */
   label: string;
 }
 
 function hourLabel(hour: number): string {
-  const suffix = hour < HOURS_PER_HALF_DAY ? 'AM' : 'PM';
-  return `${hour % HOURS_PER_HALF_DAY || HOURS_PER_HALF_DAY} ${suffix}`;
+  return `${String(hour).padStart(HOUR_DIGITS, '0')}:00`;
 }
 
 export const PLANNER_HOUR_ROWS: readonly PlannerHourRow[] = Array.from(
@@ -35,7 +40,7 @@ export const PLANNER_HOUR_ROWS: readonly PlannerHourRow[] = Array.from(
   (_, i) => ({ hour: FIRST_HOUR + i, label: hourLabel(FIRST_HOUR + i) }),
 );
 
-/** The hour row (6–19) an event at `at` sits in, or null when `at` isn't a
+/** The hour row (0–23) an event at `at` sits in, or null when `at` isn't a
  *  wall-clock value. */
 export function hourRowFor(at: string): number | null {
   const parts = splitWallClock(at);

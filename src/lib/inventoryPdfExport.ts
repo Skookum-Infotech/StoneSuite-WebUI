@@ -27,7 +27,7 @@ import { makeItemDescriptionHooks } from "@/lib/pdfTextBlocks";
 
 export type InventoryRecordType =
   | "inventory_item" | "inventory_unit" | "bundle"
-  | "adjustment" | "transfer" | "count";
+  | "adjustment" | "transfer" | "count" | "bin_transfer";
 
 export interface InventoryPdfSection {
   title: string;
@@ -51,6 +51,7 @@ const RECORD_TYPE_LABEL: Record<InventoryRecordType, string> = {
   adjustment: "Adjustment",
   transfer: "Transfer",
   count: "Cycle Count",
+  bin_transfer: "Bin Transfer",
 };
 
 export interface InventoryExportParams {

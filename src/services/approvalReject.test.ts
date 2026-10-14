@@ -18,6 +18,7 @@ import { paymentService } from './paymentService';
 import { creditMemoService } from './creditMemoService';
 import { refundService } from './refundService';
 import { vendorCreditService } from './vendorCreditService';
+import { binTransferService } from './binTransferService';
 
 interface Rejectable {
   id: string;
@@ -45,6 +46,7 @@ const MODULES: [string, RejectableService, string, string, string][] = [
   ['credit memo', creditMemoService as unknown as RejectableService, '/tenant/credit-memos', 'creditMemo', 'getCreditMemo'],
   ['refund', refundService as unknown as RejectableService, '/tenant/refunds', 'refund', 'getRefund'],
   ['vendor credit', vendorCreditService as unknown as RejectableService, '/tenant/vendor-credits', 'vendorCredit', 'getVendorCredit'],
+  ['bin transfer', binTransferService as unknown as RejectableService, '/tenant/inventory/bin-transfers', 'binTransfer', 'get'],
 ];
 
 describe('reject() on every Sales/Purchases service', () => {

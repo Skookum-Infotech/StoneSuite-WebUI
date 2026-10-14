@@ -339,11 +339,6 @@ export interface UnitSearchRequest {
   search?: string;
 }
 
-export interface MoveUnitInput {
-  binId?: string | null;
-  note?: string;
-}
-
 export interface ScrapUnitInput {
   reasonId: number;
   note?: string;
@@ -358,8 +353,41 @@ export interface UnitHistoryEntry {
   toBin?: string;
   reason?: string;
   note?: string;
+  /** The bin transfer that made a bin_move, when one did. */
+  transferId?: string;
+  transferNumber?: string;
   at: string;
   byName: string;
+}
+
+// ── Bin history ───────────────────────────────────────────────────────────
+
+/** Whether a unit arrived in a bin, left it, or was only named on the event. */
+export type BinHistoryDirection = 'in' | 'out' | 'other';
+
+/** One event on a bin — read from the units' own movement history, so it covers
+ *  every route in and out of the bin, not only bin transfers. */
+export interface BinHistoryEntry {
+  /** bin_move, create, cut, scrap, warehouse_move, remnant_created… */
+  action: string;
+  direction: BinHistoryDirection;
+  unitId: string;
+  unitSerial: string;
+  inventoryItemName?: string;
+  /** The two ends of the movement; whichever is the bin itself is that bin. */
+  fromBinPath?: string;
+  toBinPath?: string;
+  note?: string;
+  transferId?: string;
+  transferNumber?: string;
+  at: string;
+  byName: string;
+}
+
+export interface BinHistoryPage {
+  records: BinHistoryEntry[];
+  nextCursor: string;
+  hasMore: boolean;
 }
 
 // ── Cutting ───────────────────────────────────────────────────────────────

@@ -340,6 +340,11 @@ const TransferDetailPage = lazyWithRetry(() => import("@/pages/inventory/transfe
 const CountListPage = lazyWithRetry(() => import("@/pages/inventory/count/CountListPage"));
 const AddCountPage = lazyWithRetry(() => import("@/pages/inventory/count/AddCountPage"));
 const CountDetailPage = lazyWithRetry(() => import("@/pages/inventory/count/CountDetailPage"));
+const BinDetailPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinDetailPage"));
+const BinTransferListPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/BinTransferListPage"));
+const AddBinTransferPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/AddBinTransferPage"));
+const EditBinTransferPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/EditBinTransferPage"));
+const BinTransferDetailPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/BinTransferDetailPage"));
 const InventorySetupPage = lazyWithRetry(() => import("@/pages/config/inventory-setup/InventorySetupPage"));
 
 const JournalEntryListPage = lazyWithRetry(
@@ -1221,6 +1226,46 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="inventory_bin" action="read">
             <BinListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_bin" action="read">
+            <BinDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="read">
+            <BinTransferListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/new",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="create">
+            <AddBinTransferPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/:id",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="read">
+            <BinTransferDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="update">
+            <EditBinTransferPage />
           </PermissionGuard>,
         ),
       },

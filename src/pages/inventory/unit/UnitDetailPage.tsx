@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2, CheckCircle2, X } from 'lucide-react';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
@@ -12,7 +12,6 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } from '@/types/inventory';
 import { historyActionLabel } from '@/lib/inventoryWarehouse';
-import { MoveUnitDialog } from './components/MoveUnitDialog';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
 import { UnitInspectionPanel } from './components/UnitInspectionPanel';
@@ -51,7 +50,7 @@ export default function UnitDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('usage');
-  const [dialog, setDialog] = useState<'move' | 'scrap' | 'cut' | null>(null);
+  const [dialog, setDialog] = useState<'scrap' | 'cut' | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [cutMessage, setCutMessage] = useState<string | null>(null);
@@ -91,7 +90,7 @@ export default function UnitDetailPage() {
   const inTransit = unit.status === UNIT_STATUS_IN_TRANSIT;
   const actionable = unit.status === UNIT_STATUS_AVAILABLE;
   const disabledReason = inTransit
-    ? 'This unit is in transit between locations — refuses bin moves, cuts and scraps until received.'
+    ? 'This unit is in transit between locations — it cannot be moved, cut or scrapped until received.'
     : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
 
   async function handleExportPdf() {
@@ -203,7 +202,17 @@ export default function UnitDetailPage() {
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{historyActionLabel(h.action)}</p>
                         {describeHistoryEntry(h) && <p className="text-2xs text-stone-500">{describeHistoryEntry(h)}</p>}
-                        <p className="text-2xs text-stone-400">{fmtDateTime(h.at)} · {h.byName}</p>
+                        <p className="text-2xs text-stone-400">
+                          {fmtDateTime(h.at)} · {h.byName}
+                          {h.transferNumber && (
+                            <>
+                              {' · '}
+                              <Link to={`/inventory/bin_transfer/${h.transferId}`} className="font-mono font-semibold text-stone-600 transition-colors hover:text-accent-foreground">
+                                {h.transferNumber}
+                              </Link>
+                            </>
+                          )}
+                        </p>
                       </div>
                     </li>
                   ))}
@@ -230,9 +239,6 @@ export default function UnitDetailPage() {
           {canUpdate && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4" title={disabledReason}>
               <p className="text-xs font-semibold text-stone-400 mb-2">Actions</p>
-              <button type="button" disabled={Boolean(disabledReason)} onClick={() => setDialog('move')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
-                <ArrowLeftRight className="size-4 text-stone-400 shrink-0" /> Move Bin
-              </button>
               <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <Scissors className="size-4 text-stone-400 shrink-0" /> Cut
               </button>
@@ -257,7 +263,6 @@ export default function UnitDetailPage() {
         </SalesDetailSidebar>
       </div>
 
-      {dialog === 'move' && <MoveUnitDialog unit={unit} onClose={() => setDialog(null)} onMoved={invalidateUnit} />}
       {dialog === 'scrap' && <ScrapUnitDialog unit={unit} onClose={() => setDialog(null)} onScrapped={invalidateUnit} />}
       {dialog === 'cut' && (
         <CutUnitDialog
