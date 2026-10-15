@@ -5,7 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileClock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PENDING_DOCUMENTS_KEY } from '@/hooks/useDocumentExtraction';
+import { useBackgroundExtractionWatch } from '@/hooks/useBackgroundExtractions';
+import { PENDING_DOCUMENTS_KEY } from '@/lib/documentExtractionKeys';
 import { documentRoutes } from '@/lib/documentExtractionRoutes';
 import { relativeTime } from '@/lib/recentRecordRoute';
 import { documentExtractionService } from '@/services/documentExtractionService';
@@ -30,6 +31,7 @@ export function PendingDocumentsChip({ docType, enabled = true }: PendingDocumen
     enabled,
     staleTime: PENDING_STALE_MS,
   });
+  useBackgroundExtractionWatch(enabled);
   const { fromDocumentPath } = documentRoutes(docType);
   const items = (data ?? []).filter((e) => e.docType === docType);
   if (items.length === 0) return null;
