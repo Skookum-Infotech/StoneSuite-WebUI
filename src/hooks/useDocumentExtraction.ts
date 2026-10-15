@@ -178,6 +178,12 @@ export function useDocumentExtraction(docType: DocumentExtractionDocType = 'sale
       const status = q.state.data?.status;
       return !status || IN_FLIGHT_STATUSES.includes(status) ? POLL_INTERVAL_MS : false;
     },
+    // React Query pauses interval polling while the tab is hidden (macOS Chrome
+    // also reports an occluded window as hidden), which left the stepper on
+    // "Read, in progress" long after the server finished. Keep polling, and
+    // refetch at once when the tab is shown again.
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
     retry: POLL_RETRIES,
   });
   const polled = query.data;

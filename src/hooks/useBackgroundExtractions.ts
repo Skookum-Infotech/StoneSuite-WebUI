@@ -38,6 +38,8 @@ export function useBackgroundExtractionWatch(enabled: boolean): void {
       queryFn: () => documentExtractionService.get(id),
       enabled,
       retry: false,
+      // Interval polls pause while the tab is hidden; catch up as soon as it is shown.
+      refetchOnWindowFocus: 'always' as const,
       refetchInterval: (q: { state: { data?: { status: string } } }) => {
         const status = q.state.data?.status;
         return !status || (IN_FLIGHT_STATUSES as readonly string[]).includes(status) ? BACKGROUND_POLL_MS : false;
