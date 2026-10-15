@@ -1,5 +1,6 @@
 import { isInvalidPhoneValue } from '@/lib/phoneValidation';
-import { areaKindConfig, FAUCET_SPREAD_OPTIONS } from '@/lib/createdOrderAreas';
+import { earliestInstallDate } from '@/lib/salesOrderSchedule';
+import { areaKindConfig } from '@/lib/createdOrderAreas';
 import type { AreaFieldKey } from '@/lib/createdOrderAreas';
 import type { AreaKind, CreatedOrderArea, CreatedOrderInput } from '@/types/createdOrder';
 
@@ -13,9 +14,13 @@ export const MAX_BACKSPLASH_HEIGHT_IN = 96;
 /** Step for the Backsplash Height input — quarter-inch cuts. */
 export const BACKSPLASH_HEIGHT_STEP = 0.25;
 
+// Text limits match the server's columns for the order (and the Sales Order
+// fields it is copied to), so a form that validates here is never refused there.
 export const NAME_MAX_LENGTH = 120;
-export const ADDRESS_MAX_LENGTH = 200;
-export const ZIP_MAX_LENGTH = 12;
+/** Install address, e-mail and city. */
+export const ADDRESS_MAX_LENGTH = 100;
+export const AREA_NAME_MAX_LENGTH = 100;
+export const ZIP_MAX_LENGTH = 10;
 export const NOTES_MAX_LENGTH = 1000;
 export const INSTRUCTIONS_MAX_LENGTH = 2000;
 
@@ -95,8 +100,14 @@ export function createdOrderDefaults(): CreatedOrderFormState {
 export function defaultAreaName(kind: AreaKind, existing: readonly AreaDraft[]): string {
   const { label, repeatable } = areaKindConfig(kind);
   if (!repeatable) return label;
+  // Names become Kit/Package names on the order, so they must be unique: skip
+  // any number a removed or renamed area has left taken.
+  const taken = new Set(existing.map((area) => nameKey(area.name)));
   const sameKind = existing.filter((area) => area.kind === kind).length;
-  return sameKind === 0 ? label : `${label} ${sameKind + 1}`;
+  if (sameKind === 0 && !taken.has(nameKey(label))) return label;
+  let n = Math.max(sameKind + 1, 2);
+  while (taken.has(nameKey(`${label} ${n}`))) n += 1;
+  return `${label} ${n}`;
 }
 
 export function newAreaDraft(kind: AreaKind, key: string, existing: readonly AreaDraft[]): AreaDraft {
@@ -128,7 +139,16 @@ function isBlank(value: string): boolean {
   return value.trim() === '';
 }
 
-function headerErrors(form: CreatedOrderFormState): CreatedOrderErrors['header'] {
+/** How two area names are compared: case and runs of spaces do not matter. */
+function nameKey(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function headerErrors(
+  form: CreatedOrderFormState,
+  now: Date,
+  storedInstallDate: string,
+): CreatedOrderErrors['header'] {
   const errors: CreatedOrderErrors['header'] = {};
 
   for (const field of REQUIRED_HEADER_FIELDS) {
@@ -142,6 +162,13 @@ function headerErrors(form: CreatedOrderFormState): CreatedOrderErrors['header']
   }
   if (!errors.installDate && !errors.measureDate && form.installDate < form.measureDate) {
     errors.installDate = 'Install Date cannot be before the Measure Date.';
+  }
+  // ISO dates order the same as the calendar days they name. The date an order
+  // already has is accepted even once it has slipped into the past, as the
+  // server does; only a different one is held to "not in the past".
+  const unchanged = storedInstallDate !== '' && form.installDate === storedInstallDate;
+  if (!errors.installDate && !unchanged && form.installDate < earliestInstallDate(now)) {
+    errors.installDate = 'Install Date cannot be in the past.';
   }
   return errors;
 }
@@ -161,14 +188,40 @@ function areaErrors(area: AreaDraft): Partial<Record<AreaErrorField, string>> {
   return errors;
 }
 
-export function validateCreatedOrder(form: CreatedOrderFormState): CreatedOrderErrors {
+/** Flags every repeatable area that shares its name with another area — the
+ *  ones with a name field to fix it in (a single-use area's name is its label). */
+function duplicateNameKeys(areas: readonly AreaDraft[]): Set<string> {
+  const byName = new Map<string, AreaDraft[]>();
+  for (const area of areas) {
+    const key = nameKey(area.name);
+    if (key !== '') byName.set(key, [...(byName.get(key) ?? []), area]);
+  }
+  const flagged = new Set<string>();
+  for (const group of byName.values()) {
+    if (group.length < 2) continue;
+    for (const area of group) {
+      if (areaKindConfig(area.kind).repeatable) flagged.add(area.key);
+    }
+  }
+  return flagged;
+}
+
+/** `storedInstallDate` is the Install Date of the order being changed ('' when
+ *  placing a new one). */
+export function validateCreatedOrder(
+  form: CreatedOrderFormState,
+  now: Date = new Date(),
+  storedInstallDate = '',
+): CreatedOrderErrors {
   const areas: CreatedOrderErrors['areas'] = {};
+  const duplicates = duplicateNameKeys(form.areas);
   for (const area of form.areas) {
     const errors = areaErrors(area);
+    if (!errors.name && duplicates.has(area.key)) errors.name = 'Another area already has this name.';
     if (Object.keys(errors).length > 0) areas[area.key] = errors;
   }
   return {
-    header: headerErrors(form),
+    header: headerErrors(form, now, storedInstallDate),
     areas,
     noAreas: form.areas.length === 0 ? 'Add at least one area to your order.' : undefined,
   };
@@ -221,45 +274,6 @@ export function stoneSource(areas: readonly AreaDraft[], areaKey: string): AreaD
   return areas.find((area) => area.key !== areaKey && !isBlank(area.color));
 }
 
-function toAreaPayload(area: AreaDraft): CreatedOrderArea {
-  const config = areaKindConfig(area.kind);
-  const has = (field: AreaFieldKey): boolean => config.fields.includes(field);
-  const text = (field: AreaFieldKey, value: string): string => (has(field) ? value.trim() : '');
-  const spreadOrder = FAUCET_SPREAD_OPTIONS[config.spreadScale].map((option) => option.value);
-
-  return {
-    kind: area.kind,
-    name: area.name.trim(),
-    color: text('color', area.color),
-    finish: text('finish', area.finish),
-    edge: text('edge', area.edge),
-    backsplashHeight: text('backsplashHeight', area.backsplashHeight),
-    sinkModel: text('sinkModel', area.sinkModel),
-    cooktopModel: text('cooktopModel', area.cooktopModel),
-    waterfallQty: has('waterfallQty') ? area.waterfallQty : 0,
-    popUpOutlet: has('popUpOutlet') ? area.popUpOutlet : 0,
-    halfWall: has('halfWall') ? area.halfWall : false,
-    location: text('location', area.location),
-    faucetSpread: spreadOrder.filter((position) => area.faucetSpread.includes(position)),
-    notes: area.notes.trim(),
-  };
-}
-
-/** The request body: trimmed text, no client keys, and any value an area's kind
- *  does not show (left over from a copy or an edit) reset to empty. */
-export function toCreatePayload(form: CreatedOrderFormState): CreatedOrderInput {
-  return {
-    builder: form.builder.trim(),
-    community: form.community.trim(),
-    plan: form.plan.trim(),
-    phone: form.phone.trim(),
-    email: form.email.trim(),
-    installAddress: form.installAddress.trim(),
-    city: form.city.trim(),
-    zip: form.zip.trim(),
-    measureDate: form.measureDate,
-    installDate: form.installDate,
-    specialInstructions: form.specialInstructions.trim(),
-    areas: form.areas.map(toAreaPayload),
-  };
-}
+// The mapping between this form state and the API's order shape lives in its
+// own file; re-exported so callers have one place to import the form from.
+export { toCreatePayload, toFormState } from '@/lib/createdOrderPayload';

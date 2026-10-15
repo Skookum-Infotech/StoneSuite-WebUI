@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,6 +20,9 @@ import { toast } from 'sonner';
 
 const NEW_PATH = '/sales/created-orders/new';
 const LIST_PATH = '/sales/created-orders';
+// The two end-to-end flows below type a whole order and drive the calendar, so
+// they sit close to the 5 s default on a loaded machine.
+const FLOW_TIMEOUT_MS = 20_000;
 
 function renderPage() {
   const router = createMemoryRouter(
@@ -69,6 +72,7 @@ function createdOrder(): CreatedOrder {
   return {
     id: 'o1',
     status: 'submitted',
+    editable: true,
     createdAt: '2026-10-14T10:00:00Z',
   } as CreatedOrder;
 }
@@ -91,6 +95,15 @@ afterAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The calendar opens on the current month and Install Date cannot be in the
+  // past, so the day picks below need a fixed "today". Only Date is faked: real
+  // timers keep user-event and waitFor working.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 9, 5, 12, 0, 0));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('AddCreatedOrderPage', () => {
@@ -207,14 +220,14 @@ describe('AddCreatedOrderPage', () => {
       zip: '76227',
     });
     expect(payload.phone).toMatch(/480/);
-    expect(payload.measureDate).toMatch(/^\d{4}-\d{2}-10$/);
-    expect(payload.installDate).toMatch(/^\d{4}-\d{2}-20$/);
+    expect(payload.measureDate).toBe('2026-10-10');
+    expect(payload.installDate).toBe('2026-10-20');
     expect(payload.areas).toHaveLength(1);
     expect(payload.areas[0]).toMatchObject({ kind: 'kitchen', name: 'Kitchen', color: 'Serene', faucetSpread: ['C'] });
 
     await waitFor(() => expect(router.state.location.pathname).toBe(LIST_PATH));
     expect(toast.success).toHaveBeenCalledWith('Order submitted');
-  });
+  }, FLOW_TIMEOUT_MS);
 
   it('keeps the entries and shows the reason when submitting fails', async () => {
     vi.mocked(createdOrderService.create).mockRejectedValue(new Error('Plan 214 is not available.'));
@@ -228,5 +241,5 @@ describe('AddCreatedOrderPage', () => {
     expect(await screen.findByText('Plan 214 is not available.')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(NEW_PATH);
     expect(screen.getByLabelText(/^Builder/)).toHaveValue('Highland Homes');
-  });
+  }, FLOW_TIMEOUT_MS);
 });

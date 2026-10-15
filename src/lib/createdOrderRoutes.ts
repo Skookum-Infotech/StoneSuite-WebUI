@@ -6,3 +6,13 @@
 // opens on them, but outside every staff module's own prefix.
 export const CREATED_ORDERS_PATH = '/sales/created-orders';
 export const NEW_CREATED_ORDER_PATH = `${CREATED_ORDERS_PATH}/new`;
+
+/** The detail page of one order, by the id the API gave it. */
+export function createdOrderPath(id: string): string {
+  return `${CREATED_ORDERS_PATH}/${encodeURIComponent(id)}`;
+}
+
+/** The page that changes one order, while it is still editable. */
+export function createdOrderEditPath(id: string): string {
+  return `${createdOrderPath(id)}/edit`;
+}

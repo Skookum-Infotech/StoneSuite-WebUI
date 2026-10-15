@@ -3,18 +3,30 @@ import { formatDisplayDate } from '@/lib/dateUtils';
 import type { CreatedOrderFormState } from '@/lib/createdOrderForm';
 import { cn } from '@/lib/utils';
 
-interface OrderSummaryPanelProps {
-  form: CreatedOrderFormState;
+export interface SummaryStatus {
   /** Required items still missing or invalid — what the status line counts. */
   errorCount: number;
   isSubmitting: boolean;
+}
+
+/** The submit button's wording: "Submit order" when placing, "Save changes"
+ *  when changing one. */
+export interface SummaryLabels {
+  submit: string;
+  submitting: string;
+}
+
+interface OrderSummaryPanelProps {
+  form: CreatedOrderFormState;
+  status: SummaryStatus;
   /** `card`: the sticky side panel on wide screens. `bar`: the bottom bar on
    *  narrow ones, which only carries the status and the buttons. */
   layout: 'card' | 'bar';
+  labels: SummaryLabels;
   onCancel: () => void;
 }
 
-function SubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
+function SubmitButton({ isSubmitting, labels }: { isSubmitting: boolean; labels: SummaryLabels }) {
   return (
     <button
       type="submit"
@@ -26,7 +38,7 @@ function SubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
       ) : (
         <Send className="size-4" aria-hidden="true" />
       )}
-      {isSubmitting ? 'Submitting…' : 'Submit order'}
+      {isSubmitting ? labels.submitting : labels.submit}
     </button>
   );
 }
@@ -77,14 +89,15 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 // what the job is, which areas are on it, and how much is left. The Submit
 // button is never greyed out for missing fields — pressing it is what shows
 // the customer exactly which ones, which beats a dead button with no reason.
-export function OrderSummaryPanel({ form, errorCount, isSubmitting, layout, onCancel }: OrderSummaryPanelProps) {
+export function OrderSummaryPanel({ form, status, layout, labels, onCancel }: OrderSummaryPanelProps) {
+  const { errorCount, isSubmitting } = status;
   if (layout === 'bar') {
     return (
       <div className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 shadow-sm">
         <StatusLine errorCount={errorCount} />
         <div className="flex shrink-0 items-center gap-2">
           <CancelButton onCancel={onCancel} disabled={isSubmitting} />
-          <SubmitButton isSubmitting={isSubmitting} />
+          <SubmitButton isSubmitting={isSubmitting} labels={labels} />
         </div>
       </div>
     );
@@ -129,7 +142,7 @@ export function OrderSummaryPanel({ form, errorCount, isSubmitting, layout, onCa
       <div className="space-y-3 border-t border-stone-100 pt-3">
         <StatusLine errorCount={errorCount} />
         <div className="grid gap-2">
-          <SubmitButton isSubmitting={isSubmitting} />
+          <SubmitButton isSubmitting={isSubmitting} labels={labels} />
           <CancelButton onCancel={onCancel} disabled={isSubmitting} />
         </div>
       </div>

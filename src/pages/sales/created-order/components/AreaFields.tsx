@@ -1,8 +1,9 @@
 import { fieldCls, fieldErrorCls } from '@/components/crm/formUtils';
 import { Switch } from '@/components/ui/switch';
-import { areaKindConfig } from '@/lib/createdOrderAreas';
+import { AREA_FIELD_LABELS as FIELD_LABELS, areaKindConfig } from '@/lib/createdOrderAreas';
 import type { AreaFieldKey } from '@/lib/createdOrderAreas';
 import {
+  AREA_NAME_MAX_LENGTH,
   BACKSPLASH_HEIGHT_STEP,
   MAX_BACKSPLASH_HEIGHT_IN,
   NAME_MAX_LENGTH,
@@ -18,19 +19,6 @@ interface AreaFieldsProps {
 }
 
 type TextFieldKey = 'color' | 'finish' | 'edge' | 'sinkModel' | 'cooktopModel' | 'location';
-
-const FIELD_LABELS: Record<AreaFieldKey, string> = {
-  color: 'Color',
-  finish: 'Finish',
-  edge: 'Edge',
-  backsplashHeight: 'Backsplash Height',
-  sinkModel: 'Sink Model',
-  cooktopModel: 'Cooktop Model',
-  waterfallQty: 'Waterfall Qty',
-  popUpOutlet: 'Pop-up Outlet',
-  halfWall: 'Half Wall',
-  location: 'Location',
-};
 
 const TEXT_PLACEHOLDERS: Record<TextFieldKey, string> = {
   color: 'e.g. Serene',
@@ -142,7 +130,7 @@ export function AreaFields({ area, errors, onChange }: AreaFieldsProps) {
               {...control}
               type="text"
               value={area.name}
-              maxLength={NAME_MAX_LENGTH}
+              maxLength={AREA_NAME_MAX_LENGTH}
               placeholder="e.g. Bath 12"
               onChange={(e) => onChange('name', e.target.value)}
               className={errors.name ? fieldErrorCls : fieldCls}

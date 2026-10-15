@@ -1,41 +1,42 @@
-import { AxiosError } from 'axios';
 import { apiErrorMessage, tenantClient } from '@/api/tenantClient';
 import type { CreatedOrder, CreatedOrderInput, CreatedOrderPage } from '@/types/createdOrder';
 
-// Customer-portal "Created Orders" API.
-//
-// TODO(backend): these endpoints do not exist yet — the frontend ships first
-// and the backend owner wires them. The contract this file assumes, so the two
-// sides can meet in the middle (a portal token is confined to /api/portal/*, so
-// there is no staff variant to branch to, unlike feedbackService):
+// Customer-portal "Created Orders" API — a portal token is confined to
+// /api/portal/*, so there is no staff variant to branch to (unlike
+// feedbackService).
 //
 //   GET  /api/portal/created-orders?cursor=&limit=
-//        → { success, orders: CreatedOrder[], nextCursor }   (own orders only,
-//          newest first; nextCursor is an opaque keyset cursor, '' at the end)
+//        → { success, orders: CreatedOrder[], nextCursor, hasMore }
+//          (the customer's own orders, newest first; nextCursor is an opaque
+//          keyset cursor, '' at the end)
+//   GET  /api/portal/created-orders/{id}   → { success, order }  (404 when it is
+//        not this customer's — indistinguishable from a missing one)
 //   POST /api/portal/created-orders        body: CreatedOrderInput
-//        → { success, order: CreatedOrder }                  (400 with a
-//          `message` for a validation failure)
+//        → 201 { success, order: CreatedOrder }
+//          400 `message` for a validation failure; 409 when the customer's
+//          account cannot place new orders right now
+//   PUT  /api/portal/created-orders/{id}   body: CreatedOrderInput (the whole order)
+//        → 200 { success, order: CreatedOrder }
+//          as POST, plus 404 for an order that is not theirs and 409 once the
+//          order's Sales Order has moved on from Draft (`order.editable` is
+//          false from then on)
 //
-// Both are scoped server-side to the signed-in customer; the frontend never
-// sends a customer or tenant id.
+// Placing an order also drafts a Sales Order for the fabricator's staff; the
+// customer never sees that draft, only their order. Changing one brings that
+// draft along, keeping what staff have done to it. All calls are scoped
+// server-side to the signed-in customer — the frontend never sends a customer
+// or tenant id.
 const BASE = '/portal/created-orders';
 
-const HTTP_NOT_FOUND = 404;
-
-const EMPTY_PAGE: CreatedOrderPage = { orders: [], nextCursor: '' };
-
-function isNotFound(err: unknown): boolean {
-  return err instanceof AxiosError && err.response?.status === HTTP_NOT_FOUND;
-}
-
-/** What to tell the customer when submitting fails. While the endpoint is
- *  missing (see TODO(backend) above) that is a 404, which "Request failed with
- *  status code 404" would describe unhelpfully. */
-export function createOrderErrorMessage(err: unknown): string {
-  if (isNotFound(err)) {
-    return "Order submission isn't available yet. Your entries are still here — please try again later.";
-  }
-  return apiErrorMessage(err, 'We could not submit your order. Please try again.');
+/** What to tell the customer when submitting fails: the server's own message
+ *  (validation, account on hold) when it sent one, else a plain retry. */
+export function createOrderErrorMessage(err: unknown, changing = false): string {
+  return apiErrorMessage(
+    err,
+    changing
+      ? 'We could not save your changes. Please try again.'
+      : 'We could not submit your order. Please try again.',
+  );
 }
 
 export const createdOrderService = {
@@ -44,17 +45,20 @@ export const createdOrderService = {
       .get<{ success: boolean; orders: CreatedOrder[]; nextCursor: string }>(BASE, {
         params: { cursor: cursor || undefined, limit },
       })
-      .then((r) => ({ orders: r.data.orders ?? [], nextCursor: r.data.nextCursor ?? '' }))
-      .catch((err: unknown) => {
-        // TODO(backend): drop this once the endpoint ships. Until then the
-        // route itself is missing, which reads as "no orders yet" rather than
-        // a broken page. Any other failure still surfaces to the caller.
-        if (isNotFound(err)) return EMPTY_PAGE;
-        throw err;
-      }),
+      .then((r) => ({ orders: r.data.orders ?? [], nextCursor: r.data.nextCursor ?? '' })),
+
+  get: (id: string): Promise<CreatedOrder> =>
+    tenantClient
+      .get<{ success: boolean; order: CreatedOrder }>(`${BASE}/${encodeURIComponent(id)}`)
+      .then((r) => r.data.order),
 
   create: (input: CreatedOrderInput): Promise<CreatedOrder> =>
     tenantClient
       .post<{ success: boolean; order: CreatedOrder }>(BASE, input)
+      .then((r) => r.data.order),
+
+  update: (id: string, input: CreatedOrderInput): Promise<CreatedOrder> =>
+    tenantClient
+      .put<{ success: boolean; order: CreatedOrder }>(`${BASE}/${encodeURIComponent(id)}`, input)
       .then((r) => r.data.order),
 };

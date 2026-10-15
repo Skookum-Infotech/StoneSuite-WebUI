@@ -74,6 +74,11 @@ export interface CreatedOrder extends CreatedOrderInput {
   orderNumber?: string;
   status: string;
   createdAt: string;
+  /** When the customer last changed the order; absent if never. */
+  updatedAt?: string;
+  /** True while the order's Sales Order is still a draft, so the customer can
+   *  still change it. The server enforces this too. */
+  editable: boolean;
 }
 
 export interface CreatedOrderPage {

@@ -10,12 +10,17 @@ import {
   newAreaDraft,
   stoneSource,
   toCreatePayload,
+  toFormState,
   validateCreatedOrder,
 } from './createdOrderForm';
 import type { AreaDraft, CreatedOrderFormState } from './createdOrderForm';
-import type { AreaKind } from '@/types/createdOrder';
+import type { AreaKind, CreatedOrder } from '@/types/createdOrder';
 
 const VALID_PHONE = '+1 480 209 5330';
+
+// A fixed "today", so the past-date rule does not depend on when the suite runs.
+const NOW = new Date(2026, 9, 1, 12, 0, 0);
+const validate = (form: CreatedOrderFormState) => validateCreatedOrder(form, NOW);
 
 /** A form that passes validation, with `overrides` applied on top. */
 function validForm(overrides: Partial<CreatedOrderFormState> = {}): CreatedOrderFormState {
@@ -52,6 +57,51 @@ describe('defaultAreaName', () => {
     const existing = existingKinds.map((k, i) => area(k, `e${i}`));
     expect(defaultAreaName(kind, existing)).toBe(expected);
   });
+
+  it('skips a number a removed area left taken', () => {
+    // Bath and Bath 2 were added, then Bath was removed.
+    const existing = [area('bath', 'b2', { name: 'Bath 2' })];
+
+    expect(defaultAreaName('bath', existing)).toBe('Bath 3');
+  });
+
+  it('does not reuse the plain label when another area was named that', () => {
+    const existing = [area('custom', 'c1', { name: ' bath ' })];
+
+    expect(defaultAreaName('bath', existing)).toBe('Bath 2');
+  });
+});
+
+describe('validateCreatedOrder area names', () => {
+  it('flags every repeatable area that shares a name', () => {
+    const errors = validate(
+      validForm({
+        areas: [
+          area('custom', 'a', { name: 'Wine Bar', color: 'White' }),
+          area('custom', 'b', { name: ' wine   bar ', color: 'White' }),
+          area('custom', 'c', { name: 'Deck', color: 'White' }),
+        ],
+      }),
+    );
+
+    expect(errors.areas.a?.name).toMatch(/already has this name/i);
+    expect(errors.areas.b?.name).toMatch(/already has this name/i);
+    expect(errors.areas.c).toBeUndefined();
+  });
+
+  it('flags the repeatable area, not the single-use one it collides with', () => {
+    const errors = validate(
+      validForm({
+        areas: [
+          area('custom', 'a', { name: 'Kitchen', color: 'White' }),
+          area('kitchen', 'k', { color: 'White' }),
+        ],
+      }),
+    );
+
+    expect(errors.areas.a?.name).toMatch(/already has this name/i);
+    expect(errors.areas.k).toBeUndefined();
+  });
 });
 
 describe('addableKinds', () => {
@@ -72,7 +122,7 @@ describe('addableKinds', () => {
 
 describe('validateCreatedOrder', () => {
   it('accepts a complete order', () => {
-    const errors = validateCreatedOrder(validForm());
+    const errors = validate(validForm());
 
     expect(errors.header).toEqual({});
     expect(errors.areas).toEqual({});
@@ -91,13 +141,13 @@ describe('validateCreatedOrder', () => {
     'measureDate',
     'installDate',
   ] as const)('requires %s', (field) => {
-    const errors = validateCreatedOrder(validForm({ [field]: '   ' }));
+    const errors = validate(validForm({ [field]: '   ' }));
 
     expect(errors.header[field]).toMatch(/required/i);
   });
 
   it.each(['plan', 'specialInstructions'] as const)('treats %s as optional', (field) => {
-    const errors = validateCreatedOrder(validForm({ [field]: '' }));
+    const errors = validate(validForm({ [field]: '' }));
 
     expect(errors.header[field]).toBeUndefined();
   });
@@ -107,7 +157,7 @@ describe('validateCreatedOrder', () => {
     ['letters', 'call me', true],
     ['a valid number', VALID_PHONE, false],
   ])('phone: %s', (_label, phone, invalid) => {
-    const errors = validateCreatedOrder(validForm({ phone }));
+    const errors = validate(validForm({ phone }));
 
     expect(Boolean(errors.header.phone)).toBe(invalid);
   });
@@ -117,7 +167,7 @@ describe('validateCreatedOrder', () => {
     ['no domain dot', 'a@b', true],
     ['a plain address', 'a@b.co', false],
   ])('email: %s', (_label, email, invalid) => {
-    const errors = validateCreatedOrder(validForm({ email }));
+    const errors = validate(validForm({ email }));
 
     expect(Boolean(errors.header.email)).toBe(invalid);
   });
@@ -127,27 +177,37 @@ describe('validateCreatedOrder', () => {
     ['install on the measure day', '2026-10-06', '2026-10-06', false],
     ['install after measure', '2026-10-06', '2026-10-19', false],
   ])('dates: %s', (_label, measureDate, installDate, invalid) => {
-    const errors = validateCreatedOrder(validForm({ measureDate, installDate }));
+    const errors = validate(validForm({ measureDate, installDate }));
 
     expect(Boolean(errors.header.installDate)).toBe(invalid);
   });
 
+  it.each([
+    ['today', '2026-10-01', false],
+    ['tomorrow', '2026-10-02', false],
+    ['yesterday', '2026-09-30', true],
+  ])('install date: %s', (_label, installDate, past) => {
+    const errors = validate(validForm({ measureDate: '2026-09-28', installDate }));
+
+    expect(errors.header.installDate === 'Install Date cannot be in the past.').toBe(past);
+  });
+
   it('does not stack an ordering error on a missing Measure Date', () => {
-    const errors = validateCreatedOrder(validForm({ measureDate: '' }));
+    const errors = validate(validForm({ measureDate: '' }));
 
     expect(errors.header.measureDate).toMatch(/required/i);
     expect(errors.header.installDate).toBeUndefined();
   });
 
   it('asks for at least one area', () => {
-    const errors = validateCreatedOrder(validForm({ areas: [] }));
+    const errors = validate(validForm({ areas: [] }));
 
     expect(errors.noAreas).toBeDefined();
     expect(countErrors(errors)).toBe(1);
   });
 
   it('requires a Color on every area and reports it against that area', () => {
-    const errors = validateCreatedOrder(
+    const errors = validate(
       validForm({ areas: [area('kitchen', 'k', { color: 'Serene' }), area('island', 'i')] }),
     );
 
@@ -155,7 +215,7 @@ describe('validateCreatedOrder', () => {
   });
 
   it('requires a name on a Bath or Custom area', () => {
-    const errors = validateCreatedOrder(validForm({ areas: [area('bath', 'b', { color: 'White', name: '  ' })] }));
+    const errors = validate(validForm({ areas: [area('bath', 'b', { color: 'White', name: '  ' })] }));
 
     expect(errors.areas.b?.name).toBeDefined();
   });
@@ -169,7 +229,7 @@ describe('validateCreatedOrder', () => {
     ['negative', '-1', true],
     ['not a number', 'tall', true],
   ])('backsplash height: %s', (_label, backsplashHeight, invalid) => {
-    const errors = validateCreatedOrder(
+    const errors = validate(
       validForm({ areas: [area('kitchen', 'k', { color: 'Serene', backsplashHeight })] }),
     );
 
@@ -177,7 +237,7 @@ describe('validateCreatedOrder', () => {
   });
 
   it('counts header and area problems together', () => {
-    const errors = validateCreatedOrder(
+    const errors = validate(
       validForm({ builder: '', areas: [area('kitchen', 'k'), area('island', 'i')] }),
     );
 
@@ -289,5 +349,85 @@ describe('toCreatePayload', () => {
     );
 
     expect(payload.areas[0].faucetSpread).toEqual(['L4', 'C', 'R4']);
+  });
+});
+
+describe('validateCreatedOrder — an order being changed', () => {
+  const past = validForm({ measureDate: '2026-09-01', installDate: '2026-09-10' });
+
+  it('accepts the install date the order already has, even once it has passed', () => {
+    expect(validateCreatedOrder(past, NOW, '2026-09-10').header.installDate).toBeUndefined();
+  });
+
+  it('still refuses a different install date in the past', () => {
+    const moved = { ...past, installDate: '2026-09-11' };
+
+    expect(validateCreatedOrder(moved, NOW, '2026-09-10').header.installDate).toBe(
+      'Install Date cannot be in the past.',
+    );
+  });
+
+  it('holds a new order to the rule, there being no stored date to keep', () => {
+    expect(validateCreatedOrder(past, NOW).header.installDate).toBe('Install Date cannot be in the past.');
+  });
+});
+
+describe('toFormState', () => {
+  const saved: CreatedOrder = {
+    id: 'o1',
+    status: 'submitted',
+    editable: true,
+    createdAt: '2026-10-12T15:30:00Z',
+    builder: 'Highland Homes',
+    community: 'Sandbrock Ranch',
+    plan: '214',
+    phone: VALID_PHONE,
+    email: 'brandon.french@highlandhomes.com',
+    installAddress: '741 Bridle Path',
+    city: 'Aubrey',
+    zip: '76227',
+    measureDate: '2026-10-06',
+    installDate: '2026-10-19',
+    specialInstructions: 'Gate code 1234.',
+    areas: [
+      {
+        kind: 'kitchen', name: 'Kitchen', color: 'Serene', finish: '', edge: 'Flat', backsplashHeight: '4',
+        sinkModel: '440185', cooktopModel: '', waterfallQty: 2, popUpOutlet: 0, halfWall: false,
+        location: '', faucetSpread: ['L8', 'C'], notes: 'Seam at the window.',
+      },
+      {
+        kind: 'bath', name: 'Guest Bath', color: 'Ash', finish: '', edge: '', backsplashHeight: '',
+        sinkModel: '', cooktopModel: '', waterfallQty: 0, popUpOutlet: 0, halfWall: false,
+        location: '', faucetSpread: [], notes: '',
+      },
+    ],
+  };
+
+  it('sends back exactly what was saved when nothing is changed', () => {
+    const { id, status, editable, createdAt, ...input } = saved;
+    void [id, status, editable, createdAt];
+
+    expect(toCreatePayload(toFormState(saved))).toEqual(input);
+  });
+
+  it('gives every area its own client key, none of which can clash with a new area', () => {
+    const keys = toFormState(saved).areas.map((area) => area.key);
+
+    expect(new Set(keys).size).toBe(2);
+    expect(keys.every((key) => !key.startsWith('area-'))).toBe(true);
+  });
+
+  it('does not share the faucet spread with the saved order', () => {
+    const form = toFormState(saved);
+
+    form.areas[0].faucetSpread.push('R8');
+
+    expect(saved.areas[0].faucetSpread).toEqual(['L8', 'C']);
+  });
+
+  it('is valid as it came back, so Save changes needs no edits', () => {
+    const errors = validateCreatedOrder(toFormState(saved), NOW, saved.installDate);
+
+    expect(countErrors(errors)).toBe(0);
   });
 });
