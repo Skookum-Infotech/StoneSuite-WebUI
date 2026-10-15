@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { VendorRef } from '@/pages/purchases/purchase-order/components/VendorPicker';
-import type { HandoffGeo } from '@/lib/documentAddress';
+import { formatFormAddress, NO_GEO, type HandoffGeo } from '@/lib/documentAddress';
 import { calcLineItem } from '@/lib/purchaseOrderForm';
 import { PO_HEADER_KEYS } from '@/lib/purchaseOrderHandoffTypes';
 import { createPurchaseOrderAdapter } from './purchaseOrderReviewAdapter';
@@ -49,13 +49,13 @@ export function usePurchaseOrderReviewMode({ form, apply, onVendorChange, geo }:
       case PO_HEADER_KEYS.orderDate: return String(data.order_date ?? '');
       case PO_HEADER_KEYS.expectedDate: return String(data.expected_date ?? '');
       case PO_HEADER_KEYS.shipTo:
-        return [data.ship_address1, data.ship_city, data.ship_zip].filter(Boolean).join(', ');
+        return formatFormAddress(data, 'ship', geo ?? NO_GEO);
       case PO_HEADER_KEYS.shippingCharge: return signedUsd(data.shipping_charge);
       case PO_HEADER_KEYS.adjustment: return signedUsd(data.adjustment);
       case PO_HEADER_KEYS.tax: return signedUsd(formTax);
       default: return '';
     }
-  }, [form, formTax]);
+  }, [form, formTax, geo]);
 
   return {
     ...base,

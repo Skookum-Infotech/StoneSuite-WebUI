@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseUsAddress, resolveStateId } from './documentAddress';
+import { formatFormAddress, parseUsAddress, resolveStateId, type HandoffGeo } from './documentAddress';
 
 describe('parseUsAddress', () => {
   it.each([
@@ -61,5 +61,34 @@ describe('resolveStateId', () => {
     { code: '', countryId: 1, want: '' },
   ])('$code in country $countryId -> "$want"', ({ code, countryId, want }) => {
     expect(resolveStateId(states, code, countryId)).toBe(want);
+  });
+});
+
+describe('formatFormAddress', () => {
+  const geo: HandoffGeo = { countries: [], states: [{ id: 44, code: 'TX', name: 'Texas', countryId: 1 }] as HandoffGeo['states'] };
+  it.each([
+    {
+      name: 'shows the state code beside the zip',
+      data: { ship_address1: '2200 Foundry Road', ship_city: 'Austin', ship_state: '44', ship_zip: '78702' },
+      want: '2200 Foundry Road, Austin, TX 78702',
+    },
+    {
+      name: 'includes line 2',
+      data: { ship_address1: '2200 Foundry Road', ship_address2: 'Elevation Stone - Yard', ship_city: 'Austin', ship_state: '44', ship_zip: '78702' },
+      want: '2200 Foundry Road, Elevation Stone - Yard, Austin, TX 78702',
+    },
+    {
+      name: 'leaves out a state not picked yet',
+      data: { ship_address1: '418 Willow Bend', ship_city: 'Celina', ship_state: '', ship_zip: '75009' },
+      want: '418 Willow Bend, Celina, 75009',
+    },
+    {
+      name: 'never shows a raw unknown state id',
+      data: { ship_address1: '1 A St', ship_city: 'X', ship_state: '999', ship_zip: '75001' },
+      want: '1 A St, X, 75001',
+    },
+    { name: 'empty', data: {}, want: '' },
+  ])('$name', ({ data, want }) => {
+    expect(formatFormAddress(data, 'ship', geo)).toBe(want);
   });
 });

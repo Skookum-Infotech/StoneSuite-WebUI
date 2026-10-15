@@ -19,7 +19,7 @@ const COPY = {
   'discard-document': {
     title: 'Discard this document?',
     description:
-      "The uploaded file and everything read from it are deleted, along with any edits on this form. No sales order is created. This can't be undone.",
+      "The uploaded file and everything read from it are deleted, along with any edits on this form. No record is created. This can't be undone.",
     confirmLabel: 'Discard document',
     cancelLabel: 'Keep reviewing',
   },
@@ -60,12 +60,22 @@ interface ConfirmLeaveDialogProps {
   variant: ConfirmLeaveVariant;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Lower-case name of the record the page would create (e.g. "purchase
+   *  order"); names it in the 'discard-document' copy instead of "record". */
+  recordNoun?: string;
+}
+
+/** The variant's description, naming the record a discarded document won't create. */
+function describe(variant: ConfirmLeaveVariant, recordNoun?: string): string {
+  const text: string = COPY[variant].description;
+  return variant === 'discard-document' && recordNoun ? text.replace('No record', `No ${recordNoun}`) : text;
 }
 
 export function ConfirmLeaveDialog({
   variant,
   onConfirm,
   onCancel,
+  recordNoun,
 }: ConfirmLeaveDialogProps): React.JSX.Element {
   const contentRef = useModalDialog(onCancel);
   const copy = COPY[variant];
@@ -91,7 +101,7 @@ export function ConfirmLeaveDialog({
         </div>
 
         <p id="confirm-leave-desc" className="mb-5 text-xs text-stone-600">
-          {copy.description}
+          {describe(variant, recordNoun)}
         </p>
 
         <div className="flex justify-end gap-2">

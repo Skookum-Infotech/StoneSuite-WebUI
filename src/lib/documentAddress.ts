@@ -83,3 +83,14 @@ export function applyAddress(data: Record<string, unknown>, items: ReviewItem[],
     items.push({ key, label: ADDRESS_LABELS[key], required: false, reason: 'The document gives no state - pick the state.' });
   }
 }
+
+/** One-line summary of a form's `<prefix>_*` address ("Street, Line 2, City, ST
+ *  12345"), shown beside the document's text in review. The state id is turned
+ *  back into its code; an unknown id is left out rather than shown raw. */
+export function formatFormAddress(data: Record<string, unknown>, prefix: 'bill' | 'ship', geo: HandoffGeo): string {
+  const text = (k: string): string => String(data[`${prefix}_${k}`] ?? '').trim();
+  const stateId = text('state');
+  const stateCode = stateId ? (geo.states.find((s) => String(s.id) === stateId)?.code ?? '') : '';
+  const stateZip = [stateCode, text('zip')].filter(Boolean).join(' ');
+  return [text('address1'), text('address2'), text('city'), stateZip].filter(Boolean).join(', ');
+}
