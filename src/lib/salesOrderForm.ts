@@ -450,6 +450,10 @@ export const DRAWING_STATUS_CONFIG: Record<DrawingStatus, { label: string; bg: s
  *  are actually legal from a given status — this list only drives the Edit
  *  page's "change status" select; an illegal pick is rejected server-side
  *  with a 409, surfaced as a normal save error. */
+/** The status every sales order starts in, and the one a customer's portal order
+ *  stays editable in. */
+export const SO_DRAFT_CODE = 'DRFT';
+
 export const SO_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'DRFT', label: 'Draft' },
   { code: 'PAPV', label: 'Pending Approval' },

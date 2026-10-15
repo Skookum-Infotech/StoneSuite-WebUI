@@ -168,6 +168,12 @@ const CreatedOrderListPage = lazyWithRetry(
 const AddCreatedOrderPage = lazyWithRetry(
   () => import("@/pages/sales/created-order/AddCreatedOrderPage"),
 );
+const CreatedOrderDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/CreatedOrderDetailPage"),
+);
+const EditCreatedOrderPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/EditCreatedOrderPage"),
+);
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
 );
@@ -623,6 +629,22 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PortalOnlyGuard>
             <AddCreatedOrderPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/:id",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <CreatedOrderDetailPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/:id/edit",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <EditCreatedOrderPage />
           </PortalOnlyGuard>,
         ),
       },

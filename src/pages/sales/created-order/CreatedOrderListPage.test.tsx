@@ -16,6 +16,7 @@ function order(overrides: Partial<CreatedOrder> = {}): CreatedOrder {
   return {
     id: 'o1',
     status: 'pending_review',
+    editable: false,
     createdAt: '2026-10-12T15:30:00Z',
     builder: 'Highland Homes',
     community: 'Sandbrock Ranch',
@@ -45,6 +46,8 @@ function renderPage() {
         <Routes>
           <Route path="/sales/created-orders" element={<CreatedOrderListPage />} />
           <Route path="/sales/created-orders/new" element={<div>New order form</div>} />
+          <Route path="/sales/created-orders/:id" element={<div>Order detail</div>} />
+          <Route path="/sales/created-orders/:id/edit" element={<div>Edit form</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -80,6 +83,39 @@ describe('CreatedOrderListPage', () => {
     expect(screen.getByText('Pending review')).toBeInTheDocument();
     expect(screen.getByText('Oct 6, 2026', { exact: false })).toBeInTheDocument();
     expect(screen.getByText('Oct 19, 2026', { exact: false })).toBeInTheDocument();
+  });
+
+  it('opens the order detail page from its address', async () => {
+    vi.mocked(createdOrderService.list).mockResolvedValue(page([order({ id: 'abc-123' })]));
+    const user = renderPage();
+
+    await user.click(await screen.findByRole('link', { name: 'View order for 741 Bridle Path' }));
+
+    expect(screen.getByText('Order detail')).toBeInTheDocument();
+  });
+
+  it('offers Edit only on orders that can still be changed', async () => {
+    vi.mocked(createdOrderService.list).mockResolvedValue(
+      page([
+        order({ id: 'o1', installAddress: '1 First St', editable: true }),
+        order({ id: 'o2', installAddress: '2 Second St', editable: false }),
+      ]),
+    );
+    const user = renderPage();
+
+    await user.click(await screen.findByRole('link', { name: 'Edit order for 1 First St' }));
+
+    expect(screen.getByText('Edit form')).toBeInTheDocument();
+  });
+
+  it('shows no Edit link on an order that has moved on', async () => {
+    vi.mocked(createdOrderService.list).mockResolvedValue(
+      page([order({ id: 'o2', installAddress: '2 Second St', editable: false })]),
+    );
+    renderPage();
+    await screen.findByText('2 Second St');
+
+    expect(screen.queryByRole('link', { name: /Edit order for/ })).not.toBeInTheDocument();
   });
 
   it('opens the new-order form from the Create Order button', async () => {

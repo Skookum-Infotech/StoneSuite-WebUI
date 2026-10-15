@@ -21,7 +21,7 @@ import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
 import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
-import { SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
+import { SO_DRAFT_CODE, SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
@@ -33,6 +33,7 @@ import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
+import { CustomerOrderFormAction } from './components/CustomerOrderFormAction';
 import { formatDateValue } from '@/lib/dateUtils';
 import { isPortalSession } from '@/store/useAuthStore';
 
@@ -210,8 +211,9 @@ export default function SalesOrderDetailPage() {
         subtitle={order.customer.name}
         recordNumber={order.salesOrderNumber}
         statusBadge={<Badge color={color}>{order.status}</Badge>}
-        actions={(canConvert || canFabricate) && (
+        actions={(
           <>
+            <CustomerOrderFormAction orderId={id} isDraft={order.statusCode === SO_DRAFT_CODE} />
             {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
               <button
                 type="button"

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
+import { earliestInstallDate } from '@/lib/salesOrderSchedule';
 import {
   ADDRESS_MAX_LENGTH,
   HEADER_FIELD_LABELS,
@@ -24,6 +25,9 @@ const SPECIAL_INSTRUCTIONS_ROWS = 3;
 // customer thinks about it: who and where, how to reach them, and when.
 export function OrderDetailsSection({ form, errors, onChange }: OrderDetailsSectionProps) {
   const cls = (field: HeaderField): string => (errors[field] ? fieldErrorCls : fieldCls);
+  // Nothing can be installed before it is measured, or before today.
+  const today = earliestInstallDate();
+  const installMinDate = form.measureDate > today ? form.measureDate : today;
   const setPhone = useCallback((next: string) => onChange('phone', next), [onChange]);
 
   const text = (field: HeaderField, required: boolean, placeholder: string, maxLength = NAME_MAX_LENGTH) => (
@@ -81,7 +85,7 @@ export function OrderDetailsSection({ form, errors, onChange }: OrderDetailsSect
         <div className="sm:col-span-6">
           {text('installAddress', true, 'Street address of the job', ADDRESS_MAX_LENGTH)}
         </div>
-        <div className="sm:col-span-4">{text('city', true, 'City')}</div>
+        <div className="sm:col-span-4">{text('city', true, 'City', ADDRESS_MAX_LENGTH)}</div>
         <div className="sm:col-span-2">{text('zip', true, 'ZIP / postal code', ZIP_MAX_LENGTH)}</div>
       </div>
 
@@ -103,7 +107,7 @@ export function OrderDetailsSection({ form, errors, onChange }: OrderDetailsSect
               onChange={(iso) => onChange('installDate', iso)}
               label={HEADER_FIELD_LABELS.installDate}
               required
-              minDate={form.measureDate || undefined}
+              minDate={installMinDate}
             />
           )}
         </Field>
