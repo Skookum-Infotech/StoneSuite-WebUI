@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CLS } from '@/lib/lineActionsColumn';
 // Inventory catalog picker is tenant-wide, not sales-specific — reused as-is
 // from its current home rather than duplicated (mirrors EstimateItemsTab's
 // usage one folder over).
@@ -44,7 +45,7 @@ const ITEM_COLS = [
   { label: 'Amount', w: 'w-20', right: true },
   { label: 'Tax %', w: 'w-16', right: true },
   { label: 'Total', w: 'w-20', right: true },
-  { label: '', w: 'w-8' },
+  { label: '', w: LINE_ACTIONS_HEAD_CLS },
 ];
 
 // Mirrors EstimateItemsTab — a PO line has no free-text sku/units/tax% input;
@@ -203,7 +204,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
                 <Fragment key={row.id}>
                 <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
-                  <td className="px-2 py-1.5">
+                  <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
                     </button>
@@ -228,8 +229,8 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-700 font-medium">{row.amount ? `$${row.amount}` : '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-400">{headerTaxPercent}%</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.total ? `$${row.total}` : '—'}</td>
-                  <td className="px-2 py-2.5">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <td className={LINE_ACTIONS_CELL_CLS}>
+                    <div className="flex items-center gap-1">
                       <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
@@ -245,7 +246,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
               <>
                 <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
-                  <td className="px-2 py-1.5" />
+                  <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
                 </tr>
                 {slabEstimate}
               </>
