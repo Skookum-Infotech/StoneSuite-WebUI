@@ -37,6 +37,20 @@ export interface FaucetSpreadOption {
   label: string;
 }
 
+/** The label each input carries on the form and on a submitted order. */
+export const AREA_FIELD_LABELS: Record<AreaFieldKey, string> = {
+  color: 'Color',
+  finish: 'Finish',
+  edge: 'Edge',
+  backsplashHeight: 'Backsplash Height',
+  sinkModel: 'Sink Model',
+  cooktopModel: 'Cooktop Model',
+  waterfallQty: 'Waterfall Qty',
+  popUpOutlet: 'Pop-up Outlet',
+  halfWall: 'Half Wall',
+  location: 'Location',
+};
+
 const CORE_FIELDS: readonly AreaFieldKey[] = ['color', 'finish', 'edge', 'backsplashHeight', 'sinkModel'];
 
 export const AREA_KINDS: readonly AreaKindConfig[] = [

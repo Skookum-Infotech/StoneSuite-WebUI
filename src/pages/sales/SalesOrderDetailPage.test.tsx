@@ -10,6 +10,7 @@ vi.mock('@/services/salesOrderService', () => ({
     approve: vi.fn(),
     reject: vi.fn(),
     convertToInvoice: vi.fn(),
+    getCustomerOrderForm: vi.fn(),
   },
 }));
 vi.mock('@/services/fabricationService', () => ({ fabricationService: { fabricateFromOrder: vi.fn() } }));
@@ -106,6 +107,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(isPortalSession).mockReturnValue(false);
   vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
+  // Not placed from the portal: no Customer Order Form action.
+  vi.mocked(salesOrderService.getCustomerOrderForm).mockResolvedValue(null);
 });
 
 describe('SalesOrderDetailPage ?tab=', () => {

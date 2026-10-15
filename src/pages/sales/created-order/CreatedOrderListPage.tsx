@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ClipboardPlus, Loader2, Plus } from 'lucide-react';
 import { ErrorNote, Spinner } from '@/components/tenant/ui';
 import { Button } from '@/components/ui/button';
 import { areaCountLabel, cityZipLabel, orderStatusLabel } from '@/lib/createdOrderDisplay';
-import { NEW_CREATED_ORDER_PATH } from '@/lib/createdOrderRoutes';
+import { createdOrderEditPath, createdOrderPath, NEW_CREATED_ORDER_PATH } from '@/lib/createdOrderRoutes';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { createdOrderService } from '@/services/createdOrderService';
@@ -46,8 +46,23 @@ function OrderRow({ order }: { order: CreatedOrder }) {
   return (
     <tr className="border-b border-stone-100 last:border-0">
       <td className={CELL_CLS}>
-        <p className="font-semibold text-stone-900">{order.installAddress}</p>
+        <Link
+          to={createdOrderPath(order.id)}
+          aria-label={`View order for ${order.installAddress}`}
+          className="font-semibold text-stone-900 underline-offset-2 hover:underline focus-visible:underline"
+        >
+          {order.installAddress}
+        </Link>
         {place && <p className="text-stone-500">{place}</p>}
+        {order.editable && (
+          <Link
+            to={createdOrderEditPath(order.id)}
+            aria-label={`Edit order for ${order.installAddress}`}
+            className="mt-1 inline-block text-xs font-medium text-stone-600 underline-offset-2 hover:underline focus-visible:underline"
+          >
+            Edit
+          </Link>
+        )}
       </td>
       <td className={CELL_CLS}>
         <p className="font-medium text-stone-800">{builder[0] ?? '—'}</p>
