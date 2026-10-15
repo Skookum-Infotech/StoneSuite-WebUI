@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CLS } from '@/lib/lineActionsColumn';
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from './InventoryItemPicker';
 import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
@@ -43,7 +44,7 @@ const ITEM_COLS = [
   { label: 'Tax %', w: 'w-16', right: true },
   { label: 'Total', w: 'w-20', right: true },
   { label: 'Fulfillment', w: 'w-24' },
-  { label: '', w: 'w-8' },
+  { label: '', w: LINE_ACTIONS_HEAD_CLS },
 ];
 
 export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; onUpdate: (v: SOLineItem[]) => void }) {
@@ -191,7 +192,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                   <td className="px-2 py-1.5">
                     <FulfillmentBadge status={row.status} />
                   </td>
-                  <td className="px-2 py-1.5">
+                  <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
                     </button>
@@ -212,8 +213,8 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{row.tax ? `${row.tax}%` : '0%'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.total ? `$${row.total}` : '—'}</td>
                   <td className="px-2.5 py-2.5"><FulfillmentBadge status={row.status} /></td>
-                  <td className="px-2 py-2.5">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <td className={LINE_ACTIONS_CELL_CLS}>
+                    <div className="flex items-center gap-1">
                       <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
@@ -230,7 +231,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
               <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
                 <td className="px-2 py-1.5"><FulfillmentBadge status={draft.status} /></td>
-                <td className="px-2 py-1.5" />
+                <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
               </tr>
             )}
           </tbody>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CLS } from '@/lib/lineActionsColumn';
 import { expenseService } from '@/services/expenseService';
 import { EMPTY_LINE_ITEM, categoryNameForCode, type ExpenseLineItem } from '@/lib/expenseForm';
 
@@ -17,7 +18,7 @@ const ITEM_COLS = [
   { label: 'Date *', w: 'w-32' },
   { label: 'Description', w: 'min-w-[160px]' },
   { label: 'Amount *', w: 'w-24', right: true },
-  { label: '', w: 'w-8' },
+  { label: '', w: LINE_ACTIONS_HEAD_CLS },
 ];
 
 // Mirrors RequisitionLinesTable's inline add/edit UX, adapted to Expense's
@@ -103,7 +104,7 @@ export function ExpenseLinesTable({ items, onUpdate }: {
               editId === row.id ? (
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} categories={categories} onChange={updateDraft} onCategoryChange={onCategoryChange} />
-                  <td className="px-2 py-1.5">
+                  <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.lineNo}`}>
                       <Trash2 className="size-3.5" />
                     </button>
@@ -116,8 +117,8 @@ export function ExpenseLinesTable({ items, onUpdate }: {
                   <td className="px-2.5 py-2.5 text-stone-500">{row.expenseDate || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[180px] truncate">{row.description || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.amount ? `$${parseFloat(row.amount).toFixed(2)}` : '—'}</td>
-                  <td className="px-2 py-2.5">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <td className={LINE_ACTIONS_CELL_CLS}>
+                    <div className="flex items-center gap-1">
                       <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
@@ -132,7 +133,7 @@ export function ExpenseLinesTable({ items, onUpdate }: {
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineItemRow lineNo={items.length + 1} draft={draft} categories={categories} onChange={updateDraft} onCategoryChange={onCategoryChange} />
-                <td className="px-2 py-1.5" />
+                <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
               </tr>
             )}
           </tbody>

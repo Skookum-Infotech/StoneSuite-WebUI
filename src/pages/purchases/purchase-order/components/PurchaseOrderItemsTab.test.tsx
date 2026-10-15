@@ -201,3 +201,31 @@ describe('PurchaseOrderItemsTab — the slab estimate helper', () => {
     expect(saved.tracking).toBe('quantity');
   });
 });
+
+describe('PurchaseOrderItemsTab — saved row actions', () => {
+  const saved: PurchaseOrderLineItem = {
+    ...EMPTY_LINE_ITEM, id: 'l1', lineNo: 1, itemName: 'Absolute Black', quantity: '2', unitPrice: '18',
+  };
+
+  it('offers Edit and Remove for a saved row by label, with no hover needed to see them', () => {
+    render(<Harness initial={[saved]} />);
+
+    const edit = screen.getByRole('button', { name: 'Edit line Absolute Black' });
+    const remove = screen.getByRole('button', { name: 'Remove line Absolute Black' });
+    expect(edit).toBeVisible();
+    expect(remove).toBeVisible();
+    // Not hover-gated: the hiding classes would make the icons invisible on touch.
+    expect(edit.parentElement?.className).not.toMatch(/opacity-0/);
+    // Pinned so a wide table's horizontal scroll cannot carry them off screen.
+    expect(edit.closest('td')).toHaveClass('sticky', 'right-0', 'bg-white');
+  });
+
+  it('opens the row for editing from the Edit button', async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={[saved]} />);
+
+    await user.click(screen.getByRole('button', { name: 'Edit line Absolute Black' }));
+
+    expect(screen.getByRole('button', { name: 'Save Line' })).toBeInTheDocument();
+  });
+});
