@@ -31,6 +31,7 @@ export function ReviewDialogs({ review, onCreateAnyway, markClean }: ReviewDialo
       {review.confirmingDiscard && (
         <ConfirmLeaveDialog
           variant="discard-document"
+          recordNoun={routes.noun}
           onConfirm={() => review.confirmDiscard(markClean)}
           onCancel={review.cancelDiscard}
         />

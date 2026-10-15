@@ -10,7 +10,9 @@ import {
   willAutoRetry,
   type ExtractionState,
 } from '@/lib/documentExtractionMachine';
+import { trackBackgroundExtraction } from '@/hooks/useBackgroundExtractions';
 import { deleteDocumentFile, setDocumentFile } from '@/lib/documentFileRegistry';
+import { PENDING_DOCUMENTS_KEY } from '@/lib/documentExtractionKeys';
 import { validateDocumentFile, withDocumentContentType } from '@/lib/documentUploadValidation';
 import { UploadError } from '@/services/attachmentService';
 import { ExtractionApiError, documentExtractionService, sha256Hex } from '@/services/documentExtractionService';
@@ -24,7 +26,7 @@ const UNAVAILABLE_MESSAGE = 'This document is no longer available. You can still
 const PRESIGN_EXPIRY_MARGIN_MS = 30_000;
 const POLL_RETRIES = 2;
 
-export const PENDING_DOCUMENTS_KEY = ['document-extractions', 'ready'] as const;
+export { PENDING_DOCUMENTS_KEY };
 const extractionKey = (id: string | null) => ['document-extraction', id] as const;
 
 export interface UseDocumentExtraction {
@@ -245,11 +247,12 @@ export function useDocumentExtraction(docType: DocumentExtractionDocType = 'sale
     if (!id) return false;
     try {
       await documentExtractionService.notify(id);
+      trackBackgroundExtraction(queryClient, id);
       return true;
     } catch {
       return false;
     }
-  }, []);
+  }, [queryClient]);
 
   const reset = useCallback(() => {
     runRef.current += 1;
