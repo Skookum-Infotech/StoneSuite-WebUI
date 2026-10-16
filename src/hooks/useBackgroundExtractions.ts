@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useQueries, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { PENDING_DOCUMENTS_KEY } from '@/lib/documentExtractionKeys';
 import { documentExtractionService } from '@/services/documentExtractionService';
 import { IN_FLIGHT_STATUSES } from '@/types/documentExtraction';
@@ -12,6 +13,12 @@ import { IN_FLIGHT_STATUSES } from '@/types/documentExtraction';
 /** Slower than the dialog's poll: nobody is watching a spinner. */
 const BACKGROUND_POLL_MS = 5000;
 const BACKGROUND_EXTRACTIONS_KEY = ['document-extractions', 'background'] as const;
+
+/** Toast id for an extraction's "we'll notify you" notice, so it can be
+ *  dismissed once the extraction finishes instead of going stale on screen. */
+export function backgroundToastId(id: string): string {
+  return `document-extraction-background-${id}`;
+}
 
 /** Remembers an extraction the user sent to the background so a chip watches it. */
 export function trackBackgroundExtraction(queryClient: QueryClient, id: string): void {
@@ -51,7 +58,10 @@ export function useBackgroundExtractionWatch(enabled: boolean): void {
   }).filter(Boolean).join(',');
   useEffect(() => {
     if (!settled) return;
-    for (const id of settled.split(',')) untrack(queryClient, id);
+    for (const id of settled.split(',')) {
+      untrack(queryClient, id);
+      toast.dismiss(backgroundToastId(id));
+    }
     void queryClient.invalidateQueries({ queryKey: PENDING_DOCUMENTS_KEY });
   }, [settled, queryClient]);
 }

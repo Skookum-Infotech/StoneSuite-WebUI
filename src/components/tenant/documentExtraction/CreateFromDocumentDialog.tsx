@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AlertCircle, FileText, Loader2, WifiOff, X } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
+import { backgroundToastId } from '@/hooks/useBackgroundExtractions';
 import { useDocumentExtraction } from '@/hooks/useDocumentExtraction';
 import { acknowledgeDuplicates } from '@/lib/documentDuplicateAck';
 import { DOCUMENT_ACCEPT_ATTRIBUTE } from '@/lib/documentUploadValidation';
@@ -92,7 +93,7 @@ export function CreateFromDocumentDialog({
 
   async function handleBackground() {
     const ok = await continueInBackground();
-    if (ok) toast.info(`We'll notify you when ${current.name} is ready`);
+    if (ok) toast.info(`We'll notify you when ${current.name} is ready`, extractionId ? { id: backgroundToastId(extractionId) } : undefined);
     else toast.error("Couldn't set up the notification — keep this window open instead.");
     if (ok) onClose();
   }
