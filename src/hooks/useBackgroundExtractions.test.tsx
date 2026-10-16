@@ -6,8 +6,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 vi.mock('@/services/documentExtractionService', () => ({
   documentExtractionService: { get: vi.fn() },
 }));
+vi.mock('sonner', () => ({ toast: { dismiss: vi.fn() } }));
 
-import { trackBackgroundExtraction, useBackgroundExtractionWatch } from './useBackgroundExtractions';
+import { toast } from 'sonner';
+import { backgroundToastId, trackBackgroundExtraction, useBackgroundExtractionWatch } from './useBackgroundExtractions';
 import { PENDING_DOCUMENTS_KEY } from '@/lib/documentExtractionKeys';
 import { documentExtractionService as svc } from '@/services/documentExtractionService';
 import type { DocumentExtraction } from '@/types/documentExtraction';
@@ -34,6 +36,14 @@ describe('useBackgroundExtractionWatch', () => {
     await waitFor(() => expect(client.getQueryData(['document-extractions', 'background'])).toEqual([]));
   });
 
+  it("dismisses the stale \"we'll notify you\" toast once the extraction settles", async () => {
+    vi.mocked(svc.get).mockResolvedValue({ id: 'ex-1', status: 'ready' } as DocumentExtraction);
+    const { client, wrapper } = setup();
+    trackBackgroundExtraction(client, 'ex-1');
+    renderHook(() => useBackgroundExtractionWatch(true), { wrapper });
+    await waitFor(() => expect(toast.dismiss).toHaveBeenCalledWith(backgroundToastId('ex-1')));
+  });
+
   it('keeps watching while the extraction is still running', async () => {
     vi.mocked(svc.get).mockResolvedValue({ id: 'ex-1', status: 'running' } as DocumentExtraction);
     const { client, invalidate, wrapper } = setup();
@@ -42,6 +52,7 @@ describe('useBackgroundExtractionWatch', () => {
     await waitFor(() => expect(svc.get).toHaveBeenCalledWith('ex-1'));
     expect(pendingRefreshed(invalidate)).toBe(false);
     expect(client.getQueryData(['document-extractions', 'background'])).toEqual(['ex-1']);
+    expect(toast.dismiss).not.toHaveBeenCalled();
   });
 
   it('stops watching an extraction that can no longer be read', async () => {
