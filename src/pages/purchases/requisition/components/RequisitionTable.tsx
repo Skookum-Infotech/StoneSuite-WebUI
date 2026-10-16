@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
-  ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2, Link2,
+  ChevronLeft, ChevronRight, ShieldCheck, Download, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -340,17 +340,14 @@ export function RequisitionTable() {
                   const priorityColor = PRIORITY_COLORS[reqn.priority] ?? '#a8a29e';
                   return (
                     <tr key={reqn.id} className="group hover:bg-accent/10 transition-colors duration-150">
-                      <td className="px-4 max-sm:px-2 py-3.5">
+                      <td className="px-4 max-sm:px-2 py-3.5 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => navigate(`/purchases/requisition/${reqn.id}`)}
                           aria-label={`Open requisition ${reqn.requisitionNumber}`}
-                          className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {reqn.requisitionNumber || '—'}
-                          {reqn.convertedPurchaseOrderId && (
-                            <Link2 className="size-3 text-stone-400" aria-label="Converted to a purchase order" />
-                          )}
                         </button>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
