@@ -114,6 +114,9 @@ const FeedbackDetailPage = lazyWithRetry(
 const PlatformAIPage = lazyWithRetry(
   () => import("@/pages/platform/ai/PlatformAIPage"),
 );
+const PlatformAutomationPage = lazyWithRetry(
+  () => import("@/pages/platform/automation/PlatformAutomationPage"),
+);
 const SamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/SamlSetupPage"),
 );
@@ -1642,6 +1645,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard platformAdminOnly>
             <PlatformAIPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "platform/automation",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <PlatformAutomationPage />
           </PermissionGuard>,
         ),
       },
