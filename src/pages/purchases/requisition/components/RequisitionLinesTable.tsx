@@ -170,7 +170,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
-                    <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
+                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
                       <Trash2 className="size-3.5" />
                     </button>
                   </td>
@@ -188,10 +188,10 @@ export function RequisitionLinesTable({ items, onUpdate }: {
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.amount ? `$${row.amount}` : '—'}</td>
                   <td className={LINE_ACTIONS_CELL_CLS}>
                     <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
+                      <button type="button" onClick={() => startEdit(row)} className="text-stone-500 hover:text-stone-700 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
-                      <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
+                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
