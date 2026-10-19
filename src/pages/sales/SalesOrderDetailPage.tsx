@@ -26,6 +26,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
+import { SalesOrderCommunicationTab } from './components/SalesOrderCommunicationTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
@@ -42,17 +43,22 @@ const TABS = [
   { key: 'items', label: 'Items' },
   { key: 'inventory', label: 'Inventory' },
   { key: 'scheduling', label: 'Scheduling' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
+// Tabs a customer-portal session never gets: both read staff-only endpoints
+// (the production schedule, and the order's email thread with the customer).
+const STAFF_ONLY_TABS: readonly Tab[] = ['scheduling', 'communication'];
+
 // The tab a `?tab=` link asks for — the Activity Planner's cards open the
 // Scheduling tab. Anything unknown, or a tab this session doesn't have (a
-// customer has no Scheduling tab), falls back to Overview.
+// customer has no Scheduling or Communication tab), falls back to Overview.
 function tabFromParam(raw: string | null): Tab {
   const match = TABS.find((t) => t.key === raw);
-  if (!match || (match.key === 'scheduling' && isPortalSession())) return 'overview';
+  if (!match || (STAFF_ONLY_TABS.includes(match.key) && isPortalSession())) return 'overview';
   return match.key;
 }
 
@@ -171,9 +177,9 @@ export default function SalesOrderDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';
-  // The production schedule is internal bookkeeping with a staff-only endpoint,
-  // so a customer-portal session doesn't get its tab.
-  const visibleTabs = isPortalSession() ? TABS.filter((t) => t.key !== 'scheduling') : TABS;
+  // The production schedule and the customer email thread are internal, with
+  // staff-only endpoints, so a customer-portal session doesn't get their tabs.
+  const visibleTabs = isPortalSession() ? TABS.filter((t) => !STAFF_ONLY_TABS.includes(t.key)) : TABS;
 
   async function handleExportPdf() {
     if (!order) return;
@@ -385,6 +391,7 @@ export default function SalesOrderDetailPage() {
           {activeTab === 'scheduling' && (
             <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
           )}
+          {activeTab === 'communication' && <SalesOrderCommunicationTab orderId={id} />}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
