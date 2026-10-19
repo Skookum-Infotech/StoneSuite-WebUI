@@ -16,13 +16,15 @@ import {
 } from '@/lib/purchaseOrderFilters';
 import { PurchaseOrderFilterDrawer } from './PurchaseOrderFilterDrawer';
 import { PurchaseOrderStatusControl } from './PurchaseOrderStatusControl';
+import { PurchaseOrderReceivingProgress } from './PurchaseOrderReceivingProgress';
+import { showsReceivingProgress } from '@/lib/receivingProgress';
 import { ReadOnlyStatusPill } from '@/pages/sales/components/ReadOnlyStatusPill';
 import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import type { PurchaseOrderSearchRequest } from '@/types/purchaseOrder';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
-const PHONE_COLUMNS = new Set([0, 1, 2, 7]);
+const PHONE_COLUMNS = new Set([0, 1, 2, 8]);
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -192,11 +194,12 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
     try {
       await exportPagedCsv(
         (exportCursor) => purchaseOrderService.searchPurchaseOrders({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['PO #', 'Vendor', 'Status', 'Approval', 'Order Date', 'Expected Date', 'Owner', 'Grand Total'],
+        ['PO #', 'Vendor', 'Status', 'Received %', 'Approval', 'Order Date', 'Expected Date', 'Owner', 'Grand Total'],
         (po) => [
           po.purchaseOrderNumber ?? '',
           po.vendor?.name ?? '',
           po.status ?? '',
+          showsReceivingProgress(po.statusCode) && po.receivedPercent !== undefined ? String(po.receivedPercent) : '',
           APPROVAL_LABELS[po.approvalStatus] ?? '',
           fmtCsvDate(po.orderDate),
           fmtCsvDate(po.expectedDate),
@@ -299,12 +302,13 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
-          <table className="w-full sm:min-w-[920px] text-left text-xs">
+          <table className="w-full sm:min-w-[1040px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">PO #</th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Received</th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Approval</th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Order Date</th>
                 <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Expected Date</th>
@@ -319,7 +323,7 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: canEdit ? 9 : 8 }, (_, j) => (
+                    {Array.from({ length: canEdit ? 10 : 9 }, (_, j) => (
                       <td key={j} className={cn('px-4 max-sm:px-2 py-3', !PHONE_COLUMNS.has(j) && 'max-sm:hidden')}><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
@@ -353,6 +357,9 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                         ) : (
                           <ReadOnlyStatusPill label={po.status} color={PO_STATUS_COLORS[po.statusCode]} />
                         )}
+                      </td>
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
+                        <PurchaseOrderReceivingProgress order={po} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
@@ -396,7 +403,7 @@ export function PurchaseOrderTable({ toolbarActions }: { toolbarActions?: ReactN
                 })
               ) : (
                 <tr>
-                  <td colSpan={8 + (canEdit ? 1 : 0)} className="py-16 text-center">
+                  <td colSpan={9 + (canEdit ? 1 : 0)} className="py-16 text-center">
                     {!hasFilters ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
