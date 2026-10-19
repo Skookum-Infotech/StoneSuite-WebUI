@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 
 vi.mock('@/services/documentExtractionService', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@/services/documentExtractionService');
@@ -35,7 +35,10 @@ beforeEach(() => {
   vi.mocked(svc.start).mockResolvedValue({ status: 'queued' });
   vi.mocked(svc.discard).mockResolvedValue(undefined);
 });
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  vi.useRealTimers();
+  focusManager.setFocused(undefined);
+});
 
 describe('useDocumentExtraction', () => {
   it('uploads, starts with the client sha, reads and reaches ready', async () => {
@@ -45,6 +48,18 @@ describe('useDocumentExtraction', () => {
     await waitFor(() => expect(result.current.state.stage).toBe('ready'));
     expect(svc.create).toHaveBeenCalledWith({ docType: 'sales_order', fileName: 'po.pdf', sizeBytes: FILE.size, contentType: 'application/pdf' });
     expect(svc.start).toHaveBeenCalledWith('ex-1', 'abc123');
+  });
+
+  it('keeps polling while the tab is hidden', async () => {
+    vi.mocked(svc.get).mockResolvedValue({ id: 'ex-1', status: 'running' } as DocumentExtraction);
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { result } = renderHook(() => useDocumentExtraction(), { wrapper: wrapper() });
+    await act(async () => { await result.current.start(FILE); });
+    await waitFor(() => expect(result.current.state.stage).toBe('reading'));
+    act(() => focusManager.setFocused(false));
+    vi.mocked(svc.get).mockResolvedValue({ id: 'ex-1', status: 'ready' } as DocumentExtraction);
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+    await waitFor(() => expect(result.current.state.stage).toBe('ready'));
   });
 
   it('surfaces a server failure with its message', async () => {
