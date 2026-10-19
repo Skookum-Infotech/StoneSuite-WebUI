@@ -227,3 +227,66 @@ describe('Sidebar workflow-enabled gating', () => {
     expect(screen.getByText('Payments')).toBeInTheDocument();
   });
 });
+
+describe('Sidebar Calendar group', () => {
+  const readOrders = [{ resource: 'sales_order', action: 'read' }];
+
+  it('shows Calendar > Activity Planner to anyone who can read sales orders', () => {
+    setup({ grants: readOrders });
+
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Activity Planner/ })).toHaveAttribute('href', '/calendar/activity-planner');
+  });
+
+  it('hides Calendar from a user who cannot read sales orders', () => {
+    setup({ grants: [{ resource: 'invoice', action: 'read' }] });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+  });
+
+  it('hides Calendar once the Sales Order workflow is disabled', () => {
+    setup({ grants: [{ resource: '*', action: '*' }], disabledWorkflows: ['sales_order'] });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+  });
+
+  // A portal session is granted sales_order:read for its own order pages, but
+  // the Planner is staff-only and MainLayout bounces customers away from it —
+  // so the menu must not offer it.
+  it('does not offer the Calendar to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: readOrders });
+
+    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+    expect(screen.getByText('Sales Orders')).toBeInTheDocument();
+  });
+});
+
+describe('Sidebar Created Orders link', () => {
+  // The portal-only entry: the countertop orders a customer files themselves.
+  it('shows Created Orders to a customer-portal session', () => {
+    setup({ kind: 'portal', grants: [] });
+
+    expect(screen.getByRole('link', { name: /Created Orders/ })).toHaveAttribute(
+      'href',
+      '/sales/created-orders',
+    );
+  });
+
+  // `alwaysVisible` alone would show it to every staff user — customerOnly is
+  // what keeps a portal-only page out of the staff menu.
+  it('hides Created Orders from staff, even a super admin', () => {
+    setup({ grants: [{ resource: '*', action: '*' }] });
+
+    expect(screen.queryByText('Created Orders')).toBeNull();
+  });
+
+  // Sidebar shows every link while permissions load to avoid layout shift;
+  // the portal-only link must not ride that shortcut.
+  it('does not flash Created Orders at staff while permissions load', () => {
+    setup({ grants: [], isLoading: true });
+
+    expect(screen.queryByText('Created Orders')).toBeNull();
+  });
+});

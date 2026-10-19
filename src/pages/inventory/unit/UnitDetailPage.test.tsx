@@ -8,7 +8,6 @@ vi.mock('@/services/inventoryUnitService', () => ({
   inventoryUnitService: { getUnit: vi.fn(), getHistory: vi.fn(), searchUnits: vi.fn() },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
-vi.mock('./components/MoveUnitDialog', () => ({ MoveUnitDialog: () => null }));
 vi.mock('./components/ScrapUnitDialog', () => ({ ScrapUnitDialog: () => null }));
 vi.mock('./components/CutUnitDialog', () => ({ CutUnitDialog: () => null }));
 
@@ -79,16 +78,41 @@ describe('UnitDetailPage', () => {
     expect(await screen.findByText('Yard / A1 → Yard / B2')).toBeInTheDocument();
   });
 
-  it('keeps the move, cut and scrap actions for a slab in stock', async () => {
+  it('keeps the cut and scrap actions for a slab in stock', async () => {
     renderPage(makeUnit());
 
     await screen.findByText('Untouched', { selector: 'p' });
     // The sidebar renders its content for both the desktop and the mobile drawer.
-    for (const name of [/Move Bin/, /^Cut$/, /Scrap/]) {
+    for (const name of [/^Cut$/, /Scrap/]) {
       const buttons = screen.getAllByRole('button', { name });
       expect(buttons.length).toBeGreaterThan(0);
       buttons.forEach((b) => expect(b).toBeEnabled());
     }
+  });
+
+  // A bin move is requested through a Bin Transfer — it can be approved and has
+  // a document — so the unit page no longer moves a slab by itself.
+  it('has no instant Move Bin action', async () => {
+    renderPage(makeUnit());
+
+    await screen.findByText('Untouched', { selector: 'p' });
+    expect(screen.queryByRole('button', { name: /move bin/i })).not.toBeInTheDocument();
+  });
+
+  it('links a move in the history to the bin transfer that made it', async () => {
+    renderPage(makeUnit());
+    vi.mocked(inventoryUnitService.getHistory).mockResolvedValue([{
+      action: 'bin_move', field: 'binId', oldValue: '', newValue: '',
+      fromBin: 'YARD/A1', toBin: 'RACK/B2', transferId: 'bt-12', transferNumber: 'BTRF-000012',
+      at: '2026-10-14T10:42:00', byName: 'Maria',
+    }]);
+    const user = userEvent.setup();
+    await screen.findByText('Untouched', { selector: 'p' });
+
+    await user.click(screen.getByRole('button', { name: 'History' }));
+
+    const link = await screen.findByRole('link', { name: 'BTRF-000012' });
+    expect(link).toHaveAttribute('href', '/inventory/bin_transfer/bt-12');
   });
 
   it('highlights the sales order and job a slab is reserved for, on every tab', async () => {
@@ -127,7 +151,7 @@ describe('UnitDetailPage', () => {
     renderPage(makeCutUnit(30, 15.2, 2));
 
     await screen.findByText('66% used');
-    screen.getAllByRole('button', { name: /Move Bin/ }).forEach((b) => expect(b).toBeDisabled());
+    screen.getAllByRole('button', { name: /^Cut$/ }).forEach((b) => expect(b).toBeDisabled());
     expect(screen.getAllByText('Unit is consumed.').length).toBeGreaterThan(0);
   });
 });

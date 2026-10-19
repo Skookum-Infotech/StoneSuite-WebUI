@@ -10,6 +10,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryService } from '@/services/inventoryService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv } from '@/lib/csvExport';
+import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type InventoryItemFilterState } from '@/lib/inventoryItemFilters';
 import { ItemFilterDrawer } from './ItemFilterDrawer';
@@ -128,8 +129,12 @@ export function ItemTable() {
     try {
       await exportPagedCsv(
         (exportCursor) => inventoryService.searchItems({ ...req, limit: EXPORT_PAGE_SIZE, cursor: exportCursor }),
-        ['SKU', 'Name', 'Tracking', 'Unit Price', 'Barcode', 'Active'],
-        (it) => [it.sku, it.name, it.tracking, it.unitPrice.toFixed(2), it.barcode ?? '', it.isActive ? 'Yes' : 'No'],
+        ['SKU', 'Name', 'Tracking', 'Purchasing Unit Price', 'Selling Unit Price', 'Barcode', 'Active'],
+        (it) => [
+          it.sku, it.name, it.tracking,
+          itemPrice(it, 'purchasing').toFixed(2), itemPrice(it, 'selling').toFixed(2),
+          it.barcode ?? '', it.isActive ? 'Yes' : 'No',
+        ],
         'Inventory Item',
       );
     } catch (err) {
@@ -215,7 +220,8 @@ export function ItemTable() {
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">SKU</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tracking</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Unit Price</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Purchasing Price</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Selling Price</th>
                 <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
                 {canEdit && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>}
               </tr>
@@ -224,7 +230,7 @@ export function ItemTable() {
               {isLoading ? (
                 Array.from({ length: 5 }, (_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: canEdit ? 6 : 5 }, (_, j) => (
+                    {Array.from({ length: canEdit ? 7 : 6 }, (_, j) => (
                       <td key={j} className="px-4 py-3"><div className="animate-pulse h-3 rounded bg-stone-100 w-16" /></td>
                     ))}
                   </tr>
@@ -241,7 +247,8 @@ export function ItemTable() {
                     <td className="px-4 py-3.5 text-xs text-stone-500">
                       {it.tracking === TRACKING_SERIALIZED ? 'Serialized' : 'Quantity'}
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${it.unitPrice.toFixed(2)}</td>
+                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${itemPrice(it, 'purchasing').toFixed(2)}</td>
+                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${itemPrice(it, 'selling').toFixed(2)}</td>
                     <td className="px-4 py-3.5">
                       <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold whitespace-nowrap', it.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', it.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />

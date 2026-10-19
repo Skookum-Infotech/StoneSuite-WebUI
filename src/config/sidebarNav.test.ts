@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { sidebarNav } from './sidebarNav';
-import { CUSTOMER_ALLOWED_PATH_PREFIXES } from './customerPortal';
+import { CUSTOMER_ALLOWED_PATH_PREFIXES, isCustomerAllowedPath } from './customerPortal';
+import { CREATED_ORDERS_PATH, NEW_CREATED_ORDER_PATH } from '@/lib/createdOrderRoutes';
 import { SUPPORT_PATH } from '@/lib/feedback';
 import type { NavEntry, NavLink } from './sidebarNav';
 
@@ -98,6 +99,24 @@ describe('sidebarNav access declarations', () => {
     }
   });
 
+  // buildPermModules keeps the first link to name a resource, so the Calendar
+  // group has to come after Sales or the role editor would list Sales Orders
+  // under Calendar.
+  it('puts the Calendar group after Sales', () => {
+    const entries = sidebarNav.sections.flatMap((s) => s.entries).filter((e) => e.type === 'group');
+    const ids = entries.map((e) => e.id);
+
+    expect(ids).toContain('calendar');
+    expect(ids.indexOf('calendar')).toBeGreaterThan(ids.indexOf('sales'));
+  });
+
+  it('points the Activity Planner at its route', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'activity-planner');
+
+    expect(entry?.link.path).toBe('/calendar/activity-planner');
+    expect(entry?.link.permission).toEqual({ resource: 'sales_order', action: 'read' });
+  });
+
   it('CRM and Sales links declare the workflow that backs their form', () => {
     const expected: Record<string, string> = {
       leads: 'lead',
@@ -107,6 +126,7 @@ describe('sidebarNav access declarations', () => {
       quotes: 'quote',
       'sales-orders': 'sales_order',
       installation: 'installation',
+      'activity-planner': 'sales_order',
       invoices: 'invoice',
       payments: 'payment',
       'credit-memos': 'credit_memo',
@@ -124,5 +144,28 @@ describe('sidebarNav access declarations', () => {
     for (const [id, workflowKey] of Object.entries(expected)) {
       expect(byId.get(id)?.workflowKey, `${id} workflowKey`).toBe(workflowKey);
     }
+  });
+});
+
+describe('portal-only links', () => {
+  it('customerOnly links are also alwaysVisible and customerVisible', () => {
+    const misuse = allLinks()
+      .filter(({ link }) => link.customerOnly && !(link.alwaysVisible && link.customerVisible))
+      .map(({ trail }) => trail);
+
+    expect(misuse, `customerOnly without alwaysVisible + customerVisible:\n  ${misuse.join('\n  ')}`).toEqual([]);
+  });
+
+  it('Created Orders points at the shared route and is portal-only', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'created-orders');
+
+    expect(entry?.link.path).toBe(CREATED_ORDERS_PATH);
+    expect(entry?.link.customerOnly).toBe(true);
+    expect(entry?.link.permission).toBeUndefined();
+  });
+
+  it('lets a customer session reach the Created Orders pages', () => {
+    expect(isCustomerAllowedPath(CREATED_ORDERS_PATH)).toBe(true);
+    expect(isCustomerAllowedPath(NEW_CREATED_ORDER_PATH)).toBe(true);
   });
 });

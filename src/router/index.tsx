@@ -24,6 +24,7 @@ function lazyWithRetry<T extends React.ComponentType<unknown>>(
 }
 
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { PortalOnlyGuard } from "@/components/PortalOnlyGuard";
 
 const FabricationApprovalPage = lazyWithRetry(() => import("@/pages/customer/FabricationApprovalPage"));
 const LoginPage = lazyWithRetry(() => import("@/pages/auth/LoginPage"));
@@ -88,9 +89,6 @@ const CompanyProfilePage = lazyWithRetry(
 );
 const AIAssistantConfigPage = lazyWithRetry(
   () => import("@/pages/config/ai-assistant/AIAssistantConfigPage"),
-);
-const CrmNotificationsPage = lazyWithRetry(
-  () => import("@/pages/config/crm-notifications/CrmNotificationsPage"),
 );
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
@@ -160,6 +158,18 @@ const QuoteDetailPage = lazyWithRetry(
 );
 const EditQuotePage = lazyWithRetry(
   () => import("@/pages/sales/EditQuotePage"),
+);
+const CreatedOrderListPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/CreatedOrderListPage"),
+);
+const AddCreatedOrderPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/AddCreatedOrderPage"),
+);
+const CreatedOrderDetailPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/CreatedOrderDetailPage"),
+);
+const EditCreatedOrderPage = lazyWithRetry(
+  () => import("@/pages/sales/created-order/EditCreatedOrderPage"),
 );
 const SalesOrderListPage = lazyWithRetry(
   () => import("@/pages/sales/SalesOrderListPage"),
@@ -324,6 +334,8 @@ const ItemListPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemList
 const AddItemPage = lazyWithRetry(() => import("@/pages/inventory/item/AddItemPage"));
 const EditItemPage = lazyWithRetry(() => import("@/pages/inventory/item/EditItemPage"));
 const ItemDetailPage = lazyWithRetry(() => import("@/pages/inventory/item/ItemDetailPage"));
+const AddKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/AddKitPage"));
+const EditKitPage = lazyWithRetry(() => import("@/pages/inventory/kit/EditKitPage"));
 const UnitListPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitListPage"));
 const UnitDetailPage = lazyWithRetry(() => import("@/pages/inventory/unit/UnitDetailPage"));
 const BinListPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinListPage"));
@@ -341,6 +353,11 @@ const TransferDetailPage = lazyWithRetry(() => import("@/pages/inventory/transfe
 const CountListPage = lazyWithRetry(() => import("@/pages/inventory/count/CountListPage"));
 const AddCountPage = lazyWithRetry(() => import("@/pages/inventory/count/AddCountPage"));
 const CountDetailPage = lazyWithRetry(() => import("@/pages/inventory/count/CountDetailPage"));
+const BinDetailPage = lazyWithRetry(() => import("@/pages/inventory/bin/BinDetailPage"));
+const BinTransferListPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/BinTransferListPage"));
+const AddBinTransferPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/AddBinTransferPage"));
+const EditBinTransferPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/EditBinTransferPage"));
+const BinTransferDetailPage = lazyWithRetry(() => import("@/pages/inventory/bin-transfer/BinTransferDetailPage"));
 const InventorySetupPage = lazyWithRetry(() => import("@/pages/config/inventory-setup/InventorySetupPage"));
 
 const JournalEntryListPage = lazyWithRetry(
@@ -366,6 +383,11 @@ const AccountDefaultsPage = lazyWithRetry(
 );
 const AccountingPeriodsPage = lazyWithRetry(
   () => import("@/pages/finance/accounting-periods/AccountingPeriodsPage"),
+);
+
+// Calendar module
+const ActivityPlannerPage = lazyWithRetry(
+  () => import("@/pages/calendar/ActivityPlannerPage"),
 );
 
 const PageLoader = () => (
@@ -588,6 +610,42 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Created Orders — countertop orders a customer-portal user files. Portal
+      // only: no staff module, so the guard is the session kind, not an RBAC
+      // resource (the API is /api/portal/created-orders).
+      {
+        path: "sales/created-orders",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <CreatedOrderListPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/new",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <AddCreatedOrderPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/:id",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <CreatedOrderDetailPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+      {
+        path: "sales/created-orders/:id/edit",
+        element: lazy_(
+          <PortalOnlyGuard>
+            <EditCreatedOrderPage />
+          </PortalOnlyGuard>,
+        ),
+      },
+
       // Sales Orders (specific routes must come before the catch-all)
       {
         path: "sales/sales_order",
@@ -788,6 +846,18 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="refund" action="update" workflowKey="refund">
             <EditRefundPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Calendar: Activity Planner. It reads every order's schedule, so it is
+      // gated like the Sales Orders list (and hidden from customer sessions by
+      // CUSTOMER_ALLOWED_PATH_PREFIXES, which has no /calendar entry).
+      {
+        path: "calendar/activity-planner",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
+            <ActivityPlannerPage />
           </PermissionGuard>,
         ),
       },
@@ -1167,6 +1237,23 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+      // Kits: named groups of items sold together. Same grant as the items.
+      {
+        path: "inventory/kit/new",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="create">
+            <AddKitPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/kit/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_item" action="update">
+            <EditKitPage />
+          </PermissionGuard>,
+        ),
+      },
       {
         path: "inventory/unit",
         element: lazy_(
@@ -1188,6 +1275,46 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="inventory_bin" action="read">
             <BinListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin/:id",
+        element: lazy_(
+          <PermissionGuard resource="inventory_bin" action="read">
+            <BinDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="read">
+            <BinTransferListPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/new",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="create">
+            <AddBinTransferPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/:id",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="read">
+            <BinTransferDetailPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "inventory/bin_transfer/:id/edit",
+        element: lazy_(
+          <PermissionGuard resource="bin_transfer" action="update">
+            <EditBinTransferPage />
           </PermissionGuard>,
         ),
       },
@@ -1391,14 +1518,6 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="company_profile" action="read">
             <AIAssistantConfigPage />
-          </PermissionGuard>,
-        ),
-      },
-      {
-        path: "config/crm-notifications",
-        element: lazy_(
-          <PermissionGuard resource="workflow_config" action="configure">
-            <CrmNotificationsPage />
           </PermissionGuard>,
         ),
       },

@@ -8,6 +8,7 @@ vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn(), success: vi.f
 vi.mock('@/hooks/useDocumentExtraction', () => ({ useDocumentExtraction: vi.fn() }));
 
 import { CreateFromDocumentDialog } from './CreateFromDocumentDialog';
+import { backgroundToastId } from '@/hooks/useBackgroundExtractions';
 import { useDocumentExtraction, type UseDocumentExtraction } from '@/hooks/useDocumentExtraction';
 import { initialExtractionState, type ExtractionState } from '@/lib/documentExtractionMachine';
 import { toast } from 'sonner';
@@ -85,7 +86,7 @@ describe('CreateFromDocumentDialog', () => {
     const onClose = renderDialog();
     await userEvent.click(screen.getByRole('button', { name: 'Continue in background' }));
     expect(handlers.continueInBackground).toHaveBeenCalled();
-    expect(toast.info).toHaveBeenCalledWith("We'll notify you when PO-4471.pdf is ready");
+    expect(toast.info).toHaveBeenCalledWith("We'll notify you when PO-4471.pdf is ready", { id: backgroundToastId('ex-1') });
     expect(onClose).toHaveBeenCalled();
   });
 

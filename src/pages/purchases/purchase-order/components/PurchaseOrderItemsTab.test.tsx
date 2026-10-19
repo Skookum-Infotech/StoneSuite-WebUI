@@ -35,7 +35,9 @@ const base = {
   thicknessMm: 30, barcode: '', createdAt: '', updatedAt: '',
 };
 const SLAB_ITEM = { ...base, id: 'item-slab', sku: 'AB-30', name: 'Absolute Black', unitId: 6, tracking: 'serialized' };
-const QUANTITY_ITEM = { ...base, id: 'item-each', sku: 'SEAL-1', name: 'Sealer', unitId: 1, unitPrice: 12, tracking: 'quantity' };
+const QUANTITY_ITEM = {
+  ...base, id: 'item-each', sku: 'SEAL-1', name: 'Sealer', unitId: 1, unitPrice: 12, purchaseUnitPrice: 7.5, tracking: 'quantity',
+};
 
 const noop = () => undefined;
 
@@ -56,6 +58,29 @@ function Harness({ initial = [] as PurchaseOrderLineItem[], onChange = noop }: {
 async function startAdding(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Add Line' }));
 }
+
+describe('PurchaseOrderItemsTab — the line price', () => {
+  it('defaults a picked item to its purchasing price, not its selling price', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await startAdding(user);
+
+    await user.click(screen.getByRole('button', { name: 'pick each item' }));
+
+    // Sealer sells for 12 and costs 7.5: a purchase line is what we pay.
+    expect(screen.getByRole('spinbutton', { name: 'Unit Price' })).toHaveValue(7.5);
+  });
+
+  it('uses the selling price for an item the API sent without a purchasing price', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await startAdding(user);
+
+    await user.click(screen.getByRole('button', { name: 'pick slab item' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Unit Price' })).toHaveValue(18);
+  });
+});
 
 describe('PurchaseOrderItemsTab — the Units column', () => {
   it('shows the unit as soon as an item is picked, not a dash', async () => {
@@ -174,5 +199,33 @@ describe('PurchaseOrderItemsTab — the slab estimate helper', () => {
     const [saved] = onChange.mock.calls[0][0] as PurchaseOrderLineItem[];
     expect(saved.expectedSlabs).toBe('');
     expect(saved.tracking).toBe('quantity');
+  });
+});
+
+describe('PurchaseOrderItemsTab — saved row actions', () => {
+  const saved: PurchaseOrderLineItem = {
+    ...EMPTY_LINE_ITEM, id: 'l1', lineNo: 1, itemName: 'Absolute Black', quantity: '2', unitPrice: '18',
+  };
+
+  it('offers Edit and Remove for a saved row by label, with no hover needed to see them', () => {
+    render(<Harness initial={[saved]} />);
+
+    const edit = screen.getByRole('button', { name: 'Edit line Absolute Black' });
+    const remove = screen.getByRole('button', { name: 'Remove line Absolute Black' });
+    expect(edit).toBeVisible();
+    expect(remove).toBeVisible();
+    // Not hover-gated: the hiding classes would make the icons invisible on touch.
+    expect(edit.parentElement?.className).not.toMatch(/opacity-0/);
+    // Pinned so a wide table's horizontal scroll cannot carry them off screen.
+    expect(edit.closest('td')).toHaveClass('sticky', 'right-0', 'bg-white');
+  });
+
+  it('opens the row for editing from the Edit button', async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={[saved]} />);
+
+    await user.click(screen.getByRole('button', { name: 'Edit line Absolute Black' }));
+
+    expect(screen.getByRole('button', { name: 'Save Line' })).toBeInTheDocument();
   });
 });

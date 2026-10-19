@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, ArrowLeftRight, Scissors, AlertTriangle, CheckCircle2,
+  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, Scissors, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
@@ -12,7 +12,6 @@ import { allocationOf } from '@/lib/unitAllocation';
 import { formatUnitArea, usageOf } from '@/lib/unitConsumption';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT } from '@/types/inventory';
 import type { InventoryUnit, UnitSearchRequest } from '@/types/inventory';
-import { MoveUnitDialog } from './MoveUnitDialog';
 import { ScrapUnitDialog } from './ScrapUnitDialog';
 import { CutUnitDialog } from './CutUnitDialog';
 import { UnitAllocationChips } from './UnitAllocationChips';
@@ -53,7 +52,6 @@ export function UnitTable() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const [moveTarget, setMoveTarget] = useState<InventoryUnit | null>(null);
   const [scrapTarget, setScrapTarget] = useState<InventoryUnit | null>(null);
   const [cutTarget, setCutTarget] = useState<InventoryUnit | null>(null);
   const [cutMessage, setCutMessage] = useState<string | null>(null);
@@ -201,9 +199,6 @@ export function UnitTable() {
                       {canUpdate && (
                         <td className="px-4 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setMoveTarget(u)} aria-label={`Move ${u.serial}`} title={disabledReason ? `Move — ${disabledReason}` : 'Move'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                              <ArrowLeftRight className="size-3.5" />
-                            </button>
                             <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} title={disabledReason ? `Cut — ${disabledReason}` : u.kind !== 'slab' && u.kind !== 'remnant' ? 'Cut — only available for slabs and remnants' : 'Cut'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <Scissors className="size-3.5" />
                             </button>
@@ -240,7 +235,6 @@ export function UnitTable() {
         )}
       </div>
 
-      {moveTarget && <MoveUnitDialog unit={moveTarget} onClose={() => setMoveTarget(null)} onMoved={() => {}} />}
       {scrapTarget && <ScrapUnitDialog unit={scrapTarget} onClose={() => setScrapTarget(null)} onScrapped={() => {}} />}
       {cutTarget && (
         <CutUnitDialog

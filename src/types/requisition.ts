@@ -26,6 +26,15 @@ export interface RequisitionLineInput {
   description?: string;
   quantity: number;
   estimatedUnitPrice: number;
+  /** Size of one slab and how many slabs the line covers. With length and
+   *  width both set the server derives the quantity from them (length x width x
+   *  slabs, in the item's area unit), so the quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
+  slabs?: number;
 }
 
 export interface RequisitionCreatePayload {
@@ -70,6 +79,13 @@ export interface RequisitionLine {
   quantity: number;
   estimatedUnitPrice: number;
   estimatedAmount: number;
+  /** The slab size and count the line was priced from, when entered that
+   *  way; quantity is then their area. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
+  slabs?: number | null;
 }
 
 /** `lkp_record_status` codes seeded for the REQN record type. There is no

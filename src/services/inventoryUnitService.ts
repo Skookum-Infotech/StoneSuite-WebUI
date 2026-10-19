@@ -1,7 +1,7 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
   InventoryUnit, UnitPage, UnitSearchRequest,
-  MoveUnitInput, ScrapUnitInput, CutUnitInput, CutResult, UnitHistoryEntry,
+  ScrapUnitInput, CutUnitInput, CutResult, UnitHistoryEntry,
 } from '@/types/inventory';
 
 // Physical units — slabs and remnants — `inventory_unit` RBAC resource.
@@ -39,12 +39,9 @@ export const inventoryUnitService = {
       .get<{ success: boolean; unit: InventoryUnit }>(`${BASE}/${uuid}`)
       .then((r) => r.data.unit),
 
-  // Stock-neutral — moves bin only, never fires a ledger entry. Refused for
-  // in_transit, consumed or scrapped units (server message explains why).
-  moveBin: (uuid: string, payload: MoveUnitInput): Promise<InventoryUnit> =>
-    tenantClient
-      .patch<{ success: boolean; unit: InventoryUnit }>(`${BASE}/${uuid}/bin`, payload)
-      .then((r) => r.data.unit),
+  // There is deliberately no moveBin: a slab is moved between bins with a Bin
+  // Transfer (binTransferService), which can be approved and leaves a document.
+  // The server refuses the old instant PATCH .../bin.
 
   scrap: (uuid: string, payload: ScrapUnitInput): Promise<InventoryUnit> =>
     tenantClient

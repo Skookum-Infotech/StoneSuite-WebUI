@@ -2,20 +2,26 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { TriangleAlert } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
-import type { DuplicateConflict } from '@/hooks/useSalesOrderReviewMode';
+import { documentRoutes } from '@/lib/documentExtractionRoutes';
+import type { DuplicateConflict } from '@/lib/salesOrderDuplicate';
+import type { DocumentExtractionDocType } from '@/types/documentExtraction';
 
 interface DuplicateCreateDialogProps {
+  docType: DocumentExtractionDocType;
   conflict: DuplicateConflict;
   onOpenExisting: (uuid: string) => void;
   onCreateAnyway: () => void;
   onCancel: () => void;
+  /** Label of the override button; "Create anyway" unless the page edits an existing record. */
+  anywayLabel?: string;
 }
 
-/** Shown when create answers 409 duplicate_document: a sales order with this PO
- *  number already exists for the customer. "Open existing" is offered only when
+/** Shown when create answers 409 duplicate_document: a matching document
+ *  already exists (same PO number for the customer, same invoice for the vendor). "Open existing" is offered only when
  *  the server revealed it; "Create anyway" resubmits with allowDuplicate. Same
  *  shape as DuplicateRecordDialog. */
-export function DuplicateCreateDialog({ conflict, onOpenExisting, onCreateAnyway, onCancel }: DuplicateCreateDialogProps): React.JSX.Element {
+export function DuplicateCreateDialog({ docType, conflict, onOpenExisting, onCreateAnyway, onCancel, anywayLabel = 'Create anyway' }: DuplicateCreateDialogProps): React.JSX.Element {
+  const { manualNoun } = documentRoutes(docType);
   const contentRef = useModalDialog(onCancel);
   return createPortal(
     <div
@@ -30,7 +36,7 @@ export function DuplicateCreateDialog({ conflict, onOpenExisting, onCreateAnyway
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/10 dark:bg-amber-500/10">
             <TriangleAlert className="size-4 text-warning dark:text-amber-400" aria-hidden="true" />
           </div>
-          <h3 id="duplicate-so-title" className="text-sm font-bold text-stone-900 dark:text-stone-100">This order may already exist</h3>
+          <h3 id="duplicate-so-title" className="text-sm font-bold text-stone-900 dark:text-stone-100">This {manualNoun} may already exist</h3>
         </div>
         <p id="duplicate-so-desc" className="mb-5 text-xs text-stone-600 dark:text-stone-300">{conflict.message}</p>
         <div className="flex flex-wrap justify-end gap-2">
@@ -56,7 +62,7 @@ export function DuplicateCreateDialog({ conflict, onOpenExisting, onCreateAnyway
             onClick={onCreateAnyway}
             className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 transition-all hover:bg-brand-hover active:scale-95"
           >
-            Create anyway
+            {anywayLabel}
           </button>
         </div>
       </div>

@@ -37,7 +37,7 @@ describe('PendingDocumentsChip', () => {
   it('shows the count and lists resume links', async () => {
     vi.mocked(documentExtractionService.list).mockResolvedValue([ex('a', 'PO-1.pdf'), ex('b', 'PO-2.pdf'), ex('c', 'bill.pdf', 'vendor_bill')]);
     renderChip();
-    const chip = await screen.findByRole('button', { name: 'Pending documents, 2' });
+    const chip = await screen.findByRole('button', { name: 'Pending documents (2)' });
     expect(chip).toHaveTextContent('Pending documents (2)');
     await userEvent.click(chip);
     expect(screen.getByRole('link', { name: /PO-1.pdf/ })).toHaveAttribute('href', '/sales/sales_order/new?fromDocument=a');
@@ -49,11 +49,11 @@ describe('PendingDocumentsChip', () => {
     vi.mocked(documentExtractionService.list).mockResolvedValue([ex('a', 'PO-1.pdf'), ex('b', 'PO-2.pdf')]);
     vi.mocked(documentExtractionService.discard).mockResolvedValue(undefined);
     renderChip();
-    await userEvent.click(await screen.findByRole('button', { name: 'Pending documents, 2' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Pending documents (2)' }));
     await userEvent.click(screen.getByRole('button', { name: 'Discard PO-1.pdf' }));
     expect(documentExtractionService.discard).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Confirm discard PO-1.pdf' }));
     expect(documentExtractionService.discard).toHaveBeenCalledWith('a');
-    expect(await screen.findByRole('button', { name: 'Pending documents, 1' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Pending documents (1)' })).toBeInTheDocument();
   });
 });

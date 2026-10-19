@@ -1,5 +1,7 @@
+import { isAxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
 import type { ApprovalRejection } from '@/types/tenant';
+import type { CreatedOrder, CreatedOrderInput } from '@/types/createdOrder';
 import { isPortalSession } from '@/store/useAuthStore';
 import type { AuditEntry } from '@/services/crmService';
 import type {
@@ -9,6 +11,11 @@ import type {
   SalesOrderSearchRequest,
   SalesOrderPage,
   SalesOrderInventoryRow,
+  SalesOrderScheduleActivity,
+  SalesOrderScheduleActivityPatch,
+  ScheduleFeed,
+  ScheduleFeedEvent,
+  ScheduleFeedQuery,
 } from '@/types/salesOrder';
 import type { Invoice } from '@/types/invoice';
 
@@ -23,6 +30,16 @@ const BASE = '/tenant/sales-orders';
 // approve are staff-only, and the backend's RequireAuth confines a portal
 // token to /api/portal/* regardless, so there is nothing to branch below.
 const PORTAL_BASE = '/portal/sales-orders';
+
+const HTTP_NOT_FOUND = 404;
+
+/** What saving a sales order's customer order form returned. */
+export interface CustomerOrderFormSave {
+  form: CreatedOrder;
+  /** True when the Sales Order was saved along with the form; false when it had
+   *  already moved on from Draft and only the form record changed. */
+  synced: boolean;
+}
 
 export const salesOrderService = {
   // Full filter + sort + global search + keyset pagination (design §11).
@@ -128,6 +145,61 @@ export const salesOrderService = {
     tenantClient
       .get<{ success: boolean; recordId: string; audit: AuditEntry[] }>(`${BASE}/${uuid}/audit`)
       .then((r) => r.data.audit ?? []),
+
+  // The countertop order form this order was drafted from (tenant side; a
+  // portal session has no such route). null when the order was not placed from
+  // the portal — the server's 404 there is an answer, not a failure.
+  getCustomerOrderForm: (uuid: string): Promise<CreatedOrder | null> =>
+    tenantClient
+      .get<{ success: boolean; form: CreatedOrder }>(`${BASE}/${uuid}/customer-order-form`)
+      .then((r) => r.data.form)
+      .catch((err: unknown) => {
+        if (isAxiosError(err) && err.response?.status === HTTP_NOT_FOUND) return null;
+        throw err;
+      }),
+
+  // Super admin only (403 otherwise). The whole form is sent, as the customer
+  // sends it. The order's lines follow only while it is still a Draft.
+  updateCustomerOrderForm: (uuid: string, input: CreatedOrderInput): Promise<CustomerOrderFormSave> =>
+    tenantClient
+      .put<{ success: boolean; form: CreatedOrder; synced: boolean }>(
+        `${BASE}/${uuid}/customer-order-form`,
+        input,
+      )
+      .then((r) => ({ form: r.data.form, synced: Boolean(r.data.synced) })),
+
+  // The Activity Planner's feed: every planned activity of one group across the
+  // orders this caller can read, for an inclusive date window (at most ~3
+  // months). Scope-filtered by the server like the order list; cancelled
+  // orders are left out.
+  getScheduleFeed: ({ group, from, to }: ScheduleFeedQuery): Promise<ScheduleFeed> =>
+    tenantClient
+      .get<{ success: boolean; events: ScheduleFeedEvent[]; truncated?: boolean }>(
+        `${BASE}/schedule`,
+        { params: { group, from, to } },
+      )
+      .then((r) => ({ events: r.data.events ?? [], truncated: Boolean(r.data.truncated) })),
+
+  // The order's auto-planned production schedule, in plan order. Empty until a
+  // scheduled installation date has been saved on the order.
+  getSchedule: (uuid: string): Promise<SalesOrderScheduleActivity[]> =>
+    tenantClient
+      .get<{ success: boolean; activities: SalesOrderScheduleActivity[] }>(`${BASE}/${uuid}/schedule`)
+      .then((r) => r.data.activities ?? []),
+
+  // Partial edit of one activity (status / scheduled time / completed-on / notes).
+  // Gated on sales_order:update, like editing the order itself.
+  updateScheduleActivity: (
+    uuid: string,
+    code: string,
+    patch: SalesOrderScheduleActivityPatch,
+  ): Promise<SalesOrderScheduleActivity> =>
+    tenantClient
+      .patch<{ success: boolean; activity: SalesOrderScheduleActivity }>(
+        `${BASE}/${uuid}/schedule/${encodeURIComponent(code)}`,
+        patch,
+      )
+      .then((r) => r.data.activity),
 
   // Snapshot-copies this order into a new Invoice (idempotent — replaying
   // against an already-converted order returns the existing Invoice with

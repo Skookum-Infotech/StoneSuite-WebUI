@@ -1,5 +1,4 @@
 import { lineReviewKey, type HandoffLine, type LinePill, type ProvenanceInfo, type ReviewItem } from '@/lib/salesOrderDocumentHandoff';
-import type { SOLineItem } from '@/lib/salesOrderForm';
 import { sameUnit } from '@/lib/unitConversion';
 
 // Pure review-progress helpers shared by the review header, navigator,
@@ -11,16 +10,29 @@ const EPSILON = 0.005;
 /** What is resolved right now, taken from the live form. */
 export interface ReviewContext {
   hasCustomer: boolean;
+  /** Review key of the party row ('customer' by default, 'vendor' on purchases). */
+  partyKey?: string;
   /** True when the form line with this review key has a catalog item picked. */
   lineHasItem: (key: string) => boolean;
   reviewed: ReadonlySet<string>;
 }
 
+const DEFAULT_PARTY_KEY = 'customer';
+
 function isResolved(item: ReviewItem, ctx: ReviewContext): boolean {
   if (item.resolvedByReview) return ctx.reviewed.has(item.key);
-  if (item.key === 'customer' && item.required) return ctx.hasCustomer;
+  if (item.key === (ctx.partyKey ?? DEFAULT_PARTY_KEY) && item.required) return ctx.hasCustomer;
   if (item.key.startsWith('line:') && item.required) return ctx.lineHasItem(item.key);
   return ctx.reviewed.has(item.key);
+}
+
+/** The part of a form line the unit check reads (any document type's line). */
+export interface UnitCheckLine {
+  id: string;
+  itemName: string;
+  quantity: string;
+  units?: string;
+  inventoryItemUuid?: string;
 }
 
 /** Required checks for lines whose picked item is sold in a different unit than
@@ -28,7 +40,7 @@ function isResolved(item: ReviewItem, ctx: ReviewContext): boolean {
  *  never converted ("4 EA" saved as "4 SQFT"). Derived from the live form, so
  *  it covers an item picked in the review panel or in the items table and
  *  survives a reload. Cleared only by "Mark reviewed". */
-export function unitCheckItems(lines: HandoffLine[], formLines: SOLineItem[]): ReviewItem[] {
+export function unitCheckItems(lines: HandoffLine[], formLines: UnitCheckLine[]): ReviewItem[] {
   return lines.flatMap((meta) => {
     const line = formLines.find((l) => l.id === meta.id);
     if (!line?.inventoryItemUuid || !meta.docUom || !line.units || sameUnit(meta.docUom, line.units)) return [];
@@ -83,7 +95,7 @@ export function reviewProgress(
 }
 
 function isResolvedKey(key: string, ctx: ReviewContext): boolean {
-  if (key === 'customer') return ctx.hasCustomer;
+  if (key === (ctx.partyKey ?? DEFAULT_PARTY_KEY)) return ctx.hasCustomer;
   return ctx.lineHasItem(key);
 }
 

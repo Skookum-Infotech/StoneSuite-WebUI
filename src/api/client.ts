@@ -80,25 +80,71 @@ let isLoggingOut = false;
 export async function attemptRefresh(): Promise<RefreshOutcome> {
   // Only one refresh at a time — share the promise across concurrent callers.
   if (!refreshPromise) {
-    refreshPromise = (async () => {
-      try {
-        let outcome = await refreshOnce();
-        for (const delay of TRANSIENT_RETRY_DELAYS_MS) {
-          if (outcome !== 'transient') break;
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          outcome = await refreshOnce();
-        }
-        return outcome;
-      } finally {
-        refreshPromise = null;
+    refreshPromise = withCrossTabRefreshLock(async () => {
+      let outcome = await refreshOnce();
+      for (const delay of TRANSIENT_RETRY_DELAYS_MS) {
+        if (outcome !== 'transient') break;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        outcome = await refreshOnce();
       }
-    })();
+      return outcome;
+    }).finally(() => {
+      refreshPromise = null;
+    });
   }
   return refreshPromise;
 }
 
+// Bumped whenever the session is deliberately ended. A refresh that was already
+// in flight compares its starting epoch and discards its result, so a slow
+// refresh can never resurrect a session the user (or another tab) just logged
+// out of.
+let sessionEpoch = 0;
+
+/** Marks the current session as ended; any refresh still in flight is discarded. */
+export function invalidateSession(): void {
+  sessionEpoch += 1;
+}
+
+const REFRESH_LOCK_NAME = 'stonesuite-session-refresh';
+
+// Serializes refreshes across browser tabs (Web Locks), so two tabs never
+// rotate the same refresh token at once. After waiting for the lock, a tab
+// whose session another tab already extended skips its own refresh. Where Web
+// Locks is unavailable (old browsers, jsdom) the in-tab single-flight above is
+// all there is.
+async function withCrossTabRefreshLock(run: () => Promise<RefreshOutcome>): Promise<RefreshOutcome> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  if (!locks) return run();
+  const expiryBefore = useAuthStore.getState().sessionExpiresAt ?? 0;
+  try {
+    return await locks.request(REFRESH_LOCK_NAME, async () => {
+      const expiryNow = useAuthStore.getState().sessionExpiresAt ?? 0;
+      if (expiryNow > expiryBefore && expiryNow > Date.now()) return 'ok' as const;
+      return run();
+    });
+  } catch {
+    return run();
+  }
+}
+
+/** True while a refresh is running in this tab or any other tab. The expiry
+ *  failsafe uses it to avoid logging out (which revokes the refresh token with
+ *  no grace) underneath a refresh that is about to succeed. */
+export async function isRefreshInFlight(): Promise<boolean> {
+  if (refreshPromise) return true;
+  try {
+    const snapshot = await navigator.locks?.query();
+    const named = (l: { name?: string }) => l.name === REFRESH_LOCK_NAME;
+    return Boolean(snapshot?.held?.some(named) || snapshot?.pending?.some(named));
+  } catch {
+    return false;
+  }
+}
+
 // A single refresh request, classified into a RefreshOutcome.
 async function refreshOnce(): Promise<RefreshOutcome> {
+  const epoch = sessionEpoch;
   try {
     const { kind, activeTenantId } = useAuthStore.getState();
     // A customer-portal session refreshes at a different endpoint and
@@ -113,6 +159,7 @@ async function refreshOnce(): Promise<RefreshOutcome> {
       const res = await apiClient.post<{
         success: boolean; token?: string; expiresAt?: number; tenantId?: string;
       }>('/portal/auth/refresh', { tenantId: activeTenantId });
+      if (epoch !== sessionEpoch) return 'rejected'; // logged out while in flight
       if (res.data.success && res.data.token && res.data.expiresAt) {
         useAuthStore.getState().applyWorkspaceSwitch(
           res.data.tenantId ?? activeTenantId,
@@ -140,6 +187,7 @@ async function refreshOnce(): Promise<RefreshOutcome> {
       '/auth/refresh',
       user?.selectedRoleId ? { activeRoleId: user.selectedRoleId } : undefined,
     );
+    if (epoch !== sessionEpoch) return 'rejected'; // logged out while in flight
     if (res.data.success && res.data.expiresAt) {
       // /auth/refresh re-issues the access token (RefreshSession returns
       // it in the body). Store it, not just the expiry — cross-origin
@@ -187,6 +235,7 @@ export function forceLogout(notice?: string): void {
   // fire a redirect. isLoggingOut resets on hard navigation (page reload).
   if (isLoggingOut) return;
   isLoggingOut = true;
+  invalidateSession();
 
   // Read before logout() clears it — a customer session's server-side
   // cookies live at /api/portal/auth/logout, not /api/auth/logout, and

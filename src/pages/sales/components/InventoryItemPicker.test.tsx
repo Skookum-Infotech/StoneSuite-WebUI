@@ -5,25 +5,39 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('@/services/inventoryService', () => ({
-  inventoryService: { searchItems: vi.fn() },
+  inventoryService: { searchItems: vi.fn(), searchKits: vi.fn() },
 }));
 
 import { InventoryItemPicker } from './InventoryItemPicker';
 import { inventoryService } from '@/services/inventoryService';
-import type { InventoryItem } from '@/types/inventory';
+import type { ItemPriceKind } from '@/lib/itemPrice';
+import type { InventoryItem, InventoryKit } from '@/types/inventory';
 
-const GOLD = { id: 'item-1', name: 'Calacatta Gold', sku: 'CG-01', unitPrice: 120 } as InventoryItem;
+const GOLD = {
+  id: 'item-1', name: 'Calacatta Gold', sku: 'CG-01', unitPrice: 120, purchaseUnitPrice: 80,
+} as InventoryItem;
 const WHITE = { id: 'item-2', name: 'Calacatta White', sku: 'CW-01', unitPrice: 95 } as InventoryItem;
+const KITCHEN = {
+  id: 'kit-1', name: 'Kitchen', description: '', isActive: true, itemCount: 4, createdAt: '', updatedAt: '',
+} as InventoryKit;
+const RETIRED_KIT = { ...KITCHEN, id: 'kit-2', name: 'Kitchen Old', isActive: false } as InventoryKit;
 
 function mockSearch(records: InventoryItem[]) {
   vi.mocked(inventoryService.searchItems).mockResolvedValue({ records, nextCursor: '', hasMore: false });
 }
 
+function mockKits(records: InventoryKit[]) {
+  vi.mocked(inventoryService.searchKits).mockResolvedValue({ records, nextCursor: '', hasMore: false });
+}
+
 // Mirrors how the items tables host the picker: a controlled value inside the
 // table's clipping overflow wrapper.
-function Harness({ onPick = vi.fn(), onAddToInventory }: {
+function Harness({ onPick = vi.fn(), onAddToInventory, onPickKit, onAddKit, priceKind }: {
   onPick?: (item: InventoryItem) => void;
   onAddToInventory?: (name: string) => void;
+  onPickKit?: (kit: InventoryKit) => void;
+  onAddKit?: (name: string) => void;
+  priceKind?: ItemPriceKind;
 }) {
   const [value, setValue] = useState('');
   return (
@@ -33,6 +47,9 @@ function Harness({ onPick = vi.fn(), onAddToInventory }: {
         onTextChange={setValue}
         onPick={(item) => { setValue(item.name); onPick(item); }}
         onAddToInventory={onAddToInventory}
+        onPickKit={onPickKit}
+        onAddKit={onAddKit}
+        priceKind={priceKind}
       />
     </div>
   );
@@ -74,6 +91,26 @@ describe('InventoryItemPicker', () => {
 
     expect(onPick).toHaveBeenCalledWith(GOLD);
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('shows the selling price by default, as on a sales document', async () => {
+    mockSearch([GOLD]);
+    const user = userEvent.setup();
+    renderPicker();
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Cala');
+
+    expect(await screen.findByRole('option', { name: /Calacatta Gold/ })).toHaveTextContent('CG-01 · $120.00');
+  });
+
+  it('shows the purchasing price on a purchase document', async () => {
+    mockSearch([GOLD]);
+    const user = userEvent.setup();
+    renderPicker({ priceKind: 'purchasing' });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Cala');
+
+    expect(await screen.findByRole('option', { name: /Calacatta Gold/ })).toHaveTextContent('CG-01 · $80.00');
   });
 
   it('warns and offers Add to Inventory when nothing matches', async () => {
@@ -145,5 +182,115 @@ describe('InventoryItemPicker', () => {
     await user.keyboard('{Escape}');
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+});
+
+describe('InventoryItemPicker — kits', () => {
+  it('never asks for kits when kits are not enabled (editing an existing line)', async () => {
+    mockSearch([GOLD]);
+    const user = userEvent.setup();
+    renderPicker();
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Kit');
+    await screen.findByRole('option', { name: /Calacatta Gold/ });
+
+    expect(inventoryService.searchKits).not.toHaveBeenCalled();
+  });
+
+  it('lists matching kits after the items, marked KIT with their item count', async () => {
+    mockSearch([GOLD]);
+    mockKits([KITCHEN]);
+    const user = userEvent.setup();
+    renderPicker({ onPickKit: vi.fn() });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Kit');
+
+    const options = await screen.findAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual([
+      expect.stringContaining('Calacatta Gold'),
+      expect.stringContaining('Kitchen'),
+    ]);
+    expect(options[1]).toHaveTextContent('KIT');
+    expect(options[1]).toHaveTextContent('4 items');
+  });
+
+  it('picks a kit on click, handing over the kit and not an item', async () => {
+    mockSearch([]);
+    mockKits([KITCHEN]);
+    const onPick = vi.fn();
+    const onPickKit = vi.fn();
+    const user = userEvent.setup();
+    renderPicker({ onPick, onPickKit });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Kitch');
+    await user.click(await screen.findByRole('option', { name: /Kitchen/ }));
+
+    expect(onPickKit).toHaveBeenCalledWith(KITCHEN);
+    expect(onPick).not.toHaveBeenCalled();
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('leaves out an inactive kit', async () => {
+    mockSearch([]);
+    mockKits([KITCHEN, RETIRED_KIT]);
+    const user = userEvent.setup();
+    renderPicker({ onPickKit: vi.fn() });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Kitch');
+
+    await screen.findByRole('option', { name: /^Kitchen KIT/ });
+    expect(screen.queryByRole('option', { name: /Kitchen Old/ })).not.toBeInTheDocument();
+  });
+
+  it('offers Add as a Kit for a name that is no kit, next to Add to Inventory', async () => {
+    mockSearch([]);
+    mockKits([]);
+    const onAddKit = vi.fn();
+    const user = userEvent.setup();
+    renderPicker({ onPickKit: vi.fn(), onAddKit, onAddToInventory: vi.fn() });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Bathroom');
+
+    expect(await screen.findByRole('option', { name: 'Add “Bathroom” to Inventory' })).toBeInTheDocument();
+    await user.click(screen.getByRole('option', { name: 'Add “Bathroom” as a Kit' }));
+    expect(onAddKit).toHaveBeenCalledWith('Bathroom');
+  });
+
+  it('hides Add as a Kit once the name is exactly an existing kit', async () => {
+    mockSearch([]);
+    mockKits([KITCHEN]);
+    const user = userEvent.setup();
+    renderPicker({ onPickKit: vi.fn(), onAddKit: vi.fn() });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'kitchen');
+
+    await screen.findByRole('option', { name: /^Kitchen KIT/ });
+    expect(screen.queryByRole('option', { name: /as a Kit/ })).not.toBeInTheDocument();
+  });
+
+  it('does not offer Add as a Kit without the handler (no permission to create)', async () => {
+    mockSearch([]);
+    mockKits([]);
+    const user = userEvent.setup();
+    renderPicker({ onPickKit: vi.fn() });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Bathroom');
+
+    await screen.findByText(/isn't in inventory/);
+    expect(screen.queryByRole('option', { name: /as a Kit/ })).not.toBeInTheDocument();
+  });
+
+  it('reaches a kit with the keyboard', async () => {
+    mockSearch([GOLD]);
+    mockKits([KITCHEN]);
+    const onPickKit = vi.fn();
+    const user = userEvent.setup();
+    renderPicker({ onPickKit });
+
+    await user.type(screen.getByRole('combobox', { name: 'Item Name' }), 'Kit');
+    await screen.findByRole('option', { name: /^Kitchen KIT/ });
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+
+    expect(onPickKit).toHaveBeenCalledWith(KITCHEN);
   });
 });

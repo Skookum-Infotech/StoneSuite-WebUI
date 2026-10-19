@@ -14,7 +14,9 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { cn } from '@/lib/utils';
+import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
+import { DIMENSION_UNIT_LABELS, itemDimensionUnit } from '@/lib/lineDimensions';
 import { DeleteItemDialog } from './components/DeleteItemDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
@@ -97,10 +99,12 @@ export default function ItemDetailPage() {
               ['SKU', item.sku],
               ['Description', item.description || ''],
               ['Unit', nameOf(lookups?.units, item.unitId) || ''],
-              ['Unit Price', `$${item.unitPrice.toFixed(2)}`],
+              ['Purchasing Unit Price', `$${itemPrice(item, 'purchasing').toFixed(2)}`],
+              ['Selling Unit Price', `$${itemPrice(item, 'selling').toFixed(2)}`],
               ['Barcode', item.barcode || ''],
               ['Default Location', lookups?.warehouses.find((w) => w.warehouseId === item.defaultWarehouseId)?.name || ''],
               ['Track Stock', item.tracking === TRACKING_SERIALIZED || item.trackStock !== false ? 'Yes' : 'No'],
+              ['Length / Width Unit', DIMENSION_UNIT_LABELS[itemDimensionUnit(item)]],
             ],
           },
           {
@@ -158,12 +162,15 @@ export default function ItemDetailPage() {
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Unit" value={nameOf(lookups?.units, item.unitId)} />
-                  <ReadonlyField label="Unit Price" value={`$${item.unitPrice.toFixed(2)}`} />
+                  <ReadonlyField label="Purchasing Unit Price" value={`$${itemPrice(item, 'purchasing').toFixed(2)}`} />
+                  <ReadonlyField label="Selling Unit Price" value={`$${itemPrice(item, 'selling').toFixed(2)}`} />
                   <ReadonlyField label="Currency" value={nameOf(crmLookups?.currencies, item.currencyId)} />
                   <ReadonlyField label="Tax Rate" value={nameOf(lookups?.['tax-rates'], item.taxRateId)} />
                   <ReadonlyField label="Barcode" value={item.barcode} />
                   <ReadonlyField label="Default Location" value={lookups?.warehouses.find((w) => w.warehouseId === item.defaultWarehouseId)?.name} />
                   <ReadonlyField label="Track Stock" value={item.tracking === TRACKING_SERIALIZED || item.trackStock !== false ? 'Yes' : 'No'} />
+                  <ReadonlyField label="Kit/Packages" value={(item.kits ?? []).map((k) => k.name).join(', ')} />
+                  <ReadonlyField label="Length / Width Unit" value={DIMENSION_UNIT_LABELS[itemDimensionUnit(item)]} />
                 </div>
               </ModernSection>
 

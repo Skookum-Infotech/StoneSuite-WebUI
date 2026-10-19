@@ -10,7 +10,9 @@ import {
   willAutoRetry,
   type ExtractionState,
 } from '@/lib/documentExtractionMachine';
+import { trackBackgroundExtraction } from '@/hooks/useBackgroundExtractions';
 import { deleteDocumentFile, setDocumentFile } from '@/lib/documentFileRegistry';
+import { PENDING_DOCUMENTS_KEY } from '@/lib/documentExtractionKeys';
 import { validateDocumentFile, withDocumentContentType } from '@/lib/documentUploadValidation';
 import { UploadError } from '@/services/attachmentService';
 import { ExtractionApiError, documentExtractionService, sha256Hex } from '@/services/documentExtractionService';
@@ -24,7 +26,7 @@ const UNAVAILABLE_MESSAGE = 'This document is no longer available. You can still
 const PRESIGN_EXPIRY_MARGIN_MS = 30_000;
 const POLL_RETRIES = 2;
 
-export const PENDING_DOCUMENTS_KEY = ['document-extractions', 'ready'] as const;
+export { PENDING_DOCUMENTS_KEY };
 const extractionKey = (id: string | null) => ['document-extraction', id] as const;
 
 export interface UseDocumentExtraction {
@@ -176,6 +178,12 @@ export function useDocumentExtraction(docType: DocumentExtractionDocType = 'sale
       const status = q.state.data?.status;
       return !status || IN_FLIGHT_STATUSES.includes(status) ? POLL_INTERVAL_MS : false;
     },
+    // React Query pauses interval polling while the tab is hidden (macOS Chrome
+    // also reports an occluded window as hidden), which left the stepper on
+    // "Read, in progress" long after the server finished. Keep polling, and
+    // refetch at once when the tab is shown again.
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
     retry: POLL_RETRIES,
   });
   const polled = query.data;
@@ -245,11 +253,12 @@ export function useDocumentExtraction(docType: DocumentExtractionDocType = 'sale
     if (!id) return false;
     try {
       await documentExtractionService.notify(id);
+      trackBackgroundExtraction(queryClient, id);
       return true;
     } catch {
       return false;
     }
-  }, []);
+  }, [queryClient]);
 
   const reset = useCallback(() => {
     runRef.current += 1;

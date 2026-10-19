@@ -37,10 +37,13 @@ import {
   ClipboardEdit,
   Repeat,
   ClipboardCheck,
+  ClipboardPlus,
   Layers,
   Boxes,
   ArrowLeftRight,
   CalendarClock,
+  CalendarDays,
+  CalendarRange,
   LayoutGrid,
   KeyRound,
   LifeBuoy,
@@ -78,6 +81,11 @@ export interface NavLink {
    *  useUserPermissions' portal allowlist instead). The path must also be in
    *  CUSTOMER_ALLOWED_PATH_PREFIXES or MainLayout bounces the customer away. */
   customerVisible?: boolean;
+  /** Show the link to customer-portal sessions ONLY — staff never see it, not
+   *  even for the moment permissions are still loading. For a page that exists
+   *  purely for the portal (Created Orders) and has no staff-side module. Must
+   *  be paired with `alwaysVisible` + `customerVisible`. */
+  customerOnly?: boolean;
   /** Live counter shown as a pill beside the label. */
   badge?: NavBadge;
   /** Workflow key (Configuration > Workflows) backing this link's form, e.g.
@@ -190,6 +198,21 @@ export const sidebarNav: SidebarNavConfig = {
           iconColor: "text-emerald-600 dark:text-emerald-400",
           matchPaths: ["/sales"],
           children: [
+            {
+              type: "link",
+              id: "created-orders",
+              label: "Created Orders",
+              path: "/sales/created-orders",
+              icon: ClipboardPlus,
+              iconColor: "text-lime-600 dark:text-lime-400",
+              // The countertop orders a customer files from the portal. It has
+              // no staff module (and no resource in the role matrix), so like
+              // Support it declares no `permission` — `customerOnly` is what
+              // keeps it out of every staff sidebar.
+              alwaysVisible: true,
+              customerVisible: true,
+              customerOnly: true,
+            },
             {
               type: "link",
               id: "estimates",
@@ -408,6 +431,16 @@ export const sidebarNav: SidebarNavConfig = {
             },
             {
               type: "link",
+              id: "bin-transfer",
+              label: "Bin Transfer",
+              path: "/inventory/bin_transfer",
+              icon: ArrowLeftRight,
+              iconColor: "text-violet-500 dark:text-violet-400",
+              permission: { resource: "bin_transfer", action: "read" },
+              workflowKey: "bin_transfer",
+            },
+            {
+              type: "link",
               id: "locations",
               label: "Locations",
               path: "/inventory/location",
@@ -487,6 +520,31 @@ export const sidebarNav: SidebarNavConfig = {
               icon: Settings2,
               iconColor: "text-slate-500 dark:text-slate-400",
               permission: { resource: "chart_of_account", action: "configure" },
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "calendar",
+          label: "Calendar",
+          icon: CalendarDays,
+          iconColor: "text-sky-600 dark:text-sky-400",
+          matchPaths: ["/calendar"],
+          children: [
+            {
+              type: "link",
+              id: "activity-planner",
+              label: "Activity Planner",
+              path: "/calendar/activity-planner",
+              icon: CalendarRange,
+              iconColor: "text-sky-500 dark:text-sky-400",
+              // A view over every order's schedule, so it reuses the Sales
+              // Order grant instead of naming a resource of its own. Keep this
+              // group AFTER Sales: buildPermModules keeps the first occurrence
+              // of a resource, and the role matrix must still list
+              // sales_order under Sales.
+              permission: { resource: "sales_order", action: "read" },
+              workflowKey: "sales_order",
             },
           ],
         },

@@ -28,6 +28,15 @@ export interface VendorBillLineInput {
   unitPrice: number;
   discountPercent?: number;
   taxRateId?: number | null;
+  /** Size of one slab and how many slabs the line covers. With length and
+   *  width both set the server derives the quantity from them (length x width x
+   *  slabs, in the item's area unit), so the quantity sent is then ignored. */
+  length?: number;
+  width?: number;
+  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
+   *  the item's unit, then cm. */
+  dimensionUnit?: string;
+  slabs?: number;
 }
 
 export interface CreateVendorBillPayload {
@@ -51,6 +60,8 @@ export interface CreateVendorBillPayload {
   adjustment?: number;
   customFields?: Record<string, unknown>;
   items: VendorBillLineInput[];
+  /** Save despite a 409 duplicate_document (same vendor invoice number). */
+  allowDuplicate?: boolean;
 }
 
 /** Update mirrors create minus the vendor and purchase order (a vendor bill's
@@ -91,6 +102,13 @@ export interface VendorBillLine {
   lineDiscount: number;
   lineTax: number;
   lineTotal: number;
+  /** The slab size and count the line was priced from, when entered that
+   *  way; quantity is then their area. */
+  length?: number | null;
+  width?: number | null;
+  /** The unit length and width were measured in. */
+  dimensionUnit?: string | null;
+  slabs?: number | null;
 }
 
 /** One live vendor payment application against this bill — read-only. A bill

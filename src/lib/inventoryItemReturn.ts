@@ -7,9 +7,12 @@
 // user to Inventory → New Item, and that page navigates back to `returnTo`
 // with the created item in router state. The document page then restores the
 // stash and re-opens the line with the new item picked.
-import type { InventoryItem } from '@/types/inventory';
+import type { InventoryItem, InventoryKit } from '@/types/inventory';
 
 export const INVENTORY_ITEM_NEW_PATH = '/inventory/item/new';
+/** Kits take the same trip: a name the picker doesn't know as a kit is added in
+ *  Inventory → New Kit, which comes back with the created kit in router state. */
+export const INVENTORY_KIT_NEW_PATH = '/inventory/kit/new';
 export const RETURN_TO_PARAM = 'returnTo';
 export const ITEM_NAME_PARAM = 'name';
 /** Router-state key the New Item page sets when it sends the user back. */
@@ -34,6 +37,8 @@ export interface ResolvedInventoryReturn<P = unknown, L = unknown> {
   page: P;
   line: LineDraftStash<L> | null;
   createdItem: InventoryItem | null;
+  /** Set instead of `createdItem` when the trip was to New Kit. */
+  createdKit: InventoryKit | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -59,6 +64,20 @@ export function newInventoryItemPath(returnTo: string, itemName: string): string
  *  when the user cancelled out of New Item. */
 export function returnRouterState(createdItem: InventoryItem | null): Record<string, unknown> {
   return { [INVENTORY_RETURN_STATE_KEY]: { createdItem } };
+}
+
+export function newInventoryKitPath(returnTo: string, kitName: string): string {
+  const params = new URLSearchParams({ [RETURN_TO_PARAM]: returnTo });
+  const name = kitName.trim();
+  if (name) params.set(ITEM_NAME_PARAM, name);
+  return `${INVENTORY_KIT_NEW_PATH}?${params.toString()}`;
+}
+
+/** Router state for coming back from New Kit — `createdKit` is null when the
+ *  user cancelled. Carries the whole kit, items included, so the document can
+ *  add its lines without asking the server again. */
+export function kitReturnRouterState(createdKit: InventoryKit | null): Record<string, unknown> {
+  return { [INVENTORY_RETURN_STATE_KEY]: { createdItem: null, createdKit } };
 }
 
 /** Returns false when storage is unavailable (private mode, quota) so the
@@ -99,13 +118,22 @@ export function clearReturnStash(): void {
   }
 }
 
-function readCreatedItem(routerState: unknown): { returned: boolean; createdItem: InventoryItem | null } {
+function hasIdAndName(candidate: unknown): candidate is Record<string, unknown> {
+  return isRecord(candidate) && typeof candidate.id === 'string' && typeof candidate.name === 'string';
+}
+
+function readCreated(routerState: unknown): {
+  returned: boolean; createdItem: InventoryItem | null; createdKit: InventoryKit | null;
+} {
   if (!isRecord(routerState) || !isRecord(routerState[INVENTORY_RETURN_STATE_KEY])) {
-    return { returned: false, createdItem: null };
+    return { returned: false, createdItem: null, createdKit: null };
   }
-  const candidate = routerState[INVENTORY_RETURN_STATE_KEY].createdItem;
-  const valid = isRecord(candidate) && typeof candidate.id === 'string' && typeof candidate.name === 'string';
-  return { returned: true, createdItem: valid ? (candidate as unknown as InventoryItem) : null };
+  const state = routerState[INVENTORY_RETURN_STATE_KEY];
+  return {
+    returned: true,
+    createdItem: hasIdAndName(state.createdItem) ? (state.createdItem as unknown as InventoryItem) : null,
+    createdKit: hasIdAndName(state.createdKit) ? (state.createdKit as unknown as InventoryKit) : null,
+  };
 }
 
 /**
@@ -121,12 +149,13 @@ export function resolveInventoryReturn<P, L>(
   isHistoryPop: boolean,
 ): ResolvedInventoryReturn<P, L> | null {
   if (!stash || stash.returnTo !== currentPath) return null;
-  const { returned, createdItem } = readCreatedItem(routerState);
+  const { returned, createdItem, createdKit } = readCreated(routerState);
   if (!returned && !isHistoryPop) return null;
   return {
     page: stash.page as P,
     line: stash.line as LineDraftStash<L> | null,
     createdItem,
+    createdKit,
   };
 }
 

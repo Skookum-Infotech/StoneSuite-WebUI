@@ -8,6 +8,7 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { toExpectedSlabs } from '@/lib/slabEstimate';
+import { dimensionsFromLine, dimensionsPayload, isAreaUnit, type LineDimensions } from '@/lib/lineDimensions';
 import type {
   PurchaseOrder, PurchaseOrderCreatePayload, PurchaseOrderLineInput, PurchaseOrderLine,
 } from '@/types/purchaseOrder';
@@ -228,7 +229,7 @@ export const SHIP_TO_FIELDS: PurchaseOrderFormField[] = [
 // seeded "No Tax" row and no endpoint exposes it — matches Estimate/Quote/
 // Invoice/SalesOrder), so every line's tax preview follows the header's
 // Sales Tax % rather than a per-line rate.
-export interface PurchaseOrderLineItem {
+export interface PurchaseOrderLineItem extends Pick<LineDimensions, 'length' | 'width' | 'dimensionUnit'> {
   id: string;
   lineNo: number;
   itemName: string;
@@ -560,6 +561,8 @@ function toStr(v: unknown): string {
  *  `itemName`, since the backend requires a description there (mirrors
  *  estimateForm.ts's toLineInput / purchaseorder/store_create.go resolveLines). */
 function toLineInput(item: PurchaseOrderLineItem, lineNo: number): PurchaseOrderLineInput {
+  // The slab count lives in expectedSlabs; only the size is added here.
+  const size = dimensionsPayload({ length: item.length, width: item.width, dimensionUnit: item.dimensionUnit }, item.units);
   return {
     lineNumber: lineNo,
     inventoryItemUuid: item.inventoryItemUuid || undefined,
@@ -568,8 +571,14 @@ function toLineInput(item: PurchaseOrderLineItem, lineNo: number): PurchaseOrder
     quantity: toNum(item.quantity),
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
-    // Only a slab line carries an expected count; the server refuses it elsewhere.
-    expectedSlabs: item.tracking === TRACKING_SERIALIZED && item.inventoryItemUuid ? toExpectedSlabs(item.expectedSlabs) : undefined,
+    // Only a slab line, or one measured in an area unit (where it is the Slabs of
+    // a length x width x slabs line), carries an expected count; the server
+    // refuses it elsewhere.
+    expectedSlabs: item.inventoryItemUuid && (item.tracking === TRACKING_SERIALIZED || isAreaUnit(item.units))
+      ? toExpectedSlabs(item.expectedSlabs) : undefined,
+    length: size.length,
+    width: size.width,
+    dimensionUnit: size.dimensionUnit,
   };
 }
 
@@ -644,6 +653,9 @@ function fromLine(line: PurchaseOrderLine, i: number): PurchaseOrderLineItem {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     tracking: line.tracking,
     expectedSlabs: line.expectedSlabs ? String(line.expectedSlabs) : '',
+    length: dimensionsFromLine(line).length,
+    width: dimensionsFromLine(line).width,
+    dimensionUnit: dimensionsFromLine(line).dimensionUnit,
   };
 }
 

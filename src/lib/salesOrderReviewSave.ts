@@ -1,3 +1,4 @@
+import { savedLines } from '@/lib/documentHandoffShared';
 import type { HandoffLine, SalesOrderHandoff } from '@/lib/salesOrderDocumentHandoff';
 import type { SOLineItem } from '@/lib/salesOrderForm';
 import type { CompleteExtractionInput } from '@/types/documentExtraction';
@@ -13,16 +14,9 @@ export function buildCompleteInput(
   lines: HandoffLine[],
   lineItems: SOLineItem[],
 ): CompleteExtractionInput {
-  const byId = new Map(lineItems.map((l) => [l.id, l]));
   return {
     recordUuid,
-    saved: {
-      ...form,
-      lines: lines.flatMap((l) => {
-        const itemUuid = byId.get(l.id)?.inventoryItemUuid;
-        return itemUuid ? [{ docSku: l.docSku, docDescription: l.docDescription, itemUuid }] : [];
-      }),
-    },
+    saved: { ...form, lines: savedLines(lines, lineItems) },
   };
 }
 

@@ -18,7 +18,7 @@ function badgeLabels(b: HandoffBadges): string[] {
   if (b.revision) out.push(`Revision: ${b.revision}`);
   if (b.convertedUnits) out.push('Converted units');
   if (b.wrongType) out.push(`Looks like a ${b.wrongType}`);
-  if (b.notRecognized) out.push('Not a purchase order?');
+  if (b.notRecognized) out.push(b.notRecognizedLabel ?? 'Not a purchase order?');
   return out;
 }
 

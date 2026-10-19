@@ -17,7 +17,6 @@ import {
   FilePlus,
   Wallet,
   MapPin,
-  ArrowLeftRight,
   ClipboardEdit,
   Repeat,
   ClipboardCheck,
@@ -113,11 +112,6 @@ const MODULE_META: Record<string, ModuleMeta> = {
     title: 'Bin Management',
     description: 'Organize locations and bin storage.',
     icon: MapPin,
-  },
-  bin_transfer: {
-    title: 'Bin Transfer',
-    description: 'Move stock between bins within a location.',
-    icon: ArrowLeftRight,
   },
   adjustment: {
     title: 'Adjust Inventory',

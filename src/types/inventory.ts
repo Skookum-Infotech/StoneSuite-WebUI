@@ -84,7 +84,13 @@ export interface InventoryItem {
   name: string;
   description: string;
   unitId: number;
+  /** The SELLING price — what a sales document line defaults to. */
   unitPrice: number;
+  /** What a purchase order, vendor bill or requisition line defaults to. The API
+   *  always sends it; optional here so a hand-built item (a test fixture) still
+   *  type-checks — read it through `itemPrice()`, where absent means the selling
+   *  price. */
+  purchaseUnitPrice?: number;
   currencyId?: number | null;
   taxRateId?: number | null;
   isActive: boolean;
@@ -98,11 +104,19 @@ export interface InventoryItem {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  /** The unit this item's slabs' length and width are measured in: mm, cm, in, ft
+   *  or m. A document line copies it when the item is picked. The API always sends
+   *  it; optional here so a hand-built item (a test fixture) still type-checks —
+   *  read it through itemDimensionUnit(), where absent means cm. */
+  dimensionUnit?: string;
   /** Whether a sales order line for this item is checked against stock and
    *  reserves it. Off for a service/delivery/labour item; always on for a slab
    *  item. The API always sends it; optional here so a hand-built item (a test
    *  fixture) still type-checks — absent reads as on. */
   trackStock?: boolean;
+  /** The kits this item is in. Sent by the single-item GET only; list and
+   *  search rows leave it out. */
+  kits?: KitRef[];
 
   createdAt: string;
   updatedAt: string;
@@ -115,7 +129,9 @@ export interface InventoryItemInput {
   name: string;
   description: string;
   unitId: number;
+  /** Selling price. Required by the API, as is `purchaseUnitPrice`. */
   unitPrice: number;
+  purchaseUnitPrice: number;
   currencyId?: number | null;
   taxRateId?: number | null;
   customFields: Record<string, unknown>;
@@ -128,7 +144,12 @@ export interface InventoryItemInput {
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
+  /** mm, cm, in, ft or m. Omit to leave the item's unit as it is. */
+  dimensionUnit?: string;
   trackStock?: boolean;
+  /** When present, makes exactly these kits (ids) the item's kits. Omit to
+   *  leave its memberships alone; `[]` takes the item out of every kit. */
+  kitIds?: string[];
 }
 
 export interface InventoryItemPage {
@@ -150,6 +171,69 @@ export interface InventoryItemHistoryEntry {
   at: string;
   byName: string;
   details?: Record<string, unknown>;
+}
+
+// ── Kits ─────────────────────────────────────────────────────────────────────
+// A kit is a named group of catalogue items sold together ("Kitchen"). Picking
+// one on a document line adds its items as ordinary lines under a kit heading.
+// Served from `/api/tenant/inventory/kits*` under the `inventory_item` grant;
+// mirrors the Go structs in StoneSuite-Backend `inventory/kit_types.go`.
+
+/** The light kit reference an item carries. */
+export interface KitRef {
+  id: string;
+  name: string;
+}
+
+/** One item a kit holds and the quantity a line gets by default. `item` is the
+ *  full catalogue record — what an item search returns — so a kit is added to a
+ *  line table through the code that adds an item. */
+export interface KitMember {
+  quantity: number;
+  item: InventoryItem;
+}
+
+export interface InventoryKit {
+  id: string; // inventory_kit_uuid
+  name: string;
+  description: string;
+  isActive: boolean;
+  /** Live items in the kit; set on every read. */
+  itemCount: number;
+  /** Present on the single-kit GET only — list and search rows carry the count. */
+  members?: KitMember[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KitMemberInput {
+  /** The item's id (its uuid). */
+  itemId: string;
+  /** Omitted or 0 reads as 1 server-side. */
+  quantity: number;
+}
+
+// Whole-object write, like items. `members` omitted leaves the kit's items
+// alone; an explicit empty list empties it. `isActive` omitted leaves it as is.
+export interface KitInput {
+  name: string;
+  description: string;
+  isActive?: boolean;
+  members?: KitMemberInput[];
+}
+
+export interface KitPage {
+  records: InventoryKit[];
+  nextCursor: string;
+  hasMore: boolean;
+}
+
+export interface KitSearchRequest {
+  filters?: FilterClause[];
+  sort?: SortKey[];
+  limit?: number;
+  cursor?: string;
+  search?: string;
 }
 
 // ── Units (slabs / remnants) ─────────────────────────────────────────────────
@@ -255,11 +339,6 @@ export interface UnitSearchRequest {
   search?: string;
 }
 
-export interface MoveUnitInput {
-  binId?: string | null;
-  note?: string;
-}
-
 export interface ScrapUnitInput {
   reasonId: number;
   note?: string;
@@ -274,8 +353,41 @@ export interface UnitHistoryEntry {
   toBin?: string;
   reason?: string;
   note?: string;
+  /** The bin transfer that made a bin_move, when one did. */
+  transferId?: string;
+  transferNumber?: string;
   at: string;
   byName: string;
+}
+
+// ── Bin history ───────────────────────────────────────────────────────────
+
+/** Whether a unit arrived in a bin, left it, or was only named on the event. */
+export type BinHistoryDirection = 'in' | 'out' | 'other';
+
+/** One event on a bin — read from the units' own movement history, so it covers
+ *  every route in and out of the bin, not only bin transfers. */
+export interface BinHistoryEntry {
+  /** bin_move, create, cut, scrap, warehouse_move, remnant_created… */
+  action: string;
+  direction: BinHistoryDirection;
+  unitId: string;
+  unitSerial: string;
+  inventoryItemName?: string;
+  /** The two ends of the movement; whichever is the bin itself is that bin. */
+  fromBinPath?: string;
+  toBinPath?: string;
+  note?: string;
+  transferId?: string;
+  transferNumber?: string;
+  at: string;
+  byName: string;
+}
+
+export interface BinHistoryPage {
+  records: BinHistoryEntry[];
+  nextCursor: string;
+  hasMore: boolean;
 }
 
 // ── Cutting ───────────────────────────────────────────────────────────────
