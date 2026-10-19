@@ -26,6 +26,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
+import { LineReceivingProgress } from './components/LineReceivingProgress';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
@@ -360,7 +361,7 @@ export default function PurchaseOrderDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5">
-                        <ReceiptProgress received={line.qtyReceived} ordered={line.quantity} />
+                        <LineReceivingProgress line={line} />
                         {(line.expectedSlabs || line.slabsReceived) ? (
                           <p className="mt-1 text-2xs text-stone-400">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
                         ) : null}
@@ -507,22 +508,6 @@ export default function PurchaseOrderDetailPage() {
         />
       )}
 
-    </div>
-  );
-}
-
-function ReceiptProgress({ received, ordered }: { received: number; ordered: number }) {
-  const pct = ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
-  const complete = ordered > 0 && received >= ordered;
-  return (
-    <div className="flex items-center gap-2 min-w-[100px]">
-      <div className="h-1.5 flex-1 rounded-full bg-stone-100 overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all', complete ? 'bg-emerald-500' : received > 0 ? 'bg-amber-400' : 'bg-stone-200')}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="shrink-0 text-2xs tabular-nums text-stone-500">{received}/{ordered}</span>
     </div>
   );
 }

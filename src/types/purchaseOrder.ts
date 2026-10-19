@@ -177,6 +177,10 @@ export interface PurchaseOrder {
   createdAt?: string;
   updatedAt?: string;
   items: PurchaseOrderLine[];
+  /** 0-100 receiving progress, average of each line's received ÷ ordered
+   *  (see lib/receivingProgress.ts). Filled on list/search rows only — the
+   *  detail response carries the lines, which are the source of truth. */
+  receivedPercent?: number;
 }
 
 /** List/search rows are full `PurchaseOrder` records server-side with `items`
@@ -186,7 +190,7 @@ export type PurchaseOrderSummary = Pick<
   PurchaseOrder,
   | 'id' | 'purchaseOrderNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'nextStatusCodes'
   | 'vendor' | 'orderDate' | 'expectedDate' | 'grandTotal' | 'ownerEmployeeId'
-  | 'createdAt' | 'updatedAt'
+  | 'receivedPercent' | 'createdAt' | 'updatedAt'
 >;
 
 /** Search request = the shared `query.Request` plus the optional global-search
