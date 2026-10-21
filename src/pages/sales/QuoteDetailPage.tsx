@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileText, Upload, Pencil, FileSpreadsheet, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { quoteService } from '@/services/quoteService';
 import { lookupService } from '@/services/lookupService';
@@ -67,6 +68,7 @@ export default function QuoteDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('quote', 'update');
   const canDelete = permissionsLoading || hasPermission('quote', 'delete');
+  const canCopy = permissionsLoading || hasPermission('quote', 'create');
   // Convert targets a new Sales Order, so gate on the Sales Order module's
   // create permission (backend checks source quote:read + target sales_order:create).
   const canConvert = permissionsLoading || hasPermission('sales_order', 'create');
@@ -358,6 +360,9 @@ export default function QuoteDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit quote
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="quote" addPath="/sales/quote/new" sourceId={id} />
               )}
               {canEdit && (
                 <button

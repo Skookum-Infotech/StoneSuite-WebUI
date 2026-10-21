@@ -23,6 +23,12 @@ import {
   type QuoteLineItem,
 } from '@/lib/quoteForm';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { fromQuoteForCopy } from '@/lib/quoteCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { Quote } from '@/types/quote';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface QuoteDraft {
@@ -34,7 +40,16 @@ interface QuoteDraft {
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that quote (see CopySeedGate). */
 export default function AddQuotePage() {
+  return (
+    <CopySeedGate queryKey="quote" load={(id) => quoteService.getQuote(id)}>
+      {(source) => <AddQuoteForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddQuoteForm({ source }: { source?: Quote }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -68,9 +83,10 @@ export default function AddQuotePage() {
   // pushing setState calls into a useEffect body. The same derivation defaults
   // a still-empty country/currency to United States/USD once lookups load,
   // without overriding a value carried over from the source estimate.
+  const seed = useMemo(() => (source ? fromQuoteForCopy(source) : null), [source]);
   const prefill = useMemo(
-    () => (sourceEstimate ? fromSourceEstimate(sourceEstimate) : null),
-    [sourceEstimate],
+    () => seed ?? (sourceEstimate ? fromSourceEstimate(sourceEstimate) : null),
+    [seed, sourceEstimate],
   );
   const baseData = useMemo(() => {
     const merged: Record<string, unknown> = { ...quoteDefaults(), ...(prefill?.data ?? {}) };
@@ -86,11 +102,17 @@ export default function AddQuotePage() {
   const [localLineItems, setLocalLineItems] = useState<QuoteLineItem[] | null>(restored?.localLineItems ?? null);
   const [localCustomer, setLocalCustomer] = useState<CustomerRef | null>(restored?.localCustomer ?? null);
   const [customerTouched, setCustomerTouched] = useState(restored?.customerTouched ?? false);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
 
   const data = localData ?? baseData;
   const lineItems = useMemo(() => localLineItems ?? prefill?.lineItems ?? [], [localLineItems, prefill]);
   const customer = customerTouched ? localCustomer : (prefill?.customer ?? null);
+
+  // Quotes carry no guard of their own; a copy is unsaved work from the start,
+  // so only then does leaving prompt.
+  const guard = useUnsavedChangesGuard({ data, lineItems, customer, customFieldValues }, Boolean(seed), Boolean(seed));
 
   const set = useCallback((key: string, value: unknown) => {
     setLocalData((d) => {
@@ -128,7 +150,7 @@ export default function AddQuotePage() {
 
   // Shared by both return-trip hooks — either one may stash and restore it.
   const draft: QuoteDraft = { activeTab, localData, localLineItems, localCustomer, customerTouched, customFieldValues };
-  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
@@ -156,6 +178,7 @@ export default function AddQuotePage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(quote.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/quote');
     },
   });
@@ -163,13 +186,14 @@ export default function AddQuotePage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Quotes"
           onBack={() => navigate('/sales/quote')}
           icon={FileText}
           title="New Quote"
-          subtitle="Fields marked * are required."
+          subtitle={source ? copySubtitle(source.quoteNumber) : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
@@ -196,7 +220,7 @@ export default function AddQuotePage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <QuoteFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}
