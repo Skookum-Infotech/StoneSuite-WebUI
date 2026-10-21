@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileCheck, Upload, Pencil, FileDown, Loader2, Ban, Wallet } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -69,6 +70,7 @@ export default function VendorBillDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('vendor_bill', 'update');
   const canDelete = permissionsLoading || hasPermission('vendor_bill', 'delete');
+  const canCopy = permissionsLoading || hasPermission('vendor_bill', 'create');
   const canTransition = permissionsLoading || hasPermission('vendor_bill', 'transition');
   const canRecordPayment = permissionsLoading || hasPermission('vendor_payment', 'create');
 
@@ -415,6 +417,9 @@ export default function VendorBillDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit vendor bill
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="vendor bill" addPath="/purchases/vendor_bill/new" sourceId={id} />
               )}
               <button
                 type="button"

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Wallet, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { expenseService } from '@/services/expenseService';
 import { lookupService } from '@/services/lookupService';
@@ -60,6 +61,7 @@ export default function ExpenseDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('expense', 'update');
   const canDelete = permissionsLoading || hasPermission('expense', 'delete');
+  const canCopy = permissionsLoading || hasPermission('expense', 'create');
   const canTransition = permissionsLoading || hasPermission('expense', 'transition');
 
   const { data: exp, isLoading, error } = useQuery({
@@ -311,6 +313,9 @@ export default function ExpenseDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit expense
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="expense" addPath="/purchases/expense/new" sourceId={id} />
               )}
               <button
                 type="button"

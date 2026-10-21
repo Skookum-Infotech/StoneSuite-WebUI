@@ -37,6 +37,10 @@ import {
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { installDateError } from '@/lib/salesOrderSchedule';
 import { PLANNER_QUERY_KEY } from '@/lib/plannerCalendar';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromOrderForCopy } from '@/lib/salesOrderCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { SalesOrder } from '@/types/salesOrder';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface SalesOrderDraft {
@@ -48,7 +52,16 @@ interface SalesOrderDraft {
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that order (see CopySeedGate). */
 export default function AddSalesOrderPage() {
+  return (
+    <CopySeedGate queryKey="sales-order" load={(id) => salesOrderService.getOrder(id)}>
+      {(source) => <AddSalesOrderForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddSalesOrderForm({ source }: { source?: SalesOrder }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -57,13 +70,16 @@ export default function AddSalesOrderPage() {
     'customer', '/crm/customer/new', { resource: 'customer', action: 'create' },
   );
   const restored = inventoryReturn.restored ?? customerReturn.restored;
+  const seed = useMemo(() => (source ? fromOrderForCopy(source) : null), [source]);
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? soDefaults());
-  const [lineItems, setLineItems] = useState<SOLineItem[]>(restored?.lineItems ?? []);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? soDefaults());
+  const [lineItems, setLineItems] = useState<SOLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
   const [drawings, setDrawings] = useState<SODrawing[]>(restored?.drawings ?? []);
-  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [customer, setCustomer] = useState<CustomerRef | null>(restored?.customer ?? seed?.customer ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
 
   const set = useCallback((key: string, value: unknown) => {
     setData((d) => {
@@ -131,13 +147,14 @@ export default function AddSalesOrderPage() {
 
   // A document-prefilled form is unsaved work from the start, so leaving prompts
   // — except for a document that was already used or couldn't be read, which
-  // shows no form at all.
+  // shows no form at all. A copy is unsaved work from the start too.
   const documentUsed = review.active && review.phase === 'used';
   const documentFailed = review.active && review.phase === 'failed';
   const guard = useUnsavedChangesGuard(
     { data, lineItems, drawings, customer, customFieldValues },
     !review.active || review.hydrated,
-    inventoryReturn.isRestored || customerReturn.isRestored || (review.active && !documentUsed && !documentFailed),
+    inventoryReturn.isRestored || customerReturn.isRestored || Boolean(seed)
+      || (review.active && !documentUsed && !documentFailed),
   );
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -219,7 +236,7 @@ export default function AddSalesOrderPage() {
           onBack={() => navigate('/sales/sales_order')}
           icon={ShoppingCart}
           title={review.active ? 'New Sales Order from Document' : 'New Sales Order'}
-          subtitle="Fields marked * are required."
+          subtitle={source ? copySubtitle(source.salesOrderNumber) : 'Fields marked * are required.'}
           actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { lookupService } from '@/services/lookupService';
@@ -67,6 +68,7 @@ export default function EstimateDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('estimate', 'update');
   const canDelete = permissionsLoading || hasPermission('estimate', 'delete');
+  const canCopy = permissionsLoading || hasPermission('estimate', 'create');
   // Convert targets a new Quote, so gate on the Quote module's create
   // permission (backend checks source estimate:read + target quote:create).
   const canConvert = permissionsLoading || hasPermission('quote', 'create');
@@ -346,6 +348,9 @@ export default function EstimateDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit estimate
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="estimate" addPath="/sales/estimate/new" sourceId={id} />
               )}
               {canEdit && (
                 <button

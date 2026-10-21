@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Package, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -74,6 +75,7 @@ export default function PurchaseOrderDetailPage() {
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
+  const canCopy = permissionsLoading || hasPermission('purchase_order', 'create');
   // A new receipt is saved and posted in one step, so it takes both grants.
   const canReceive = permissionsLoading
     || (hasPermission('item_receipt', 'create') && hasPermission('item_receipt', 'transition'));
@@ -409,6 +411,9 @@ export default function PurchaseOrderDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit purchase order
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="purchase order" addPath="/purchases/purchase_order/new" sourceId={id} />
               )}
               <button
                 type="button"

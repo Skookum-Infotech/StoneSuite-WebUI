@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AxiosError, type AxiosResponse } from 'axios';
 
 vi.mock('@/services/purchaseOrderService', () => ({
@@ -55,6 +55,12 @@ const pendingOrder = {
   updatedAt: '2026-09-01T00:00:00Z',
 } as unknown as PurchaseOrder;
 
+// Stands in for the Add page so a test can see where Copy sent the user.
+function AddPageProbe() {
+  const { pathname, search } = useLocation();
+  return <p data-testid="add-page">{`${pathname}${search}`}</p>;
+}
+
 function renderPage({ isSuperAdmin = false, denied = [] as string[] } = {}) {
   vi.mocked(useUserPermissions).mockReturnValue({
     grants: [], isLoading: false, activeRoleId: '', isSuperAdmin,
@@ -67,6 +73,7 @@ function renderPage({ isSuperAdmin = false, denied = [] as string[] } = {}) {
       <MemoryRouter initialEntries={['/purchases/purchase_order/po-1']}>
         <Routes>
           <Route path="/purchases/purchase_order/:id" element={<PurchaseOrderDetailPage />} />
+          <Route path="/purchases/purchase_order/new" element={<AddPageProbe />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -465,5 +472,33 @@ describe('PurchaseOrderDetailPage — Resend email', () => {
     expect(await screen.findByText('The email could not be delivered.')).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'Resend to vendor?' })).toBeInTheDocument();
     expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+// Copy opens the Add page pre-filled; it creates a record, so it takes the
+// create grant — not update, which only Edit needs.
+describe('PurchaseOrderDetailPage — Copy purchase order', () => {
+  it('opens the Add page for this order, nothing created yet', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage();
+
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Copy purchase order' }))[0]);
+
+    expect(screen.getByTestId('add-page')).toHaveTextContent('/purchases/purchase_order/new?copyFrom=po-1');
+  });
+
+  it('is hidden without permission to create purchase orders', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage({ denied: ['purchase_order:create'] });
+
+    await screen.findAllByText('Sent');
+    expect(screen.queryAllByRole('button', { name: 'Copy purchase order' })).toHaveLength(0);
+  });
+
+  it('does not depend on the update grant', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(sentOrder);
+    renderPage({ denied: ['purchase_order:update'] });
+
+    expect((await screen.findAllByRole('button', { name: 'Copy purchase order' })).length).toBeGreaterThan(0);
   });
 });
