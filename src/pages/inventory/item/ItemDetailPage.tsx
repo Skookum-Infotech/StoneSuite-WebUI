@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package, Pencil, FileDown, Loader2, History as HistoryIcon } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { inventoryService } from '@/services/inventoryService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -47,6 +48,7 @@ export default function ItemDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('inventory_item', 'update');
   const canDelete = permissionsLoading || hasPermission('inventory_item', 'delete');
+  const canCopy = permissionsLoading || hasPermission('inventory_item', 'create');
 
   const { data: item, isLoading, error } = useQuery({
     queryKey: ['inventory-item', id],
@@ -223,6 +225,9 @@ export default function ItemDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit item
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="item" addPath="/inventory/item/new" sourceId={id} />
               )}
               <button
                 type="button"

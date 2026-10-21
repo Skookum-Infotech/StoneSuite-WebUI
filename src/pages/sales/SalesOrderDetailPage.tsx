@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
@@ -91,6 +92,7 @@ export default function SalesOrderDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('sales_order', 'update');
   const canDelete = permissionsLoading || hasPermission('sales_order', 'delete');
+  const canCopy = permissionsLoading || hasPermission('sales_order', 'create');
   // Convert targets a new Invoice, so gate on the Invoice module's create
   // permission (backend checks source sales_order:read + target invoice:create).
   const canConvert = permissionsLoading || hasPermission('invoice', 'create');
@@ -422,6 +424,9 @@ export default function SalesOrderDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit sales order
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="sales order" addPath="/sales/sales_order/new" sourceId={id} />
               )}
               {canEdit && (
                 <button

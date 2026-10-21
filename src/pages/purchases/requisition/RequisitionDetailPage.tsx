@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ClipboardList, Upload, Pencil, ArrowRightLeft, FileDown, Loader2, ExternalLink } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { requisitionService } from '@/services/requisitionService';
 import { lookupService } from '@/services/lookupService';
@@ -64,6 +65,7 @@ export default function RequisitionDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('requisition', 'update');
   const canDelete = permissionsLoading || hasPermission('requisition', 'delete');
+  const canCopy = permissionsLoading || hasPermission('requisition', 'create');
   const canTransition = permissionsLoading || hasPermission('requisition', 'transition');
   // Converting spawns a purchase order, so the server checks
   // purchase_order:create on top of requisition:read — mirror that here rather
@@ -359,6 +361,9 @@ export default function RequisitionDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit requisition
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="requisition" addPath="/purchases/requisition/new" sourceId={id} />
               )}
               <button
                 type="button"
