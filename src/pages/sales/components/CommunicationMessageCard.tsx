@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { EyeOff } from 'lucide-react';
 import { relativeTime } from '@/lib/recentRecordRoute';
 import { avatarInitials, senderName } from '@/lib/recordEmail';
+import { cn } from '@/lib/utils';
 import type { RecordEmailMessage } from '@/types/recordEmail';
 
 // A reply longer than this is folded behind "Show more", so one long email does
@@ -13,14 +15,17 @@ interface CommunicationMessageCardProps {
   isLast: boolean;
 }
 
-// One email in the Communication timeline. Every message — sent or received — has
+// One message in the Communication timeline. Every email — sent or received — has
 // the same look: an initials avatar joined to the next one by a vertical rail, the
 // author and relative time on one line, and the message in a roomy bordered card.
-// Sent emails add a quiet "To …" line inside the card; nothing else differs.
+// Sent emails add a quiet "To …" line inside the card. An internal note is the one
+// thing that looks different: an amber card with an "Internal" badge, so nobody
+// mistakes it for something the customer received.
 export function CommunicationMessageCard({ message, isLast }: CommunicationMessageCardProps) {
   const [expanded, setExpanded] = useState(false);
   const name = senderName(message);
   const fromStaff = message.direction === 'out';
+  const internal = message.internal;
   const sentAt = new Date(message.createdAt);
   const body = message.body || '(no message)';
   const foldable = body.length > COLLAPSE_OVER_CHARS;
@@ -39,16 +44,29 @@ export function CommunicationMessageCard({ message, isLast }: CommunicationMessa
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3 pb-2 pt-1.5">
           <p className="min-w-0 truncate text-sm font-semibold text-stone-950">{name}</p>
-          <time
-            dateTime={message.createdAt}
-            title={Number.isNaN(sentAt.getTime()) ? undefined : sentAt.toLocaleString()}
-            className="shrink-0 text-xs text-stone-500"
-          >
-            {relativeTime(message.createdAt)}
-          </time>
+          <div className="flex shrink-0 items-center gap-2">
+            {internal && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700">
+                <EyeOff className="size-2.5" aria-hidden="true" />
+                Internal note
+              </span>
+            )}
+            <time
+              dateTime={message.createdAt}
+              title={Number.isNaN(sentAt.getTime()) ? undefined : sentAt.toLocaleString()}
+              className="text-xs text-stone-500"
+            >
+              {relativeTime(message.createdAt)}
+            </time>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-stone-200 bg-white px-5 py-4">
+        <div
+          className={cn(
+            'rounded-xl border px-5 py-4',
+            internal ? 'border-amber-200 bg-amber-50' : 'border-stone-200 bg-white',
+          )}
+        >
           {fromStaff && message.to && (
             <p className="mb-3 break-words text-xs text-stone-500">
               To {message.to}
