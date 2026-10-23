@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { EyeOff } from 'lucide-react';
 import { relativeTime } from '@/lib/recentRecordRoute';
-import { avatarInitials, senderName } from '@/lib/recordEmail';
+import { avatarInitials, missingAttachmentCount, senderName } from '@/lib/recordEmail';
 import { cn } from '@/lib/utils';
 import type { CommunicationAudience, RecordEmailMessage } from '@/types/recordEmail';
+import { CommunicationAttachmentList } from './CommunicationAttachmentList';
 
 // A reply longer than this is folded behind "Show more", so one long email does
 // not push the rest of the conversation off the screen.
@@ -30,6 +31,7 @@ export function CommunicationMessageCard({ message, audience, isLast }: Communic
   const name = senderName(message, audience);
   const fromStaff = message.direction === 'out';
   const internal = message.internal && audience !== 'internal';
+  const missingCount = missingAttachmentCount(message);
   const sentAt = new Date(message.createdAt);
   const body = message.body || '(no message)';
   const foldable = body.length > COLLAPSE_OVER_CHARS;
@@ -95,12 +97,12 @@ export function CommunicationMessageCard({ message, audience, isLast }: Communic
               {expanded ? 'Show less' : 'Show more'}
             </button>
           )}
-          {message.attachmentCount > 0 && (
-            <p className="mt-3 text-xs italic text-stone-400">
-              {message.attachmentCount === 1
-                ? 'This email had 1 attachment (not shown).'
-                : `This email had ${message.attachmentCount} attachments (not shown).`}
-            </p>
+          {(message.attachments.length > 0 || missingCount > 0) && (
+            <CommunicationAttachmentList
+              recordId={message.recordId}
+              attachments={message.attachments}
+              missingCount={missingCount}
+            />
           )}
         </div>
       </div>

@@ -56,7 +56,7 @@ export function RecordCommunicationTab({ recordId, audience, canReply }: RecordC
     return <p role="alert" className="py-6 text-center text-xs italic text-destructive/70">Failed to load the conversation.</p>;
   }
 
-  const { enabled, replyTo, messages } = thread.data;
+  const { enabled, messages } = thread.data;
   const EmptyIcon = notesOnly ? StickyNote : Mail;
 
   return (
@@ -93,8 +93,7 @@ export function RecordCommunicationTab({ recordId, audience, canReply }: RecordC
           <CommunicationComposer
             recordId={recordId}
             audience={audience}
-            emailEnabled={enabled}
-            replyTo={replyTo}
+            thread={thread.data}
             onSent={() => {
               followNextChange.current = true;
             }}

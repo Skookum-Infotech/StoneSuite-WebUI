@@ -2,6 +2,23 @@
 // are plain text: the backend strips a reply's quoted history and keeps no HTML.
 export type RecordEmailDirection = 'in' | 'out';
 
+// Where a file on a message stands. 'stored' can be downloaded; 'pending' is a
+// received file still being copied; the rest were deliberately or unavoidably
+// not kept (too large, a program-like type, or storage was not available).
+export type RecordEmailAttachmentStatus = 'pending' | 'stored' | 'too_large' | 'blocked' | 'unavailable';
+
+// One file that travelled with a message: received on a reply, or attached by
+// staff when replying.
+export interface RecordEmailAttachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  // Shown inside the mail body (a pasted picture, a signature logo), not attached.
+  inline: boolean;
+  status: RecordEmailAttachmentStatus;
+}
+
 export interface RecordEmailMessage {
   id: string;
   recordId: string;
@@ -15,8 +32,10 @@ export interface RecordEmailMessage {
   cc: string;
   subject: string;
   body: string;
-  // Attachments are not stored yet; this only says how many the mail had.
+  // How many files the mail had. A message from before files were kept has a count
+  // but no entries in `attachments`.
   attachmentCount: number;
+  attachments: RecordEmailAttachment[];
   // A team-only note typed with "Internal only" on: kept on the record, never
   // emailed (so it has no recipient or subject).
   internal: boolean;
@@ -32,6 +51,9 @@ export interface RecordEmailThread {
   // False when the backend has no inbound reply domain configured: the
   // conversation still lists, but the other party's replies are not captured.
   enabled: boolean;
+  // Files can be attached to a message and downloaded: the workspace has file
+  // storage. Independent of `enabled`, since a note can carry files too.
+  attachmentsEnabled: boolean;
   // The address a reply would go to; '' until an email has been sent.
   replyTo: string;
   // Oldest first, the order the tab shows.
@@ -43,6 +65,13 @@ export interface RecordEmailThread {
 export interface RecordEmailReplyRequest {
   message: string;
   internalOnly: boolean;
+  // Files to send with it (or, on a note, to keep with it).
+  files?: File[];
+}
+
+export interface RecordEmailAttachmentDownload {
+  downloadUrl: string;
+  fileName: string;
 }
 
 export interface RecordEmailReplyResult {

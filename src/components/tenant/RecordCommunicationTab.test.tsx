@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('@/services/recordEmailService', () => ({
-  recordEmailService: { list: vi.fn(), reply: vi.fn() },
+  recordEmailService: { list: vi.fn(), reply: vi.fn(), downloadAttachment: vi.fn() },
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { RecordCommunicationTab } from './RecordCommunicationTab';
 import { recordEmailService } from '@/services/recordEmailService';
@@ -20,13 +20,13 @@ function msg(over: Partial<RecordEmailMessage> = {}): RecordEmailMessage {
   return {
     id: 'm1', recordId: ORDER_ID, workflowKey: 'sales_order', direction: 'out',
     fromName: 'Harish Narne', fromEmail: 'harish@acme.com', to: CUSTOMER, cc: '',
-    subject: 'Your Sales Order SO-1', body: 'Hello Priya, your order is ready.', attachmentCount: 0, internal: false,
+    subject: 'Your Sales Order SO-1', body: 'Hello Priya, your order is ready.', attachmentCount: 0, attachments: [], internal: false,
     createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(), ...over,
   };
 }
 
 function thread(over: Partial<RecordEmailThread> = {}): RecordEmailThread {
-  return { enabled: true, replyTo: CUSTOMER, messages: [msg()], ...over };
+  return { enabled: true, attachmentsEnabled: true, replyTo: CUSTOMER, messages: [msg()], ...over };
 }
 
 function renderTab(canReply = true, audience: CommunicationAudience = 'customer') {
@@ -91,7 +91,7 @@ describe('RecordCommunicationTab conversation', () => {
     expect(items[1]).toHaveTextContent('Priya Shah');
     expect(items[1]).toHaveTextContent('Can you install on Friday?');
     expect(items[1]).toHaveTextContent('5m ago');
-    expect(items[1]).toHaveTextContent('This email had 2 attachments (not shown).');
+    expect(items[1]).toHaveTextContent('This email had 2 attachments that were not kept.');
     // Only the sent email carries a recipient line.
     expect(items[1]).not.toHaveTextContent('To ');
     expect(screen.getByText('2 emails')).toBeInTheDocument();
@@ -345,5 +345,203 @@ describe('RecordCommunicationTab for a team-notes record', () => {
 
     expect(await screen.findByText('No notes yet')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).toBeNull();
+  });
+});
+
+describe('RecordCommunicationTab files on messages', () => {
+  it('shows a received file as a download and fetches it for that record', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [msg({
+        direction: 'in', fromName: 'Priya Shah', attachmentCount: 2,
+        attachments: [
+          { id: 'att-1', fileName: 'kitchen.jpg', contentType: 'image/jpeg', sizeBytes: 4096, inline: false, status: 'stored' },
+          { id: 'att-2', fileName: 'setup.exe', contentType: '', sizeBytes: 10, inline: false, status: 'blocked' },
+        ],
+      })],
+    }));
+    vi.mocked(recordEmailService.downloadAttachment).mockResolvedValue({ downloadUrl: 'https://files.test/k', fileName: 'kitchen.jpg' });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    renderTab();
+
+    const download = await screen.findByRole('button', { name: 'Download kitchen.jpg' });
+    expect(screen.getByText('Not kept for safety')).toBeInTheDocument();
+    await userEvent.click(download);
+
+    expect(recordEmailService.downloadAttachment).toHaveBeenCalledWith(ORDER_ID, 'att-1');
+    await vi.waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+    click.mockRestore();
+  });
+});
+
+describe('RecordCommunicationTab attaching files to a reply', () => {
+  beforeEach(() => vi.mocked(recordEmailService.list).mockResolvedValue(thread()));
+
+  const picker = () => screen.getByLabelText('Choose files to attach');
+  const attachButton = () => screen.getByRole('button', { name: 'Attach files' });
+  const pdf = (name: string, size = 100) => new File([new Uint8Array(size)], name, { type: 'application/pdf' });
+  // The file input's own `accept` filter would stop a disallowed type before our check sees it.
+  const uploader = () => userEvent.setup({ applyAccept: false });
+
+  it('has a paperclip that offers the allowed types, and no chips until something is picked', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    expect(attachButton()).toBeEnabled();
+    expect(attachButton()).toHaveAttribute('title', 'Attach files (up to 5, 5 MB in total)');
+    expect(picker()).toHaveAttribute('multiple');
+    expect(picker().getAttribute('accept')).toContain('.pdf');
+    expect(screen.queryByRole('list', { name: 'Attached files' })).toBeNull();
+  });
+
+  it('is disabled, with the reason, when the workspace cannot keep files', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ attachmentsEnabled: false }));
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    expect(attachButton()).toBeDisabled();
+    expect(attachButton()).toHaveAttribute('title', expect.stringMatching(/File storage is not set up/));
+  });
+
+  it('shows each picked file as a chip with its size and a running total', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('plan.pdf', 2048), pdf('kitchen.pdf', 1024 * 1024)]);
+
+    const chips = within(screen.getByRole('list', { name: 'Attached files' })).getAllByRole('listitem');
+    expect(chips).toHaveLength(2);
+    expect(chips[0]).toHaveTextContent('plan.pdf');
+    expect(chips[0]).toHaveTextContent('2 KB');
+    expect(chips[1]).toHaveTextContent('kitchen.pdf');
+    expect(screen.getByText('1.0 MB of 5 MB')).toBeInTheDocument();
+  });
+
+  it('removes a file when its remove button is pressed', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    await uploader().upload(picker(), [pdf('a.pdf'), pdf('b.pdf')]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove a.pdf' }));
+
+    const chips = within(screen.getByRole('list', { name: 'Attached files' })).getAllByRole('listitem');
+    expect(chips).toHaveLength(1);
+    expect(chips[0]).toHaveTextContent('b.pdf');
+  });
+
+  it('refuses a file that cannot be attached, says why, and keeps the good ones', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('good.pdf'), new File(['MZ'], 'setup.exe')]);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('setup.exe is not a file type that can be attached.');
+    expect(screen.getByRole('button', { name: 'Remove good.pdf' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove setup.exe' })).toBeNull();
+  });
+
+  it('refuses files past the total size limit', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('big.pdf', 5 * 1024 * 1024 + 1)]);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('big.pdf was not added: attachments are limited to 5 MB in total.');
+    expect(screen.queryByRole('list', { name: 'Attached files' })).toBeNull();
+  });
+
+  it('stops at five files', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [1, 2, 3, 4, 5, 6].map((n) => pdf(`f${n}.pdf`)));
+
+    expect(within(screen.getByRole('list', { name: 'Attached files' })).getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getByRole('alert')).toHaveTextContent('Attach at most 5 files.');
+    expect(attachButton()).toBeDisabled();
+  });
+
+  it('sends the files with the message, then clears them', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    const plan = pdf('plan.pdf');
+
+    await uploader().upload(picker(), [plan]);
+    await userEvent.type(replyBox(), 'See attached.');
+    await userEvent.click(sendButton());
+
+    expect(recordEmailService.reply).toHaveBeenCalledTimes(1);
+    const [id, body] = vi.mocked(recordEmailService.reply).mock.calls[0];
+    expect(id).toBe(ORDER_ID);
+    expect(body.message).toBe('See attached.');
+    expect(body.internalOnly).toBe(false);
+    expect(body.files).toHaveLength(1);
+    expect(body.files?.[0]).toBe(plan);
+    await vi.waitFor(() => expect(screen.queryByRole('list', { name: 'Attached files' })).toBeNull());
+    expect(replyBox()).toHaveValue('');
+  });
+
+  it('sends no files key at all when nothing is attached', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await userEvent.type(replyBox(), 'Plain reply');
+    await userEvent.click(sendButton());
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, { message: 'Plain reply', internalOnly: false });
+  });
+
+  it('keeps the files, and the text, when the send fails', async () => {
+    vi.mocked(recordEmailService.reply).mockRejectedValue(new Error('Failed to send the email.'));
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('plan.pdf')]);
+    await userEvent.type(replyBox(), 'Important');
+    await userEvent.click(sendButton());
+
+    expect(await screen.findByText('Failed to send the email.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove plan.pdf' })).toBeInTheDocument();
+    expect(replyBox()).toHaveValue('Important');
+  });
+
+  it('attaches to an internal note too', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    await userEvent.click(internalSwitch());
+
+    await uploader().upload(picker(), [pdf('site.pdf')]);
+    await userEvent.type(screen.getByLabelText('Internal note'), 'Site photo.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save internal note' }));
+
+    const [, body] = vi.mocked(recordEmailService.reply).mock.calls[0];
+    expect(body.internalOnly).toBe(true);
+    expect(body.files).toHaveLength(1);
+  });
+
+  it('lets a team-notes record attach files, with no Internal only switch', async () => {
+    renderTab(true, 'internal');
+    await screen.findByLabelText('Internal note');
+
+    expect(screen.queryByRole('switch')).toBeNull();
+    await uploader().upload(picker(), [pdf('quote.pdf')]);
+    await userEvent.type(screen.getByLabelText('Internal note'), 'Vendor quote attached.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save internal note' }));
+
+    const [, body] = vi.mocked(recordEmailService.reply).mock.calls[0];
+    expect(body.internalOnly).toBe(true);
+    expect(body.files).toHaveLength(1);
+  });
+
+  it('lets the same file be picked again after it was removed', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    const user = uploader();
+    const plan = pdf('plan.pdf');
+
+    await user.upload(picker(), [plan]);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove plan.pdf' }));
+    await user.upload(picker(), [plan]);
+
+    expect(screen.getByRole('button', { name: 'Remove plan.pdf' })).toBeInTheDocument();
   });
 });
