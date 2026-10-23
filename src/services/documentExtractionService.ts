@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
+import type { ProposedAction } from '@/types/proposedAction';
 import { attachmentService } from '@/services/attachmentService';
 import type {
   CompleteExtractionInput,
@@ -9,6 +10,7 @@ import type {
   ExtractionErrorCode,
   ExtractionStatus,
   PresignExtractionResult,
+  ProposeEntityOverrides,
 } from '@/types/documentExtraction';
 
 const BASE = '/tenant/document-extractions';
@@ -95,4 +97,15 @@ export const documentExtractionService = {
   /** Marks the extraction used by a saved record; 409 already_used if it was. */
   complete: (id: string, input: CompleteExtractionInput): Promise<void> =>
     call(tenantClient.post(`${BASE}/${id}/complete`, input)).then(() => undefined),
+
+  /** Proposes creating the unmatched customer/vendor/item `key`; returns the
+   *  pending ProposedAction (201 new, 200 existing). 403 no permission, 404 gone,
+   *  409 not ready/used, 422 missing or invalid input (message in the error). */
+  proposeEntity: async (
+    id: string, key: string, overrides?: ProposeEntityOverrides,
+  ): Promise<ProposedAction> =>
+    (await call(tenantClient.post<{ success: boolean; action: ProposedAction }>(
+      `${BASE}/${encodeURIComponent(id)}/proposed-entities/${encodeURIComponent(key)}/propose`,
+      overrides ? { overrides } : {},
+    ))).action,
 };

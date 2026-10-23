@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { InventoryItemPicker } from '@/pages/sales/components/InventoryItemPicker';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
+import { ProposedEntityChips } from './ProposedEntityChips';
 import { LineStatusPill } from './LineStatusPill';
 import { ReviewFieldFrame } from './ReviewFieldFrame';
 import { PoLineSelect } from './PoLineSelect';
@@ -9,7 +10,10 @@ import { visiblePills } from '@/lib/documentReviewState';
 import { lineReviewKey, type HandoffLine } from '@/lib/documentHandoffShared';
 import { convertLine, sameUnit } from '@/lib/unitConversion';
 import type { DocumentReviewView, ReviewLineLike } from '@/hooks/documentReviewView';
+import { inventoryService } from '@/services/inventoryService';
 import type { InventoryItem } from '@/types/inventory';
+import type { ProposedEntityView } from '@/types/documentExtraction';
+import type { ProposedActionResultRef } from '@/types/proposedAction';
 
 interface DocumentLinesPanelProps {
   review: DocumentReviewView;
@@ -21,6 +25,28 @@ interface LineReviewRowProps {
   needsReview: boolean;
   reviewed: boolean;
   review: DocumentReviewView;
+}
+
+function itemEntities(review: DocumentReviewView): ProposedEntityView[] {
+  return (review.proposedEntities ?? []).filter((e) => e.kind === 'item');
+}
+
+/** `source.lines` are 0-based indexes into the extraction's lines (docIndex),
+ *  not display line numbers. The chip sits on the first covered docIndex that
+ *  has a form line; creating the item selects it on the other covered lines. */
+function anchorDocIndex(entity: ProposedEntityView, docIndexes: ReadonlySet<number>): number | undefined {
+  return entity.source.lines?.find((i) => docIndexes.has(i));
+}
+
+function itemEntitiesFor(review: DocumentReviewView, docIndex: number): ProposedEntityView[] {
+  const docIndexes = new Set((review.handoff?.lines ?? []).map((l) => l.docIndex));
+  return itemEntities(review).filter((e) => anchorDocIndex(e, docIndexes) === docIndex);
+}
+
+/** Proposals that cover no form line: shown above the lines, selecting nothing on create. */
+function unplacedItemEntities(review: DocumentReviewView, docIndexes: readonly number[]): ProposedEntityView[] {
+  const set = new Set(docIndexes);
+  return itemEntities(review).filter((e) => anchorDocIndex(e, set) === undefined);
 }
 
 function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReviewRowProps): React.JSX.Element {
@@ -54,6 +80,30 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
     setText(item.name);
   };
 
+  // A freshly created item: load it so the line gets its real unit/price, then
+  // select it exactly like a pick from the picker. Other lines the proposal
+  // covers that still have no item get the identity only.
+  const onItemCreated = async (entity: ProposedEntityView, ref: ProposedActionResultRef): Promise<void> => {
+    // A failed load falls back to the identity from the confirm result.
+    const item = await inventoryService.getItem(ref.recordId).catch(() => null);
+    if (item) onPick(item);
+    else review.updateLine(line.id, { itemName: ref.label || entity.name, inventoryItemUuid: ref.recordId });
+    for (const idx of entity.source.lines ?? []) {
+      if (idx === meta.docIndex) continue;
+      const other = review.handoff?.lines.find((l) => l.docIndex === idx);
+      const target = other && review.lineItems.find((l) => l.id === other.id);
+      if (!target || target.inventoryItemUuid) continue;
+      const next = {
+        ...target,
+        itemName: item?.name ?? (ref.label || entity.name),
+        itemSku: item?.sku ?? target.itemSku,
+        units: item ? unitCodeFor(item) || target.units : target.units,
+        inventoryItemUuid: ref.recordId,
+      };
+      review.updateLine(target.id, { ...next, ...review.calcLine(next) });
+    }
+  };
+
   return (
     <ReviewFieldFrame reviewKey={key} needsReview={needsReview} onFieldFocus={() => review.focusField(prov?.page, prov?.row)}>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -67,6 +117,11 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
       ) : (
         <p className="text-stone-800 dark:text-stone-200">{line.itemName} {'·'} {line.quantity} {line.units} {'×'} ${line.unitPrice}</p>
       )}
+      <ProposedEntityChips
+        extractionId={review.extractionId}
+        entities={hasItem ? undefined : itemEntitiesFor(review, meta.docIndex)}
+        onCreated={(entity, ref) => { void onItemCreated(entity, ref); }}
+      />
       <p className="text-stone-500 dark:text-stone-400">Document: {meta.docText || '(no text)'}</p>
       {(pickNote || meta.conversionNote) && <p className="text-stone-500 dark:text-stone-400">{pickNote || meta.conversionNote}</p>}
       {poChoices.length > 1 && review.setPoLine && (
@@ -106,6 +161,11 @@ export function DocumentLinesPanel({ review }: DocumentLinesPanelProps): React.J
   return (
     <section aria-label="Lines read from the document" className="space-y-2">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Document lines</h3>
+      <ProposedEntityChips
+        extractionId={review.extractionId}
+        entities={unplacedItemEntities(review, handoff.lines.map((l) => l.docIndex))}
+        onCreated={() => undefined}
+      />
       {rows.map(({ meta, line }) => {
         const key = lineReviewKey(meta.lineNo);
         return (

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { AxiosError } from 'axios';
+import { Link } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useCancelProposedAction, useConfirmProposedAction } from '@/hooks/useProposedActions';
-import type { ProposedAction } from '@/types/proposedAction';
+import type { ProposedAction, ProposedActionConfirmResult } from '@/types/proposedAction';
 import { PROPOSED_ACTION_STRINGS as S } from './proposedActionStrings';
 
 const HTTP_FORBIDDEN = 403;
@@ -19,7 +20,15 @@ const HOURS_PER_DAY = 24;
 interface ProposedActionCardProps {
   action: ProposedAction;
   onConfirmed?: (action: ProposedAction) => void;
+  /** Called with the full confirm result (action incl. resultRef, and `replayed`). */
+  onConfirmResult?: (result: ProposedActionConfirmResult) => void;
   onCancelled?: (action: ProposedAction) => void;
+  /** Called with the raw failure of a confirm/cancel call (any status). */
+  onError?: (err: unknown) => void;
+  /** When set, Confirm is disabled and this text is exposed as its description. */
+  disabledReason?: string;
+  /** When set, the created record's label renders as a link to this route. */
+  resultHref?: string;
 }
 
 function errorStatus(err: unknown): number | undefined {
@@ -60,7 +69,9 @@ const STATUS_LABEL = {
 } as const;
 
 /** Preview of a proposed change with Confirm/Cancel; drives its own mutations. */
-export function ProposedActionCard({ action, onConfirmed, onCancelled }: ProposedActionCardProps) {
+export function ProposedActionCard({
+  action, onConfirmed, onConfirmResult, onCancelled, onError, disabledReason, resultHref,
+}: ProposedActionCardProps) {
   const confirmM = useConfirmProposedAction();
   const cancelM = useCancelProposedAction();
   // Latest server-returned copy (or locally-detected expiry) wins over the prop
@@ -70,12 +81,14 @@ export function ProposedActionCard({ action, onConfirmed, onCancelled }: Propose
   // Id of an action the server answered 404 for (unknown, someone else's, or the
   // target record is out of the caller's scope: indistinguishable by design).
   const [unavailableId, setUnavailableId] = useState<string | null>(null);
+  const [replayed, setReplayed] = useState(false);
   const [now] = useState(() => Date.now());
 
   const current = override && override.id === action.id ? override : action;
   const unavailable = unavailableId === current.id;
   const busy = confirmM.isPending || cancelM.isPending;
   const titleId = `proposed-action-${current.id}-title`;
+  const reasonId = `proposed-action-${current.id}-reason`;
   const { relative, absolute } = formatExpiry(current.expiresAt, now);
 
   const handleConfirm = () => {
@@ -83,9 +96,12 @@ export function ProposedActionCard({ action, onConfirmed, onCancelled }: Propose
     confirmM.mutate(current.id, {
       onSuccess: (res) => {
         setOverride(res.action);
+        setReplayed(res.replayed);
         onConfirmed?.(res.action);
+        onConfirmResult?.(res);
       },
       onError: (err) => {
+        onError?.(err);
         if (errorStatus(err) === HTTP_GONE) {
           setOverride({ ...current, status: 'expired' });
           return;
@@ -107,6 +123,7 @@ export function ProposedActionCard({ action, onConfirmed, onCancelled }: Propose
         onCancelled?.(a);
       },
       onError: (err) => {
+        onError?.(err);
         if (errorStatus(err) === HTTP_GONE) {
           setOverride({ ...current, status: 'expired' });
           return;
@@ -162,7 +179,13 @@ export function ProposedActionCard({ action, onConfirmed, onCancelled }: Propose
         <div role="status" aria-live="polite" className="text-sm">
           {current.status === 'confirmed' && current.resultRef && (
             <p className="text-accent-foreground">
-              {S.resultPrefix} {current.resultRef.label}
+              {S.resultPrefix}{' '}
+              {resultHref ? (
+                <Link to={resultHref} className="underline">{current.resultRef.label}</Link>
+              ) : (
+                current.resultRef.label
+              )}
+              {replayed && <span className="text-muted-foreground"> {S.replayedNote}</span>}
             </p>
           )}
           {current.status === 'cancelled' && <p className="text-muted-foreground">{S.cancelledNote}</p>}
@@ -183,7 +206,8 @@ export function ProposedActionCard({ action, onConfirmed, onCancelled }: Propose
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={busy}
+            disabled={busy || Boolean(disabledReason)}
+            aria-describedby={disabledReason ? reasonId : undefined}
             aria-busy={confirmM.isPending}
             aria-label={`${S.confirm}: ${current.preview.title}`}
           >
@@ -201,6 +225,9 @@ export function ProposedActionCard({ action, onConfirmed, onCancelled }: Propose
             {cancelM.isPending && <LoaderCircle className="animate-spin" aria-hidden="true" />}
             {cancelM.isPending ? S.working : S.cancel}
           </Button>
+          {disabledReason && (
+            <p id={reasonId} className="text-label text-muted-foreground">{disabledReason}</p>
+          )}
         </CardFooter>
       )}
     </Card>
