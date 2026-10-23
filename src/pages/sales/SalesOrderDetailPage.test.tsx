@@ -31,8 +31,8 @@ vi.mock('@/components/tenant/DocumentSendHistory', () => ({ DocumentSendHistory:
 vi.mock('./components/SalesOrderInventoryTab', () => ({ SalesOrderInventoryTab: () => null }));
 vi.mock('./components/SalesOrderAuditTab', () => ({ SalesOrderAuditTab: () => null }));
 vi.mock('./components/SalesOrderStatusControl', () => ({ SalesOrderStatusControl: () => null }));
-vi.mock('./components/SalesOrderCommunicationTab', () => ({
-  SalesOrderCommunicationTab: ({ orderId }: { orderId: string }) => <div>Communication tab for {orderId}</div>,
+vi.mock('@/components/tenant/RecordCommunicationTab', () => ({
+  RecordCommunicationTab: ({ recordId }: { recordId: string }) => <div>Communication tab for {recordId}</div>,
 }));
 vi.mock('./components/SalesOrderSchedulingTab', () => ({
   SalesOrderSchedulingTab: ({ orderId }: { orderId: string }) => <div>Scheduling tab for {orderId}</div>,

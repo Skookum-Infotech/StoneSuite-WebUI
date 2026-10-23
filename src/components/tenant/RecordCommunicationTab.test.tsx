@@ -8,10 +8,10 @@ vi.mock('@/services/recordEmailService', () => ({
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn() } }));
 
-import { SalesOrderCommunicationTab } from './SalesOrderCommunicationTab';
+import { RecordCommunicationTab } from './RecordCommunicationTab';
 import { recordEmailService } from '@/services/recordEmailService';
 import { toast } from 'sonner';
-import type { RecordEmailMessage, RecordEmailThread } from '@/types/recordEmail';
+import type { CommunicationAudience, RecordEmailMessage, RecordEmailThread } from '@/types/recordEmail';
 
 const ORDER_ID = 'so-1';
 const CUSTOMER = 'priya@gmail.com';
@@ -29,11 +29,11 @@ function thread(over: Partial<RecordEmailThread> = {}): RecordEmailThread {
   return { enabled: true, replyTo: CUSTOMER, messages: [msg()], ...over };
 }
 
-function renderTab(canReply = true) {
+function renderTab(canReply = true, audience: CommunicationAudience = 'customer') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <SalesOrderCommunicationTab orderId={ORDER_ID} canReply={canReply} />
+      <RecordCommunicationTab recordId={ORDER_ID} audience={audience} canReply={canReply} />
     </QueryClientProvider>,
   );
 }
@@ -63,7 +63,7 @@ beforeEach(() => {
   vi.mocked(recordEmailService.reply).mockResolvedValue({});
 });
 
-describe('SalesOrderCommunicationTab conversation', () => {
+describe('RecordCommunicationTab conversation', () => {
   it('tells staff how to start when there are no emails yet', async () => {
     vi.mocked(recordEmailService.list).mockResolvedValue(thread({ replyTo: '', messages: [] }));
     renderTab();
@@ -142,7 +142,7 @@ describe('SalesOrderCommunicationTab conversation', () => {
   });
 });
 
-describe('SalesOrderCommunicationTab reply box', () => {
+describe('RecordCommunicationTab reply box', () => {
   beforeEach(() => vi.mocked(recordEmailService.list).mockResolvedValue(thread()));
 
   it('is hidden from someone who cannot update the order', async () => {
@@ -256,5 +256,94 @@ describe('SalesOrderCommunicationTab reply box', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('The reply was saved, but the email could not be delivered. The address was rejected.');
     expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+describe('RecordCommunicationTab for a vendor', () => {
+  it('says the conversation starts with Send to Vendor', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ replyTo: '', messages: [] }));
+    renderTab(true, 'vendor');
+
+    expect(await screen.findByText('No emails yet')).toBeInTheDocument();
+    expect(screen.getByText('Use Send to Vendor to start the conversation.')).toBeInTheDocument();
+    expect(screen.getByText(/There is no vendor email to reply to yet — use Send to Vendor first\./)).toBeInTheDocument();
+  });
+
+  it('names the vendor in the not-captured notice', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ enabled: false }));
+    renderTab(true, 'vendor');
+
+    expect(await screen.findByText(/Vendor replies are not being captured yet/)).toBeInTheDocument();
+  });
+
+  it('names the vendor in the reply box', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread());
+    renderTab(true, 'vendor');
+
+    expect(await screen.findByLabelText('Reply to the vendor')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Write a reply to the vendor…')).toBeInTheDocument();
+  });
+
+  it('calls an unnamed sender a vendor', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [msg({ direction: 'in', fromName: '', fromEmail: '', to: '', body: 'Shipping Tuesday.' })],
+    }));
+    renderTab(true, 'vendor');
+
+    const items = await screen.findAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Vendor');
+  });
+});
+
+describe('RecordCommunicationTab for a team-notes record', () => {
+  it('invites a first note instead of an email, even with inbound email off', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ enabled: false, replyTo: '', messages: [] }));
+    renderTab(true, 'internal');
+
+    expect(await screen.findByText('No notes yet')).toBeInTheDocument();
+    expect(screen.getByText('Add a note below to keep your team in the loop.')).toBeInTheDocument();
+    expect(screen.queryByText(/replies are not being captured/)).toBeNull();
+  });
+
+  it('counts plain notes and marks none of them as an internal note', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [
+        msg({ id: 'm1', to: '', subject: '', body: 'Need approval by Friday.', internal: true }),
+        msg({ id: 'm2', to: '', subject: '', body: 'Approved by finance.', internal: true }),
+      ],
+    }));
+    renderTab(true, 'internal');
+
+    const items = await screen.findAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).not.toHaveTextContent('Internal note');
+    expect(screen.getByText('2 notes')).toBeInTheDocument();
+  });
+
+  it('has no Internal only switch and no lock message, and only ever saves notes', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ messages: [] }));
+    renderTab(true, 'internal');
+
+    const box = await screen.findByLabelText('Internal note');
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.queryByText(/Replying to/)).toBeNull();
+    expect(screen.queryByText(/not set up/)).toBeNull();
+    expect(screen.queryByText(/Nothing is emailed/)).toBeNull();
+
+    await userEvent.type(box, 'Waiting on the vendor quote.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save internal note' }));
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, {
+      message: 'Waiting on the vendor quote.', internalOnly: true,
+    });
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith('Internal note saved.'));
+  });
+
+  it('hides the box from someone who cannot update the record', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ messages: [] }));
+    renderTab(false, 'internal');
+
+    expect(await screen.findByText('No notes yet')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).toBeNull();
   });
 });

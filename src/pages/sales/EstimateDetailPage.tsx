@@ -9,6 +9,7 @@ import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
@@ -35,6 +36,7 @@ import { formatDateValue } from '@/lib/dateUtils';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -229,9 +231,11 @@ export default function EstimateDetailPage() {
         ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
               <AmountsStrip
@@ -320,6 +324,7 @@ export default function EstimateDetailPage() {
             </div>
           )}
 
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
           {activeTab === 'audit' && <EstimateAuditTab estimateId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 

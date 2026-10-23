@@ -5,15 +5,17 @@ import { Check, EyeOff, Loader2, Mail, Reply } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Switch } from '@/components/ui/switch';
 import { recordEmailService } from '@/services/recordEmailService';
-import { REPLY_MAX_CHARS, composerMode, recordEmailKey } from '@/lib/recordEmail';
+import { REPLY_MAX_CHARS, communicationCopy, composerMode, recordEmailKey } from '@/lib/recordEmail';
 import { cn } from '@/lib/utils';
-import type { RecordEmailReplyRequest } from '@/types/recordEmail';
+import type { CommunicationAudience, RecordEmailReplyRequest } from '@/types/recordEmail';
 
 interface CommunicationComposerProps {
-  orderId: string;
+  recordId: string;
+  // Who a reply goes to; 'internal' is a record that only keeps team notes.
+  audience: CommunicationAudience;
   // Inbound email is set up for the workspace (the thread's `enabled`).
   emailEnabled: boolean;
-  // The customer address a reply goes to; '' until an email has been sent.
+  // The address a reply goes to; '' until an email has been sent.
   replyTo: string;
   // Called once a message or note was saved, so the tab can scroll to it.
   onSent: () => void;
@@ -22,11 +24,12 @@ interface CommunicationComposerProps {
 const DELIVERY_FAILED = 'The reply was saved, but the email could not be delivered.';
 
 // The box under the conversation: write a message, press the reply icon, and it is
-// emailed to the customer. Turn on "Internal only" and the same box saves a team
-// note instead — kept on the order, never emailed. The box turns amber while that
-// switch is on, so the mode is plain before anything is sent. A failed send keeps
-// what was typed; it is only cleared once the backend has accepted it.
-export function CommunicationComposer({ orderId, emailEnabled, replyTo, onSent }: CommunicationComposerProps) {
+// emailed to the customer or vendor. Turn on "Internal only" and the same box saves
+// a team note instead — kept on the record, never emailed. The box turns amber while
+// that switch is on, so the mode is plain before anything is sent. A record that only
+// keeps team notes has no switch and no amber: every message is a note. A failed
+// send keeps what was typed; it is only cleared once the backend has accepted it.
+export function CommunicationComposer({ recordId, audience, emailEnabled, replyTo, onSent }: CommunicationComposerProps) {
   const queryClient = useQueryClient();
   const [text, setText] = useState('');
   const [internalOnly, setInternalOnly] = useState(false);
@@ -34,18 +37,21 @@ export function CommunicationComposer({ orderId, emailEnabled, replyTo, onSent }
   // RecordEmailReplyResult.emailSent), which is not an HTTP error.
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
-  const mode = composerMode({ emailEnabled, replyTo, internalOnly });
+  const mode = composerMode({ emailEnabled, replyTo, internalOnly, audience });
+  const copy = communicationCopy(audience);
+  // Amber marks a note among emails; on a notes-only record it would be everywhere.
+  const amber = mode.internal && !mode.notesOnly;
   const message = text.trim();
 
   const send = useMutation({
-    mutationFn: (body: RecordEmailReplyRequest) => recordEmailService.reply(orderId, body),
+    mutationFn: (body: RecordEmailReplyRequest) => recordEmailService.reply(recordId, body),
     onMutate: () => setDeliveryError(null),
     onSuccess: (result, body) => {
       // The message is stored whether or not the email went out, so the thread
       // changes either way.
-      void queryClient.invalidateQueries({ queryKey: recordEmailKey(orderId) });
+      void queryClient.invalidateQueries({ queryKey: recordEmailKey(recordId) });
       setText('');
-      // Each send starts as an email to the customer again: an internal note is a
+      // Each send starts as an email to the other party again: an internal note is a
       // deliberate choice, never a leftover from the last message.
       setInternalOnly(false);
       onSent();
@@ -86,7 +92,7 @@ export function CommunicationComposer({ orderId, emailEnabled, replyTo, onSent }
         aria-label="Add to the conversation"
         className={cn(
           'rounded-2xl border shadow-sm transition-colors focus-within:ring-2',
-          mode.internal
+          amber
             ? 'border-amber-200 bg-amber-50 focus-within:ring-amber-300/50'
             : 'border-stone-200 bg-white focus-within:ring-brand/30',
         )}
@@ -94,8 +100,12 @@ export function CommunicationComposer({ orderId, emailEnabled, replyTo, onSent }
         <p className="flex items-start gap-1.5 break-words px-4 pt-3 text-xs text-stone-500">
           {mode.internal ? (
             <>
-              <EyeOff className="mt-0.5 size-3.5 shrink-0 text-amber-600" aria-hidden="true" />
-              <span>Internal note — only your team sees this. Nothing is emailed.</span>
+              <EyeOff className={cn('mt-0.5 size-3.5 shrink-0', amber ? 'text-amber-600' : 'text-stone-400')} aria-hidden="true" />
+              <span>
+                {mode.notesOnly
+                  ? 'Internal note — only your team sees this.'
+                  : 'Internal note — only your team sees this. Nothing is emailed.'}
+              </span>
             </>
           ) : (
             <>
@@ -114,27 +124,30 @@ export function CommunicationComposer({ orderId, emailEnabled, replyTo, onSent }
           readOnly={send.isPending}
           rows={2}
           maxLength={REPLY_MAX_CHARS}
-          placeholder={mode.internal ? 'Add an internal note…' : 'Write a reply to the customer…'}
-          aria-label={mode.internal ? 'Internal note' : 'Reply to the customer'}
+          placeholder={mode.internal ? 'Add an internal note…' : copy.replyPlaceholder}
+          aria-label={mode.internal ? 'Internal note' : copy.replyLabel}
           className="block max-h-40 min-h-14 w-full resize-none bg-transparent px-4 py-2 text-sm leading-relaxed text-stone-900 outline-none placeholder:text-stone-400 [field-sizing:content]"
         />
 
         <div
           className={cn(
-            'flex items-center justify-between gap-3 border-t px-3 py-2',
-            mode.internal ? 'border-amber-200/70' : 'border-stone-100',
+            'flex items-center gap-3 border-t px-3 py-2',
+            mode.notesOnly ? 'justify-end' : 'justify-between',
+            amber ? 'border-amber-200/70' : 'border-stone-100',
           )}
         >
-          <label htmlFor="comm-internal-only" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-stone-600">
-            <Switch
-              id="comm-internal-only"
-              checked={mode.internal}
-              onCheckedChange={setInternalOnly}
-              disabled={mode.locked || send.isPending}
-              className="data-checked:bg-amber-500"
-            />
-            Internal only
-          </label>
+          {!mode.notesOnly && (
+            <label htmlFor="comm-internal-only" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-stone-600">
+              <Switch
+                id="comm-internal-only"
+                checked={mode.internal}
+                onCheckedChange={setInternalOnly}
+                disabled={mode.locked || send.isPending}
+                className="data-checked:bg-amber-500"
+              />
+              Internal only
+            </label>
+          )}
 
           <div className="flex items-center gap-3">
             <span className="hidden text-2xs text-stone-400 sm:inline">Ctrl + Enter to send</span>
@@ -145,7 +158,7 @@ export function CommunicationComposer({ orderId, emailEnabled, replyTo, onSent }
               title={sendLabel}
               className={cn(
                 'flex size-9 items-center justify-center rounded-full shadow-sm transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40',
-                mode.internal ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-brand text-stone-900 hover:bg-brand-hover',
+                amber ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-brand text-stone-900 hover:bg-brand-hover',
               )}
             >
               {send.isPending ? (
@@ -160,7 +173,7 @@ export function CommunicationComposer({ orderId, emailEnabled, replyTo, onSent }
         </div>
       </form>
 
-      {mode.locked && <p className="px-1 text-xs text-stone-500">{mode.lockReason}</p>}
+      {mode.lockReason !== '' && <p className="px-1 text-xs text-stone-500">{mode.lockReason}</p>}
       {send.isError && (
         <p role="alert" className="px-1 text-xs text-destructive">
           {apiErrorMessage(send.error, send.variables?.internalOnly ? 'Failed to save the note.' : 'Failed to send the reply.')}

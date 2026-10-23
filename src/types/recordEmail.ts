@@ -6,7 +6,7 @@ export interface RecordEmailMessage {
   id: string;
   recordId: string;
   workflowKey: string;
-  // 'out' is mail StoneSuite sent; 'in' is a customer's reply.
+  // 'out' is mail StoneSuite sent; 'in' is the other party's reply.
   direction: RecordEmailDirection;
   fromName: string;
   fromEmail: string;
@@ -23,11 +23,16 @@ export interface RecordEmailMessage {
   createdAt: string;
 }
 
+// Who is on the other end of a record's Communication tab: the customer a sales
+// document goes to, the vendor a purchase order goes to, or nobody ('internal':
+// a team-notes timeline with no email at all, as on a requisition).
+export type CommunicationAudience = 'customer' | 'vendor' | 'internal';
+
 export interface RecordEmailThread {
   // False when the backend has no inbound reply domain configured: the
-  // conversation still lists, but customer replies are not captured.
+  // conversation still lists, but the other party's replies are not captured.
   enabled: boolean;
-  // The customer address a reply would go to; '' until an email has been sent.
+  // The address a reply would go to; '' until an email has been sent.
   replyTo: string;
   // Oldest first, the order the tab shows.
   messages: RecordEmailMessage[];

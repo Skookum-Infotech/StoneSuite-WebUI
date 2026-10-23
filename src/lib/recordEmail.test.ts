@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { avatarInitials, composerMode, conversationSummary, recordEmailKey, senderName } from './recordEmail';
+import { avatarInitials, communicationCopy, composerMode, conversationSummary, recordEmailKey, senderName } from './recordEmail';
 import type { RecordEmailMessage } from '@/types/recordEmail';
 
 function msg(over: Partial<RecordEmailMessage> = {}): RecordEmailMessage {
@@ -23,6 +23,35 @@ describe('senderName', () => {
     ['neutral label for unknown staff', msg({ direction: 'out' }), 'Team'],
   ])('%s', (_label, m, want) => {
     expect(senderName(m)).toBe(want);
+  });
+
+  it('calls an unknown sender by the other party of the conversation', () => {
+    expect(senderName(msg({ direction: 'in' }), 'customer')).toBe('Customer');
+    expect(senderName(msg({ direction: 'in' }), 'vendor')).toBe('Vendor');
+    expect(senderName(msg({ direction: 'out' }), 'vendor')).toBe('Team');
+  });
+});
+
+describe('communicationCopy', () => {
+  it('words a customer conversation around Send to customer', () => {
+    const copy = communicationCopy('customer');
+    expect(copy.emptyHint).toBe('Use Send to customer to start the conversation.');
+    expect(copy.replyLabel).toBe('Reply to the customer');
+    expect(copy.replyPlaceholder).toBe('Write a reply to the customer…');
+    expect(copy.notCapturedNotice).toMatch(/^Customer replies are not being captured yet/);
+  });
+
+  it('words a vendor conversation around Send to Vendor', () => {
+    const copy = communicationCopy('vendor');
+    expect(copy.emptyHint).toBe('Use Send to Vendor to start the conversation.');
+    expect(copy.replyLabel).toBe('Reply to the vendor');
+    expect(copy.notCapturedNotice).toMatch(/^Vendor replies are not being captured yet/);
+  });
+
+  it('words a team-notes timeline with no email talk at all', () => {
+    const copy = communicationCopy('internal');
+    expect(copy.emptyTitle).toBe('No notes yet');
+    expect(copy.notCapturedNotice).toBe('');
   });
 });
 
@@ -55,6 +84,27 @@ describe('composerMode', () => {
     expect(composerMode({ emailEnabled: true, replyTo: '', internalOnly: false }).lockReason).toMatch(/Send to customer first/);
     expect(composerMode({ emailEnabled: true, replyTo: 'p@x.com', internalOnly: true }).lockReason).toBe('');
   });
+
+  it('names the vendor and its send button before a purchase order has been emailed', () => {
+    const mode = composerMode({ emailEnabled: true, replyTo: '', internalOnly: false, audience: 'vendor' });
+    expect(mode.locked).toBe(true);
+    expect(mode.lockReason).toMatch(/no vendor email to reply to yet — use Send to Vendor first/);
+  });
+
+  it.each([
+    ['inbound email off', { emailEnabled: false, replyTo: '' }],
+    ['no address yet', { emailEnabled: true, replyTo: '' }],
+    ['a reply address', { emailEnabled: true, replyTo: 'p@x.com' }],
+  ])('a team-notes record is always a note with no switch: %s', (_label, input) => {
+    expect(composerMode({ ...input, internalOnly: false, audience: 'internal' })).toEqual({
+      internal: true, locked: true, notesOnly: true, lockReason: '',
+    });
+  });
+
+  it('only a team-notes record is notes-only', () => {
+    expect(composerMode({ emailEnabled: true, replyTo: 'p@x.com', internalOnly: false }).notesOnly).toBe(false);
+    expect(composerMode({ emailEnabled: false, replyTo: '', internalOnly: false, audience: 'vendor' }).notesOnly).toBe(false);
+  });
 });
 
 describe('conversationSummary', () => {
@@ -66,5 +116,13 @@ describe('conversationSummary', () => {
     ['emails and notes counted apart', [msg(), msg({ id: 'b', internal: true }), msg({ id: 'c', internal: true })], '1 email · 2 internal notes'],
   ])('%s', (_label, messages, want) => {
     expect(conversationSummary(messages)).toBe(want);
+  });
+
+  it.each([
+    ['no notes', [], ''],
+    ['one note', [msg({ internal: true })], '1 note'],
+    ['several notes', [msg({ internal: true }), msg({ id: 'b', internal: true })], '2 notes'],
+  ])('on a team-notes record, %s are plain notes', (_label, messages, want) => {
+    expect(conversationSummary(messages, 'internal')).toBe(want);
   });
 });
