@@ -80,3 +80,15 @@ export interface PlatformAISettings {
    *  instance — populated only when non-empty. */
   leaseHolders?: string[];
 }
+
+/** Platform-admin view of the automation scheduler's global on/off switch. */
+export interface PlatformAutomationSettings {
+  enabled: boolean;
+  updatedAt?: string | null;
+  updatedBy?: string;
+  /** Whether the backend can mirror the switch to the Cloudflare cron Worker. */
+  kvConfigured: boolean;
+  /** Present only when kvConfigured; false means saved but not yet mirrored. */
+  kvSynced?: boolean;
+  message: string;
+}
