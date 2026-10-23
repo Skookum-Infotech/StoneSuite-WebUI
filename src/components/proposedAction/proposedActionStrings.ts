@@ -1,0 +1,26 @@
+// No i18n library in the repo: all user-visible copy for ProposedActionCard
+// lives here so it can be swapped for a translation layer later.
+export const PROPOSED_ACTION_STRINGS = {
+  confirm: 'Confirm',
+  cancel: 'Cancel',
+  working: 'Working…',
+  sourceAgent: 'Assistant',
+  sourceDocextract: 'Document extraction',
+  kindCreate: 'Create',
+  kindUpdate: 'Update',
+  statusConfirmed: 'Confirmed',
+  statusCancelled: 'Cancelled',
+  statusExpired: 'Expired',
+  statusFailed: 'Failed',
+  expiresPrefix: 'Expires',
+  expiredPrefix: 'Expired',
+  resultPrefix: 'Result:',
+  cancelledNote: 'This proposed action was cancelled.',
+  expiredNote: 'This proposed action expired and can no longer be confirmed.',
+  failedNote: 'This proposed action could not be completed.',
+  fieldsLabel: 'Proposed changes',
+  genericError: 'Could not complete this action. Please try again.',
+  noPermission: 'You do not have permission to do this.',
+  unavailable: 'This action is no longer available.',
+  conflict: 'This action can no longer be changed.',
+} as const;
