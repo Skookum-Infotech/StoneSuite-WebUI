@@ -27,7 +27,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
-import { SalesOrderCommunicationTab } from './components/SalesOrderCommunicationTab';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
@@ -291,9 +291,11 @@ export default function SalesOrderDetailPage() {
         ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
               <AmountsStrip
@@ -393,7 +395,7 @@ export default function SalesOrderDetailPage() {
           {activeTab === 'scheduling' && (
             <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
           )}
-          {activeTab === 'communication' && <SalesOrderCommunicationTab orderId={id} canReply={canEdit} />}
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 

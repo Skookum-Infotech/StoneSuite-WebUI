@@ -77,7 +77,7 @@ export function SendToCustomerDialog({
       // The send is recorded whether or not the email went, so the email
       // history changes either way.
       void queryClient.invalidateQueries({ queryKey: documentSendsKey(recordId) });
-      // ...and so does the order's Communication tab, which opens with this email.
+      // ...and so does the record's Communication tab, which opens with this email.
       void queryClient.invalidateQueries({ queryKey: recordEmailKey(recordId) });
       if (result.emailSent === false) {
         // The send is recorded, but reporting "Sent to …" here would be false.
