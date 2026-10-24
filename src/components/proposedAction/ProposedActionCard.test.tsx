@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
+import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('@/services/proposedActionService', () => ({
   proposedActionService: { list: vi.fn(), get: vi.fn(), confirm: vi.fn(), cancel: vi.fn() },
@@ -11,13 +12,24 @@ vi.mock('@/services/proposedActionService', () => ({
 import { ProposedActionCard } from './ProposedActionCard';
 import { proposedActionService } from '@/services/proposedActionService';
 import { makeProposedAction } from '@/test/proposedActionFixtures';
-import type { ProposedAction } from '@/types/proposedAction';
+import type { ProposedAction, ProposedActionConfirmResult } from '@/types/proposedAction';
 
-function renderCard(action: ProposedAction, cb: { onConfirmed?: () => void; onCancelled?: () => void } = {}) {
+interface CardProps {
+  onConfirmed?: () => void;
+  onConfirmResult?: (r: ProposedActionConfirmResult) => void;
+  onCancelled?: () => void;
+  onError?: (e: unknown) => void;
+  disabledReason?: string;
+  resultHref?: string;
+}
+
+function renderCard(action: ProposedAction, cb: CardProps = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <ProposedActionCard action={action} {...cb} />
+      <MemoryRouter>
+        <ProposedActionCard action={action} {...cb} />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -154,5 +166,50 @@ describe('ProposedActionCard', () => {
     await userEvent.tab();
     await userEvent.keyboard('{Enter}');
     expect(proposedActionService.cancel).toHaveBeenCalledWith('pa-1');
+  });
+});
+
+describe('ProposedActionCard extensions', () => {
+  it('disabledReason: confirm is disabled and described by the reason; cancel stays enabled', () => {
+    renderCard(makeProposedAction(), { disabledReason: 'No create permission' });
+    const confirm = screen.getByRole('button', { name: /Confirm/ });
+    expect(confirm).toBeDisabled();
+    expect(confirm).toHaveAccessibleDescription('No create permission');
+    expect(screen.getByRole('button', { name: /Cancel/ })).toBeEnabled();
+  });
+
+  it('onConfirmResult receives the full result incl. resultRef and replayed', async () => {
+    const done = makeProposedAction({
+      status: 'confirmed',
+      resultRef: { resource: 'vendor', recordId: 'v1', label: 'Acme Stone' },
+    });
+    const result = { action: done, replayed: true, message: 'ok' };
+    vi.mocked(proposedActionService.confirm).mockResolvedValue(result);
+    const onConfirmResult = vi.fn();
+    renderCard(makeProposedAction(), { onConfirmResult });
+    await userEvent.click(screen.getByRole('button', { name: /Confirm/ }));
+    expect(await screen.findByText(/Acme Stone/)).toBeInTheDocument();
+    expect(onConfirmResult).toHaveBeenCalledWith(result);
+    expect(screen.getByText(/already confirmed earlier/)).toBeInTheDocument();
+  });
+
+  it('resultHref: renders the created label as a link', () => {
+    renderCard(
+      makeProposedAction({
+        status: 'confirmed',
+        resultRef: { resource: 'vendor', recordId: 'v1', label: 'Acme Stone' },
+      }),
+      { resultHref: '/vendors/v1' },
+    );
+    expect(screen.getByRole('link', { name: 'Acme Stone' })).toHaveAttribute('href', '/vendors/v1');
+  });
+
+  it('onError receives the raw failure', async () => {
+    const err = httpError(403, 'nope');
+    vi.mocked(proposedActionService.confirm).mockRejectedValue(err);
+    const onError = vi.fn();
+    renderCard(makeProposedAction(), { onError });
+    await userEvent.click(screen.getByRole('button', { name: /Confirm/ }));
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(err));
   });
 });

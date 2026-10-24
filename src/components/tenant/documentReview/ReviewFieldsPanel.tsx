@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { ProposedEntityChips } from './ProposedEntityChips';
 import { FieldProvenance } from './FieldProvenance';
 import { ReviewFieldFrame } from './ReviewFieldFrame';
 import { documentRoutes } from '@/lib/documentExtractionRoutes';
@@ -56,6 +57,7 @@ export function ReviewFieldsPanel({ review, fields }: ReviewFieldsPanelProps): R
   if (!handoff) return null;
   const noun = documentRoutes(review.docType).partyLabel;
   const pendingKeys = new Set(review.pending.map((p) => p.key));
+  const partyEntities = review.proposedEntities?.filter((e) => e.kind === 'customer' || e.kind === 'vendor');
   const rows = fields.order.filter((k) => handoff.provenance[k] || k === fields.partyKey);
   return (
     <section aria-label="Fields read from the document" className="grid gap-2 sm:grid-cols-2">
@@ -74,6 +76,13 @@ export function ReviewFieldsPanel({ review, fields }: ReviewFieldsPanelProps): R
             {prov?.value && <p className="text-stone-600 dark:text-stone-300">Document: {prov.value}</p>}
             {current && current !== prov?.value && <p className="text-stone-800 dark:text-stone-200">Form: {current}</p>}
             {key === fields.partyKey && <PartyChoices review={review} noun={noun} searchSelector={fields.partySearchSelector} />}
+            {key === fields.partyKey && (
+              <ProposedEntityChips
+                extractionId={review.extractionId}
+                entities={review.formPartyId ? undefined : partyEntities}
+                onCreated={(entity, ref) => review.pickParty({ id: ref.recordId, name: ref.label || entity.name })}
+              />
+            )}
             <button
               type="button"
               aria-pressed={reviewed}

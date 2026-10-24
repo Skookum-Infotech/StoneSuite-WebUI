@@ -22,5 +22,6 @@ export const PROPOSED_ACTION_STRINGS = {
   genericError: 'Could not complete this action. Please try again.',
   noPermission: 'You do not have permission to do this.',
   unavailable: 'This action is no longer available.',
+  replayedNote: '(already confirmed earlier)',
   conflict: 'This action can no longer be changed.',
 } as const;

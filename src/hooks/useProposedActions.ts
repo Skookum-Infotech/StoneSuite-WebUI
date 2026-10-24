@@ -17,9 +17,15 @@ export const proposedActionKeys = {
  * updates a record. The repo has no uniform per-resource key convention (CRM
  * pages use ['crm-records', <workflowKey>], documents use their own roots), so
  * only the actions keys are invalidated by default. Register a resource here
- * (resource name -> key prefixes) to refresh its lists on confirm.
+ * (resource name -> key prefixes) to refresh its lists on confirm. The three
+ * resources document extraction can create are registered: the record lists and
+ * the pickers a review form searches.
  */
-export const RESOURCE_QUERY_KEYS: Record<string, ReadonlyArray<readonly unknown[]>> = {};
+export const RESOURCE_QUERY_KEYS: Record<string, ReadonlyArray<readonly unknown[]>> = {
+  customer: [['crm-records', 'customer'], ['customer-picker']],
+  vendor: [['vendors'], ['vendor-picker']],
+  inventory_item: [['inventory-items'], ['inventory-item-picker']],
+};
 
 /** The caller's own proposed actions (server-scoped to the current user). */
 export function useProposedActions(limit: number = DEFAULT_LIST_LIMIT) {
