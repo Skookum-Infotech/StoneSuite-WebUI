@@ -10,6 +10,7 @@ import {
   Loader2,
   AlertCircle,
   KeyRound,
+  ShieldCheck,
   UserCircle,
   Zap,
 } from 'lucide-react'
@@ -29,6 +30,7 @@ import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types/auth'
 import type { Grant } from '@/types/tenant'
 import { ProfileNameForm } from './components/ProfileNameForm'
+import { TwoStepVerificationCard } from './components/TwoStepVerificationCard'
 
 // ── Password schema ──────────────────────────────────────────────────────────
 
@@ -48,7 +50,7 @@ const passwordSchema = z
   })
 
 type PasswordFields = z.infer<typeof passwordSchema>
-type Tab = 'profile' | 'password' | 'roles'
+type Tab = 'profile' | 'password' | 'security' | 'roles'
 
 // ── Role card ────────────────────────────────────────────────────────────────
 
@@ -260,6 +262,9 @@ export default function AccountSettingsPage() {
   const navItems: { id: Tab; label: string; icon: React.ElementType; badge?: string }[] = [
     { id: 'profile', label: 'Profile', icon: UserCircle },
     { id: 'password', label: 'Password', icon: KeyRound },
+    // Two-step verification is staff-only: its endpoints are unreachable from a
+    // customer-portal session, and the portal sign-in has no code step to offer.
+    ...(isCustomer ? [] : [{ id: 'security' as Tab, label: 'Security', icon: ShieldCheck }]),
     ...(isCustomer
       ? []
       : [{ id: 'roles' as Tab, label: 'Roles & Access', icon: Shield, badge: roles.length > 0 ? String(roles.length) : undefined }]),
@@ -473,6 +478,9 @@ export default function AccountSettingsPage() {
                 </div>
               </div>
             )}
+
+            {/* ── Security tab ── */}
+            {activeTab === 'security' && !isCustomer && <TwoStepVerificationCard />}
 
             {/* ── Roles tab ── */}
             {activeTab === 'roles' && (
