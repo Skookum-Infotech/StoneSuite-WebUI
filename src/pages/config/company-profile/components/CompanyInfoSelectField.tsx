@@ -4,10 +4,15 @@ import { cn } from '@/lib/utils';
 import type { CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import type { SelectOption } from '@/lib/companyInfoLookupOptions';
 
+function renderOption(o: SelectOption) {
+  return <option key={o.value} value={o.value}>{o.label}</option>;
+}
+
 // Dropdown counterpart to CompanyInfoTextField, same chrome/sizing — for the
-// handful of Company Info fields (country/state/currency) that have a
-// backend lookup list to choose from, even though the value saved is still
-// plain text (see lib/companyInfoLookupOptions.ts).
+// handful of Company Info fields (country/state/currency/timezone) that have
+// a list to choose from, even though the value saved is still plain text
+// (see lib/companyInfoLookupOptions.ts). Options carrying a `group` render
+// under an <optgroup> (the long timezone list).
 export function CompanyInfoSelectField({
   field, registration, error, options,
 }: {
@@ -18,6 +23,12 @@ export function CompanyInfoSelectField({
 }) {
   const Icon = field.icon;
   const errorId = `${field.id}-error`;
+  const ungrouped = options.filter((o) => !o.group);
+  const grouped = new Map<string, SelectOption[]>();
+  for (const o of options) {
+    if (o.group) grouped.set(o.group, [...(grouped.get(o.group) ?? []), o]);
+  }
+  const groups = [...grouped];
   return (
     <div className={cn(
       'space-y-1.5',
@@ -39,7 +50,10 @@ export function CompanyInfoSelectField({
           {...registration}
         >
           <option value="">{field.placeholder}</option>
-          {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {ungrouped.map(renderOption)}
+          {groups.map(([group, items]) => (
+            <optgroup key={group} label={group}>{items.map(renderOption)}</optgroup>
+          ))}
         </select>
       </div>
       {error && <p id={errorId} className="mt-1 text-xs text-red-600">{error}</p>}
