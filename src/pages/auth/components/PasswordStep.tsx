@@ -6,10 +6,11 @@ import { ArrowRight, Eye, EyeOff, Lock, Loader2, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { apiErrorMessage } from '@/api/tenantClient'
+import { toMfaChallenge } from '@/lib/mfa'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { AuthResponse } from '@/types/auth'
+import type { AuthResponse, MfaChallenge } from '@/types/auth'
 
 const passwordSchema = z.object({
   password: z.string().min(1, 'Password is required'),
@@ -22,13 +23,16 @@ interface PasswordStepProps {
   // below so the button's loading state covers the whole handoff, not just
   // the login call itself.
   onSuccess: (response: AuthResponse) => void | Promise<void>
+  // The password was right but the account asks for an emailed code next: no
+  // session exists yet, only the challenge to answer.
+  onMfaRequired: (challenge: MfaChallenge) => void
   onBack: () => void
 }
 
 // Second step, shown once EmailStep resolves an email to "password". The
 // email itself is display-only here -- changing it means going back to
 // re-identify, since a different email could resolve to SSO instead.
-export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
+export function PasswordStep({ email, onSuccess, onMfaRequired, onBack }: PasswordStepProps) {
   const [showPassword, setShowPassword] = useState(false)
   const {
     register,
@@ -40,7 +44,10 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
   const onSubmit = async (data: PasswordFields) => {
     try {
       const response = await authService.login({ email, password: data.password, rememberMe: false })
-      if (response.success && response.user && response.token && response.expiresAt) {
+      const challenge = toMfaChallenge(response)
+      if (challenge) {
+        onMfaRequired(challenge)
+      } else if (response.success && response.user && response.token && response.expiresAt) {
         await onSuccess(response)
       } else {
         setError('root', { message: response.message ?? 'Login failed' })
