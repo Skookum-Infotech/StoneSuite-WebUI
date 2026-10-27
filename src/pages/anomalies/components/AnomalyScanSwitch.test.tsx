@@ -7,11 +7,13 @@ import type { AutomationRule } from '@/types/automationRule';
 vi.mock('@/services/automationRuleService', () => ({
   automationRuleService: { list: vi.fn(), setEnabled: vi.fn() },
 }));
+vi.mock('@/services/anomalyService', () => ({ anomalyService: { scanNow: vi.fn() } }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { AnomalyScanSwitch } from './AnomalyScanSwitch';
 import { automationRuleService } from '@/services/automationRuleService';
+import { anomalyService } from '@/services/anomalyService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { toast } from 'sonner';
 
@@ -89,5 +91,39 @@ describe('AnomalyScanSwitch', () => {
     await userEvent.click(await screen.findByRole('switch', { name: 'Anomaly scanning' }));
     await waitFor(() => expect(toast.error).toHaveBeenCalled());
     expect(screen.getByText('Off — nothing is checked or sent')).toBeInTheDocument();
+  });
+
+  it('runs a scan now and reports what it found', async () => {
+    allow('automation:read', 'automation:configure');
+    vi.mocked(automationRuleService.list).mockResolvedValue([rule()]);
+    vi.mocked(anomalyService.scanNow).mockResolvedValue({ raised: 2, alreadyKnown: 5, alertsSent: 2, alertsFailed: 0 });
+    renderSwitch();
+    await userEvent.click(await screen.findByRole('button', { name: 'Run scan now' }));
+    await waitFor(() => expect(anomalyService.scanNow).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('2 new anomalies found, 2 alerts sent'));
+  });
+
+  it('cannot run a scan while scanning is off', async () => {
+    allow('automation:read', 'automation:configure');
+    vi.mocked(automationRuleService.list).mockResolvedValue([rule({ enabled: false })]);
+    renderSwitch();
+    expect(await screen.findByRole('button', { name: 'Run scan now' })).toBeDisabled();
+  });
+
+  it('hides the scan button from people who can only read', async () => {
+    allow('automation:read');
+    vi.mocked(automationRuleService.list).mockResolvedValue([rule()]);
+    renderSwitch();
+    await screen.findByRole('switch', { name: 'Anomaly scanning' });
+    expect(screen.queryByRole('button', { name: 'Run scan now' })).not.toBeInTheDocument();
+  });
+
+  it('shows the server reason when a scan is refused', async () => {
+    allow('automation:read', 'automation:configure');
+    vi.mocked(automationRuleService.list).mockResolvedValue([rule()]);
+    vi.mocked(anomalyService.scanNow).mockRejectedValue(new Error('A scan is already running.'));
+    renderSwitch();
+    await userEvent.click(await screen.findByRole('button', { name: 'Run scan now' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
   });
 });

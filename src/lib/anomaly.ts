@@ -1,4 +1,5 @@
 import type {
+  AnomalyScanResult,
   AnomalyFilter,
   AnomalyListParams,
   AnomalySeverity,
@@ -12,6 +13,15 @@ export const ANOMALY_SCAN_RULE_KEY = 'anomaly_scan';
 /** The anomaly scan switch among a workspace's automation rules, if it exists. */
 export function findAnomalyScanRule(rules: ReadonlyArray<AutomationRule>): AutomationRule | undefined {
   return rules.find((r) => r.ruleKey === ANOMALY_SCAN_RULE_KEY);
+}
+
+/** One-line toast for a finished on-demand scan. */
+export function scanSummary(r: AnomalyScanResult): string {
+  const found =
+    r.raised === 0 ? 'No new anomalies found' : `${r.raised} new ${r.raised === 1 ? 'anomaly' : 'anomalies'} found`;
+  const alerts = r.alertsSent > 0 ? `, ${r.alertsSent} alert${r.alertsSent === 1 ? '' : 's'} sent` : '';
+  const failed = r.alertsFailed > 0 ? `, ${r.alertsFailed} could not be sent` : '';
+  return `${found}${alerts}${failed}`;
 }
 
 /** Findings per page — the server caps this too (anomaly.MaxPageSize). */

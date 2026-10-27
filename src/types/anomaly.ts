@@ -33,5 +33,13 @@ export interface AnomalyListParams {
   limit?: number;
 }
 
+/** Counts from POST /api/tenant/anomalies/scan (an on-demand scan). */
+export interface AnomalyScanResult {
+  raised: number;
+  alreadyKnown: number;
+  alertsSent: number;
+  alertsFailed: number;
+}
+
 /** A tab on the page: one status, or every status. */
 export type AnomalyFilter = AnomalyStatus | 'all';

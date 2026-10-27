@@ -1,5 +1,11 @@
 import { tenantClient } from '@/api/tenantClient';
-import type { Anomaly, AnomalyListParams, AnomalyPage, AnomalyStatus } from '@/types/anomaly';
+import type {
+  Anomaly,
+  AnomalyListParams,
+  AnomalyPage,
+  AnomalyScanResult,
+  AnomalyStatus,
+} from '@/types/anomaly';
 
 // Findings raised by the backend's scheduled anomaly scan —
 // GET /api/tenant/anomalies and PATCH /api/tenant/anomalies/{id}. The server
@@ -22,4 +28,15 @@ export const anomalyService = {
     tenantClient
       .patch<{ success: boolean; item: Anomaly }>(`/tenant/anomalies/${id}`, { status, note })
       .then((r) => r.data.item),
+
+  /** Runs a scan now for this workspace (automation:configure). 409 = switched off or already running. */
+  scanNow: (): Promise<AnomalyScanResult> =>
+    tenantClient
+      .post<AnomalyScanResult & { success: boolean }>('/tenant/anomalies/scan')
+      .then(({ data }) => ({
+        raised: data.raised,
+        alreadyKnown: data.alreadyKnown,
+        alertsSent: data.alertsSent,
+        alertsFailed: data.alertsFailed,
+      })),
 };

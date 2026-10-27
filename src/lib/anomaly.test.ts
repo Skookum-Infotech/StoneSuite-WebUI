@@ -5,6 +5,7 @@ import {
   anomalyRuleLabel,
   buildAnomalyParams,
   findAnomalyScanRule,
+  scanSummary,
   reviewActions,
 } from './anomaly';
 import type { AnomalyStatus } from '@/types/anomaly';
@@ -72,5 +73,17 @@ describe('findAnomalyScanRule', () => {
   it('returns undefined when the workspace has none', () => {
     expect(findAnomalyScanRule([{ ...base, ruleKey: 'ar_dunning' }])).toBeUndefined();
     expect(findAnomalyScanRule([])).toBeUndefined();
+  });
+});
+
+describe('scanSummary', () => {
+  const cases = [
+    { name: 'nothing new', r: { raised: 0, alreadyKnown: 4, alertsSent: 0, alertsFailed: 0 }, want: 'No new anomalies found' },
+    { name: 'one, one alert', r: { raised: 1, alreadyKnown: 0, alertsSent: 1, alertsFailed: 0 }, want: '1 new anomaly found, 1 alert sent' },
+    { name: 'several', r: { raised: 3, alreadyKnown: 0, alertsSent: 2, alertsFailed: 0 }, want: '3 new anomalies found, 2 alerts sent' },
+    { name: 'failed sends', r: { raised: 2, alreadyKnown: 0, alertsSent: 1, alertsFailed: 1 }, want: '2 new anomalies found, 1 alert sent, 1 could not be sent' },
+  ];
+  it.each(cases)('$name', ({ r, want }) => {
+    expect(scanSummary(r)).toBe(want);
   });
 });
