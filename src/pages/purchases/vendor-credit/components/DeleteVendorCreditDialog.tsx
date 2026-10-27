@@ -77,7 +77,7 @@ export function DeleteVendorCreditDialog({ vendorCreditId, label, onDeleted }: {
                 <h3 id="delete-vc-dialog-title" className="text-sm font-bold text-stone-900">
                   Delete vendor credit?
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">This action cannot be undone.</p>
+                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
               </div>
             </div>
 

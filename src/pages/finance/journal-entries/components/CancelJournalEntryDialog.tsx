@@ -73,7 +73,7 @@ export function CancelJournalEntryDialog({ journalEntryId, onCancelled }: {
               </div>
               <div>
                 <h3 id="cancel-je-dialog-title" className="text-sm font-bold text-stone-900">Cancel this journal entry?</h3>
-                <p className="text-xs text-stone-400 mt-0.5">This action cannot be undone.</p>
+                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
               </div>
             </div>
 

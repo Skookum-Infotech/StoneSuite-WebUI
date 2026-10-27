@@ -99,7 +99,7 @@ export function ImportUploadStep({ workflowKey, onStaged }: Props) {
         <p className="mb-1 text-xs font-medium text-stone-600 dark:text-stone-300">
           {busy ? `Uploading… ${progress}%` : dragging ? 'Release to upload' : 'Drop a file here or click to browse'}
         </p>
-        <p className="flex items-center justify-center gap-1 text-2xs text-stone-400">
+        <p className="flex items-center justify-center gap-1 text-2xs text-stone-500">
           <FileSpreadsheet className="size-3" /> CSV, XLSX, DOCX, or PDF — up to 25 MB
         </p>
       </div>

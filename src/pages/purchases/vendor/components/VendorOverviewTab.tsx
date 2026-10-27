@@ -27,7 +27,7 @@ function ReadonlyField({ label, value, full, link, multiline }: {
         </a>
       ) : (
         <div className={cn(readonlyCls, multiline && 'whitespace-pre-wrap min-h-[4.5rem]')}>
-          {value || <span className="text-stone-400">—</span>}
+          {value || <span className="text-stone-500">—</span>}
         </div>
       )}
     </div>
@@ -36,7 +36,7 @@ function ReadonlyField({ label, value, full, link, multiline }: {
 
 function ChipList({ items, emptyLabel }: { items: string[]; emptyLabel: ReactNode }) {
   if (items.length === 0) return typeof emptyLabel === 'string'
-    ? <div className={cn(readonlyCls, 'text-stone-400')}>{emptyLabel}</div>
+    ? <div className={cn(readonlyCls, 'text-stone-500')}>{emptyLabel}</div>
     : <>{emptyLabel}</>;
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -107,7 +107,7 @@ export function VendorOverviewTab({ vendor, countryName }: { vendor: Vendor; cou
             <ReadonlyField label="Fax Number" value={vendor.faxNumber} />
             <ReadonlyField label="Physical Address" value={vendor.physicalAddress} full multiline />
           </div>
-          <p className="pt-1 text-2xs font-semibold uppercase tracking-wider text-stone-400">Primary Contact Point</p>
+          <p className="pt-1 text-2xs font-semibold uppercase tracking-wider text-stone-500">Primary Contact Point</p>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <ReadonlyField label="Contact Type" value={vendor.contactPoint?.contactType} />
             <ReadonlyField label="Contact Telephone" value={vendor.contactPoint?.telephone} />
@@ -148,7 +148,7 @@ export function VendorOverviewTab({ vendor, countryName }: { vendor: Vendor; cou
       {!isPerson && (
         <>
           <ModernSection title="Accepted Payment Methods" index={6}>
-            <ChipList items={acceptedPaymentMethods} emptyLabel={<p className="text-xs text-stone-400 italic">No payment methods on file.</p>} />
+            <ChipList items={acceptedPaymentMethods} emptyLabel={<p className="text-xs text-stone-500 italic">No payment methods on file.</p>} />
           </ModernSection>
           <ModernSection title="Compliance Policies" index={7}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">

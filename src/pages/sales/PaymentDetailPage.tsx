@@ -296,7 +296,7 @@ export default function PaymentDetailPage() {
                           </button>
                         </td>
                         <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(app.amount)}</td>
-                        <td className="px-3 py-2.5 tabular-nums text-stone-400">{fmtDate(app.createdAt)}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-stone-500">{fmtDate(app.createdAt)}</td>
                         <td className="px-3 py-2.5 text-right">
                           {canEdit && (
                             <button
@@ -314,7 +314,7 @@ export default function PaymentDetailPage() {
                       </tr>
                     ))}
                     {payment.applications.length === 0 && (
-                      <tr><td colSpan={4} className="py-8 text-center text-stone-400">Not applied to any invoices yet.</td></tr>
+                      <tr><td colSpan={4} className="py-8 text-center text-stone-500">Not applied to any invoices yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -334,7 +334,7 @@ export default function PaymentDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Payment Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
@@ -386,7 +386,7 @@ export default function PaymentDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <PaymentStatusControl
@@ -478,7 +478,7 @@ function ApplyDialog({ paymentId, customer, unappliedAmount, excludeIds, onClose
             <h3 id="apply-payment-dialog-title" className="text-sm font-bold text-stone-900">
               Apply to invoice
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Unapplied balance: {currency(unappliedAmount)}
             </p>
           </div>
@@ -541,7 +541,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

@@ -100,7 +100,7 @@ export function ApproverPicker({
       )}
 
       {atLimit ? (
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-stone-500">
           Maximum of {MAX_APPROVERS} approvers selected. Remove one to add another.
         </p>
       ) : (
@@ -122,7 +122,7 @@ export function ApproverPicker({
           {open && (
             <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md dark:border-stone-700 dark:bg-stone-900">
               {results.length === 0 ? (
-                <p className="px-3.5 py-2.5 text-xs text-stone-400">
+                <p className="px-3.5 py-2.5 text-xs text-stone-500">
                   {users.length === 0 ? 'No active users available.' : 'No matching users.'}
                 </p>
               ) : (
@@ -138,7 +138,7 @@ export function ApproverPicker({
                     className="flex w-full flex-col items-start px-3.5 py-2 text-left text-xs transition hover:bg-stone-50 dark:hover:bg-stone-800"
                   >
                     <span className="font-semibold text-stone-700 dark:text-stone-200">{u.fullName || u.email}</span>
-                    <span className="text-stone-400">{u.email}</span>
+                    <span className="text-stone-500">{u.email}</span>
                   </button>
                 ))
               )}
@@ -148,7 +148,7 @@ export function ApproverPicker({
       )}
 
       {selected.length === 0 && !atLimit && (
-        <p className="text-2xs text-stone-400">No approver selected — records won't require sign-off.</p>
+        <p className="text-2xs text-stone-500">No approver selected — records won't require sign-off.</p>
       )}
     </div>
   );

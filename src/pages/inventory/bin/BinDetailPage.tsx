@@ -20,9 +20,9 @@ type Tab = (typeof TABS)[number]['key'];
 function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: 'warn' }) {
   return (
     <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('mt-0.5 text-lg font-bold tabular-nums', tone === 'warn' ? 'text-amber-700' : 'text-stone-900')}>{value}</p>
-      {hint && <p className="text-2xs text-stone-400">{hint}</p>}
+      {hint && <p className="text-2xs text-stone-500">{hint}</p>}
     </div>
   );
 }
@@ -66,7 +66,7 @@ export default function BinDetailPage() {
           <span className="flex items-center gap-1.5">
             <span className="rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold capitalize text-stone-600">{bin.type}</span>
             {bin.isWip && <span className="rounded bg-violet-100 px-1.5 py-0.5 text-2xs font-semibold text-violet-700">WIP</span>}
-            {!bin.isActive && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-400">Inactive</span>}
+            {!bin.isActive && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-500">Inactive</span>}
           </span>
         )}
       />

@@ -58,7 +58,7 @@ export function SessionExpiryModal({
             <h3 id="session-expiry-title" className="text-sm font-bold text-stone-900">
               Your session is expiring
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">You'll be signed out automatically.</p>
+            <p className="text-xs text-stone-500 mt-0.5">You'll be signed out automatically.</p>
           </div>
         </div>
 

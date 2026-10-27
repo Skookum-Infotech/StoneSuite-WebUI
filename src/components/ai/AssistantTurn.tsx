@@ -7,7 +7,7 @@ import { CitationChips, type CitationChipsHandle, type NumberedCitation } from '
 import type { ChatTurn } from './useAssistantConversation';
 import type { Citation } from '@/types/ai';
 
-const noteClass = 'text-2xs italic text-stone-400 dark:text-stone-500';
+const noteClass = 'text-2xs italic text-stone-500 dark:text-stone-500';
 /** After this many seconds still waiting on the first token, swap "Thinking…"
  *  for a cold-start explanation — Ollama can take up to ~60s to load. */
 const WARMUP_THRESHOLD_SECONDS = 8;

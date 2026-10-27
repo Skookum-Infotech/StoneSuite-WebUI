@@ -263,7 +263,7 @@ export default function LeadDetailPage() {
                       <div key={key} className="space-y-1.5">
                         <label className={fieldLabelCls}>{key}</label>
                         <div className={readonlyCls}>
-                          {String(value ?? "") || <span className="text-stone-400">—</span>}
+                          {String(value ?? "") || <span className="text-stone-500">—</span>}
                         </div>
                       </div>
                     ))}

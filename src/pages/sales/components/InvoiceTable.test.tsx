@@ -3,7 +3,10 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  useNavigate: () => vi.fn(),
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/invoiceService', () => ({
   invoiceService: { searchInvoices: vi.fn(), transition: vi.fn() },

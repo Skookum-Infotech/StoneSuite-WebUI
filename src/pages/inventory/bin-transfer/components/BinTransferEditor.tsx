@@ -6,6 +6,8 @@ import { inventoryBinService } from '@/services/inventoryBinService';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useBinTransferCustomFields } from '@/hooks/useBinTransferCustomFields';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { FormActionBar, ModernFieldShell, ModernSection } from '@/components/crm/FormPrimitives';
 import { fieldCls } from '@/components/crm/formUtils';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
@@ -27,7 +29,8 @@ const TODAY = () => new Date().toISOString().split('T')[0];
 export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }: {
   initial?: BinTransferRecord;
   copy: { title: string; subtitle: string; backLabel: string; submitLabel: string };
-  onSubmit: (input: BinTransferInput) => void;
+  /** `markClean` must run once the save has succeeded, just before the page navigates away. */
+  onSubmit: (input: BinTransferInput, markClean: () => void) => void;
   status: { isPending: boolean; error: unknown };
   onCancel: () => void;
 }) {
@@ -53,6 +56,13 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
     enabled: Boolean(locationUuid),
   });
 
+  // `locationUuid` is derived (the lookups arrive after mount), so the snapshot
+  // waits for them rather than baselining on an empty location.
+  const guard = useUnsavedChangesGuard(
+    { locationUuid, date, notes, lines, customValues },
+    Boolean(lookups),
+  );
+
   const warehouseId = toNumericWarehouseId(warehouses, locationUuid);
   const summary = summarizeDraft(lines);
   const errorRef = useScrollToError<HTMLDivElement>(status.error || fieldError);
@@ -71,11 +81,12 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
       notes,
       customFields: coerceCustomFields(customDefs, customValues),
       lines: toLineInputs(lines),
-    });
+    }, guard.markClean);
   }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel={copy.backLabel}
@@ -126,7 +137,7 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
                     className={lines.length > 0 ? 'cursor-not-allowed bg-stone-50' : undefined}
                   />
                   {lines.length > 0 && (
-                    <p className="mt-1 text-2xs text-stone-400">Remove every slab to change the location.</p>
+                    <p className="mt-1 text-2xs text-stone-500">Remove every slab to change the location.</p>
                   )}
                 </ModernFieldShell>
                 <ModernFieldShell label="Date" required>

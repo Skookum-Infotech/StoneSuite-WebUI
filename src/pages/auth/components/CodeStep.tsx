@@ -133,14 +133,14 @@ export function CodeStep({ challenge, onSuccess, onBack }: CodeStepProps) {
           type="button"
           onClick={onBack}
           aria-label="Back to password"
-          className="shrink-0 text-xs font-semibold text-stone-400 underline underline-offset-2 transition-colors hover:text-stone-700"
+          className="shrink-0 text-xs font-semibold text-stone-500 underline underline-offset-2 transition-colors hover:text-stone-700"
         >
           Back
         </button>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="mfa-code" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+        <Label htmlFor="mfa-code" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
           Sign-in code
         </Label>
         <Controller
@@ -167,7 +167,7 @@ export function CodeStep({ challenge, onSuccess, onBack }: CodeStepProps) {
           <p id="mfa-code-error" className="text-xs text-destructive">{errors.code.message}</p>
         ) : (
           expiresInMinutes > 0 && (
-            <p id="mfa-code-hint" className="text-xs text-stone-400">
+            <p id="mfa-code-hint" className="text-xs text-stone-500">
               The code works for {expiresInMinutes} {expiresInMinutes === 1 ? 'minute' : 'minutes'}.
             </p>
           )
@@ -199,7 +199,7 @@ export function CodeStep({ challenge, onSuccess, onBack }: CodeStepProps) {
         )}
       </Button>
 
-      <div className="flex items-center justify-center gap-1.5 text-xs text-stone-400">
+      <div className="flex items-center justify-center gap-1.5 text-xs text-stone-500">
         <span>Didn&apos;t get it?</span>
         <ResendCodeButton secondsLeft={secondsLeft} pending={resending} onResend={handleResend} />
       </div>

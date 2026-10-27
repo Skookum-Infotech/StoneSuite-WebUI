@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { DataMemoryRouter } from '@/test/DataMemoryRouter';
+import { Route, Routes } from 'react-router-dom';
 
 vi.mock('@/hooks/useInventoryLookups', () => ({ useInventoryLookups: vi.fn() }));
 vi.mock('@/hooks/useBinTransferCustomFields', () => ({ useBinTransferCustomFields: () => [] }));
@@ -40,13 +41,13 @@ function renderPage(warehouses: Warehouse[] = [YARD]) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/inventory/bin_transfer/new']}>
+      <DataMemoryRouter initialEntries={['/inventory/bin_transfer/new']}>
         <Routes>
           <Route path="/inventory/bin_transfer/new" element={<AddBinTransferPage />} />
           <Route path="/inventory/bin_transfer/:id" element={<p>transfer page</p>} />
           <Route path="/inventory/bin_transfer" element={<p>transfer list</p>} />
         </Routes>
-      </MemoryRouter>
+      </DataMemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -112,6 +113,28 @@ describe('AddBinTransferPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Line 1 (SLB-000231) needs a destination bin.');
     expect(binTransferService.create).not.toHaveBeenCalled();
+  });
+
+  it('leaves straight away when nothing has been entered', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Cancel' }))[0]);
+
+    expect(await screen.findByText('transfer list')).toBeInTheDocument();
+  });
+
+  it('asks before discarding a draft with slabs on it, and stays when told to', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await addFirstSlab(user);
+    await user.click(screen.getAllByRole('button', { name: 'Cancel' })[0]);
+
+    expect(await screen.findByText('Discard unsaved changes?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(screen.queryByText('Discard unsaved changes?')).not.toBeInTheDocument();
+    expect(screen.queryByText('transfer list')).not.toBeInTheDocument();
   });
 
   it('will not save with no slabs', async () => {

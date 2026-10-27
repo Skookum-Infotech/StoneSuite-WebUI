@@ -92,7 +92,7 @@ export function ItemReceiptFormBody({
               'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
               activeTab === tab.key
                 ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+                : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
             )}
           >
             {tab.label}
@@ -112,7 +112,7 @@ export function ItemReceiptFormBody({
                     <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-stone-800">{sourcePurchaseOrder.number || '—'}</p>
-                      <p className="truncate text-xs text-stone-400">{sourcePurchaseOrder.vendorName}</p>
+                      <p className="truncate text-xs text-stone-500">{sourcePurchaseOrder.vendorName}</p>
                     </div>
                   </div>
                   <button

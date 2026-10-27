@@ -43,7 +43,7 @@ export function BlockingSlotsDialog({
             <h3 id="blocking-slots-dialog-title" className="text-sm font-bold text-stone-900">
               Account in use as a default
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">Point the default at another account first.</p>
+            <p className="text-xs text-stone-500 mt-0.5">Point the default at another account first.</p>
           </div>
         </div>
 

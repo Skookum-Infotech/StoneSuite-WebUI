@@ -355,21 +355,21 @@ export default function PurchaseOrderDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {po.items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 min-w-[200px] max-w-md whitespace-pre-wrap break-words">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <LineDimensionViewCells length={line.length} width={line.width} slabs={line.expectedSlabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5">
                         <LineReceivingProgress line={line} />
                         {(line.expectedSlabs || line.slabsReceived) ? (
-                          <p className="mt-1 text-2xs text-stone-400">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
+                          <p className="mt-1 text-2xs text-stone-500">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
                         ) : null}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -379,7 +379,7 @@ export default function PurchaseOrderDetailPage() {
                     </tr>
                   ))}
                   {po.items.length === 0 && (
-                    <tr><td colSpan={14} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -397,7 +397,7 @@ export default function PurchaseOrderDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Purchase Order Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -438,7 +438,7 @@ export default function PurchaseOrderDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <PurchaseOrderStatusControl
                 order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, gated: po.gated, nextStatusCodes: po.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
@@ -450,7 +450,7 @@ export default function PurchaseOrderDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{po.status}</Badge>
@@ -526,7 +526,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -541,7 +541,7 @@ function AddressBlock({ addr }: { addr: { name?: string; attention?: string; add
   ].filter(Boolean);
 
   if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
+    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
@@ -554,7 +554,7 @@ function AddressBlock({ addr }: { addr: { name?: string; attention?: string; add
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

@@ -50,7 +50,7 @@ export function TenantDialog({ title, subtitle, tone, onClose, children }: Props
             <h3 id={titleId} className="text-sm font-bold text-stone-900">
               {title}
             </h3>
-            <p className="mt-0.5 text-xs text-stone-400">{subtitle}</p>
+            <p className="mt-0.5 text-xs text-stone-500">{subtitle}</p>
           </div>
         </div>
         {children}

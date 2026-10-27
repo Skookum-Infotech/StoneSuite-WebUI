@@ -42,7 +42,7 @@ export function OnboardingSelectField({
           aria-label={`${label}: ${displayText}`}
           className={cn(
             'flex w-full items-center justify-between gap-2 text-left outline-none transition',
-            !selected && 'text-stone-400',
+            !selected && 'text-stone-500',
             className,
           )}
         >
@@ -64,7 +64,7 @@ export function OnboardingSelectField({
         </div>
         <div role="listbox" aria-label={label} className="max-h-60 overflow-y-auto p-1">
           {filtered.length === 0 && (
-            <p className="px-2.5 py-2 text-xs text-stone-400">No matches</p>
+            <p className="px-2.5 py-2 text-xs text-stone-500">No matches</p>
           )}
           {filtered.map((o) => (
             <button

@@ -182,7 +182,7 @@ export default function ImportDataPage() {
           </div>
 
           {workflowsQuery.isError && (
-            <p className="text-2xs text-stone-400">
+            <p className="text-2xs text-stone-500">
               {apiErrorMessage(
                 workflowsQuery.error,
                 'Custom-field mapping suggestions are unavailable — you can still import using core fields.',

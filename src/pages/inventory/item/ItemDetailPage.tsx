@@ -192,7 +192,7 @@ export default function ItemDetailPage() {
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
               {history.length === 0 ? (
-                <p className="py-8 text-center text-sm text-stone-400">No history recorded yet.</p>
+                <p className="py-8 text-center text-sm text-stone-500">No history recorded yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {history.map((h, i) => (
@@ -200,7 +200,7 @@ export default function ItemDetailPage() {
                       <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{h.action}</p>
-                        <p className="text-2xs text-stone-400">{fmtDateTime(h.at)} · {h.byName}</p>
+                        <p className="text-2xs text-stone-500">{fmtDateTime(h.at)} · {h.byName}</p>
                       </div>
                     </li>
                   ))}
@@ -214,7 +214,7 @@ export default function ItemDetailPage() {
 
         <SalesDetailSidebar label="Item Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
@@ -244,7 +244,7 @@ export default function ItemDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={item.isActive ? '#22c55e' : '#a8a29e'}>{item.isActive ? 'Active' : 'Inactive'}</Badge>
@@ -281,7 +281,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

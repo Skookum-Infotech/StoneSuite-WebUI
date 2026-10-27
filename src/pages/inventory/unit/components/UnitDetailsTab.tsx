@@ -8,7 +8,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

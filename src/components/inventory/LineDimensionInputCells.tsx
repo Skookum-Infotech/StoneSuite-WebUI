@@ -6,11 +6,11 @@ import {
 } from '@/lib/lineDimensions';
 
 const inputCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-right text-xs tabular-nums text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-300';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-right text-xs tabular-nums text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-300';
 
 // The unit sits inside the box, right-aligned after the number, so which unit a
 // line is in is read where the number is typed — it differs per item.
-const unitCls = 'pointer-events-none absolute inset-y-0 right-1.5 flex items-center text-2xs text-stone-400';
+const unitCls = 'pointer-events-none absolute inset-y-0 right-1.5 flex items-center text-2xs text-stone-500';
 
 const EDITABLE_BOX = 'input:not([disabled]):not([readonly])';
 

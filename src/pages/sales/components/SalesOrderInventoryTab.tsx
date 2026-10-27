@@ -22,7 +22,7 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
 
   if (!orderId) {
     return (
-      <p className="py-8 text-center text-xs text-stone-400">
+      <p className="py-8 text-center text-xs text-stone-500">
         Inventory data will be available after saving the order.
       </p>
     );
@@ -31,7 +31,7 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
   if (error) return <p className="py-8 text-center text-xs text-destructive/70">Failed to load inventory.</p>;
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-xs text-stone-400">
+      <p className="py-8 text-center text-xs text-stone-500">
         This order has no catalog-linked lines — inventory is only tracked for items picked from the catalog.
       </p>
     );
@@ -54,7 +54,7 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
               {row.tracked === false ? (
                 <>
                   <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
-                  <td colSpan={4} className="px-3 py-2.5 text-stone-400">Stock is not tracked for this item.</td>
+                  <td colSpan={4} className="px-3 py-2.5 text-stone-500">Stock is not tracked for this item.</td>
                 </>
               ) : (
                 <>

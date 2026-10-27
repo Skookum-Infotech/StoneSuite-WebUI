@@ -73,10 +73,10 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
             </div>
             <div>
               <h3 id="slab-picker-title" className="text-sm font-bold text-stone-900">Add slabs</h3>
-              <p className="mt-0.5 text-xs text-stone-400">Slabs in this location that can be moved.</p>
+              <p className="mt-0.5 text-xs text-stone-500">Slabs in this location that can be moved.</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100">
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-500 hover:bg-stone-100">
             <X className="size-4" />
           </button>
         </div>
@@ -90,7 +90,7 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
               onChange={(e) => setTerm(e.target.value)}
               placeholder="Search serial, item or lot…"
               aria-label="Search slabs"
-              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
             />
             {isFetching && <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-stone-400" aria-hidden="true" />}
           </div>
@@ -99,7 +99,7 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
         <div className="min-h-[12rem] flex-1 overflow-y-auto modal-scrollbar px-2 py-2">
           {isError && <p role="alert" className="px-3 py-4 text-xs text-destructive">{apiErrorMessage(error, 'Failed to load slabs.')}</p>}
           {!isError && results.length === 0 && !isFetching && (
-            <p className="px-3 py-10 text-center text-xs text-stone-400">
+            <p className="px-3 py-10 text-center text-xs text-stone-500">
               {debounced ? 'No movable slabs match that search.' : 'No movable slabs in this location.'}
             </p>
           )}
@@ -129,7 +129,7 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
                         {unit.status === UNIT_STATUS_RESERVED && (
                           <span className="rounded bg-amber-100 px-1.5 py-0.5 text-2xs font-semibold text-amber-700">Reserved</span>
                         )}
-                        {added && <span className="text-2xs font-semibold text-stone-400">Already added</span>}
+                        {added && <span className="text-2xs font-semibold text-stone-500">Already added</span>}
                       </span>
                       <span className="block truncate text-2xs text-stone-500">{unit.inventoryItemName ?? '—'}</span>
                     </span>
@@ -137,7 +137,7 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
                       <span className="block text-xs tabular-nums text-stone-700">
                         {unit.area.toFixed(2)} {unit.areaUnitCode ?? ''}
                       </span>
-                      <span className="block text-2xs text-stone-400">{unit.binPath || 'No bin'}</span>
+                      <span className="block text-2xs text-stone-500">{unit.binPath || 'No bin'}</span>
                     </span>
                   </label>
                 </li>

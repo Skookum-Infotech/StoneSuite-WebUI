@@ -68,7 +68,7 @@ export function InventoryAlerts({
   return (
     <WidgetCard title="Inventory alerts" subtitle="stock needing attention">
       {data.alerts.length === 0 ? (
-        <p className="text-xs text-stone-400">Nothing needs attention right now.</p>
+        <p className="text-xs text-stone-500">Nothing needs attention right now.</p>
       ) : (
         <>
           <div className="flex flex-col divide-y divide-stone-100">

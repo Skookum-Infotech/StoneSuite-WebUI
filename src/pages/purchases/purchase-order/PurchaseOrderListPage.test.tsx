@@ -3,7 +3,10 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  useNavigate: () => vi.fn(),
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+}));
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/hooks/useAIStatus', () => ({ useAIStatus: vi.fn() }));
 vi.mock('@/components/tenant/documentExtraction/PendingDocumentsChip', () => ({

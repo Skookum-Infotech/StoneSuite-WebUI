@@ -164,17 +164,17 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
                     {formatWallClock(a.scheduledAt) || '—'}
                   </td>
                   <td className="px-3 py-2.5 tabular-nums whitespace-nowrap text-stone-600">
-                    {formatWallClock(a.completedAt) || <span className="text-stone-300">—</span>}
+                    {formatWallClock(a.completedAt) || <span className="text-stone-500">—</span>}
                   </td>
                   <td className="max-w-xs px-3 py-2.5 text-stone-600">
-                    {a.notes ? <span className="block truncate" title={a.notes}>{a.notes}</span> : <span className="text-stone-300">—</span>}
+                    {a.notes ? <span className="block truncate" title={a.notes}>{a.notes}</span> : <span className="text-stone-500">—</span>}
                   </td>
                   {canEdit && (
                     <td className="px-3 py-2.5 text-right">
                       <button
                         type="button"
                         onClick={() => startEditing(a.code)}
-                        className="rounded-md p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+                        className="rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
                         aria-label={`Edit ${a.name}`}
                       >
                         <Pencil className="size-3.5" aria-hidden="true" />
@@ -188,7 +188,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
         </table>
       </div>
 
-      <p className="text-2xs text-stone-400">
+      <p className="text-2xs text-stone-500">
         Dates were planned from the installation date. Changing that date re-plans every pending activity; ones that are in progress or completed stay where they are.
       </p>
     </div>

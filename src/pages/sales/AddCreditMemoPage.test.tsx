@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { DataMemoryRouter } from '@/test/DataMemoryRouter';
+import { Route, Routes } from 'react-router-dom';
 import type { CrmLookups } from '@/services/lookupService';
 import type { CreditMemo } from '@/types/creditMemo';
 import type { WorkflowRecord } from '@/types/tenant';
@@ -88,14 +89,14 @@ function Providers({ state = PAYMENT_HANDOFF_STATE }: { state?: typeof PAYMENT_H
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[{ pathname: '/sales/credit_memo/new', state }]}>
+      <DataMemoryRouter initialEntries={[{ pathname: '/sales/credit_memo/new', state }]}>
         <Routes>
           <Route path="/sales/credit_memo/new" element={<AddCreditMemoPage />} />
           <Route path="/sales/credit_memo/:id" element={<div>credit memo saved</div>} />
           <Route path="/sales/credit_memo" element={<div>credit memo list</div>} />
           <Route path="/sales/payment/:id" element={<div>payment page</div>} />
         </Routes>
-      </MemoryRouter>
+      </DataMemoryRouter>
     </QueryClientProvider>
   );
 }

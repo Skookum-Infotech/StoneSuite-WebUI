@@ -85,7 +85,7 @@ export function AreaCard({ area, errors, copyFromName, actions, isNew }: AreaCar
               Needs attention
             </span>
           ) : (
-            <span className="shrink-0 text-xs text-stone-400">
+            <span className="shrink-0 text-xs text-stone-500">
               {filled} of {total} filled
             </span>
           )}

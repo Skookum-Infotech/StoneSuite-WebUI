@@ -36,15 +36,15 @@ export function BillingDetailsCard({
 
       <dl className="flex-1 px-5 sm:px-6 py-4 sm:py-5 space-y-4 text-xs flex flex-col justify-center">
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-stone-400 font-semibold shrink-0">Contact</dt>
+          <dt className="text-stone-500 font-semibold shrink-0">Contact</dt>
           <dd className="text-stone-800 text-right truncate">{contact.name}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-stone-400 font-semibold shrink-0">Email</dt>
+          <dt className="text-stone-500 font-semibold shrink-0">Email</dt>
           <dd className="text-stone-800 text-right truncate">{contact.email}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-stone-400 font-semibold shrink-0">Address</dt>
+          <dt className="text-stone-500 font-semibold shrink-0">Address</dt>
           <dd className="text-stone-800 text-right">
             {contact.addressLine1}
             {contact.addressLine2 ? `, ${contact.addressLine2}` : ''}

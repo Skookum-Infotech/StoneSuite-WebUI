@@ -196,7 +196,7 @@ export default function BinTransferDetailPage() {
 
         <SalesDetailSidebar label="Bin Transfer Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canUpdate && btIsEditable(transfer.statusCode) && (
                 <button
@@ -223,13 +223,13 @@ export default function BinTransferDetailPage() {
 
           {(transfer.nextStatusCodes.length > 0) && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <BinTransferActions transfer={transfer} can={{ transition: canTransition, approve: canApprove }} />
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex items-center justify-between border-b border-stone-100 py-2 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{transfer.statusName}</Badge>

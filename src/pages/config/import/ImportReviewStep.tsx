@@ -211,7 +211,7 @@ export function ImportReviewStep({ jobId, workflowKey, fieldDefs, onCommitted }:
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-stone-100 dark:border-stone-800">
-                  <td className="px-3 py-2 text-stone-400">{row.rowIndex + 1}</td>
+                  <td className="px-3 py-2 text-stone-500">{row.rowIndex + 1}</td>
                   <td className="max-w-[16rem] truncate px-3 py-2 text-stone-600 dark:text-stone-300" title={JSON.stringify(row.mapped.core)}>
                     {Object.keys(row.mapped.core ?? {}).length === 0 ? '—' : JSON.stringify(row.mapped.core)}
                   </td>

@@ -47,7 +47,7 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
         ) : (
           <>
             <span className="text-3xl font-bold tracking-tight text-stone-900">${price}</span>
-            <span className="text-xs font-semibold text-stone-400">{period}</span>
+            <span className="text-xs font-semibold text-stone-500">{period}</span>
           </>
         )}
       </div>
@@ -69,7 +69,7 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
         className={cn(
           'mt-5 w-full rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed',
           isCurrent
-            ? 'bg-stone-100 text-stone-400'
+            ? 'bg-stone-100 text-stone-500'
             : 'bg-brand text-stone-950 hover:bg-brand-hover active:scale-[0.99]',
         )}
         style={!isCurrent ? { boxShadow: '0 4px 14px rgba(194,245,137,0.35)' } : undefined}

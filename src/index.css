@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap"); /* --font-brand fallback */
-
 /* ── Font imports — change fonts here, nowhere else ─────────────────────── */
 @import "@fontsource-variable/geist"; /* --font-sans */
 @import "@fontsource/ibm-plex-mono/400.css"; /* --font-mono */
@@ -174,13 +172,15 @@
   --secondary: #f7f7f7;           /* stone-100: secondary surfaces */
   --secondary-foreground: #1c1917;
   --muted: #f7f7f7;               /* stone-100 */
-  --muted-foreground: #787878;    /* stone-500: placeholder, secondary text */
+  --muted-foreground: #6b6560;    /* stone-500: placeholder, secondary text */
 
   /* Semantic */
   --destructive: #d94f36;
   --border: #e8e8e8;              /* stone-300: subtle borders */
   --input: #d4d0cc;               /* input border — darker than --border so form fields read as clearly interactive */
-  --ring: #c2f589;                /* focus ring — brand lime */
+  --ring: #c2f589;                /* decorative focus glow — brand lime (1.26:1 on white, so never the only indicator) */
+  --focus-ring: #1c1917;          /* keyboard focus outline on light surfaces (stone-950, ≥3:1) */
+  --focus-ring-on-dark: #ffffff;  /* same, inside the dark app header */
 
   /* ── App header gradient ────────────────────────────────────────────────
      Dark teal-to-navy gradient used by the top navigation bar.
@@ -215,8 +215,8 @@
   --color-stone-100: #f7f7f7;
   --color-stone-200: #eeeeee;
   --color-stone-300: #e8e8e8;
-  --color-stone-400: #ababab;
-  --color-stone-500: #787878;
+  --color-stone-400: #8a8580;       /* icons / UI only: 3.6:1 on white. Never body text. */
+  --color-stone-500: #6b6560;       /* secondary text: 5.6:1 on white, 5.1:1 on stone-100 */
   --color-stone-950: #1c1917;
 
   /* Accent lime — for active states, chip fills, subtle highlights */
@@ -278,7 +278,7 @@
   /* Font families — change font here, nowhere else */
   --font-sans: "Geist Variable", system-ui, sans-serif;    /* all UI text */
   --font-mono: "IBM Plex Mono", "Geist Mono", ui-monospace, monospace; /* code, IDs */
-  --font-brand: "All Round Gothic", "Nunito", sans-serif;  /* display/brand moments only */
+  --font-brand: "All Round Gothic", "Geist Variable", sans-serif;  /* display/brand moments only */
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -356,7 +356,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   body {
@@ -382,4 +382,19 @@
   .dark input[type='radio'] {
     color-scheme: dark;
   }
+}
+
+/* ── Keyboard focus indicator (WCAG 2.4.7 / 1.4.11) ─────────────────────────
+   Deliberately OUTSIDE any @layer: unlayered rules beat Tailwind's utilities
+   layer, so the many `outline-none` components still show a visible ring when
+   reached by keyboard. The brand-lime ring-* glow most components add stays as
+   decoration; this outline is the real (≥3:1) indicator. Programmatic focus on
+   tabindex="-1" containers (dialogs, skip targets) is excluded on purpose. */
+:focus-visible:not([tabindex='-1']) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+header :focus-visible:not([tabindex='-1']) {
+  outline-color: var(--focus-ring-on-dark);
 }

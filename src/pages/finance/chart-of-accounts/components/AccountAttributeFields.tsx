@@ -55,7 +55,7 @@ export function AccountAttributeFields({
               aria-describedby={missing ? `coa-attr-${f.key}-error` : undefined}
             />
             {isBankNumber && currentLast4 && (
-              <p className="text-2xs text-stone-400">
+              <p className="text-2xs text-stone-500">
                 Currently on file, ending •••• {currentLast4}. Leave blank to keep it unchanged.
               </p>
             )}

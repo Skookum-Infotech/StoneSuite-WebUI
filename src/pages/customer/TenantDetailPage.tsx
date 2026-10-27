@@ -140,7 +140,7 @@ export default function TenantDetailPage() {
                   <h1 className="text-2xl font-bold tracking-tight text-stone-900">{tenant.displayName}</h1>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <TenantStatusBadges tenant={tenant} />
-                    <span className="font-mono text-label text-stone-400">{tenant.slug}</span>
+                    <span className="font-mono text-label text-stone-500">{tenant.slug}</span>
                   </div>
                 </div>
               </div>

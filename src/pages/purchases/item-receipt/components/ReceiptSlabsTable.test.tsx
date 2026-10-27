@@ -1,14 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import type * as ReactRouterDom from 'react-router-dom';
-
-const navigateMock = vi.fn();
-vi.mock('react-router-dom', async (importOriginal) => ({
-  ...(await importOriginal<typeof ReactRouterDom>()),
-  useNavigate: () => navigateMock,
-}));
 
 import { ReceiptSlabsTable } from './ReceiptSlabsTable';
 import type { ItemReceiptLine } from '@/types/itemReceipt';
@@ -54,12 +46,10 @@ describe('ReceiptSlabsTable', () => {
     expect(screen.getByText('Available')).toBeInTheDocument();
   });
 
-  it('links a posted slab\'s serial to its unit', async () => {
+  it('links a posted slab\'s serial to its unit', () => {
     renderTable([receiptLine({ slabs: [postedSlab] })]);
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Open slab PORD-000012-001' }));
-
-    expect(navigateMock).toHaveBeenCalledWith('/inventory/unit/unit-uuid-1');
+    expect(screen.getByRole('link', { name: 'Open slab PORD-000012-001' })).toHaveAttribute('href', '/inventory/unit/unit-uuid-1');
   });
 
   it('says a pending slab\'s serial is assigned when the receipt posts, and offers no link', () => {
@@ -68,7 +58,7 @@ describe('ReceiptSlabsTable', () => {
     })]);
 
     expect(screen.getByText('Assigned when posted')).toBeInTheDocument();
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it.each([

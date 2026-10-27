@@ -121,7 +121,7 @@ export function KitSelect({ value, onChange }: {
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {choices.length === 0 && !isFetching && !canAddNew && (
-            <p className="px-3 py-2 text-xs text-stone-400">
+            <p className="px-3 py-2 text-xs text-stone-500">
               {debounced ? 'No more kit/packages match.' : 'No kit/packages to add. Type a name to create one.'}
             </p>
           )}
@@ -134,7 +134,7 @@ export function KitSelect({ value, onChange }: {
             >
               <Boxes className="size-3.5 shrink-0 text-violet-500" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate text-xs font-medium text-stone-800">{kit.name}</span>
-              <span className="shrink-0 text-2xs text-stone-400">
+              <span className="shrink-0 text-2xs text-stone-500">
                 {kit.itemCount} {kit.itemCount === 1 ? 'item' : 'items'}
               </span>
             </button>

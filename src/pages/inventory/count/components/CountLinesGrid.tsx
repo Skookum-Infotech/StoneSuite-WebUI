@@ -76,7 +76,7 @@ export function CountLinesGrid({ count, editable }: { count: Count; editable: bo
               />
             ))}
             {count.lines.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-stone-400">No lines yet — freeze to snapshot the scope.</td></tr>
+              <tr><td colSpan={6} className="py-8 text-center text-stone-500">No lines yet — freeze to snapshot the scope.</td></tr>
             )}
           </tbody>
         </table>
@@ -116,7 +116,7 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
     <tr className={cn(hasVariance && 'bg-amber-50/40')}>
       <td className="px-3 py-2.5">
         <span className="block font-medium text-stone-800">{line.inventoryItemName || '—'}</span>
-        {line.unitSerial && <span className="block font-mono text-2xs text-stone-400">{line.unitSerial}</span>}
+        {line.unitSerial && <span className="block font-mono text-2xs text-stone-500">{line.unitSerial}</span>}
       </td>
       <td className="px-3 py-2.5 text-stone-500">{line.binPath || '—'}</td>
       <td className="px-3 py-2.5 text-right tabular-nums text-stone-700">{line.systemQty}</td>
@@ -142,12 +142,12 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
         ) : (
           <span className="tabular-nums text-stone-700">
             {line.countedQty === null || line.countedQty === undefined
-              ? <span className="italic text-stone-400">{countedQtyDisplay(line.countedQty)}</span>
+              ? <span className="italic text-stone-500">{countedQtyDisplay(line.countedQty)}</span>
               : line.countedQty}
           </span>
         )}
       </td>
-      <td className={cn('px-3 py-2.5 text-right tabular-nums font-semibold', hasVariance ? 'text-amber-700' : 'text-stone-400')}>
+      <td className={cn('px-3 py-2.5 text-right tabular-nums font-semibold', hasVariance ? 'text-amber-700' : 'text-stone-500')}>
         {line.variance === null || line.variance === undefined ? '—' : (line.variance > 0 ? '+' : '') + line.variance}
       </td>
       <td className="px-3 py-2.5">
@@ -163,7 +163,7 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
             <span className="font-semibold text-amber-700">Missing — recount needed</span>
           )
         ) : (
-          <span className="text-stone-300">—</span>
+          <span className="text-stone-500">—</span>
         )}
       </td>
     </tr>

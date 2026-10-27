@@ -47,7 +47,7 @@ export function EstimateField({ field, value, set, lookups, dependsOnValue, disa
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );
@@ -133,7 +133,7 @@ export function EstimateField({ field, value, set, lookups, dependsOnValue, disa
             placeholder={field.placeholder}
             aria-label={field.label}
           />
-          {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -155,7 +155,7 @@ export function EstimateField({ field, value, set, lookups, dependsOnValue, disa
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

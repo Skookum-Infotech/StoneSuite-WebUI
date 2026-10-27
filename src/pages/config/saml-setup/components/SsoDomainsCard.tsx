@@ -90,7 +90,7 @@ export function SsoDomainsCard({ provider }: SsoDomainsCardProps) {
       {domainsQ.isLoading && <Spinner label="Loading domains…" />}
 
       {!domainsQ.isLoading && domains.length === 0 && (
-        <p className="text-xs text-stone-400">No domains registered yet.</p>
+        <p className="text-xs text-stone-500">No domains registered yet.</p>
       )}
 
       {domains.length > 0 && (
