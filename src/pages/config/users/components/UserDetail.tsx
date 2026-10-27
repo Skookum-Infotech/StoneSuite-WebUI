@@ -1,24 +1,28 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Ban, RotateCcw, Trash2, ChevronRight, Loader2 } from "lucide-react";
+import { Pencil, Ban, RotateCcw, Trash2, ChevronRight, Loader2, ShieldCheck } from "lucide-react";
 import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { WorkspaceUser } from "@/types/tenant";
+import { isSuperAdminUser } from "@/lib/userBulk";
 import { initials, avatarColor, fmtDate } from "../userHelpers";
 import { StatusBadge } from "./StatusBadge";
 import { ManageUserRoles } from "./ManageUserRoles";
 import { EditNameModal } from "./EditNameModal";
+import { TwoStepAdminToggle } from "./TwoStepAdminToggle";
 
 export function UserDetail({ user }: { user: WorkspaceUser }) {
   const qc = useQueryClient();
   const [showEditName, setShowEditName] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission("user", "update");
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
+  // Anyone who can read users sees super admins, but only a super admin may change one.
+  const locked = !isSuperAdmin && isSuperAdminUser(user);
+  const canEdit = !locked && (permissionsLoading || hasPermission("user", "update"));
 
   const suspendMut = useMutation({
     mutationFn: () =>
@@ -63,6 +67,12 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
               {user.fullName || "(no name)"}
             </h2>
             <StatusBadge status={user.status} />
+            {user.mfaEnabled && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-2xs font-bold text-emerald-700">
+                <ShieldCheck className="size-3" aria-hidden="true" />
+                Two-step on
+              </span>
+            )}
           </div>
           <p className="text-xs text-stone-500 truncate">{user.email}</p>
           <p className="text-2xs text-stone-500 mt-0.5">
@@ -73,6 +83,8 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
 
       <ManageUserRoles user={user} />
 
+      {isSuperAdmin && user.status !== "disabled" && <TwoStepAdminToggle user={user} />}
+
       {/* Error */}
       {actionError && (
         <div className="mb-4">
@@ -81,7 +93,16 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
       )}
 
       {/* Actions */}
-      {user.status !== "disabled" && (
+      {locked && user.status !== "disabled" && (
+        <p
+          role="note"
+          className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-stone-600"
+        >
+          Only a super admin can change another super admin.
+        </p>
+      )}
+
+      {user.status !== "disabled" && !locked && (
         <div className="space-y-2">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
             Actions

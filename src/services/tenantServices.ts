@@ -21,6 +21,7 @@ import type {
   FieldDefinition,
   OnboardingApplyDetails,
   WorkspaceUser,
+  MfaChangeResult,
   AssignableUser,
   UserInvite,
   UserInviteActionResult,
@@ -405,6 +406,16 @@ export const userService = {
     tenantClient
       .delete<{ success: boolean; message: string }>(`/tenant/users/${id}`)
       .then((r) => r.data),
+
+  // Super admin only: turn two-step verification on or off for one or many
+  // members. One member being skipped never blocks the rest.
+  setUsersMfa: (userIds: string[], enabled: boolean) =>
+    tenantClient
+      .post<{ success: boolean; enabled: boolean; results: MfaChangeResult[] }>('/tenant/users/mfa', {
+        userIds,
+        enabled,
+      })
+      .then((r) => r.data.results ?? []),
 
   assignRole: (userId: string, roleId: string) =>
     tenantClient

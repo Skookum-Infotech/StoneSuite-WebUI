@@ -5,8 +5,13 @@ import { userService } from "@/services/tenantServices";
 import { apiErrorMessage } from "@/api/tenantClient";
 import { EmptyState, Spinner } from "@/components/tenant/ui";
 import { cn } from "@/lib/utils";
-import { initials, avatarColor } from "./userHelpers";
-import { StatusBadge } from "./components/StatusBadge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useIdSelection } from "@/hooks/useIdSelection";
+import { isSuperAdminUser } from "@/lib/userBulk";
+import { MemberRow } from "./components/MemberRow";
+import { BulkConfigPanel } from "./components/BulkConfigPanel";
+import { SelectionStrip } from "./components/SelectionStrip";
 import { InviteStatusBadge } from "./components/InviteStatusBadge";
 import { EmailStatusBadge } from "@/components/tenant/EmailStatusBadge";
 import { InviteModal } from "./components/InviteModal";
@@ -21,8 +26,15 @@ export default function UsersPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedInviteId, setSelectedInviteId] = useState<string | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  // Ticking a member opens the Configure panel on the right; opening a single
+  // member's profile swaps it back (the ticks stay).
+  const [configOpen, setConfigOpen] = useState(false);
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canInvite = permissionsLoading || hasPermission("user", "create");
+  // Ticking members is for whoever can change users; the two-step actions in
+  // the Configure panel are for super admins only.
+  const canSelect = !permissionsLoading && (isSuperAdmin || hasPermission("user", "update"));
+  const selfIdentityId = useAuthStore((s) => s.user?.id);
 
   const usersQ = useQuery({
     queryKey: ["users"],
@@ -41,6 +53,46 @@ export default function UsersPage() {
     () => (invitesQ.data ?? []).map((i) => ({ ...i })),
     [invitesQ.data],
   );
+
+  // You, deactivated accounts, and (unless you are one) super admins can't be
+  // bulk-changed, so they get no checkbox.
+  const selectableIds = useMemo(
+    () =>
+      users
+        .filter(
+          (u) =>
+            u.status !== "disabled" &&
+            u.identityId !== selfIdentityId &&
+            (isSuperAdmin || !isSuperAdminUser(u)),
+        )
+        .map((u) => u.id),
+    [users, selfIdentityId, isSuperAdmin],
+  );
+  const selection = useIdSelection(selectableIds);
+  const selectedUsers = useMemo(
+    () => users.filter((u) => selection.selected.has(u.id)),
+    [users, selection.selected],
+  );
+  const allPicked = selectableIds.length > 0 && selection.selected.size === selectableIds.length;
+
+  const configuring = tab === "members" && canSelect && selectedUsers.length > 0;
+  const showConfig = configuring && configOpen;
+
+  const toggleMember = (id: string) => {
+    selection.toggle(id);
+    setConfigOpen(true);
+  };
+  const clearSelection = () => {
+    selection.clear();
+    setConfigOpen(false);
+  };
+  const removeFromSelection = (id: string) => {
+    selection.toggle(id);
+  };
+  const openMember = (id: string) => {
+    setSelectedUserId(id);
+    setConfigOpen(false);
+  };
 
   // Fall back to first item when no explicit selection has been made.
   const activeUser =
@@ -87,7 +139,7 @@ export default function UsersPage() {
         {/* Left panel — hidden on mobile when a member/invite is selected */}
         <aside className={cn(
           "flex flex-col md:w-64 md:shrink-0 md:border-r border-stone-100",
-          (tab === "members" ? selectedUserId !== null : selectedInviteId !== null)
+          showConfig || (tab === "members" ? selectedUserId !== null : selectedInviteId !== null)
             ? "hidden md:flex"
             : "flex flex-1 md:flex-none",
         )}>
@@ -143,54 +195,32 @@ export default function UsersPage() {
                     No members yet.
                   </p>
                 )}
-                {users.map((u) => {
-                  const active = u.id === selectedUserId;
-                  const avi = initials(u.fullName || u.email);
-                  const aviColor = avatarColor(u.id);
-                  return (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => setSelectedUserId(u.id)}
-                      className={cn(
-                        "w-full rounded-lg px-2.5 py-2 text-left transition-colors border",
-                        active
-                          ? "bg-brand/10 border-brand/25"
-                          : "border-transparent hover:bg-stone-50",
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={cn(
-                            "flex size-7 shrink-0 items-center justify-center rounded-lg text-2xs font-bold",
-                            aviColor,
-                          )}
-                        >
-                          {avi}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={cn(
-                              "text-xs font-semibold truncate",
-                              active ? "text-brand-dark" : "text-stone-700",
-                              u.status === "disabled" && "opacity-50",
-                            )}
-                          >
-                            {u.fullName || u.email}
-                          </p>
-                          <p className="text-2xs text-stone-500 truncate">
-                            {u.roles.length === 0
-                              ? "No roles"
-                              : u.roles.map((r) => r.name).join(", ")}
-                          </p>
-                        </div>
-                        {u.status !== "active" && (
-                          <StatusBadge status={u.status} />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
+                {canSelect && selectableIds.length > 0 && (
+                  <label className="flex items-center gap-2 px-2.5 py-1.5 text-2xs font-semibold text-stone-500">
+                    <Checkbox
+                      checked={allPicked ? true : selection.selected.size > 0 ? "indeterminate" : false}
+                      onCheckedChange={() => {
+                        if (allPicked) clearSelection();
+                        else {
+                          selection.setAll(selectableIds);
+                          setConfigOpen(true);
+                        }
+                      }}
+                      aria-label="Select all members"
+                    />
+                    Select all
+                  </label>
+                )}
+                {users.map((u) => (
+                  <MemberRow
+                    key={u.id}
+                    user={u}
+                    active={u.id === selectedUserId}
+                    checked={canSelect && selectableIds.includes(u.id) ? selection.selected.has(u.id) : null}
+                    onOpen={openMember}
+                    onToggle={toggleMember}
+                  />
+                ))}
               </>
             )}
 
@@ -243,15 +273,33 @@ export default function UsersPage() {
               </>
             )}
           </div>
+
+          {configuring && (
+            <SelectionStrip
+              count={selectedUsers.length}
+              panelOpen={showConfig}
+              onConfigure={() => setConfigOpen(true)}
+              onClear={clearSelection}
+            />
+          )}
         </aside>
 
         {/* Right panel — hidden on mobile until a selection is made */}
         <main className={cn(
           "flex-1 overflow-y-auto modal-scrollbar",
-          (tab === "members" ? selectedUserId === null : selectedInviteId === null) && "hidden md:block",
+          !showConfig && (tab === "members" ? selectedUserId === null : selectedInviteId === null) && "hidden md:block",
         )}>
+          {showConfig && (
+            <BulkConfigPanel
+              users={selectedUsers}
+              onRemove={removeFromSelection}
+              onClear={clearSelection}
+              onBack={() => setConfigOpen(false)}
+            />
+          )}
+
           {/* Mobile back button */}
-          {(tab === "members" ? selectedUserId !== null : selectedInviteId !== null) && (
+          {!showConfig && (tab === "members" ? selectedUserId !== null : selectedInviteId !== null) && (
             <button
               type="button"
               onClick={() => {
@@ -265,7 +313,7 @@ export default function UsersPage() {
             </button>
           )}
 
-          {tab === "members" && (
+          {tab === "members" && !showConfig && (
             <>
               {!activeUser && !usersQ.isLoading && (
                 <div className="hidden md:flex h-full items-center justify-center">
