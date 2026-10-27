@@ -301,7 +301,7 @@ export default function ResetPasswordPage() {
                   <CheckCircle2 className="size-8 text-emerald-500" />
                 </div>
                 <h2 className="font-brand text-2xl font-bold tracking-tight text-stone-950">Password updated</h2>
-                <p className="mt-2 text-sm font-light text-stone-400">
+                <p className="mt-2 text-sm font-light text-stone-500">
                   Your password has been reset successfully. Redirecting you to sign in…
                 </p>
                 <Link
@@ -332,7 +332,7 @@ export default function ResetPasswordPage() {
                   </div>
                   <h2 className="font-brand text-3xl font-bold tracking-tight text-stone-950">Create new password</h2>
                   {tokenQuery.data?.email && (
-                    <p className="mt-2 text-sm font-light text-stone-400">
+                    <p className="mt-2 text-sm font-light text-stone-500">
                       for <span className="font-semibold text-stone-600">{tokenQuery.data.email}</span>
                     </p>
                   )}
@@ -343,12 +343,12 @@ export default function ResetPasswordPage() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="newPassword"
-                      className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400"
+                      className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500"
                     >
                       New Password
                     </Label>
                     <div className="relative">
-                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
                       <Input
                         id="newPassword"
                         type={showPassword ? 'text' : 'password'}
@@ -357,13 +357,13 @@ export default function ResetPasswordPage() {
                         aria-invalid={Boolean(errors.newPassword)}
                         aria-describedby={errors.newPassword ? 'pw-error' : undefined}
                         {...register('newPassword')}
-                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword((v) => !v)}
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition-colors hover:text-stone-600"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-500 transition-colors hover:text-stone-600"
                       >
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
@@ -383,12 +383,12 @@ export default function ResetPasswordPage() {
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="confirm"
-                      className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400"
+                      className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500"
                     >
                       Confirm Password
                     </Label>
                     <div className="relative">
-                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
                       <Input
                         id="confirm"
                         type={showConfirm ? 'text' : 'password'}
@@ -397,13 +397,13 @@ export default function ResetPasswordPage() {
                         aria-invalid={Boolean(errors.confirm)}
                         aria-describedby={errors.confirm ? 'confirm-error' : undefined}
                         {...register('confirm')}
-                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-11 text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirm((v) => !v)}
                         aria-label={showConfirm ? 'Hide confirmation password' : 'Show confirmation password'}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 transition-colors hover:text-stone-600"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-500 transition-colors hover:text-stone-600"
                       >
                         {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
@@ -443,7 +443,7 @@ export default function ResetPasswordPage() {
                 <div className="mt-6 text-center">
                   <Link
                     to="/auth/login"
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors duration-150 hover:text-stone-900"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors duration-150 hover:text-stone-900"
                     aria-label="Go back to sign in"
                   >
                     <ArrowLeft className="size-3.5" />

@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { DataMemoryRouter } from '@/test/DataMemoryRouter';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import type { Invoice } from '@/types/invoice';
 import type { Payment } from '@/types/payment';
 
@@ -120,14 +121,14 @@ function renderPage() {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/sales/payment/new?fromInvoice=inv-1']}>
+      <DataMemoryRouter initialEntries={['/sales/payment/new?fromInvoice=inv-1']}>
         <Routes>
           <Route path="/sales/payment/new" element={<AddPaymentPage />} />
           <Route path="/sales/invoice/:id" element={<LocationProbe />} />
           <Route path="/sales/credit_memo/new" element={<LocationProbe />} />
           <Route path="/sales/payment" element={<LocationProbe />} />
         </Routes>
-      </MemoryRouter>
+      </DataMemoryRouter>
     </QueryClientProvider>,
   );
 }

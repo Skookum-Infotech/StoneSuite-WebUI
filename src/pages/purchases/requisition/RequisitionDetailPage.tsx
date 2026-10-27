@@ -303,9 +303,9 @@ export default function RequisitionDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {reqn.items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
@@ -317,7 +317,7 @@ export default function RequisitionDetailPage() {
                     </tr>
                   ))}
                   {reqn.items.length === 0 && (
-                    <tr><td colSpan={11} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={11} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -334,7 +334,7 @@ export default function RequisitionDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Requisition Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -388,7 +388,7 @@ export default function RequisitionDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <RequisitionStatusControl
                 order={{ statusCode: reqn.statusCode, approvalStatus: reqn.approvalStatus, gated: reqn.gated, nextStatusCodes: reqn.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
@@ -402,7 +402,7 @@ export default function RequisitionDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{reqn.status}</Badge>
@@ -489,7 +489,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -497,7 +497,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

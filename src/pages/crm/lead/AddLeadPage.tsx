@@ -200,7 +200,7 @@ export default function AddLeadPage() {
                 'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
                 activeTab === tab.key
                   ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+                  : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
               )}
             >
               {tab.label}

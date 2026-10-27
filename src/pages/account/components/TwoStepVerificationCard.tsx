@@ -80,7 +80,7 @@ export function TwoStepVerificationCard() {
 
       <div className="px-4 py-4 sm:px-6 sm:py-6">
         {status.isPending ? (
-          <div className="flex items-center gap-2 py-4 text-xs text-stone-400">
+          <div className="flex items-center gap-2 py-4 text-xs text-stone-500">
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             Loading…
           </div>

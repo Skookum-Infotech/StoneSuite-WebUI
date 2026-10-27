@@ -19,7 +19,7 @@ export function VendorBillField({ field, value, set, lookups }: {
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );
@@ -97,7 +97,7 @@ export function VendorBillField({ field, value, set, lookups }: {
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

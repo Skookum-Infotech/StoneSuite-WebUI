@@ -65,7 +65,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                 <h3 id="delete-dialog-title" className="text-sm font-bold text-stone-900">
                   {blocked ? 'Can’t delete this record yet' : 'Delete record?'}
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">
+                <p className="text-xs text-stone-500 mt-0.5">
                   {blocked ? 'Resolve the item below first.' : 'This action cannot be undone.'}
                 </p>
               </div>
@@ -89,7 +89,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Briefly explain why you're deleting this record…"
                     rows={3}
-                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-800 placeholder:text-stone-400 focus:border-destructive/30 focus:outline-none focus:ring-2 focus:ring-destructive/10 resize-none"
+                    className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-800 placeholder:text-stone-500 focus:border-destructive/30 focus:outline-none focus:ring-2 focus:ring-destructive/10 resize-none"
                   />
                 </div>
 

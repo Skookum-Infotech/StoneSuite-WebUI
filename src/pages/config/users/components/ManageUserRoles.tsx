@@ -49,12 +49,12 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
 
   return (
     <div className="mb-4 sm:mb-6">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
         Roles
       </h3>
 
       {user.roles.length === 0 ? (
-        <p className="mb-2 text-xs text-stone-400 italic">No roles assigned.</p>
+        <p className="mb-2 text-xs text-stone-500 italic">No roles assigned.</p>
       ) : (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {user.roles.map((r) => (

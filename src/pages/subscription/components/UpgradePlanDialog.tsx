@@ -48,7 +48,7 @@ export function UpgradePlanDialog({
 
         {added.length > 0 && (
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-stone-400 mb-2">What&apos;s new</p>
+            <p className="text-2xs font-bold uppercase tracking-wider text-stone-500 mb-2">What&apos;s new</p>
             <ul className="space-y-1.5">
               {added.map((feature) => (
                 <li key={feature} className="flex items-start gap-2">

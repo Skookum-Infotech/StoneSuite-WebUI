@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Boxes, ChevronLeft, ChevronRight, Pencil, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,6 @@ const SKELETON_ROWS = 5;
 /** The Kits tab of Inventory → Items: every kit, by name, with how many items
  *  it holds. A row opens the kit's own screen. */
 export function KitTable() {
-  const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement>(null);
 
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
@@ -83,7 +82,7 @@ export function KitTable() {
             aria-label="Search kit/packages"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
         {term && (
@@ -126,14 +125,13 @@ export function KitTable() {
                   <tr key={kit.id} className="group hover:bg-accent/10 transition-colors duration-150">
                     <td className="px-4 py-3.5">
                       {canEdit ? (
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/inventory/kit/${kit.id}`)}
+                        <Link
+                          to={`/inventory/kit/${kit.id}`}
                           className="inline-flex items-center gap-2 text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           <Boxes className="size-3.5 text-violet-500" aria-hidden="true" />
                           {kit.name}
-                        </button>
+                        </Link>
                       ) : (
                         <span className="inline-flex items-center gap-2 text-xs font-semibold text-stone-900">
                           <Boxes className="size-3.5 text-violet-500" aria-hidden="true" />
@@ -151,14 +149,13 @@ export function KitTable() {
                     </td>
                     {canEdit && (
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/inventory/kit/${kit.id}`)}
+                        <Link
+                          to={`/inventory/kit/${kit.id}`}
                           aria-label={`Edit kit/package ${kit.name}`}
                           className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                         >
                           <Pencil className="size-4" />
-                        </button>
+                        </Link>
                       </td>
                     )}
                   </tr>
@@ -173,7 +170,7 @@ export function KitTable() {
                       <p className="text-sm font-semibold text-stone-700">
                         {debounced ? 'No kit/packages match the current search.' : 'No kit/packages added yet.'}
                       </p>
-                      <p className="text-xs text-stone-400">
+                      <p className="text-xs text-stone-500">
                         {debounced
                           ? 'Try a different name.'
                           : 'A kit/package is a named group of items sold together, like “Kitchen”. Add your first with New Kit/Package.'}

@@ -52,7 +52,7 @@ export function BillingHistory() {
             placeholder="Search by invoice number…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50 transition"
+            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50 transition"
             aria-label="Search invoices"
           />
         </div>
@@ -82,10 +82,10 @@ export function BillingHistory() {
                 <td colSpan={4} className="px-4 py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100">
-                      <Search className="size-5 text-stone-300" />
+                      <Search className="size-5 text-stone-400" />
                     </div>
                     <p className="text-xs font-semibold text-stone-500">No invoices found</p>
-                    <p className="text-xs text-stone-400">Try a different search term</p>
+                    <p className="text-xs text-stone-500">Try a different search term</p>
                   </div>
                 </td>
               </tr>

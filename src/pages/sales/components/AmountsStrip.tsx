@@ -48,7 +48,7 @@ const VALUE_BY_EMPHASIS: Record<AmountEmphasis, string> = {
 // A component that is nothing (no discount, no adjustment) recedes so the
 // figures that do carry a value read first. Headline figures never recede —
 // a $0.00 balance is information, not filler.
-const ZERO_QUIET_VALUE = 'text-stone-400';
+const ZERO_QUIET_VALUE = 'text-stone-500';
 
 export function AmountsStrip({ items, currencyCode = DEFAULT_CURRENCY_CODE }: {
   items: AmountItem[];

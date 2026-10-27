@@ -101,7 +101,7 @@ export function KitFormBody({ data, onChange }: {
                   type="button"
                   onClick={() => onChange(removeMember(data, m.itemId))}
                   aria-label={`Remove ${m.name} from this kit`}
-                  className="shrink-0 rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-destructive"
+                  className="shrink-0 rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-destructive"
                 >
                   <Trash2 className="size-4" />
                 </button>

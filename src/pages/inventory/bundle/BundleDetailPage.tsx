@@ -122,14 +122,14 @@ export default function BundleDetailPage() {
 
           <ModernSection title={`Members (${members.length})`} index={1}>
             <div className="space-y-2">
-              {members.length === 0 && <p className="text-xs text-stone-400">No members yet.</p>}
+              {members.length === 0 && <p className="text-xs text-stone-500">No members yet.</p>}
               {members.map((u) => (
                 <div key={u.id} className="flex items-center justify-between rounded-lg border border-stone-200 px-3 py-2">
                   <button type="button" onClick={() => navigate(`/inventory/unit/${u.id}`)} className="text-xs font-medium text-stone-800 hover:text-accent-foreground">
-                    {u.serial} <span className="text-stone-400">· {u.area.toFixed(2)} sq</span>
+                    {u.serial} <span className="text-stone-500">· {u.area.toFixed(2)} sq</span>
                   </button>
                   {isOpen && canUpdate && (
-                    <button type="button" onClick={() => removeMember(u.id)} aria-label={`Remove ${u.serial} from bundle`} className="rounded p-1 text-stone-400 hover:bg-destructive/10 hover:text-destructive">
+                    <button type="button" onClick={() => removeMember(u.id)} aria-label={`Remove ${u.serial} from bundle`} className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-destructive">
                       <X className="size-3.5" />
                     </button>
                   )}
@@ -146,7 +146,7 @@ export default function BundleDetailPage() {
         <SalesDetailSidebar label="Bundle Actions">
           {canUpdate && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-2 mb-4">
-              <p className="text-xs font-semibold text-stone-400 mb-1">Lifecycle</p>
+              <p className="text-xs font-semibold text-stone-500 mb-1">Lifecycle</p>
               {isOpen && (
                 <button type="button" disabled={sealing || members.length === 0} onClick={() => seal()} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed">
                   <Lock className="size-4 text-stone-400" /> {sealing ? 'Sealing…' : 'Seal'}
@@ -185,7 +185,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

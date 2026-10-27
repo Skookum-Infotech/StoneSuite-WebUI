@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BinTransferLine } from '@/types/binTransfer';
@@ -31,7 +31,6 @@ export function BinTransferSlabsTable({ lines, pending }: {
   /** True while the moves have not been applied yet (not completed or cancelled). */
   pending: boolean;
 }) {
-  const navigate = useNavigate();
 
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white modal-scrollbar">
@@ -51,13 +50,12 @@ export function BinTransferSlabsTable({ lines, pending }: {
             return (
               <tr key={l.id} className="align-top">
                 <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/inventory/unit/${l.unitId}`)}
+                  <Link
+                    to={`/inventory/unit/${l.unitId}`}
                     className="font-mono text-xs font-semibold text-stone-900 transition-colors hover:text-accent-foreground"
                   >
                     {l.unitSerial}
-                  </button>
+                  </Link>
                   <span className="block truncate text-2xs text-stone-500">{l.inventoryItemName || '—'}</span>
                   {warning && (
                     <span role="note" className="mt-1.5 flex items-start gap-1 text-2xs text-amber-700">
@@ -70,12 +68,12 @@ export function BinTransferSlabsTable({ lines, pending }: {
                   {l.area.toFixed(2)} {l.areaUnitCode}
                 </td>
                 <td className="px-4 py-3 text-stone-500">
-                  {l.fromBinPath || <span className="text-stone-400">No bin</span>}
+                  {l.fromBinPath || <span className="text-stone-500">No bin</span>}
                 </td>
-                <td className="px-0 py-3 text-stone-300"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
+                <td className="px-0 py-3 text-stone-400"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
                 <td className="px-4 py-3">
                   <span className={cn('font-medium', l.movedAt ? 'text-emerald-700' : 'text-stone-800')}>{l.toBinPath}</span>
-                  {l.toBinName && <span className="block text-2xs text-stone-400">{l.toBinName}</span>}
+                  {l.toBinName && <span className="block text-2xs text-stone-500">{l.toBinName}</span>}
                   {l.movedAt && (
                     <span className="mt-1 flex items-center gap-1 text-2xs font-semibold text-emerald-700">
                       <CheckCircle2 className="size-3" aria-hidden="true" /> Moved

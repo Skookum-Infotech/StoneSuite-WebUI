@@ -154,13 +154,13 @@ export function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {listQ.isLoading && (
-              <p className="px-3 py-4 text-center text-2xs text-stone-500">Loading…</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">Loading…</p>
             )}
             {listQ.isError && !listQ.data && (
-              <p className="px-3 py-4 text-center text-2xs text-stone-500">Couldn't load notifications.</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">Couldn't load notifications.</p>
             )}
             {listQ.data?.length === 0 && (
-              <p className="px-3 py-4 text-center text-2xs text-stone-500">You're all caught up.</p>
+              <p className="px-3 py-4 text-center text-2xs text-stone-400">You're all caught up.</p>
             )}
             {visible.map((n) => (
               <button
@@ -183,7 +183,7 @@ export function NotificationBell() {
                 )}
                 <span className={cn('flex-1', n.readAt && 'pl-4')}>
                   <span className="block text-xs font-semibold text-stone-200">{n.title}</span>
-                  {n.body && <span className="mt-0.5 block text-2xs text-stone-500">{n.body}</span>}
+                  {n.body && <span className="mt-0.5 block text-2xs text-stone-400">{n.body}</span>}
                   <span className="mt-1 block text-2xs text-stone-600">{timeAgo(n.createdAt)}</span>
                 </span>
               </button>

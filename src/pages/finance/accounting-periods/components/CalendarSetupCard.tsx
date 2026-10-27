@@ -95,7 +95,7 @@ export function CalendarSetupCard() {
             ariaLabel="Base period go-live month"
             ariaDescribedBy={showErrors && missingBase ? 'base-period-error' : undefined}
           />
-          <p className="mt-1 text-2xs text-stone-400">
+          <p className="mt-1 text-2xs text-stone-500">
             The first month you&apos;ll post transactions into. Earlier months are generated closed.
           </p>
           {showErrors && missingBase && (

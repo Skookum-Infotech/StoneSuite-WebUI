@@ -77,7 +77,7 @@ export function RequisitionFormBody({
               'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
               activeTab === tab.key
                 ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+                : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
             )}
           >
             {tab.label}
@@ -97,7 +97,7 @@ export function RequisitionFormBody({
                     <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
                       <ModernFieldShell label="Suggested Vendor">
                         <VendorPicker value={vendor} onChange={setVendor} onCreateNew={onCreateVendor} />
-                        <p className="text-2xs text-stone-400">
+                        <p className="text-2xs text-stone-500">
                           A suggestion only — the vendor is confirmed when this becomes a purchase order.
                         </p>
                       </ModernFieldShell>

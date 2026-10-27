@@ -68,7 +68,7 @@ export function LogActivityDialog({ workflowKey, recordId, mode, activity, onClo
             <h3 id="log-activity-dialog-title" className="text-sm font-bold text-stone-900">
               {title}
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">Calls, emails, meetings, notes, and tasks.</p>
+            <p className="text-xs text-stone-500 mt-0.5">Calls, emails, meetings, notes, and tasks.</p>
           </div>
         </div>
 

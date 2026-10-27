@@ -202,7 +202,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
               </option>
             ))}
           </select>
-          <p className="text-2xs text-stone-400">
+          <p className="text-2xs text-stone-500">
             Granted automatically to anyone signing in for the first time through this provider.
           </p>
         </div>

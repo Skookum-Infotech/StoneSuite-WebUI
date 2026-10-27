@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Wallet, Pencil, Filter,
@@ -209,7 +209,7 @@ export function VendorPaymentTable() {
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             aria-label="Search vendor payments"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
@@ -230,7 +230,7 @@ export function VendorPaymentTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -317,13 +317,12 @@ export function VendorPaymentTable() {
                   return (
                     <tr key={payment.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/vendor_payment/${payment.id}`)}
+                        <Link
+                          to={`/purchases/vendor_payment/${payment.id}`}
                           className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {payment.vendorPaymentNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
                         {payment.vendor?.name ?? '—'}
@@ -341,13 +340,13 @@ export function VendorPaymentTable() {
                             {approvalLabel}
                           </span>
                         ) : (
-                          <span className="text-2xs text-stone-300">—</span>
+                          <span className="text-2xs text-stone-500">—</span>
                         )}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 whitespace-nowrap max-sm:hidden">
                         {payment.method || '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(payment.paymentDate)}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
@@ -368,7 +367,7 @@ export function VendorPaymentTable() {
                               <Pencil className="size-4" />
                             </button>
                           ) : (
-                            <span className="text-2xs text-stone-300">—</span>
+                            <span className="text-2xs text-stone-500">—</span>
                           )}
                         </td>
                       )}
@@ -384,7 +383,7 @@ export function VendorPaymentTable() {
                           <Wallet className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No vendor payments recorded yet.</p>
-                        <p className="text-xs text-stone-400">Record your first vendor payment to get started.</p>
+                        <p className="text-xs text-stone-500">Record your first vendor payment to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -392,7 +391,7 @@ export function VendorPaymentTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No vendor payments match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or filters.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>

@@ -100,7 +100,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                 <tr key={`${rowKey(step)}-${i}`} className="hover:bg-stone-50/50 align-top">
                   <td className="px-3 py-2.5">
                     <p className="font-medium text-stone-800">{stepLabel}</p>
-                    {dup && <p className="text-2xs text-stone-400">piece {seenCounts[step.code]} of {totalByCode[step.code]}</p>}
+                    {dup && <p className="text-2xs text-stone-500">piece {seenCounts[step.code]} of {totalByCode[step.code]}</p>}
                   </td>
                   <td className="px-3 py-2.5">
                     {canEdit ? (
@@ -133,10 +133,10 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                     )}
                     {rowErrors[rowKey(step)] && <p className="mt-1 text-2xs text-destructive">{rowErrors[rowKey(step)]}</p>}
                   </td>
-                  <td className="px-3 py-2.5 text-stone-400 whitespace-nowrap">
+                  <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap">
                     {step.startedAt ? new Date(step.startedAt).toLocaleDateString() : '—'}
                   </td>
-                  <td className="px-3 py-2.5 text-stone-400 whitespace-nowrap">
+                  <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap">
                     {step.completedAt ? new Date(step.completedAt).toLocaleDateString() : '—'}
                   </td>
                   {canEdit && (
@@ -158,7 +158,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
               );
             })}
             {steps.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-stone-400">No checklist steps found.</td></tr>
+              <tr><td colSpan={6} className="py-8 text-center text-stone-500">No checklist steps found.</td></tr>
             )}
           </tbody>
         </table>

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
@@ -283,7 +283,7 @@ export function CrmRecordTable({ config }: Props) {
             placeholder={`Search ${lowerLabel}s…`}
             value={nameFilter}
             onChange={(e) => setNameFilter(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
@@ -294,7 +294,7 @@ export function CrmRecordTable({ config }: Props) {
             onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); }}
             className={cn(
               'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
-              statusFilter === '' ? 'text-stone-400' : 'text-stone-900',
+              statusFilter === '' ? 'text-stone-500' : 'text-stone-900',
             )}
             aria-label="Filter by status"
           >
@@ -311,7 +311,7 @@ export function CrmRecordTable({ config }: Props) {
 
         {/* Sort chips */}
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -422,15 +422,14 @@ export function CrmRecordTable({ config }: Props) {
                             {companyInitials(company)}
                           </span>
                           <div className="min-w-0">
-                            <button
-                              type="button"
-                              onClick={() => navigate(config.detailPath(record.id))}
+                            <Link
+                              to={config.detailPath(record.id)}
                               className="text-left text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors truncate max-w-[200px] block"
                             >
                               {company}
-                            </button>
+                            </Link>
                             {record.recordNumber && (
-                              <p className="font-mono text-2xs text-stone-400 mt-0.5">{record.recordNumber}</p>
+                              <p className="font-mono text-2xs text-stone-500 mt-0.5">{record.recordNumber}</p>
                             )}
                           </div>
                         </div>
@@ -450,30 +449,29 @@ export function CrmRecordTable({ config }: Props) {
                             gated={gated}
                           />
                         ) : (
-                          <span className="text-xs text-stone-400">—</span>
+                          <span className="text-xs text-stone-500">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-600 truncate max-w-[160px]">
                         {(record.ownerUserId && userMap.get(record.ownerUserId)) || (
-                          <span className="text-stone-400">—</span>
+                          <span className="text-stone-500">—</span>
                         )}
                       </td>
                       {config.showEmail && (
                         <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">{email}</td>
                       )}
-                      <td className="px-4 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap">
+                      <td className="px-4 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap">
                         {new Date(record.createdAt).toLocaleDateString(undefined, LIST_DATE_OPTIONS)}
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => navigate(config.editPath(record.id))}
+                          <Link
+                            to={config.editPath(record.id)}
                             aria-label={`Edit ${label}`}
                             className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
                             <Pencil className="size-4" />
-                          </button>
+                          </Link>
                         </td>
                       )}
                     </tr>
@@ -488,7 +486,7 @@ export function CrmRecordTable({ config }: Props) {
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first {lowerLabel} to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first {lowerLabel} to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -496,7 +494,7 @@ export function CrmRecordTable({ config }: Props) {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s match the current filters.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or status filter.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or status filter.</p>
                       </div>
                     )}
                   </td>

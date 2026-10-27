@@ -79,7 +79,7 @@ export function PurchaseOrderFormBody({
               'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
               activeTab === tab.key
                 ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+                : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
             )}
           >
             {tab.label}
@@ -100,7 +100,7 @@ export function PurchaseOrderFormBody({
                       <ModernFieldShell label="Vendor" required={!vendorLocked}>
                         {vendorLocked ? (
                           <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                            {vendor?.name || <span className="text-stone-400">—</span>}
+                            {vendor?.name || <span className="text-stone-500">—</span>}
                           </div>
                         ) : (
                           <VendorPicker value={vendor} onChange={setVendor} required onCreateNew={onCreateVendor} />

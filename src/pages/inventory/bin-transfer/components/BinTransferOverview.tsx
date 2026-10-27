@@ -11,7 +11,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <span className={fieldLabelCls}>{label}</span>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

@@ -77,7 +77,7 @@ export function AssignUsersModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
@@ -88,7 +88,7 @@ export function AssignUsersModal({
         {!usersQ.isLoading && (
           <>
             {assignedUsers.length === 0 ? (
-              <p className="mb-3 text-xs text-stone-400 italic">
+              <p className="mb-3 text-xs text-stone-500 italic">
                 No one has this role yet.
               </p>
             ) : (
@@ -102,7 +102,7 @@ export function AssignUsersModal({
                       <p className="truncate text-xs font-semibold text-stone-700">
                         {u.fullName || u.email}
                       </p>
-                      <p className="truncate text-2xs text-stone-400">
+                      <p className="truncate text-2xs text-stone-500">
                         {u.email}
                       </p>
                     </div>
@@ -191,7 +191,7 @@ export function AssignUsersModal({
                 </Button>
               </div>
             ) : (
-              <p className="text-xs text-stone-400 italic">
+              <p className="text-xs text-stone-500 italic">
                 Every member already has this role.
               </p>
             )}

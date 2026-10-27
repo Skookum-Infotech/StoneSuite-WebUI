@@ -13,7 +13,7 @@ type ReceivingProgressOrder = Pick<PurchaseOrderSummary, 'id' | 'purchaseOrderNu
 export function PurchaseOrderReceivingProgress({ order }: { order: ReceivingProgressOrder }) {
   const { receivedPercent } = order;
   if (receivedPercent === undefined || !showsReceivingProgress(order.statusCode)) {
-    return <span className="text-2xs text-stone-300">—</span>;
+    return <span className="text-2xs text-stone-500">—</span>;
   }
   return (
     <Popover>

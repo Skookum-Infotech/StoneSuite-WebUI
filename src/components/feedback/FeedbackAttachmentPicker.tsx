@@ -137,7 +137,7 @@ export function FeedbackAttachmentPicker({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">{file.name}</p>
-                  <span className="text-xs text-stone-400">{formatFeedbackFileSize(file.size)}</span>
+                  <span className="text-xs text-stone-500">{formatFeedbackFileSize(file.size)}</span>
                 </div>
                 <button
                   type="button"

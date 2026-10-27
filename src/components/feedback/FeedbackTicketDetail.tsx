@@ -115,7 +115,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
 
       <div className="modal-scrollbar min-h-0 flex-1 space-y-7 overflow-y-auto px-5 py-5">
         <section aria-label="Your report" className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400">Your report</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Your report</h3>
           <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-stone-800 dark:text-stone-100">
             {ticket.description}
           </p>
@@ -139,7 +139,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
                   >
                     <Paperclip className="size-3.5 text-stone-400" aria-hidden="true" />
                     {attachment.fileName}
-                    <span className="text-stone-400">{formatFeedbackFileSize(attachment.sizeBytes)}</span>
+                    <span className="text-stone-500">{formatFeedbackFileSize(attachment.sizeBytes)}</span>
                     <Download className="size-3.5 text-stone-400" aria-hidden="true" />
                   </button>
                 </li>

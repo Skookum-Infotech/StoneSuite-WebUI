@@ -267,8 +267,8 @@ export default function LoginPage() {
 
             {/* Footer */}
             <div className="mt-4 hidden items-center justify-center gap-1.5 sm:flex sm:mt-8">
-              <Lock className="size-3 text-stone-300" aria-hidden="true" />
-              <p className="text-center text-xs text-stone-300">Protected by enterprise-grade security</p>
+              <Lock className="size-3 text-stone-400" aria-hidden="true" />
+              <p className="text-center text-xs text-stone-500">Protected by enterprise-grade security</p>
             </div>
           </div>
         </div>

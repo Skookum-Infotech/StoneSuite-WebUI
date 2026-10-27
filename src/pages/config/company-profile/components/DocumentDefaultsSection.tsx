@@ -59,7 +59,7 @@ export function DocumentDefaultsSection({
                       />
                     ) : (
                       <div className={cn(readonlyCls, 'h-auto min-h-10 whitespace-pre-wrap')}>
-                        {values.documentDefaults?.[kind]?.[key] || <span className="text-stone-400">—</span>}
+                        {values.documentDefaults?.[kind]?.[key] || <span className="text-stone-500">—</span>}
                       </div>
                     )}
                     {error && <p id={errorId} className="mt-1 text-xs text-red-600">{error}</p>}

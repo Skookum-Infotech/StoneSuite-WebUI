@@ -69,9 +69,9 @@ export function RecordCommunicationTab({ recordId, audience, canReply }: RecordC
 
       {messages.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-stone-200 px-4 py-10 text-center">
-          <EmptyIcon className="size-5 text-stone-300" aria-hidden="true" />
+          <EmptyIcon className="size-5 text-stone-400" aria-hidden="true" />
           <p className="text-sm font-medium text-stone-600">{copy.emptyTitle}</p>
-          <p className="text-xs text-stone-400">{copy.emptyHint}</p>
+          <p className="text-xs text-stone-500">{copy.emptyHint}</p>
         </div>
       ) : (
         <>

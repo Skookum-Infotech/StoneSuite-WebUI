@@ -28,7 +28,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
           </div>
           <div>
             <h3 id={OVER_RECEIPT_TITLE_ID} className="text-sm font-bold text-stone-900">This exceeds the ordered quantity</h3>
-            <p className="text-xs text-stone-400 mt-0.5">You don&apos;t have permission to accept an over-delivery.</p>
+            <p className="text-xs text-stone-500 mt-0.5">You don&apos;t have permission to accept an over-delivery.</p>
           </div>
         </div>
         <OverReceiptLinesList lines={lines} />
@@ -57,7 +57,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
         </div>
         <div>
           <h3 id={OVER_RECEIPT_TITLE_ID} className="text-sm font-bold text-stone-900">This exceeds the ordered quantity</h3>
-          <p className="text-xs text-stone-400 mt-0.5">Confirm the over-receipt to post anyway.</p>
+          <p className="text-xs text-stone-500 mt-0.5">Confirm the over-receipt to post anyway.</p>
         </div>
       </div>
       <OverReceiptLinesList lines={lines} />

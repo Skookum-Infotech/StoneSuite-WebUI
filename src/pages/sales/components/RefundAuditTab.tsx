@@ -16,11 +16,11 @@ export function RefundAuditTab({ refundId }: { refundId?: string }) {
   });
 
   if (!refundId) {
-    return <p className="py-12 text-center text-sm text-stone-400">Audit trail will be available after saving the refund.</p>;
+    return <p className="py-12 text-center text-sm text-stone-500">Audit trail will be available after saving the refund.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error) return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
-  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-400 italic">No audit events recorded yet.</p>;
+  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
@@ -28,7 +28,7 @@ export function RefundAuditTab({ refundId }: { refundId?: string }) {
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
-              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-400 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -58,20 +58,20 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
         <td className="py-2.5 px-3"><ActionBadge action={entry.action} /></td>
-        <td className="py-2.5 px-3 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-300 italic">system</span>}</td>
-        <td className="py-2.5 px-3 text-stone-400 font-mono text-2xs">{entry.ipAddress || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-400 text-2xs">{entry.appVersion || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-400 text-2xs whitespace-nowrap">
+        <td className="py-2.5 px-3 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="py-2.5 px-3 text-stone-500 font-mono text-2xs">{entry.ipAddress || '—'}</td>
+        <td className="py-2.5 px-3 text-stone-500 text-2xs">{entry.appVersion || '—'}</td>
+        <td className="py-2.5 px-3 text-stone-500 text-2xs whitespace-nowrap">
           {hasChanges ? (
             <button
               type="button"
               aria-expanded={expanded}
               aria-label={`${expanded ? 'Hide' : 'Show'} changes for the ${entry.action} on ${new Date(entry.at).toLocaleString()}`}
               onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
-              className="inline-flex items-center gap-1.5 rounded text-stone-400 hover:text-stone-600 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded text-stone-500 hover:text-stone-600 transition-colors"
             >
               {new Date(entry.at).toLocaleString()}
-              <span className="text-stone-300" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
+              <span className="text-stone-500" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
             </button>
           ) : (
             new Date(entry.at).toLocaleString()

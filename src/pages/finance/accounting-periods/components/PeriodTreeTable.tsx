@@ -141,7 +141,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
         >
           <ChevronsDown className="size-3.5" /> Expand All
         </button>
-        <span className="text-stone-300" aria-hidden="true">|</span>
+        <span className="text-stone-500" aria-hidden="true">|</span>
         <button
           type="button"
           onClick={() => setCollapsed(new Set(allGroupKeys(tree)))}

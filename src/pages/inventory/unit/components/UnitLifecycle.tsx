@@ -43,7 +43,7 @@ export function UnitLifecycle({ unit }: { unit: InventoryUnit }) {
               )}
             </p>
             {step.detail && <p className="text-xs text-stone-600">{step.detail}</p>}
-            {step.at && <p className="text-2xs text-stone-400">{fmtDateTime(step.at)}</p>}
+            {step.at && <p className="text-2xs text-stone-500">{fmtDateTime(step.at)}</p>}
           </li>
         );
       })}

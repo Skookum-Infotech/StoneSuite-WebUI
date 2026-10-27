@@ -110,7 +110,7 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
               <input type="number" min={0} value={capacityArea} onChange={(e) => setCapacityArea(e.target.value)} className={fieldCls} aria-label="Capacity area" />
             </div>
           </div>
-          <p className="text-2xs text-stone-400">Capacity is advisory only — it never blocks a move.</p>
+          <p className="text-2xs text-stone-500">Capacity is advisory only — it never blocks a move.</p>
           <div className="space-y-1.5">
             <label className={fieldLabelCls}>Notes</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${fieldCls} h-auto resize-none`} aria-label="Notes" />

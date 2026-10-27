@@ -82,7 +82,7 @@ export function ApplyRefundDialog({ refund, onClose, onApplied }: {
             <h3 id="apply-refund-dialog-title" className="text-sm font-bold text-stone-900">
               Draw from a source
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Unapplied balance: {currency(refund.unappliedAmount)}
             </p>
           </div>

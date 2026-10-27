@@ -202,7 +202,7 @@ export function LocationsTab({ actionsSlot }: { actionsSlot: HTMLDivElement | nu
                   : 'No address on file yet — add one on the Company Profile tab.'}
               </span>
             </div>
-            <p className="mt-3 text-xs text-stone-400">
+            <p className="mt-3 text-xs text-stone-500">
               Add a location to give the company a specific address instead of this default.
             </p>
           </div>

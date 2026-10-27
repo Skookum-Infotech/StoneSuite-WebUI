@@ -162,7 +162,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
           maxLength={REPLY_MAX_CHARS}
           placeholder={mode.internal ? 'Add an internal note…' : copy.replyPlaceholder}
           aria-label={mode.internal ? 'Internal note' : copy.replyLabel}
-          className="block max-h-40 min-h-14 w-full resize-none bg-transparent px-4 py-2 text-sm leading-relaxed text-stone-900 outline-none placeholder:text-stone-400 [field-sizing:content]"
+          className="block max-h-40 min-h-14 w-full resize-none bg-transparent px-4 py-2 text-sm leading-relaxed text-stone-900 outline-none placeholder:text-stone-500 [field-sizing:content]"
         />
 
         {files.length > 0 && (
@@ -175,7 +175,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
                 >
                   <Paperclip className="size-3 shrink-0 text-stone-400" aria-hidden="true" />
                   <span className="max-w-48 truncate">{file.name}</span>
-                  <span className="shrink-0 text-stone-400">{formatFileSize(file.size)}</span>
+                  <span className="shrink-0 text-stone-500">{formatFileSize(file.size)}</span>
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
@@ -188,7 +188,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
                 </li>
               ))}
             </ul>
-            <p className="mt-1.5 text-2xs text-stone-400">
+            <p className="mt-1.5 text-2xs text-stone-500">
               {formatFileSize(attachedBytes)} of {REPLY_MAX_TOTAL_MB} MB
             </p>
           </div>
@@ -240,7 +240,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-2xs text-stone-400 sm:inline">Ctrl + Enter to send</span>
+            <span className="hidden text-2xs text-stone-500 sm:inline">Ctrl + Enter to send</span>
             <button
               type="submit"
               disabled={!canSend}

@@ -20,7 +20,7 @@ export function RefundField({ field, value, set, lookups }: {
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );

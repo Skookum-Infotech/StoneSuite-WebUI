@@ -65,7 +65,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
             <StatusBadge status={user.status} />
           </div>
           <p className="text-xs text-stone-500 truncate">{user.email}</p>
-          <p className="text-2xs text-stone-400 mt-0.5">
+          <p className="text-2xs text-stone-500 mt-0.5">
             Member since {fmtDate(user.createdAt)}
           </p>
         </div>
@@ -83,7 +83,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
       {/* Actions */}
       {user.status !== "disabled" && (
         <div className="space-y-2">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
             Actions
           </h3>
 
@@ -95,7 +95,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
             >
               <Pencil className="size-4 text-stone-400" />
               Edit display name
-              <ChevronRight className="size-4 text-stone-300 ml-auto" />
+              <ChevronRight className="size-4 text-stone-400 ml-auto" />
             </button>
           )}
 
@@ -179,7 +179,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
 
       {user.status === "disabled" && (
         <div className="rounded-xl border border-dashed border-stone-200 p-4 text-center">
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-stone-500">
             This account has been deactivated.
           </p>
         </div>

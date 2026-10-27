@@ -108,7 +108,7 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
 function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={htmlFor} className="text-2xs font-semibold uppercase tracking-wider text-stone-400">
+      <label htmlFor={htmlFor} className="text-2xs font-semibold uppercase tracking-wider text-stone-500">
         {label}
       </label>
       {children}

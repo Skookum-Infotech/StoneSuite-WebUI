@@ -61,9 +61,9 @@ function JobRow({ job, onRetry, retrying }: { job: AsyncJob; onRetry: () => void
         <span className="text-xs font-semibold text-stone-700">{job.jobType}</span>
         <Badge color={JOB_STATUS_COLOR[job.status]}>{job.status}</Badge>
       </div>
-      {job.progress?.step && <p className="mt-1 text-2xs text-stone-400">Step: {job.progress.step}</p>}
+      {job.progress?.step && <p className="mt-1 text-2xs text-stone-500">Step: {job.progress.step}</p>}
       {job.lastError && <p className="mt-1 text-2xs text-red-500">{job.lastError}</p>}
-      <p className="mt-1 text-2xs text-stone-400">
+      <p className="mt-1 text-2xs text-stone-500">
         Attempt {job.attempts}/{job.maxAttempts} · updated {new Date(job.updatedAt).toLocaleString()}
       </p>
       {canRetry && (

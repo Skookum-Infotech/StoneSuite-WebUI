@@ -34,7 +34,7 @@ export function RemnantsFinder() {
         </div>
       </div>
 
-      {!item && <p className="text-xs text-stone-400">Pick an item to see its usable remnants, largest first.</p>}
+      {!item && <p className="text-xs text-stone-500">Pick an item to see its usable remnants, largest first.</p>}
       {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load remnants.')}</p>}
 
       {item && (
@@ -51,7 +51,7 @@ export function RemnantsFinder() {
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {isLoading ? (
-                  <tr><td colSpan={4} className="px-4 py-6 text-center text-stone-400">Loading…</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
                 ) : remnants.length > 0 ? (
                   remnants.map((r) => (
                     <tr key={r.id} className="hover:bg-accent/10 transition-colors">
@@ -66,8 +66,8 @@ export function RemnantsFinder() {
                 ) : (
                   <tr><td colSpan={4} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <Layers className="size-6 text-stone-300" />
-                      <p className="text-xs text-stone-400">No usable remnants for this item.</p>
+                      <Layers className="size-6 text-stone-400" />
+                      <p className="text-xs text-stone-500">No usable remnants for this item.</p>
                     </div>
                   </td></tr>
                 )}

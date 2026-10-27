@@ -282,7 +282,7 @@ export default function VendorPaymentDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Vendor Payment Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -319,7 +319,7 @@ export default function VendorPaymentDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{payment.status}</Badge>
@@ -402,7 +402,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -410,7 +410,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

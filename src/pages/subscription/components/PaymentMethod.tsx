@@ -55,7 +55,7 @@ export function PaymentMethodCard({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-stone-400 mt-0.5">Expires {method.expiry}</p>
+              <p className="text-xs text-stone-500 mt-0.5">Expires {method.expiry}</p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {!method.isDefault && (

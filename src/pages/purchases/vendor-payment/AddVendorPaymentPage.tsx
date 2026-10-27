@@ -247,7 +247,7 @@ export default function AddVendorPaymentPage() {
                           type="button"
                           onClick={() => removeApplication(app.vendorBillUuid)}
                           aria-label={`Remove application to ${appliedBillNumbers[app.vendorBillUuid]}`}
-                          className="rounded p-0.5 text-stone-400 hover:bg-stone-200 hover:text-stone-600 transition-colors"
+                          className="rounded p-0.5 text-stone-500 hover:bg-stone-200 hover:text-stone-600 transition-colors"
                         >
                           <X className="size-3.5" />
                         </button>
@@ -287,7 +287,7 @@ export default function AddVendorPaymentPage() {
                 </button>
               </div>
 
-              <p className="text-2xs text-stone-400">
+              <p className="text-2xs text-stone-500">
                 {vendor
                   ? 'Only this vendor’s approved bills with a balance due can be paid. Each application is recorded after the payment itself saves — if one is rejected, the payment still exists and can be applied again from its detail page.'
                   : 'Select a vendor above to apply this payment to their bills.'}

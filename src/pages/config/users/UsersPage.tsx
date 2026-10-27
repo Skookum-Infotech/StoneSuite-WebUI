@@ -139,7 +139,7 @@ export default function UsersPage() {
                   </p>
                 )}
                 {!usersQ.isLoading && users.length === 0 && (
-                  <p className="px-2 py-4 text-xs text-stone-400 text-center">
+                  <p className="px-2 py-4 text-xs text-stone-500 text-center">
                     No members yet.
                   </p>
                 )}
@@ -178,7 +178,7 @@ export default function UsersPage() {
                           >
                             {u.fullName || u.email}
                           </p>
-                          <p className="text-2xs text-stone-400 truncate">
+                          <p className="text-2xs text-stone-500 truncate">
                             {u.roles.length === 0
                               ? "No roles"
                               : u.roles.map((r) => r.name).join(", ")}
@@ -270,8 +270,8 @@ export default function UsersPage() {
               {!activeUser && !usersQ.isLoading && (
                 <div className="hidden md:flex h-full items-center justify-center">
                   <div className="text-center">
-                    <UsersRound className="mx-auto mb-2 size-8 text-stone-300" />
-                    <p className="text-sm text-stone-400">
+                    <UsersRound className="mx-auto mb-2 size-8 text-stone-400" />
+                    <p className="text-sm text-stone-500">
                       Select a member to view their profile.
                     </p>
                   </div>
@@ -288,8 +288,8 @@ export default function UsersPage() {
               {!activeInvite && !invitesQ.isLoading && (
                 <div className="hidden md:flex h-full items-center justify-center">
                   <div className="text-center">
-                    <Mail className="mx-auto mb-2 size-8 text-stone-300" />
-                    <p className="text-sm text-stone-400">
+                    <Mail className="mx-auto mb-2 size-8 text-stone-400" />
+                    <p className="text-sm text-stone-500">
                       Select an invitation to view details.
                     </p>
                   </div>

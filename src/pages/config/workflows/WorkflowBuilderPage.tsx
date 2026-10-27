@@ -135,7 +135,7 @@ export default function WorkflowBuilderPage() {
                 <h1 className="text-xl font-bold tracking-tight text-stone-900 truncate dark:text-white">
                   {def.workflow.name}
                 </h1>
-                <span className="rounded-lg bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-400 dark:bg-stone-800">
+                <span className="rounded-lg bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800">
                   {def.workflow.key}
                 </span>
                 <label className="flex items-center gap-1.5 select-none">
@@ -164,7 +164,7 @@ export default function WorkflowBuilderPage() {
           <Link
             to="/config/workflows"
             aria-label="Back to All forms"
-            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200"
+            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200"
           >
             <ChevronLeft className="size-3.5" />
             Back
@@ -229,7 +229,7 @@ export default function WorkflowBuilderPage() {
               </div>
             )}
             {!def.workflow.customFieldsEnabled && (
-              <p className="mb-3 text-xs text-stone-400">
+              <p className="mb-3 text-xs text-stone-500">
                 This section is switched off — {def.workflow.name} forms won&apos;t show these fields until you turn it
                 on. Field definitions and any values already saved under them are kept either way.
               </p>
@@ -278,7 +278,7 @@ function Section({
 
 function FieldsCounter({ count }: { count: number }) {
   return (
-    <span className="text-xs text-stone-400 tabular-nums">
+    <span className="text-xs text-stone-500 tabular-nums">
       {count} / {FIELD_CAP}
     </span>
   );
@@ -357,7 +357,7 @@ export function ApproversSection({ workflowId, approverUserIds }: { workflowId: 
         Lead to Prospect or Customer.
       </p>
       {!enabled ? (
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-stone-500">
           Approval is disabled — records can move past this stage without sign-off.
         </p>
       ) : usersQ.isLoading ? (
@@ -406,7 +406,7 @@ function FieldsSection({
   return (
     <div>
       {atCap && !open && (
-        <p className="mb-3 text-xs text-stone-400">Field cap reached ({FIELD_CAP}). Delete one to add another.</p>
+        <p className="mb-3 text-xs text-stone-500">Field cap reached ({FIELD_CAP}). Delete one to add another.</p>
       )}
 
       {fields.length === 0 && !open ? (
@@ -434,12 +434,12 @@ function FieldsSection({
               className={cn('grid min-w-[560px] items-center gap-x-3 border-b border-stone-100 py-2.5 text-xs dark:border-stone-800/60', FIELD_COLS)}
             >
               <span className="truncate font-semibold text-stone-900 dark:text-stone-100">{f.label}</span>
-              <span className="truncate font-mono text-xs text-stone-400">{f.key}</span>
-              <span className="text-xs text-stone-400">{f.dataType}</span>
+              <span className="truncate font-mono text-xs text-stone-500">{f.key}</span>
+              <span className="text-xs text-stone-500">{f.dataType}</span>
               <span className="text-xs font-semibold">
-                {f.required ? <span className="text-amber-600 dark:text-amber-400">Yes</span> : <span className="text-stone-300 dark:text-stone-600">—</span>}
+                {f.required ? <span className="text-amber-600 dark:text-amber-400">Yes</span> : <span className="text-stone-500 dark:text-stone-600">—</span>}
               </span>
-              <span className="truncate text-xs text-stone-400">{f.options.length > 0 ? f.options.join(', ') : '—'}</span>
+              <span className="truncate text-xs text-stone-500">{f.options.length > 0 ? f.options.join(', ') : '—'}</span>
               <button
                 type="button"
                 aria-label={`Delete field ${f.label}`}
@@ -509,7 +509,7 @@ function NewFieldRow({ workflowId, onDone, onCancel }: { workflowId: string; onD
         {dataType === 'enum' ? (
           <Input aria-label="New field options, comma-separated" value={options} onChange={(e) => setOptions(e.target.value)} placeholder="a, b, c" className="h-8 text-xs" />
         ) : (
-          <span className="text-xs text-stone-300 dark:text-stone-600">—</span>
+          <span className="text-xs text-stone-500 dark:text-stone-600">—</span>
         )}
         <div className="flex items-center justify-end gap-1">
           <button
@@ -525,7 +525,7 @@ function NewFieldRow({ workflowId, onDone, onCancel }: { workflowId: string; onD
             type="button"
             aria-label="Cancel new field"
             onClick={onCancel}
-            className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
+            className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800"
           >
             <X className="size-3.5" />
           </button>

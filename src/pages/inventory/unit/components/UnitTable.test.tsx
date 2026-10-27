@@ -91,7 +91,8 @@ describe('UnitTable', () => {
 
     const free = (await screen.findByText('PO-00012-001')).closest('tr') as HTMLElement;
     expect(within(free).getByLabelText('Not allocated')).toBeInTheDocument();
-    expect(within(free).queryByRole('link')).not.toBeInTheDocument();
+    // The serial itself is a link to the unit; there must be no second one to a claimant.
+    expect(within(free).getAllByRole('link').map((a) => a.textContent)).toEqual(['PO-00012-001']);
   });
 
   it('shows what each area is measured in', async () => {
