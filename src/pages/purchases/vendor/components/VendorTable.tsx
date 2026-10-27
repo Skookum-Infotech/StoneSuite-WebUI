@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
@@ -251,13 +251,12 @@ export function VendorTable() {
                   return (
                     <tr key={vendor.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/vendor/${vendor.id}`)}
+                        <Link
+                          to={`/purchases/vendor/${vendor.id}`}
                           className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {vendor.vendorNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[240px]">
                         {vendor.displayName}

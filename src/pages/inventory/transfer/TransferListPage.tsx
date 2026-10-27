@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Repeat, Plus, Search, ChevronLeft, ChevronRight, Truck } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -115,8 +115,8 @@ export default function TransferListPage() {
                 {loading ? (
                   <tr><td colSpan={5} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((t) => (
-                  <tr key={t.id} className="hover:bg-accent/10 transition-colors cursor-pointer" onClick={() => navigate(`/inventory/transfer/${t.id}`)}>
-                    <td className="px-4 py-3.5 font-mono font-semibold text-stone-900">{t.number || '—'}</td>
+                  <tr key={t.id} className="relative hover:bg-accent/10 transition-colors">
+                    <td className="px-4 py-3.5 font-mono font-semibold text-stone-900"><Link to={`/inventory/transfer/${t.id}`} className="after:absolute after:inset-0">{t.number || '—'}</Link></td>
                     <td className="px-4 py-3.5 text-stone-700">{t.fromWarehouseName || '—'}</td>
                     <td className="px-4 py-3.5 text-stone-700">{t.toWarehouseName || '—'}</td>
                     <td className="px-4 py-3.5"><Badge color={DOC_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{docStatusLabel(t.statusCode)}</Badge></td>

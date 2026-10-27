@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
@@ -327,14 +327,13 @@ export function ExpenseTable() {
                   return (
                     <tr key={exp.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/expense/${exp.id}`)}
+                        <Link
+                          to={`/purchases/expense/${exp.id}`}
                           aria-label={`Open expense ${exp.expenseNumber}`}
                           className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {exp.expenseNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
                         {claimantName ?? '—'}

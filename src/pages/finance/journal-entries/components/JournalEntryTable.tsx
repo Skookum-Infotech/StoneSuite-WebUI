@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, ArrowLeftRight, Pencil, Filter,
@@ -299,13 +299,12 @@ export function JournalEntryTable() {
                   return (
                     <tr key={je.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/finance/journal-entries/${je.id}`)}
+                        <Link
+                          to={`/finance/journal-entries/${je.id}`}
                           className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {je.transferNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 py-3.5">
                         <span

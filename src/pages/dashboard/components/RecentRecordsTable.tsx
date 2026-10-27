@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { formatBreadcrumbSegment } from '@/lib/breadcrumb';
 import { recordRoute, relativeTime } from '@/lib/recentRecordRoute';
@@ -48,7 +48,6 @@ export function RecentRecordsTable({
   isError: boolean;
   hasMore?: boolean;
 }) {
-  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -105,14 +104,13 @@ export function RecentRecordsTable({
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-[19px] py-3 font-mono text-xs text-stone-500">
-                    <button
-                      type="button"
-                      onClick={() => navigate(recordRoute(r.domain, r.module, r.id))}
+                    <Link
+                      to={recordRoute(r.domain, r.module, r.id)}
                       aria-label={`View ${typeLabel} ${r.recordNumber}${r.account ? ` for ${r.account}` : ''}`}
                       className="rounded text-left hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {r.recordNumber}
-                    </button>
+                    </Link>
                   </td>
                   <td className="px-[19px] py-3 text-xs text-stone-950">{r.account ?? '—'}</td>
                   <td className="whitespace-nowrap px-[19px] py-3 text-right text-xs font-semibold text-stone-950 tabular-nums">

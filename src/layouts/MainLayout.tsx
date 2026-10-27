@@ -19,7 +19,7 @@ import { useExitConfirmation } from '@/hooks/useExitConfirmation';
 import { useTrackLastAppPath } from '@/hooks/useTrackLastAppPath';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { isCustomerAllowedPath } from '@/config/customerPortal';
-import { formatBreadcrumbSegment, isRegisteredPath } from '@/lib/breadcrumb';
+import { Breadcrumbs } from '@/layouts/Breadcrumbs';
 import { SessionExpiryModal } from '@/components/SessionExpiryModal';
 import { ConfirmLeaveDialog } from '@/components/ConfirmLeaveDialog';
 import { apiClient } from '@/api/client';
@@ -36,7 +36,6 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { TenantLogoMark } from '@/components/TenantLogoMark';
 import {
   Menu,
-  ChevronRight,
   LogOut,
   Settings,
   Search,
@@ -472,42 +471,7 @@ export default function MainLayout(): React.JSX.Element {
 
           {/* Breadcrumb bar — contextual, scrolls with page */}
           {pathSegments.length > 0 && (
-            <nav
-              aria-label="Breadcrumb"
-              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs xl:text-xs font-semibold text-stone-500"
-            >
-              <span
-                className="cursor-pointer hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
-                onClick={() => navigate('/')}
-              >
-                Home
-              </span>
-              {pathSegments.map((segment, index) => {
-                const url = `/${pathSegments.slice(0, index + 1).join('/')}`;
-                const isLast = index === pathSegments.length - 1;
-                // Only crumbs whose URL is a real page are links — group prefixes like
-                // /finance have none, and would land on the 404 route.
-                const isClickable = !isLast && isRegisteredPath(routes, url);
-                return (
-                  <React.Fragment key={segment}>
-                    <ChevronRight className="size-3 xl:size-3.5 text-stone-400 shrink-0" />
-                    <span
-                      onClick={() => { if (isClickable) navigate(url); }}
-                      className={cn(
-                        'transition-colors',
-                        isLast
-                          ? 'text-stone-600 dark:text-stone-300 font-bold'
-                          : isClickable
-                            ? 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200'
-                            : 'text-stone-500',
-                      )}
-                    >
-                      {breadcrumbLabels[segment] ?? formatBreadcrumbSegment(segment)}
-                    </span>
-                  </React.Fragment>
-                );
-              })}
-            </nav>
+            <Breadcrumbs segments={pathSegments} labels={breadcrumbLabels} routes={routes} />
           )}
 
           <Outlet />

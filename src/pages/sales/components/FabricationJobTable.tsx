@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox,
@@ -48,7 +48,6 @@ function fmtDate(iso?: string): string {
 }
 
 export function FabricationJobTable() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -263,13 +262,12 @@ export function FabricationJobTable() {
                   return (
                     <tr key={job.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/sales/installation/${job.id}`)}
+                        <Link
+                          to={`/sales/installation/${job.id}`}
                           className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {job.jobNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
                         {job.customer?.name ?? '—'}

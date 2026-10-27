@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { ItemReceiptLine } from '@/types/itemReceipt';
 
@@ -21,7 +21,6 @@ function statusLabel(status: string): string {
 // to its unit and shows that unit's LIVE status, so a slab that has since been
 // reserved, cut or written off is visible from the document that received it.
 export function ReceiptSlabsTable({ lines }: { lines: ItemReceiptLine[] }) {
-  const navigate = useNavigate();
   const slabLines = lines.filter((l) => (l.slabs?.length ?? 0) > 0);
   if (slabLines.length === 0) return null;
 
@@ -57,14 +56,13 @@ export function ReceiptSlabsTable({ lines }: { lines: ItemReceiptLine[] }) {
                   <tr key={slab.serial || `pending-${i}`} className="hover:bg-stone-50/50">
                     <td className="px-3 py-2 font-mono text-2xs">
                       {slab.unitId && slab.serial ? (
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/inventory/unit/${slab.unitId}`)}
+                        <Link
+                          to={`/inventory/unit/${slab.unitId}`}
                           aria-label={`Open slab ${slab.serial}`}
                           className="font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {slab.serial}
-                        </button>
+                        </Link>
                       ) : (
                         <span className="text-stone-500">Assigned when posted</span>
                       )}

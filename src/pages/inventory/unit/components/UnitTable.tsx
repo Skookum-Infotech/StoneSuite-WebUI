@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, Scissors, AlertTriangle, CheckCircle2,
@@ -38,7 +38,6 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function UnitTable() {
-  const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement>(null);
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canUpdate = permissionsLoading || hasPermission('inventory_unit', 'update');
@@ -180,7 +179,7 @@ export function UnitTable() {
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
-                        <button type="button" onClick={() => navigate(`/inventory/unit/${u.id}`)} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">{u.serial}</button>
+                        <Link to={`/inventory/unit/${u.id}`} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">{u.serial}</Link>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">{u.inventoryItemName ?? '—'}</td>
                       <td className="px-4 py-3.5 text-xs text-stone-500 capitalize">{u.kind}</td>

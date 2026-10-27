@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { Spinner } from '@/components/tenant/ui';
 import {
@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import type { FeedbackPriority, FeedbackStatus, FeedbackTicket } from '@/types/feedback';
 
 export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTicket[]; isLoading: boolean }) {
-  const navigate = useNavigate();
 
   if (isLoading) return <div className="flex justify-center py-10"><Spinner label="Loading tickets…" /></div>;
   if (tickets.length === 0) {
@@ -42,13 +41,12 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
             return (
               <tr key={ticket.id} className="transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.03]">
                 <td className="px-3.5 py-2.5">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/platform/feedback/${ticket.id}`)}
+                  <Link
+                    to={`/platform/feedback/${ticket.id}`}
                     className="font-semibold text-stone-700 hover:text-brand-dark transition-colors dark:text-stone-200"
                   >
                     {ticket.ticketNumber}
-                  </button>
+                  </Link>
                 </td>
                 <td className="px-3.5 py-2.5 text-stone-600 dark:text-stone-300">{ticket.tenantName || '—'}</td>
                 <td className="px-3.5 py-2.5 text-stone-600 dark:text-stone-300">{ticket.reporterName || ticket.reporterEmail}</td>

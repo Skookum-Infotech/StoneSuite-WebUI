@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardCheck, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -95,8 +95,8 @@ export default function CountListPage() {
                 {loading ? (
                   <tr><td colSpan={5} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((c) => (
-                  <tr key={c.id} className="hover:bg-accent/10 transition-colors cursor-pointer" onClick={() => navigate(`/inventory/count/${c.id}`)}>
-                    <td className="px-4 py-3.5 font-mono font-semibold text-stone-900">{c.number || '—'}</td>
+                  <tr key={c.id} className="relative hover:bg-accent/10 transition-colors">
+                    <td className="px-4 py-3.5 font-mono font-semibold text-stone-900"><Link to={`/inventory/count/${c.id}`} className="after:absolute after:inset-0">{c.number || '—'}</Link></td>
                     <td className="px-4 py-3.5 text-stone-700">{c.warehouseName || '—'}</td>
                     <td className="px-4 py-3.5"><Badge color={DOC_STATUS_COLORS[c.statusCode] ?? '#a8a29e'}>{docStatusLabel(c.statusCode)}</Badge></td>
                     <td className="px-4 py-3.5 text-stone-500 tabular-nums">{fmtDate(c.date)}</td>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, FilePlus, Pencil, Filter,
@@ -328,13 +328,12 @@ export function VendorCreditTable() {
                   return (
                     <tr key={credit.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/vendor_credit/${credit.id}`)}
+                        <Link
+                          to={`/purchases/vendor_credit/${credit.id}`}
                           className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {credit.vendorCreditNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
                         {credit.vendor?.name ?? '—'}

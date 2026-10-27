@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
@@ -422,13 +422,12 @@ export function CrmRecordTable({ config }: Props) {
                             {companyInitials(company)}
                           </span>
                           <div className="min-w-0">
-                            <button
-                              type="button"
-                              onClick={() => navigate(config.detailPath(record.id))}
+                            <Link
+                              to={config.detailPath(record.id)}
                               className="text-left text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors truncate max-w-[200px] block"
                             >
                               {company}
-                            </button>
+                            </Link>
                             {record.recordNumber && (
                               <p className="font-mono text-2xs text-stone-500 mt-0.5">{record.recordNumber}</p>
                             )}
@@ -466,14 +465,13 @@ export function CrmRecordTable({ config }: Props) {
                       </td>
                       {canEdit && (
                         <td className="px-4 py-3.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => navigate(config.editPath(record.id))}
+                          <Link
+                            to={config.editPath(record.id)}
                             aria-label={`Edit ${label}`}
                             className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 transition-colors hover:bg-accent hover:border-accent hover:text-accent-foreground cursor-pointer"
                           >
                             <Pencil className="size-4" />
-                          </button>
+                          </Link>
                         </td>
                       )}
                     </tr>

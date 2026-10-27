@@ -138,7 +138,14 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
                         <div className="h-7 w-7 rounded bg-stone-100 flex items-center justify-center shrink-0">
                           <FileImage className="h-3.5 w-3.5 text-stone-400" />
                         </div>
-                        <span className="font-medium text-stone-800">{d.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); startEdit(d); }}
+                          aria-label={`Edit drawing ${d.name}`}
+                          className="font-medium text-stone-800 hover:text-stone-950"
+                        >
+                          {d.name}
+                        </button>
                       </div>
                     </td>
                     <td className="px-3 py-2.5 text-stone-500">{DRAWING_TYPE_LABELS[d.type]}</td>
