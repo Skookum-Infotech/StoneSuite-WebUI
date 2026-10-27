@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CircleHelp, LifeBuoy, Sparkles } from 'lucide-react';
-import { AssistantPanel } from '@/components/ai/AssistantPanel';
 import { useAssistantConversation } from '@/components/ai/useAssistantConversation';
 import { useAIStatus } from '@/hooks/useAIStatus';
 import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
@@ -10,6 +9,14 @@ import { warmAssistant } from '@/services/aiService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useHeaderMenuStore } from '@/store/useHeaderMenuStore';
 import { cn } from '@/lib/utils';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
+
+// The panel pulls in the markdown renderer (react-markdown + remark-gfm), which
+// would otherwise sit in the entry bundle of every page since HelpMenu is in
+// the header. Warmed on menu hover/focus so opening it still feels instant.
+const loadAssistantPanel = () =>
+  import('@/components/ai/AssistantPanel').then((m) => ({ default: m.AssistantPanel }));
+const AssistantPanel = lazyWithRetry(loadAssistantPanel);
 
 /** Minimum gap between warmAssistant() calls. Module-level (not a ref) so it
  *  also guards against React StrictMode's deliberate double-invoke of
@@ -109,6 +116,8 @@ export function HelpMenu() {
           <button
             type="button"
             role="menuitem"
+            onMouseEnter={() => { void loadAssistantPanel(); }}
+            onFocus={() => { void loadAssistantPanel(); }}
             onClick={(e) => { e.stopPropagation(); setOpenMenu(null); setAssistantOpen(true); }}
             className="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.06] cursor-pointer"
           >
@@ -156,14 +165,16 @@ export function HelpMenu() {
       )}
 
       {assistantOpen && (
-        <AssistantPanel
-          conversation={conversation}
-          draft={{ value: conversation.draft, onChange: conversation.setDraft }}
-          onClose={() => {
-            setAssistantOpen(false);
-            triggerRef.current?.focus();
-          }}
-        />
+        <Suspense fallback={null}>
+          <AssistantPanel
+            conversation={conversation}
+            draft={{ value: conversation.draft, onChange: conversation.setDraft }}
+            onClose={() => {
+              setAssistantOpen(false);
+              triggerRef.current?.focus();
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -9,6 +9,9 @@ describe('router', () => {
   it('registers the Support page inside the app shell', () => {
     const matches = matchRoutes(router.routes, SUPPORT_PATH);
 
-    expect(matches?.map((match) => match.route.path)).toEqual(['/', 'support']);
+    // Pathless layout routes (the error-boundary wrapper inside the shell) have
+    // no `path`, so they are not part of what this asserts.
+    const paths = matches?.map((match) => match.route.path).filter(Boolean);
+    expect(paths).toEqual(['/', 'support']);
   });
 });

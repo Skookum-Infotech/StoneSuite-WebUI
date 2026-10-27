@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { onboardingService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { strongPasswordSchema } from '@/lib/passwordPolicy';
+import { LinkProblemCard } from '@/components/auth/LinkProblemCard';
 import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordRequirements } from '@/components/auth/PasswordRequirements';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
@@ -67,7 +68,14 @@ export default function SetPasswordPage() {
     </div>
   );
 
-  if (!token) return card(<ErrorNote>Missing token.</ErrorNote>);
+  if (!token) {
+    return card(
+      <LinkProblemCard
+        title="This link is incomplete"
+        message="This password link is incomplete or has expired. Ask the person who invited you to send a new one, or sign in if you already have an account."
+      />,
+    );
+  }
   if (tokenQ.isLoading) return card(<Spinner label="Verifying link…" />);
   if (tokenQ.error) return card(<ErrorNote>{apiErrorMessage(tokenQ.error, 'This link is invalid or has expired.')}</ErrorNote>);
 
