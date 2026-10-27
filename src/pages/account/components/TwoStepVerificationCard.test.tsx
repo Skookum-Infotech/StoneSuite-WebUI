@@ -40,7 +40,7 @@ function renderCard() {
   )
 }
 
-const turnOnButton = () => screen.findByRole('button', { name: 'Turn on two-step verification' })
+const twoStepSwitch = () => screen.findByRole('switch', { name: 'Email code at sign-in' })
 const dialog = () => screen.getByRole('dialog')
 
 beforeEach(() => {
@@ -56,15 +56,15 @@ describe('TwoStepVerificationCard — turning it on', () => {
   it('shows it off, with where a code would go', async () => {
     renderCard()
 
-    expect(await screen.findByText('Off')).toBeInTheDocument()
+    expect(await twoStepSwitch()).not.toBeChecked()
     expect(screen.getByText(/a•••@example\.com/)).toBeInTheDocument()
   })
 
-  it('emails a code and opens the confirm dialog when "Turn on" is clicked', async () => {
+  it('emails a code and opens the confirm dialog when the switch is turned on', async () => {
     const user = userEvent.setup()
     renderCard()
 
-    await user.click(await turnOnButton())
+    await user.click(await twoStepSwitch())
 
     expect(authService.startEnableMfa).toHaveBeenCalledOnce()
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
@@ -78,13 +78,13 @@ describe('TwoStepVerificationCard — turning it on', () => {
     vi.mocked(authService.getMfaStatus).mockResolvedValueOnce(OFF).mockResolvedValue(ON)
     renderCard()
 
-    await user.click(await turnOnButton())
+    await user.click(await twoStepSwitch())
     await user.type(await screen.findByLabelText('Code from your email'), '042917')
     await user.click(screen.getByRole('button', { name: 'Confirm code and turn on two-step verification' }))
 
     await vi.waitFor(() => expect(authService.confirmEnableMfa).toHaveBeenCalledWith('042917'))
     expect(toast.success).toHaveBeenCalledWith('Two-step verification is on')
-    expect(await screen.findByText('On')).toBeInTheDocument()
+    await vi.waitFor(async () => expect(await twoStepSwitch()).toBeChecked())
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
@@ -95,13 +95,14 @@ describe('TwoStepVerificationCard — turning it on', () => {
     )
     renderCard()
 
-    await user.click(await turnOnButton())
+    await user.click(await twoStepSwitch())
     await user.type(await screen.findByLabelText('Code from your email'), '111111')
     await user.click(screen.getByRole('button', { name: 'Confirm code and turn on two-step verification' }))
 
     expect(await screen.findByText("That code isn't right. 4 attempts left.")).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     expect(toast.success).not.toHaveBeenCalled()
+    expect(await twoStepSwitch()).not.toBeChecked()
   })
 
   it('lets a new code be requested right away once the old one is dead', async () => {
@@ -111,7 +112,7 @@ describe('TwoStepVerificationCard — turning it on', () => {
     )
     renderCard()
 
-    await user.click(await turnOnButton())
+    await user.click(await twoStepSwitch())
     expect(within(dialog()).getByRole('button', { name: 'Resend code in 60 seconds' })).toBeDisabled()
     await user.type(await screen.findByLabelText('Code from your email'), '111111')
     await user.click(screen.getByRole('button', { name: 'Confirm code and turn on two-step verification' }))
@@ -125,7 +126,7 @@ describe('TwoStepVerificationCard — turning it on', () => {
     vi.mocked(authService.startEnableMfa).mockResolvedValue({ ...SENT, resendAfterSeconds: 0 })
     renderCard()
 
-    await user.click(await turnOnButton())
+    await user.click(await twoStepSwitch())
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Resend code' }))
 
     expect(await screen.findByText('A new code is on its way to a•••@example.com.')).toBeInTheDocument()
@@ -139,7 +140,7 @@ describe('TwoStepVerificationCard — turning it on', () => {
     )
     renderCard()
 
-    await user.click(await turnOnButton())
+    await user.click(await twoStepSwitch())
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
     expect(within(dialog()).getByText(/A code was just sent to you/)).toBeInTheDocument()
@@ -153,7 +154,7 @@ describe('TwoStepVerificationCard — turning it on', () => {
     )
     renderCard()
 
-    await user.click(await turnOnButton())
+    await user.click(await twoStepSwitch())
 
     expect(await screen.findByRole('alert')).toHaveTextContent("We couldn't send your code right now.")
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -167,8 +168,8 @@ describe('TwoStepVerificationCard — turning it off', () => {
 
   const openDisableDialog = async (user: ReturnType<typeof userEvent.setup>) => {
     renderCard()
-    expect(await screen.findByText('On')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Turn off two-step verification' }))
+    expect(await twoStepSwitch()).toBeChecked()
+    await user.click(await twoStepSwitch())
     return await screen.findByRole('dialog')
   }
 
@@ -207,7 +208,7 @@ describe('TwoStepVerificationCard — turning it off', () => {
 
     await vi.waitFor(() => expect(authService.disableMfa).toHaveBeenCalledWith('hunter2'))
     expect(toast.success).toHaveBeenCalledWith('Two-step verification is off')
-    expect(await screen.findByText('Off')).toBeInTheDocument()
+    await vi.waitFor(async () => expect(await twoStepSwitch()).not.toBeChecked())
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
@@ -219,6 +220,7 @@ describe('TwoStepVerificationCard — turning it off', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(authService.disableMfa).not.toHaveBeenCalled()
+    expect(await twoStepSwitch()).toBeChecked()
   })
 })
 
@@ -228,7 +230,7 @@ describe('TwoStepVerificationCard — other states', () => {
     renderCard()
 
     expect(await screen.findByText(/single sign-on/)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /two-step verification/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   })
 
   it('says so, and can retry, when the setting will not load', async () => {
@@ -239,6 +241,6 @@ describe('TwoStepVerificationCard — other states', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent("We couldn't load your two-step verification setting.")
     await user.click(screen.getByRole('button', { name: 'Try loading two-step verification again' }))
 
-    expect(await screen.findByText('Off')).toBeInTheDocument()
+    expect(await twoStepSwitch()).not.toBeChecked()
   })
 })
