@@ -68,7 +68,7 @@ export function RecentRecordsTable({
 
   if (records.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-stone-400">
+      <div className="rounded-xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-stone-500">
         No recent activity to show.
       </div>
     );
@@ -134,7 +134,7 @@ export function RecentRecordsTable({
       </div>
       {hasMore && (
         <div className="px-[19px] pb-3">
-          <p className="pt-2 text-2xs font-medium text-stone-400">More records available — narrow the range to see fewer.</p>
+          <p className="pt-2 text-2xs font-medium text-stone-500">More records available — narrow the range to see fewer.</p>
         </div>
       )}
     </div>

@@ -7,7 +7,7 @@ import { expenseService } from '@/services/expenseService';
 import { EMPTY_LINE_ITEM, categoryNameForCode, type ExpenseLineItem } from '@/lib/expenseForm';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `expli-${rowCounter}`; }
@@ -105,24 +105,24 @@ export function ExpenseLinesTable({ items, onUpdate }: {
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} categories={categories} onChange={updateDraft} onCategoryChange={onCategoryChange} />
                   <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
-                    <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.lineNo}`}>
+                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.lineNo}`}>
                       <Trash2 className="size-3.5" />
                     </button>
                   </td>
                 </tr>
               ) : (
                 <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
-                  <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
-                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.categoryName || row.categoryCode || <span className="text-stone-300">—</span>}</td>
+                  <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.lineNo}</td>
+                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.categoryName || row.categoryCode || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500">{row.expenseDate || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[180px] truncate">{row.description || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.amount ? `$${parseFloat(row.amount).toFixed(2)}` : '—'}</td>
                   <td className={LINE_ACTIONS_CELL_CLS}>
                     <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.lineNo}`}>
+                      <button type="button" onClick={() => startEdit(row)} className="text-stone-500 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
-                      <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.lineNo}`}>
+                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.lineNo}`}>
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
@@ -142,8 +142,8 @@ export function ExpenseLinesTable({ items, onUpdate }: {
 
       {items.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-400">No expense lines yet.</p>
-          <p className="text-2xs text-stone-300">Click <strong className="text-stone-500">+ Add Line</strong> to add a receipt.</p>
+          <p className="text-xs text-stone-500">No expense lines yet.</p>
+          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Line</strong> to add a receipt.</p>
         </div>
       )}
 
@@ -190,7 +190,7 @@ function InlineItemRow({ lineNo, draft, categories, onChange, onCategoryChange }
 }) {
   return (
     <>
-      <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
+      <td className="px-2.5 py-1.5 text-stone-500 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
         <select
           value={draft.categoryCode}

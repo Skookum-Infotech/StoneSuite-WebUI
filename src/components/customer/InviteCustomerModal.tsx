@@ -67,7 +67,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
             </div>
             <h2 className="text-sm font-bold text-stone-800">Invite Customer</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600">
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600">
             <X className="size-4" />
           </button>
         </div>

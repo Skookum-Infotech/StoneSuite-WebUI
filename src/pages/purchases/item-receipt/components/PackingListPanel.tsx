@@ -8,7 +8,7 @@ import { PACKING_LIST_UNITS, parsePackingList, type PackingListUnit } from '@/li
 import { unitLabel } from '@/lib/unitLabels';
 
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 const PREVIEW_ROWS = 5;
@@ -78,7 +78,7 @@ export function PackingListPanel({ itemId, unitCode, onAdd, onClose }: {
         <ClipboardPaste className="size-3.5 text-stone-400" aria-hidden="true" />
         Paste from packing list
       </p>
-      <p className="mt-1 text-2xs text-stone-400">
+      <p className="mt-1 text-2xs text-stone-500">
         One slab per line: length, width, optionally thickness and a lot — copied straight from your supplier&apos;s
         packing list or spreadsheet. Paste only those columns.
       </p>

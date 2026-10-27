@@ -174,14 +174,14 @@ export function PaymentTable() {
             placeholder="Search payment #, customer, reference…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -288,7 +288,7 @@ export function PaymentTable() {
                           <ReadOnlyStatusPill label={p.status} color={PAYMENT_STATUS_COLORS[p.status]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {p.paymentDate
                           ? formatDateValue(p.paymentDate, undefined, LIST_DATE_OPTIONS)
                           : '—'}
@@ -323,7 +323,7 @@ export function PaymentTable() {
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No payments recorded yet.</p>
-                        <p className="text-xs text-stone-400">Record your first payment to get started.</p>
+                        <p className="text-xs text-stone-500">Record your first payment to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -331,7 +331,7 @@ export function PaymentTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No payments match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search terms.</p>
                       </div>
                     )}
                   </td>

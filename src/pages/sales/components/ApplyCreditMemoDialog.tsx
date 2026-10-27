@@ -50,7 +50,7 @@ export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount,
             <h3 id="apply-credit-memo-dialog-title" className="text-sm font-bold text-stone-900">
               Apply to invoice
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Unapplied balance: {currency(unappliedAmount)}
             </p>
           </div>

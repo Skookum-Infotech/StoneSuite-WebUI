@@ -58,17 +58,17 @@ export function CommunicationAttachmentList({ recordId, attachments, missingCoun
                     <Paperclip className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                   )}
                   <span className="truncate">{a.fileName}</span>
-                  {a.sizeBytes > 0 && <span className="shrink-0 font-normal text-stone-400">{formatFileSize(a.sizeBytes)}</span>}
+                  {a.sizeBytes > 0 && <span className="shrink-0 font-normal text-stone-500">{formatFileSize(a.sizeBytes)}</span>}
                   <Download className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                 </button>
               ) : a.status === 'pending' ? (
                 <span title="This file is being copied and will be ready shortly." className={`${CHIP_BASE} border-dashed border-stone-200 text-stone-500`}>
                   <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" />
                   <span className="truncate">{a.fileName}</span>
-                  <span className="shrink-0 text-stone-400">Copying…</span>
+                  <span className="shrink-0 text-stone-500">Copying…</span>
                 </span>
               ) : (
-                <span title={NOT_KEPT_REASONS[a.status].detail} className={`${CHIP_BASE} border-stone-100 bg-stone-50/60 text-stone-400`}>
+                <span title={NOT_KEPT_REASONS[a.status].detail} className={`${CHIP_BASE} border-stone-100 bg-stone-50/60 text-stone-500`}>
                   <FileX className="size-3.5 shrink-0" aria-hidden="true" />
                   <span className="truncate">{a.fileName}</span>
                   <span className="shrink-0">{NOT_KEPT_REASONS[a.status].label}</span>
@@ -79,7 +79,7 @@ export function CommunicationAttachmentList({ recordId, attachments, missingCoun
         </ul>
       )}
       {missingCount > 0 && (
-        <p className="text-xs italic text-stone-400">
+        <p className="text-xs italic text-stone-500">
           {missingCount === 1
             ? 'This email had 1 attachment that was not kept.'
             : `This email had ${missingCount} attachments that were not kept.`}

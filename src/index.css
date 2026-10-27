@@ -172,7 +172,7 @@
   --secondary: #f7f7f7;           /* stone-100: secondary surfaces */
   --secondary-foreground: #1c1917;
   --muted: #f7f7f7;               /* stone-100 */
-  --muted-foreground: #787878;    /* stone-500: placeholder, secondary text */
+  --muted-foreground: #6b6560;    /* stone-500: placeholder, secondary text */
 
   /* Semantic */
   --destructive: #d94f36;
@@ -215,8 +215,8 @@
   --color-stone-100: #f7f7f7;
   --color-stone-200: #eeeeee;
   --color-stone-300: #e8e8e8;
-  --color-stone-400: #ababab;
-  --color-stone-500: #787878;
+  --color-stone-400: #8a8580;       /* icons / UI only: 3.6:1 on white. Never body text. */
+  --color-stone-500: #6b6560;       /* secondary text: 5.6:1 on white, 5.1:1 on stone-100 */
   --color-stone-950: #1c1917;
 
   /* Accent lime — for active states, chip fills, subtle highlights */

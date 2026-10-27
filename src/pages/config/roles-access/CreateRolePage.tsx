@@ -13,6 +13,8 @@ import { SCOPES, SCOPE_LABELS, normalizeScope } from "@/lib/scope";
 import { buildPermModules } from "@/lib/permissionMatrix";
 import type { PermModule, ResourceRow } from "@/lib/permissionMatrix";
 import { isDuplicateRoleName } from "@/lib/roleValidation";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { UnsavedChangesPrompt } from "@/components/UnsavedChangesPrompt";
 import type { Grant, Scope } from "@/types/tenant";
 
 // ---------------------------------------------------------------------------
@@ -278,6 +280,14 @@ export default function CreateRolePage() {
     setTimeout(() => setDraftSaved(false), 1800);
   }
 
+  // `effectiveSelected` drops actions the catalog doesn't offer, so the baseline
+  // waits for the catalog rather than snapshotting the unfiltered draft. A draft
+  // restored from localStorage is part of that baseline; only edits after it count.
+  const guard = useUnsavedChangesGuard(
+    { name, key, description, selected: effectiveSelected },
+    Boolean(catalogQ.data),
+  );
+
   const create = useMutation({
     mutationFn: () => {
       const permissions: Grant[] = [];
@@ -302,6 +312,7 @@ export default function CreateRolePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["roles"] });
       localStorage.removeItem(DRAFT_KEY);
+      guard.markClean();
       navigate("/config/roles");
     },
   });
@@ -321,6 +332,7 @@ export default function CreateRolePage() {
 
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       {/* ── Top bar (full-bleed) ── */}
       <div className="flex items-center justify-between gap-4 border-b border-stone-200 bg-white px-6 py-3">
         <div className="flex items-center gap-4 min-w-0">
@@ -403,7 +415,7 @@ export default function CreateRolePage() {
                       className="h-9 text-xs font-mono"
                     />
                     {!keyTouched && name && (
-                      <p className="text-2xs text-stone-400">
+                      <p className="text-2xs text-stone-500">
                         Auto-generated — edit to override
                       </p>
                     )}
@@ -422,13 +434,13 @@ export default function CreateRolePage() {
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Optional"
                       rows={3}
-                      className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
+                      className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-xs text-stone-700 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
                     />
                   </div>
 
                   {/* Live summary */}
                   <div className="rounded-lg bg-stone-50 p-3 border border-stone-100">
-                    <p className="text-2xs font-bold uppercase tracking-widest text-stone-400 mb-1.5">
+                    <p className="text-2xs font-bold uppercase tracking-widest text-stone-500 mb-1.5">
                       Summary
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -463,7 +475,7 @@ export default function CreateRolePage() {
                     <h2 className="text-xs font-bold uppercase tracking-widest text-stone-500">
                       Permissions Matrix
                     </h2>
-                    <p className="mt-0.5 text-label text-stone-400">
+                    <p className="mt-0.5 text-label text-stone-500">
                       Click column headers to toggle that action across the
                       module. Click row labels to grant everything.
                     </p>
@@ -528,7 +540,7 @@ export default function CreateRolePage() {
                                 <span className="text-xs font-bold text-stone-700">
                                   {mod.label}
                                 </span>
-                                <span className="text-2xs text-stone-400">
+                                <span className="text-2xs text-stone-500">
                                   {mod.rows.length} resource
                                   {mod.rows.length !== 1 ? "s" : ""}
                                 </span>
@@ -553,7 +565,7 @@ export default function CreateRolePage() {
                               <table className="w-full text-xs">
                                 <thead>
                                   <tr className="border-y border-stone-100 bg-white">
-                                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-400 w-48">
+                                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-500 w-48">
                                       Resource
                                     </th>
                                     {cols.map((action) => {
@@ -583,7 +595,7 @@ export default function CreateRolePage() {
                                               "mx-auto flex items-center justify-center rounded px-2 py-1 text-2xs font-bold uppercase tracking-widest transition",
                                               allHave
                                                 ? "bg-brand/15 text-brand-dark hover:bg-brand/25"
-                                                : "text-stone-400 hover:bg-stone-100 hover:text-stone-700",
+                                                : "text-stone-500 hover:bg-stone-100 hover:text-stone-700",
                                             )}
                                             title={`Toggle ${ACTION_LABELS[action]} for all rows`}
                                           >
@@ -592,7 +604,7 @@ export default function CreateRolePage() {
                                         </th>
                                       );
                                     })}
-                                    <th className="px-3 py-2 text-center text-2xs font-bold uppercase tracking-widest text-stone-400 w-28">
+                                    <th className="px-3 py-2 text-center text-2xs font-bold uppercase tracking-widest text-stone-500 w-28">
                                       Scope
                                     </th>
                                   </tr>
@@ -637,7 +649,7 @@ export default function CreateRolePage() {
                                             <p className="text-xs font-semibold text-stone-700">
                                               {row.label}
                                             </p>
-                                            <p className="text-2xs font-mono text-stone-400">
+                                            <p className="text-2xs font-mono text-stone-500">
                                               {row.resource}
                                             </p>
                                           </button>

@@ -72,7 +72,7 @@ export function RoleWidgetPanel({
 
       {!role.locked && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-2xs text-stone-400">Presets</span>
+          <span className="text-2xs text-stone-500">Presets</span>
           {WIDGET_PRESETS.map((preset) => {
             const active = preset.id === activePresetId;
             return (
@@ -111,7 +111,7 @@ export function RoleWidgetPanel({
                   {WIDGET_CATEGORY_LABELS[category]}
                 </h3>
                 {role.locked ? (
-                  <span className="text-2xs text-stone-400">
+                  <span className="text-2xs text-stone-500">
                     {categoryIds.length}/{categoryIds.length} on
                   </span>
                 ) : (

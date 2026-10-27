@@ -18,7 +18,7 @@ const SUGGESTED_HOWTO = ['What can the assistant help with?', 'How do I create a
 const SUGGESTED_DATA = ['How many leads do I have?', 'How do I convert a prospect to a customer?', 'What deals closed this month?'];
 
 const headerButton =
-  'flex min-h-11 min-w-11 items-center justify-center rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-white/10 dark:hover:text-stone-200 cursor-pointer sm:min-h-0 sm:min-w-0';
+  'flex min-h-11 min-w-11 items-center justify-center rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-white/10 dark:hover:text-stone-200 cursor-pointer sm:min-h-0 sm:min-w-0';
 
 const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 

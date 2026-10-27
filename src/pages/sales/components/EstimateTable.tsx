@@ -184,14 +184,14 @@ export function EstimateTable() {
             placeholder="Search estimate #, customer, PO…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -298,10 +298,10 @@ export function EstimateTable() {
                           <ReadOnlyStatusPill label={est.status} color={ESTIMATE_STATUS_COLORS[est.status]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(est.estimateDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(est.validUntil)}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
@@ -331,7 +331,7 @@ export function EstimateTable() {
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No estimates added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first estimate to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first estimate to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -339,7 +339,7 @@ export function EstimateTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No estimates match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search terms.</p>
                       </div>
                     )}
                   </td>

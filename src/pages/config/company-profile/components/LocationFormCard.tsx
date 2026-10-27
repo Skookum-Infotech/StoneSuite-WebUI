@@ -89,7 +89,7 @@ export function LocationFormCard({
         </div>
 
         <div>
-          <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-400">
+          <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-500">
             <MapPin className="size-3.5" />
             Address
           </h3>

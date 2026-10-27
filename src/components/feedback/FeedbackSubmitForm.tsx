@@ -194,12 +194,12 @@ export function FeedbackSubmitForm({
             {descriptionError ? (
               <p id="feedback-description-error" className="text-xs text-destructive">{descriptionError}</p>
             ) : <span />}
-            <span className="text-xs text-stone-400">{description.length}/{MAX_DESCRIPTION_LENGTH}</span>
+            <span className="text-xs text-stone-500">{description.length}/{MAX_DESCRIPTION_LENGTH}</span>
           </div>
         </div>
 
         <div>
-          <p className={fieldLabelCls}>Screenshot / File <span className="font-normal text-stone-400">(optional)</span></p>
+          <p className={fieldLabelCls}>Screenshot / File <span className="font-normal text-stone-500">(optional)</span></p>
           <div className="mt-1.5">
             <FeedbackAttachmentPicker files={stagedFiles} onFilesChange={setStagedFiles} disabled={submitMutation.isPending} />
           </div>

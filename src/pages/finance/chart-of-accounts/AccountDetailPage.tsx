@@ -206,7 +206,7 @@ export default function AccountDetailPage() {
               <OverviewRow label="Depth" value={account.depth === 0 ? 'Top-level account' : 'Sub-account'} />
               {attributeFields.length > 0 && (
                 <div className="border-t border-stone-100 pt-3 space-y-2">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">Attributes</p>
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Attributes</p>
                   {attributeFields.map((f) => (
                     <OverviewRow key={f.key} label={f.label} value={account.attributes[f.key] || '—'} />
                   ))}
@@ -231,7 +231,7 @@ export default function AccountDetailPage() {
 
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canUpdate && (
                 <button
@@ -268,7 +268,7 @@ export default function AccountDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={statusColor}>{statusLabel}</Badge>

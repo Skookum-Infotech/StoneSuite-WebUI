@@ -81,7 +81,7 @@ export function ArOutstanding({
       </div>
 
       {data.oldest.length === 0 ? (
-        <p className="mt-4 text-xs text-stone-400">Nothing outstanding right now.</p>
+        <p className="mt-4 text-xs text-stone-500">Nothing outstanding right now.</p>
       ) : (
         <>
           <div className="mt-4 flex flex-col divide-y divide-stone-100">

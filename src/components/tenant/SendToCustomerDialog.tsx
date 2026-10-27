@@ -150,7 +150,7 @@ export function SendToCustomerDialog({
             <h3 id="send-to-recipient-dialog-title" className="text-sm font-bold text-stone-900">
               {copy.title}
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">{resend ? 'An email with this order will be sent again.' : 'An email with this order will be sent.'}</p>
+            <p className="text-xs text-stone-500 mt-0.5">{resend ? 'An email with this order will be sent again.' : 'An email with this order will be sent.'}</p>
           </div>
         </div>
 

@@ -18,7 +18,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
 
   if (isLoading) return <div className="flex justify-center py-10"><Spinner label="Loading tickets…" /></div>;
   if (tickets.length === 0) {
-    return <p className="py-10 text-center text-xs italic text-stone-400">No feedback tickets match these filters.</p>;
+    return <p className="py-10 text-center text-xs italic text-stone-500">No feedback tickets match these filters.</p>;
   }
 
   return (
@@ -58,7 +58,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                     {category.label}
                   </span>
                   {ticket.area && (
-                    <span className="mt-0.5 block text-2xs text-stone-400">{feedbackAreaLabel(ticket.area)}</span>
+                    <span className="mt-0.5 block text-2xs text-stone-500">{feedbackAreaLabel(ticket.area)}</span>
                   )}
                 </td>
                 <td className="max-w-72 truncate px-3.5 py-2.5 text-stone-600 dark:text-stone-300" title={ticket.description}>
@@ -79,7 +79,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                     {feedbackStatusLabel(ticket.status)}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-3.5 py-2.5 text-stone-400">{formatFeedbackTime(ticket.createdAt)}</td>
+                <td className="whitespace-nowrap px-3.5 py-2.5 text-stone-500">{formatFeedbackTime(ticket.createdAt)}</td>
               </tr>
             );
           })}

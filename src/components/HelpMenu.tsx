@@ -126,7 +126,7 @@ export function HelpMenu() {
             </span>
             <span>
               <span className="block text-xs font-bold text-stone-200">StoneSuite Assistant</span>
-              <span className="mt-0.5 block text-2xs text-stone-500">
+              <span className="mt-0.5 block text-2xs text-stone-400">
                 Ask about a record, workflow, or how to do something
               </span>
             </span>
@@ -156,7 +156,7 @@ export function HelpMenu() {
                   </span>
                 )}
               </span>
-              <span className="mt-0.5 block text-2xs text-stone-500">
+              <span className="mt-0.5 block text-2xs text-stone-400">
                 Report a bug, request a feature, or track your tickets
               </span>
             </span>

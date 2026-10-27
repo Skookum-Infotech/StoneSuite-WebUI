@@ -96,7 +96,7 @@ export function FabricationJobFormBody({
               'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
               activeTab === tab.key
                 ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+                : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
             )}
           >
             {tab.label}
@@ -182,13 +182,13 @@ export function FabricationJobFormBody({
           {activeTab === 'materials' && (
             isEdit && job
               ? <FabricationMaterialsTab jobId={jobId!} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
-              : <p className="py-8 text-center text-xs text-stone-400">Material allocation will be available after saving the job.</p>
+              : <p className="py-8 text-center text-xs text-stone-500">Material allocation will be available after saving the job.</p>
           )}
 
           {activeTab === 'checklist' && (
             isEdit && job
               ? <FabricationStepsTab jobId={jobId!} steps={job.steps ?? []} canEdit={canEditSteps} />
-              : <p className="py-8 text-center text-xs text-stone-400">The checklist is seeded once the job is saved.</p>
+              : <p className="py-8 text-center text-xs text-stone-500">The checklist is seeded once the job is saved.</p>
           )}
 
           <div className={activeTab === 'files' ? '' : 'hidden'}>

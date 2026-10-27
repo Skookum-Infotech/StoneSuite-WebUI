@@ -102,7 +102,7 @@ function RejectDialogContent<T>({ noun, run, warning, onClose, onRejected }: {
             <h3 id={titleId} className="text-sm font-bold text-stone-900">
               Reject this {noun}?
             </h3>
-            <p className="mt-0.5 text-xs text-stone-400">A reason is required.</p>
+            <p className="mt-0.5 text-xs text-stone-500">A reason is required.</p>
           </div>
         </div>
 

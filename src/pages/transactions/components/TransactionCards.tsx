@@ -36,16 +36,16 @@ export function TransactionCards({ rows }: { rows: TransactionRow[] }) {
 
               <dl className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-xs">
                 <div className="min-w-0">
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-400">Customer / Vendor</dt>
+                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Customer / Vendor</dt>
                   <dd className="truncate font-semibold text-stone-800">{row.account || '—'}</dd>
                 </div>
                 <div className="text-right">
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-400">Amount</dt>
+                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Amount</dt>
                   <dd className="font-bold tabular-nums text-stone-900">{formatAmount(row.amount)}</dd>
                 </div>
               </dl>
 
-              <p className="mt-2.5 text-2xs text-stone-400">
+              <p className="mt-2.5 text-2xs text-stone-500">
                 Updated{' '}
                 <time dateTime={row.updatedAt} title={new Date(row.updatedAt).toLocaleString()}>
                   {relativeTime(row.updatedAt)}

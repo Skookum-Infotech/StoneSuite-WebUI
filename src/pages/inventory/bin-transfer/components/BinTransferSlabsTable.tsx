@@ -70,12 +70,12 @@ export function BinTransferSlabsTable({ lines, pending }: {
                   {l.area.toFixed(2)} {l.areaUnitCode}
                 </td>
                 <td className="px-4 py-3 text-stone-500">
-                  {l.fromBinPath || <span className="text-stone-400">No bin</span>}
+                  {l.fromBinPath || <span className="text-stone-500">No bin</span>}
                 </td>
-                <td className="px-0 py-3 text-stone-300"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
+                <td className="px-0 py-3 text-stone-400"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
                 <td className="px-4 py-3">
                   <span className={cn('font-medium', l.movedAt ? 'text-emerald-700' : 'text-stone-800')}>{l.toBinPath}</span>
-                  {l.toBinName && <span className="block text-2xs text-stone-400">{l.toBinName}</span>}
+                  {l.toBinName && <span className="block text-2xs text-stone-500">{l.toBinName}</span>}
                   {l.movedAt && (
                     <span className="mt-1 flex items-center gap-1 text-2xs font-semibold text-emerald-700">
                       <CheckCircle2 className="size-3" aria-hidden="true" /> Moved

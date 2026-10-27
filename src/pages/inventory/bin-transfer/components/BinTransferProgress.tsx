@@ -5,13 +5,13 @@ import { btProgress, type BtStepState } from '@/lib/binTransferStatus';
 const DOT: Record<BtStepState, string> = {
   done: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
   current: 'bg-amber-100 text-amber-700 ring-amber-300',
-  upcoming: 'bg-white text-stone-400 ring-stone-200',
+  upcoming: 'bg-white text-stone-500 ring-stone-200',
 };
 
 const LABEL: Record<BtStepState, string> = {
   done: 'text-stone-500',
   current: 'font-semibold text-stone-900',
-  upcoming: 'text-stone-400',
+  upcoming: 'text-stone-500',
 };
 
 // Where a transfer is on its way: Draft → Pending Approval → Approved →
@@ -31,7 +31,7 @@ export function BinTransferProgress({ statusCode }: { statusCode: string }) {
             <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-2xs font-semibold ring-1', DOT[step.state])}>
               {step.state === 'done' ? <Check className="size-3.5" aria-hidden="true" /> : i + 1}
             </span>
-            <span className={cn('whitespace-nowrap text-xs', LABEL[step.state], cancelled && 'text-stone-300')}>
+            <span className={cn('whitespace-nowrap text-xs', LABEL[step.state], cancelled && 'text-stone-500')}>
               {step.label}
               <span className="sr-only">{step.state === 'done' ? ' (done)' : step.state === 'current' ? ' (current)' : ''}</span>
             </span>

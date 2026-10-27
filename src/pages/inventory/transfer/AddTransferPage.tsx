@@ -18,6 +18,8 @@ import { useQuery } from '@tanstack/react-query';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import type { TransferLineInput } from '@/types/inventory';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { TransferLinesEditor } from './components/TransferLinesEditor';
 import { emptyTransferLine, type TransferDraftLine } from '@/lib/inventoryTransferLines';
 
@@ -60,6 +62,13 @@ export default function AddTransferPage() {
   const [lines, setLines] = useState<TransferDraftLine[]>([emptyTransferLine()]);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
+  // The default location is derived once the lookups arrive, so the snapshot
+  // waits for them rather than baselining on an empty location.
+  const guard = useUnsavedChangesGuard(
+    { fromWarehouseId, toWarehouseId, toBinId, date, expectedDate, carrier, trackingNumber, notes, lines },
+    Boolean(lookups),
+  );
+
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       const lineInputs = lines.map(toLineInput).filter((l): l is TransferLineInput => l !== null);
@@ -75,6 +84,7 @@ export default function AddTransferPage() {
     onSuccess: () => {
       toast.success('Transfer saved.');
       queryClient.invalidateQueries({ queryKey: ['inventory-transfers'] });
+      guard.markClean();
       navigate('/inventory/transfer');
     },
   });
@@ -92,6 +102,7 @@ export default function AddTransferPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Transfers"

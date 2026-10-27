@@ -22,6 +22,8 @@ import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 // Stable reference so `lineItems`'s fallback doesn't create a new array
 // identity every render (which would defeat the totals useMemo below).
@@ -103,6 +105,14 @@ export default function EditQuotePage() {
     [mapped],
   );
 
+  // Status changes are saved by their own transition mutation the moment they are
+  // picked, so they are excluded from the snapshot — only unsaved form edits count.
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, customer, customFieldValues },
+    Boolean(mapped),
+    inventoryReturn.isRestored,
+  );
+
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
   const { subtotal, discountAmt, taxTotal, total } = useMemo(() => {
@@ -146,6 +156,7 @@ export default function EditQuotePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      guard.markClean();
       navigate(`/sales/quote/${id}`);
     },
   });
@@ -168,11 +179,11 @@ export default function EditQuotePage() {
           subtitle={quote.customer.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-300" aria-hidden="true" />
+          <Lock className="size-8 text-stone-400" aria-hidden="true" />
           <p className="text-sm font-semibold text-stone-700">
             This quote is {quote.status} and can no longer be edited.
           </p>
-          <p className="text-xs text-stone-400">{quote.status} quotes are locked server-side.</p>
+          <p className="text-xs text-stone-500">{quote.status} quotes are locked server-side.</p>
           <button
             type="button"
             onClick={() => navigate(`/sales/quote/${id}`)}
@@ -187,6 +198,7 @@ export default function EditQuotePage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="flex flex-col flex-1 min-h-0"
@@ -224,7 +236,7 @@ export default function EditQuotePage() {
         )}
 
         <InventoryItemReturnContext.Provider
-          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localCustomer, localCustomFields })}
+          value={inventoryReturn.provide({ activeTab, localData, localLineItems, localCustomer, localCustomFields }, guard.markClean)}
         >
           <QuoteFormBody
             activeTab={activeTab}

@@ -62,7 +62,7 @@ function TypeMenu({
           <TypeOption label={ALL_TYPES_LABEL} selected={value === ''} onPick={() => pick('')} />
           {groups.map((g) => (
             <div key={g.domain} role="group" aria-label={g.label}>
-              <p className="px-3.5 pb-1 pt-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-400">{g.label}</p>
+              <p className="px-3.5 pb-1 pt-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">{g.label}</p>
               {g.types.map((t) => (
                 <TypeOption key={t.type} label={t.label} selected={value === t.type} onPick={() => pick(t.type)} />
               ))}
@@ -114,7 +114,7 @@ export function TransactionFilters({
           placeholder="Search by reference, name, or customer/vendor…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 text-xs text-stone-900 transition placeholder:text-stone-400 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40"
+          className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 text-xs text-stone-900 transition placeholder:text-stone-500 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40"
         />
       </div>
 

@@ -29,12 +29,12 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
   return (
     <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-3 space-y-2 mb-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-stone-400">Email history</p>
+        <p className="text-xs font-semibold text-stone-500">Email history</p>
         <button
           type="button"
           onClick={() => void sends.refetch()}
           aria-label="Refresh email history"
-          className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+          className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
         >
           <RefreshCw className={cn('size-3.5', sends.isFetching && 'animate-spin')} />
         </button>
@@ -53,7 +53,7 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
                   <p className="min-w-0 text-xs text-stone-700 break-words">{s.sentTo}</p>
                   <EmailStatusBadge source={s} />
                 </div>
-                <p className="text-2xs text-stone-400 break-words" title={new Date(s.sentAt).toLocaleString()}>
+                <p className="text-2xs text-stone-500 break-words" title={new Date(s.sentAt).toLocaleString()}>
                   {s.cc ? `cc ${s.cc} · ` : ''}
                   {relativeTime(s.sentAt)}
                 </p>

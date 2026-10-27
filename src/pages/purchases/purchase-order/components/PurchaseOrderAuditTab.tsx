@@ -16,11 +16,11 @@ export function PurchaseOrderAuditTab({ purchaseOrderId }: { purchaseOrderId?: s
   });
 
   if (!purchaseOrderId) {
-    return <p className="py-12 text-center text-sm text-stone-400">Audit trail will be available after saving the purchase order.</p>;
+    return <p className="py-12 text-center text-sm text-stone-500">Audit trail will be available after saving the purchase order.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error) return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
-  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-400 italic">No audit events recorded yet.</p>;
+  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
@@ -28,7 +28,7 @@ export function PurchaseOrderAuditTab({ purchaseOrderId }: { purchaseOrderId?: s
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
-              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-400 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -53,12 +53,12 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
         <td className="py-2.5 px-3"><ActionBadge action={entry.action} /></td>
-        <td className="py-2.5 px-3 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-300 italic">system</span>}</td>
-        <td className="py-2.5 px-3 text-stone-400 font-mono text-2xs">{entry.ipAddress || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-400 text-2xs">{entry.appVersion || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-400 text-2xs whitespace-nowrap">
+        <td className="py-2.5 px-3 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="py-2.5 px-3 text-stone-500 font-mono text-2xs">{entry.ipAddress || '—'}</td>
+        <td className="py-2.5 px-3 text-stone-500 text-2xs">{entry.appVersion || '—'}</td>
+        <td className="py-2.5 px-3 text-stone-500 text-2xs whitespace-nowrap">
           {new Date(entry.at).toLocaleString()}
-          {hasChanges && <span className="ml-1.5 text-stone-300">{expanded ? '▲' : '▼'}</span>}
+          {hasChanges && <span className="ml-1.5 text-stone-500">{expanded ? '▲' : '▼'}</span>}
         </td>
       </tr>
       {expanded && hasChanges && (

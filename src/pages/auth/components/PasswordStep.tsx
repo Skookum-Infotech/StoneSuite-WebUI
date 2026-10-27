@@ -66,18 +66,18 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onBack }: Passwo
           type="button"
           onClick={onBack}
           aria-label="Use a different email"
-          className="shrink-0 text-xs font-semibold text-stone-400 underline underline-offset-2 transition-colors hover:text-stone-700"
+          className="shrink-0 text-xs font-semibold text-stone-500 underline underline-offset-2 transition-colors hover:text-stone-700"
         >
           Change
         </button>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+        <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
           Password
         </Label>
         <div className="relative">
-          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
@@ -87,7 +87,7 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onBack }: Passwo
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? 'password-error' : undefined}
             {...register('password')}
-            className="h-12 rounded-xl border-stone-200 bg-white pl-11 pr-11 text-sm text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+            className="h-12 rounded-xl border-stone-200 bg-white pl-11 pr-11 text-sm text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
             style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
           />
           <button
@@ -95,7 +95,7 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onBack }: Passwo
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             aria-pressed={showPassword}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-500 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>

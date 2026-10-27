@@ -127,7 +127,7 @@ export function KpiStrip({
 
   if (metrics.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-stone-400">
+      <div className="rounded-2xl border border-dashed border-stone-300 p-[18px] text-center text-sm text-stone-500">
         No KPI data available for your role.
       </div>
     );

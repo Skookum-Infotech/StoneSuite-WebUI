@@ -5,7 +5,7 @@ import { estimateQuantity, impliedAverage } from '@/lib/slabEstimate';
 import { unitLabel } from '@/lib/unitLabels';
 
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all text-right';
+  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all text-right';
 
 // Shown under a slab line while it is being added or edited. Stone is priced by
 // area but ordered by bundle or lot, so the buyer usually knows "about 12
@@ -67,7 +67,7 @@ export function SlabEstimateRow({ quantity, units, expectedSlabs, onChange }: {
       <p className="self-center text-xs tabular-nums text-stone-700" aria-live="polite">
         {estimate ? `= ${estimate} ${unit}` : ''}
       </p>
-      <p className="basis-full text-2xs text-stone-400">
+      <p className="basis-full text-2xs text-stone-500">
         Optional. Fills in the quantity — you can still type it directly. Slab sizes vary, so the exact area is
         measured when the slabs arrive; expected slabs is only a count to check the delivery against.
       </p>

@@ -96,7 +96,7 @@ function RejectDialogContent({ recordId, workflowKey, onClose, onRejected }: {
             <h3 id="reject-crm-dialog-title" className="text-sm font-bold text-stone-900">
               Reject this record?
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">A reason is required.</p>
+            <p className="text-xs text-stone-500 mt-0.5">A reason is required.</p>
           </div>
         </div>
 

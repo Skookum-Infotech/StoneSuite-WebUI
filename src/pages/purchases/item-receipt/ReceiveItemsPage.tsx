@@ -117,7 +117,7 @@ export default function ReceiveItemsPage() {
   if (!purchaseOrderId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <Inbox className="size-8 text-stone-300" aria-hidden="true" />
+        <Inbox className="size-8 text-stone-400" aria-hidden="true" />
         <p className="text-sm font-semibold text-stone-700">Choose a purchase order to receive against.</p>
         <button
           type="button"
@@ -149,7 +149,7 @@ export default function ReceiveItemsPage() {
           <p className="text-sm font-semibold text-stone-700">
             {po.purchaseOrderNumber} is {po.status} and cannot be received against.
           </p>
-          <p className="text-xs text-stone-400">Only Sent or Partially Received purchase orders can accept a receipt.</p>
+          <p className="text-xs text-stone-500">Only Sent or Partially Received purchase orders can accept a receipt.</p>
           <button
             type="button"
             onClick={() => navigate(`/purchases/purchase_order/${po.id}`)}

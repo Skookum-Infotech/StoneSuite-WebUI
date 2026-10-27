@@ -38,7 +38,7 @@ function fmtDate(iso: string): string {
 const cardCls =
   "rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4";
 const headingCls =
-  "text-xs font-semibold text-stone-400";
+  "text-xs font-semibold text-stone-500";
 const rowCls =
   "flex justify-between items-center py-2 border-b border-stone-100 last:border-0 text-xs";
 const actionRowCls = quickActionRowCls;
@@ -129,12 +129,12 @@ export function CrmDetailSidebar({
           {statusControl ?? (statusInfo ? (
             <Badge color={resolveStatusColor(statusInfo.stateKey, statusInfo.color)}>{statusInfo.statusLabel}</Badge>
           ) : (
-            <span className="text-stone-400">—</span>
+            <span className="text-stone-500">—</span>
           ))}
         </div>
         <div className={rowCls}>
           <span className="text-xs text-stone-500">Account owner</span>
-          <span className={owner ? "text-xs text-stone-700" : "text-xs text-stone-400"}>
+          <span className={owner ? "text-xs text-stone-700" : "text-xs text-stone-500"}>
             {owner?.fullName ?? "—"}
           </span>
         </div>

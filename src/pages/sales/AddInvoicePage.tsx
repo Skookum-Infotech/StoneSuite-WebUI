@@ -16,6 +16,8 @@ import { defaultCountryId, defaultCurrencyId } from '@/lib/lookupDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { InvoiceFormBody } from './components/InvoiceFormBody';
 import {
   invoiceDefaults, toCreatePayload, PAGE_TABS, BILL_TO_FIELDS, SHIP_TO_FIELDS, type PageTab,
@@ -96,9 +98,17 @@ export default function AddInvoicePage() {
     };
   }, [data, lookups]);
 
+  // A draft restored from a return trip is unsaved work from the start, so
+  // leaving it must still prompt.
+  const guard = useUnsavedChangesGuard(
+    { data, lineItems, customer, customFieldValues },
+    true,
+    inventoryReturn.isRestored || customerReturn.isRestored,
+  );
+
   // Shared by both return-trip hooks — either one may stash and restore it.
   const draft: InvoiceDraft = { activeTab, data, lineItems, customer, customFieldValues };
-  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
 
@@ -126,6 +136,7 @@ export default function AddInvoicePage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(invoice.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/invoice');
     },
   });
@@ -133,6 +144,7 @@ export default function AddInvoicePage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Invoices"
@@ -166,7 +178,7 @@ export default function AddInvoicePage() {
           </div>
         )}
 
-        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft)}>
+        <InventoryItemReturnContext.Provider value={inventoryReturn.provide(draft, guard.markClean)}>
           <InvoiceFormBody
             activeTab={activeTab}
             setActiveTab={setActiveTab}

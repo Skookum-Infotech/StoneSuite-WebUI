@@ -87,7 +87,7 @@ function RoleCard({
           <span className={cn('block text-xs font-bold transition-colors', isActive ? 'text-stone-900' : 'text-stone-700 group-hover:text-stone-900')}>
             {role.name}
           </span>
-          <span className="block text-xs text-stone-400 font-mono mt-0.5">{role.key}</span>
+          <span className="block text-xs text-stone-500 font-mono mt-0.5">{role.key}</span>
         </div>
         <div className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5', isActive ? 'border-brand bg-brand' : 'border-stone-300 bg-white group-hover:border-stone-400')}>
           {isActive && <Check className="size-3 text-stone-900" />}
@@ -163,7 +163,7 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
   ).filter(r => r.level !== null)
 
   if (rows.length === 0) {
-    return <p className="text-xs text-stone-400 py-2">No permissions found for this role.</p>
+    return <p className="text-xs text-stone-500 py-2">No permissions found for this role.</p>
   }
 
   return (
@@ -174,7 +174,7 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
             <Check className="size-3.5 text-stone-500" />
           </div>
           <span className="flex-1 text-xs font-medium text-stone-700">{row.label}</span>
-          <span className="text-xs text-stone-400">{row.level!.desc}</span>
+          <span className="text-xs text-stone-500">{row.level!.desc}</span>
           <span className={cn(
             'shrink-0 rounded-full border px-2.5 py-0.5 text-2xs font-bold',
             row.level!.style,
@@ -296,7 +296,7 @@ export default function AccountSettingsPage() {
                 />
                 <div className="flex-1 sm:flex-none sm:text-center min-w-0">
                   <p className="text-xs font-bold text-stone-900 leading-tight truncate">{user?.fullName ?? '—'}</p>
-                  <p className="text-xs text-stone-400 mt-0.5 truncate sm:max-w-[168px]">{user?.email ?? '—'}</p>
+                  <p className="text-xs text-stone-500 mt-0.5 truncate sm:max-w-[168px]">{user?.email ?? '—'}</p>
                 </div>
                 {roles.length > 0 && (
                   <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-2xs font-bold text-brand-dark">
@@ -410,7 +410,7 @@ export default function AccountSettingsPage() {
                         placeholder="Enter your current password"
                         aria-invalid={Boolean(errors.currentPassword)}
                         {...register('currentPassword')}
-                        className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-300"
+                        className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
                       />
                       {errors.currentPassword && <p className="text-xs text-destructive">{errors.currentPassword.message}</p>}
                     </div>
@@ -429,7 +429,7 @@ export default function AccountSettingsPage() {
                           placeholder="Create a strong password"
                           aria-invalid={Boolean(errors.newPassword)}
                           {...register('newPassword')}
-                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-300"
+                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
                         />
                         {errors.newPassword && <p className="text-xs text-destructive">{errors.newPassword.message}</p>}
                         <PasswordStrengthMeter password={newPasswordValue} />
@@ -447,7 +447,7 @@ export default function AccountSettingsPage() {
                           placeholder="Repeat new password"
                           aria-invalid={Boolean(errors.confirmPassword)}
                           {...register('confirmPassword')}
-                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-300"
+                          className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
                         />
                         {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
                       </div>
@@ -507,10 +507,10 @@ export default function AccountSettingsPage() {
                   {roles.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-stone-200 py-12 text-center">
                       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 mb-3">
-                        <Shield className="size-6 text-stone-300" />
+                        <Shield className="size-6 text-stone-400" />
                       </div>
                       <p className="text-xs font-semibold text-stone-500">No roles assigned</p>
-                      <p className="text-xs text-stone-400 mt-1">Contact your workspace administrator to get access.</p>
+                      <p className="text-xs text-stone-500 mt-1">Contact your workspace administrator to get access.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -555,11 +555,11 @@ export default function AccountSettingsPage() {
                       <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 bg-stone-50/60">
                           <p className="text-xs font-bold text-stone-700">Permission Summary</p>
-                          <p className="text-2xs text-stone-400">What your active role can do</p>
+                          <p className="text-2xs text-stone-500">What your active role can do</p>
                         </div>
                         <div className="px-4 py-4">
                           {permissionsLoading ? (
-                            <div className="flex items-center gap-2 py-4 text-xs text-stone-400">
+                            <div className="flex items-center gap-2 py-4 text-xs text-stone-500">
                               <Loader2 className="size-4 animate-spin" />
                               Loading permissions…
                             </div>

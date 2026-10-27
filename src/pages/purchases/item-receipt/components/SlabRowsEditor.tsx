@@ -10,7 +10,7 @@ import { ApplyToAllPanel } from './ApplyToAllPanel';
 import { PackingListPanel } from './PackingListPanel';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 const SERIAL_PENDING_HINT = 'assigned on save';
@@ -90,7 +90,7 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
         <div>
           <p className="text-xs font-semibold text-stone-700">
             Slabs for {itemLabel}
-            <span className="ml-2 font-normal text-stone-400">
+            <span className="ml-2 font-normal text-stone-500">
               {count === 0 ? 'None added — this line is skipped.' : `${count} slab${count === 1 ? '' : 's'}`}
             </span>
           </p>
@@ -177,14 +177,14 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
                           aria-expanded={open}
                           aria-controls={moreId}
                           aria-label={`${open ? 'Hide' : 'Show'} more fields for slab ${n}`}
-                          className="rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+                          className="rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600"
                         >
                           {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                         </button>
                       </td>
                       <td className="px-1.5 py-1.5 align-top font-mono text-2xs text-stone-500">
                         <span className="inline-block py-1" data-testid={`slab-serial-${n}`}>
-                          {serials[i] || <span className="text-stone-300">{SERIAL_PENDING_HINT}</span>}
+                          {serials[i] || <span className="text-stone-500">{SERIAL_PENDING_HINT}</span>}
                         </span>
                       </td>
                       {DIMENSION_COLUMNS.map((c) => (
@@ -210,11 +210,11 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
                       <td className="px-1.5 py-1.5 align-top">
                         <div className="flex justify-end gap-0.5">
                           <button type="button" onClick={() => duplicate(slab)} aria-label={`Duplicate slab ${n}`}
-                            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600">
+                            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600">
                             <Copy className="size-3.5" />
                           </button>
                           <button type="button" onClick={() => remove(slab.key)} aria-label={`Remove slab ${n}`}
-                            className="rounded p-1 text-stone-400 hover:bg-red-50 hover:text-red-600">
+                            className="rounded p-1 text-stone-500 hover:bg-red-50 hover:text-red-600">
                             <Trash2 className="size-3.5" />
                           </button>
                         </div>

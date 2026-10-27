@@ -322,7 +322,7 @@ export default function MainLayout(): React.JSX.Element {
                     <h5 className="text-xs font-bold text-stone-200">
                       {user?.fullName || 'Guest User'}
                     </h5>
-                    <p className="truncate text-2xs text-stone-500 mt-0.5">
+                    <p className="truncate text-2xs text-stone-400 mt-0.5">
                       {user?.email || 'guest@stonesuite.com'}
                     </p>
                   </div>
@@ -331,7 +331,7 @@ export default function MainLayout(): React.JSX.Element {
                       onClick={() => { setOpenMenu(null); navigate('/account/settings'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <Settings className="size-4 text-stone-500" />
+                      <Settings className="size-4 text-stone-400" />
                       <span>Account Settings</span>
                     </button>
                   </div>
@@ -341,14 +341,14 @@ export default function MainLayout(): React.JSX.Element {
                       onClick={() => { setOpenMenu(null); navigate('/transactions'); }}
                       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer"
                     >
-                      <CreditCard className="size-4 text-stone-500" />
+                      <CreditCard className="size-4 text-stone-400" />
                       <span>My Transactions</span>
                     </button>
                   </div>
                   <div className="h-px bg-white/[0.08] my-1" />
                   {isCustomer ? (
                     <div className="py-1">
-                      <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
                         Workspaces
                       </div>
                       {workspaces.length > 0 ? (
@@ -366,9 +366,9 @@ export default function MainLayout(): React.JSX.Element {
                                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Building2 className="size-4 text-stone-500 flex-shrink-0" />
+                                  <Building2 className="size-4 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="flex-1 truncate">{w.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
@@ -377,7 +377,7 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 text-2xs text-stone-500">
+                        <div className="px-3 py-2 text-2xs text-stone-400">
                           No workspaces
                         </div>
                       )}
@@ -389,7 +389,7 @@ export default function MainLayout(): React.JSX.Element {
                     </div>
                   ) : (
                     <div className="py-1">
-                      <div className="px-3 py-2 text-2xs font-bold text-stone-500 uppercase tracking-wide">
+                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
                         Roles
                       </div>
                       {roles.length > 0 ? (
@@ -407,9 +407,9 @@ export default function MainLayout(): React.JSX.Element {
                                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-400 hover:bg-white/[0.06] hover:text-stone-200 transition-colors text-left cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 {isSwitching ? (
-                                  <Loader2 className="size-4 text-stone-500 flex-shrink-0 animate-spin" />
+                                  <Loader2 className="size-4 text-stone-400 flex-shrink-0 animate-spin" />
                                 ) : (
-                                  <Shield className="size-4 text-stone-500 flex-shrink-0" />
+                                  <Shield className="size-4 text-stone-400 flex-shrink-0" />
                                 )}
                                 <span className="flex-1">{role.name}</span>
                                 {isActive && <Check className="size-4 text-brand flex-shrink-0" />}
@@ -418,7 +418,7 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 text-2xs text-stone-500">
+                        <div className="px-3 py-2 text-2xs text-stone-400">
                           No roles assigned
                         </div>
                       )}
@@ -474,7 +474,7 @@ export default function MainLayout(): React.JSX.Element {
           {pathSegments.length > 0 && (
             <nav
               aria-label="Breadcrumb"
-              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs xl:text-xs font-semibold text-stone-400"
+              className="flex flex-wrap items-center gap-1.5 px-4 pt-3 pb-1 sm:px-6 sm:pt-4 3xl:px-12 3xl:pt-5 4xl:px-16 text-2xs xl:text-xs font-semibold text-stone-500"
             >
               <span
                 className="cursor-pointer hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
@@ -490,7 +490,7 @@ export default function MainLayout(): React.JSX.Element {
                 const isClickable = !isLast && isRegisteredPath(routes, url);
                 return (
                   <React.Fragment key={segment}>
-                    <ChevronRight className="size-3 xl:size-3.5 text-stone-300 shrink-0" />
+                    <ChevronRight className="size-3 xl:size-3.5 text-stone-400 shrink-0" />
                     <span
                       onClick={() => { if (isClickable) navigate(url); }}
                       className={cn(
@@ -499,7 +499,7 @@ export default function MainLayout(): React.JSX.Element {
                           ? 'text-stone-600 dark:text-stone-300 font-bold'
                           : isClickable
                             ? 'cursor-pointer hover:text-stone-600 dark:hover:text-stone-200'
-                            : 'text-stone-400',
+                            : 'text-stone-500',
                       )}
                     >
                       {breadcrumbLabels[segment] ?? formatBreadcrumbSegment(segment)}

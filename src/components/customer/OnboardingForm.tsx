@@ -7,6 +7,8 @@ import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { defaultCountryName } from '@/lib/lookupDefaults';
 import { countryOptions, currencyOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupOptions';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { OnboardingSelectField } from './OnboardingSelectField';
 import {
   ALL_BASE_FIELDS,
@@ -19,7 +21,7 @@ import type { FieldDefinition } from '@/types/tenant';
 import { cn } from '@/lib/utils';
 
 const inputCls =
-  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-300 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
+  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
 
 export function OnboardingForm({
   prefill,
@@ -40,6 +42,9 @@ export function OnboardingForm({
   }));
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
   const [validationError, setValidationError] = useState<string | null>(null);
+  // A successful submit replaces this form with a confirmation screen, which
+  // unmounts it (and so its navigation block); a failed one keeps it armed.
+  const guard = useUnsavedChangesGuard(data);
 
   const schemaQ = useQuery({ queryKey: ['onboarding-form-schema'], queryFn: onboardingService.formSchema });
   const extras = useMemo<FieldDefinition[]>(
@@ -153,6 +158,8 @@ export function OnboardingForm({
   }
 
   return (
+    <>
+    <UnsavedChangesPrompt guard={guard} />
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
       {bannerMessage && (
@@ -227,5 +234,6 @@ export function OnboardingForm({
         </button>
       </div>
     </form>
+    </>
   );
 }

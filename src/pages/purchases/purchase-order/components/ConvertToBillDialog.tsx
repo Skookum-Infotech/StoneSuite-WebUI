@@ -46,7 +46,7 @@ export function ConvertToBillDialog({ purchaseOrder, lines, onClose, onConverted
             <h3 id="convert-to-bill-title" className="text-sm font-bold text-stone-900">
               Create a vendor bill?
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">From {purchaseOrder.number}</p>
+            <p className="text-xs text-stone-500 mt-0.5">From {purchaseOrder.number}</p>
           </div>
         </div>
 

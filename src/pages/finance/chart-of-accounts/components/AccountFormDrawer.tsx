@@ -205,13 +205,13 @@ export function AccountFormDrawer({
                     ? `New Account under ${initialPlacementLabel}`
                     : 'New Account'}
             </h2>
-            {isEdit && account && <p className="text-2xs text-stone-400 font-mono mt-0.5">{account.code}</p>}
+            {isEdit && account && <p className="text-2xs text-stone-500 font-mono mt-0.5">{account.code}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-4" />
           </button>

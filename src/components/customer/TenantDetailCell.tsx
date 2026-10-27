@@ -10,9 +10,9 @@ type Props = {
 export function TenantDetailCell({ label, value, mono = false, dimmed = false }: Props) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5 bg-white px-4 py-3">
-      <span className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</span>
+      <span className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</span>
       <span
-        className={cn('truncate text-xs', mono ? 'font-mono' : 'font-medium', dimmed ? 'text-stone-300' : 'text-stone-700')}
+        className={cn('truncate text-xs', mono ? 'font-mono' : 'font-medium', dimmed ? 'text-stone-500' : 'text-stone-700')}
         title={value}
       >
         {value}

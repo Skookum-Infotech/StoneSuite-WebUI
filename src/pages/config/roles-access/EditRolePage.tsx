@@ -13,6 +13,8 @@ import { SCOPES, SCOPE_LABELS } from "@/lib/scope";
 import { buildPermModules } from "@/lib/permissionMatrix";
 import type { PermModule, ResourceRow } from "@/lib/permissionMatrix";
 import { isDuplicateRoleName } from "@/lib/roleValidation";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { UnsavedChangesPrompt } from "@/components/UnsavedChangesPrompt";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import type { Grant, Role, Scope } from "@/types/tenant";
 
@@ -262,6 +264,8 @@ function EditRoleInner({
     });
   }
 
+  const guard = useUnsavedChangesGuard({ name, description, selected });
+
   const update = useMutation({
     mutationFn: () => {
       const permissions: Grant[] = [];
@@ -285,6 +289,7 @@ function EditRoleInner({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["roles"] });
+      guard.markClean();
       navigate("/config/roles");
     },
   });
@@ -301,6 +306,7 @@ function EditRoleInner({
 
   return (
     <div className="flex flex-1 flex-col min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       {/* Top bar */}
       <div className="flex items-center justify-between gap-4 border-b border-stone-200 bg-white px-6 py-3">
         <div className="flex items-center gap-4 min-w-0">
@@ -372,11 +378,11 @@ function EditRoleInner({
                       Key
                     </Label>
                     <div className="flex h-9 items-center rounded-md border border-stone-100 bg-stone-50 px-2.5">
-                      <span className="text-xs font-mono text-stone-400">
+                      <span className="text-xs font-mono text-stone-500">
                         {role.key}
                       </span>
                     </div>
-                    <p className="text-2xs text-stone-400">
+                    <p className="text-2xs text-stone-500">
                       Key cannot be changed after creation.
                     </p>
                   </div>
@@ -394,12 +400,12 @@ function EditRoleInner({
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Optional"
                       rows={3}
-                      className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-xs text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
+                      className="w-full rounded-md border border-stone-200 px-2.5 py-1.5 text-xs text-stone-700 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
                     />
                   </div>
 
                   <div className="rounded-lg bg-stone-50 p-3 border border-stone-100">
-                    <p className="text-2xs font-bold uppercase tracking-widest text-stone-400 mb-1.5">
+                    <p className="text-2xs font-bold uppercase tracking-widest text-stone-500 mb-1.5">
                       Summary
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -433,7 +439,7 @@ function EditRoleInner({
                     <h2 className="text-xs font-bold uppercase tracking-widest text-stone-500">
                       Permissions Matrix
                     </h2>
-                    <p className="mt-0.5 text-label text-stone-400">
+                    <p className="mt-0.5 text-label text-stone-500">
                       Click column headers to toggle that action across the
                       module. Click row labels to grant everything.
                     </p>
@@ -479,7 +485,7 @@ function EditRoleInner({
                               <span className="text-xs font-bold text-stone-700">
                                 {mod.label}
                               </span>
-                              <span className="text-2xs text-stone-400">
+                              <span className="text-2xs text-stone-500">
                                 {mod.rows.length} resource
                                 {mod.rows.length !== 1 ? "s" : ""}
                               </span>
@@ -503,7 +509,7 @@ function EditRoleInner({
                             <table className="w-full text-xs">
                               <thead>
                                 <tr className="border-y border-stone-100 bg-white">
-                                  <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-400 w-48">
+                                  <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-500 w-48">
                                     Resource
                                   </th>
                                   {cols.map((action) => {
@@ -531,7 +537,7 @@ function EditRoleInner({
                                             "mx-auto flex items-center justify-center rounded px-2 py-1 text-2xs font-bold uppercase tracking-widest transition",
                                             allHave
                                               ? "bg-brand/15 text-brand-dark hover:bg-brand/25"
-                                              : "text-stone-400 hover:bg-stone-100 hover:text-stone-700",
+                                              : "text-stone-500 hover:bg-stone-100 hover:text-stone-700",
                                           )}
                                           title={`Toggle ${ACTION_LABELS[action]} for all rows`}
                                         >
@@ -540,7 +546,7 @@ function EditRoleInner({
                                       </th>
                                     );
                                   })}
-                                  <th className="px-3 py-2 text-center text-2xs font-bold uppercase tracking-widest text-stone-400 w-28">
+                                  <th className="px-3 py-2 text-center text-2xs font-bold uppercase tracking-widest text-stone-500 w-28">
                                     Scope
                                   </th>
                                 </tr>
@@ -583,7 +589,7 @@ function EditRoleInner({
                                           <p className="text-xs font-semibold text-stone-700">
                                             {row.label}
                                           </p>
-                                          <p className="text-2xs font-mono text-stone-400">
+                                          <p className="text-2xs font-mono text-stone-500">
                                             {row.resource}
                                           </p>
                                         </button>

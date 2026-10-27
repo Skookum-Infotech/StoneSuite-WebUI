@@ -83,7 +83,7 @@ export function KitTable() {
             aria-label="Search kit/packages"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
         {term && (
@@ -173,7 +173,7 @@ export function KitTable() {
                       <p className="text-sm font-semibold text-stone-700">
                         {debounced ? 'No kit/packages match the current search.' : 'No kit/packages added yet.'}
                       </p>
-                      <p className="text-xs text-stone-400">
+                      <p className="text-xs text-stone-500">
                         {debounced
                           ? 'Try a different name.'
                           : 'A kit/package is a named group of items sold together, like “Kitchen”. Add your first with New Kit/Package.'}

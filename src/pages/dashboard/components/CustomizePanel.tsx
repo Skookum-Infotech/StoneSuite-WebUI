@@ -39,14 +39,14 @@ export function CustomizePanel({
             type="button"
             onClick={onClose}
             aria-label="Close customize panel"
-            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
         </div>
 
         {widgets.length === 0 ? (
-          <p className="text-xs text-stone-400">Your admin hasn&apos;t allocated any widgets to you yet.</p>
+          <p className="text-xs text-stone-500">Your admin hasn&apos;t allocated any widgets to you yet.</p>
         ) : (
           <div className="max-h-[60vh] space-y-1 overflow-y-auto modal-scrollbar">
             {widgets.map((w) => {

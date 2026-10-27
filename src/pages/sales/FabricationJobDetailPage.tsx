@@ -307,7 +307,7 @@ export default function FabricationJobDetailPage() {
 
         <SalesDetailSidebar label="Job Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -345,13 +345,13 @@ export default function FabricationJobDetailPage() {
 
           {canEdit && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Status Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Status Actions</p>
               <FabricationHoldResumeControl job={job} onChanged={applyUpdatedJob} />
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <FabricationStatusControl
@@ -383,7 +383,7 @@ export default function FabricationJobDetailPage() {
 
           {canEdit && canCancel(job.statusCode) && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Cancel</p>
+              <p className="text-xs font-semibold text-stone-500">Cancel</p>
               <CancelFabricationJobDialog job={job} onCancelled={applyUpdatedJob} />
             </div>
           )}
@@ -410,7 +410,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

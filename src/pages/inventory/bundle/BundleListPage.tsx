@@ -72,11 +72,11 @@ export default function BundleListPage() {
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {bundles.length === 0 ? (
-                    <tr><td colSpan={6} className="py-12 text-center text-stone-400">No bundles yet.</td></tr>
+                    <tr><td colSpan={6} className="py-12 text-center text-stone-500">No bundles yet.</td></tr>
                   ) : bundles.map((b) => (
                     <tr key={b.id} className="hover:bg-accent/10 transition-colors cursor-pointer" onClick={() => navigate(`/inventory/bundle/${b.id}`)}>
                       <td className="px-4 py-3.5 font-mono font-semibold text-stone-900">{b.code}</td>
-                      <td className="px-4 py-3.5 text-stone-700 truncate max-w-[180px]">{b.inventoryItemName || <span className="text-stone-400">Unadopted</span>}</td>
+                      <td className="px-4 py-3.5 text-stone-700 truncate max-w-[180px]">{b.inventoryItemName || <span className="text-stone-500">Unadopted</span>}</td>
                       <td className="px-4 py-3.5"><Badge color={STATUS_COLORS[b.status] ?? '#a8a29e'}>{b.status}</Badge></td>
                       <td className="px-4 py-3.5 tabular-nums text-right text-stone-700">{b.memberCount}</td>
                       <td className="px-4 py-3.5 tabular-nums text-right text-stone-700">{b.totalArea.toFixed(2)}</td>

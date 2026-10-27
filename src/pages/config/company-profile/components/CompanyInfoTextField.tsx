@@ -72,7 +72,7 @@ export function CompanyInfoReadonlyField({ field, value }: { field: CompanyInfoF
     )}>
       <label className={fieldLabelCls}>{field.label}</label>
       <div className={readonlyCls}>
-        {value || <span className="text-stone-400">—</span>}
+        {value || <span className="text-stone-500">—</span>}
       </div>
     </div>
   );

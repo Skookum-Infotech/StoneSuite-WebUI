@@ -60,7 +60,7 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
             <h3 id="apply-vendor-payment-dialog-title" className="text-sm font-bold text-stone-900">
               Apply to vendor bill
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Unapplied balance: {currency(payment.unappliedAmount)}
             </p>
           </div>
@@ -96,7 +96,7 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
               aria-label="Application amount"
             />
             {bill && (
-              <p className="mt-1 text-2xs text-stone-400">
+              <p className="mt-1 text-2xs text-stone-500">
                 At most {currency(cap)} — the smaller of this payment's unapplied balance and the bill's balance due.
               </p>
             )}

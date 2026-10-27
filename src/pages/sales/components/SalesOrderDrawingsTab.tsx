@@ -13,7 +13,7 @@ import {
 // mirrors the pre-existing mocked behavior, not a regression.
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 const DRAWING_TYPES: DrawingType[] = ['floor_plan', 'elevation', 'section', 'detail', 'fabrication', 'installation', 'shop_drawing', 'as_built', 'other'];
 const DRAWING_STATUSES: DrawingStatus[] = ['draft', 'pending_review', 'approved', 'rejected'];
@@ -59,7 +59,7 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
           <Upload className="h-4.5 w-4.5 text-stone-400 group-hover:text-stone-600 transition-colors" />
         </div>
         <p className="text-xs font-medium text-stone-600 mb-1">Drop drawing files here or click to browse</p>
-        <p className="text-2xs text-stone-400">PDF, DWG, DXF, PNG, JPG · CAD files, shop drawings, templates</p>
+        <p className="text-2xs text-stone-500">PDF, DWG, DXF, PNG, JPG · CAD files, shop drawings, templates</p>
       </div>
 
       {/* Add form */}
@@ -123,7 +123,7 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
                     <td className="px-2 py-2"><input type="text" value={draft.revision} onChange={(e) => setDraft((p) => ({ ...p, revision: e.target.value }))} className={cn(inlineCls, 'w-20')} aria-label="Revision" /></td>
                     <td className="px-2 py-2"><select value={draft.status} onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value as DrawingStatus }))} className={cn(inlineCls, 'w-28')} aria-label="Status">{DRAWING_STATUSES.map((s) => <option key={s} value={s}>{DRAWING_STATUS_CONFIG[s].label}</option>)}</select></td>
                     <td className="px-2 py-2"><input type="text" value={draft.notes} onChange={(e) => setDraft((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes…" className={cn(inlineCls, 'min-w-[100px]')} aria-label="Notes" /></td>
-                    <td className="px-3 py-2 text-stone-400 text-2xs whitespace-nowrap">{new Date(d.uploadedAt).toLocaleDateString()}</td>
+                    <td className="px-3 py-2 text-stone-500 text-2xs whitespace-nowrap">{new Date(d.uploadedAt).toLocaleDateString()}</td>
                     <td className="px-2 py-2">
                       <div className="flex gap-1">
                         <button type="button" onClick={commitEdit} className="rounded bg-brand px-2 py-1 text-2xs font-semibold text-stone-900 hover:bg-brand-hover transition-colors">Save</button>
@@ -148,10 +148,10 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
                         {DRAWING_STATUS_CONFIG[d.status].label}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-stone-500 max-w-[160px] truncate">{d.notes || <span className="text-stone-300">—</span>}</td>
-                    <td className="px-3 py-2.5 text-stone-400 text-2xs whitespace-nowrap">{new Date(d.uploadedAt).toLocaleDateString()}</td>
+                    <td className="px-3 py-2.5 text-stone-500 max-w-[160px] truncate">{d.notes || <span className="text-stone-500">—</span>}</td>
+                    <td className="px-3 py-2.5 text-stone-500 text-2xs whitespace-nowrap">{new Date(d.uploadedAt).toLocaleDateString()}</td>
                     <td className="px-2 py-2.5 opacity-0 group-hover:opacity-100">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); remove(d.id); }} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove drawing">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); remove(d.id); }} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove drawing">
                         <Trash2 className="size-3.5" />
                       </button>
                     </td>
@@ -163,7 +163,7 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
         </div>
       )}
       {!drawings.length && !isAdding && (
-        <p className="py-2 text-center text-xs text-stone-400 italic">No drawings attached yet.</p>
+        <p className="py-2 text-center text-xs text-stone-500 italic">No drawings attached yet.</p>
       )}
       {!isAdding && (
         <button type="button" onClick={openAdd} className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors">

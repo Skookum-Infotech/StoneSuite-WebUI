@@ -74,7 +74,7 @@ export default function CountListPage() {
 
         <div className="mt-5 relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
+          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
         </div>
 
         {isError && <p className="mt-3 text-xs text-red-500">{apiErrorMessage(error, 'Failed to load counts.')}</p>}
@@ -93,7 +93,7 @@ export default function CountListPage() {
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-stone-400">Loading…</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((c) => (
                   <tr key={c.id} className="hover:bg-accent/10 transition-colors cursor-pointer" onClick={() => navigate(`/inventory/count/${c.id}`)}>
                     <td className="px-4 py-3.5 font-mono font-semibold text-stone-900">{c.number || '—'}</td>
@@ -103,7 +103,7 @@ export default function CountListPage() {
                     <td className="px-4 py-3.5 text-right tabular-nums text-stone-700">{c.countedCount}/{c.lineCount}</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={5} className="py-16 text-center text-stone-400">No counts yet.</td></tr>
+                  <tr><td colSpan={5} className="py-16 text-center text-stone-500">No counts yet.</td></tr>
                 )}
               </tbody>
             </table>

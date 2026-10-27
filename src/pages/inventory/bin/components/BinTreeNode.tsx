@@ -57,7 +57,7 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
           >
             {bin.name}
           </button>
-          <span className="ml-1.5 font-mono text-2xs text-stone-400">{bin.code}</span>
+          <span className="ml-1.5 font-mono text-2xs text-stone-500">{bin.code}</span>
         </span>
         <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-500 capitalize">{bin.type}</span>
         {bin.unitCount > 0 && (
@@ -65,16 +65,16 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
             {bin.unitCount}{bin.overCapacity ? ' · over capacity' : ''}
           </span>
         )}
-        {!bin.isActive && <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-400">Inactive</span>}
+        {!bin.isActive && <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-500">Inactive</span>}
         {canEdit && (
           <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button type="button" onClick={() => onAddChild(bin)} aria-label={`Add child bin under ${bin.name}`} title="Add child bin" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
+            <button type="button" onClick={() => onAddChild(bin)} aria-label={`Add child bin under ${bin.name}`} title="Add child bin" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700">
               <Plus className="size-3.5" />
             </button>
-            <button type="button" onClick={() => onEdit(bin)} aria-label={`Edit ${bin.name}`} title="Edit bin" className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
+            <button type="button" onClick={() => onEdit(bin)} aria-label={`Edit ${bin.name}`} title="Edit bin" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700">
               <Pencil className="size-3.5" />
             </button>
-            <button type="button" onClick={() => onDelete(bin)} aria-label={`Delete ${bin.name}`} title="Delete bin" className="rounded p-1 text-stone-400 hover:bg-destructive/10 hover:text-destructive">
+            <button type="button" onClick={() => onDelete(bin)} aria-label={`Delete ${bin.name}`} title="Delete bin" className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-destructive">
               <Trash2 className="size-3.5" />
             </button>
           </div>
