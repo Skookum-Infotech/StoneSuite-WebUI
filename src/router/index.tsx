@@ -122,6 +122,9 @@ const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
 const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
+const AnomaliesPage = lazyWithRetry(
+  () => import("@/pages/anomalies/AnomaliesPage"),
+);
 const SubscriptionPage = lazyWithRetry(
   () => import("@/pages/subscription/SubscriptionPage"),
 );
@@ -424,6 +427,10 @@ export const router = createBrowserRouter([
       // Open to every signed-in user, customer-portal sessions included (see
       // CUSTOMER_ALLOWED_PATH_PREFIXES), so deliberately no PermissionGuard.
       { path: "support", element: lazy_(<SupportPage />) },
+      // Staff only (customer sessions are bounced by CUSTOMER_ALLOWED_PATH_PREFIXES)
+      // and deliberately no PermissionGuard: the server addresses each finding to
+      // specific people and returns only theirs, so there is no RBAC resource.
+      { path: "anomalies", element: lazy_(<AnomaliesPage />) },
       {
         path: "subscription",
         element: lazy_(

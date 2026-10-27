@@ -50,6 +50,7 @@ import {
   LifeBuoy,
   MessageSquareText,
   Upload,
+  ShieldAlert,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -143,6 +144,18 @@ export const sidebarNav: SidebarNavConfig = {
       iconColor: "text-indigo-500 dark:text-indigo-400",
       // The landing route for every signed-in user; it has no single backing
       // resource and each widget gates its own data server-side.
+      alwaysVisible: true,
+    },
+    {
+      type: "link",
+      id: "anomalies",
+      label: "Anomalies",
+      path: "/anomalies",
+      icon: ShieldAlert,
+      iconColor: "text-rose-500 dark:text-rose-400",
+      // Open to every signed-in staff user: the API returns only the findings
+      // addressed to the caller (all of them for a super admin), so the page is
+      // empty for most people and there is no role-editor row for it.
       alwaysVisible: true,
     },
   ],
