@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { authService } from '@/services/authService'
 import { MFA_CODE_LENGTH, MFA_ERROR, mfaErrorInfo } from '@/lib/mfa'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Switch } from '@/components/ui/switch'
 import type { MfaCodeSent } from '@/types/auth'
 import { DisableTwoStepDialog } from './DisableTwoStepDialog'
 import { EnableTwoStepDialog } from './EnableTwoStepDialog'
@@ -107,50 +107,28 @@ export function TwoStepVerificationCard() {
           </p>
         ) : (
           <div className="space-y-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-bold text-stone-900">Email code at sign-in</p>
-                  <span
-                    className={cn(
-                      'rounded-full border px-2 py-0.5 text-2xs font-bold',
-                      status.data.enabled
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : 'border-stone-200 bg-stone-100 text-stone-500',
-                    )}
-                  >
-                    {status.data.enabled ? 'On' : 'Off'}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-stone-500">
+                <p id="two-step-label" className="text-xs font-bold text-stone-900">Email code at sign-in</p>
+                <p id="two-step-hint" className="mt-1 text-xs text-stone-500">
                   {status.data.enabled
                     ? `After your password, we email a ${MFA_CODE_LENGTH}-digit code to ${status.data.maskedEmail}.`
                     : `Turn it on and signing in will also need a ${MFA_CODE_LENGTH}-digit code we email to ${status.data.maskedEmail}.`}
                 </p>
               </div>
 
-              {status.data.enabled ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialog({ kind: 'disable' })}
-                  aria-label="Turn off two-step verification"
-                  className="h-9 shrink-0 rounded-lg px-4 text-xs font-semibold"
-                >
-                  Turn off
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={() => startEnable.mutate()}
+              <div className="flex shrink-0 items-center gap-2">
+                {startEnable.isPending && <Loader2 className="size-4 animate-spin text-stone-400" aria-hidden="true" />}
+                {/* Controlled by the saved setting: it flips only once the code
+                    (to turn on) or password (to turn off) has been accepted. */}
+                <Switch
+                  checked={status.data.enabled}
                   disabled={startEnable.isPending}
-                  aria-label="Turn on two-step verification"
-                  className="h-9 shrink-0 rounded-lg bg-brand px-4 text-xs font-semibold text-stone-950 hover:bg-brand-hover"
-                >
-                  {startEnable.isPending && <Loader2 className="mr-1.5 size-3 animate-spin" aria-hidden="true" />}
-                  Turn on
-                </Button>
-              )}
+                  onCheckedChange={(next) => (next ? startEnable.mutate() : setDialog({ kind: 'disable' }))}
+                  aria-labelledby="two-step-label"
+                  aria-describedby="two-step-hint"
+                />
+              </div>
             </div>
 
             {startError && (
