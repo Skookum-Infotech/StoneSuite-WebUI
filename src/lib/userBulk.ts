@@ -5,7 +5,7 @@ import type { MfaChangeResult, WorkspaceUser } from '@/types/tenant'
 
 export type BulkAction = 'mfa-on' | 'mfa-off' | 'suspend' | 'restore'
 
-export type SkipReason = 'self' | 'deactivated' | 'sso' | 'already'
+export type SkipReason = 'self' | 'deactivated' | 'sso' | 'already' | 'super_admin'
 
 export interface BulkPlan {
   targets: WorkspaceUser[]
@@ -27,6 +27,7 @@ export const SKIP_LABEL: Record<SkipReason, string> = {
   deactivated: 'deactivated',
   sso: 'single sign-on',
   already: 'already that way',
+  super_admin: 'super admin',
 }
 
 const DONE_LABEL: Record<BulkAction, string> = {
@@ -38,6 +39,11 @@ const DONE_LABEL: Record<BulkAction, string> = {
 
 export const BULK_MFA_ACTIONS: readonly BulkAction[] = ['mfa-on', 'mfa-off']
 
+// The role key the backend gives the workspace's super admins.
+export const SUPER_ADMIN_ROLE_KEY = 'super_admin'
+
+export const isSuperAdminUser = (u: WorkspaceUser): boolean => u.roles.some((r) => r.key === SUPER_ADMIN_ROLE_KEY)
+
 export const displayName = (u: WorkspaceUser): string => u.fullName || u.email
 
 export const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`
@@ -45,10 +51,18 @@ export const plural = (n: number, one: string, many: string): string => `${n} ${
 // Who an action applies to. You are never a target (your own two-step goes
 // through Account Settings, and suspending yourself locks you out), nor is a
 // deactivated account; the rest depend on the action.
-export function planBulk(action: BulkAction, users: WorkspaceUser[], selfIdentityId: string | undefined): BulkPlan {
+// Only a super admin may change another super admin (the server enforces it
+// too), so for anyone else a super admin is never a target.
+export function planBulk(
+  action: BulkAction,
+  users: WorkspaceUser[],
+  selfIdentityId: string | undefined,
+  canChangeSuperAdmins = true,
+): BulkPlan {
   const plan: BulkPlan = { targets: [], skipped: [] }
   for (const user of users) {
-    const reason = skipReason(action, user, selfIdentityId)
+    const reason =
+      !canChangeSuperAdmins && isSuperAdminUser(user) ? 'super_admin' : skipReason(action, user, selfIdentityId)
     if (reason) plan.skipped.push({ user, reason })
     else plan.targets.push(user)
   }

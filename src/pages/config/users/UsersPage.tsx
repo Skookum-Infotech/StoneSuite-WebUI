@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useIdSelection } from "@/hooks/useIdSelection";
+import { isSuperAdminUser } from "@/lib/userBulk";
 import { MemberRow } from "./components/MemberRow";
 import { BulkConfigPanel } from "./components/BulkConfigPanel";
 import { SelectionStrip } from "./components/SelectionStrip";
@@ -53,10 +54,19 @@ export default function UsersPage() {
     [invitesQ.data],
   );
 
-  // You and deactivated accounts can't be bulk-changed, so they get no checkbox.
+  // You, deactivated accounts, and (unless you are one) super admins can't be
+  // bulk-changed, so they get no checkbox.
   const selectableIds = useMemo(
-    () => users.filter((u) => u.status !== "disabled" && u.identityId !== selfIdentityId).map((u) => u.id),
-    [users, selfIdentityId],
+    () =>
+      users
+        .filter(
+          (u) =>
+            u.status !== "disabled" &&
+            u.identityId !== selfIdentityId &&
+            (isSuperAdmin || !isSuperAdminUser(u)),
+        )
+        .map((u) => u.id),
+    [users, selfIdentityId, isSuperAdmin],
   );
   const selection = useIdSelection(selectableIds);
   const selectedUsers = useMemo(

@@ -60,12 +60,12 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
 
   const plans = useMemo(
     () => ({
-      "mfa-on": planBulk("mfa-on", users, selfIdentityId),
-      "mfa-off": planBulk("mfa-off", users, selfIdentityId),
-      suspend: planBulk("suspend", users, selfIdentityId),
-      restore: planBulk("restore", users, selfIdentityId),
+      "mfa-on": planBulk("mfa-on", users, selfIdentityId, isSuperAdmin),
+      "mfa-off": planBulk("mfa-off", users, selfIdentityId, isSuperAdmin),
+      suspend: planBulk("suspend", users, selfIdentityId, isSuperAdmin),
+      restore: planBulk("restore", users, selfIdentityId, isSuperAdmin),
     }),
-    [users, selfIdentityId],
+    [users, selfIdentityId, isSuperAdmin],
   );
 
   const run = useMutation({

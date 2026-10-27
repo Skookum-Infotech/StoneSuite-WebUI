@@ -71,6 +71,7 @@ beforeEach(() => {
     member('a'),
     member('b', { mfaEnabled: true }),
     member('gone', { status: 'disabled' }),
+    member('boss', { roles: [{ id: 'r1', key: 'super_admin', name: 'Super Admin' }] }),
   ])
   permissions()
 })
@@ -129,7 +130,7 @@ describe('UsersPage — picking several members', () => {
 
     await user.click(await screen.findByRole('checkbox', { name: 'Select all members' }))
 
-    expect(screen.getByText('2 selected')).toBeInTheDocument()
+    expect(screen.getByText('3 selected')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Select A' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Select B' })).toBeChecked()
   })
@@ -150,6 +151,28 @@ describe('UsersPage — picking several members', () => {
 
     expect(screen.getByRole('button', { name: 'Suspend access for 1 selected' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /two-step/ })).not.toBeInTheDocument()
+  })
+
+  it('lets a super admin tick another super admin', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('checkbox', { name: 'Select BOSS' })).toBeInTheDocument()
+  })
+
+  it('shows a super admin to someone else but read-only: no checkbox, no actions', async () => {
+    permissions({ isSuperAdmin: false, canUpdate: true })
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByRole('checkbox', { name: 'Select A' })
+    expect(screen.queryByRole('checkbox', { name: 'Select BOSS' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Open BOSS' }))
+
+    expect(await screen.findByText('Only a super admin can change another super admin.')).toBeInTheDocument()
+    expect(screen.queryByText('Suspend access')).not.toBeInTheDocument()
+    expect(screen.queryByText('Edit display name')).not.toBeInTheDocument()
+    expect(screen.queryByText('Deactivate account')).not.toBeInTheDocument()
   })
 
   it('offers no selection to someone who cannot change users', async () => {

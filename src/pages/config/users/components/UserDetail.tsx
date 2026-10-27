@@ -7,6 +7,7 @@ import { ErrorNote } from "@/components/tenant/ui";
 import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { WorkspaceUser } from "@/types/tenant";
+import { isSuperAdminUser } from "@/lib/userBulk";
 import { initials, avatarColor, fmtDate } from "../userHelpers";
 import { StatusBadge } from "./StatusBadge";
 import { ManageUserRoles } from "./ManageUserRoles";
@@ -19,7 +20,9 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
-  const canEdit = permissionsLoading || hasPermission("user", "update");
+  // Anyone who can read users sees super admins, but only a super admin may change one.
+  const locked = !isSuperAdmin && isSuperAdminUser(user);
+  const canEdit = !locked && (permissionsLoading || hasPermission("user", "update"));
 
   const suspendMut = useMutation({
     mutationFn: () =>
@@ -90,7 +93,16 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
       )}
 
       {/* Actions */}
-      {user.status !== "disabled" && (
+      {locked && user.status !== "disabled" && (
+        <p
+          role="note"
+          className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-stone-600"
+        >
+          Only a super admin can change another super admin.
+        </p>
+      )}
+
+      {user.status !== "disabled" && !locked && (
         <div className="space-y-2">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
             Actions

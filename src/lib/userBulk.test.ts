@@ -89,6 +89,20 @@ describe('planBulk', () => {
   })
 })
 
+describe('planBulk — super admins', () => {
+  const sa = user('sa', { roles: [{ id: 'r', key: 'super_admin', name: 'Super Admin' }] })
+
+  it('lets a super admin change another super admin', () => {
+    expect(idsOf(planBulk('suspend', [sa], ME, true).targets)).toEqual(['sa'])
+  })
+
+  it('never targets a super admin for anyone else', () => {
+    const plan = planBulk('suspend', [sa, user('a')], ME, false)
+    expect(idsOf(plan.targets)).toEqual(['a'])
+    expect(plan.skipped.map((s) => [s.user.id, s.reason])).toEqual([['sa', 'super_admin']])
+  })
+})
+
 describe('skippedSummary', () => {
   it('is empty when nothing was skipped', () => {
     expect(skippedSummary([])).toBe('')

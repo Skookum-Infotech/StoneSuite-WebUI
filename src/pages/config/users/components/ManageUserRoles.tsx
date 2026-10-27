@@ -7,6 +7,7 @@ import { ErrorNote } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
+import { SUPER_ADMIN_ROLE_KEY, isSuperAdminUser } from "@/lib/userBulk";
 import type { WorkspaceUser } from "@/types/tenant";
 
 export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
@@ -16,13 +17,17 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
   // Assigning/removing a role is enforced server-side as role:update (see
   // RBACOps.UserRoles in the backend) — not a user-resource permission.
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
-  const canManageRoles = permissionsLoading || hasPermission("role", "update");
+  const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
+  // A super admin's roles, and the super admin role itself, are for super admins only.
+  const canManageRoles =
+    (permissionsLoading || hasPermission("role", "update")) && (isSuperAdmin || !isSuperAdminUser(user));
 
   const rolesQ = useQuery({ queryKey: ["roles"], queryFn: rbacService.listRoles });
 
   const assignedIds = new Set(user.roles.map((r) => r.id));
-  const availableRoles = (rolesQ.data ?? []).filter((r) => !assignedIds.has(r.id));
+  const availableRoles = (rolesQ.data ?? []).filter(
+    (r) => !assignedIds.has(r.id) && (isSuperAdmin || r.key !== SUPER_ADMIN_ROLE_KEY),
+  );
 
   const assignMut = useMutation({
     mutationFn: (roleId: string) => userService.assignRole(user.id, roleId),
