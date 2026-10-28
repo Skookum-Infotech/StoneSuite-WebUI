@@ -6,6 +6,7 @@ import {
   CloudUpload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { crmService, type AuditEntry } from '@/services/crmService';
 import { attachmentService, type Attachment } from '@/services/attachmentService';
 import { Spinner } from '@/components/tenant/ui';
@@ -97,22 +98,19 @@ export function CrmSubTabsPanel({ tabs, readOnly = true, recordId, workflowKey }
 
   return (
     <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex border-b border-stone-100 px-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActive(tab.key)}
-            className={cn(
-              'px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors duration-150',
-              active === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex border-b border-stone-200 px-3 py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActive(tab.key)}
+              className={tabClass(active === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="px-5 py-4">

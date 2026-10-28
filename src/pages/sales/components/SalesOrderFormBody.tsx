@@ -1,6 +1,7 @@
 import type { Ref, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
@@ -72,27 +73,24 @@ export function SalesOrderFormBody({
   return (
     <>
       {/* Page-level tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-            {tab.key === 'drawings' && drawings.length > 0 && (
-              <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-2xs font-bold text-stone-500 tabular-nums">
-                {drawings.length}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+              {tab.key === 'drawings' && drawings.length > 0 && (
+                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-2xs font-bold text-stone-500 tabular-nums">
+                  {drawings.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable content */}
