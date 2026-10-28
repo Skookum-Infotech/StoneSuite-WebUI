@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarClock, Loader2, AlertCircle } from 'lucide-react';
@@ -75,7 +76,7 @@ export function CalendarSetupCard() {
 
       <div className="space-y-4">
         <ModernFieldShell label="Fiscal year start month" required>
-          <select
+          <Select
             value={startMonth}
             onChange={(e) => setStartMonth(Number(e.target.value))}
             className={fieldCls}
@@ -84,7 +85,7 @@ export function CalendarSetupCard() {
             {MONTH_NAMES.map((label, i) => (
               <option key={label} value={i + 1}>{label}</option>
             ))}
-          </select>
+          </Select>
         </ModernFieldShell>
 
         <ModernFieldShell label="Base period (go-live month)" required>

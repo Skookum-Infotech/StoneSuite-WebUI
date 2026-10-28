@@ -6,7 +6,7 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { defaultCountryName } from '@/lib/lookupDefaults';
-import { countryOptions, currencyOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupOptions';
+import { countryOptions, currencyOptions, stateOptionsForCountry, timezoneOptions } from '@/lib/companyInfoLookupOptions';
 import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { OnboardingSelectField } from './OnboardingSelectField';
@@ -140,6 +140,18 @@ export function OnboardingForm({
           onChange={(v) => set(f.key, v)}
           options={currencyOptions(lookupsQ.data?.currencies, str(f.key))}
           placeholder={f.placeholder ?? 'Select a currency'}
+          className={inputCls}
+        />
+      );
+    }
+    if (f.type === 'timezone') {
+      return (
+        <OnboardingSelectField
+          label={f.label}
+          value={str(f.key)}
+          onChange={(v) => set(f.key, v)}
+          options={timezoneOptions(str(f.key))}
+          placeholder={f.placeholder ?? 'Select a timezone'}
           className={inputCls}
         />
       );

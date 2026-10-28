@@ -1,4 +1,5 @@
 import type {
+  Anomaly,
   AnomalyScanResult,
   AnomalyFilter,
   AnomalyListParams,
@@ -141,6 +142,49 @@ export function reviewActions(status: AnomalyStatus): ReviewAction[] {
       return [{ to: 'open', label: 'Reopen' }];
   }
 }
+
+const SEVERITY_RANK: Record<AnomalySeverity, number> = { critical: 0, warning: 1, info: 2 };
+
+/** Criticals first, then warnings, then info; newest detection first inside
+ *  each band. Reorders only the page in hand — the server still pages by date. */
+export function sortAnomalies(items: ReadonlyArray<Anomaly>): Anomaly[] {
+  return [...items].sort((a, b) => {
+    const bySeverity = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
+    if (bySeverity !== 0) return bySeverity;
+    return Date.parse(b.detectedAt) - Date.parse(a.detectedAt);
+  });
+}
+
+export type AnomalySeverityFilter = AnomalySeverity | 'all';
+
+export const ANOMALY_SEVERITY_FILTERS: ReadonlyArray<{ value: AnomalySeverityFilter; label: string }> = [
+  { value: 'all', label: 'Any' },
+  { value: 'critical', label: 'Critical' },
+  { value: 'warning', label: 'Warning' },
+  { value: 'info', label: 'Info' },
+];
+
+/** Dot colour for each severity chip. */
+export const ANOMALY_SEVERITY_DOT_CLASSES: Record<AnomalySeverityFilter, string> = {
+  all: 'bg-stone-900',
+  critical: 'bg-red-500',
+  warning: 'bg-amber-500',
+  info: 'bg-sky-500',
+};
+
+/** Narrow a page of findings to one severity ('all' keeps everything). */
+export function filterBySeverity(items: ReadonlyArray<Anomaly>, severity: AnomalySeverityFilter): Anomaly[] {
+  return severity === 'all' ? [...items] : items.filter((a) => a.severity === severity);
+}
+
+/** Dot colour shown on each status chip. */
+export const ANOMALY_FILTER_DOT_CLASSES: Record<AnomalyFilter, string> = {
+  open: 'bg-red-500',
+  confirmed: 'bg-orange-500',
+  reviewed: 'bg-emerald-500',
+  dismissed: 'bg-stone-400',
+  all: 'bg-stone-900',
+};
 
 /** Query params for a list request: 'all' and an empty cursor are omitted. */
 export function buildAnomalyParams(filter: AnomalyFilter, cursor: string): AnomalyListParams {

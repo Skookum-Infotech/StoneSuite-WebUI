@@ -8,7 +8,7 @@ import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { parseCoaError } from '@/lib/coaErrors';
 import { attrFieldsFor, ACCOUNT_NUMBER_LAST4_KEY } from '@/lib/coaAttributes';
 import { placementLabel, placementOf } from '@/lib/coaPlacement';
@@ -163,26 +163,23 @@ export default function AccountDetailPage() {
         statusBadge={<Badge color={statusColor}>{statusLabel}</Badge>}
       />
 
-      <div role="tablist" aria-label="Account detail" className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            id={`account-tab-${tab.key}`}
-            aria-selected={activeTab === tab.key}
-            aria-controls={`account-tabpanel-${tab.key}`}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" aria-label="Account detail" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              id={`account-tab-${tab.key}`}
+              aria-selected={activeTab === tab.key}
+              aria-controls={`account-tabpanel-${tab.key}`}
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">

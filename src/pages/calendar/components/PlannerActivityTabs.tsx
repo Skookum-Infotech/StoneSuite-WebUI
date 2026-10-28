@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { PLANNER_PANEL_ID, plannerTabId } from '@/lib/plannerCalendar';
@@ -60,7 +61,7 @@ export function PlannerActivityTabs({ activities, activeKey, onSelect }: {
       <div
         role="tablist"
         aria-label="Activity"
-        className="flex w-max min-w-full items-end gap-1 border-b border-stone-300 pt-1"
+        className={cn(TAB_LIST_CLASS, "w-max")}
       >
         {activities.map((activity, index) => {
           const selected = activity.key === activeKey;
@@ -78,13 +79,7 @@ export function PlannerActivityTabs({ activities, activeKey, onSelect }: {
               tabIndex={selected ? 0 : -1}
               onClick={() => onSelect(activity.key)}
               onKeyDown={(event) => handleKeyDown(event, index)}
-              className={cn(
-                'shrink-0 whitespace-nowrap rounded-t-lg border border-b-0 px-4 text-sm font-semibold outline-none transition-colors duration-150',
-                'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50',
-                selected
-                  ? '-mb-px border-b border-stone-300 border-b-background bg-background py-2.5 text-stone-950 shadow-[inset_0_3px_0_0_var(--color-brand-dark)]'
-                  : 'border-stone-200 bg-stone-200/60 py-2 text-stone-600 hover:bg-stone-200 hover:text-stone-800',
-              )}
+              className={tabClass(selected)}
             >
               {activity.label}
             </button>

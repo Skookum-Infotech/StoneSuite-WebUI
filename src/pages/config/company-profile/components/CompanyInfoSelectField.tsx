@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 import { fieldCls, fieldErrorCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
@@ -14,10 +15,11 @@ function renderOption(o: SelectOption) {
 // (see lib/companyInfoLookupOptions.ts). Options carrying a `group` render
 // under an <optgroup> (the long timezone list).
 export function CompanyInfoSelectField({
-  field, registration, error, options,
+  field, registration, value, error, options,
 }: {
   field: CompanyInfoFieldSpec;
   registration: UseFormRegisterReturn;
+  value: string;
   error?: string;
   options: SelectOption[];
 }) {
@@ -41,20 +43,22 @@ export function CompanyInfoSelectField({
       </label>
       <div className="relative">
         {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400 z-10" />}
-        <select
+        <Select
           id={field.id}
           aria-label={field.label}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
           className={cn(error ? fieldErrorCls : fieldCls, Icon && 'pl-9')}
-          {...registration}
+          name={registration.name}
+          value={value}
+          onChange={registration.onChange}
         >
           <option value="">{field.placeholder}</option>
           {ungrouped.map(renderOption)}
           {groups.map(([group, items]) => (
             <optgroup key={group} label={group}>{items.map(renderOption)}</optgroup>
           ))}
-        </select>
+        </Select>
       </div>
       {error && <p id={errorId} className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

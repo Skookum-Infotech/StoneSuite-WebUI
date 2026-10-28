@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Anomaly, AnomalyPage } from '@/types/anomaly';
@@ -52,7 +52,7 @@ describe('AnomaliesPage', () => {
     renderPage();
     expect(await screen.findByText('Possible duplicate vendor bill VBIL-000002')).toBeInTheDocument();
     expect(anomalyService.list).toHaveBeenCalledWith({ limit: 25, status: 'open' });
-    expect(screen.getByText('Warning')).toBeInTheDocument();
+    expect(within(screen.getByRole('list', { name: 'Anomalies' })).getByText('Warning')).toBeInTheDocument();
   });
 
   it('shows an empty message when nothing is open', async () => {
@@ -92,6 +92,24 @@ describe('AnomaliesPage', () => {
     expect(anomalyService.list).toHaveBeenCalledWith({ limit: 25, status: 'open', cursor: 'CURSOR-2' });
     await userEvent.click(screen.getByRole('button', { name: 'Previous page' }));
     await waitFor(() => expect(anomalyService.list).toHaveBeenLastCalledWith({ limit: 25, status: 'open' }));
+  });
+
+  it('lists criticals first and narrows by severity chip', async () => {
+    vi.mocked(anomalyService.list).mockResolvedValue(
+      page([
+        anomaly({ id: 'w', title: 'Warn one', severity: 'warning', detectedAt: '2026-10-27T10:00:00Z' }),
+        anomaly({ id: 'c', title: 'Crit one', severity: 'critical', detectedAt: '2026-10-20T10:00:00Z' }),
+      ]),
+    );
+    renderPage();
+    await screen.findByText('Crit one');
+    const titles = screen.getAllByRole('listitem').map((li) => li.textContent ?? '');
+    expect(titles.findIndex((t) => t.includes('Crit one'))).toBeLessThan(
+      titles.findIndex((t) => t.includes('Warn one')),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Warning' }));
+    expect(screen.queryByText('Crit one')).not.toBeInTheDocument();
+    expect(screen.getByText('Warn one')).toBeInTheDocument();
   });
 
   it('reports a load failure', async () => {

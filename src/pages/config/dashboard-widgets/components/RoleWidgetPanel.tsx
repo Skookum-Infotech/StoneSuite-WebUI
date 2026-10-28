@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toggleIds, resolvePresetWidgetIds, matchingPresetId } from '@/lib/dashboardWidgets';
@@ -44,7 +45,7 @@ export function RoleWidgetPanel({
         {!role.locked && otherEditableRoles.length > 0 && (
           <label className="flex items-center gap-1.5 text-2xs text-stone-500">
             Copy from
-            <select
+            <Select
               aria-label={`Copy widget allocation into ${role.name} from another role`}
               value=""
               onChange={(e) => {
@@ -58,7 +59,7 @@ export function RoleWidgetPanel({
                   {r.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         )}
       </div>

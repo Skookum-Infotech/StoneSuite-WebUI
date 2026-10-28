@@ -1,6 +1,7 @@
+import { Select } from '@/components/ui/select';
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Send, X, Loader2, Copy, Check, MailWarning, Users } from "lucide-react";
@@ -49,6 +50,7 @@ export function InviteModal({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<InviteFields>({ resolver: zodResolver(inviteSchema) });
 
@@ -183,18 +185,26 @@ export function InviteModal({
               Initial role{" "}
               <span className="text-stone-500 font-normal">(optional)</span>
             </Label>
-            <select
-              id="invite-role"
-              {...register("initialRoleId")}
-              className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
-            >
-              <option value="">No role assigned</option>
-              {(rolesQ.data ?? []).map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+            <Controller
+              control={control}
+              name="initialRoleId"
+              render={({ field }) => (
+                <Select
+                  id="invite-role"
+                  name={field.name}
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+                >
+                  <option value="">No role assigned</option>
+                  {(rolesQ.data ?? []).map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            />
           </div>
 
           {submitError?.kind === "conflict" ? (

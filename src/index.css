@@ -181,6 +181,8 @@
   --ring: #c2f589;                /* decorative focus glow — brand lime (1.26:1 on white, so never the only indicator) */
   --focus-ring: #1c1917;          /* keyboard focus outline on light surfaces (stone-950, ≥3:1) */
   --focus-ring-on-dark: #ffffff;  /* same, inside the dark app header */
+  --field-focus-border: #8fb82a;  /* text-field focus: olive-lime border */
+  --field-focus-ring: #c9f24a;    /* text-field focus: inner lime band (see "Text-field focus" rule) */
 
   /* ── App header gradient ────────────────────────────────────────────────
      Dark teal-to-navy gradient used by the top navigation bar.
@@ -397,4 +399,27 @@
 
 header :focus-visible:not([tabindex='-1']) {
   outline-color: var(--focus-ring-on-dark);
+}
+
+/* ── Text-field focus: inner lime ring ───────────────────────────────────────
+   One highlighter for every typed-into field and dropdown trigger: an olive-lime
+   border with a 3px lime band drawn INSIDE it (inset box-shadow), so the field's
+   footprint never grows. Unlayered, so it beats the per-component focus:ring-*
+   utilities (~180 files) without editing each one. Left alone on purpose: invalid
+   fields (keep their destructive ring), the dark app header (its own white
+   outline), and inputs nested in a focus-within wrapper (the wrapper draws it). */
+:where(input, textarea, select, [role='combobox'], [contenteditable='true']):focus-visible:not(
+    [type='checkbox'],
+    [type='radio'],
+    [type='range'],
+    [type='file'],
+    [type='color'],
+    [aria-invalid='true'],
+    [tabindex='-1'],
+    header *,
+    [class*='focus-within'] *
+  ) {
+  outline: none;
+  border-color: var(--field-focus-border);
+  box-shadow: inset 0 0 0 3px var(--field-focus-ring);
 }

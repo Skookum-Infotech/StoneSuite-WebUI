@@ -1,3 +1,4 @@
+import { chooseOpenOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -67,10 +68,10 @@ describe('TransactionsPagination', () => {
     const { onPageSize } = setup({ pageSize: 25 });
 
     const select = screen.getByRole('combobox', { name: /rows per page/i });
-    expect(select).toHaveValue('25');
-    expect(Array.from((select as HTMLSelectElement).options).map((o) => o.value)).toEqual(['10', '25', '50', '100']);
-
-    await user.selectOptions(select, '50');
+    expect(select).toHaveAttribute('data-value', '25');
+    await user.click(select);
+    expect(screen.getAllByRole('option').map((o) => o.getAttribute('data-value'))).toEqual(['10', '25', '50', '100']);
+    await chooseOpenOption('50');
     expect(onPageSize).toHaveBeenCalledWith(50);
   });
 

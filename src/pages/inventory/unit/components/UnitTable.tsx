@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -118,14 +119,14 @@ export function UnitTable() {
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
           <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
         </div>
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
+        <Select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
           {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <select value={kind} onChange={(e) => { setKind(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by kind" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
+        </Select>
+        <Select value={kind} onChange={(e) => { setKind(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by kind" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
           <option value="">Any kind</option>
           <option value="slab">Slab</option>
           <option value="remnant">Remnant</option>
-        </select>
+        </Select>
         {hasFilters && (
           <button onClick={clearFilters} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors">
             <X className="size-3" /> Clear

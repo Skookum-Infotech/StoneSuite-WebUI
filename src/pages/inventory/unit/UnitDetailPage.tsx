@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2, CheckCircle2, X } from 'lucide-react';
@@ -166,12 +167,14 @@ export default function UnitDetailPage() {
         </div>
       )}
 
-      <div className="flex shrink-0 overflow-x-auto border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((t) => (
-          <button key={t.key} type="button" onClick={() => setActiveTab(t.key)} className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${activeTab === t.key ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
+      <div className="flex shrink-0 overflow-x-auto border-b border-stone-200 bg-white px-5 py-2.5 3xl:px-12 4xl:px-16 modal-scrollbar">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((t) => (
+          <button key={t.key} type="button" onClick={() => setActiveTab(t.key)} className={tabClass(activeTab === t.key)}>
             {t.label}
           </button>
         ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">

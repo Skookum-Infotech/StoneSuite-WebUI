@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -92,7 +93,7 @@ describe('AddBinTransferPage', () => {
     renderPage();
 
     await addFirstSlab(user);
-    await user.selectOptions(
+    await pickOption(
       await screen.findByRole('combobox', { name: 'Destination bin for SLB-000231' }), 'bin-b2');
     await user.click(screen.getAllByRole('button', { name: 'Save Draft' })[0]);
 
@@ -157,11 +158,11 @@ describe('AddBinTransferPage', () => {
     await user.click(within(dialog).getByRole('checkbox', { name: 'Select SLB-000232' }));
     await user.click(within(dialog).getByRole('button', { name: 'Add 2 slabs' }));
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Move all slabs to bin' }), 'bin-b2');
+    await pickOption(screen.getByRole('combobox', { name: 'Move all slabs to bin' }), 'bin-b2');
     await user.click(screen.getByRole('button', { name: 'Apply to all' }));
 
-    expect(screen.getByRole('combobox', { name: 'Destination bin for SLB-000231' })).toHaveValue('bin-b2');
-    expect(screen.getByRole('combobox', { name: 'Destination bin for SLB-000232' })).toHaveValue('bin-b2');
+    expect(screen.getByRole('combobox', { name: 'Destination bin for SLB-000231' })).toHaveAttribute('data-value', 'bin-b2');
+    expect(screen.getByRole('combobox', { name: 'Destination bin for SLB-000232' })).toHaveAttribute('data-value', 'bin-b2');
   });
 
   it('shows a slab that is already on the transfer as added rather than hiding it', async () => {

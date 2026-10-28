@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -623,7 +624,7 @@ function EditRoleInner({
                                         );
                                       })}
                                       <td className="px-3 py-2.5">
-                                        <select
+                                        <Select
                                           aria-label={`Scope for ${row.label}`}
                                           value={scope}
                                           disabled={!hasAny}
@@ -646,7 +647,7 @@ function EditRoleInner({
                                               {SCOPE_LABELS[s]}
                                             </option>
                                           ))}
-                                        </select>
+                                        </Select>
                                       </td>
                                     </tr>
                                   );
