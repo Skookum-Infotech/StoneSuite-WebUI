@@ -137,11 +137,11 @@ export default function EditItemReceiptPage() {
           subtitle={ir.vendor.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <Lock className="size-8 text-stone-300" aria-hidden="true" />
+          <Lock className="size-8 text-stone-400" aria-hidden="true" />
           <p className="text-sm font-semibold text-stone-700">
             This item receipt is {irStatusLabel(ir.statusCode)} and can no longer be edited.
           </p>
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-stone-500">
             {ir.statusCode === 'VOID'
               ? 'A voided receipt is terminal.'
               : 'Void and reissue a new receipt to make changes — a posted receipt is immutable.'}

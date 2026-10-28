@@ -107,7 +107,7 @@ export function PeriodStatusDialog({ period, target, onClose }: {
             <h3 id="period-status-dialog-title" className="text-sm font-bold text-stone-900">
               {title}
             </h3>
-            <p className="mt-0.5 text-xs text-stone-400">
+            <p className="mt-0.5 text-xs text-stone-500">
               {closing ? TARGET_HINTS[target].closing : TARGET_HINTS[target].reopening}
             </p>
           </div>

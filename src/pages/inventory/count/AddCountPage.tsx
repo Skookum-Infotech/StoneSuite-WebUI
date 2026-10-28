@@ -14,6 +14,8 @@ import { BinPicker } from '@/components/inventory/BinPicker';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryBinService } from '@/services/inventoryBinService';
 
@@ -27,6 +29,10 @@ export default function AddCountPage() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  // The default location is derived once the lookups arrive, so the snapshot
+  // waits for them rather than baselining on an empty location.
+  const guard = useUnsavedChangesGuard({ warehouseId, binId, date, notes }, Boolean(lookups));
 
   const { data: bins = [] } = useQuery({
     queryKey: ['inventory-bins-tree', warehouseId],
@@ -48,6 +54,7 @@ export default function AddCountPage() {
     onSuccess: (count) => {
       toast.success('Count created.');
       queryClient.invalidateQueries({ queryKey: ['inventory-counts'] });
+      guard.markClean();
       navigate(`/inventory/count/${count.id}`);
     },
   });
@@ -62,6 +69,7 @@ export default function AddCountPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Counts"

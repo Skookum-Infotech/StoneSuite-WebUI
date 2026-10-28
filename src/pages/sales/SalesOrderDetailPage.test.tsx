@@ -31,6 +31,9 @@ vi.mock('@/components/tenant/DocumentSendHistory', () => ({ DocumentSendHistory:
 vi.mock('./components/SalesOrderInventoryTab', () => ({ SalesOrderInventoryTab: () => null }));
 vi.mock('./components/SalesOrderAuditTab', () => ({ SalesOrderAuditTab: () => null }));
 vi.mock('./components/SalesOrderStatusControl', () => ({ SalesOrderStatusControl: () => null }));
+vi.mock('@/components/tenant/RecordCommunicationTab', () => ({
+  RecordCommunicationTab: ({ recordId }: { recordId: string }) => <div>Communication tab for {recordId}</div>,
+}));
 vi.mock('./components/SalesOrderSchedulingTab', () => ({
   SalesOrderSchedulingTab: ({ orderId }: { orderId: string }) => <div>Scheduling tab for {orderId}</div>,
 }));
@@ -160,6 +163,22 @@ describe('SalesOrderDetailPage ?tab=', () => {
     expect(rows.findIndex((r) => r === 'Kit Kitchen')).toBeGreaterThan(rows.findIndex((r) => r.includes('Loose Slab')));
     // Read-only here: a heading you cannot remove from the detail page.
     expect(screen.queryByRole('button', { name: /Remove kit Kitchen/ })).not.toBeInTheDocument();
+  });
+
+  it('opens the Communication tab when the link asks for it', async () => {
+    renderPage('?tab=communication');
+
+    expect(await screen.findByText('Communication tab for so-1')).toBeInTheDocument();
+    expect(screen.queryByText('Primary Information')).toBeNull();
+  });
+
+  it('never opens the staff-only Communication tab for a customer session', async () => {
+    vi.mocked(isPortalSession).mockReturnValue(true);
+    renderPage('?tab=communication');
+
+    expect(await screen.findByText('Primary Information')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Communication' })).toBeNull();
+    expect(screen.queryByText('Communication tab for so-1')).toBeNull();
   });
 
   it('never opens the staff-only Scheduling tab for a customer session', async () => {

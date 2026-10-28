@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countryOptions, currencyOptions, stateOptionsForCountry } from './companyInfoLookupOptions';
+import { countryOptions, currencyOptions, stateOptionsForCountry, timezoneOptions } from './companyInfoLookupOptions';
 import type { CrmLookups } from '@/services/lookupService';
 
 function lookups(overrides: Partial<CrmLookups> = {}): CrmLookups {
@@ -105,5 +105,43 @@ describe('stateOptionsForCountry', () => {
   it('does not duplicate the current value when it already matches a filtered option', () => {
     const result = stateOptionsForCountry(lookups(), 'United States', 'Texas');
     expect(result.filter((o) => o.value === 'Texas')).toHaveLength(1);
+  });
+});
+
+describe('timezoneOptions', () => {
+  // Fixed instant: Asia/Kolkata has no DST, America/Chicago is on CST (UTC-06:00) in January.
+  const JANUARY = new Date('2026-01-15T12:00:00Z');
+
+  it('offers IANA zones grouped by region with the UTC offset in the label', () => {
+    const options = timezoneOptions('', JANUARY);
+    const kolkata = options.find((o) => o.value === 'Asia/Kolkata');
+    expect(kolkata).toEqual({ value: 'Asia/Kolkata', label: 'Asia/Kolkata (UTC+05:30)', group: 'Asia' });
+    const chicago = options.find((o) => o.value === 'America/Chicago');
+    expect(chicago?.label).toBe('America/Chicago (UTC-06:00)');
+    expect(chicago?.group).toBe('America');
+  });
+
+  it('always includes UTC, with the zero offset spelled out', () => {
+    const utc = timezoneOptions('', JANUARY).find((o) => o.value === 'UTC');
+    expect(utc?.label).toBe('UTC (UTC+00:00)');
+    expect(utc?.group).toBe('Other');
+  });
+
+  it('lists renamed zones under their current IANA name, not the legacy alias', () => {
+    const values = timezoneOptions('', JANUARY).map((o) => o.value);
+    expect(values).not.toContain('Asia/Calcutta');
+    expect(values).not.toContain('Europe/Kiev');
+    expect(values).toContain('Europe/Kyiv');
+  });
+
+  it('keeps an unrecognised saved value selectable instead of dropping it', () => {
+    const options = timezoneOptions('08:00–18:00', JANUARY);
+    expect(options[0]).toEqual({ value: '08:00–18:00', label: '08:00–18:00 (current)' });
+  });
+
+  it('does not duplicate a saved value that is already a valid zone', () => {
+    const options = timezoneOptions('Asia/Kolkata', JANUARY);
+    expect(options.filter((o) => o.value === 'Asia/Kolkata')).toHaveLength(1);
+    expect(options.some((o) => o.label.endsWith('(current)'))).toBe(false);
   });
 });

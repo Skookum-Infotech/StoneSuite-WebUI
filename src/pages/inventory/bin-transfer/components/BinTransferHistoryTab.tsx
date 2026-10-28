@@ -45,7 +45,7 @@ export function BinTransferHistoryTab({ transferId }: { transferId: string }) {
   if (isLoading) return <Spinner label="Loading history…" />;
   if (error) return <ErrorNote>{apiErrorMessage(error, 'Failed to load history.')}</ErrorNote>;
   if (data.length === 0) {
-    return <p className="rounded-xl border border-stone-200 bg-white py-10 text-center text-sm text-stone-400">No history recorded yet.</p>;
+    return <p className="rounded-xl border border-stone-200 bg-white py-10 text-center text-sm text-stone-500">No history recorded yet.</p>;
   }
 
   return (
@@ -58,7 +58,7 @@ export function BinTransferHistoryTab({ transferId }: { transferId: string }) {
           </span>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-stone-800">{describe(e)}</p>
-            <p className="text-2xs text-stone-400">{fmtDateTime(e.at)} · {e.byName}</p>
+            <p className="text-2xs text-stone-500">{fmtDateTime(e.at)} · {e.byName}</p>
           </div>
         </li>
       ))}

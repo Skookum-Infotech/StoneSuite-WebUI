@@ -104,7 +104,7 @@ export const AssistantInput = forwardRef(function AssistantInput(
       {bytes >= COUNTER_THRESHOLD_BYTES && (
         <p
           id="assistant-question-length"
-          className={cn('mt-1 text-right text-2xs', tooLong ? 'text-destructive' : 'text-stone-400')}
+          className={cn('mt-1 text-right text-2xs', tooLong ? 'text-destructive' : 'text-stone-500')}
         >
           {tooLong ? 'Too long — please shorten your question. ' : ''}
           {bytes} / {MAX_QUESTION_BYTES}

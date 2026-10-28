@@ -17,6 +17,8 @@ import { type SalesOrderRef } from './components/SalesOrderPicker';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useCustomerRef } from '@/hooks/useCustomerRef';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { CreditMemoFormBody } from './components/CreditMemoFormBody';
 import { LeaveCreditMemoDialog } from './components/LeaveCreditMemoDialog';
 import {
@@ -144,8 +146,16 @@ export default function AddCreditMemoPage() {
     [data.amount, headerTaxPercent, adjustment],
   );
 
+  // A restored or payment-prefilled memo is unsaved work from the start, so
+  // leaving it must still prompt.
+  const guard = useUnsavedChangesGuard(
+    { data, customer, invoice, salesOrder, sourcePayment, customFieldValues },
+    true,
+    customerReturn.isRestored || Boolean(paymentHandoff),
+  );
+
   const draft: CreditMemoDraft = { activeTab, data, customer, invoice, salesOrder, sourcePayment, customFieldValues };
-  const { startCreate: startCreateCustomer } = customerReturn.provide(draft);
+  const { startCreate: startCreateCustomer } = customerReturn.provide(draft, guard.markClean);
 
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -172,6 +182,7 @@ export default function AddCreditMemoPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(creditMemo.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate(`/sales/credit_memo/${creditMemo.id}`);
     },
   });
@@ -187,11 +198,14 @@ export default function AddCreditMemoPage() {
     else navigate(CREDIT_MEMO_LIST_PATH);
   }
   function leave() {
+    // The payment dialog already confirmed, so the guard must not ask again.
+    guard.markClean();
     navigate(paymentHandoff ? `/sales/payment/${encodeURIComponent(paymentHandoff.payment.id)}` : CREDIT_MEMO_LIST_PATH);
   }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Credit Memos"

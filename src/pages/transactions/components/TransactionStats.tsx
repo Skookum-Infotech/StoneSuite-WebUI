@@ -17,7 +17,7 @@ function StatCard({
         <p className="text-xs font-semibold leading-tight text-stone-500 sm:truncate">{label}</p>
         <p className="mt-0.5 truncate text-base font-bold leading-tight text-stone-900 tabular-nums">{value}</p>
         {/* The caption is the first thing to go on a phone: two cards per row leave no room for it. */}
-        <p className="mt-0.5 hidden truncate text-2xs text-stone-400 sm:block">{sub}</p>
+        <p className="mt-0.5 hidden truncate text-2xs text-stone-500 sm:block">{sub}</p>
       </div>
     </div>
   );

@@ -60,7 +60,7 @@ export function LookupSelect({
             type="button"
             onClick={() => setAdding(false)}
             aria-label={`Cancel adding ${label}`}
-            className="rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-3.5" />
           </button>

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FileSpreadsheet, Upload, Pencil, ArrowRightLeft, Loader2, FileDown, Send } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { estimateService } from '@/services/estimateService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
@@ -34,6 +36,7 @@ import { formatDateValue } from '@/lib/dateUtils';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -67,6 +70,7 @@ export default function EstimateDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('estimate', 'update');
   const canDelete = permissionsLoading || hasPermission('estimate', 'delete');
+  const canCopy = permissionsLoading || hasPermission('estimate', 'create');
   // Convert targets a new Quote, so gate on the Quote module's create
   // permission (backend checks source estimate:read + target quote:create).
   const canConvert = permissionsLoading || hasPermission('quote', 'create');
@@ -227,9 +231,11 @@ export default function EstimateDetailPage() {
         ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
               <AmountsStrip
@@ -293,15 +299,15 @@ export default function EstimateDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   <KitLineRows lines={estimate.items} colSpan={13} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -311,13 +317,14 @@ export default function EstimateDetailPage() {
                     </tr>
                   )} />
                   {estimate.items.length === 0 && (
-                    <tr><td colSpan={13} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={13} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           )}
 
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
           {activeTab === 'audit' && <EstimateAuditTab estimateId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
@@ -327,7 +334,7 @@ export default function EstimateDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Estimate Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -346,6 +353,9 @@ export default function EstimateDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit estimate
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="estimate" addPath="/sales/estimate/new" sourceId={id} />
               )}
               {canEdit && (
                 <button
@@ -385,7 +395,7 @@ export default function EstimateDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <EstimateStatusControl
@@ -446,7 +456,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -461,7 +471,7 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
   ].filter(Boolean);
 
   if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
+    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">

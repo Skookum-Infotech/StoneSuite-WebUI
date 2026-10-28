@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Boxes, Plus } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -12,7 +12,6 @@ import { NewBundleDialog } from './components/NewBundleDialog';
 const STATUS_COLORS: Record<string, string> = { open: '#22c55e', sealed: '#3b82f6', broken: '#a8a29e' };
 
 export default function BundleListPage() {
-  const navigate = useNavigate();
   const { hasPermission, isLoading: permsLoading } = useUserPermissions();
   const canCreate = permsLoading || hasPermission('inventory_bundle', 'create');
   const [status, setStatus] = useState('');
@@ -72,11 +71,11 @@ export default function BundleListPage() {
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {bundles.length === 0 ? (
-                    <tr><td colSpan={6} className="py-12 text-center text-stone-400">No bundles yet.</td></tr>
+                    <tr><td colSpan={6} className="py-12 text-center text-stone-500">No bundles yet.</td></tr>
                   ) : bundles.map((b) => (
-                    <tr key={b.id} className="hover:bg-accent/10 transition-colors cursor-pointer" onClick={() => navigate(`/inventory/bundle/${b.id}`)}>
-                      <td className="px-4 py-3.5 font-mono font-semibold text-stone-900">{b.code}</td>
-                      <td className="px-4 py-3.5 text-stone-700 truncate max-w-[180px]">{b.inventoryItemName || <span className="text-stone-400">Unadopted</span>}</td>
+                    <tr key={b.id} className="relative hover:bg-accent/10 transition-colors">
+                      <td className="px-4 py-3.5 font-mono font-semibold text-stone-900"><Link to={`/inventory/bundle/${b.id}`} className="after:absolute after:inset-0">{b.code}</Link></td>
+                      <td className="px-4 py-3.5 text-stone-700 truncate max-w-[180px]">{b.inventoryItemName || <span className="text-stone-500">Unadopted</span>}</td>
                       <td className="px-4 py-3.5"><Badge color={STATUS_COLORS[b.status] ?? '#a8a29e'}>{b.status}</Badge></td>
                       <td className="px-4 py-3.5 tabular-nums text-right text-stone-700">{b.memberCount}</td>
                       <td className="px-4 py-3.5 tabular-nums text-right text-stone-700">{b.totalArea.toFixed(2)}</td>

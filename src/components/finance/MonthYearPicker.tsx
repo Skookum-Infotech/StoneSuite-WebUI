@@ -81,7 +81,7 @@ export function MonthYearPicker({
         aria-expanded={open}
         aria-invalid={invalid || undefined}
         aria-describedby={ariaDescribedBy}
-        className={cn(invalid ? fieldErrorCls : fieldCls, 'flex items-center gap-2 text-left', !selected && 'text-stone-400')}
+        className={cn(invalid ? fieldErrorCls : fieldCls, 'flex items-center gap-2 text-left', !selected && 'text-stone-500')}
       >
         <CalendarDays className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         <span className="flex-1 truncate">{displayLabel}</span>
@@ -98,7 +98,7 @@ export function MonthYearPicker({
               type="button"
               onClick={() => setViewYear((y) => y - 1)}
               aria-label="Previous year"
-              className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded-lg p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -107,7 +107,7 @@ export function MonthYearPicker({
               type="button"
               onClick={() => setViewYear((y) => y + 1)}
               aria-label="Next year"
-              className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded-lg p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
             >
               <ChevronRight className="size-4" />
             </button>

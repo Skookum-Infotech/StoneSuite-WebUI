@@ -39,15 +39,43 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Derive initial open state: all groups start collapsed.
-function buildInitialOpenState(): Record<string, boolean> {
-  const state: Record<string, boolean> = {};
+const OPEN_GROUPS_STORAGE_KEY = 'ss.sidebar.open';
+
+function isGroupPathActive(group: NavGroup, pathname: string): boolean {
+  return group.matchPaths.some((p) => pathname.startsWith(p));
+}
+
+// Which groups the user left open last time. Storage can be unavailable or
+// hold junk (private window, cleared site data), so anything unreadable
+// degrades to "nothing remembered" instead of breaking the nav.
+function readRememberedOpenGroups(): Record<string, boolean> {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(OPEN_GROUPS_STORAGE_KEY) ?? '{}');
+    if (typeof parsed !== 'object' || parsed === null) return {};
+    return Object.fromEntries(Object.entries(parsed).filter(([, open]) => open === true));
+  } catch {
+    return {};
+  }
+}
+
+function rememberOpenGroups(state: Record<string, boolean>): void {
+  try {
+    localStorage.setItem(OPEN_GROUPS_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Remembering is a convenience; a full or blocked store must not break the nav.
+  }
+}
+
+// Open state for a page: whatever the user left open, plus the group the
+// current URL lives in, so you never land on a page whose menu is collapsed.
+function withActiveGroupsOpen(state: Record<string, boolean>, pathname: string): Record<string, boolean> {
+  const next = { ...state };
   sidebarNav.sections.forEach((section) => {
     section.entries.forEach((entry) => {
-      if (entry.type === 'group') state[entry.id] = false;
+      if (entry.type === 'group') next[entry.id] = next[entry.id] === true || isGroupPathActive(entry, pathname);
     });
   });
-  return state;
+  return next;
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -57,13 +85,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
   const unreadTickets = useFeedbackUnreadCount();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(buildInitialOpenState);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    withActiveGroupsOpen(readRememberedOpenGroups(), location.pathname),
+  );
+  const [syncedPathname, setSyncedPathname] = useState(location.pathname);
+
+  // Following a link (or Back) into another group opens that group. Done during
+  // render rather than in an effect so the menu is never painted collapsed first.
+  if (syncedPathname !== location.pathname) {
+    setSyncedPathname(location.pathname);
+    setOpenGroups(withActiveGroupsOpen(openGroups, location.pathname));
+  }
 
   // The numbers behind each `badge` a nav link can name (see NavBadge).
   const badgeCounts: Record<NavBadge, number> = { 'support-unread': unreadTickets };
 
   function toggleGroup(id: string) {
-    setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+    const next = { ...openGroups, [id]: !openGroups[id] };
+    setOpenGroups(next);
+    rememberOpenGroups(next);
   }
 
   // While permissions are loading, show all items to avoid layout shift.
@@ -124,7 +164,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }
 
   function isGroupActive(group: NavGroup): boolean {
-    return group.matchPaths.some((p) => location.pathname.startsWith(p));
+    return isGroupPathActive(group, location.pathname);
   }
 
   function renderLink(item: NavLinkItem, isChild = false) {
@@ -169,6 +209,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           type="button"
           onClick={() => toggleGroup(group.id)}
           aria-label={`Toggle ${group.label} menu`}
+          aria-expanded={groupOpen}
+          aria-controls={`nav-group-${group.id}`}
           className={cn(
             'group flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
             active
@@ -191,6 +233,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </button>
 
         <div
+          id={`nav-group-${group.id}`}
+          inert={!groupOpen}
           className={cn(
             'grid overflow-hidden transition-all duration-300 ease-in-out',
             groupOpen ? 'mt-0.5 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',

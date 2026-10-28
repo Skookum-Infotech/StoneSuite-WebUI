@@ -93,7 +93,7 @@ export function PurchaseOrderPicker({
           type="button"
           onClick={() => onChange(null)}
           aria-label="Remove purchase order link"
-          className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -129,7 +129,7 @@ export function PurchaseOrderPicker({
             </p>
           )}
           {!error && results.length === 0 && !isFetching && (
-            <p className="px-3 py-2 text-xs text-stone-400">
+            <p className="px-3 py-2 text-xs text-stone-500">
               {debounced ? 'No matching purchase orders.' : 'No purchase orders for this vendor.'}
             </p>
           )}
@@ -145,7 +145,7 @@ export function PurchaseOrderPicker({
                 <Package className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                 <span className="truncate">{order.number}</span>
               </span>
-              <span className="shrink-0 text-stone-400">{order.status}</span>
+              <span className="shrink-0 text-stone-500">{order.status}</span>
             </button>
           ))}
         </div>

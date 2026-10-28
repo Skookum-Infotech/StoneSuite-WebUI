@@ -22,7 +22,7 @@ export function VendorPaymentField({ field, value, set, lookups }: {
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );
@@ -106,7 +106,7 @@ export function VendorPaymentField({ field, value, set, lookups }: {
 
 function FieldHint({ hint }: { hint?: string }) {
   if (!hint) return null;
-  return <p className="mt-1 text-2xs text-stone-400">{hint}</p>;
+  return <p className="mt-1 text-2xs text-stone-500">{hint}</p>;
 }
 
 export function VendorPaymentSectionGrid({ fields, data, set, lookups }: {

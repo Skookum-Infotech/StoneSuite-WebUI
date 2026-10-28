@@ -132,7 +132,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
@@ -196,7 +196,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
                 </select>
               </ModernFieldShell>
 
-              <p className="text-2xs text-stone-400">
+              <p className="text-2xs text-stone-500">
                 The code and range are assigned automatically from the next free block, and cannot
                 be changed later.
               </p>
@@ -204,7 +204,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
           )}
 
           {intent.kind === 'create-subcategory' && (
-            <p className="text-2xs text-stone-400">
+            <p className="text-2xs text-stone-500">
               The code and range are assigned automatically from the next free block under{' '}
               {intent.parentLabel}. It reports on the same side as its category.
             </p>

@@ -55,6 +55,41 @@ export interface AuthResponse {
   // since the expired access token can no longer be decoded to recover it.
   tenantId?: string;
   workspaces?: PortalWorkspace[];
+  // Present instead of token/user when the password was right but the account
+  // has two-step verification on: a code was emailed, and the session starts
+  // only once POST /auth/mfa/verify accepts it. See lib/mfa.ts's toMfaChallenge.
+  mfaRequired?: boolean;
+  challengeToken?: string;
+  maskedEmail?: string;
+  codeLength?: number;
+  expiresInSeconds?: number;
+  resendAfterSeconds?: number;
+}
+
+// A code was just emailed (sign-in resend, or turning two-step verification
+// on). The timings drive the code-entry screens; the code itself never
+// reaches the browser.
+export interface MfaCodeSent {
+  success: boolean;
+  maskedEmail: string;
+  codeLength: number;
+  expiresInSeconds: number;
+  resendAfterSeconds: number;
+}
+
+// The sign-in's second step: a code sent plus the token that names the
+// challenge it belongs to.
+export interface MfaChallenge extends MfaCodeSent {
+  challengeToken: string;
+}
+
+// GET /auth/mfa. `available` is false for an account with no password step to
+// add a code to (single sign-on).
+export interface MfaStatus {
+  success: boolean;
+  enabled: boolean;
+  available: boolean;
+  maskedEmail: string;
 }
 
 export interface RefreshResponse {

@@ -123,16 +123,16 @@ export function OrderSummaryPanel({ form, status, layout, labels, onCancel }: Or
 
       <div className="border-t border-stone-100 pt-3">
         <p className="text-xs font-semibold text-stone-900">
-          Areas <span className="font-normal text-stone-400">({form.areas.length})</span>
+          Areas <span className="font-normal text-stone-500">({form.areas.length})</span>
         </p>
         {form.areas.length === 0 ? (
-          <p className="mt-1 text-xs text-stone-400">None added yet.</p>
+          <p className="mt-1 text-xs text-stone-500">None added yet.</p>
         ) : (
           <ul className="mt-1.5 space-y-1">
             {form.areas.map((area) => (
               <li key={area.key} className="flex items-center justify-between gap-2 text-xs text-stone-700">
                 <span className="truncate">{area.name || 'Unnamed area'}</span>
-                <span className="shrink-0 text-stone-400">{area.color.trim() || 'No color'}</span>
+                <span className="shrink-0 text-stone-500">{area.color.trim() || 'No color'}</span>
               </li>
             ))}
           </ul>

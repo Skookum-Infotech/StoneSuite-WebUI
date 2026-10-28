@@ -17,6 +17,8 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { AccountPicker, type AccountRef } from '@/components/finance/AccountPicker';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { JournalEntrySectionGrid } from './components/JournalEntryFormFields';
 import { JournalEntryAuditTab } from './components/JournalEntryAuditTab';
 import {
@@ -85,6 +87,8 @@ export default function EditJournalEntryPage() {
     [mapped],
   );
 
+  const guard = useUnsavedChangesGuard({ data, customFieldValues, fromAccount, toAccount }, Boolean(mapped));
+
   const save = useMutation({
     mutationFn: () => {
       if (!fromAccount || !toAccount) throw new Error('A From and To account are required.');
@@ -96,6 +100,7 @@ export default function EditJournalEntryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['journal-entry', id] });
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+      guard.markClean();
       navigate(`/finance/journal-entries/${id}`);
     },
   });
@@ -108,6 +113,7 @@ export default function EditJournalEntryPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="flex flex-col flex-1 min-h-0">
 
         <CrmPageHeader
@@ -153,7 +159,7 @@ export default function EditJournalEntryPage() {
                 'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
                 activeTab === tab.key
                   ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
+                  : 'border-transparent text-stone-500 hover:text-stone-600 hover:border-stone-300',
               )}
             >
               {tab.label}

@@ -20,6 +20,9 @@ import { findDuplicateMatch, type DuplicateCandidate, type DuplicateMatchStatus 
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import type { InventoryItem } from '@/types/inventory';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromItemForCopy } from '@/lib/inventoryItemCopy';
+import { copySubtitle } from '@/lib/recordCopy';
 import { ItemFormBody } from './components/ItemFormBody';
 
 const ITEM_LIST_PATH = '/inventory/item';
@@ -31,11 +34,20 @@ interface ItemDuplicate {
   statusLabel: string;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that item (see CopySeedGate). */
 export default function AddItemPage() {
+  return (
+    <CopySeedGate queryKey="inventory-item" load={(id) => inventoryService.getItem(id)}>
+      {(source) => <AddItemForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddItemForm({ source }: { source?: InventoryItem }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { lookups } = useInventoryLookups();
-  const warehouses = lookups?.warehouses ?? [];
+  const warehouses = useMemo(() => lookups?.warehouses ?? [], [lookups]);
 
   // Opened from a document's item picker ("Add to Inventory"): the typed name
   // is prefilled, and saving or cancelling returns to that document, which
@@ -44,14 +56,20 @@ export default function AddItemPage() {
   const returnParam = searchParams.get(RETURN_TO_PARAM);
   const returnTo = isSafeReturnPath(returnParam) ? returnParam : null;
 
-  const [data, setData] = useState<Record<string, unknown>>(
-    () => ({ ...itemDefaults(), name: searchParams.get(ITEM_NAME_PARAM) ?? '' }),
+  // A copy's warehouse can only be resolved once the lookups load, so the
+  // starting state is derived (as on the Edit page) and edits shadow it.
+  const nameParam = searchParams.get(ITEM_NAME_PARAM) ?? '';
+  const base = useMemo(
+    () => (source ? fromItemForCopy(source, warehouses) : { ...itemDefaults(), name: nameParam }),
+    [source, warehouses, nameParam],
   );
+  const [localData, setLocalData] = useState<Record<string, unknown> | null>(null);
+  const data = localData ?? base;
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const [duplicate, setDuplicate] = useState<ItemDuplicate | null>(null);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [duplicateCheckError, setDuplicateCheckError] = useState<string | null>(null);
-  const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }));
+  const set = (key: string, value: unknown) => setLocalData((d) => ({ ...(d ?? base), [key]: value }));
 
   const { data: crmLookups } = useQuery({
     queryKey: ['crm-lookups'],
@@ -69,7 +87,7 @@ export default function AddItemPage() {
     unit_id: data.unit_id || (lookups ? defaultUnitId(lookups.units) : ''),
   }), [data, crmLookups, lookups]);
 
-  const guard = useUnsavedChangesGuard(data);
+  const guard = useUnsavedChangesGuard(data, true, Boolean(source));
 
   const leave = (createdItem: InventoryItem | null) => {
     if (returnTo) navigate(returnTo, { state: returnRouterState(createdItem) });
@@ -144,9 +162,11 @@ export default function AddItemPage() {
           onBack={() => leave(null)}
           icon={Package}
           title="New Inventory Item"
-          subtitle={returnTo
-            ? "Fields marked * are required. You'll go back to your document after saving."
-            : 'Fields marked * are required.'}
+          subtitle={source
+            ? copySubtitle(source.sku || source.name)
+            : returnTo
+              ? "Fields marked * are required. You'll go back to your document after saving."
+              : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending || isCheckingDuplicate}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">

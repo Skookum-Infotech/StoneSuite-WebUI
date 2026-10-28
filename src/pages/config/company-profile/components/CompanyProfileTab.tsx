@@ -13,7 +13,7 @@ import { companyProfileService } from '@/services/companyProfileService';
 import { companyProfileSchema, type CompanyProfileFormValues } from '@/lib/companyProfileForm';
 import type { Address, PaymentDetails } from '@/types/companyProfile';
 import { lookupService } from '@/services/lookupService';
-import { countryOptions, currencyOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupOptions';
+import { countryOptions, currencyOptions, stateOptionsForCountry, timezoneOptions } from '@/lib/companyInfoLookupOptions';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -52,8 +52,9 @@ const DEFAULT_VALUES: CompanyProfileFormValues = {
 // their neighbors) get 2 of 3 columns, everything else is a single column —
 // tiling into clean 3-wide rows (3, then 2+1, then 2+1, then 1+1+1).
 // Country/Currency render as CompanyInfoSelectField (backend-lookup-backed
-// dropdowns, see the id special-cases below) — Industry/Timezone stay plain
-// text since no backend lookup exists for either.
+// dropdowns) and Timezone as a grouped IANA-zone dropdown (see the id
+// special-cases below) — Industry stays plain text since no lookup exists.
+// The timezone drives the automation send window (08:00–18:00 local).
 const COMPANY_FIELDS: CompanyInfoFieldSpec[] = [
   { id: 'cp-company-name', label: 'Company Name', icon: Building2, placeholder: 'e.g. Acme Stone Co.', required: true, colSpan: 3 },
   { id: 'cp-legal-name', label: 'Legal Name', icon: ScrollText, placeholder: 'e.g. Acme Stone Company LLC', colSpan: 2 },
@@ -61,7 +62,7 @@ const COMPANY_FIELDS: CompanyInfoFieldSpec[] = [
   { id: 'cp-website', label: 'Website', icon: Globe, placeholder: 'e.g. https://acmestone.com', colSpan: 2 },
   { id: 'cp-country', label: 'Country', icon: Flag, placeholder: 'Select a country' },
   { id: 'cp-currency', label: 'Currency', icon: DollarSign, placeholder: 'Select a currency' },
-  { id: 'cp-timezone', label: 'Timezone', icon: Clock, placeholder: 'e.g. America/Chicago' },
+  { id: 'cp-timezone', label: 'Timezone', icon: Clock, placeholder: 'Select a timezone' },
   { id: 'cp-tax-id', label: 'Tax / VAT ID', icon: Receipt, placeholder: 'e.g. 12-3456789' },
 ];
 
@@ -188,6 +189,17 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
           registration={register('currency')}
           error={errors.currency?.message}
           options={currencyOptions(lookupsQ.data?.currencies, values.currency ?? '')}
+        />
+      );
+    }
+    if (field.id === 'cp-timezone') {
+      return (
+        <CompanyInfoSelectField
+          key={field.id}
+          field={field}
+          registration={register('timezone')}
+          error={errors.timezone?.message}
+          options={timezoneOptions(values.timezone ?? '')}
         />
       );
     }

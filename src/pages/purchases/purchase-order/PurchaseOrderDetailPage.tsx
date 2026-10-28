@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Package, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -11,6 +12,7 @@ import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
@@ -26,6 +28,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { isPurchaseOrderReceivable } from '@/lib/itemReceiptForm';
 import { PurchaseOrderAuditTab } from './components/PurchaseOrderAuditTab';
 import { PurchaseOrderReceiptsTab } from './components/PurchaseOrderReceiptsTab';
+import { LineReceivingProgress } from './components/LineReceivingProgress';
 import { DeletePurchaseOrderDialog } from './components/DeletePurchaseOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
@@ -41,6 +44,7 @@ const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
   { key: 'receipts', label: 'Receipts' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
@@ -73,6 +77,7 @@ export default function PurchaseOrderDetailPage() {
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('purchase_order', 'update');
   const canDelete = permissionsLoading || hasPermission('purchase_order', 'delete');
+  const canCopy = permissionsLoading || hasPermission('purchase_order', 'create');
   // A new receipt is saved and posted in one step, so it takes both grants.
   const canReceive = permissionsLoading
     || (hasPermission('item_receipt', 'create') && hasPermission('item_receipt', 'transition'));
@@ -289,9 +294,11 @@ export default function PurchaseOrderDetailPage() {
         ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
               <ModernSection title="Primary Information" index={0}>
@@ -348,21 +355,21 @@ export default function PurchaseOrderDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {po.items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 min-w-[200px] max-w-md whitespace-pre-wrap break-words">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <LineDimensionViewCells length={line.length} width={line.width} slabs={line.expectedSlabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5">
-                        <ReceiptProgress received={line.qtyReceived} ordered={line.quantity} />
+                        <LineReceivingProgress line={line} />
                         {(line.expectedSlabs || line.slabsReceived) ? (
-                          <p className="mt-1 text-2xs text-stone-400">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
+                          <p className="mt-1 text-2xs text-stone-500">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
                         ) : null}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -372,7 +379,7 @@ export default function PurchaseOrderDetailPage() {
                     </tr>
                   ))}
                   {po.items.length === 0 && (
-                    <tr><td colSpan={14} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -380,6 +387,7 @@ export default function PurchaseOrderDetailPage() {
           )}
 
           {activeTab === 'receipts' && <PurchaseOrderReceiptsTab purchaseOrderId={id} />}
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="vendor" canReply={canEdit} />}
           {activeTab === 'audit' && <PurchaseOrderAuditTab purchaseOrderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
@@ -389,7 +397,7 @@ export default function PurchaseOrderDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Purchase Order Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -409,6 +417,9 @@ export default function PurchaseOrderDetailPage() {
                   Edit purchase order
                 </button>
               )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="purchase order" addPath="/purchases/purchase_order/new" sourceId={id} />
+              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -427,7 +438,7 @@ export default function PurchaseOrderDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <PurchaseOrderStatusControl
                 order={{ statusCode: po.statusCode, approvalStatus: po.approvalStatus, gated: po.gated, nextStatusCodes: po.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
@@ -439,7 +450,7 @@ export default function PurchaseOrderDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{po.status}</Badge>
@@ -511,27 +522,11 @@ export default function PurchaseOrderDetailPage() {
   );
 }
 
-function ReceiptProgress({ received, ordered }: { received: number; ordered: number }) {
-  const pct = ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
-  const complete = ordered > 0 && received >= ordered;
-  return (
-    <div className="flex items-center gap-2 min-w-[100px]">
-      <div className="h-1.5 flex-1 rounded-full bg-stone-100 overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all', complete ? 'bg-emerald-500' : received > 0 ? 'bg-amber-400' : 'bg-stone-200')}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="shrink-0 text-2xs tabular-nums text-stone-500">{received}/{ordered}</span>
-    </div>
-  );
-}
-
 function ReadonlyField({ label, value, full }: { label: string; value?: string; full?: boolean }) {
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -546,7 +541,7 @@ function AddressBlock({ addr }: { addr: { name?: string; attention?: string; add
   ].filter(Boolean);
 
   if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
+    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
@@ -559,7 +554,7 @@ function AddressBlock({ addr }: { addr: { name?: string; attention?: string; add
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

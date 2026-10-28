@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 export interface ApplyToAllFields {
   lot?: string;
@@ -37,7 +37,7 @@ export function ApplyToAllPanel({ slabCount, onApply, onClose }: {
   return (
     <div className="mb-3 rounded-lg border border-stone-200 bg-white p-3" role="group" aria-label="Set lot and block for all slabs">
       <p className="text-xs font-semibold text-stone-700">Set lot / block for all slabs</p>
-      <p className="mt-1 text-2xs text-stone-400">
+      <p className="mt-1 text-2xs text-stone-500">
         Fills the lot and block ID on all {slabCount} slab{slabCount === 1 ? '' : 's'} on this line. Leave one blank to keep what is already there.
       </p>
       <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">

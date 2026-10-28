@@ -64,7 +64,7 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-4" />
           </button>

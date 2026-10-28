@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil, Filter,
@@ -228,7 +228,7 @@ export function RequisitionTable() {
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             aria-label="Search requisitions"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
@@ -249,7 +249,7 @@ export function RequisitionTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -341,14 +341,13 @@ export function RequisitionTable() {
                   return (
                     <tr key={reqn.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-3.5 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/purchases/requisition/${reqn.id}`)}
+                        <Link
+                          to={`/purchases/requisition/${reqn.id}`}
                           aria-label={`Open requisition ${reqn.requisitionNumber}`}
                           className="inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {reqn.requisitionNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
                         {requesterName ?? '—'}
@@ -378,7 +377,7 @@ export function RequisitionTable() {
                             {approvalLabel}
                           </span>
                         ) : (
-                          <span className="text-2xs text-stone-300">—</span>
+                          <span className="text-2xs text-stone-500">—</span>
                         )}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
@@ -389,7 +388,7 @@ export function RequisitionTable() {
                           {priorityLabel(reqn.priority)}
                         </span>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(reqn.neededByDate)}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[160px] max-sm:hidden">
@@ -422,7 +421,7 @@ export function RequisitionTable() {
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No requisitions raised yet.</p>
-                        <p className="text-xs text-stone-400">Create your first requisition to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first requisition to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -430,7 +429,7 @@ export function RequisitionTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No requisitions match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search or filters.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>

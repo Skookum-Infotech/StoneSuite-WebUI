@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
@@ -26,6 +27,7 @@ import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
+import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
@@ -42,17 +44,22 @@ const TABS = [
   { key: 'items', label: 'Items' },
   { key: 'inventory', label: 'Inventory' },
   { key: 'scheduling', label: 'Scheduling' },
+  { key: 'communication', label: 'Communication' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
+// Tabs a customer-portal session never gets: both read staff-only endpoints
+// (the production schedule, and the order's email thread with the customer).
+const STAFF_ONLY_TABS: readonly Tab[] = ['scheduling', 'communication'];
+
 // The tab a `?tab=` link asks for — the Activity Planner's cards open the
 // Scheduling tab. Anything unknown, or a tab this session doesn't have (a
-// customer has no Scheduling tab), falls back to Overview.
+// customer has no Scheduling or Communication tab), falls back to Overview.
 function tabFromParam(raw: string | null): Tab {
   const match = TABS.find((t) => t.key === raw);
-  if (!match || (match.key === 'scheduling' && isPortalSession())) return 'overview';
+  if (!match || (STAFF_ONLY_TABS.includes(match.key) && isPortalSession())) return 'overview';
   return match.key;
 }
 
@@ -85,6 +92,7 @@ export default function SalesOrderDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('sales_order', 'update');
   const canDelete = permissionsLoading || hasPermission('sales_order', 'delete');
+  const canCopy = permissionsLoading || hasPermission('sales_order', 'create');
   // Convert targets a new Invoice, so gate on the Invoice module's create
   // permission (backend checks source sales_order:read + target invoice:create).
   const canConvert = permissionsLoading || hasPermission('invoice', 'create');
@@ -171,9 +179,9 @@ export default function SalesOrderDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load sales order.')}</ErrorNote></div>;
 
   const color = SO_STATUS_COLORS[order.status] ?? '#a8a29e';
-  // The production schedule is internal bookkeeping with a staff-only endpoint,
-  // so a customer-portal session doesn't get its tab.
-  const visibleTabs = isPortalSession() ? TABS.filter((t) => t.key !== 'scheduling') : TABS;
+  // The production schedule and the customer email thread are internal, with
+  // staff-only endpoints, so a customer-portal session doesn't get their tabs.
+  const visibleTabs = isPortalSession() ? TABS.filter((t) => !STAFF_ONLY_TABS.includes(t.key)) : TABS;
 
   async function handleExportPdf() {
     if (!order) return;
@@ -283,9 +291,11 @@ export default function SalesOrderDetailPage() {
         ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
+      <div className="flex flex-1 flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
-        <div className="flex-1 space-y-3 min-w-0">
+        {/* The Communication tab fills the column, so its reply box can sit at the
+            bottom of the screen even when the conversation is empty. */}
+        <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
               <AmountsStrip
@@ -352,14 +362,14 @@ export default function SalesOrderDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   <KitLineRows lines={order.items} colSpan={13} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.itemName || line.description || <span className="text-stone-300">—</span>}
+                        {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                        {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                        {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -374,7 +384,7 @@ export default function SalesOrderDetailPage() {
                     </tr>
                   )} />
                   {order.items.length === 0 && (
-                    <tr><td colSpan={13} className="py-8 text-center text-stone-400">No line items.</td></tr>
+                    <tr><td colSpan={13} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -385,6 +395,7 @@ export default function SalesOrderDetailPage() {
           {activeTab === 'scheduling' && (
             <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
           )}
+          {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
@@ -394,7 +405,7 @@ export default function SalesOrderDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Order Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
@@ -415,6 +426,9 @@ export default function SalesOrderDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit sales order
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="sales order" addPath="/sales/sales_order/new" sourceId={id} />
               )}
               {canEdit && (
                 <button
@@ -454,7 +468,7 @@ export default function SalesOrderDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <SalesOrderStatusControl
@@ -515,7 +529,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -530,7 +544,7 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
   ].filter(Boolean);
 
   if (lines.length === 0) {
-    return <p className="text-xs text-stone-400 italic">No address on file.</p>;
+    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">

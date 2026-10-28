@@ -177,17 +177,17 @@ export default function JournalEntryDetailPage() {
                   <div className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
                     <Landmark className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">From</p>
+                      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">From</p>
                       <p className="truncate text-sm font-semibold text-stone-800">{je.fromAccount.name}</p>
-                      <p className="truncate text-2xs text-stone-400 font-mono">{je.fromAccount.code}</p>
+                      <p className="truncate text-2xs text-stone-500 font-mono">{je.fromAccount.code}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
                     <Landmark className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">To</p>
+                      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">To</p>
                       <p className="truncate text-sm font-semibold text-stone-800">{je.toAccount.name}</p>
-                      <p className="truncate text-2xs text-stone-400 font-mono">{je.toAccount.code}</p>
+                      <p className="truncate text-2xs text-stone-500 font-mono">{je.toAccount.code}</p>
                     </div>
                   </div>
                 </div>
@@ -214,7 +214,7 @@ export default function JournalEntryDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Journal Entry Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -252,7 +252,7 @@ export default function JournalEntryDetailPage() {
 
           {(canApproveHere || canPostHere || canReverseHere) && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-2.5 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               {canApproveHere && <ApproveJournalEntryDialog journalEntryId={id} onApproved={refresh} />}
               {canPostHere && <PostJournalEntryDialog journalEntryId={id} onPosted={refresh} />}
               {canReverseHere && <ReverseJournalEntryDialog journalEntryId={id} onReversed={refresh} />}
@@ -260,7 +260,7 @@ export default function JournalEntryDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{je.status}</Badge>
@@ -314,7 +314,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

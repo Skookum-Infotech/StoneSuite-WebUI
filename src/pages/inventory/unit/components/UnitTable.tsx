@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, Scissors, AlertTriangle, CheckCircle2,
@@ -38,7 +38,6 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function UnitTable() {
-  const navigate = useNavigate();
   const topRef = useRef<HTMLDivElement>(null);
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canUpdate = permissionsLoading || hasPermission('inventory_unit', 'update');
@@ -117,7 +116,7 @@ export function UnitTable() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
+          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
         </div>
         <select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
           {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -180,7 +179,7 @@ export function UnitTable() {
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
-                        <button type="button" onClick={() => navigate(`/inventory/unit/${u.id}`)} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">{u.serial}</button>
+                        <Link to={`/inventory/unit/${u.id}`} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">{u.serial}</Link>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">{u.inventoryItemName ?? '—'}</td>
                       <td className="px-4 py-3.5 text-xs text-stone-500 capitalize">{u.kind}</td>
@@ -191,7 +190,7 @@ export function UnitTable() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        {allocationOf(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-300" aria-label="Not allocated">—</span>}
+                        {allocationOf(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-500" aria-label="Not allocated">—</span>}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right whitespace-nowrap">{formatUnitArea(u.area, u.areaUnitCode)}</td>
                       <td className="px-4 py-3.5"><UnitConsumptionCell unit={u} /></td>

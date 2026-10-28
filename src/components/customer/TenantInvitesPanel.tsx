@@ -90,7 +90,7 @@ export function TenantInvitesPanel({ tenant }: { tenant: Tenant }) {
                   type="button"
                   onClick={() => copy(inv.token, `key-${inv.id}`)}
                   aria-label="Copy invite key"
-                  className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                  className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
                 >
                   <Copy className="size-3.5" />
                 </button>
@@ -102,7 +102,7 @@ export function TenantInvitesPanel({ tenant }: { tenant: Tenant }) {
                   {copied === `link-${inv.id}` ? 'Link copied' : copied === `key-${inv.id}` ? 'Key copied' : 'Copy link'}
                 </button>
               </div>
-              <p className="mt-1.5 text-2xs text-stone-400">
+              <p className="mt-1.5 text-2xs text-stone-500">
                 Expires {new Date(inv.expiresAt).toLocaleString()}
                 {inv.acceptedAt && ` · accepted ${new Date(inv.acceptedAt).toLocaleDateString()}`}
               </p>

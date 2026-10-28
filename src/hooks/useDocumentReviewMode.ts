@@ -17,11 +17,12 @@ import {
 import { duplicateFrom, type DuplicateConflict } from '@/lib/salesOrderDuplicate';
 import { failureText } from '@/lib/documentExtractionMachine';
 import { ExtractionApiError, documentExtractionService } from '@/services/documentExtractionService';
-import type { ExtractedPageRows } from '@/types/documentExtraction';
+import type { ExtractedPageRows, ProposedEntityView } from '@/types/documentExtraction';
 import type { DocFocus, DocumentReviewAdapter, ReviewDraft, ReviewParty } from './documentReviewModeTypes';
 
 const AI_UNAVAILABLE_WARNING = 'ai_unavailable';
 const NO_PAGES: ExtractedPageRows[] = [];
+const NO_PROPOSED: ProposedEntityView[] = [];
 
 interface Args<F, Patch, X, H extends DocumentHandoffBase, P extends ReviewParty, R, PL> {
   adapter: DocumentReviewAdapter<F, Patch, X, H, P, R, PL>;
@@ -237,7 +238,8 @@ export function useDocumentReviewMode<F, Patch, X, H extends DocumentHandoffBase
   }, [extractionId, finish, navigate, routes]);
 
   return {
-    docType, active, phase, fileName, file, handoff, pages: result?.extracted.pages ?? NO_PAGES, hydrated, form, extras, reviewed,
+    docType, active, phase, fileName, file, handoff, extractionId,
+    proposedEntities: result?.proposedEntities ?? NO_PROPOSED, pages: result?.extracted.pages ?? NO_PAGES, hydrated, form, extras, reviewed,
     pending, requiredPending, blockedReason, progress, preTaxTotal, formTax, formAmounts, focus,
     banner: {
       usedRecordUuid: doc.usedRecordUuid,

@@ -21,9 +21,9 @@ interface Props {
 function AccessDenied() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <ShieldOff className="mb-3 size-10 text-stone-300" aria-hidden="true" />
+      <ShieldOff className="mb-3 size-10 text-stone-400" aria-hidden="true" />
       <p className="text-sm font-semibold text-stone-600 dark:text-stone-300">Access Denied</p>
-      <p className="mt-1 text-xs text-stone-400">
+      <p className="mt-1 text-xs text-stone-500">
         You don&apos;t have permission to view this page.
       </p>
     </div>
@@ -33,9 +33,9 @@ function AccessDenied() {
 function FormDisabled() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <Ban className="mb-3 size-10 text-stone-300" aria-hidden="true" />
+      <Ban className="mb-3 size-10 text-stone-400" aria-hidden="true" />
       <p className="text-sm font-semibold text-stone-600 dark:text-stone-300">Form Disabled</p>
-      <p className="mt-1 text-xs text-stone-400">
+      <p className="mt-1 text-xs text-stone-500">
         This form has been disabled by your administrator.
       </p>
     </div>

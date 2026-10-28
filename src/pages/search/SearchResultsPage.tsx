@@ -112,7 +112,7 @@ export default function SearchResultsPage() {
                       )}
                     >
                       <span>{entityLabel(t)}</span>
-                      <span className="text-2xs tabular-nums text-stone-400">
+                      <span className="text-2xs tabular-nums text-stone-500">
                         {g.results.length}
                         {g.hasMore ? '+' : ''}
                       </span>
@@ -139,7 +139,7 @@ export default function SearchResultsPage() {
                               {hit.displayName || '(untitled)'}
                             </span>
                             {(hit.number || hit.subtitle) && (
-                              <span className="block truncate text-xs text-stone-400">
+                              <span className="block truncate text-xs text-stone-500">
                                 {[hit.number, hit.subtitle].filter(Boolean).join(' · ')}
                               </span>
                             )}
@@ -147,7 +147,7 @@ export default function SearchResultsPage() {
                           <time
                             dateTime={hit.updatedAt}
                             title={new Date(hit.updatedAt).toLocaleString()}
-                            className="shrink-0 font-mono text-2xs text-stone-400"
+                            className="shrink-0 font-mono text-2xs text-stone-500"
                           >
                             {relativeTime(hit.updatedAt)}
                           </time>
@@ -156,7 +156,7 @@ export default function SearchResultsPage() {
                     ))}
                   </ul>
                   {activeGroup.hasMore && (
-                    <p className="mt-2 text-xs text-stone-400">
+                    <p className="mt-2 text-xs text-stone-500">
                       Showing the first {activeGroup.results.length} {entityLabel(activeType).toLowerCase()}. Add
                       another word to narrow the results.
                     </p>

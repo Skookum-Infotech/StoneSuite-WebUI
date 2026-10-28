@@ -121,7 +121,7 @@ function PostReceiptDialogContent({
             </div>
             <div>
               <h3 id="post-receipt-title" className="text-sm font-bold text-stone-900">Post this item receipt?</h3>
-              <p className="text-xs text-stone-400 mt-0.5">This moves stock and advances the purchase order.</p>
+              <p className="text-xs text-stone-500 mt-0.5">This moves stock and advances the purchase order.</p>
             </div>
           </div>
           <p className="text-xs text-stone-600 mb-5">

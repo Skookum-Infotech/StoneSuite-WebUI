@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -18,6 +18,9 @@ vi.mock('@/hooks/useCurrentUserRoles', () => ({
 }))
 vi.mock('@/api/tenantClient', () => ({
   apiErrorMessage: (_e: unknown, fallback: string) => fallback,
+}))
+vi.mock('./components/TwoStepVerificationCard', () => ({
+  TwoStepVerificationCard: () => <div>two-step card</div>,
 }))
 
 import AccountSettingsPage from './AccountSettingsPage'
@@ -302,5 +305,28 @@ describe('AccountSettingsPage show/hide password', () => {
       await user.click(screen.getByRole('button', { name: `Hide ${toggle}` }))
       expect(field).toHaveAttribute('type', 'password')
     }
+  })
+})
+
+describe('AccountSettingsPage security tab', () => {
+  afterEach(() => {
+    useAuthStore.setState({ kind: undefined })
+  })
+
+  it('gives a staff user a Security tab with the two-step verification card', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'Security' }))
+
+    expect(screen.getByText('two-step card')).toBeInTheDocument()
+  })
+
+  it('does not offer a customer-portal session a Security tab', () => {
+    useAuthStore.setState({ kind: 'portal' })
+    renderPage()
+
+    expect(screen.queryByRole('button', { name: 'Security' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Password' })).toBeInTheDocument()
   })
 })

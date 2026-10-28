@@ -1,27 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import AuthLayout from "@/layouts/AuthLayout";
 import MainLayout from "@/layouts/MainLayout";
-
-// Wraps lazy() so that a ChunkLoadError (stale CDN chunk after a new deploy)
-// triggers a one-time hard reload instead of showing a crash screen.
-function lazyWithRetry<T extends React.ComponentType<unknown>>(
-  factory: () => Promise<{ default: T }>,
-): React.LazyExoticComponent<T> {
-  return lazy(() =>
-    factory().catch((err: unknown) => {
-      const reloadKey = "chunk_reload_attempted";
-      if (!sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, "1");
-        window.location.reload();
-        // Return a never-resolving promise — reload takes over.
-        return new Promise<never>(() => {});
-      }
-      return Promise.reject(err);
-    }),
-  );
-}
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import RouteErrorPage from "@/pages/common/RouteErrorPage";
 
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { PortalOnlyGuard } from "@/components/PortalOnlyGuard";
@@ -114,6 +97,9 @@ const FeedbackDetailPage = lazyWithRetry(
 const PlatformAIPage = lazyWithRetry(
   () => import("@/pages/platform/ai/PlatformAIPage"),
 );
+const PlatformAutomationPage = lazyWithRetry(
+  () => import("@/pages/platform/automation/PlatformAutomationPage"),
+);
 const SamlSetupPage = lazyWithRetry(
   () => import("@/pages/config/saml-setup/SamlSetupPage"),
 );
@@ -136,6 +122,9 @@ const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
 const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
+const AnomaliesPage = lazyWithRetry(
+  () => import("@/pages/anomalies/AnomaliesPage"),
+);
 const SubscriptionPage = lazyWithRetry(
   () => import("@/pages/subscription/SubscriptionPage"),
 );
@@ -404,21 +393,32 @@ export const router = createBrowserRouter([
   // Public onboarding routes: self-service application + password setup.
   {
     path: "/onboarding/apply",
+    errorElement: <RouteErrorPage />,
     element: lazy_(<OnboardingApplyPage />),
   },
   {
     path: "/onboarding/set-password",
+    errorElement: <RouteErrorPage />,
     element: lazy_(<SetPasswordPage />),
   },
   // Public workspace invite acceptance route.
   {
     path: "/accept-invite",
+    errorElement: <RouteErrorPage />,
     element: lazy_(<AcceptInvitePage />),
   },
+  // `/login` is the first URL people guess; the real route lives under /auth.
+  { path: "/login", element: <Navigate to="/auth/login" replace /> },
   {
     path: "/",
     element: <MainLayout />,
+    // Only reached if MainLayout itself crashes; a page crash is caught by the
+    // pathless route below so the sidebar and header stay usable.
+    errorElement: <RouteErrorPage />,
     children: [
+      {
+        errorElement: <RouteErrorPage embedded />,
+        children: [
       { path: "", element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: lazy_(<DashboardPage />) },
       { path: "search", element: lazy_(<SearchResultsPage />) },
@@ -427,6 +427,10 @@ export const router = createBrowserRouter([
       // Open to every signed-in user, customer-portal sessions included (see
       // CUSTOMER_ALLOWED_PATH_PREFIXES), so deliberately no PermissionGuard.
       { path: "support", element: lazy_(<SupportPage />) },
+      // Staff only (customer sessions are bounced by CUSTOMER_ALLOWED_PATH_PREFIXES)
+      // and deliberately no PermissionGuard: the server addresses each finding to
+      // specific people and returns only theirs, so there is no RBAC resource.
+      { path: "anomalies", element: lazy_(<AnomaliesPage />) },
       {
         path: "subscription",
         element: lazy_(
@@ -1645,11 +1649,22 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+      {
+        path: "platform/automation",
+        element: lazy_(
+          <PermissionGuard platformAdminOnly>
+            <PlatformAutomationPage />
+          </PermissionGuard>,
+        ),
+      },
+        ],
+      },
     ],
   },
   {
     path: "/auth",
     element: <AuthLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: "login", element: lazy_(<LoginPage />) },
       { path: "forgot-password", element: lazy_(<ForgotPasswordPage />) },
@@ -1659,10 +1674,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: (
-      <div className="p-8">
-        <h1>404 - Not Found</h1>
-      </div>
-    ),
+    element: <RouteErrorPage notFound />,
   },
 ]);

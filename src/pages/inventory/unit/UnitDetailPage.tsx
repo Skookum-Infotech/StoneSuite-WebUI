@@ -193,7 +193,7 @@ export default function UnitDetailPage() {
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
               {history.length === 0 ? (
-                <p className="py-8 text-center text-sm text-stone-400">No history recorded yet.</p>
+                <p className="py-8 text-center text-sm text-stone-500">No history recorded yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {history.map((h, i) => (
@@ -202,7 +202,7 @@ export default function UnitDetailPage() {
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{historyActionLabel(h.action)}</p>
                         {describeHistoryEntry(h) && <p className="text-2xs text-stone-500">{describeHistoryEntry(h)}</p>}
-                        <p className="text-2xs text-stone-400">
+                        <p className="text-2xs text-stone-500">
                           {fmtDateTime(h.at)} · {h.byName}
                           {h.transferNumber && (
                             <>
@@ -226,7 +226,7 @@ export default function UnitDetailPage() {
 
         <SalesDetailSidebar label="Unit Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button type="button" onClick={handleExportPdf} disabled={exportingPdf} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed" aria-label="Export as PDF">
                 {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
@@ -238,19 +238,19 @@ export default function UnitDetailPage() {
 
           {canUpdate && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4" title={disabledReason}>
-              <p className="text-xs font-semibold text-stone-400 mb-2">Actions</p>
+              <p className="text-xs font-semibold text-stone-500 mb-2">Actions</p>
               <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <Scissors className="size-4 text-stone-400 shrink-0" /> Cut
               </button>
               <button type="button" disabled={Boolean(disabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <AlertTriangle className="size-4 shrink-0" /> Scrap
               </button>
-              {disabledReason && <p className="px-3 pt-1 text-2xs text-stone-400">{disabledReason}</p>}
+              {disabledReason && <p className="px-3 pt-1 text-2xs text-stone-500">{disabledReason}</p>}
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
               <span className="text-stone-700">{fmtDateTime(unit.createdAt)}</span>

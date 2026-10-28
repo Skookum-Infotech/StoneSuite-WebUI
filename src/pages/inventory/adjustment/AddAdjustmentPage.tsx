@@ -14,6 +14,8 @@ import { ReasonSelect } from '@/components/inventory/ReasonSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useDefaultLocation } from '@/hooks/useDefaultLocation';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import type { AdjustmentLineInput } from '@/types/inventory';
 import { AdjustmentLinesEditor } from './components/AdjustmentLinesEditor';
@@ -43,6 +45,10 @@ export default function AddAdjustmentPage() {
   const [lines, setLines] = useState<AdjustmentDraftLine[]>([emptyAdjustmentLine()]);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
+  // The default location is derived once the lookups arrive, so the snapshot
+  // waits for them rather than baselining on an empty location.
+  const guard = useUnsavedChangesGuard({ warehouseId, date, reasonId, notes, lines }, Boolean(lookups));
+
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       const lineInputs = lines.map(toLineInput).filter((l): l is AdjustmentLineInput => l !== null);
@@ -57,6 +63,7 @@ export default function AddAdjustmentPage() {
     onSuccess: () => {
       toast.success('Adjustment saved.');
       queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] });
+      guard.markClean();
       navigate('/inventory/adjustment');
     },
   });
@@ -73,6 +80,7 @@ export default function AddAdjustmentPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Adjustments"

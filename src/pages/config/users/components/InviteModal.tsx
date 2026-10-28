@@ -110,7 +110,7 @@ export function InviteModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
@@ -167,7 +167,7 @@ export function InviteModal({
           <div className="space-y-1.5">
             <Label htmlFor="invite-name">
               Full name{" "}
-              <span className="text-stone-400 font-normal">(optional)</span>
+              <span className="text-stone-500 font-normal">(optional)</span>
             </Label>
             <Input
               id="invite-name"
@@ -181,7 +181,7 @@ export function InviteModal({
           <div className="space-y-1.5">
             <Label htmlFor="invite-role">
               Initial role{" "}
-              <span className="text-stone-400 font-normal">(optional)</span>
+              <span className="text-stone-500 font-normal">(optional)</span>
             </Label>
             <select
               id="invite-role"

@@ -89,7 +89,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optional)"
             aria-label="Note for the selected periods"
-            className="h-7 min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 text-xs placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30"
+            className="h-7 min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 text-xs placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
 
           {allOpen && (
@@ -117,7 +117,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             </button>
           )}
           {!allOpen && !allClosed && (
-            <span className="text-2xs italic text-stone-400">
+            <span className="text-2xs italic text-stone-500">
               Select periods that are all open or all closed for {LOCK_TARGET_LABELS[target]}.
             </span>
           )}
@@ -126,7 +126,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             type="button"
             onClick={onClear}
             aria-label="Clear selection"
-            className="ml-auto rounded p-0.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="ml-auto rounded p-0.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-3.5" />
           </button>
@@ -140,7 +140,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             type="button"
             onClick={() => setResultMessage(null)}
             aria-label="Dismiss"
-            className="shrink-0 rounded p-0.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="shrink-0 rounded p-0.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-3" />
           </button>

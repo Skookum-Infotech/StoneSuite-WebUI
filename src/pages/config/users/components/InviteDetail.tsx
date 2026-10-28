@@ -90,7 +90,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
           {invite.FullName && (
             <p className="text-xs text-stone-500">{invite.FullName}</p>
           )}
-          <p className="text-2xs text-stone-400 mt-0.5">
+          <p className="text-2xs text-stone-500 mt-0.5">
             Invited {fmtDate(invite.CreatedAt)}
           </p>
         </div>
@@ -99,12 +99,12 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
       <div className="mb-6 space-y-1.5 text-xs">
         {invite.Status === "pending" && invite.emailStatus && invite.emailStatus !== "unknown" && (
           <div className="flex justify-between gap-3">
-            <span className="text-stone-400">Email</span>
+            <span className="text-stone-500">Email</span>
             <EmailStatusBadge source={invite} showMessage />
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-stone-400">Expires</span>
+          <span className="text-stone-500">Expires</span>
           <span
             className={cn(
               "font-medium",
@@ -117,7 +117,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
         </div>
         {invite.AcceptedAt && (
           <div className="flex justify-between">
-            <span className="text-stone-400">Accepted</span>
+            <span className="text-stone-500">Accepted</span>
             <span className="font-medium text-stone-700">
               {fmtDate(invite.AcceptedAt)}
             </span>
@@ -164,7 +164,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
 
       {(canResend || canRevoke) && (
         <div className="space-y-2">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
             Actions
           </h3>
 

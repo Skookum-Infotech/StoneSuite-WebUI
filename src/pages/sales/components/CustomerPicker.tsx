@@ -186,7 +186,7 @@ export function CustomerPicker({
           type="button"
           onClick={() => onChange(null)}
           aria-label="Change billing customer"
-          className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+          className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -216,7 +216,7 @@ export function CustomerPicker({
       {open && enabled && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {results.length === 0 && !isFetching && !showInactiveNotice && (
-            <p className="px-3 py-2 text-xs text-stone-400">
+            <p className="px-3 py-2 text-xs text-stone-500">
               {debounced ? 'No matching customers.' : 'No active customers available.'}
             </p>
           )}

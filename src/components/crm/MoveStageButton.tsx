@@ -98,7 +98,7 @@ export function MoveStageButton({ workflowKey, recordId, currentStateId, gated =
       <PopoverContent align="end" className="w-56 p-1">
         <div role="listbox" aria-label="Move to stage">
           {options.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-stone-400">
+            <p className="px-3 py-2.5 text-sm text-stone-500">
               {transitionsQuery.isLoading ? 'Loading…' : 'No further status changes.'}
             </p>
           ) : (

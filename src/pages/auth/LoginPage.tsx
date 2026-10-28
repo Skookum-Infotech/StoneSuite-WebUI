@@ -10,12 +10,13 @@ import { samlProviderLabel } from '@/lib/ssoConfigForm'
 import { SAML_PENDING_PROVIDER_KEY } from '@/lib/samlSession'
 import { EmailStep } from './components/EmailStep'
 import { PasswordStep } from './components/PasswordStep'
+import { CodeStep } from './components/CodeStep'
 import { AuthNotice } from './components/AuthNotice'
 import { LoginHero } from './components/LoginHero'
-import type { UserRole, AuthResponse, IdentifyResult } from '@/types/auth'
+import type { UserRole, AuthResponse, IdentifyResult, MfaChallenge } from '@/types/auth'
 import type { SAMLProvider } from '@/types/tenant'
 
-type Step = 'email' | 'password' | 'redirecting'
+type Step = 'email' | 'password' | 'code' | 'redirecting'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -26,6 +27,9 @@ export default function LoginPage() {
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [redirectProvider, setRedirectProvider] = useState<SAMLProvider | null>(null)
+  // Set while the code step is showing: the password was right, a code was
+  // emailed, and no session exists until it is entered.
+  const [challenge, setChallenge] = useState<MfaChallenge | null>(null)
 
   const loggedOut = searchParams.get('logged_out') === 'true'
 
@@ -97,6 +101,18 @@ export default function LoginPage() {
 
   function handleBack() {
     setStep('email')
+  }
+
+  function handleMfaRequired(next: MfaChallenge) {
+    setChallenge(next)
+    setStep('code')
+  }
+
+  // Back from the code step lands on the password step: the code belongs to
+  // that password entry, so asking for a new one means entering it again.
+  function handleCodeBack() {
+    setChallenge(null)
+    setStep('password')
   }
 
   return (
@@ -209,9 +225,15 @@ export default function LoginPage() {
                       }}
                     />
                   </div>
-                  <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">Welcome back</h2>
+                  <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">
+                    {step === 'code' ? 'Check your email' : 'Welcome back'}
+                  </h2>
                   <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">
-                    {step === 'password' ? 'Enter your password to continue' : 'Sign in to your Stone Suite workspace'}
+                    {step === 'code'
+                      ? 'Enter the code we emailed you to finish signing in'
+                      : step === 'password'
+                        ? 'Enter your password to continue'
+                        : 'Sign in to your Stone Suite workspace'}
                   </p>
                 </>
               )}
@@ -230,16 +252,23 @@ export default function LoginPage() {
               <div className="flex justify-center py-6">
                 <Loader2 className="size-6 animate-spin text-stone-400" aria-hidden="true" />
               </div>
+            ) : step === 'code' && challenge ? (
+              <CodeStep challenge={challenge} onSuccess={handleLoginSuccess} onBack={handleCodeBack} />
             ) : step === 'password' ? (
-              <PasswordStep email={email} onSuccess={handleLoginSuccess} onBack={handleBack} />
+              <PasswordStep
+                email={email}
+                onSuccess={handleLoginSuccess}
+                onMfaRequired={handleMfaRequired}
+                onBack={handleBack}
+              />
             ) : (
               <EmailStep defaultEmail={email} onIdentified={handleIdentified} />
             )}
 
             {/* Footer */}
             <div className="mt-4 hidden items-center justify-center gap-1.5 sm:flex sm:mt-8">
-              <Lock className="size-3 text-stone-300" aria-hidden="true" />
-              <p className="text-center text-xs text-stone-300">Protected by enterprise-grade security</p>
+              <Lock className="size-3 text-stone-400" aria-hidden="true" />
+              <p className="text-center text-xs text-stone-500">Protected by enterprise-grade security</p>
             </div>
           </div>
         </div>
