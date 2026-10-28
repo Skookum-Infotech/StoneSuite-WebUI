@@ -13,10 +13,32 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Starting a jsdom window per test file is about a third of the suite's
+    // total CPU time (and most of it for the plain `.test.ts` files). Plain `.test.ts` files (lib helpers, services, stores) don't render
+    // anything, so they run in Node; `.test.tsx` files render components and
+    // keep jsdom. A `.test.ts` that needs the DOM (hooks via renderHook,
+    // cookies, localStorage, matchMedia, history) opts back in with a
+    // `// @vitest-environment jsdom` docblock on its first line.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/**/*.{test,spec}.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'jsdom',
+          environment: 'jsdom',
+          include: ['src/**/*.{test,spec}.tsx'],
+        },
+      },
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
