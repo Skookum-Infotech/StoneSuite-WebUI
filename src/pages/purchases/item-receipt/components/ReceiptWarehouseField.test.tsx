@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -35,21 +36,22 @@ describe('ReceiptWarehouseField', () => {
     expect(screen.getByRole('combobox', { name: 'Location' })).toBeRequired();
   });
 
-  it('lists every location, marking the default', () => {
+  it('lists every location, marking the default', async () => {
     renderField('', [wh({ id: 'a', name: 'Main Yard', isDefault: true }), wh({ id: 'b', name: 'Annex' })]);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Location' }));
     expect(screen.getByRole('option', { name: 'Main Yard (Default)' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Annex' })).toBeInTheDocument();
   });
 
   it('shows the location the receipt already points at as selected', () => {
     renderField('b', [wh({ id: 'a', name: 'Main Yard' }), wh({ id: 'b', name: 'Annex' })]);
-    expect(screen.getByRole('combobox', { name: 'Location' })).toHaveValue('b');
+    expect(screen.getByRole('combobox', { name: 'Location' })).toHaveAttribute('data-value', 'b');
   });
 
   it("reports the chosen location's uuid under the field key", async () => {
     const { set } = renderField('', [wh({ id: 'a', name: 'Main Yard' }), wh({ id: 'b', name: 'Annex' })]);
 
-    await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Location' }), 'Annex');
+    await pickOption(screen.getByRole('combobox', { name: 'Location' }), 'Annex');
 
     expect(set).toHaveBeenCalledWith('warehouse_id', 'b');
   });
@@ -57,6 +59,6 @@ describe('ReceiptWarehouseField', () => {
   it('is disabled and points at Company Info when the tenant has no locations yet', () => {
     renderField('', []);
     expect(screen.getByRole('combobox', { name: 'Location' })).toBeDisabled();
-    expect(screen.getByRole('option', { name: /add one in Company Info/ })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Location' })).toHaveTextContent(/add one in Company Info/);
   });
 });

@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronsDown, ChevronsUp, MapPin, Plus } from 'lucide-react';
@@ -80,10 +81,10 @@ export default function BinListPage() {
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} aria-label="Filter by location" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
+          <Select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} aria-label="Filter by location" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
             <option value="">All Locations</option>
             {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-          </select>
+          </Select>
 
           <div className="ml-auto flex items-center gap-3">
             <button

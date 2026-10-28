@@ -148,7 +148,8 @@ describe('SlabRowsEditor', () => {
     renderEditor({ initial: [fullSlab()], onSlabs, warehouseId: 'wh-7' });
 
     const bin = screen.getByRole('combobox', { name: 'Bin for slab 1' });
-    await user.selectOptions(bin, await screen.findByRole('option', { name: /Rack A/ }));
+    await user.click(bin);
+    await user.click(await screen.findByRole('option', { name: /Rack A/ }));
 
     expect(inventoryBinService.getTree).toHaveBeenCalledWith('wh-7');
     expect((onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[])[0].binId).toBe('bin-1');

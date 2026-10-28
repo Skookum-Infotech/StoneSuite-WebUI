@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, ClipboardPaste } from 'lucide-react';
@@ -95,14 +96,14 @@ export function PackingListPanel({ itemId, unitCode, onAdd, onClose }: {
       <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
         <label className="block text-2xs font-medium text-stone-500">
           Sizes are in
-          <select
+          <Select
             value={unit}
             onChange={(e) => setUnit(e.target.value as PackingListUnit)}
             aria-label="Packing list units"
             className={cn(inputCls, 'mt-1 block')}
           >
             {PACKING_LIST_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block text-2xs font-medium text-stone-500">
           Thickness (mm) for rows without one

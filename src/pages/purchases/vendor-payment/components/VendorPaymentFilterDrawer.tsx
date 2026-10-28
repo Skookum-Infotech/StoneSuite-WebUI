@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -105,21 +106,21 @@ export function VendorPaymentFilterDrawer({ onClose, value, onApply }: {
           </FilterField>
 
           <FilterField label="Payment Method">
-            <select value={draft.methodId} onChange={(e) => set('methodId', e.target.value)} className={fieldCls} aria-label="Payment method">
+            <Select value={draft.methodId} onChange={(e) => set('methodId', e.target.value)} className={fieldCls} aria-label="Payment method">
               <option value="">— Any —</option>
               {PAYMENT_METHODS.map((method) => (
                 <option key={method.id} value={method.id}>{method.name}</option>
               ))}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Approval">
-            <select value={draft.approvalStatus} onChange={(e) => set('approvalStatus', e.target.value)} className={fieldCls} aria-label="Approval status">
+            <Select value={draft.approvalStatus} onChange={(e) => set('approvalStatus', e.target.value)} className={fieldCls} aria-label="Approval status">
               <option value="">— Any —</option>
               {APPROVAL_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </select>
+            </Select>
           </FilterField>
 
           {customFieldDefs.length > 0 && (

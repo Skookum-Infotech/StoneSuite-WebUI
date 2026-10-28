@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -105,7 +106,7 @@ describe('RoleWidgetPanel', () => {
         onCopyFrom={onCopyFrom}
       />,
     );
-    await userEvent.selectOptions(
+    await pickOption(
       screen.getByLabelText('Copy widget allocation into Sales Rep from another role'),
       'role-ops',
     );

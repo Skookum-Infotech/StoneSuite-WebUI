@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { fieldCls } from '@/components/crm/formUtils';
 import type { Bin } from '@/types/inventory';
 import { cn } from '@/lib/utils';
@@ -25,7 +26,7 @@ function flatten(bins: Bin[], parentNames: string[] = [], out: FlatBin[] = [], s
   return out;
 }
 
-// Bin <select> built from the tree endpoint's nested shape, flattened and
+// Bin <Select> built from the tree endpoint's nested shape, flattened and
 // indented by depth (max 4) so the name trail reads as a breadcrumb. Capacity
 // is shown as a plain suffix — advisory only, never disables an option: a
 // yard crew that already placed a slab cannot be blocked by a row count.
@@ -44,7 +45,7 @@ export function BinPicker({
 }) {
   const flat = flatten(bins, [], [], showWarehouse);
   return (
-    <select
+    <Select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required={required}
@@ -59,6 +60,6 @@ export function BinPicker({
           {b.unitCount > 0 ? ` (${b.unitCount}${b.overCapacity ? ' · over capacity' : ''})` : ''}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }

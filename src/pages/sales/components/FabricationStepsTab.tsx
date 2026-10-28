@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save } from 'lucide-react';
@@ -104,7 +105,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                   </td>
                   <td className="px-3 py-2.5">
                     {canEdit ? (
-                      <select
+                      <Select
                         value={draft.status}
                         onChange={(e) => setDraft(step, { status: e.target.value })}
                         className={cn(fieldCls, 'h-8 py-1 w-36')}
@@ -113,7 +114,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                         {STEP_STATUS_OPTIONS.map((opt) => (
                           <option key={opt} value={opt}>{STEP_STATUS_LABELS[opt]}</option>
                         ))}
-                      </select>
+                      </Select>
                     ) : (
                       <StepStatusBadge status={step.status} />
                     )}

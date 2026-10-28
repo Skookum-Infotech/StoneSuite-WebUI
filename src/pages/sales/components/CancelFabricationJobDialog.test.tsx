@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -35,7 +36,7 @@ function renderDialog() {
 
 async function openAndChooseRecovered(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Cancel fabrication job' }));
-  await user.selectOptions(await screen.findByLabelText('Disposition for slab SL-100'), 'recovered');
+  await pickOption(await screen.findByLabelText('Disposition for slab SL-100'), 'recovered');
 }
 
 beforeEach(() => {
@@ -82,7 +83,7 @@ describe('CancelFabricationJobDialog — recovered offcuts', () => {
     await user.type(screen.getByLabelText('Length of the offcut from slab SL-100'), '1000');
     await user.type(screen.getByLabelText('Width of the offcut from slab SL-100'), '500');
     await user.type(screen.getByLabelText('Thickness of the offcut from slab SL-100'), '20');
-    await user.selectOptions(
+    await pickOption(
       await screen.findByLabelText('Put-away bin for the offcut from slab SL-100'), 'bin-1',
     );
     await user.click(screen.getByRole('button', { name: 'Record disposition for slab SL-100' }));
@@ -97,7 +98,7 @@ describe('CancelFabricationJobDialog — recovered offcuts', () => {
     const user = userEvent.setup();
     renderDialog();
     await user.click(screen.getByRole('button', { name: 'Cancel fabrication job' }));
-    await user.selectOptions(await screen.findByLabelText('Disposition for slab SL-100'), 'scrapped');
+    await pickOption(await screen.findByLabelText('Disposition for slab SL-100'), 'scrapped');
 
     expect(screen.queryByLabelText(/Put-away bin/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Record disposition for slab SL-100' }));

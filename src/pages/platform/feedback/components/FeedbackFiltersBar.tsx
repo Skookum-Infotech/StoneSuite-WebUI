@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { X } from 'lucide-react';
 import { fieldCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
@@ -24,7 +25,7 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
   return (
     <div className="flex flex-wrap items-end gap-2">
       <Field label="Status" htmlFor="fb-filter-status">
-        <select
+        <Select
           id="fb-filter-status"
           value={filters.status ?? ''}
           onChange={(e) => onChange({ status: e.target.value as FeedbackAdminFilters['status'] })}
@@ -34,11 +35,11 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
           {Object.entries(FEEDBACK_STATUS_LABELS).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="Category" htmlFor="fb-filter-category">
-        <select
+        <Select
           id="fb-filter-category"
           value={filters.category ?? ''}
           onChange={(e) => onChange({ category: e.target.value as FeedbackAdminFilters['category'] })}
@@ -48,11 +49,11 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
           {FEEDBACK_CATEGORY_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="Priority" htmlFor="fb-filter-priority">
-        <select
+        <Select
           id="fb-filter-priority"
           value={filters.priority ?? ''}
           onChange={(e) => onChange({ priority: e.target.value as FeedbackAdminFilters['priority'] })}
@@ -62,11 +63,11 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
           {Object.entries(FEEDBACK_PRIORITY_LABELS).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="Tenant" htmlFor="fb-filter-tenant">
-        <select
+        <Select
           id="fb-filter-tenant"
           value={filters.tenantId ?? ''}
           onChange={(e) => onChange({ tenantId: e.target.value })}
@@ -76,7 +77,7 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
           {tenants.map((t) => (
             <option key={t.id} value={t.id}>{t.displayName}</option>
           ))}
-        </select>
+        </Select>
       </Field>
 
       <Field label="Search" htmlFor="fb-filter-search">

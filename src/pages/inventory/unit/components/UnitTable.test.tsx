@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -115,7 +116,7 @@ describe('UnitTable', () => {
     const user = userEvent.setup();
     await screen.findByText('PO-00012-001');
 
-    await user.selectOptions(screen.getByLabelText('Filter by status'), 'consumed');
+    await pickOption(screen.getByLabelText('Filter by status'), 'consumed');
     await vi.waitFor(() => expect(lastSearch().filters).toEqual([{ field: 'status', op: 'eq', value: 'consumed' }]));
 
     await user.click(screen.getByRole('button', { name: /clear/i }));

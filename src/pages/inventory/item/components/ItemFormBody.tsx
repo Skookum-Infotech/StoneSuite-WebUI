@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
@@ -97,7 +98,7 @@ export function ItemFormBody({ data, set }: {
             />
           </ModernFieldShell>
           <ModernFieldShell label="Currency">
-            <select
+            <Select
               value={String(data.currency_id ?? '')}
               onChange={(e) => set('currency_id', e.target.value)}
               className={fieldCls}
@@ -107,7 +108,7 @@ export function ItemFormBody({ data, set }: {
               {(crmLookups?.currencies ?? []).map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
           <ModernFieldShell label="Tax Rate">
             <LookupSelect
@@ -145,7 +146,7 @@ export function ItemFormBody({ data, set }: {
           {/* The unit length and width are measured in everywhere this item is used.
               Always shown: which unit applies doesn't depend on the Unit chosen above. */}
           <ModernFieldShell label="Length / Width Unit">
-            <select
+            <Select
               value={normalizeUnit(String(data.dimension_unit ?? ''))}
               onChange={(e) => set('dimension_unit', e.target.value)}
               className={fieldCls}
@@ -154,7 +155,7 @@ export function ItemFormBody({ data, set }: {
               {DIMENSION_UNITS.map((u) => (
                 <option key={u} value={u}>{DIMENSION_UNIT_LABELS[u]}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
           {/* The two on/off switches sit together on a row of their own, each in a tile,
               on the same three-column rhythm as the fields above. */}
@@ -206,7 +207,7 @@ export function ItemFormBody({ data, set }: {
       <ModernSection title="Stone Attributes" index={1}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <ModernFieldShell label="Tracking">
-            <select
+            <Select
               value={String(data.tracking ?? '')}
               onChange={(e) => set('tracking', e.target.value)}
               className={fieldCls}
@@ -215,7 +216,7 @@ export function ItemFormBody({ data, set }: {
               {TRACKING_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
           <ModernFieldShell label="Material">
             <LookupSelect
@@ -263,7 +264,7 @@ export function ItemFormBody({ data, set }: {
             </ModernFieldShell>
           )}
           <ModernFieldShell label="Origin Country">
-            <select
+            <Select
               value={String(data.origin_country_id ?? '')}
               onChange={(e) => set('origin_country_id', e.target.value)}
               className={fieldCls}
@@ -273,7 +274,7 @@ export function ItemFormBody({ data, set }: {
               {(crmLookups?.countries ?? []).map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
         </div>
       </ModernSection>
