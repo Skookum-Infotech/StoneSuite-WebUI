@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
@@ -28,6 +28,9 @@ export default defineConfig({
           name: 'node',
           environment: 'node',
           include: ['src/**/*.{test,spec}.ts'],
+          // Hook tests drive React through renderHook, which needs a DOM, so
+          // every file under hooks/ runs in the jsdom project below.
+          exclude: [...configDefaults.exclude, 'src/hooks/**'],
         },
       },
       {
@@ -35,7 +38,7 @@ export default defineConfig({
         test: {
           name: 'jsdom',
           environment: 'jsdom',
-          include: ['src/**/*.{test,spec}.tsx'],
+          include: ['src/**/*.{test,spec}.tsx', 'src/hooks/**/*.{test,spec}.ts'],
         },
       },
     ],
