@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Ban, CheckCircle2, Loader2, RotateCcw } from 'lucide-react';
@@ -46,7 +47,7 @@ function ColumnMappingRow({
       <span className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-700 dark:text-stone-200" title={column}>
         {column}
       </span>
-      <select
+      <Select
         value={mode === 'cf' ? target : mode}
         onChange={(e) => {
           const v = e.target.value;
@@ -65,7 +66,7 @@ function ColumnMappingRow({
             ))}
           </optgroup>
         )}
-      </select>
+      </Select>
       {mode === 'core' && (
         <input
           type="text"

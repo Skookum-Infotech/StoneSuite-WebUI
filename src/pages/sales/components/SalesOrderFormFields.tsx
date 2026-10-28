@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import {
   fieldCls, textareaCls, readonlyCls, checkboxLabelCls,
@@ -88,7 +89,7 @@ export function SOField({ field, value, set, lookups, dependsOnValue, disabled }
     return (
       <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -104,7 +105,7 @@ export function SOField({ field, value, set, lookups, dependsOnValue, disabled }
               : field.options?.filter(Boolean).map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
-          </select>
+          </Select>
         </ModernFieldShell>
       </div>
     );

@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useRef, useState, useCallback } from 'react';
 import { Plus, Trash2, X, FileImage, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -73,9 +74,9 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
             </div>
             <div className="space-y-1">
               <label className={fieldLabelCls}>Type</label>
-              <select value={draft.type} onChange={(e) => setDraft((p) => ({ ...p, type: e.target.value as DrawingType }))} className={fieldCls} aria-label="Drawing Type">
+              <Select value={draft.type} onChange={(e) => setDraft((p) => ({ ...p, type: e.target.value as DrawingType }))} className={fieldCls} aria-label="Drawing Type">
                 {DRAWING_TYPES.map((t) => <option key={t} value={t}>{DRAWING_TYPE_LABELS[t]}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="space-y-1">
               <label className={fieldLabelCls}>Revision</label>
@@ -83,9 +84,9 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
             </div>
             <div className="space-y-1">
               <label className={fieldLabelCls}>Status</label>
-              <select value={draft.status} onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value as DrawingStatus }))} className={fieldCls} aria-label="Status">
+              <Select value={draft.status} onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value as DrawingStatus }))} className={fieldCls} aria-label="Status">
                 {DRAWING_STATUSES.map((s) => <option key={s} value={s}>{DRAWING_STATUS_CONFIG[s].label}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="space-y-1 sm:col-span-2">
               <label className={fieldLabelCls}>Notes</label>
@@ -119,9 +120,9 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
                 editId === d.id ? (
                   <tr key={d.id} className="bg-brand/5">
                     <td className="px-2 py-2"><input autoFocus type="text" value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))} className={cn(inlineCls, 'min-w-[150px]')} aria-label="Drawing Name" /></td>
-                    <td className="px-2 py-2"><select value={draft.type} onChange={(e) => setDraft((p) => ({ ...p, type: e.target.value as DrawingType }))} className={cn(inlineCls, 'w-28')} aria-label="Type">{DRAWING_TYPES.map((t) => <option key={t} value={t}>{DRAWING_TYPE_LABELS[t]}</option>)}</select></td>
+                    <td className="px-2 py-2"><Select value={draft.type} onChange={(e) => setDraft((p) => ({ ...p, type: e.target.value as DrawingType }))} className={cn(inlineCls, 'w-28')} aria-label="Type">{DRAWING_TYPES.map((t) => <option key={t} value={t}>{DRAWING_TYPE_LABELS[t]}</option>)}</Select></td>
                     <td className="px-2 py-2"><input type="text" value={draft.revision} onChange={(e) => setDraft((p) => ({ ...p, revision: e.target.value }))} className={cn(inlineCls, 'w-20')} aria-label="Revision" /></td>
-                    <td className="px-2 py-2"><select value={draft.status} onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value as DrawingStatus }))} className={cn(inlineCls, 'w-28')} aria-label="Status">{DRAWING_STATUSES.map((s) => <option key={s} value={s}>{DRAWING_STATUS_CONFIG[s].label}</option>)}</select></td>
+                    <td className="px-2 py-2"><Select value={draft.status} onChange={(e) => setDraft((p) => ({ ...p, status: e.target.value as DrawingStatus }))} className={cn(inlineCls, 'w-28')} aria-label="Status">{DRAWING_STATUSES.map((s) => <option key={s} value={s}>{DRAWING_STATUS_CONFIG[s].label}</option>)}</Select></td>
                     <td className="px-2 py-2"><input type="text" value={draft.notes} onChange={(e) => setDraft((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes…" className={cn(inlineCls, 'min-w-[100px]')} aria-label="Notes" /></td>
                     <td className="px-3 py-2 text-stone-500 text-2xs whitespace-nowrap">{new Date(d.uploadedAt).toLocaleDateString()}</td>
                     <td className="px-2 py-2">

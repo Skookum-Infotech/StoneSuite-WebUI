@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,7 +24,7 @@ export function FabricationCustomerEvidence({ jobId, revision }: { jobId: string
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm font-medium">Customer approver<input required value={approver} onChange={(event) => setApprover(event.target.value)} className={field} /></label>
       <label className="text-sm font-medium">Approval received<input required type="datetime-local" value={date} onChange={(event) => setDate(event.target.value)} className={field} /></label>
-      <label className="text-sm font-medium">Evidence channel<select value={channel} onChange={(event) => setChannel(event.target.value)} className={field}><option value="email">Email</option><option value="signed_document">Signed document</option><option value="message">Message</option></select></label>
+      <label className="text-sm font-medium">Evidence channel<Select value={channel} onChange={(event) => setChannel(event.target.value)} className={field}><option value="email">Email</option><option value="signed_document">Signed document</option><option value="message">Message</option></Select></label>
     </div>
     <label className="block text-sm font-medium">Evidence reference<textarea required value={evidence} onChange={(event) => setEvidence(event.target.value)} placeholder="Identify the saved email, signed document or message." className={field} /></label>
     {action.isError && <p role="alert" className="text-sm text-red-700">{apiErrorMessage(action.error, 'Customer approval could not be recorded.')}</p>}

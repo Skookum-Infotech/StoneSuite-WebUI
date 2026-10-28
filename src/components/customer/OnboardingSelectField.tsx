@@ -62,7 +62,7 @@ export function OnboardingSelectField({
             className="w-full rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-stone-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
           />
         </div>
-        <div role="listbox" aria-label={label} className="max-h-60 overflow-y-auto p-1">
+        <div role="listbox" aria-label={label} className="modal-scrollbar max-h-60 overflow-y-auto p-1">
           {filtered.length === 0 && (
             <p className="px-2.5 py-2 text-xs text-stone-500">No matches</p>
           )}

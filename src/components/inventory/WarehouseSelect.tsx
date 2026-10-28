@@ -1,8 +1,9 @@
+import { Select } from '@/components/ui/select';
 import { fieldCls } from '@/components/crm/formUtils';
 import type { Warehouse } from '@/types/inventory';
 import { cn } from '@/lib/utils';
 
-// Location <select> over the tenant's Company Info locations, bound to the
+// Location <Select> over the tenant's Company Info locations, bound to the
 // location uuid — the id GET /inventory/lookups exposes for a picker. See
 // lib/inventoryWarehouse.ts for the numeric id every document write contract
 // takes, and for `defaultWarehouseUuid`, which is what a new record starts on
@@ -22,7 +23,7 @@ export function WarehouseSelect({
 }) {
   const hasLocations = warehouses.length > 0;
   return (
-    <select
+    <Select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required={required}
@@ -36,6 +37,6 @@ export function WarehouseSelect({
       {warehouses.map((w) => (
         <option key={w.id} value={w.id}>{w.name}{w.isDefault ? ' (Default)' : ''}</option>
       ))}
-    </select>
+    </Select>
   );
 }

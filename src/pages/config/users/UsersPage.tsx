@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useQuery } from "@tanstack/react-query";
 import { UsersRound, Plus, Mail, ChevronLeft } from "lucide-react";
 import { userService } from "@/services/tenantServices";
@@ -144,16 +145,12 @@ export default function UsersPage() {
             : "flex flex-1 md:flex-none",
         )}>
           {/* Tab switcher */}
-          <div className="flex border-b border-stone-100">
+          <div className="border-b border-stone-100 p-2">
+            <div role="tablist" className={cn(TAB_LIST_CLASS, "flex w-full")}>
             <button
               type="button"
               onClick={() => setTab("members")}
-              className={cn(
-                "flex-1 py-2.5 text-xs font-semibold transition-colors",
-                tab === "members"
-                  ? "border-b-2 border-brand-dark text-brand-dark"
-                  : "text-stone-500 hover:text-stone-700",
-              )}
+              className={cn(tabClass(tab === "members"), "flex-1 shrink justify-center")}
             >
               Members
               <span className="ml-1.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-2xs text-stone-500">
@@ -163,12 +160,7 @@ export default function UsersPage() {
             <button
               type="button"
               onClick={() => setTab("invites")}
-              className={cn(
-                "flex-1 py-2.5 text-xs font-semibold transition-colors",
-                tab === "invites"
-                  ? "border-b-2 border-brand-dark text-brand-dark"
-                  : "text-stone-500 hover:text-stone-700",
-              )}
+              className={cn(tabClass(tab === "invites"), "flex-1 shrink justify-center")}
             >
               Invites
               {pendingCount > 0 && (
@@ -177,6 +169,7 @@ export default function UsersPage() {
                 </span>
               )}
             </button>
+            </div>
           </div>
 
           {/* List */}

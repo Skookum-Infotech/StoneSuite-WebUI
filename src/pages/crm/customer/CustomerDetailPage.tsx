@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
@@ -26,7 +27,6 @@ import { PortalAccessStatusCard } from "@/pages/crm/customer/components/PortalAc
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
 import { CrmPageHeader } from "@/pages/crm/components/CrmPageHeader";
 import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm/formUtils";
-import { cn } from "@/lib/utils";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { recordApprovalState, type StatusInfo } from "@/types/tenant";
 
@@ -235,22 +235,19 @@ export default function CustomerDetailPage() {
 
       {/* Tab bar — scrolls horizontally on small screens rather than
           overflowing the page (6 tabs don't fit a phone width). */}
-      <div className="flex shrink-0 overflow-x-auto modal-scrollbar border-b border-stone-200 bg-white px-3 sm:px-5 3xl:px-12 4xl:px-16">
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "shrink-0 whitespace-nowrap px-3 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 sm:px-4",
-              activeTab === tab.key
-                ? "border-brand text-stone-950"
-                : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto modal-scrollbar border-b border-stone-200 bg-white px-3 sm:px-5 3xl:px-12 4xl:px-16 py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Two-column body — stacks on mobile, side-by-side on lg+ */}

@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -96,7 +97,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
           <div className="space-y-3">
             <div>
               <label htmlFor="apply-existing-payment" className={fieldLabelCls}>Payment</label>
-              <select
+              <Select
                 id="apply-existing-payment"
                 value={paymentId}
                 onChange={(e) => choose(e.target.value)}
@@ -108,7 +109,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
                     {p.vendorPaymentNumber || 'Payment'} — {currency(p.unappliedAmount)} unapplied
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label htmlFor="apply-existing-amount" className={fieldLabelCls}>Amount</label>

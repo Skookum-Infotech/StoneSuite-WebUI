@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Layers } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { UnitTable } from './components/UnitTable';
 import { RemnantsFinder } from './components/RemnantsFinder';
 
@@ -31,20 +31,19 @@ export default function UnitListPage() {
           </div>
         </div>
 
-        <div className="mt-5 flex gap-1 border-b border-stone-200">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className={cn(
-                'px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-                tab === t.key ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="mt-5 flex border-b border-stone-200 py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={tabClass(tab === t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-4 flex-1 flex flex-col min-h-0">

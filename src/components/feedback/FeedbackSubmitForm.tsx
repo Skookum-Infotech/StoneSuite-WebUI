@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { AlertCircle, Send } from 'lucide-react';
@@ -147,7 +148,7 @@ export function FeedbackSubmitForm({
             <label htmlFor="feedback-category" className={fieldLabelCls}>
               <span className="text-red-500">*</span> Category
             </label>
-            <select
+            <Select
               id="feedback-category"
               value={category}
               onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
@@ -156,12 +157,12 @@ export function FeedbackSubmitForm({
               {FEEDBACK_CATEGORY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
             <label htmlFor="feedback-area" className={fieldLabelCls}>Where did this happen?</label>
-            <select
+            <Select
               id="feedback-area"
               value={area}
               onChange={(e) => setArea(e.target.value as FeedbackArea)}
@@ -170,7 +171,7 @@ export function FeedbackSubmitForm({
               {FEEDBACK_AREA_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 

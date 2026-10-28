@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -289,7 +290,7 @@ export function CrmRecordTable({ config }: Props) {
 
         {/* Status filter */}
         <div className="relative w-full sm:w-auto">
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); }}
             className={cn(
@@ -302,7 +303,7 @@ export function CrmRecordTable({ config }: Props) {
             {statuses.map((s) => (
               <option key={s.stateId} value={s.stateId}>{s.statusLabel}</option>
             ))}
-          </select>
+          </Select>
           <ChevronRight className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3 text-stone-400 rotate-90" />
         </div>
 

@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -61,47 +62,47 @@ export function ItemFilterDrawer({ onClose, value, onApply }: {
             <input type="text" value={draft.barcode} onChange={(e) => set('barcode', e.target.value)} placeholder="Contains…" className={fieldCls} aria-label="Barcode" />
           </FilterField>
           <FilterField label="Tracking">
-            <select value={draft.tracking} onChange={(e) => set('tracking', e.target.value)} className={fieldCls} aria-label="Tracking">
+            <Select value={draft.tracking} onChange={(e) => set('tracking', e.target.value)} className={fieldCls} aria-label="Tracking">
               <option value="">— Any —</option>
               {TRACKING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </Select>
           </FilterField>
           <FilterField label="Active">
-            <select value={draft.isActive} onChange={(e) => set('isActive', e.target.value)} className={fieldCls} aria-label="Active">
+            <Select value={draft.isActive} onChange={(e) => set('isActive', e.target.value)} className={fieldCls} aria-label="Active">
               <option value="">— Any —</option>
               <option value="true">Active only</option>
               <option value="false">Inactive only</option>
-            </select>
+            </Select>
           </FilterField>
           <FilterField label="Material">
-            <select value={draft.materialId} onChange={(e) => set('materialId', e.target.value)} className={fieldCls} aria-label="Material">
+            <Select value={draft.materialId} onChange={(e) => set('materialId', e.target.value)} className={fieldCls} aria-label="Material">
               <option value="">— Any —</option>
               {(lookups?.materials ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+            </Select>
           </FilterField>
           <FilterField label="Color">
-            <select value={draft.colorId} onChange={(e) => set('colorId', e.target.value)} className={fieldCls} aria-label="Color">
+            <Select value={draft.colorId} onChange={(e) => set('colorId', e.target.value)} className={fieldCls} aria-label="Color">
               <option value="">— Any —</option>
               {(lookups?.colors ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           </FilterField>
           <FilterField label="Finish">
-            <select value={draft.finishId} onChange={(e) => set('finishId', e.target.value)} className={fieldCls} aria-label="Finish">
+            <Select value={draft.finishId} onChange={(e) => set('finishId', e.target.value)} className={fieldCls} aria-label="Finish">
               <option value="">— Any —</option>
               {(lookups?.finishes ?? []).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
+            </Select>
           </FilterField>
           <FilterField label="Origin Country">
-            <select value={draft.originCountryId} onChange={(e) => set('originCountryId', e.target.value)} className={fieldCls} aria-label="Origin Country">
+            <Select value={draft.originCountryId} onChange={(e) => set('originCountryId', e.target.value)} className={fieldCls} aria-label="Origin Country">
               <option value="">— Any —</option>
               {(crmLookups?.countries ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           </FilterField>
           <FilterField label="Default Location">
-            <select value={draft.defaultWarehouseId} onChange={(e) => set('defaultWarehouseId', e.target.value)} className={fieldCls} aria-label="Default Location">
+            <Select value={draft.defaultWarehouseId} onChange={(e) => set('defaultWarehouseId', e.target.value)} className={fieldCls} aria-label="Default Location">
               <option value="">— Any —</option>
               {(lookups?.warehouses ?? []).map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-            </select>
+            </Select>
           </FilterField>
           <FilterField label="Thickness (mm)">
             <div className="grid grid-cols-2 gap-2">

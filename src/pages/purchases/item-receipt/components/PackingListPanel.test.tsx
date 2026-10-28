@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -63,7 +64,7 @@ describe('PackingListPanel', () => {
   it('converts a list given in centimetres to millimetres', async () => {
     const user = userEvent.setup();
     const { onAdd } = renderPanel();
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Packing list units' }), 'cm');
+    await pickOption(screen.getByRole('combobox', { name: 'Packing list units' }), 'cm');
     paste('304.8 152.4 3');
 
     await user.click(screen.getByRole('button', { name: 'Add 1 slab' }));
@@ -74,7 +75,7 @@ describe('PackingListPanel', () => {
   it('converts a list given in inches', async () => {
     const user = userEvent.setup();
     const { onAdd } = renderPanel();
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Packing list units' }), 'in');
+    await pickOption(screen.getByRole('combobox', { name: 'Packing list units' }), 'in');
     paste('120 60 1.25');
 
     await user.click(screen.getByRole('button', { name: 'Add 1 slab' }));

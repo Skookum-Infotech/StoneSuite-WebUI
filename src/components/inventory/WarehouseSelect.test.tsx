@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -16,16 +17,19 @@ const LOCATIONS = [
 ];
 
 describe('WarehouseSelect', () => {
-  it('is a "Location" picker with a Location placeholder', () => {
+  it('is a "Location" picker with a Location placeholder', async () => {
     render(<WarehouseSelect warehouses={LOCATIONS} value="" onChange={vi.fn()} />);
 
-    expect(screen.getByRole('combobox', { name: 'Location' })).toBeInTheDocument();
+    const trigger = screen.getByRole('combobox', { name: 'Location' });
+    expect(trigger).toHaveTextContent('— Select Location —');
+    await userEvent.click(trigger);
     expect(screen.getByRole('option', { name: '— Select Location —' })).toBeInTheDocument();
   });
 
-  it('lists every location and marks the default one', () => {
+  it('lists every location and marks the default one', async () => {
     render(<WarehouseSelect warehouses={LOCATIONS} value="" onChange={vi.fn()} />);
 
+    await userEvent.click(screen.getByRole('combobox', { name: 'Location' }));
     expect(screen.getByRole('option', { name: 'Main Yard (Default)' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Annex' })).toBeInTheDocument();
   });
@@ -33,14 +37,14 @@ describe('WarehouseSelect', () => {
   it('shows the location it is given as selected', () => {
     render(<WarehouseSelect warehouses={LOCATIONS} value="main" onChange={vi.fn()} />);
 
-    expect(screen.getByRole('combobox', { name: 'Location' })).toHaveValue('main');
+    expect(screen.getByRole('combobox', { name: 'Location' })).toHaveAttribute('data-value', 'main');
   });
 
   it("reports another location's uuid when the user picks it", async () => {
     const onChange = vi.fn();
     render(<WarehouseSelect warehouses={LOCATIONS} value="main" onChange={onChange} />);
 
-    await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Location' }), 'Annex');
+    await pickOption(screen.getByRole('combobox', { name: 'Location' }), 'Annex');
 
     expect(onChange).toHaveBeenCalledWith('annex');
   });
@@ -55,6 +59,6 @@ describe('WarehouseSelect', () => {
     render(<WarehouseSelect warehouses={[]} value="" onChange={vi.fn()} />);
 
     expect(screen.getByRole('combobox', { name: 'Location' })).toBeDisabled();
-    expect(screen.getByRole('option', { name: /No locations yet.*Company Info/ })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Location' })).toHaveTextContent(/No locations yet.*Company Info/);
   });
 });

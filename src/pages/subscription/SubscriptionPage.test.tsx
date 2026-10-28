@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -58,7 +59,7 @@ describe('SubscriptionPage — Plan tab', () => {
 
     await user.type(within(dialog).getByLabelText('Name'), 'Jane Doe')
     await user.type(within(dialog).getByLabelText('Work email'), 'jane@acme.com')
-    await user.selectOptions(within(dialog).getByLabelText('Company size'), 'medium')
+    await pickOption(within(dialog).getByLabelText('Company size'), 'medium')
     await user.click(within(dialog).getByRole('button', { name: 'Send message to sales' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent(

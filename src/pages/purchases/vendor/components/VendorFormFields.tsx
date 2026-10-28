@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
@@ -51,7 +52,7 @@ export function VendorField({ field, value, set, lookups, showError }: {
     return (
       <div className={colClass}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -62,7 +63,7 @@ export function VendorField({ field, value, set, lookups, showError }: {
             {lookupRows
               ? lookupRows.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)
               : field.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
+          </Select>
         </ModernFieldShell>
       </div>
     );

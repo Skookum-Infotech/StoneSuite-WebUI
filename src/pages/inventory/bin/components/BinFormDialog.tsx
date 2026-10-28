@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MapPin, X } from 'lucide-react';
@@ -84,9 +85,9 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
             </div>
             <div className="space-y-1.5">
               <label className={fieldLabelCls}>Type</label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className={fieldCls} aria-label="Bin type">
+              <Select value={type} onChange={(e) => setType(e.target.value)} className={fieldCls} aria-label="Bin type">
                 {BIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -95,10 +96,10 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
           </div>
           <div className="space-y-1.5">
             <label className={fieldLabelCls}>Parent Bin</label>
-            <select value={parentId} onChange={(e) => setParentId(e.target.value)} className={fieldCls} aria-label="Parent bin">
+            <Select value={parentId} onChange={(e) => setParentId(e.target.value)} className={fieldCls} aria-label="Parent bin">
               <option value="">— Top level —</option>
               {parentOptions.map((b) => <option key={b.id} value={b.id}>{b.path || b.name}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

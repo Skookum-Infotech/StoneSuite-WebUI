@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -43,12 +44,12 @@ export default function BundleListPage() {
         </div>
 
         <div className="mt-5 flex items-center gap-2">
-          <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
+          <Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
             <option value="">Any status</option>
             <option value={BUNDLE_OPEN}>Open</option>
             <option value={BUNDLE_SEALED}>Sealed</option>
             <option value="broken">Broken</option>
-          </select>
+          </Select>
         </div>
 
         <div className="mt-4 flex-1 overflow-y-auto modal-scrollbar">
