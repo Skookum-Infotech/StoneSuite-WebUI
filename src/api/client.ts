@@ -73,6 +73,9 @@ export function isRefreshRejection(err: unknown): boolean {
 // each hitting the logout path don't each fire window.location redirects.
 let isLoggingOut = false;
 
+// Longest forceLogout waits for the server to confirm logout before redirecting.
+const LOGOUT_REDIRECT_TIMEOUT_MS = 2000;
+
 // Exported so notifyClient can reuse the exact same refresh (one shared
 // in-flight promise via refreshPromise) instead of racing it with a second
 // /auth/refresh of its own. Retries transient failures before giving up, so a
@@ -247,10 +250,15 @@ export function forceLogout(notice?: string): void {
   // Shown on the login page the redirect below lands on.
   if (notice) setAuthNotice(notice);
 
-  // Clear server-side cookies (fire-and-forget). Uses apiClient so the request
-  // still carries X-CSRF-Token; isLoggingOut above stops the response
-  // interceptor from reacting to a 401 on this call.
-  apiClient.post(wasPortal ? '/portal/auth/logout' : '/auth/logout').catch(() => undefined);
+  // Clear server-side cookies. Uses apiClient so the request still carries
+  // X-CSRF-Token; isLoggingOut above stops the response interceptor from
+  // reacting to a 401 on this call. The redirect below waits for it (bounded by
+  // LOGOUT_REDIRECT_TIMEOUT_MS) so the hard navigation cannot cancel the request
+  // and leave the refresh token valid server-side.
+  const logoutRequest = apiClient
+    .post(wasPortal ? '/portal/auth/logout' : '/auth/logout')
+    .then(() => undefined, () => undefined);
+  const logoutDeadline = new Promise<void>((resolve) => setTimeout(resolve, LOGOUT_REDIRECT_TIMEOUT_MS));
 
   try {
     const ch = new BroadcastChannel('session-sync');
@@ -261,7 +269,9 @@ export function forceLogout(notice?: string): void {
   }
 
   // Hard redirect — resets all in-flight state including isLoggingOut.
-  window.location.href = '/auth/login';
+  void Promise.race([logoutRequest, logoutDeadline]).then(() => {
+    window.location.href = '/auth/login';
+  });
 }
 
 // Sign-in and refresh report a refused workspace themselves (the form shows the

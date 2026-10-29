@@ -10,14 +10,24 @@ export function lazyWithRetry<P>(
   factory: () => Promise<{ default: React.ComponentType<P> }>,
 ): React.LazyExoticComponent<React.ComponentType<P>> {
   return lazy(() =>
-    factory().catch((err: unknown) => {
-      if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
-        sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
-        window.location.reload();
-        // Return a never-resolving promise — reload takes over.
-        return new Promise<never>(() => {});
-      }
-      return Promise.reject(err);
-    }),
+    factory()
+      .then((module) => {
+        // A chunk loaded fine: re-arm the one-time reload for the next deploy.
+        try {
+          sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+        } catch {
+          // storage unavailable — nothing to re-arm
+        }
+        return module;
+      })
+      .catch((err: unknown) => {
+        if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+          sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+          window.location.reload();
+          // Return a never-resolving promise — reload takes over.
+          return new Promise<never>(() => {});
+        }
+        return Promise.reject(err);
+      }),
   );
 }

@@ -186,7 +186,12 @@ export default function MainLayout(): React.JSX.Element {
   const exitConfirmation = useExitConfirmation(isAuthenticated);
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />;
+    // Carry the requested page so sign-in can bring the user back to it.
+    const requested = `${location.pathname}${location.search}`;
+    const loginPath = requested === '/' || requested === '/dashboard'
+      ? '/auth/login'
+      : `/auth/login?return_to=${encodeURIComponent(requested)}`;
+    return <Navigate to={loginPath} replace />;
   }
 
   // A customer-portal session may only reach the paths in

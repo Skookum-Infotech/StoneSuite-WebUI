@@ -15,6 +15,7 @@ import { AuthNotice } from './components/AuthNotice'
 import { LoginHero } from './components/LoginHero'
 import type { UserRole, AuthResponse, IdentifyResult, MfaChallenge } from '@/types/auth'
 import type { SAMLProvider } from '@/types/tenant'
+import { isSafeReturnPath } from '@/lib/safeReturnPath'
 
 type Step = 'email' | 'password' | 'code' | 'redirecting'
 
@@ -45,12 +46,20 @@ export default function LoginPage() {
     }
     setRedirectProvider(result.provider)
     setStep('redirecting')
-    const returnTo = searchParams.get('return_to') ?? undefined
+    const requestedReturnTo = searchParams.get('return_to')
+    const returnTo = isSafeReturnPath(requestedReturnTo) ? requestedReturnTo : undefined
     sessionStorage.setItem(SAML_PENDING_PROVIDER_KEY, result.provider)
     window.location.href = samlAuthService.initiateUrl(result.provider, {
       tenantId: result.tenantId,
       returnTo,
     })
+  }
+
+  // Where to land after sign-in: the page the user originally asked for (see
+  // MainLayout's redirect), when it is a safe in-app path, else the default.
+  function postLoginPath(fallback: string): string {
+    const requested = searchParams.get('return_to')
+    return isSafeReturnPath(requested) ? requested : fallback
   }
 
   async function handleLoginSuccess(response: AuthResponse) {
@@ -72,7 +81,7 @@ export default function LoginPage() {
         tenantId: response.tenantId ?? '',
         workspaces: response.workspaces ?? [],
       })
-      navigate('/sales/sales_order', { replace: true })
+      navigate(postLoginPath('/sales/sales_order'), { replace: true })
       return
     }
 
@@ -96,7 +105,7 @@ export default function LoginPage() {
 
     // replace: true drops /auth/login from the history stack so the browser
     // Back button cannot land a signed-in user back on the sign-in screen.
-    navigate('/dashboard', { replace: true })
+    navigate(postLoginPath('/dashboard'), { replace: true })
   }
 
   function handleBack() {

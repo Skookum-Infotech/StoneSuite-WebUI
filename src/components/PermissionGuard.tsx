@@ -42,8 +42,26 @@ function FormDisabled() {
   );
 }
 
+function PermissionsUnavailable({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div role="alert" className="flex flex-col items-center justify-center py-24 text-center">
+      <ShieldOff className="mb-3 size-10 text-stone-400" aria-hidden="true" />
+      <p className="text-sm font-semibold text-stone-600 dark:text-stone-300">Couldn&apos;t load your permissions</p>
+      <p className="mt-1 text-xs text-stone-500">Check your connection and try again.</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        aria-label="Retry loading permissions"
+        className="mt-3 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-100"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
 export function PermissionGuard({ children, resource, action, platformAdminOnly, workflowKey }: Props) {
-  const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
+  const { hasPermission, isLoading: permissionsLoading, isError: permissionsFailed, refetch } = useUserPermissions();
   const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
   const user = useAuthStore((s) => s.user);
 
@@ -57,7 +75,11 @@ export function PermissionGuard({ children, resource, action, platformAdminOnly,
     return user?.isPlatformAdmin ? <>{children}</> : <AccessDenied />;
   }
 
-  if (resource && action) {
+  // A half-specified check (resource without action or vice versa) is a
+  // mistake in the route table — deny rather than silently allow everyone.
+  if (resource || action) {
+    if (!resource || !action) return <AccessDenied />;
+    if (permissionsFailed) return <PermissionsUnavailable onRetry={() => void refetch?.()} />;
     return hasPermission(resource, action) ? <>{children}</> : <AccessDenied />;
   }
 
