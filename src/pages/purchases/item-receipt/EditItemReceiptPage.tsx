@@ -49,6 +49,15 @@ export default function EditItemReceiptPage() {
     enabled: Boolean(ir?.purchaseOrder.id),
   });
 
+  // The slabs the order put on order and that have not arrived: the checklist's rows.
+  // A pending receipt that already ticked some of them still finds them here, since
+  // a slab stays on order until its receipt posts.
+  const { data: onOrderSlabs, isLoading: onOrderLoading } = useQuery({
+    queryKey: ['po-on-order-slabs', ir?.purchaseOrder.id],
+    queryFn: () => itemReceiptService.onOrderSlabs(ir!.purchaseOrder.id),
+    enabled: Boolean(ir?.purchaseOrder.id),
+  });
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -74,8 +83,8 @@ export default function EditItemReceiptPage() {
     [mapped, ir, warehouses],
   );
   const mergedLines = useMemo(
-    () => (po && ir ? mergeReceiptLines(po.items, ir.items ?? []) : []),
-    [po, ir],
+    () => (po && ir ? mergeReceiptLines(po.items, ir.items ?? [], onOrderSlabs ?? []) : []),
+    [po, ir, onOrderSlabs],
   );
   const data = localData ?? baseData;
   const lines = localLines ?? mergedLines;
@@ -99,7 +108,7 @@ export default function EditItemReceiptPage() {
   // third, so waiting on them avoids flagging that assembly as an edit.
   const guard = useUnsavedChangesGuard(
     { data, lines, customFieldValues },
-    Boolean(mapped) && Boolean(po) && Boolean(inventoryLookups) && !isLocked,
+    Boolean(mapped) && Boolean(po) && !onOrderLoading && Boolean(inventoryLookups) && !isLocked,
   );
 
   const save = useMutation({
@@ -114,13 +123,14 @@ export default function EditItemReceiptPage() {
       queryClient.invalidateQueries({ queryKey: ['item-receipt', id] });
       queryClient.invalidateQueries({ queryKey: ['item-receipts'] });
       queryClient.invalidateQueries({ queryKey: ['slab-sequence', po?.id] });
+      queryClient.invalidateQueries({ queryKey: ['po-on-order-slabs', po?.id] });
       guard.markClean();
       navigate(`/purchases/item_receipt/${id}`);
     },
   });
   const errorRef = useScrollToError<HTMLDivElement>(save.error);
 
-  if (isLoading || (Boolean(ir) && poLoading)) return <div className="p-6"><Spinner label="Loading item receipt…" /></div>;
+  if (isLoading || (Boolean(ir) && (poLoading || onOrderLoading))) return <div className="p-6"><Spinner label="Loading item receipt…" /></div>;
   if (loadError || !ir)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load item receipt.')}</ErrorNote></div>;
   if (poError || !po)

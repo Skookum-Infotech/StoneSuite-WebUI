@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useState } from 'react';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -13,19 +13,21 @@ vi.mock('@/services/inventoryBinService', () => ({
 }));
 
 vi.mock('@/services/inventoryService', () => ({
-  inventoryService: { getItem: vi.fn().mockResolvedValue({ id: 'item-1', thicknessMm: 30 }) },
+  inventoryService: { getItem: vi.fn().mockResolvedValue({ id: 'item-1', thicknessMm: 30, dimensionUnit: 'mm' }) },
 }));
 
 import { SlabRowsEditor } from './SlabRowsEditor';
 import { inventoryBinService } from '@/services/inventoryBinService';
-import { newDraftSlab, type ItemReceiptDraftSlab } from '@/lib/itemReceiptSlabs';
+import { inventoryService } from '@/services/inventoryService';
+import { newDraftSlab, GROUPED_ROW_THRESHOLD, type ItemReceiptDraftSlab } from '@/lib/itemReceiptSlabs';
 import type { ItemReceiptDraftLine } from '@/lib/itemReceiptForm';
 
-function line(slabs: ItemReceiptDraftSlab[]): ItemReceiptDraftLine {
+function line(slabs: ItemReceiptDraftSlab[], over: Partial<ItemReceiptDraftLine> = {}): ItemReceiptDraftLine {
   return {
     purchaseOrderItemId: 'poi-1', lineNumber: 1, itemName: 'Absolute Black', sku: 'AB-30',
     description: '', unitCode: 'SQFT', qtyOrdered: 500, qtyAlreadyReceived: 0,
-    qtyReceived: '', qtyRejected: '0', lineNotes: '', tracking: 'serialized', slabs,
+    qtyReceived: '', qtyRejected: '0', lineNotes: '', tracking: 'serialized', slabs, dimensionUnit: 'mm',
+    ...over,
   };
 }
 
@@ -35,8 +37,9 @@ const fullSlab = (over: Partial<ItemReceiptDraftSlab> = {}) =>
 
 // The editor is controlled, so the tests drive it through a parent that owns
 // the slabs, the way ReceiptLinesTable does.
-function Harness({ initial, serials = [], problems = [], warehouseId = 'wh-1', onSlabs }: {
+function Harness({ initial, serials = [], problems = [], warehouseId = 'wh-1', onSlabs, lineOver }: {
   initial: ItemReceiptDraftSlab[];
+  lineOver?: Partial<ItemReceiptDraftLine>;
   serials?: string[];
   problems?: string[];
   warehouseId?: string;
@@ -45,7 +48,7 @@ function Harness({ initial, serials = [], problems = [], warehouseId = 'wh-1', o
   const [slabs, setSlabs] = useState(initial);
   return (
     <SlabRowsEditor
-      line={line(slabs)}
+      line={line(slabs, lineOver)}
       onChange={(next) => { setSlabs(next); onSlabs?.(next); }}
       serials={serials}
       warehouseId={warehouseId}
@@ -287,5 +290,262 @@ describe('SlabRowsEditor — set lot / block for all', () => {
     const next = onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[];
     expect(next.map((s) => s.lot)).toEqual(['B-1234', 'B-1234', 'B-1234']);
     expect(next.map((s) => s.blockId)).toEqual(['keep-1', 'keep-2', '']);
+  });
+});
+
+describe('SlabRowsEditor — arrived count', () => {
+  const ordered = { inventoryItemId: 'item-1', expectedSlabs: 5, slabsReceived: 0, defaultLengthMm: 3048, defaultWidthMm: 1524 };
+
+  it('generates the outstanding slab count prefilled from the ordered size and the item thickness', async () => {
+    const user = userEvent.setup();
+    renderEditor({ initial: [], lineOver: ordered });
+
+    expect(screen.getByRole('spinbutton', { name: 'Slabs arrived on this receipt' })).toHaveValue(5);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Generate rows for Absolute Black' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Generate rows for Absolute Black' }));
+
+    expect(screen.getByText('5 slabs')).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Length (mm) of slab 5' })).toHaveValue(3048);
+    expect(screen.getByRole('spinbutton', { name: 'Width (mm) of slab 5' })).toHaveValue(1524);
+    expect(await screen.findByRole('spinbutton', { name: 'Thickness (mm) of slab 5' })).toHaveValue(30);
+  });
+
+  it('starts from what is still outstanding after earlier receipts', () => {
+    renderEditor({ initial: [], lineOver: { ...ordered, slabsReceived: 2 } });
+    expect(screen.getByRole('spinbutton', { name: 'Slabs arrived on this receipt' })).toHaveValue(3);
+  });
+
+  it.each([
+    ['blank', '', /Enter how many slabs arrived/],
+    ['zero', '0', /whole number of slabs/],
+    ['fractional', '2.5', /whole number of slabs/],
+    ['past the limit', '501', /up to 500 slabs/],
+  ])('disables Generate rows for a %s count and says why', async (_name, typed, reason) => {
+    const user = userEvent.setup();
+    renderEditor({ initial: [], lineOver: ordered });
+    const count = screen.getByRole('spinbutton', { name: 'Slabs arrived on this receipt' });
+
+    await user.clear(count);
+    if (typed) await user.type(count, typed);
+
+    expect(screen.getByRole('button', { name: 'Generate rows for Absolute Black' })).toBeDisabled();
+    expect(screen.getByText(reason)).toBeInTheDocument();
+  });
+
+  it('tops the line up to the typed count rather than adding a second batch', async () => {
+    const user = userEvent.setup();
+    renderEditor({ initial: [fullSlab(), fullSlab()], lineOver: ordered });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Generate rows for Absolute Black' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Generate rows for Absolute Black' }));
+    expect(screen.getByText('5 slabs')).toBeInTheDocument();
+
+    // Nothing left to add, so a second press has nothing to do.
+    expect(screen.getByRole('button', { name: 'Generate rows for Absolute Black' })).toBeDisabled();
+    expect(screen.getByText(/already has 5 slab rows/)).toBeInTheDocument();
+  });
+});
+
+describe('SlabRowsEditor — grouped rows', () => {
+  const many = (n: number) => Array.from({ length: n }, () => fullSlab());
+
+  it('shows every slab on its own row at the grouping threshold', () => {
+    renderEditor({ initial: many(GROUPED_ROW_THRESHOLD) });
+    expect(screen.getByRole('spinbutton', { name: 'Length (mm) of slab 1' })).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Length (mm) of group 1' })).not.toBeInTheDocument();
+  });
+
+  it('collapses identical slabs into one group row above it', () => {
+    renderEditor({ initial: many(GROUPED_ROW_THRESHOLD + 1) });
+    const [, groupRow] = screen.getAllByRole('row');
+    expect(within(groupRow).getByText(`${GROUPED_ROW_THRESHOLD + 1} slabs`)).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Length (mm) of group 1' })).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Length (mm) of slab 1' })).not.toBeInTheDocument();
+  });
+
+  it('edits every slab in a group at once', () => {
+    const onSlabs = vi.fn();
+    renderEditor({ initial: many(GROUPED_ROW_THRESHOLD + 1), onSlabs });
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Length (mm) of group 1' }), { target: { value: '3100' } });
+
+    const next = onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[];
+    expect(next).toHaveLength(GROUPED_ROW_THRESHOLD + 1);
+    expect(next.every((s) => s.lengthMm === '3100')).toBe(true);
+  });
+
+  it('opens one group slab by slab and keeps a hand-edited slab out of the group', async () => {
+    const user = userEvent.setup();
+    renderEditor({ initial: many(GROUPED_ROW_THRESHOLD + 1) });
+
+    await user.click(screen.getByRole('button', { name: 'Edit group 1 slab by slab' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Length (mm) of slab 3' }), { target: { value: '2900' } });
+
+    expect(screen.getByRole('spinbutton', { name: 'Length (mm) of slab 3' })).toHaveValue(2900);
+    // The 26th slab is on the next page of the slabs opened one by one.
+    await user.click(screen.getByRole('button', { name: 'Next page of slabs' }));
+    expect(screen.getByRole('spinbutton', { name: `Length (mm) of slab ${GROUPED_ROW_THRESHOLD + 1}` })).toHaveValue(3048);
+  });
+});
+
+function measuredIn(unit: string) {
+  vi.mocked(inventoryService.getItem).mockResolvedValue({ id: 'item-1', thicknessMm: 30, dimensionUnit: unit } as never);
+}
+
+describe('SlabRowsEditor — sizes in the item own unit', () => {
+  afterEach(() => measuredIn('mm'));
+
+  it('shows an inch item in inches, in the headings and in every field', async () => {
+    measuredIn('in');
+    renderEditor({ initial: [fullSlab()], lineOver: { inventoryItemId: 'item-1' } });
+
+    expect(await screen.findByRole('columnheader', { name: 'Length (in) *' })).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Length (in) of slab 1' })).toHaveValue(120);
+    expect(screen.getByRole('spinbutton', { name: 'Width (in) of slab 1' })).toHaveValue(60);
+    expect(screen.getByRole('spinbutton', { name: 'Thickness (in) of slab 1' })).toHaveValue(1.18);
+    expect(screen.queryByText(/\(mm\)/)).not.toBeInTheDocument();
+  });
+
+  it('stores what is typed in inches as millimetres', async () => {
+    measuredIn('in');
+    const onSlabs = vi.fn();
+    renderEditor({ initial: [fullSlab()], lineOver: { inventoryItemId: 'item-1' }, onSlabs });
+    await screen.findByRole('columnheader', { name: 'Width (in) *' });
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Width (in) of slab 1' }), { target: { value: '96' } });
+
+    expect((onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[])[0].widthMm).toBe('2438.4');
+  });
+
+  it('gives a generated slab the ordered size, shown in inches', async () => {
+    measuredIn('in');
+    const user = userEvent.setup();
+    renderEditor({ initial: [], lineOver: { inventoryItemId: 'item-1', expectedSlabs: 2, slabsReceived: 0, defaultLengthMm: 3048, defaultWidthMm: 1524 } });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Generate rows for Absolute Black' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Generate rows for Absolute Black' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Length (in) of slab 2' })).toHaveValue(120);
+    expect(screen.getByRole('spinbutton', { name: 'Width (in) of slab 2' })).toHaveValue(60);
+  });
+
+  it('follows an item measured in centimetres', async () => {
+    measuredIn('cm');
+    renderEditor({ initial: [fullSlab()], lineOver: { inventoryItemId: 'item-1' } });
+
+    expect(await screen.findByRole('spinbutton', { name: 'Length (cm) of slab 1' })).toHaveValue(304.8);
+  });
+});
+
+describe('SlabRowsEditor — a bin for many slabs at once', () => {
+  const many = (n: number) => Array.from({ length: n }, () => fullSlab());
+  const pickBin = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+    await user.click(screen.getByRole('combobox', { name }));
+    await user.click(await screen.findByRole('option', { name: /Rack A/ }));
+  };
+
+  it('puts every slab on the line in one bin', async () => {
+    const user = userEvent.setup();
+    const onSlabs = vi.fn();
+    renderEditor({ initial: many(40), onSlabs });
+
+    await user.click(screen.getByRole('button', { name: 'Assign a bin to slabs of Absolute Black' }));
+    await pickBin(user, 'Bin to assign');
+    await user.click(screen.getByRole('button', { name: 'Assign bin to slabs' }));
+
+    const next = onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[];
+    expect(next).toHaveLength(40);
+    expect(next.every((s) => s.binId === 'bin-1')).toBe(true);
+  });
+
+  it('can take just a range of slabs', async () => {
+    const user = userEvent.setup();
+    const onSlabs = vi.fn();
+    renderEditor({ initial: many(10), onSlabs });
+
+    await user.click(screen.getByRole('button', { name: 'Assign a bin to slabs of Absolute Black' }));
+    await user.click(screen.getByRole('radio', { name: 'A range of slabs' }));
+    await user.type(screen.getByRole('spinbutton', { name: 'From slab' }), '3');
+    await user.type(screen.getByRole('spinbutton', { name: 'To slab' }), '6');
+    await pickBin(user, 'Bin to assign');
+    await user.click(screen.getByRole('button', { name: 'Assign bin to slabs' }));
+
+    const next = onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[];
+    expect(next.map((s) => s.binId)).toEqual(['', '', 'bin-1', 'bin-1', 'bin-1', 'bin-1', '', '', '', '']);
+  });
+
+  it('can leave slabs that already have a bin', async () => {
+    const user = userEvent.setup();
+    const onSlabs = vi.fn();
+    renderEditor({ initial: [fullSlab({ binId: 'bin-9' }), fullSlab(), fullSlab()], onSlabs });
+
+    await user.click(screen.getByRole('button', { name: 'Assign a bin to slabs of Absolute Black' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Only slabs with no bin yet' }));
+    await pickBin(user, 'Bin to assign');
+    await user.click(screen.getByRole('button', { name: 'Assign bin to slabs' }));
+
+    expect((onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[]).map((s) => s.binId)).toEqual(['bin-9', 'bin-1', 'bin-1']);
+  });
+
+  it('says how many slabs it will change before it does', async () => {
+    const user = userEvent.setup();
+    renderEditor({ initial: [fullSlab({ binId: 'bin-9' }), fullSlab(), fullSlab()] });
+
+    await user.click(screen.getByRole('button', { name: 'Assign a bin to slabs of Absolute Black' }));
+    expect(screen.getByText('Sets the bin on 3 slabs.')).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: 'Only slabs with no bin yet' }));
+
+    expect(screen.getByText('Sets the bin on 2 slabs.')).toBeInTheDocument();
+  });
+
+  it('starts generated slabs in the chosen bin', async () => {
+    const user = userEvent.setup();
+    const onSlabs = vi.fn();
+    renderEditor({ initial: [], lineOver: { inventoryItemId: 'item-1', expectedSlabs: 3, slabsReceived: 0 }, onSlabs });
+
+    await pickBin(user, 'Bin for new slabs');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Generate rows for Absolute Black' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Generate rows for Absolute Black' }));
+
+    expect((onSlabs.mock.calls.at(-1)?.[0] as ItemReceiptDraftSlab[]).map((s) => s.binId)).toEqual(['bin-1', 'bin-1', 'bin-1']);
+  });
+});
+
+describe('SlabRowsEditor — a long delivery is paged', () => {
+  const distinct = (n: number) => Array.from({ length: n }, (_, i) => fullSlab({ lengthMm: String(3000 + i) }));
+
+  it('shows a page of groups at a time and walks through the rest', async () => {
+    const user = userEvent.setup();
+    renderEditor({ initial: distinct(60) });
+
+    expect(screen.getByText('Groups 1–25 of 60')).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Length (mm) of group 25' })).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Length (mm) of group 26' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next page of groups' }));
+
+    expect(screen.getByText('Groups 26–50 of 60')).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Length (mm) of group 26' })).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Length (mm) of group 25' })).not.toBeInTheDocument();
+  });
+
+  it('pages slabs opened one by one, keeping their real positions', async () => {
+    const user = userEvent.setup();
+    renderEditor({ initial: Array.from({ length: 60 }, () => fullSlab()) });
+    await user.click(screen.getByRole('button', { name: 'Edit group 1 slab by slab' }));
+
+    expect(screen.getByText('Slabs 1–25 of 60')).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Length (mm) of slab 26' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next page of slabs' }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Length (mm) of slab 26' })).toBeInTheDocument();
+    expect(screen.getByText('Slabs 26–50 of 60')).toBeInTheDocument();
+  });
+
+  it('has no pager for a short delivery', () => {
+    renderEditor({ initial: distinct(10) });
+
+    expect(screen.queryByRole('button', { name: /Next page/ })).not.toBeInTheDocument();
   });
 });

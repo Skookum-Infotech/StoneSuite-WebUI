@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BinTransferLine } from '@/types/binTransfer';
 
-const NOT_MOVABLE = new Set(['consumed', 'scrapped', 'in_transit']);
+const NOT_MOVABLE = new Set(['consumed', 'scrapped', 'in_transit', 'on_order']);
 
 function fmtStatus(status: string): string {
   return status.replace('_', ' ');

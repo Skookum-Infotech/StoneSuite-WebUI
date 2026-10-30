@@ -1,20 +1,21 @@
 import { Select } from '@/components/ui/select';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, Scissors, AlertTriangle, CheckCircle2,
+  Search, X, Layers, ChevronLeft, ChevronRight, Download, Loader2, Scissors, AlertTriangle, CheckCircle2, UserCheck, UserX,
 } from 'lucide-react';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv } from '@/lib/csvExport';
-import { allocationOf } from '@/lib/unitAllocation';
+import { customerReservationOf, isAllocated } from '@/lib/unitAllocation';
 import { formatUnitArea, usageOf } from '@/lib/unitConsumption';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT } from '@/types/inventory';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER, UNIT_STATUS_RECEIVED } from '@/types/inventory';
 import type { InventoryUnit, UnitSearchRequest } from '@/types/inventory';
 import { ScrapUnitDialog } from './ScrapUnitDialog';
 import { CutUnitDialog } from './CutUnitDialog';
+import { ReserveUnitDialog } from './ReserveUnitDialog';
 import { UnitAllocationChips } from './UnitAllocationChips';
 import { UnitConsumptionCell } from './UnitConsumptionCell';
 
@@ -24,22 +25,27 @@ const PAGE_SIZE = 25;
 const STATUS_OPTIONS = [
   { value: '', label: 'Any status' },
   { value: UNIT_STATUS_AVAILABLE, label: 'Available' },
+  { value: UNIT_STATUS_RECEIVED, label: 'Received' },
   { value: UNIT_STATUS_RESERVED, label: 'Reserved' },
   { value: UNIT_STATUS_CONSUMED, label: 'Consumed' },
   { value: UNIT_STATUS_SCRAPPED, label: 'Scrapped' },
   { value: UNIT_STATUS_IN_TRANSIT, label: 'In Transit' },
+  { value: UNIT_STATUS_ON_ORDER, label: 'On Order' },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
   available: '#22c55e',
+  received: '#06b6d4',
   reserved: '#f59e0b',
   consumed: '#64748b',
   scrapped: '#ef4444',
   in_transit: '#6366f1',
+  on_order: '#8b5cf6',
 };
 
 export function UnitTable() {
   const topRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canUpdate = permissionsLoading || hasPermission('inventory_unit', 'update');
 
@@ -55,6 +61,17 @@ export function UnitTable() {
   const [scrapTarget, setScrapTarget] = useState<InventoryUnit | null>(null);
   const [cutTarget, setCutTarget] = useState<InventoryUnit | null>(null);
   const [cutMessage, setCutMessage] = useState<string | null>(null);
+  const [reserveTarget, setReserveTarget] = useState<InventoryUnit | null>(null);
+  const [reserveMessage, setReserveMessage] = useState<string | null>(null);
+
+  const { mutate: releaseReservation, isPending: isReleasing, error: releaseError } = useMutation({
+    mutationFn: (unit: InventoryUnit) => inventoryUnitService.release(unit.id),
+    onSuccess: (_data, unit) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-units'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-unit', unit.id] });
+      setReserveMessage(`${unit.serial} is available again.`);
+    },
+  });
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(term.trim()); setCursor(''); setPrevCursors([]); }, 300);
@@ -142,6 +159,16 @@ export function UnitTable() {
 
       {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load units.')}</p>}
       {exportError && <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>}
+      {releaseError && <p role="alert" className="text-xs text-red-500">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
+      {reserveMessage && (
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+          <p className="flex-1 text-xs text-emerald-700">{reserveMessage}</p>
+          <button type="button" onClick={() => setReserveMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-500 hover:bg-emerald-100">
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
       {cutMessage && (
         <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
@@ -176,7 +203,15 @@ export function UnitTable() {
               ) : records.length > 0 ? (
                 records.map((u) => {
                   const inTransit = u.status === UNIT_STATUS_IN_TRANSIT;
-                  const disabledReason = inTransit ? 'This unit is in transit between locations.' : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status}.` : undefined;
+                  const received = u.status === UNIT_STATUS_RECEIVED;
+                  const heldForCustomer = customerReservationOf(u) !== null;
+                  const disabledReason = inTransit
+                    ? 'This unit is in transit between locations.'
+                    : received
+                      ? 'This unit has no bin yet — move it to a bin first.'
+                      : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status.replace('_', ' ')}.` : undefined;
+                  // A slab that has arrived but has no bin can still be written off.
+                  const scrapDisabledReason = received ? undefined : disabledReason;
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
@@ -191,7 +226,7 @@ export function UnitTable() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        {allocationOf(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-500" aria-label="Not allocated">—</span>}
+                        {isAllocated(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-500" aria-label="Not allocated">—</span>}
                       </td>
                       <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right whitespace-nowrap">{formatUnitArea(u.area, u.areaUnitCode)}</td>
                       <td className="px-4 py-3.5"><UnitConsumptionCell unit={u} /></td>
@@ -199,10 +234,19 @@ export function UnitTable() {
                       {canUpdate && (
                         <td className="px-4 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
+                            {heldForCustomer ? (
+                              <button type="button" disabled={isReleasing} onClick={() => releaseReservation(u)} aria-label={`Release reservation on ${u.serial}`} title="Give this slab back to available stock" className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-2xs font-semibold text-stone-600 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                                <UserX className="size-3.5" /> Release
+                              </button>
+                            ) : (
+                              <button type="button" disabled={u.status !== UNIT_STATUS_AVAILABLE} onClick={() => setReserveTarget(u)} aria-label={`Reserve ${u.serial} for a customer`} title={u.status === UNIT_STATUS_AVAILABLE ? 'Reserve for a customer' : `Reserve — ${disabledReason ?? `unit is ${u.status.replace('_', ' ')}`}`} className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-2xs font-semibold text-stone-600 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                <UserCheck className="size-3.5" /> Reserve
+                              </button>
+                            )}
                             <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} title={disabledReason ? `Cut — ${disabledReason}` : u.kind !== 'slab' && u.kind !== 'remnant' ? 'Cut — only available for slabs and remnants' : 'Cut'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <Scissors className="size-3.5" />
                             </button>
-                            <button type="button" disabled={Boolean(disabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={disabledReason ? `Scrap — ${disabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                            <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={scrapDisabledReason ? `Scrap — ${scrapDisabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <AlertTriangle className="size-3.5" />
                             </button>
                           </div>
@@ -235,6 +279,13 @@ export function UnitTable() {
         )}
       </div>
 
+      {reserveTarget && (
+        <ReserveUnitDialog
+          unit={reserveTarget}
+          onClose={() => setReserveTarget(null)}
+          onReserved={(customerName) => setReserveMessage(`${reserveTarget.serial} is reserved for ${customerName}.`)}
+        />
+      )}
       {scrapTarget && <ScrapUnitDialog unit={scrapTarget} onClose={() => setScrapTarget(null)} onScrapped={() => {}} />}
       {cutTarget && (
         <CutUnitDialog

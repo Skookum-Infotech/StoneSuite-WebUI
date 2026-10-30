@@ -3,13 +3,13 @@ import {
   mergeReceiptLines, includedReceiptLines, validateReceiptLines, validateReceiptLineErrors,
   toCreatePayload, toUpdatePayload, fromItemReceipt, irStatusLabel,
   isPurchaseOrderReceivable, RECEIVABLE_PO_STATUS_CODES, IR_STATUS_COLORS,
-  receivingQty, isSerializedLine, validateReceiptHeader,
+  receivingQty, isSerializedLine, validateReceiptHeader, exceedsOverReceiptTolerance,
   type ItemReceiptDraftLine,
 } from './itemReceiptForm'
 import { newDraftSlab } from './itemReceiptSlabs'
 import { PO_STATUS_CODES } from './purchaseOrderForm'
 import type { PurchaseOrderLine } from '@/types/purchaseOrder'
-import type { ItemReceipt, ItemReceiptLine } from '@/types/itemReceipt'
+import type { ItemReceipt, ItemReceiptLine, OnOrderSlab } from '@/types/itemReceipt'
 
 function poLine(overrides: Partial<PurchaseOrderLine> = {}): PurchaseOrderLine {
   return {
@@ -261,6 +261,22 @@ describe('mergeReceiptLines — slab lines', () => {
     expect(line.qtyRejected).toBe('0')
   })
 
+  it.each([
+    ['inches', 'in', 120, 60, 3048, 1524],
+    ['millimetres', 'mm', 3048, 1524, 3048, 1524],
+    ['a blank unit, read as inches', null, 120, 60, 3048, 1524],
+  ])('carries the ordered slab size in millimetres, measured in %s', (_name, unit, length, width, wantL, wantW) => {
+    const [line] = mergeReceiptLines([poLine({ tracking: 'serialized', length, width, dimensionUnit: unit })])
+    expect(line.defaultLengthMm).toBe(wantL)
+    expect(line.defaultWidthMm).toBe(wantW)
+  })
+
+  it('carries no slab size when the order line did not state one', () => {
+    const [line] = mergeReceiptLines([poLine({ tracking: 'serialized', length: null, width: null })])
+    expect(line.defaultLengthMm).toBeUndefined()
+    expect(line.defaultWidthMm).toBeUndefined()
+  })
+
   it('leaves a quantity line exactly as before', () => {
     const [line] = mergeReceiptLines([poLine({ tracking: 'quantity', quantity: 100 })])
     expect(line.tracking).toBe('quantity')
@@ -307,7 +323,7 @@ describe('validateReceiptLineErrors — slab lines', () => {
     expect(validateReceiptLineErrors(lines)).toEqual([
       {
         purchaseOrderItemId: 'poi-s', lineNumber: 2,
-        message: 'slab 2: length, width and thickness must all be greater than zero.',
+        message: 'slab 2: width and thickness must be greater than zero.',
       },
     ])
   })
@@ -381,6 +397,18 @@ describe('payload mapping — slab lines and warehouse', () => {
   })
 })
 
+describe('mergeReceiptLines — measuring unit', () => {
+  it('carries the unit the item is measured in, so slab sizes show in it from the start', () => {
+    const [line] = mergeReceiptLines([poLine({ tracking: 'serialized', unitCode: 'SQFT', dimensionUnit: 'in' })])
+    expect(line.dimensionUnit).toBe('in')
+  })
+
+  it('has none when the order line states none', () => {
+    const [line] = mergeReceiptLines([poLine({ tracking: 'serialized', unitCode: 'SQFT' })])
+    expect(line.dimensionUnit).toBeUndefined()
+  })
+})
+
 describe('mergeReceiptLines — expected slabs', () => {
   it('carries the order line\'s expected count and earlier progress onto a slab line', () => {
     const [line] = mergeReceiptLines([poLine({ tracking: 'serialized', unitCode: 'SQFT', expectedSlabs: 12, slabsReceived: 8 })])
@@ -398,5 +426,132 @@ describe('mergeReceiptLines — expected slabs', () => {
     const [line] = mergeReceiptLines([poLine({ tracking: 'quantity', expectedSlabs: 12, slabsReceived: 8 })])
     expect(line.expectedSlabs).toBeNull()
     expect(line.slabsReceived).toBe(0)
+  })
+
+})
+
+describe('exceedsOverReceiptTolerance', () => {
+  // Mirrors itemreceipt.WithinTolerance: 5% over the ordered quantity is accepted without a reason.
+  const qty = (over: Partial<ItemReceiptDraftLine>) => slabLine({ tracking: 'quantity', slabs: [], qtyOrdered: 100, qtyAlreadyReceived: 0, qtyReceived: '', ...over })
+
+  it('is quiet for the odd thousandth that area rounding adds', () => {
+    expect(exceedsOverReceiptTolerance(qty({ qtyOrdered: 173.333, qtyReceived: '173.334' }))).toBe(false)
+  })
+
+  it('accepts up to 5% over and flags anything past it', () => {
+    expect(exceedsOverReceiptTolerance(qty({ qtyReceived: '105' }))).toBe(false)
+    expect(exceedsOverReceiptTolerance(qty({ qtyReceived: '105.01' }))).toBe(true)
+  })
+
+  it('counts what earlier receipts already brought in', () => {
+    expect(exceedsOverReceiptTolerance(qty({ qtyAlreadyReceived: 60, qtyReceived: '45' }))).toBe(false)
+    expect(exceedsOverReceiptTolerance(qty({ qtyAlreadyReceived: 60, qtyReceived: '46' }))).toBe(true)
+  })
+
+  it('is quiet when nothing is being received', () => {
+    expect(exceedsOverReceiptTolerance(qty({ qtyReceived: '' }))).toBe(false)
+  })
+
+  it('flags anything received against a line that ordered nothing', () => {
+    expect(exceedsOverReceiptTolerance(qty({ qtyOrdered: 0, qtyReceived: '1' }))).toBe(true)
+  })
+})
+
+// ── Slabs the order put on order (ticked off on the receipt) ─────────────────
+
+describe('on-order slabs — receiving by ticking', () => {
+  const onOrder = (id: string, over: Partial<OnOrderSlab> = {}): OnOrderSlab => ({
+    id, serial: `PO-000001-${id}`, purchaseOrderItemId: 'poi-s',
+    lengthMm: 3048, widthMm: 1524, thicknessMm: 30, area: 50, ...over,
+  })
+  const slabPoLine = () => poLine({ id: 'poi-s', tracking: 'serialized', unitCode: 'SQFT', quantity: 150 })
+  const tick = (line: ItemReceiptDraftLine, ...ids: string[]): ItemReceiptDraftLine => ({
+    ...line, onOrder: (line.onOrder ?? []).map((d) => (ids.includes(d.id) ? { ...d, arrived: true } : d)),
+  })
+
+  it('lists the order\'s slabs under their line, none ticked', () => {
+    const [line] = mergeReceiptLines([slabPoLine()], [], [onOrder('001'), onOrder('002'), onOrder('x', { purchaseOrderItemId: 'other' })])
+
+    expect(line.onOrder?.map((d) => d.id)).toEqual(['001', '002'])
+    expect(line.onOrder?.every((d) => !d.arrived)).toBe(true)
+    expect(line.onOrder?.every((d) => d.binId === '')).toBe(true)
+  })
+
+  it('gives a quantity line, and a line with nothing on order, no checklist', () => {
+    expect(mergeReceiptLines([poLine()], [], [onOrder('001', { purchaseOrderItemId: 'poi-1' })])[0].onOrder).toEqual([])
+    expect(mergeReceiptLines([slabPoLine()])[0].onOrder).toEqual([])
+  })
+
+  it('brings a pending receipt\'s ticked slabs back ticked, and out of the typed rows', () => {
+    const [line] = mergeReceiptLines(
+      [slabPoLine()],
+      [irLine({
+        id: 'irl-s', purchaseOrderItemId: 'poi-s', unitCode: 'SQFT',
+        slabs: [
+          { onOrderSlabId: '002', lengthMm: 3048, widthMm: 1524, thicknessMm: 30, area: 50, binId: 'bin-9' },
+          { lengthMm: 3048, widthMm: 1524, thicknessMm: 30, area: 50 },
+        ],
+      })],
+      [onOrder('001'), onOrder('002')],
+    )
+
+    expect(line.onOrder?.map((d) => d.arrived)).toEqual([false, true])
+    expect(line.onOrder?.map((d) => d.binId)).toEqual(['', 'bin-9'])
+    expect(line.slabs).toHaveLength(1) // only the one the receiver typed
+  })
+
+  it('receives the area of the ticked slabs only', () => {
+    const [line] = mergeReceiptLines([slabPoLine()], [], [onOrder('001'), onOrder('002'), onOrder('003')])
+
+    expect(receivingQty(line)).toBe(0)
+    expect(receivingQty(tick(line, '001', '003'))).toBeCloseTo(100, 3)
+  })
+
+  it('adds ticked slabs to any typed in', () => {
+    const [line] = mergeReceiptLines([slabPoLine()], [], [onOrder('001')])
+    expect(receivingQty({ ...tick(line, '001'), slabs: [fullSlab()] })).toBeCloseTo(100, 3)
+  })
+
+  it('includes a slab line once a slab is ticked, and skips it before that', () => {
+    const [line] = mergeReceiptLines([slabPoLine()], [], [onOrder('001')])
+
+    expect(includedReceiptLines([line])).toHaveLength(0)
+    expect(includedReceiptLines([tick(line, '001')])).toHaveLength(1)
+    expect(validateReceiptLines([line])).toEqual(['At least one line item is required.'])
+    expect(validateReceiptLines([tick(line, '001')])).toEqual([])
+  })
+
+  it('asks for a thickness only on a ticked slab the order left it out of', () => {
+    const [line] = mergeReceiptLines([slabPoLine()], [], [onOrder('001', { thicknessMm: 0 }), onOrder('002', { thicknessMm: 0 })])
+
+    expect(validateReceiptLineErrors([line])).toEqual([])
+    expect(validateReceiptLineErrors([tick(line, '001')])).toEqual([
+      { purchaseOrderItemId: 'poi-s', lineNumber: 1, message: 'slab PO-000001-001: thickness must be greater than zero.' },
+    ])
+    const typed = { ...tick(line, '001'), onOrder: tick(line, '001').onOrder?.map((d) => (d.id === '001' ? { ...d, thicknessMm: '25' } : d)) }
+    expect(validateReceiptLineErrors([typed])).toEqual([])
+  })
+
+  it('sends a ticked slab by id with the line\'s bin, ahead of any typed slab', () => {
+    const [line] = mergeReceiptLines([slabPoLine()], [], [onOrder('001'), onOrder('002')])
+    const onOrderWithBin = tick(line, '002').onOrder?.map((d) => (d.id === '002' ? { ...d, binId: 'bin-3' } : d))
+    const ticked = { ...line, onOrder: onOrderWithBin, slabs: [fullSlab()] }
+
+    const payload = toCreatePayload('po-1', { receipt_date: '2026-10-30', warehouse_id: 'wh' }, [ticked])
+    const [item] = payload.items
+
+    expect(item.qtyReceived).toBeCloseTo(100, 3)
+    expect(item.slabs).toHaveLength(2)
+    expect(item.slabs?.[0]).toEqual({
+      onOrderSlabId: '002', lengthMm: 3048, widthMm: 1524, thicknessMm: 30, binId: 'bin-3',
+    })
+    expect(item.slabs?.[1]).not.toHaveProperty('onOrderSlabId')
+  })
+
+  it('counts ticked slabs toward the over-receipt check', () => {
+    const [line] = mergeReceiptLines([poLine({ id: 'poi-s', tracking: 'serialized', unitCode: 'SQFT', quantity: 60 })], [], [onOrder('001'), onOrder('002')])
+
+    expect(exceedsOverReceiptTolerance(tick(line, '001'))).toBe(false)
+    expect(exceedsOverReceiptTolerance(tick(line, '001', '002'))).toBe(true)
   })
 })

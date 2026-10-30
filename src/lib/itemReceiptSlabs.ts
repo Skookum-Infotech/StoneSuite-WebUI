@@ -47,6 +47,123 @@ export function newDraftSlab(seed: Partial<ItemReceiptDraftSlab> = {}): ItemRece
   };
 }
 
+/** The most rows one "How many arrived?" can generate — the same ceiling as a
+ *  pasted packing list, past which the count is a typo, not a delivery. */
+/** What the bin decides about a slab that arrives: it is Available when it goes
+ *  straight into a bin, Received while it has none yet. */
+export const BIN_STATUS_HINT =
+  'A slab with a bin is Available in Inventory; one without a bin is marked Received until it is put in a bin.';
+
+export const MAX_GENERATED_SLABS = 500;
+
+/** `count` identical rows, each seeded from `defaults` and given its own key.
+ *  Anything that isn't a whole number from 1 to MAX_GENERATED_SLABS makes
+ *  nothing — the caller says why, so a bad count never half-fills the grid. */
+export function generateSlabs(count: number, defaults: Partial<ItemReceiptDraftSlab>): ItemReceiptDraftSlab[] {
+  if (!Number.isInteger(count) || count < 1 || count > MAX_GENERATED_SLABS) return [];
+  return Array.from({ length: count }, () => newDraftSlab(defaults));
+}
+
+/** Total slabs at or below which the receiving grid shows every slab on its own
+ *  row; above it, identical slabs collapse into one group row. */
+export const GROUPED_ROW_THRESHOLD = 25;
+
+/** Slabs that share a group row: everything a receiver sets for a whole
+ *  delivery. The supplier code is left out — it names one physical slab. */
+export interface SlabGroup {
+  key: string;
+  count: number;
+  /** The group's first slab, shown on its row. */
+  sample: ItemReceiptDraftSlab;
+  memberKeys: string[];
+}
+
+const GROUP_KEY_FIELDS = ['lengthMm', 'widthMm', 'thicknessMm', 'binId', 'lot', 'grade', 'blockId'] as const;
+
+export function slabGroupKey(slab: ItemReceiptDraftSlab): string {
+  return JSON.stringify(GROUP_KEY_FIELDS.map((f) => slab[f]));
+}
+
+/** Groups in order of first appearance, in one pass. */
+export function groupSlabs(slabs: ItemReceiptDraftSlab[]): SlabGroup[] {
+  const groups = new Map<string, SlabGroup>();
+  for (const slab of slabs) {
+    const key = slabGroupKey(slab);
+    const group = groups.get(key);
+    if (group) {
+      group.count += 1;
+      group.memberKeys.push(slab.key);
+    } else {
+      groups.set(key, { key, count: 1, sample: slab, memberKeys: [slab.key] });
+    }
+  }
+  return [...groups.values()];
+}
+
+/** Applies `fields` to the slabs named by `memberKeys`, touching nothing else. */
+export function patchGroupMembers(
+  slabs: ItemReceiptDraftSlab[],
+  memberKeys: string[],
+  fields: Partial<ItemReceiptDraftSlab>,
+): ItemReceiptDraftSlab[] {
+  const members = new Set(memberKeys);
+  return slabs.map((s) => (members.has(s.key) ? { ...s, ...fields, key: s.key } : s));
+}
+
+/** The units a slab table speaks in: the area unit of the line (SQFT, SQM) and the
+ *  length unit the item is measured in, which sizes are shown and typed in. */
+export interface SlabUnits {
+  area: string;
+  length: string;
+}
+
+/** Which slabs a bulk bin assignment reaches: positions down the line, counted
+ *  from 1 and inclusive (the same numbers the rows are labelled with). */
+export interface BinAssignScope {
+  from?: number;
+  to?: number;
+  /** Skip slabs that already have a bin. */
+  onlyUnassigned?: boolean;
+}
+
+function reaches(slab: ItemReceiptDraftSlab, index: number, total: number, scope: BinAssignScope): boolean {
+  const position = index + 1;
+  if (position < (scope.from ?? 1) || position > (scope.to ?? total)) return false;
+  return !(scope.onlyUnassigned && slab.binId);
+}
+
+/** How many slabs `assignBin` would set for this scope. */
+export function countReached(slabs: ItemReceiptDraftSlab[], scope: BinAssignScope): number {
+  return slabs.filter((s, i) => reaches(s, i, slabs.length, scope)).length;
+}
+
+/** Puts the slabs in `scope` into `binId` (blank clears it), touching nothing
+ *  else — a 100-slab delivery goes into a bin in one step, not one by one. */
+export function assignBin(slabs: ItemReceiptDraftSlab[], binId: string, scope: BinAssignScope): ItemReceiptDraftSlab[] {
+  return slabs.map((s, i) => (reaches(s, i, slabs.length, scope) ? { ...s, binId } : s));
+}
+
+/** Rows shown at once in a slab table; a longer delivery is paged. */
+export const SLAB_PAGE_SIZE = 25;
+
+export interface SlabPage<T> {
+  items: T[];
+  /** Index of the page's first item in the whole list, so row labels stay absolute. */
+  offset: number;
+  page: number;
+  pageCount: number;
+  total: number;
+}
+
+/** One page of a list, 1-based. A page past the end (rows were removed) reads as
+ *  the last page, and an empty list is one empty page. */
+export function pageOf<T>(all: T[], requested: number, size: number = SLAB_PAGE_SIZE): SlabPage<T> {
+  const pageCount = Math.max(1, Math.ceil(all.length / size));
+  const page = Math.min(Math.max(1, Math.floor(requested) || 1), pageCount);
+  const offset = (page - 1) * size;
+  return { items: all.slice(offset, offset + size), offset, page, pageCount, total: all.length };
+}
+
 /** Rebuilds an editable row from a slab already saved on a receipt line. */
 export function draftSlabFromLine(s: ItemReceiptLineSlab): ItemReceiptDraftSlab {
   return newDraftSlab({
@@ -84,10 +201,16 @@ export function slabsTotalArea(slabs: ItemReceiptDraftSlab[], unitCode: string):
 
 /** Why a slab row can't be saved, or null when it can. */
 export function slabProblem(slab: ItemReceiptDraftSlab): string | null {
-  if (!(num(slab.lengthMm) > 0 && num(slab.widthMm) > 0 && num(slab.thicknessMm) > 0)) {
-    return 'length, width and thickness must all be greater than zero.';
-  }
-  return null;
+  const missing = [
+    num(slab.lengthMm) > 0 ? null : 'length',
+    num(slab.widthMm) > 0 ? null : 'width',
+    num(slab.thicknessMm) > 0 ? null : 'thickness',
+  ].filter((name): name is string => name !== null);
+  if (missing.length === 0) return null;
+  // Name only what is missing — a slab short of its thickness alone is told so,
+  // rather than being sent hunting through three fields.
+  if (missing.length === 3) return 'length, width and thickness must all be greater than zero.';
+  return `${missing.join(' and ')} must be greater than zero.`;
 }
 
 function trimmedOrUndefined(v: string): string | undefined {
