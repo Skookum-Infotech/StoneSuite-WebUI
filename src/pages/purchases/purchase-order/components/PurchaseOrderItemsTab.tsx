@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CLS } from '@/lib/lineActionsColumn';
@@ -21,7 +20,6 @@ import {
   LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, clampSlabs, hasSize, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
 import { blockEnterSubmit } from '@/lib/lineEntryKeys';
-import { SlabEstimateRow } from './SlabEstimateRow';
 import {
   EMPTY_LINE_ITEM, calcLineItem, clampPercent, type PurchaseOrderLineItem,
 } from '@/lib/purchaseOrderForm';
@@ -175,23 +173,6 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
 
   const activeDraft = isAdding || editId !== null;
 
-  // A slab line is ordered by count and average size; the helper fills in its area
-  // quantity. Once a length and width are stated the exact area is worked out
-  // from them, so the helper steps aside.
-  const slabEstimate = draft.tracking === TRACKING_SERIALIZED && !hasSize(draft) ? (
-    <tr className="bg-brand/5">
-      <td colSpan={ITEM_COLS.length} className="border-t border-brand/10">
-        <SlabEstimateRow
-          key={editId ?? 'new'}
-          quantity={draft.quantity}
-          units={draft.units ?? ''}
-          expectedSlabs={draft.expectedSlabs ?? ''}
-          onChange={updateDraft}
-        />
-      </td>
-    </tr>
-  ) : null;
-
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden">
       <div className="overflow-x-auto modal-scrollbar">
@@ -208,8 +189,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
           <tbody className="divide-y divide-stone-100">
             {items.map((row) =>
               editId === row.id ? (
-                <Fragment key={row.id}>
-                <tr className="bg-brand/5 divide-x divide-stone-100">
+                <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove">
@@ -217,8 +197,6 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
                     </button>
                   </td>
                 </tr>
-                {slabEstimate}
-                </Fragment>
               ) : (
                 <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
                   <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.lineNo}</td>
@@ -251,13 +229,10 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
               ),
             )}
             {isAdding && (
-              <>
-                <tr className="bg-brand/5 divide-x divide-stone-100">
-                  <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
-                  <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
-                </tr>
-                {slabEstimate}
-              </>
+              <tr className="bg-brand/5 divide-x divide-stone-100">
+                <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
+                <td className={LINE_ACTIONS_EDIT_CELL_CLS} />
+              </tr>
             )}
           </tbody>
         </table>

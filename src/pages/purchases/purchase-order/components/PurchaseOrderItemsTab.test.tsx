@@ -128,77 +128,37 @@ describe('PurchaseOrderItemsTab — the Units column', () => {
   });
 });
 
-describe('PurchaseOrderItemsTab — the slab estimate helper', () => {
-  it('appears for a slab item and turns slabs × average size into the quantity', async () => {
-    const user = userEvent.setup();
-    render(<Harness />);
-    await startAdding(user);
-    expect(screen.queryByRole('spinbutton', { name: 'Expected slabs' })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'pick slab item' }));
-    await user.type(screen.getByRole('spinbutton', { name: 'Expected slabs' }), '12');
-    await user.type(screen.getByRole('spinbutton', { name: 'Average sq ft per slab' }), '50');
-
-    expect(screen.getByRole('spinbutton', { name: 'Quantity' })).toHaveValue(600);
-  });
-
-  it('does not appear for a quantity item', async () => {
+describe('PurchaseOrderItemsTab — slab lines', () => {
+  it('has no separate slab estimate box; the slab count is the Slabs column', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await startAdding(user);
 
-    await user.click(screen.getByRole('button', { name: 'pick each item' }));
-
-    expect(screen.queryByRole('spinbutton', { name: 'Expected slabs' })).not.toBeInTheDocument();
-  });
-
-  it('saves the count with the line and shows it under the quantity', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
-    await startAdding(user);
     await user.click(screen.getByRole('button', { name: 'pick slab item' }));
-    await user.type(screen.getByRole('spinbutton', { name: 'Expected slabs' }), '12');
-    await user.type(screen.getByRole('spinbutton', { name: 'Average sq ft per slab' }), '50');
 
-    await user.click(screen.getByRole('button', { name: 'Save Line' }));
-
-    const [saved] = onChange.mock.calls[0][0] as PurchaseOrderLineItem[];
-    expect(saved).toMatchObject({ quantity: '600', expectedSlabs: '12', tracking: 'serialized', units: 'SQFT' });
-    const row = screen.getByText('Absolute Black').closest('tr') as HTMLElement;
-    expect(within(row).getByText('≈12 slabs')).toBeInTheDocument();
-  });
-
-  it('is filled in when a saved slab line is edited', async () => {
-    const user = userEvent.setup();
-    const saved: PurchaseOrderLineItem = {
-      ...EMPTY_LINE_ITEM, id: 'l1', lineNo: 1, itemName: 'Absolute Black', itemSku: 'AB-30', units: 'SQFT',
-      quantity: '600', unitPrice: '18', amount: '10800.00', total: '10800.00', inventoryItemUuid: 'item-slab',
-      tracking: 'serialized', expectedSlabs: '12',
-    };
-    render(<Harness initial={[saved]} />);
-
-    await user.click(screen.getByRole('button', { name: 'Edit line Absolute Black' }));
-
-    expect(screen.getByRole('spinbutton', { name: 'Expected slabs' })).toHaveValue(12);
-    expect(screen.getByRole('spinbutton', { name: 'Average sq ft per slab' })).toHaveValue(50);
+    expect(screen.queryByText('Slab estimate')).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Expected slabs' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: /Average .* per slab/ })).not.toBeInTheDocument();
   });
 
   it('drops the count when the line is switched to a non-slab item', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
-    await startAdding(user);
-    await user.click(screen.getByRole('button', { name: 'pick slab item' }));
-    await user.type(screen.getByRole('spinbutton', { name: 'Expected slabs' }), '12');
+    const saved: PurchaseOrderLineItem = {
+      ...EMPTY_LINE_ITEM, id: 'l1', lineNo: 1, itemName: 'Absolute Black', itemSku: 'AB-30', units: 'SQFT',
+      quantity: '600', unitPrice: '18', amount: '10800.00', total: '10800.00', inventoryItemUuid: 'item-slab',
+      tracking: 'serialized', expectedSlabs: '12',
+    };
+    render(<Harness initial={[saved]} onChange={onChange} />);
+    await user.click(screen.getByRole('button', { name: 'Edit line Absolute Black' }));
 
     await user.click(screen.getByRole('button', { name: 'pick each item' }));
     await user.type(screen.getByRole('spinbutton', { name: 'Quantity' }), '3');
     await user.click(screen.getByRole('button', { name: 'Save Line' }));
 
-    const [saved] = onChange.mock.calls[0][0] as PurchaseOrderLineItem[];
-    expect(saved.expectedSlabs).toBe('');
-    expect(saved.tracking).toBe('quantity');
+    const [row] = onChange.mock.calls.at(-1)?.[0] as PurchaseOrderLineItem[];
+    expect(row.expectedSlabs).toBe('');
+    expect(row.tracking).toBe('quantity');
   });
 });
 
