@@ -19,6 +19,9 @@ import { cn } from '@/lib/utils';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LineThicknessViewCell } from '@/components/inventory/LineThicknessViewCell';
+import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
+import { PDF_THICKNESS_HEAD, THICKNESS_COL, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
 import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
 import { slabProgressText } from '@/lib/itemReceiptSlabs';
 import {
@@ -106,6 +109,10 @@ export default function PurchaseOrderDetailPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['purchase-order', id], updated);
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      // Sending puts the order's slabs on order in Inventory, and cancelling or
+      // closing it takes the ones that never arrived back off.
+      for (const queryKey of INVENTORY_STOCK_QUERY_KEYS) queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['po-on-order-slabs', id] });
       // A move to Sent emails the vendor, which adds to the email history.
       queryClient.invalidateQueries({ queryKey: documentSendsKey(id) });
       // Label the actual resulting status, not the one requested -- a move
@@ -165,7 +172,8 @@ export default function PurchaseOrderDetailPage() {
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
       // The three size columns only appear when some line states a size.
-      const sized = anyDimensions(po.items);
+      const thick = anyThickness(po.items);
+      const sized = anyDimensions(po.items) || thick;
       await exportPurchasesRecordToPdf({
         recordType: 'purchase_order',
         title: po.purchaseOrderNumber || 'Purchase Order',
@@ -199,12 +207,13 @@ export default function PurchaseOrderDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), 'Unit', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), ...(thick ? [PDF_THICKNESS_HEAD] : []), 'Unit', 'Qty', 'Received', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: po.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
             ...(sized ? dimensionCells(line, line.expectedSlabs) : []),
+            ...(thick ? [thicknessPdfCell(line)] : []),
             unitLabel(line.unitCode) || '—',
             String(line.quantity),
             String(line.qtyReceived),
@@ -338,6 +347,7 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Description' },
                       { label: 'SKU' },
                       ...LINE_DIMENSION_COLS,
+                      THICKNESS_COL,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Received' },
@@ -360,6 +370,7 @@ export default function PurchaseOrderDetailPage() {
                       <td className="px-3 py-2.5 text-stone-500 min-w-[200px] max-w-md whitespace-pre-wrap break-words">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                       <LineDimensionViewCells length={line.length} width={line.width} slabs={line.expectedSlabs} unit={line.dimensionUnit} />
+                      <LineThicknessViewCell value={line.thickness} unit={line.dimensionUnit} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -369,6 +380,9 @@ export default function PurchaseOrderDetailPage() {
                         {(line.expectedSlabs || line.slabsReceived) ? (
                           <p className="mt-1 text-2xs text-stone-500">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
                         ) : null}
+                        {line.slabsOnOrder ? (
+                          <p className="mt-1 text-2xs text-stone-500">{line.slabsOnOrder} on order in Inventory</p>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
@@ -377,7 +391,7 @@ export default function PurchaseOrderDetailPage() {
                     </tr>
                   ))}
                   {po.items.length === 0 && (
-                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={15} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

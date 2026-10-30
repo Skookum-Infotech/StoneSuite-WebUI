@@ -62,6 +62,7 @@ describe('unitSegments', () => {
     ['available', 'stock', 'In stock'],
     ['reserved', 'reserved', 'Reserved'],
     ['in_transit', 'transit', 'In transit'],
+    ['on_order', 'onOrder', 'On order'],
     ['scrapped', 'scrapped', 'Scrapped'],
   ])('a %s unit is one whole %s segment', (status, tone, label) => {
     expect(unitSegments(unit({ status }))).toEqual([{ tone, label, area: 45.2, pct: 100 }]);
@@ -106,6 +107,8 @@ describe('consumptionLine', () => {
     ['a slab cut with nothing kept', cut(45.2, 0, 0), 'Fully used'],
     ['a scrapped slab', unit({ status: 'scrapped' }), 'Scrapped'],
     ['a slab in transit', unit({ status: 'in_transit' }), 'In transit'],
+    ['a slab on order', unit({ status: 'on_order' }), 'On order'],
+    ['a slab on order for a numbered purchase order', unit({ status: 'on_order', purchaseOrderNumber: 'PORD-000012' }), 'On order · PORD-000012'],
   ])('%s', (_name, u, want) => {
     expect(consumptionLine(u)).toBe(want);
   });
@@ -137,6 +140,7 @@ describe('consumptionState', () => {
     ['available', 'Untouched'],
     ['reserved', 'Held for a job'],
     ['in_transit', 'In transit'],
+    ['on_order', 'On order'],
     ['consumed', 'Cut'],
     ['scrapped', 'Scrapped'],
     ['mystery', 'mystery'],
@@ -198,6 +202,20 @@ describe('lifecycleSteps', () => {
     expect(steps[0]).toMatchObject({ title: 'Received on', link: { label: 'IR-000123', to: '/purchases/item_receipt/ir-1' } });
     expect(steps[1]).toMatchObject({ title: 'In stock', detail: 'Main Yard · Yard / A1', current: true });
     expect(steps[0].current).toBe(false);
+  });
+
+  it('is a single On order step, linked to its purchase order, for a slab that has not arrived', () => {
+    const steps = lifecycleSteps(unit({ status: 'on_order', purchaseOrderId: 'po-1', purchaseOrderNumber: 'PORD-000012' }));
+
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toMatchObject({
+      key: 'ordered', title: 'On order', current: true,
+      link: { label: 'PORD-000012', to: '/purchases/purchase_order/po-1' },
+    });
+  });
+
+  it('has no link when the order is unknown', () => {
+    expect(lifecycleSteps(unit({ status: 'on_order' }))[0].link).toBeUndefined();
   });
 
   it('runs receipt, job, cut for a slab a job cut', () => {

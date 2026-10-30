@@ -11,7 +11,7 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { exportPagedCsv } from '@/lib/csvExport';
 import { allocationOf } from '@/lib/unitAllocation';
 import { formatUnitArea, usageOf } from '@/lib/unitConsumption';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT } from '@/types/inventory';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED, UNIT_STATUS_CONSUMED, UNIT_STATUS_SCRAPPED, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER } from '@/types/inventory';
 import type { InventoryUnit, UnitSearchRequest } from '@/types/inventory';
 import { ScrapUnitDialog } from './ScrapUnitDialog';
 import { CutUnitDialog } from './CutUnitDialog';
@@ -28,6 +28,7 @@ const STATUS_OPTIONS = [
   { value: UNIT_STATUS_CONSUMED, label: 'Consumed' },
   { value: UNIT_STATUS_SCRAPPED, label: 'Scrapped' },
   { value: UNIT_STATUS_IN_TRANSIT, label: 'In Transit' },
+  { value: UNIT_STATUS_ON_ORDER, label: 'On Order' },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -36,6 +37,7 @@ const STATUS_COLORS: Record<string, string> = {
   consumed: '#64748b',
   scrapped: '#ef4444',
   in_transit: '#6366f1',
+  on_order: '#8b5cf6',
 };
 
 export function UnitTable() {
@@ -176,7 +178,7 @@ export function UnitTable() {
               ) : records.length > 0 ? (
                 records.map((u) => {
                   const inTransit = u.status === UNIT_STATUS_IN_TRANSIT;
-                  const disabledReason = inTransit ? 'This unit is in transit between locations.' : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status}.` : undefined;
+                  const disabledReason = inTransit ? 'This unit is in transit between locations.' : u.status !== UNIT_STATUS_AVAILABLE ? `Unit is ${u.status.replace('_', ' ')}.` : undefined;
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">

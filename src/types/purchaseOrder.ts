@@ -52,8 +52,11 @@ export interface PurchaseOrderLineInput {
    *  quantity sent is then ignored. */
   length?: number;
   width?: number;
-  /** The one unit length and width are measured in: mm, cm, in, ft or m. Blank takes
-   *  the item's unit, then cm. */
+  /** Thickness of one slab, in the same unit as length and width. Optional and
+   *  descriptive; the slabs put on order when the PO is sent are cut to it. */
+  thickness?: number;
+  /** The one unit length, width and thickness are measured in: mm, cm, in, ft or m.
+   *  Blank takes the item's unit, then inches. */
   dimensionUnit?: string;
 }
 
@@ -125,8 +128,13 @@ export interface PurchaseOrderLine {
    *  quantity is then length x width x expectedSlabs. */
   length?: number | null;
   width?: number | null;
-  /** The unit length and width were measured in. */
+  /** Thickness of one slab, in `dimensionUnit`; null when the line states none. */
+  thickness?: number | null;
+  /** The unit length, width and thickness were measured in. */
   dimensionUnit?: string | null;
+  /** How many of this line's slabs are still On Order in Inventory — put on order
+   *  when the PO was sent, not yet arrived on a receipt. */
+  slabsOnOrder?: number;
 }
 
 /** `lkp_record_status` code for the PORD record type — the fixed, mostly

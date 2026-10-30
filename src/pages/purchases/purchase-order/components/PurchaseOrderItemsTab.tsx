@@ -14,6 +14,9 @@ import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInputCells';
 import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LineThicknessInputCell } from '@/components/inventory/LineThicknessInputCell';
+import { LineThicknessViewCell } from '@/components/inventory/LineThicknessViewCell';
+import { THICKNESS_COL, thicknessFromItemMm } from '@/lib/lineThickness';
 import {
   LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, clampSlabs, hasSize, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
@@ -38,6 +41,7 @@ const ITEM_COLS = [
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
   ...LINE_DIMENSION_COLS,
+  THICKNESS_COL,
   { label: 'Units', w: 'w-16' },
   { label: 'Qty', w: 'w-20', right: true },
   { label: 'Unit Price', w: 'w-20', right: true },
@@ -73,8 +77,11 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   const unitCodeFor = useItemUnitCode();
   const applyCatalogItem = (prev: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
     const units = unitCodeFor(item);
+    const dimensionUnit = itemDimensionUnit(item);
     return recalc(withoutUnsupportedSize({
       ...prev,
+      // Thickness starts at the item's own, in the unit the line will be measured in.
+      thickness: thicknessFromItemMm(item.thicknessMm, dimensionUnit, units),
       itemName: item.name,
       units,
       tracking: item.tracking,
@@ -85,7 +92,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
       itemSku: item.sku,
       unitPrice: String(itemPrice(item, 'purchasing')),
       inventoryItemUuid: item.id,
-      dimensionUnit: itemDimensionUnit(item),
+      dimensionUnit,
     }));
   };
 
@@ -116,7 +123,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   // inventory item — a fresh pick is required before the line can be saved.
   // The description is left untouched — it's independent of the item name.
   const onItemNameText = (text: string) => {
-    setDraft((prev) => recalc(withoutUnsupportedSize({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '', tracking: undefined, expectedSlabs: '' })));
+    setDraft((prev) => recalc(withoutUnsupportedSize({ ...prev, itemName: text, inventoryItemUuid: undefined, itemSku: '', units: '', tracking: undefined, expectedSlabs: '', thickness: '' })));
   };
 
   const picker: InventoryItemPickerHandlers = {
@@ -219,6 +226,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
                   <LineDimensionViewCells length={row.length} width={row.width} slabs={row.expectedSlabs} unit={row.dimensionUnit} />
+                  <LineThicknessViewCell value={row.thickness} unit={row.dimensionUnit} />
                   <td className="px-2.5 py-2.5 text-stone-500 whitespace-nowrap" title={row.units || undefined}>{unitLabel(row.units) || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">
                     {row.quantity}
@@ -298,7 +306,7 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   );
 }
 
-type DraftKey = 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'expectedSlabs' | 'length' | 'width';
+type DraftKey = 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'expectedSlabs' | 'length' | 'width' | 'thickness';
 
 function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
@@ -324,6 +332,12 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
         unit={normalizeUnit(draft.dimensionUnit)}
         enabled={isAreaUnit(draft.units)}
         onChange={(key, val) => onChange(key === 'slabs' ? 'expectedSlabs' : key, val)}
+      />
+      <LineThicknessInputCell
+        value={draft.thickness ?? ''}
+        unit={draft.dimensionUnit}
+        enabled={isAreaUnit(draft.units)}
+        onChange={(val) => onChange('thickness', val)}
       />
       <td className="px-2 py-1.5 text-stone-500 text-2xs whitespace-nowrap" title={draft.units || undefined}>{unitLabel(draft.units) || '—'}</td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="any" value={draft.quantity} readOnly={sized} title={sized ? 'Worked out from length × width × slabs' : undefined} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-16 text-right', sized && 'cursor-default bg-stone-50 text-stone-500')} aria-label="Quantity" /></td>

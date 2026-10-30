@@ -3,6 +3,7 @@ import {
   UNIT_STATUS_AVAILABLE,
   UNIT_STATUS_CONSUMED,
   UNIT_STATUS_IN_TRANSIT,
+  UNIT_STATUS_ON_ORDER,
   UNIT_STATUS_RESERVED,
   UNIT_STATUS_SCRAPPED,
 } from '@/types/inventory';
@@ -41,13 +42,14 @@ function percentOf(part: number, whole: number): number {
 
 // ── Bars ─────────────────────────────────────────────────────────────────────
 
-export type BarTone = 'stock' | 'reserved' | 'transit' | 'used' | 'recovered' | 'scrapped';
+export type BarTone = 'stock' | 'reserved' | 'transit' | 'onOrder' | 'used' | 'recovered' | 'scrapped';
 
 // Full class strings, so Tailwind can see them.
 export const BAR_TONE_CLASS: Record<BarTone, string> = {
   stock: 'bg-emerald-500',
   reserved: 'bg-amber-400',
   transit: 'bg-indigo-400',
+  onOrder: 'bg-violet-300',
   used: 'bg-slate-500',
   recovered: 'bg-teal-400',
   scrapped: 'bg-red-400',
@@ -84,6 +86,8 @@ export function unitSegments(unit: InventoryUnit): BarSegment[] {
       return whole(unit, 'reserved', 'Reserved');
     case UNIT_STATUS_IN_TRANSIT:
       return whole(unit, 'transit', 'In transit');
+    case UNIT_STATUS_ON_ORDER:
+      return whole(unit, 'onOrder', 'On order');
     case UNIT_STATUS_SCRAPPED:
       return whole(unit, 'scrapped', 'Scrapped');
     default:
@@ -97,6 +101,7 @@ const STATE_LABEL: Record<string, string> = {
   [UNIT_STATUS_AVAILABLE]: 'Untouched',
   [UNIT_STATUS_RESERVED]: 'Held for a job',
   [UNIT_STATUS_IN_TRANSIT]: 'In transit',
+  [UNIT_STATUS_ON_ORDER]: 'On order',
   [UNIT_STATUS_CONSUMED]: 'Cut',
   [UNIT_STATUS_SCRAPPED]: 'Scrapped',
 };
@@ -132,6 +137,8 @@ export function consumptionLine(unit: InventoryUnit): string {
     case UNIT_STATUS_AVAILABLE:
       if (unit.kind === UNIT_KIND_REMNANT && unit.parentSerial) return `Offcut of ${unit.parentSerial}`;
       return 'Untouched';
+    case UNIT_STATUS_ON_ORDER:
+      return unit.purchaseOrderNumber ? `On order · ${unit.purchaseOrderNumber}` : 'On order';
     default:
       return consumptionState(unit);
   }
@@ -207,7 +214,7 @@ export interface LifecycleLink {
 }
 
 export interface LifecycleStep {
-  key: 'arrived' | 'reserved' | 'cut' | 'scrapped' | 'stock' | 'transit';
+  key: 'arrived' | 'reserved' | 'cut' | 'scrapped' | 'stock' | 'transit' | 'ordered';
   title: string;
   /** A record this step points at (the receipt, the job, the parent slab). */
   link?: LifecycleLink;
@@ -230,6 +237,17 @@ export function lifecycleSteps(unit: InventoryUnit): LifecycleStep[] {
       key: 'arrived',
       title: 'Cut from',
       link: { label: unit.parentSerial || 'the original slab', to: `/inventory/unit/${unit.parentUnitId}` },
+      at: unit.createdAt,
+    });
+  } else if (unit.status === UNIT_STATUS_ON_ORDER) {
+    // Not arrived yet: the order is where its story starts, and the one step.
+    steps.push({
+      key: 'ordered',
+      title: 'On order',
+      link: unit.purchaseOrderId
+        ? { label: unit.purchaseOrderNumber || 'purchase order', to: `/purchases/purchase_order/${unit.purchaseOrderId}` }
+        : undefined,
+      detail: 'Arrives when an item receipt that ticks it is posted.',
       at: unit.createdAt,
     });
   } else if (unit.receiptId) {

@@ -229,3 +229,60 @@ describe('PurchaseOrderItemsTab — saved row actions', () => {
     expect(screen.getByRole('button', { name: 'Save Line' })).toBeInTheDocument();
   });
 });
+
+describe('PurchaseOrderItemsTab — the Thickness column', () => {
+  it('starts at the picked item\'s own thickness, in the line\'s unit', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await startAdding(user);
+
+    await user.click(screen.getByRole('button', { name: 'pick slab item' }));
+
+    // The item is 30 mm thick; the line is measured in inches.
+    expect(screen.getByRole('textbox', { name: 'Thickness (in)' })).toHaveValue('1.18');
+  });
+
+  it('can be typed over, and is saved with the line and shown on its row', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    await startAdding(user);
+    await user.click(screen.getByRole('button', { name: 'pick slab item' }));
+    const box = screen.getByRole('textbox', { name: 'Thickness (in)' });
+
+    await user.clear(box);
+    await user.type(box, '0.75');
+    await user.click(screen.getByRole('button', { name: 'Save Line' }));
+
+    const [saved] = onChange.mock.calls[0][0] as PurchaseOrderLineItem[];
+    expect(saved.thickness).toBe('0.75');
+    const row = screen.getByText('Absolute Black').closest('tr') as HTMLElement;
+    expect(within(row).getByText('0.75 in')).toBeInTheDocument();
+  });
+
+  it('ignores letters and stops at the server\'s cap', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await startAdding(user);
+    await user.click(screen.getByRole('button', { name: 'pick slab item' }));
+    const box = screen.getByRole('textbox', { name: 'Thickness (in)' });
+
+    await user.clear(box);
+    await user.type(box, 'ab5');
+    expect(box).toHaveValue('5');
+
+    await user.clear(box);
+    await user.type(box, '99');
+    expect(box).toHaveValue('39.37'); // 1 m
+  });
+
+  it('is disabled on a line that is not measured by area', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await startAdding(user);
+
+    await user.click(screen.getByRole('button', { name: 'pick each item' }));
+
+    expect(screen.getByRole('textbox', { name: 'Thickness (in)' })).toBeDisabled();
+  });
+});

@@ -11,12 +11,13 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } from '@/types/inventory';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER, type UnitHistoryEntry } from '@/types/inventory';
 import { historyActionLabel } from '@/lib/inventoryWarehouse';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
 import { UnitInspectionPanel } from './components/UnitInspectionPanel';
 import { UnitAllocationBanner } from './components/UnitAllocationBanner';
+import { UnitOnOrderBanner } from './components/UnitOnOrderBanner';
 import { UnitUsageTab } from './components/UnitUsageTab';
 import { UnitDetailsTab } from './components/UnitDetailsTab';
 
@@ -30,7 +31,7 @@ const TABS = [
 type Tab = (typeof TABS)[number]['key'];
 
 const STATUS_COLORS: Record<string, string> = {
-  available: '#22c55e', reserved: '#f59e0b', consumed: '#64748b', scrapped: '#ef4444', in_transit: '#6366f1',
+  available: '#22c55e', reserved: '#f59e0b', consumed: '#64748b', scrapped: '#ef4444', in_transit: '#6366f1', on_order: '#8b5cf6',
 };
 
 function fmtDateTime(iso?: string): string {
@@ -89,10 +90,13 @@ export default function UnitDetailPage() {
   if (error || !unit) return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load unit.')}</ErrorNote></div>;
 
   const inTransit = unit.status === UNIT_STATUS_IN_TRANSIT;
+  const onOrder = unit.status === UNIT_STATUS_ON_ORDER;
   const actionable = unit.status === UNIT_STATUS_AVAILABLE;
   const disabledReason = inTransit
     ? 'This unit is in transit between locations — it cannot be moved, cut or scrapped until received.'
-    : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
+    : onOrder
+      ? 'This slab is still on order — it cannot be moved, cut or scrapped until it arrives on an item receipt.'
+      : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
 
   async function handleExportPdf() {
     if (!unit) return;
@@ -154,6 +158,7 @@ export default function UnitDetailPage() {
         statusBadge={<Badge color={STATUS_COLORS[unit.status] ?? '#a8a29e'}>{unit.status.replace('_', ' ')}</Badge>}
       />
 
+      <UnitOnOrderBanner unit={unit} />
       <UnitAllocationBanner unit={unit} />
       <UnitInspectionPanel unit={unit} canInspect={canUpdate} />
 

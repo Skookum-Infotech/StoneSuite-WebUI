@@ -5,6 +5,8 @@ import { AlertTriangle, ClipboardPaste } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { inventoryService } from '@/services/inventoryService';
 import { newDraftSlab, slabArea, type ItemReceiptDraftSlab } from '@/lib/itemReceiptSlabs';
+import { MmDimensionInput } from '@/components/inventory/MmDimensionInput';
+import { mmToDimension, normalizeUnit, type DimensionUnit } from '@/lib/lineDimensions';
 import { PACKING_LIST_UNITS, parsePackingList, type PackingListUnit } from '@/lib/slabPackingList';
 import { unitLabel } from '@/lib/unitLabels';
 
@@ -12,6 +14,10 @@ const inputCls =
   'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
+
+const UNIT_NAMES: Record<DimensionUnit, string> = {
+  mm: 'millimetres', cm: 'centimetres', in: 'inches', ft: 'feet', m: 'metres',
+};
 const PREVIEW_ROWS = 5;
 
 // A slab this small or this large is far outside real stone (roughly a 0.3 m²
@@ -24,14 +30,20 @@ const MAX_PLAUSIBLE_SLAB_SQM = 10;
 // Reads slab rows pasted from a supplier's packing list and adds them to the
 // line — the same rows the receiver would otherwise type one at a time. The
 // receiver sees exactly what was read (and what was skipped) before adding.
-export function PackingListPanel({ itemId, unitCode, onAdd, onClose }: {
+export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClose }: {
   itemId: string | null | undefined;
   unitCode: string;
+  /** The unit the item is measured in: what the pasted sizes are assumed to be
+   *  in, and what the preview and default thickness are shown in. Millimetres when absent. */
+  dimensionUnit?: string;
   onAdd: (slabs: ItemReceiptDraftSlab[]) => void;
   onClose: () => void;
 }) {
   const [text, setText] = useState('');
-  const [unit, setUnit] = useState<PackingListUnit>('mm');
+  const lengthUnit: DimensionUnit = dimensionUnit ? normalizeUnit(dimensionUnit) : 'mm';
+  const [unit, setUnit] = useState<PackingListUnit>(
+    PACKING_LIST_UNITS.some((u) => u.value === lengthUnit) ? (lengthUnit as PackingListUnit) : 'mm',
+  );
   // null = follow the item's own thickness until the receiver types one.
   const [typedThickness, setTypedThickness] = useState<string | null>(null);
 
@@ -106,13 +118,12 @@ export function PackingListPanel({ itemId, unitCode, onAdd, onClose }: {
           </Select>
         </label>
         <label className="block text-2xs font-medium text-stone-500">
-          Thickness (mm) for rows without one
-          <input
-            type="number" min="0" step="any" inputMode="decimal"
-            value={thickness}
-            onChange={(e) => setTypedThickness(e.target.value)}
-            placeholder="e.g. 30"
-            aria-label="Default thickness in millimetres"
+          Thickness ({lengthUnit}) for rows without one
+          <MmDimensionInput
+            valueMm={thickness}
+            onChangeMm={setTypedThickness}
+            unit={lengthUnit}
+            label={`Default thickness in ${UNIT_NAMES[lengthUnit]}`}
             className={cn(inputCls, 'mt-1 block w-28 text-right')}
           />
         </label>
@@ -127,7 +138,7 @@ export function PackingListPanel({ itemId, unitCode, onAdd, onClose }: {
           <ul className="mt-1 space-y-0.5 text-2xs tabular-nums text-stone-500">
             {drafts.slice(0, PREVIEW_ROWS).map((d) => (
               <li key={d.key}>
-                {d.lengthMm} × {d.widthMm} × {d.thicknessMm} mm{d.lot ? ` · ${d.lot}` : ''}
+                {mmToDimension(parseFloat(d.lengthMm), lengthUnit)} × {mmToDimension(parseFloat(d.widthMm), lengthUnit)} × {mmToDimension(parseFloat(d.thicknessMm), lengthUnit)} {lengthUnit}{d.lot ? ` · ${d.lot}` : ''}
               </li>
             ))}
             {drafts.length > PREVIEW_ROWS && <li>… and {drafts.length - PREVIEW_ROWS} more</li>}
