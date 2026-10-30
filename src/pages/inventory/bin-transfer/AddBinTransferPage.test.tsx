@@ -82,7 +82,7 @@ describe('AddBinTransferPage', () => {
     expect(inventoryUnitService.searchUnits).toHaveBeenCalledWith(expect.objectContaining({
       filters: expect.arrayContaining([
         { field: 'warehouse_id', op: 'eq', value: 7 },
-        { field: 'status', op: 'in', value: ['available', 'reserved'] },
+        { field: 'status', op: 'in', value: ['available', 'received', 'reserved'] },
       ]),
     }));
   });

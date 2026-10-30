@@ -8,8 +8,7 @@ import { KitSelect } from '@/components/inventory/KitSelect';
 import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { lookupService } from '@/services/lookupService';
-import { findUnit, requiresDimensions } from '@/lib/inventoryUnits';
-import { TRACKING_OPTIONS } from '@/lib/inventoryItemForm';
+import { findUnit, requiresDimensions, trackingForUnit } from '@/lib/inventoryUnits';
 import { TRACKING_SERIALIZED, type KitRef } from '@/types/inventory';
 import { DIMENSION_UNITS, DIMENSION_UNIT_LABELS, normalizeUnit } from '@/lib/lineDimensions';
 
@@ -32,8 +31,9 @@ export function ItemFormBody({ data, set }: {
   const units = lookups?.units ?? [];
   const selectedUnit = findUnit(units, Number(data.unit_id) || undefined);
   const showDimensions = requiresDimensions(selectedUnit);
-  // A slab item always has stock to run out of, so its switch is on and fixed.
-  const slabTracked = data.tracking === TRACKING_SERIALIZED;
+  // A square unit makes the item a slab, whatever an older save recorded. A slab
+  // item always has stock to run out of, so its switch is on and fixed.
+  const slabTracked = trackingForUnit(selectedUnit) === TRACKING_SERIALIZED;
 
   return (
     <div className="space-y-2">
@@ -66,7 +66,10 @@ export function ItemFormBody({ data, set }: {
               kind="units"
               items={units}
               value={String(data.unit_id ?? '')}
-              onChange={(v) => set('unit_id', v)}
+              onChange={(v) => {
+                set('unit_id', v);
+                set('tracking', trackingForUnit(findUnit(units, Number(v) || undefined)));
+              }}
               label="Unit"
               required
             />
@@ -207,16 +210,9 @@ export function ItemFormBody({ data, set }: {
       <ModernSection title="Stone Attributes" index={1}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <ModernFieldShell label="Tracking">
-            <Select
-              value={String(data.tracking ?? '')}
-              onChange={(e) => set('tracking', e.target.value)}
-              className={fieldCls}
-              aria-label="Tracking"
-            >
-              {TRACKING_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </Select>
+            <p data-testid="item-tracking" className="flex h-9 items-center text-xs text-stone-700">
+              {slabTracked ? 'Slab — tracked one by one (set by the square unit)' : 'Quantity — counted per location'}
+            </p>
           </ModernFieldShell>
           <ModernFieldShell label="Material">
             <LookupSelect

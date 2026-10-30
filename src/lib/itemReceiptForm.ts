@@ -7,12 +7,16 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { PurchaseOrder, PurchaseOrderLine } from '@/types/purchaseOrder';
 import type {
   ItemReceipt, ItemReceiptCreatePayload, ItemReceiptUpdatePayload,
-  ItemReceiptLineInput, ItemReceiptLine, ItemReceiptStatusCode,
+  ItemReceiptLineInput, ItemReceiptLine, ItemReceiptStatusCode, OnOrderSlab,
 } from '@/types/itemReceipt';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
+import { dimensionToMm } from '@/lib/lineDimensions';
 import {
   draftSlabFromLine, slabsTotalArea, slabProblem, toSlabInput, type ItemReceiptDraftSlab,
 } from '@/lib/itemReceiptSlabs';
+import {
+  arrivedArea, arrivedSlabs, onOrderDraftsForLine, onOrderSlabProblem, toOnOrderInput, type OnOrderSlabDraft,
+} from '@/lib/onOrderSlabs';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -107,10 +111,22 @@ export interface ItemReceiptDraftLine {
    *  `qtyRejected` are unused. */
   tracking: string;
   slabs: ItemReceiptDraftSlab[];
+  /** The slabs this line's order put on order and that have not arrived, each with
+   *  a tick for "arrived" (lib/onOrderSlabs.ts). When there are any, the receiver
+   *  ticks them instead of typing slab rows; a ticked slab counts toward the
+   *  line's quantity exactly like a typed one. */
+  onOrder?: OnOrderSlabDraft[];
   /** The buyer's slab count for this line, when the order states one. */
   expectedSlabs?: number | null;
   /** Slabs earlier receipts have already brought in against the order line. */
   slabsReceived?: number;
+  /** The slab size the order line was priced from, in millimetres — what
+   *  "Generate rows" seeds each new slab with. Absent when the line did not state one. */
+  defaultLengthMm?: number;
+  defaultWidthMm?: number;
+  /** The unit the item is measured in (the order line's snapshot of it), which
+   *  slab sizes are shown and typed in until the item itself has loaded. */
+  dimensionUnit?: string;
 }
 
 function outstandingFor(ordered: number, alreadyReceived: number): number {
@@ -122,6 +138,21 @@ export function isSerializedLine(line: Pick<ItemReceiptDraftLine, 'tracking'>): 
   return line.tracking === TRACKING_SERIALIZED;
 }
 
+/** A line's On Order checklist rows, none when it has no such slabs. */
+export function onOrderOf(line: Pick<ItemReceiptDraftLine, 'onOrder'>): OnOrderSlabDraft[] {
+  return line.onOrder ?? [];
+}
+
+/** The size of one ordered slab in millimetres, or nothing when the order line
+ *  gives no length and width. */
+function orderedSlabSizeMm(po: PurchaseOrderLine): Pick<ItemReceiptDraftLine, 'defaultLengthMm' | 'defaultWidthMm'> {
+  if (!(po.length && po.width && po.length > 0 && po.width > 0)) return {};
+  return {
+    defaultLengthMm: dimensionToMm(po.length, po.dimensionUnit),
+    defaultWidthMm: dimensionToMm(po.width, po.dimensionUnit),
+  };
+}
+
 /** Builds the editable line set for a receipt draft: every line on the
  *  source purchase order, each pre-filled from a matching already-saved
  *  receipt line when given (Edit), or defaulted to its outstanding quantity
@@ -131,6 +162,7 @@ export function isSerializedLine(line: Pick<ItemReceiptDraftLine, 'tracking'>): 
 export function mergeReceiptLines(
   poLines: PurchaseOrderLine[],
   existingLines: ItemReceiptLine[] = [],
+  onOrderSlabs: OnOrderSlab[] = [],
 ): ItemReceiptDraftLine[] {
   return poLines.map((po, i) => {
     const existing = existingLines.find((l) => l.purchaseOrderItemId === po.id);
@@ -151,9 +183,13 @@ export function mergeReceiptLines(
       qtyRejected: existing && !serialized ? String(existing.qtyRejected) : '0',
       lineNotes: existing?.lineNotes ?? '',
       tracking: po.tracking ?? '',
-      slabs: serialized ? (existing?.slabs ?? []).map(draftSlabFromLine) : [],
+      // A slab the saved receipt ticked is a checklist row, not a typed one.
+      slabs: serialized ? (existing?.slabs ?? []).filter((s) => !s.onOrderSlabId).map(draftSlabFromLine) : [],
+      onOrder: serialized ? onOrderDraftsForLine(onOrderSlabs, po.id, existing?.slabs) : [],
       expectedSlabs: serialized ? (po.expectedSlabs ?? null) : null,
       slabsReceived: serialized ? (po.slabsReceived ?? 0) : 0,
+      dimensionUnit: po.dimensionUnit ?? undefined,
+      ...(serialized ? orderedSlabSizeMm(po) : {}),
     };
   });
 }
@@ -163,18 +199,42 @@ function parsedQty(raw: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** What a line is receiving: the sum of its slabs' areas for a slab line, the
- *  typed quantity for any other. */
+/** How far past the ordered quantity a line may be received without an
+ *  over-receipt reason, as a percentage. Must match
+ *  itemreceipt.OverReceiptTolerancePercent on the server. */
+export const OVER_RECEIPT_TOLERANCE_PERCENT = 5
+
+/** Whether receiving this line would pass the server's over-receipt tolerance,
+ *  counting what earlier receipts already brought in. The odd thousandth that
+ *  rounding slab areas adds is well inside it. */
+export function exceedsOverReceiptTolerance(
+  line: Pick<ItemReceiptDraftLine, 'qtyOrdered' | 'qtyAlreadyReceived' | 'qtyReceived' | 'tracking' | 'slabs' | 'onOrder' | 'unitCode'>,
+): boolean {
+  const incoming = receivingQty(line as ItemReceiptDraftLine)
+  if (incoming <= 0) return false
+  if (line.qtyOrdered <= 0) return true
+  return line.qtyAlreadyReceived + incoming > line.qtyOrdered * (1 + OVER_RECEIPT_TOLERANCE_PERCENT / 100)
+}
+
+const QTY_SCALE = 1000;
+
+/** What a line is receiving: the sum of its slabs' areas for a slab line (the
+ *  ticked On Order slabs and any typed in), the typed quantity for any other. */
 export function receivingQty(line: ItemReceiptDraftLine): number {
-  return isSerializedLine(line) ? slabsTotalArea(line.slabs, line.unitCode) : parsedQty(line.qtyReceived);
+  if (!isSerializedLine(line)) return parsedQty(line.qtyReceived);
+  const total = slabsTotalArea(line.slabs, line.unitCode) + arrivedArea(onOrderOf(line), line.unitCode);
+  return Math.round(total * QTY_SCALE) / QTY_SCALE;
 }
 
 /** Lines the user has actually entered something to receive for — the ones
  *  that make it into the submitted payload. A quantity line needs a quantity
  *  above zero (itemreceipt/store_create.go); a slab line needs at least one
- *  slab row, even an unfinished one, so it is validated rather than dropped. */
+ *  slab row, even an unfinished one, or one ticked On Order slab, so it is
+ *  validated rather than dropped. */
 export function includedReceiptLines(lines: ItemReceiptDraftLine[]): ItemReceiptDraftLine[] {
-  return lines.filter((l) => (isSerializedLine(l) ? l.slabs.length > 0 : parsedQty(l.qtyReceived) > 0));
+  return lines.filter((l) => (
+    isSerializedLine(l) ? l.slabs.length > 0 || arrivedSlabs(onOrderOf(l)).length > 0 : parsedQty(l.qtyReceived) > 0
+  ));
 }
 
 /** A single line's validation failure, keyed back to the PO line it belongs
@@ -192,6 +252,13 @@ export function validateReceiptLineErrors(lines: ItemReceiptDraftLine[]): Receip
   const errors: ReceiptLineError[] = [];
   for (const line of includedReceiptLines(lines)) {
     if (isSerializedLine(line)) {
+      // A ticked On Order slab still needs a thickness when the order left it out.
+      for (const ticked of onOrderOf(line)) {
+        const problem = onOrderSlabProblem(ticked);
+        if (problem) {
+          errors.push({ purchaseOrderItemId: line.purchaseOrderItemId, lineNumber: line.lineNumber, message: problem });
+        }
+      }
       // One entry per unfinished slab; there is no rejected quantity to check.
       line.slabs.forEach((slab, i) => {
         const problem = slabProblem(slab);
@@ -262,7 +329,11 @@ function toLineInput(line: ItemReceiptDraftLine, lineNo: number): ItemReceiptLin
       purchaseOrderItemUuid: line.purchaseOrderItemId,
       qtyReceived: receivingQty(line),
       lineNotes: line.lineNotes.trim() || undefined,
-      slabs: line.slabs.map(toSlabInput),
+      // The slabs ticked off the order's list first, then any typed in.
+      slabs: [
+        ...arrivedSlabs(onOrderOf(line)).map((d) => toOnOrderInput(d)),
+        ...line.slabs.map(toSlabInput),
+      ],
     };
   }
   return {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   anyDimensions, clampDimension, clampDimensionField, clampSlabs, dimensionCells, dimensionsFromLine, dimensionsPayload,
-  hasSize, isAreaUnit, isSized, itemDimensionUnit, maxDimension, normalizeUnit, sanitizeDimensionInput, sizedQuantity,
+  dimensionToMm, hasSize, mmToDimension, isAreaUnit, isSized, itemDimensionUnit, maxDimension, normalizeUnit, sanitizeDimensionInput, sizedQuantity,
   sizeSummary, stepDimension, withoutUnsupportedSize, withSizedQuantity,
 } from './lineDimensions';
 
@@ -300,5 +300,43 @@ describe('PDF columns', () => {
 
   it('can take the slab count from elsewhere', () => {
     expect(dimensionCells({ length: 300, width: 150, dimensionUnit: 'cm' }, 12)).toEqual(['300 cm', '150 cm', '12']);
+  });
+});
+
+describe('dimensionToMm', () => {
+  it.each([
+    ['mm', 3048, 3048],
+    ['cm', 304.8, 3048],
+    ['in', 120, 3048],
+    ['ft', 10, 3048],
+    ['m', 3.048, 3048],
+  ])('converts from %s', (unit, value, want) => {
+    expect(dimensionToMm(value, unit)).toBe(want);
+  });
+
+  it('reads a missing unit as the default (inches)', () => {
+    expect(dimensionToMm(120, undefined)).toBe(3048);
+  });
+});
+
+describe('mmToDimension', () => {
+  it.each([
+    ['mm', 3048, 3048],
+    ['cm', 3048, 304.8],
+    ['in', 3048, 120],
+    ['ft', 3048, 10],
+    ['m', 3048, 3.048],
+    // To hundredths, like every dimension: 30 mm is 1.18 in.
+    ['in', 30, 1.18],
+  ])('shows millimetres in %s', (unit, mm, want) => {
+    expect(mmToDimension(mm, unit)).toBe(want);
+  });
+
+  it('reads a missing unit as the default (inches)', () => {
+    expect(mmToDimension(3048, undefined)).toBe(120);
+  });
+
+  it('round-trips a typed value', () => {
+    expect(mmToDimension(dimensionToMm(96.5, 'in'), 'in')).toBe(96.5);
   });
 });

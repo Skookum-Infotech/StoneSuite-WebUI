@@ -12,13 +12,13 @@ import { PackingListPanel } from './PackingListPanel';
 import { inventoryService } from '@/services/inventoryService';
 import type { ItemReceiptDraftSlab } from '@/lib/itemReceiptSlabs';
 
-function renderPanel({ itemId = 'item-1', unitCode = 'SQFT' }: { itemId?: string | null; unitCode?: string } = {}) {
+function renderPanel({ itemId = 'item-1', unitCode = 'SQFT', dimensionUnit }: { itemId?: string | null; unitCode?: string; dimensionUnit?: string } = {}) {
   const onAdd = vi.fn();
   const onClose = vi.fn();
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
-      <PackingListPanel itemId={itemId} unitCode={unitCode} onAdd={onAdd} onClose={onClose} />
+      <PackingListPanel itemId={itemId} unitCode={unitCode} dimensionUnit={dimensionUnit} onAdd={onAdd} onClose={onClose} />
     </QueryClientProvider>,
   );
   return { onAdd, onClose };
@@ -167,5 +167,33 @@ describe('PackingListPanel', () => {
     renderPanel({ itemId: null });
     expect(inventoryService.getItem).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Add slabs' })).toBeDisabled();
+  });
+});
+
+describe('PackingListPanel — an item measured in inches', () => {
+  it('reads the pasted sizes as inches to begin with', () => {
+    renderPanel({ dimensionUnit: 'in' });
+
+    expect(screen.getByRole('combobox', { name: 'Packing list units' })).toHaveTextContent('Inches');
+  });
+
+  it('shows the default thickness in inches, from the item thickness in millimetres', async () => {
+    renderPanel({ dimensionUnit: 'in' });
+
+    await waitFor(() => expect(screen.getByRole('spinbutton', { name: 'Default thickness in inches' })).toHaveValue(1.18));
+  });
+
+  it('shows what was read in inches, not millimetres', async () => {
+    renderPanel({ dimensionUnit: 'in' });
+    await userEvent.setup().type(screen.getByRole('textbox', { name: 'Packing list rows' }), '120\t60\t1.5');
+
+    expect(await screen.findByText('120 × 60 × 1.5 in')).toBeInTheDocument();
+  });
+
+  it('stays in millimetres for an item that is measured in them', () => {
+    renderPanel({ dimensionUnit: 'mm' });
+
+    expect(screen.getByRole('combobox', { name: 'Packing list units' })).toHaveTextContent('Millimetres');
+    expect(screen.getByRole('spinbutton', { name: 'Default thickness in millimetres' })).toBeInTheDocument();
   });
 });

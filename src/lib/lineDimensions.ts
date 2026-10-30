@@ -49,6 +49,26 @@ const QUANTITY_DECIMALS = 3;
 const DIMENSION_SCALE = 10 ** DIMENSION_DECIMALS;
 const QUANTITY_SCALE = 10 ** QUANTITY_DECIMALS;
 
+const MM_PER_CM = 10;
+
+/** A length measured in `unit` (a blank or unknown unit reads as the default),
+ *  in millimetres to hundredths — what a received slab is stored in. */
+export function dimensionToMm(value: number, unit: string | null | undefined): number {
+  return Math.round(value * CM_PER_UNIT[normalizeUnit(unit)] * MM_PER_CM * DIMENSION_SCALE) / DIMENSION_SCALE;
+}
+
+/** Decimals worth showing per unit: a foot or a metre is coarse enough that two
+ *  decimals would hide whole millimetres. */
+const DISPLAY_DECIMALS: Record<DimensionUnit, number> = { mm: 2, cm: 2, in: 2, ft: 3, m: 3 };
+
+/** A length stored in millimetres, shown in `unit` to hundredths — the inverse
+ *  of dimensionToMm, for putting a received slab's size back in the item's unit. */
+export function mmToDimension(mm: number, unit: string | null | undefined): number {
+  const u = normalizeUnit(unit);
+  const scale = 10 ** DISPLAY_DECIMALS[u];
+  return Math.round((mm / MM_PER_CM / CM_PER_UNIT[u]) * scale) / scale;
+}
+
 /** Longest length or width a line accepts (100 m), measured in centimetres so it
  *  means the same in any unit — matches the server. */
 export const MAX_DIMENSION_CM = 10_000;

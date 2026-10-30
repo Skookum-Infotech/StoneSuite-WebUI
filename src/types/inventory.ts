@@ -173,6 +173,49 @@ export interface InventoryItemHistoryEntry {
   details?: Record<string, unknown>;
 }
 
+// ── Stock (on hand) ──────────────────────────────────────────────────────────
+// Served from `/api/tenant/inventory/items/{uuid}/stock` and
+// `/api/tenant/inventory/stock/*`, under the `inventory_item` grant. Mirrors the
+// Go structs in StoneSuite-Backend `inventory/stock.go`. Every figure is in the
+// item's own unit; `available` is worked out by the server and is never
+// recalculated here.
+
+/** One item's stock at one location. */
+export interface StockRow {
+  itemId: string;
+  sku: string;
+  itemName: string;
+  tracking: TrackingMode;
+  unitCode: string;
+  warehouseId: number;
+  warehouseName: string;
+  onHand: number;
+  /** What open sales orders still hold. */
+  allocated: number;
+  /** On hand less allocated, never negative. */
+  available: number;
+  /** 0 means no reorder point is set. */
+  reorderPoint: number;
+}
+
+/** One item's stock summed over every location, for a list row. */
+export interface StockTotal {
+  unitCode: string;
+  onHand: number;
+  allocated: number;
+  available: number;
+  /** Locations the item is held in. */
+  locations: number;
+  /** True when any location is at or below its (non-zero) reorder point. */
+  belowReorder: boolean;
+}
+
+export interface ReorderPointInput {
+  itemId: string;
+  warehouseId: number;
+  reorderPoint: number;
+}
+
 // ── Kits ─────────────────────────────────────────────────────────────────────
 // A kit is a named group of catalogue items sold together ("Kitchen"). Picking
 // one on a document line adds its items as ordinary lines under a kit heading.
@@ -246,6 +289,11 @@ export const UNIT_STATUS_RESERVED = 'reserved';
 export const UNIT_STATUS_CONSUMED = 'consumed';
 export const UNIT_STATUS_SCRAPPED = 'scrapped';
 export const UNIT_STATUS_IN_TRANSIT = 'in_transit';
+/** A slab minted when its purchase order was sent: not stock, not arrived. */
+export const UNIT_STATUS_ON_ORDER = 'on_order';
+/** A slab that arrived on an item receipt with no bin: in stock, not put away yet.
+ *  Placing it in a bin (a Bin Transfer) makes it available. */
+export const UNIT_STATUS_RECEIVED = 'received';
 
 /** Consumption picture for one unit. A unit is cut whole: its area leaves stock
  *  in full, `recoveredArea` comes back as offcut units, and `usedArea` — what
@@ -298,7 +346,7 @@ export interface InventoryUnit {
   areaUnitCode?: string;
 
   form: string; // full | cut
-  status: string; // available | reserved | consumed | scrapped | in_transit
+  status: string; // on_order | available | reserved | consumed | scrapped | in_transit
   parentUnitId?: string | null;
   /** Serial of the parent / root unit, to show lineage by name. */
   parentSerial?: string;
@@ -321,6 +369,18 @@ export interface InventoryUnit {
   receiptId?: string | null;
   receiptNumber?: string;
 
+  /** The purchase order this unit was ordered on — set for a slab minted when its
+   *  order was sent (it names the order while the slab is On Order, and stays as
+   *  the order of origin once it has arrived). Absent for every other unit. */
+  purchaseOrderId?: string | null;
+  purchaseOrderNumber?: string;
+
+  /** The customer this unit is held for when it was reserved from Inventory (a
+   *  reservation a fabrication job holds is named by `usage.jobId` instead). */
+  reservedCustomerId?: string | null;
+  reservedCustomerName?: string;
+  customerReservedAt?: string | null;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -337,6 +397,12 @@ export interface UnitSearchRequest {
   limit?: number;
   cursor?: string;
   search?: string;
+}
+
+export interface ReserveUnitInput {
+  /** The customer's uuid (a customer record's id). */
+  customerId: string;
+  note?: string;
 }
 
 export interface ScrapUnitInput {

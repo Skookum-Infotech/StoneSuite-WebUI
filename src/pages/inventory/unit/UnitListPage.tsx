@@ -3,9 +3,11 @@ import { Layers } from 'lucide-react';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { UnitTable } from './components/UnitTable';
 import { RemnantsFinder } from './components/RemnantsFinder';
+import { StockOnHandTable } from './components/StockOnHandTable';
 
 const TABS = [
   { key: 'all', label: 'All Units' },
+  { key: 'stock', label: 'Stock on Hand' },
   { key: 'remnants', label: 'Find Remnants' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
@@ -26,7 +28,7 @@ export default function UnitListPage() {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-stone-900">Inventory</h1>
             <p className="text-sm text-stone-500">
-              Every slab and remnant on hand — move, cut and scrap. Slabs are added by receiving a purchase order.
+              Every slab and remnant on hand — move, cut and scrap — and the stock of everything else you count. Slabs are added by receiving a purchase order.
             </p>
           </div>
         </div>
@@ -47,7 +49,9 @@ export default function UnitListPage() {
         </div>
 
         <div className="mt-4 flex-1 flex flex-col min-h-0">
-          {tab === 'all' ? <UnitTable /> : <RemnantsFinder />}
+          {tab === 'all' && <UnitTable />}
+          {tab === 'stock' && <StockOnHandTable />}
+          {tab === 'remnants' && <RemnantsFinder />}
         </div>
       </div>
     </div>

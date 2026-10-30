@@ -32,6 +32,7 @@ function flatten(bins: Bin[], parentNames: string[] = [], out: FlatBin[] = [], s
 // yard crew that already placed a slab cannot be blocked by a row count.
 export function BinPicker({
   bins, value, onChange, label = 'Bin', required, allowEmpty = true, emptyLabel = '— No bin —', showWarehouse = false,
+  disabled,
 }: {
   bins: Bin[];
   value: string;
@@ -42,6 +43,7 @@ export function BinPicker({
   emptyLabel?: string;
   /** Prefix each bin's trail with its location (for a tree spanning locations). */
   showWarehouse?: boolean;
+  disabled?: boolean;
 }) {
   const flat = flatten(bins, [], [], showWarehouse);
   return (
@@ -49,6 +51,7 @@ export function BinPicker({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required={required}
+      disabled={disabled}
       aria-label={label}
       className={cn(fieldCls)}
     >
