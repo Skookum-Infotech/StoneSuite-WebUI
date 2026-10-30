@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2, CheckCircle2, X } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2, CheckCircle2, X, UserCheck, UserX } from 'lucide-react';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -11,10 +11,12 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER, type UnitHistoryEntry } from '@/types/inventory';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER, UNIT_STATUS_RECEIVED, type UnitHistoryEntry } from '@/types/inventory';
+import { customerReservationOf } from '@/lib/unitAllocation';
 import { historyActionLabel } from '@/lib/inventoryWarehouse';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
+import { ReserveUnitDialog } from './components/ReserveUnitDialog';
 import { UnitInspectionPanel } from './components/UnitInspectionPanel';
 import { UnitAllocationBanner } from './components/UnitAllocationBanner';
 import { UnitOnOrderBanner } from './components/UnitOnOrderBanner';
@@ -31,7 +33,7 @@ const TABS = [
 type Tab = (typeof TABS)[number]['key'];
 
 const STATUS_COLORS: Record<string, string> = {
-  available: '#22c55e', reserved: '#f59e0b', consumed: '#64748b', scrapped: '#ef4444', in_transit: '#6366f1', on_order: '#8b5cf6',
+  available: '#22c55e', received: '#06b6d4', reserved: '#f59e0b', consumed: '#64748b', scrapped: '#ef4444', in_transit: '#6366f1', on_order: '#8b5cf6',
 };
 
 function fmtDateTime(iso?: string): string {
@@ -52,7 +54,7 @@ export default function UnitDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('usage');
-  const [dialog, setDialog] = useState<'scrap' | 'cut' | null>(null);
+  const [dialog, setDialog] = useState<'scrap' | 'cut' | 'reserve' | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [cutMessage, setCutMessage] = useState<string | null>(null);
@@ -77,6 +79,15 @@ export default function UnitDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['inventory-unit-history', id] });
   }
 
+  const { mutate: releaseReservation, isPending: isReleasing, error: releaseError } = useMutation({
+    mutationFn: () => inventoryUnitService.release(id),
+    onSuccess: () => {
+      invalidateUnit();
+      queryClient.invalidateQueries({ queryKey: ['inventory-units'] });
+      setCutMessage('Reservation released — the slab is available again.');
+    },
+  });
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -92,11 +103,17 @@ export default function UnitDetailPage() {
   const inTransit = unit.status === UNIT_STATUS_IN_TRANSIT;
   const onOrder = unit.status === UNIT_STATUS_ON_ORDER;
   const actionable = unit.status === UNIT_STATUS_AVAILABLE;
+  const received = unit.status === UNIT_STATUS_RECEIVED;
+  const heldForCustomer = customerReservationOf(unit) !== null;
   const disabledReason = inTransit
     ? 'This unit is in transit between locations — it cannot be moved, cut or scrapped until received.'
     : onOrder
       ? 'This slab is still on order — it cannot be moved, cut or scrapped until it arrives on an item receipt.'
-      : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
+      : received
+        ? 'This slab has no bin yet — move it to a bin (Bin Transfer) before cutting or reserving it.'
+        : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
+  // A slab that has arrived but has no bin can still be written off.
+  const scrapDisabledReason = received ? undefined : disabledReason;
 
   async function handleExportPdf() {
     if (!unit) return;
@@ -250,10 +267,20 @@ export default function UnitDetailPage() {
               <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <Scissors className="size-4 text-stone-400 shrink-0" /> Cut
               </button>
-              <button type="button" disabled={Boolean(disabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+              {heldForCustomer ? (
+                <button type="button" disabled={isReleasing} onClick={() => releaseReservation()} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+                  <UserX className="size-4 text-stone-400 shrink-0" /> Release reservation
+                </button>
+              ) : (
+                <button type="button" disabled={!actionable} onClick={() => setDialog('reserve')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+                  <UserCheck className="size-4 text-stone-400 shrink-0" /> Reserve for customer
+                </button>
+              )}
+              <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <AlertTriangle className="size-4 shrink-0" /> Scrap
               </button>
               {disabledReason && <p className="px-3 pt-1 text-2xs text-stone-500">{disabledReason}</p>}
+              {releaseError && <p role="alert" className="px-3 pt-1 text-2xs text-destructive">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
             </div>
           )}
 
@@ -271,6 +298,13 @@ export default function UnitDetailPage() {
         </SalesDetailSidebar>
       </div>
 
+      {dialog === 'reserve' && (
+        <ReserveUnitDialog
+          unit={unit}
+          onClose={() => setDialog(null)}
+          onReserved={(customerName) => setCutMessage(`${unit.serial} is reserved for ${customerName}.`)}
+        />
+      )}
       {dialog === 'scrap' && <ScrapUnitDialog unit={unit} onClose={() => setDialog(null)} onScrapped={invalidateUnit} />}
       {dialog === 'cut' && (
         <CutUnitDialog

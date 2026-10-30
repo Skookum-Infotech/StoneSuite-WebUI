@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { BinPicker } from '@/components/inventory/BinPicker';
 import { MmDimensionInput } from '@/components/inventory/MmDimensionInput';
 import { inventoryBinService } from '@/services/inventoryBinService';
-import { pageOf } from '@/lib/itemReceiptSlabs';
+import { BIN_STATUS_HINT, pageOf } from '@/lib/itemReceiptSlabs';
 import { mmToDimension, normalizeUnit } from '@/lib/lineDimensions';
 import {
   arrivalProgressText, arrivedSlabs, onOrderSlabArea, setAllArrived, setArrived, setBin, setBinForArrived, setThickness,
@@ -63,6 +63,7 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
             {arrivalProgressText(arrived, drafts.length)}
             {' — tick the slabs that arrived. Slabs you leave unticked stay on order.'}
           </p>
+          <p className="mt-0.5 text-2xs text-stone-500">{BIN_STATUS_HINT}</p>
         </div>
         <div className="w-60">
           {/* An action, not a setting: it stays on its prompt and writes the bin onto each ticked slab. */}

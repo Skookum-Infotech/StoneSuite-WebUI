@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { allocationOf, allocationSentence, fabricationJobPath, salesOrderPath } from './unitAllocation';
+import {
+  allocationOf, allocationSentence, customerPath, customerReservationOf, fabricationJobPath, isAllocated, salesOrderPath,
+} from './unitAllocation';
 import { makeAllocatedUnit, makeCutUnit, makeUnit } from '@/pages/inventory/unit/components/unitFixtures';
 
 describe('allocationOf', () => {
@@ -53,5 +55,30 @@ describe('paths', () => {
   it('point at the sales order and fabrication job pages', () => {
     expect(salesOrderPath('so-3')).toBe('/sales/sales_order/so-3');
     expect(fabricationJobPath('job-7')).toBe('/sales/installation/job-7');
+  });
+});
+
+describe('customerReservationOf', () => {
+  const reserved = () => makeUnit({ status: 'reserved', reservedCustomerId: 'cust-1', reservedCustomerName: 'Acme Kitchens' });
+
+  it('names the customer a slab was reserved for from Inventory', () => {
+    expect(customerReservationOf(reserved())).toEqual({ customerId: 'cust-1', customerName: 'Acme Kitchens' });
+  });
+
+  it('is null for a slab nobody reserved, and for one a job holds', () => {
+    expect(customerReservationOf(makeUnit())).toBeNull();
+    expect(customerReservationOf(makeAllocatedUnit())).toBeNull();
+  });
+
+  it('is null once the slab is no longer reserved, whatever the customer field still says', () => {
+    expect(customerReservationOf(makeUnit({ status: 'available', reservedCustomerId: 'cust-1' }))).toBeNull();
+  });
+
+  it('counts as allocated, like a job does, and reads as a sentence', () => {
+    expect(isAllocated(reserved())).toBe(true);
+    expect(isAllocated(makeAllocatedUnit())).toBe(true);
+    expect(isAllocated(makeUnit())).toBe(false);
+    expect(allocationSentence(reserved())).toBe('Reserved for customer Acme Kitchens.');
+    expect(customerPath('cust-1')).toBe('/crm/customer/cust-1');
   });
 });

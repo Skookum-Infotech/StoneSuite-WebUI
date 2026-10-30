@@ -2,18 +2,20 @@ import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type AllocationChipTone = 'order' | 'job';
+export type AllocationChipTone = 'order' | 'job' | 'customer';
 
 // Colours follow the sidebar: sales orders are green, fabrication is orange, so
 // the two read as the same records wherever they show up.
 const TONE_CLASSES: Record<AllocationChipTone, string> = {
   order: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   job: 'border-orange-200 bg-orange-50 text-orange-700',
+  customer: 'border-sky-200 bg-sky-50 text-sky-700',
 };
 
 const HOVER_CLASSES: Record<AllocationChipTone, string> = {
   order: 'hover:bg-emerald-100',
   job: 'hover:bg-orange-100',
+  customer: 'hover:bg-sky-100',
 };
 
 // One record a slab is allocated to. A link when the user may open that record,

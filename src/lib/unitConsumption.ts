@@ -4,6 +4,7 @@ import {
   UNIT_STATUS_CONSUMED,
   UNIT_STATUS_IN_TRANSIT,
   UNIT_STATUS_ON_ORDER,
+  UNIT_STATUS_RECEIVED,
   UNIT_STATUS_RESERVED,
   UNIT_STATUS_SCRAPPED,
 } from '@/types/inventory';
@@ -102,6 +103,7 @@ const STATE_LABEL: Record<string, string> = {
   [UNIT_STATUS_RESERVED]: 'Held for a job',
   [UNIT_STATUS_IN_TRANSIT]: 'In transit',
   [UNIT_STATUS_ON_ORDER]: 'On order',
+  [UNIT_STATUS_RECEIVED]: 'Received, no bin yet',
   [UNIT_STATUS_CONSUMED]: 'Cut',
   [UNIT_STATUS_SCRAPPED]: 'Scrapped',
 };
@@ -133,7 +135,8 @@ export function consumptionLine(unit: InventoryUnit): string {
         ? `${usedPercent(unit)}% used · ${formatUnitArea(use.recoveredArea, unit.areaUnitCode)} back`
         : 'Fully used';
     case UNIT_STATUS_RESERVED:
-      return use.jobNumber ? `Held for ${use.jobNumber}` : 'Held for a job';
+      if (use.jobNumber) return `Held for ${use.jobNumber}`;
+      return unit.reservedCustomerName ? `Reserved for ${unit.reservedCustomerName}` : 'Held for a job';
     case UNIT_STATUS_AVAILABLE:
       if (unit.kind === UNIT_KIND_REMNANT && unit.parentSerial) return `Offcut of ${unit.parentSerial}`;
       return 'Untouched';
@@ -155,7 +158,10 @@ export function consumptionSentence(unit: InventoryUnit): string {
       : `Cut: all ${area(unit.area)} used in product and saw kerf; nothing came back.`;
   }
   if (unit.status === UNIT_STATUS_RESERVED) {
-    return use.jobNumber ? `Whole slab, ${area(unit.area)}, held for job ${use.jobNumber}.` : `Whole slab, ${area(unit.area)}, held for a job.`;
+    if (use.jobNumber) return `Whole slab, ${area(unit.area)}, held for job ${use.jobNumber}.`;
+    return unit.reservedCustomerName
+      ? `Whole slab, ${area(unit.area)}, reserved for ${unit.reservedCustomerName}.`
+      : `Whole slab, ${area(unit.area)}, held for a job.`;
   }
   if (unit.status === UNIT_STATUS_SCRAPPED) return `Scrapped: ${area(unit.area)} written off.`;
   if (unit.status === UNIT_STATUS_IN_TRANSIT) return `${area(unit.area)} in transit between locations.`;
@@ -264,10 +270,14 @@ export function lifecycleSteps(unit: InventoryUnit): LifecycleStep[] {
   if (use.reservedAt || unit.status === UNIT_STATUS_RESERVED) {
     steps.push({
       key: 'reserved',
-      title: use.jobId ? 'Held for job' : 'Held for a job',
-      link: use.jobId ? { label: use.jobNumber || 'fabrication job', to: `/sales/installation/${use.jobId}` } : undefined,
+      title: use.jobId ? 'Held for job' : unit.reservedCustomerName ? 'Reserved for customer' : 'Held for a job',
+      link: use.jobId
+        ? { label: use.jobNumber || 'fabrication job', to: `/sales/installation/${use.jobId}` }
+        : unit.reservedCustomerId
+          ? { label: unit.reservedCustomerName || 'customer', to: `/crm/customer/${unit.reservedCustomerId}` }
+          : undefined,
       detail: use.salesOrderNumber ? `For sales order ${use.salesOrderNumber}` : undefined,
-      at: use.reservedAt,
+      at: use.reservedAt ?? unit.customerReservedAt ?? undefined,
     });
   }
 
@@ -293,6 +303,13 @@ export function lifecycleSteps(unit: InventoryUnit): LifecycleStep[] {
         key: 'stock',
         title: 'In stock',
         detail: [unit.warehouseName, unit.binPath].filter(Boolean).join(' · ') || undefined,
+      });
+      break;
+    case UNIT_STATUS_RECEIVED:
+      steps.push({
+        key: 'stock',
+        title: 'Received — waiting for a bin',
+        detail: unit.warehouseName || undefined,
       });
       break;
     default:

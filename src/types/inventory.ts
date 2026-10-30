@@ -291,6 +291,9 @@ export const UNIT_STATUS_SCRAPPED = 'scrapped';
 export const UNIT_STATUS_IN_TRANSIT = 'in_transit';
 /** A slab minted when its purchase order was sent: not stock, not arrived. */
 export const UNIT_STATUS_ON_ORDER = 'on_order';
+/** A slab that arrived on an item receipt with no bin: in stock, not put away yet.
+ *  Placing it in a bin (a Bin Transfer) makes it available. */
+export const UNIT_STATUS_RECEIVED = 'received';
 
 /** Consumption picture for one unit. A unit is cut whole: its area leaves stock
  *  in full, `recoveredArea` comes back as offcut units, and `usedArea` — what
@@ -372,6 +375,12 @@ export interface InventoryUnit {
   purchaseOrderId?: string | null;
   purchaseOrderNumber?: string;
 
+  /** The customer this unit is held for when it was reserved from Inventory (a
+   *  reservation a fabrication job holds is named by `usage.jobId` instead). */
+  reservedCustomerId?: string | null;
+  reservedCustomerName?: string;
+  customerReservedAt?: string | null;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -388,6 +397,12 @@ export interface UnitSearchRequest {
   limit?: number;
   cursor?: string;
   search?: string;
+}
+
+export interface ReserveUnitInput {
+  /** The customer's uuid (a customer record's id). */
+  customerId: string;
+  note?: string;
 }
 
 export interface ScrapUnitInput {

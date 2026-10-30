@@ -13,6 +13,7 @@ const STATUS_STYLES: Record<string, string> = {
   reserved: 'bg-amber-50 text-amber-700',
   in_transit: 'bg-sky-50 text-sky-700',
   on_order: 'bg-violet-50 text-violet-700',
+  received: 'bg-cyan-50 text-cyan-700',
   consumed: 'bg-stone-100 text-stone-600',
   scrapped: 'bg-red-50 text-red-700',
 };

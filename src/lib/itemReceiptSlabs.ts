@@ -49,6 +49,11 @@ export function newDraftSlab(seed: Partial<ItemReceiptDraftSlab> = {}): ItemRece
 
 /** The most rows one "How many arrived?" can generate — the same ceiling as a
  *  pasted packing list, past which the count is a typo, not a delivery. */
+/** What the bin decides about a slab that arrives: it is Available when it goes
+ *  straight into a bin, Received while it has none yet. */
+export const BIN_STATUS_HINT =
+  'A slab with a bin is Available in Inventory; one without a bin is marked Received until it is put in a bin.';
+
 export const MAX_GENERATED_SLABS = 500;
 
 /** `count` identical rows, each seeded from `defaults` and given its own key.

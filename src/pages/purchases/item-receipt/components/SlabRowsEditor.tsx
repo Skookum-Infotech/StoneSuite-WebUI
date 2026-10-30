@@ -6,7 +6,7 @@ import { BinPicker } from '@/components/inventory/BinPicker';
 import { inventoryBinService } from '@/services/inventoryBinService';
 import { inventoryService } from '@/services/inventoryService';
 import {
-  GROUPED_ROW_THRESHOLD, MAX_GENERATED_SLABS, assignBin, generateSlabs, groupSlabs, newDraftSlab, pageOf, patchGroupMembers,
+  BIN_STATUS_HINT, GROUPED_ROW_THRESHOLD, MAX_GENERATED_SLABS, assignBin, generateSlabs, groupSlabs, newDraftSlab, pageOf, patchGroupMembers,
   slabProgressText, type BinAssignScope, type ItemReceiptDraftSlab, type SlabUnits,
 } from '@/lib/itemReceiptSlabs';
 import { normalizeUnit } from '@/lib/lineDimensions';
@@ -223,6 +223,7 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
         </button>
         {blocker && <p className="text-2xs text-stone-500">{blocker}</p>}
       </div>
+      <p className="mb-2 text-2xs text-stone-500">{BIN_STATUS_HINT}</p>
 
       {panel === 'paste' && (
         <PackingListPanel

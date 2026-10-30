@@ -6,7 +6,7 @@ import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { cn } from '@/lib/utils';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED } from '@/types/inventory';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RECEIVED, UNIT_STATUS_RESERVED } from '@/types/inventory';
 import type { InventoryUnit } from '@/types/inventory';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -39,7 +39,7 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
       search: debounced || undefined,
       filters: [
         { field: 'warehouse_id', op: 'eq', value: warehouseId },
-        { field: 'status', op: 'in', value: [UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED] },
+        { field: 'status', op: 'in', value: [UNIT_STATUS_AVAILABLE, UNIT_STATUS_RECEIVED, UNIT_STATUS_RESERVED] },
       ],
       sort: [{ field: 'serial', dir: 'asc' }],
       limit: PICKER_LIMIT,
@@ -126,6 +126,9 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="font-mono text-xs font-semibold text-stone-900">{unit.serial}</span>
+                        {unit.status === UNIT_STATUS_RECEIVED && (
+                          <span className="rounded bg-cyan-100 px-1.5 py-0.5 text-2xs font-semibold text-cyan-700">Received</span>
+                        )}
                         {unit.status === UNIT_STATUS_RESERVED && (
                           <span className="rounded bg-amber-100 px-1.5 py-0.5 text-2xs font-semibold text-amber-700">Reserved</span>
                         )}

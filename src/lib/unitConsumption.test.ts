@@ -278,3 +278,40 @@ describe('lifecycleSteps', () => {
     }
   });
 });
+
+describe('a slab received without a bin, and one reserved for a customer', () => {
+  const forCustomer = () => unit({
+    status: 'reserved', reservedCustomerId: 'cust-1', reservedCustomerName: 'Acme Kitchens',
+    customerReservedAt: '2026-10-30T09:00:00',
+  });
+
+  it('says a received slab is waiting for a bin', () => {
+    expect(consumptionState(unit({ status: 'received' }))).toBe('Received, no bin yet');
+    expect(consumptionLine(unit({ status: 'received' }))).toBe('Received, no bin yet');
+    expect(unitSegments(unit({ status: 'received' }))[0].tone).toBe('stock');
+  });
+
+  it('ends the story of a received slab at "waiting for a bin"', () => {
+    const steps = lifecycleSteps(unit({ status: 'received', warehouseName: 'Main Yard' }));
+    expect(steps.at(-1)).toMatchObject({ title: 'Received — waiting for a bin', detail: 'Main Yard', current: true });
+  });
+
+  it('names the customer instead of a job on the list line and the tooltip', () => {
+    expect(consumptionLine(forCustomer())).toBe('Reserved for Acme Kitchens');
+    expect(consumptionSentence(forCustomer())).toContain('reserved for Acme Kitchens');
+  });
+
+  it('prefers the job when a job is the one holding it', () => {
+    const job = unit({ status: 'reserved', usage: { jobNumber: 'FJOB-000012', offcutCount: 0, recoveredArea: 0, usedArea: 0 } });
+    expect(consumptionLine(job)).toBe('Held for FJOB-000012');
+  });
+
+  it('adds a "Reserved for customer" step that links to the customer', () => {
+    const step = lifecycleSteps(forCustomer()).find((s) => s.key === 'reserved');
+    expect(step).toMatchObject({
+      title: 'Reserved for customer',
+      link: { label: 'Acme Kitchens', to: '/crm/customer/cust-1' },
+      at: '2026-10-30T09:00:00',
+    });
+  });
+});

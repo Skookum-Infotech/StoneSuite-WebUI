@@ -89,6 +89,12 @@ describe('OnOrderSlabChecklist', () => {
     expect(screen.queryByRole('columnheader', { name: /^Size/ })).not.toBeInTheDocument();
   });
 
+  it('says what the bin decides: Available with one, Received without', () => {
+    renderChecklist(lineWith([slab(1)]));
+
+    expect(screen.getByText(/one without a bin is marked Received/)).toBeInTheDocument();
+  });
+
   it('ticks only the slab that was clicked and reports the new list', async () => {
     const spy = vi.fn();
     renderChecklist(lineWith([slab(1), slab(2), slab(3)]), { onChangeSpy: spy });
