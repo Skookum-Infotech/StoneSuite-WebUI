@@ -15,6 +15,12 @@ happened by the time this runs, so it never blocks — it silently accepts anyth
 `--fix` resolves and reports only what's left, same as running `eslint --fix` yourself.
 No-ops if `node_modules/.bin/eslint` isn't installed yet.
 
+## `npm-output-filter.sh` — PreToolUse on Bash (rewrites, never blocks)
+Rewrites a plain `npm test`, `npm run test|build|ci`, or `npx vitest run …` to pipe its
+output through `filter-npm-output.sh`, which drops passing-test-file lines and emitted
+`dist/` asset lines. Failures, errors and summaries pass through; exit status is kept
+via `pipefail`. Commands with quotes, pipes or other metacharacters are left alone.
+
 ## Notes
 - Edit the rule set by editing `guard.sh`/`lint.sh`; self-test with the cases in the
   commit that added them (pipe sample `{"tool_name":...,"tool_input":{"file_path":...}}`
