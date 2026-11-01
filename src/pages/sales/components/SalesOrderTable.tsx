@@ -15,6 +15,7 @@ import { SO_STATUS_COLORS } from '@/lib/salesOrderForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { SalesOrderSearchRequest } from '@/types/salesOrder';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 // Larger page size for CSV export — fewer round trips while paging through
 // every matching record (vs. the 25-row page size used for on-screen browsing).
@@ -282,7 +283,7 @@ export function SalesOrderTable({ toolbarActions }: { toolbarActions?: ReactNode
                         </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {order.customer?.name ?? '—'}
+                        {order.customer?.name ? <CustomerLink id={order.customer.id} name={order.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         {isSuperAdmin ? (

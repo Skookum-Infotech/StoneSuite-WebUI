@@ -34,6 +34,7 @@ import { DeleteFabricationJobDialog } from './components/DeleteFabricationJobDia
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { FabricationJob } from '@/types/fabrication';
 import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -367,7 +368,7 @@ export default function FabricationJobDetailPage() {
             )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{job.customer.name}</span>
+              <CustomerLink id={job.customer.id} name={job.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
