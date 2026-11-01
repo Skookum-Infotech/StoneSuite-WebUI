@@ -26,6 +26,7 @@ import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { RefundStatusControl } from './components/RefundStatusControl';
 import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -283,7 +284,7 @@ export default function RefundDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{refund.customer.name}</span>
+              <CustomerLink id={refund.customer.id} name={refund.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>

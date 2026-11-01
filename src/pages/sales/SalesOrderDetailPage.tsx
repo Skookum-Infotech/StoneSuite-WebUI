@@ -39,6 +39,7 @@ import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import { CustomerOrderFormAction } from './components/CustomerOrderFormAction';
 import { formatDateValue } from '@/lib/dateUtils';
 import { isPortalSession } from '@/store/useAuthStore';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -478,7 +479,7 @@ export default function SalesOrderDetailPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{order.customer.name}</span>
+              <CustomerLink id={order.customer.id} name={order.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>

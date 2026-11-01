@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import { crmService } from "@/services/crmService";
@@ -19,9 +18,11 @@ import { ModernSection } from "@/components/crm/FormPrimitives";
 import {
   AuditContent,
   FilesContent,
-  TransactionsContent,
 } from "@/components/crm/CrmSubTabsPanel";
 import { ActivityLogPanel } from "@/components/crm/ActivityLogPanel";
+import { CustomerDetailTabs } from "@/pages/crm/customer/components/CustomerDetailTabs";
+import { useCustomerTab } from "@/pages/crm/customer/components/customerTabs";
+import { CustomerTransactionsTab } from "@/pages/crm/customer/components/transactions/CustomerTransactionsTab";
 import { PortalAccessPanel } from "@/pages/crm/customer/components/PortalAccessPanel";
 import { PortalAccessStatusCard } from "@/pages/crm/customer/components/PortalAccessStatusCard";
 import { useBreadcrumbStore } from "@/store/useBreadcrumbStore";
@@ -30,29 +31,15 @@ import { readonlyCls, fieldLabelCls, resolveStatusColor } from "@/components/crm
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 import { recordApprovalState, type StatusInfo } from "@/types/tenant";
 
-const TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "transactions", label: "Transactions" },
-  { key: "files", label: "Files" },
-  { key: "portal", label: "Portal Access" },
-  { key: "audit", label: "Audit" },
-  { key: "activity", label: "Activity" },
-] as const;
-
-type Tab = (typeof TABS)[number]["key"];
-
 export default function CustomerDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
-  const initialTab = (location.state as { initialTab?: Tab } | null)?.initialTab ?? "overview";
-  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [activeTab, setActiveTab] = useCustomerTab();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission("customer", "update");
   const canChangeStatus = permissionsLoading || hasPermission("customer", "transition");
   const canViewPortalAccess = permissionsLoading || hasPermission("portal_access", "read");
-  const visibleTabs = TABS.filter((tab) => tab.key !== "portal" || canViewPortalAccess);
 
   const {
     data: record,
@@ -233,22 +220,7 @@ export default function CustomerDetailPage() {
         />
       )}
 
-      {/* Tab bar — scrolls horizontally on small screens rather than
-          overflowing the page (6 tabs don't fit a phone width). */}
-      <div className="flex shrink-0 overflow-x-auto modal-scrollbar border-b border-stone-200 bg-white px-3 sm:px-5 3xl:px-12 4xl:px-16 py-2.5">
-        <div role="tablist" className={TAB_LIST_CLASS}>
-          {visibleTabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={tabClass(activeTab === tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <CustomerDetailTabs active={activeTab} onChange={setActiveTab} canViewPortalAccess={canViewPortalAccess} />
 
       {/* Two-column body — stacks on mobile, side-by-side on lg+ */}
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -277,7 +249,7 @@ export default function CustomerDetailPage() {
             </>
           )}
 
-          {activeTab === "transactions" && <TransactionsContent />}
+          {activeTab === "transactions" && <CustomerTransactionsTab customerId={id} />}
 
           {activeTab === "portal" && canViewPortalAccess && (
             <PortalAccessPanel
