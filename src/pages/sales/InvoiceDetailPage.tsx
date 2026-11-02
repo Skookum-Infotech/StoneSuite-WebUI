@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Receipt, Upload, Pencil, FileDown, Loader2, Send, ShoppingCart, DollarSign } from 'lucide-react';
@@ -454,7 +455,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   );
 }
 
-function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; zip?: string; phone?: string; fax?: string; email?: string } }) {
+function AddressBlock({ addr }: { addr: { customerName?: string; attention?: string; addrLine1?: string; addrLine2?: string; suiteUnit?: string; city?: string; stateId?: number | null; countryId?: number | null; zip?: string; phone?: string; fax?: string; email?: string } }) {
   const lines = [
     addr.attention,
     [addr.addrLine1, addr.addrLine2].filter(Boolean).join(', '),
@@ -463,13 +464,14 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
     addr.email && `Email: ${addr.email}`,
   ].filter(Boolean);
 
-  if (lines.length === 0) {
+  if (lines.length === 0 && !addr.stateId && !addr.countryId) {
     return <p className="text-xs text-stone-500 italic">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
       {addr.customerName && <p className="font-semibold text-stone-900">{addr.customerName}</p>}
       {lines.map((line, i) => <p key={i} className="text-stone-600">{line}</p>)}
+      <AddressGeoLine stateId={addr.stateId} countryId={addr.countryId} />
     </div>
   );
 }

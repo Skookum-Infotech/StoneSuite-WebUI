@@ -1,4 +1,5 @@
 import { Select } from '@/components/ui/select';
+import { flagAttrs } from '@/lib/flags';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 import { fieldCls, fieldErrorCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
@@ -6,7 +7,7 @@ import type { CompanyInfoFieldSpec } from './CompanyInfoTextField';
 import type { SelectOption } from '@/lib/companyInfoLookupOptions';
 
 function renderOption(o: SelectOption) {
-  return <option key={o.value} value={o.value}>{o.label}</option>;
+  return <option key={o.value} value={o.value} {...(o.flag ? flagAttrs(o.flag.kind, o.flag.code) : {})}>{o.label}</option>;
 }
 
 // Dropdown counterpart to CompanyInfoTextField, same chrome/sizing — for the

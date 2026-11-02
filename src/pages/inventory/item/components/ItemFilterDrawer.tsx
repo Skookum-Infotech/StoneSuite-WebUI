@@ -1,4 +1,5 @@
 import { Select } from '@/components/ui/select';
+import { flagAttrs } from '@/lib/flags';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -95,7 +96,7 @@ export function ItemFilterDrawer({ onClose, value, onApply }: {
           <FilterField label="Origin Country">
             <Select value={draft.originCountryId} onChange={(e) => set('originCountryId', e.target.value)} className={fieldCls} aria-label="Origin Country">
               <option value="">— Any —</option>
-              {(crmLookups?.countries ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {(crmLookups?.countries ?? []).map((c) => <option key={c.id} value={c.id} {...flagAttrs('country', c.code)}>{c.name}</option>)}
             </Select>
           </FilterField>
           <FilterField label="Default Location">

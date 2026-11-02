@@ -1,4 +1,5 @@
 import { Select } from '@/components/ui/select';
+import { lookupFlagAttrs } from '@/lib/flags';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils';
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
@@ -48,7 +49,7 @@ export function VendorField({ field, value, set, lookups, showError }: {
 
   if (field.type === 'select') {
     const lookupRows = field.lookupKey && lookups
-      ? (lookups[field.lookupKey] as Array<{ id: number; name: string }>)
+      ? (lookups[field.lookupKey] as Array<{ id: number; name: string; code?: string }>)
       : null;
 
     return (
@@ -63,7 +64,7 @@ export function VendorField({ field, value, set, lookups, showError }: {
           >
             <option value="">— Select —</option>
             {lookupRows
-              ? lookupRows.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)
+              ? lookupRows.map((row) => <option key={row.id} value={row.id} {...lookupFlagAttrs(field.lookupKey, row)}>{row.name}</option>)
               : field.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
           </Select>
         </ModernFieldShell>
