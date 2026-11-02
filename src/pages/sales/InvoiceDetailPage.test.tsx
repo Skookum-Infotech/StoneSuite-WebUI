@@ -170,3 +170,13 @@ describe('InvoiceDetailPage source sales order', () => {
     expect(screen.queryByText('Source Sales Order')).not.toBeInTheDocument();
   });
 });
+
+describe('InvoiceDetailPage customer link', () => {
+  it('links the sidebar customer to the customer page', async () => {
+    vi.mocked(invoiceService.getInvoice).mockResolvedValue(invoice());
+    renderPage();
+
+    const links = await screen.findAllByRole('link', { name: 'View customer Acme Stoneworks' });
+    for (const link of links) expect(link).toHaveAttribute('href', '/crm/customer/cust-1');
+  });
+});

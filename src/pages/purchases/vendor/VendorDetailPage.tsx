@@ -15,16 +15,11 @@ import { VENDOR_STATUS_COLORS, type Vendor } from '@/types/vendor';
 import type { PurchasesPdfSection } from '@/lib/purchasesPdfExport';
 import { VendorOverviewTab } from './components/VendorOverviewTab';
 import { VendorAuditTab } from './components/VendorAuditTab';
+import { VendorTransactionsTab } from './components/transactions/VendorTransactionsTab';
+import { VENDOR_TABS, useVendorTab } from './components/vendorTabs';
 import { DeleteVendorDialog } from './components/DeleteVendorDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { formatDateValue } from '@/lib/dateUtils';
-
-const TABS = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'audit', label: 'Audit' },
-  { key: 'files', label: 'Files' },
-] as const;
-type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -35,7 +30,7 @@ export default function VendorDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useVendorTab();
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
 
@@ -169,10 +164,12 @@ export default function VendorDetailPage() {
       {/* Tab bar */}
       <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
         <div role="tablist" className={TAB_LIST_CLASS}>
-          {TABS.map((tab) => (
+          {VENDOR_TABS.map((tab) => (
             <button
               key={tab.key}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={tabClass(activeTab === tab.key)}
             >
@@ -186,7 +183,8 @@ export default function VendorDetailPage() {
         {/* Left column */}
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === 'overview' && <VendorOverviewTab vendor={vendor} countryName={countryName} />}
-          {activeTab === 'audit' && <VendorAuditTab vendorId={id} />}
+          {activeTab === 'transactions' && <VendorTransactionsTab vendorId={id} />}
+          {activeTab === 'audit' &&<VendorAuditTab vendorId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
           <div className="h-6" />

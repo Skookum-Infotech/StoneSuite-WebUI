@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { ClipboardList, Upload, Pencil, ArrowRightLeft, FileDown, Loader2, ExternalLink } from 'lucide-react';
@@ -32,6 +32,7 @@ import { RequisitionStatusControl } from './components/RequisitionStatusControl'
 import { ConvertToPurchaseOrderDialog } from './components/ConvertToPurchaseOrderDialog';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
+import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -263,7 +264,7 @@ export default function RequisitionDetailPage() {
                   <ReadonlyField label="Department" value={reqn.department} />
                   <ReadonlyField label="Needed By" value={reqn.neededByDate ? fmtDate(reqn.neededByDate) : undefined} />
                   <ReadonlyField label="Priority" value={priorityLabel(reqn.priority)} />
-                  <ReadonlyField label="Suggested Vendor" value={reqn.vendor?.name} />
+                  <ReadonlyField label="Suggested Vendor" value={reqn.vendor ? <VendorLink vendor={reqn.vendor} /> : undefined} />
                   <ReadonlyField label="Sales Tax %" value={`${reqn.salesTaxPercent}%`} />
                   {reqn.memo && <ReadonlyField label="Memo" value={reqn.memo} full />}
                 </div>
@@ -483,7 +484,7 @@ export default function RequisitionDetailPage() {
   );
 }
 
-function ReadonlyField({ label, value, full }: { label: string; value?: string; full?: boolean }) {
+function ReadonlyField({ label, value, full }: { label: string; value?: ReactNode; full?: boolean }) {
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
