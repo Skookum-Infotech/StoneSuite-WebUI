@@ -4,6 +4,7 @@ import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
 import type { Vendor } from '@/types/vendor';
 import { formatDateValue } from '@/lib/dateUtils';
+import { VendorSummaryStrip } from './transactions/VendorSummaryStrip';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -59,6 +60,7 @@ export function VendorOverviewTab({ vendor, countryName }: { vendor: Vendor; cou
 
   return (
     <>
+      <VendorSummaryStrip vendorId={vendor.id} />
       {isPerson ? (
         <>
           <ModernSection title="Personal Identity" index={0}>
