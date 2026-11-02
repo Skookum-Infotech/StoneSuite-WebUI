@@ -127,9 +127,9 @@ describe('VendorTransactionsTab', () => {
     expect(await screen.findByText('No transactions for this vendor yet')).toBeInTheDocument();
   });
 
-  it('renders the summary strip, rows linking to their documents, and count badges', async () => {
+  it('renders rows linking to their documents, and count badges', async () => {
     renderTab();
-    expect(await screen.findByText('Open balance')).toBeInTheDocument();
+    expect(screen.queryByText('Open balance')).toBeNull();
     const link = await screen.findByRole('link', { name: 'View Vendor Bill BILL-1001' });
     expect(link).toHaveAttribute('href', '/purchases/vendor_bill/b-1');
     expect(screen.getByRole('button', { name: 'Show Vendor Bill, 12 documents' })).toBeInTheDocument();

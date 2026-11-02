@@ -15,7 +15,6 @@ import { ErrorNote, Spinner } from '@/components/tenant/ui';
 import type { VendorTransactionFilters as Filters } from '@/types/vendorTransactions';
 import { VendorTransactionCards } from './VendorTransactionCards';
 import { VendorTransactionFilters } from './VendorTransactionFilters';
-import { VendorTransactionSummary } from './VendorTransactionSummary';
 import { VendorTransactionsPager } from './VendorTransactionsPager';
 import { VendorTransactionsTable } from './VendorTransactionsTable';
 
@@ -36,7 +35,7 @@ function errorText(err: unknown): string {
 }
 
 /**
- * The vendor's Transactions tab: payables summary tiles plus a filterable,
+ * The vendor's Transactions tab: a filterable,
  * paged list of every purchasing document the caller may see, newest first.
  * Filters and the current page's cursor live in the URL (next to the page's
  * own `tab` param), so they survive reload and sharing. The cursor is opaque
@@ -105,8 +104,6 @@ export function VendorTransactionsTab({ vendorId }: { vendorId: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {overview && <VendorTransactionSummary summary={overview.summary} scopeLimited={overview.scopeLimited} />}
-
       <div ref={listTopRef} className="scroll-mt-3 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
         {overview && (
           <VendorTransactionFilters filters={filters} overview={overview} onChange={update} onClear={clear} />
