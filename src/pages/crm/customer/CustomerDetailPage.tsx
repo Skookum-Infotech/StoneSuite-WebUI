@@ -9,6 +9,7 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { Spinner, ErrorNote, Badge } from "@/components/tenant/ui";
 import { CustomerDeleteButton } from "@/pages/crm/customer/components/CustomerDeleteButton";
 import { CrmRecordDetail } from "@/components/crm/CrmRecordDetail";
+import { CustomerSummaryStrip } from "./components/transactions/CustomerSummaryStrip";
 import { CrmDetailSidebar } from "@/components/crm/CrmDetailSidebar";
 import { CustomerStatusActions } from "@/components/crm/CustomerStatusActions";
 import { ApprovalCard, type ApprovalStatus } from "@/components/crm/ApprovalCard";
@@ -229,6 +230,7 @@ export default function CustomerDetailPage() {
         <div className="flex-1 space-y-3 min-w-0">
           {activeTab === "overview" && (
             <>
+              <CustomerSummaryStrip customerId={id} />
               <CrmRecordDetail coreFields={cf} showCustomerBalances users={users} />
               {Object.keys(record.customFields).length > 0 && (
                 <ModernSection title="Custom Fields" index={0} defaultCollapsed>
