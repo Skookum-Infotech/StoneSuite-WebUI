@@ -105,7 +105,9 @@ export function LookupSelect({
         aria-label={label}
         className={cn(fieldCls, className)}
       >
-        <option value="">{placeholder ?? `— Select ${label} —`}</option>
+        <option value="">
+          {items.length === 0 && canInlineAdd ? `No ${kind.replace('-', ' ')} yet — click + to add` : (placeholder ?? `— Select ${label} —`)}
+        </option>
         {items.map((it) => (
           <option key={it.id} value={it.id}>{it.name}{it.code ? ` (${it.code})` : ''}</option>
         ))}

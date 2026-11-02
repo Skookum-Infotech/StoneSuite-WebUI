@@ -51,6 +51,7 @@ import {
   MessageSquareText,
   Upload,
   ShieldAlert,
+  PackagePlus,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -346,6 +347,15 @@ export const sidebarNav: SidebarNavConfig = {
               iconColor: "text-orange-500 dark:text-orange-400",
               permission: { resource: "purchase_order", action: "read" },
               workflowKey: "purchase_order",
+            },
+            {
+              type: "link",
+              id: "reorder",
+              label: "Reorder",
+              path: "/purchases/reorder",
+              icon: PackagePlus,
+              iconColor: "text-red-500 dark:text-red-400",
+              permission: { resource: "replenishment", action: "read" },
             },
             {
               type: "link",

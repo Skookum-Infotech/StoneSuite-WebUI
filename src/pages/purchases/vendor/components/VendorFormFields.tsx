@@ -4,6 +4,7 @@ import { fieldCls, fieldErrorCls, textareaCls } from '@/components/crm/formUtils
 import { PhoneNumberInput } from '@/components/crm/PhoneNumberInput';
 import { DatePicker } from '@/components/ui/date-picker';
 import { isInvalidPhoneValue } from '@/lib/phoneValidation';
+import { isValidEmail } from '@/lib/emailValidation';
 import type { CrmLookups } from '@/services/lookupService';
 import type { VendorFormField } from '@/lib/vendorForm';
 
@@ -22,6 +23,7 @@ export function VendorField({ field, value, set, lookups, showError }: {
     showError && (
       (field.required && !str.trim())
       || (field.type === 'tel' && isInvalidPhoneValue(str))
+      || (field.type === 'email' && str.trim() !== '' && !isValidEmail(str))
     ),
   );
   const colClass = field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : '';

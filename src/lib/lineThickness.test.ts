@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  maxThickness, sanitizeThickness, thicknessFromItemMm, thicknessPayload, thicknessText,
+  maxThickness, sanitizeThickness, sizeFromItemMm, thicknessFromItemMm, thicknessPayload, thicknessText,
 } from '@/lib/lineThickness';
 
 describe('maxThickness', () => {
@@ -55,6 +55,19 @@ describe('thicknessFromItemMm', () => {
     [30, 'in', 'EA', ''],
   ])('%s mm in %s on %s -> %j', (mm, unit, areaUnit, expected) => {
     expect(thicknessFromItemMm(mm, unit, areaUnit)).toBe(expected);
+  });
+});
+
+describe('sizeFromItemMm', () => {
+  it.each<[number | null | undefined, string | undefined, string | undefined, string]>([
+    [3000, 'mm', 'SQFT', '3000'],
+    [3000, 'in', 'SQFT', '118.11'],
+    [1600, 'cm', 'SQM', '160'],
+    [0, 'in', 'SQFT', ''],
+    [undefined, 'in', 'SQFT', ''],
+    [3000, 'in', 'EA', ''],
+  ])('%s mm in %s on %s -> %j', (mm, unit, areaUnit, expected) => {
+    expect(sizeFromItemMm(mm, unit, areaUnit)).toBe(expected);
   });
 });
 

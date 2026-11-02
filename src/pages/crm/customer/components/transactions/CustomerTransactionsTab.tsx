@@ -16,7 +16,6 @@ import { TransactionsPagination } from '@/pages/transactions/components/Transact
 import type { CustomerTransactionFilters as Filters } from '@/types/customerTransactions';
 import { CustomerTransactionCards } from './CustomerTransactionCards';
 import { CustomerTransactionFilters } from './CustomerTransactionFilters';
-import { CustomerTransactionSummary } from './CustomerTransactionSummary';
 import { CustomerTransactionsTable } from './CustomerTransactionsTable';
 
 // Tailwind's lg breakpoint: the 7-column table needs this much width; below it
@@ -36,7 +35,7 @@ function errorText(err: unknown): string {
 }
 
 /**
- * The customer's Transactions tab: AR summary tiles plus a filterable, paged
+ * The customer's Transactions tab: a filterable, paged
  * list of every transaction the caller may see. Filters and page live in the
  * URL (next to the page's own `tab` param), so they survive reload and sharing.
  */
@@ -90,8 +89,6 @@ export function CustomerTransactionsTab({ customerId }: { customerId: string }) 
 
   return (
     <div className="flex flex-col gap-4">
-      {overview && <CustomerTransactionSummary summary={overview.summary} scopeLimited={overview.scopeLimited} />}
-
       <div ref={listTopRef} className="scroll-mt-3 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
         {overview && (
           <CustomerTransactionFilters filters={filters} overview={overview} onChange={update} onClear={clear} />

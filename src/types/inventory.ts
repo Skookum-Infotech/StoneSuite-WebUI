@@ -101,6 +101,13 @@ export interface InventoryItem {
   colorId?: number | null;
   finishId?: number | null;
   thicknessMm: number;
+  /** Unit the item's thickness is entered in (mm unless set). Display only —
+   *  the value itself is always stored in `thicknessMm`. */
+  thicknessUnit?: string;
+  /** Default slab length / width in millimetres (0 or absent = not stated). A
+   *  purchase order line copies them, in its own unit, when the item is picked. */
+  lengthMm?: number;
+  widthMm?: number;
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;
@@ -141,6 +148,9 @@ export interface InventoryItemInput {
   colorId?: number | null;
   finishId?: number | null;
   thicknessMm: number;
+  thicknessUnit?: string;
+  lengthMm?: number;
+  widthMm?: number;
   originCountryId?: number | null;
   barcode: string;
   defaultWarehouseId?: number | null;

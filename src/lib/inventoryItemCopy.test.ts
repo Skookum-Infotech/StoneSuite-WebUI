@@ -25,7 +25,7 @@ describe('fromItemForCopy', () => {
     ['unit_id', '3'],
     ['unit_price', '55'],
     ['purchase_unit_price', '40'],
-    ['thickness_mm', '20'],
+    ['thickness', '20'],
   ])('keeps %s', (key, expected) => {
     expect(copy[key]).toBe(expected)
   })
