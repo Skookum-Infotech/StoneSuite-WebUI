@@ -15,7 +15,7 @@ import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInp
 import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
 import { LineThicknessInputCell } from '@/components/inventory/LineThicknessInputCell';
 import { LineThicknessViewCell } from '@/components/inventory/LineThicknessViewCell';
-import { THICKNESS_COL, thicknessFromItemMm } from '@/lib/lineThickness';
+import { THICKNESS_COL, sizeFromItemMm, thicknessFromItemMm } from '@/lib/lineThickness';
 import {
   LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, clampSlabs, hasSize, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
@@ -80,6 +80,9 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
       ...prev,
       // Thickness starts at the item's own, in the unit the line will be measured in.
       thickness: thicknessFromItemMm(item.thicknessMm, dimensionUnit, units),
+      // Likewise the item's standard slab length and width, when it states them.
+      length: sizeFromItemMm(item.lengthMm, dimensionUnit, units),
+      width: sizeFromItemMm(item.widthMm, dimensionUnit, units),
       itemName: item.name,
       units,
       tracking: item.tracking,

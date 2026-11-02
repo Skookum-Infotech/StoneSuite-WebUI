@@ -258,6 +258,9 @@ const PurchaseOrderDetailPage = lazyWithRetry(
 const EditPurchaseOrderPage = lazyWithRetry(
   () => import("@/pages/purchases/purchase-order/EditPurchaseOrderPage"),
 );
+const ReorderPage = lazyWithRetry(
+  () => import("@/pages/purchases/reorder/ReorderPage"),
+);
 const ItemReceiptListPage = lazyWithRetry(
   () => import("@/pages/purchases/item-receipt/ItemReceiptListPage"),
 );
@@ -964,6 +967,17 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="purchase_order" action="update" workflowKey="purchase_order">
             <EditPurchaseOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Reorder (the auto-draft-PO shortage safety net) — no workflowKey,
+      // it isn't a workflow record type.
+      {
+        path: "purchases/reorder",
+        element: lazy_(
+          <PermissionGuard resource="replenishment" action="read">
+            <ReorderPage />
           </PermissionGuard>,
         ),
       },

@@ -55,6 +55,11 @@ export function thicknessFromItemMm(mm: number | null | undefined, unit: string 
   return value > 0 ? String(value) : '';
 }
 
+/** A catalogue item's default length or width (stored in millimetres, 0 = not
+ *  stated) as the text a line starts with, in the line's unit — same rules as
+ *  thicknessFromItemMm. */
+export const sizeFromItemMm = thicknessFromItemMm;
+
 /** Header label of the thickness column in a PDF line table. */
 export const PDF_THICKNESS_HEAD = 'Thick';
 

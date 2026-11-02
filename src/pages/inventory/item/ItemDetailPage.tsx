@@ -18,6 +18,7 @@ import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { DIMENSION_UNIT_LABELS, itemDimensionUnit } from '@/lib/lineDimensions';
+import { sizeText, thicknessUnitOf } from '@/lib/inventoryItemForm';
 import { DeleteItemDialog } from './components/DeleteItemDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
@@ -116,7 +117,9 @@ export default function ItemDetailPage() {
               ['Material', nameOf(lookups?.materials, item.materialId) || ''],
               ['Color', nameOf(lookups?.colors, item.colorId) || ''],
               ['Finish', nameOf(lookups?.finishes, item.finishId) || ''],
-              ['Thickness (mm)', item.thicknessMm ? String(item.thicknessMm) : ''],
+              ['Length', sizeText(item.lengthMm, itemDimensionUnit(item))],
+              ['Width', sizeText(item.widthMm, itemDimensionUnit(item))],
+              ['Thickness', sizeText(item.thicknessMm, thicknessUnitOf(item))],
               ['Origin Country', nameOf(crmLookups?.countries, item.originCountryId) || ''],
             ],
           },
@@ -181,7 +184,9 @@ export default function ItemDetailPage() {
                   <ReadonlyField label="Material" value={nameOf(lookups?.materials, item.materialId)} />
                   <ReadonlyField label="Color" value={nameOf(lookups?.colors, item.colorId)} />
                   <ReadonlyField label="Finish" value={nameOf(lookups?.finishes, item.finishId)} />
-                  {item.thicknessMm > 0 && <ReadonlyField label="Thickness (mm)" value={String(item.thicknessMm)} />}
+                  {Boolean(item.lengthMm) && <ReadonlyField label="Length" value={sizeText(item.lengthMm, itemDimensionUnit(item))} />}
+                  {Boolean(item.widthMm) && <ReadonlyField label="Width" value={sizeText(item.widthMm, itemDimensionUnit(item))} />}
+                  {item.thicknessMm > 0 && <ReadonlyField label="Thickness" value={sizeText(item.thicknessMm, thicknessUnitOf(item))} />}
                   <ReadonlyField label="Origin Country" value={nameOf(crmLookups?.countries, item.originCountryId)} />
                 </div>
               </ModernSection>

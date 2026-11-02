@@ -10,7 +10,10 @@ import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { lookupService } from '@/services/lookupService';
 import { findUnit, requiresDimensions, trackingForUnit } from '@/lib/inventoryUnits';
 import { TRACKING_SERIALIZED, type KitRef } from '@/types/inventory';
-import { DIMENSION_UNITS, DIMENSION_UNIT_LABELS, normalizeUnit } from '@/lib/lineDimensions';
+import {
+  DIMENSION_UNITS, DIMENSION_UNIT_LABELS, dimensionToMm, normalizeUnit,
+} from '@/lib/lineDimensions';
+import { mmToFormText } from '@/lib/inventoryItemForm';
 
 const switchTileCls = 'flex flex-col gap-1 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2.5';
 
@@ -22,6 +25,17 @@ export function ItemFormBody({ data, set }: {
   set: (key: string, value: unknown) => void;
 }) {
   const { lookups } = useInventoryLookups();
+
+  // Changing a unit re-expresses the number already typed, so the physical size
+  // stays the same (300 cm becomes 3000 mm) instead of silently changing meaning.
+  const changeUnit = (valueKey: string, unitKey: string, nextUnit: string) => {
+    const typed = parseFloat(String(data[valueKey] ?? ''));
+    if (Number.isFinite(typed) && typed > 0) {
+      const mm = dimensionToMm(typed, String(data[unitKey] ?? ''));
+      set(valueKey, mmToFormText(mm, nextUnit));
+    }
+    set(unitKey, nextUnit);
+  };
   const { data: crmLookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -151,7 +165,11 @@ export function ItemFormBody({ data, set }: {
           <ModernFieldShell label="Length / Width Unit">
             <Select
               value={normalizeUnit(String(data.dimension_unit ?? ''))}
-              onChange={(e) => set('dimension_unit', e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                changeUnit('length', 'dimension_unit', next);
+                changeUnit('width', 'dimension_unit', next);
+              }}
               className={fieldCls}
               aria-label="Length / Width Unit"
             >
@@ -246,17 +264,59 @@ export function ItemFormBody({ data, set }: {
             />
           </ModernFieldShell>
           {showDimensions && (
-            <ModernFieldShell label="Thickness (mm)">
+            <ModernFieldShell label="Length">
               <input
                 type="number"
                 min={0}
-                step="1"
-                value={String(data.thickness_mm ?? '0')}
-                onChange={(e) => set('thickness_mm', e.target.value)}
-                placeholder="0 = n/a — typically 20 or 30"
+                step="any"
+                value={String(data.length ?? '0')}
+                onChange={(e) => set('length', e.target.value)}
+                placeholder="0 = n/a — a standard slab length"
                 className={fieldCls}
-                aria-label="Thickness (mm)"
+                aria-label="Length"
               />
+            </ModernFieldShell>
+          )}
+          {showDimensions && (
+            <ModernFieldShell label="Width">
+              <input
+                type="number"
+                min={0}
+                step="any"
+                value={String(data.width ?? '0')}
+                onChange={(e) => set('width', e.target.value)}
+                placeholder="0 = n/a — a standard slab width"
+                className={fieldCls}
+                aria-label="Width"
+              />
+            </ModernFieldShell>
+          )}
+          {showDimensions && (
+            <ModernFieldShell label="Thickness">
+              <input
+                type="number"
+                min={0}
+                step="any"
+                value={String(data.thickness ?? '0')}
+                onChange={(e) => set('thickness', e.target.value)}
+                placeholder="0 = n/a — typically 20 or 30 mm"
+                className={fieldCls}
+                aria-label="Thickness"
+              />
+            </ModernFieldShell>
+          )}
+          {showDimensions && (
+            <ModernFieldShell label="Thickness Unit">
+              <Select
+                value={normalizeUnit(String(data.thickness_unit ?? ''))}
+                onChange={(e) => changeUnit('thickness', 'thickness_unit', e.target.value)}
+                className={fieldCls}
+                aria-label="Thickness Unit"
+              >
+                {DIMENSION_UNITS.map((u) => (
+                  <option key={u} value={u}>{DIMENSION_UNIT_LABELS[u]}</option>
+                ))}
+              </Select>
             </ModernFieldShell>
           )}
           <ModernFieldShell label="Origin Country">
