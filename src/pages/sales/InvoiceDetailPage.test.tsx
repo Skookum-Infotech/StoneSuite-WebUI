@@ -30,6 +30,7 @@ vi.mock('./components/InvoiceStatusControl', () => ({ InvoiceStatusControl: () =
 
 import InvoiceDetailPage from './InvoiceDetailPage';
 import { invoiceService } from '@/services/invoiceService';
+import { lookupService } from '@/services/lookupService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { Invoice } from '@/types/invoice';
 
@@ -89,7 +90,7 @@ function renderPage(hasPermission: (resource: string, action: string) => boolean
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 
-  render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/sales/invoice/inv-1']}>
         <Routes>
@@ -100,6 +101,7 @@ function renderPage(hasPermission: (resource: string, action: string) => boolean
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  return view;
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -178,5 +180,40 @@ describe('InvoiceDetailPage customer link', () => {
 
     const links = await screen.findAllByRole('link', { name: 'View customer Acme Stoneworks' });
     for (const link of links) expect(link).toHaveAttribute('href', '/crm/customer/cust-1');
+  });
+});
+
+describe('InvoiceDetailPage address flags', () => {
+  const GEO_LOOKUPS = {
+    currencies: [],
+    paymentTerms: [],
+    priceLevels: [],
+    countries: [{ id: 1, code: 'US', name: 'United States' }],
+    states: [{ id: 10, code: 'AR', name: 'Arkansas', countryId: 1 }],
+  };
+
+  it('shows the state and country flags in the billing address', async () => {
+    vi.mocked(lookupService.getCrmLookups).mockResolvedValue(GEO_LOOKUPS as never);
+    vi.mocked(invoiceService.getInvoice).mockResolvedValue(invoice({
+      billing: { addrLine1: '1 Quarry Rd', stateId: 10, countryId: 1 },
+    }));
+    const { container } = renderPage();
+
+    expect(await screen.findByText('Arkansas')).toBeInTheDocument();
+    expect(screen.getByText('United States')).toBeInTheDocument();
+    expect(container.querySelector('img[src="/flags/states/AR.svg"]')).not.toBeNull();
+    expect(container.querySelector('img[data-flag-code="us"]')).not.toBeNull();
+  });
+
+  it('shows no geo line when the address has no state or country', async () => {
+    vi.mocked(lookupService.getCrmLookups).mockResolvedValue(GEO_LOOKUPS as never);
+    vi.mocked(invoiceService.getInvoice).mockResolvedValue(invoice({
+      billing: { addrLine1: '1 Quarry Rd' },
+    }));
+    const { container } = renderPage();
+
+    await screen.findAllByText('INV-000001');
+    expect(screen.queryByText('Arkansas')).toBeNull();
+    expect(container.querySelector('img[src^="/flags/states/"]')).toBeNull();
   });
 });

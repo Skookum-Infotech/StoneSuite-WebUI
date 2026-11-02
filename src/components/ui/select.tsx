@@ -5,6 +5,8 @@ import {
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Flag } from '@/components/ui/Flag';
+import { FLAG_ATTR, parseFlagAttr, type OptionFlag } from '@/lib/flags';
 
 // Drop-in replacement for the browser <select>: same props, same <option> /
 // <optgroup> children, same onChange(e) contract (e.target.value) — rendered
@@ -20,6 +22,8 @@ interface ParsedOption {
   label: string;
   disabled: boolean;
   group?: string;
+  // From an <option data-flag="country:US"> — Country / State lists only.
+  flag: OptionFlag | null;
 }
 
 function nodeText(node: ReactNode): string {
@@ -33,7 +37,7 @@ function nodeText(node: ReactNode): string {
 function collectOptions(children: ReactNode, group?: string): ParsedOption[] {
   const out: ParsedOption[] = [];
   Children.forEach(children, (child) => {
-    if (!isValidElement<{ children?: ReactNode; value?: string | number; disabled?: boolean; label?: string }>(child)) return;
+    if (!isValidElement<{ children?: ReactNode; value?: string | number; disabled?: boolean; label?: string; [FLAG_ATTR]?: string }>(child)) return;
     if (child.type === Fragment) {
       out.push(...collectOptions(child.props.children, group));
     } else if (child.type === 'optgroup') {
@@ -45,6 +49,7 @@ function collectOptions(children: ReactNode, group?: string): ParsedOption[] {
         label,
         disabled: Boolean(child.props.disabled),
         group,
+        flag: parseFlagAttr(child.props[FLAG_ATTR]),
       });
     }
   });
@@ -124,7 +129,8 @@ export function Select({
             isPlaceholder && 'text-stone-500',
           )}
         >
-          <span className="truncate">{selected?.label || ' '}</span>
+          {selected?.flag && <Flag {...selected.flag} />}
+          <span className="flex-1 truncate">{selected?.label ||' '}</span>
           <ChevronDown className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         </button>
       </PopoverTrigger>
@@ -184,7 +190,8 @@ export function Select({
                     isSelected && 'bg-brand/10 font-medium text-stone-900',
                   )}
                 >
-                  <span className="truncate">{o.label || ' '}</span>
+                  {o.flag && <Flag {...o.flag} reserveSpace />}
+                  <span className="flex-1 truncate">{o.label ||' '}</span>
                   {isSelected && <Check className="size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />}
                 </button>
               </Fragment>

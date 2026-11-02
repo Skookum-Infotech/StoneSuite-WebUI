@@ -64,9 +64,10 @@ export default function VendorDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor.')}</ErrorNote></div>;
 
   const color = VENDOR_STATUS_COLORS[vendor.status] ?? '#a8a29e';
-  const countryName = vendor.nationalityCountryId !== null && vendor.nationalityCountryId !== undefined
-    ? lookups?.countries.find((c) => c.id === vendor.nationalityCountryId)?.name
+  const country = vendor.nationalityCountryId !== null && vendor.nationalityCountryId !== undefined
+    ? lookups?.countries.find((c) => c.id === vendor.nationalityCountryId)
     : undefined;
+  const countryName = country?.name;
 
   async function handleExportPdf() {
     if (!vendor) return;
@@ -182,7 +183,7 @@ export default function VendorDetailPage() {
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
         <div className="flex-1 space-y-3 min-w-0">
-          {activeTab === 'overview' && <VendorOverviewTab vendor={vendor} countryName={countryName} />}
+          {activeTab === 'overview' && <VendorOverviewTab vendor={vendor} countryName={countryName} countryCode={country?.code} />}
           {activeTab === 'transactions' && <VendorTransactionsTab vendorId={id} />}
           {activeTab === 'audit' &&<VendorAuditTab vendorId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}

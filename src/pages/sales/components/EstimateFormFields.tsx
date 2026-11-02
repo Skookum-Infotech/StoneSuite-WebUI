@@ -1,4 +1,5 @@
 import { Select } from '@/components/ui/select';
+import { lookupFlagAttrs } from '@/lib/flags';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import {
   fieldCls, textareaCls, readonlyCls, checkboxLabelCls,
@@ -79,7 +80,7 @@ export function EstimateField({ field, value, set, lookups, dependsOnValue, disa
     // stored value is the id (string) — matching the create payload's *Id
     // fields — rather than a display label.
     const lookupRows = field.lookupKey && lookups
-      ? (lookups[field.lookupKey] as Array<{ id: number; name: string; countryId?: number }>)
+      ? (lookups[field.lookupKey] as Array<{ id: number; name: string; code?: string; countryId?: number }>)
       : null;
     const dependsOnUnset = Boolean(field.dependsOn) && !dependsOnValue;
     const filteredRows = lookupRows && field.dependsOn
@@ -100,7 +101,7 @@ export function EstimateField({ field, value, set, lookups, dependsOnValue, disa
             <option value="">{dependsOnUnset ? '— Select a country first —' : '— Select —'}</option>
             {filteredRows
               ? filteredRows.map((row) => (
-                  <option key={row.id} value={row.id}>{row.name}</option>
+                  <option key={row.id} value={row.id} {...lookupFlagAttrs(field.lookupKey, row)}>{row.name}</option>
                 ))
               : field.options?.filter(Boolean).map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
