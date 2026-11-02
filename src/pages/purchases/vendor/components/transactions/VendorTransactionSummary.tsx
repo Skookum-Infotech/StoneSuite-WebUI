@@ -59,9 +59,9 @@ export function VendorTransactionSummary({
   return (
     <section aria-label="Vendor account summary" className="space-y-2">
       {tiles.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {tiles.map((t) => (
-            <div key={t.key} className="min-w-0 rounded-2xl border border-stone-200 bg-white px-3 py-3 shadow-sm sm:px-4">
+            <div key={t.key} className="min-w-0 flex-1 basis-36 rounded-2xl border border-stone-200 bg-white px-3 py-3 shadow-sm sm:px-4">
               <p className="text-xs font-semibold leading-tight text-stone-500">{t.label}</p>
               <p className={cn('mt-1 truncate text-base font-bold tabular-nums text-stone-900', t.tone)}>{t.value}</p>
               <p className="mt-0.5 truncate text-2xs text-stone-500">{t.sub}</p>
