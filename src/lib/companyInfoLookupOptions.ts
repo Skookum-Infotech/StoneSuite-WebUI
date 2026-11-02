@@ -13,12 +13,15 @@
 // blank out already-saved data the user never intended to change.
 
 import type { CrmLookups, LookupItem } from '@/services/lookupService';
+import type { OptionFlag } from '@/lib/flags';
 
 export interface SelectOption {
   value: string;
   label: string;
   // Optional <optgroup> heading; options without one render ungrouped.
   group?: string;
+  // Country / State rows only — drives the flag shown beside the label.
+  flag?: OptionFlag;
 }
 
 function withCurrentValue(options: SelectOption[], currentValue: string): SelectOption[] {
@@ -33,7 +36,7 @@ function withCurrentValue(options: SelectOption[], currentValue: string): Select
 // call getCrmLookups with -- can reuse the same option-mapping and
 // preserve-current-value safeguard as Company Profile/Locations.
 export function countryOptions(countries: LookupItem[] | undefined, currentValue: string): SelectOption[] {
-  const base = (countries ?? []).map((c) => ({ value: c.name, label: c.name }));
+  const base = (countries ?? []).map((c) => ({ value: c.name, label: c.name, flag: { kind: 'country' as const, code: c.code } }));
   return withCurrentValue(base, currentValue);
 }
 
@@ -108,6 +111,6 @@ export function stateOptionsForCountry(
   const countryId = lookups?.countries.find((c) => c.name === countryValue)?.id;
   const states = lookups?.states ?? [];
   const matching = countryId !== undefined ? states.filter((s) => s.countryId === countryId) : states;
-  const base = matching.map((s) => ({ value: s.name, label: s.name }));
+  const base = matching.map((s) => ({ value: s.name, label: s.name, flag: { kind: 'state' as const, code: s.code } }));
   return withCurrentValue(base, currentValue);
 }

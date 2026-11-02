@@ -1,4 +1,5 @@
 import { Select } from '@/components/ui/select';
+import { flagAttrs } from '@/lib/flags';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
@@ -328,7 +329,7 @@ export function ItemFormBody({ data, set }: {
             >
               <option value="">— Select Country —</option>
               {(crmLookups?.countries ?? []).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id} {...flagAttrs('country', c.code)}>{c.name}</option>
               ))}
             </Select>
           </ModernFieldShell>

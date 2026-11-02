@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Flag } from '@/components/ui/Flag';
 import type { SelectOption } from '@/lib/companyInfoLookupOptions';
 
 // Searchable Popover-trigger picker over real lookup-table data (Country,
@@ -46,7 +47,8 @@ export function OnboardingSelectField({
             className,
           )}
         >
-          <span className="truncate">{displayText}</span>
+          {selected?.flag && <Flag {...selected.flag} />}
+          <span className="flex-1 truncate">{displayText}</span>
           <ChevronDown className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
         </button>
       </PopoverTrigger>
@@ -78,7 +80,8 @@ export function OnboardingSelectField({
                 o.value === value && 'bg-brand/10 font-medium text-stone-900',
               )}
             >
-              <span className="truncate">{o.label}</span>
+              {o.flag && <Flag {...o.flag} reserveSpace />}
+              <span className="flex-1 truncate">{o.label}</span>
               {o.value === value && <Check className="size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />}
             </button>
           ))}

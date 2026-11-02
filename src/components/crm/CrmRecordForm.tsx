@@ -1,4 +1,5 @@
 import { Select } from '@/components/ui/select';
+import { lookupFlagAttrs } from '@/lib/flags';
 import { useQuery } from '@tanstack/react-query';
 import { lookupService, type LookupItem } from '@/services/lookupService';
 import { CRM_CORE_SECTIONS, CRM_CUSTOMER_BALANCE_SECTION, type CrmCoreField } from '@/lib/crmFields';
@@ -255,7 +256,7 @@ function CrmFieldInput({
         >
           <option value="">— Select —</option>
           {options.map((opt) => (
-            <option key={opt.id} value={String(opt.id)}>
+            <option key={opt.id} value={String(opt.id)} {...lookupFlagAttrs(field.lookupKey, opt)}>
               {opt.name}
             </option>
           ))}
