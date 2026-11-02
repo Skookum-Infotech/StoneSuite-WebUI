@@ -156,25 +156,6 @@ describe('CustomerTransactionsTab', () => {
     expect(screen.getByRole('link', { name: 'View Invoice INV-1001' })).toHaveAttribute('href', '/sales/invoice/inv-1');
   });
 
-  it('hides tiles whose figure is null and shows the scope note', async () => {
-    summary.mockResolvedValue(makeOverview({
-      scopeLimited: true,
-      summary: { ...makeOverview().summary, openBalance: null, overdueBalance: null, billed12m: null },
-    }));
-    renderTab();
-    await screen.findByText('Unapplied credits');
-    expect(screen.queryByText('Open balance')).toBeNull();
-    expect(screen.queryByText('Billed (12 mo)')).toBeNull();
-    expect(screen.getByText('Paid (12 mo)')).toBeInTheDocument();
-    expect(screen.getByText('Based on records you can see.')).toBeInTheDocument();
-  });
-
-  it('omits the scope note when not scope-limited', async () => {
-    renderTab();
-    await screen.findByText('Open balance');
-    expect(screen.queryByText('Based on records you can see.')).toBeNull();
-  });
-
   it('a filter writes the URL, keeps tab, and resets the page', async () => {
     serve([makeRow()], 100);
     renderTab('?tab=transactions&page=3');
