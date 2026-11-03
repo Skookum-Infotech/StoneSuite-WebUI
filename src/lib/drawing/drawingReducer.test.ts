@@ -157,4 +157,43 @@ describe('editorReducer — view-only actions and undo/redo', () => {
     // not the original single-area blank state.
     expect(s.past[0].areas.length).toBeGreaterThan(5);
   });
+
+  it('undo falls back activeAreaId to an existing area when undo removes the active one, and clears a now-dangling selection', () => {
+    let s = blank();
+    s = editorReducer(s, { type: 'addArea', name: 'X' });
+    const newAreaId = s.present.areas[1].id;
+    s = editorReducer(s, { type: 'setActiveArea', areaId: newAreaId });
+    s = { ...s, selectedPieceId: 'whatever' };
+    s = editorReducer(s, { type: 'undo' }); // removes area X again
+    expect(s.present.areas.map((a) => a.id)).not.toContain(newAreaId);
+    expect(s.present.areas.some((a) => a.id === s.activeAreaId)).toBe(true);
+    expect(s.selectedPieceId).toBeNull();
+  });
+
+  it('redo also falls back a stranded activeAreaId', () => {
+    let s = blank();
+    const areaId = s.present.areas[0].id;
+    s = editorReducer(s, { type: 'addArea', name: 'X' });
+    s = editorReducer(s, { type: 'deleteArea', areaId }); // active area deleted; reducer already reassigns on delete
+    const remainingAreaId = s.present.areas[0].id;
+    s = editorReducer(s, { type: 'undo' }); // area 1 comes back
+    s = editorReducer(s, { type: 'redo' }); // area 1 removed again
+    expect(s.present.areas.some((a) => a.id === s.activeAreaId)).toBe(true);
+    expect(s.activeAreaId).toBe(remainingAreaId);
+  });
+
+  it('setActiveArea clears the piece selection — a piece from the old area should not look selected in the new one', () => {
+    const s0 = { ...withPiece('area-1', makePiece('p1', 'A-1')), selectedPieceId: 'p1' };
+    const s1 = editorReducer(s0, { type: 'addArea', name: 'Y' });
+    const s2 = editorReducer(s1, { type: 'setActiveArea', areaId: s1.present.areas[1].id });
+    expect(s2.selectedPieceId).toBeNull();
+  });
+
+  it('adding a piece after undo strands the active area never throws, and lands in a real area', () => {
+    let s = blank();
+    s = editorReducer(s, { type: 'addArea', name: 'X' });
+    s = editorReducer(s, { type: 'setActiveArea', areaId: s.present.areas[1].id });
+    s = editorReducer(s, { type: 'undo' }); // active area no longer exists
+    expect(() => editorReducer(s, { type: 'addPiece', areaId: s.activeAreaId, piece: makePiece('p1', 'A-1') })).not.toThrow();
+  });
 });

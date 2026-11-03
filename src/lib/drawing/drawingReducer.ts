@@ -90,7 +90,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
 
     case 'setActiveArea':
-      return { ...state, activeAreaId: action.areaId };
+      // A piece selected in the area being left has no meaning in the new
+      // one — clear it so the inspector doesn't keep showing it.
+      return { ...state, activeAreaId: action.areaId, selectedPieceId: null };
 
     case 'addPiece':
       return mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
@@ -158,25 +160,46 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'undo': {
       if (state.past.length === 0) return state;
       const previous = state.past[state.past.length - 1];
-      return {
+      return sanitizeSelection({
         ...state,
         past: state.past.slice(0, -1),
         present: previous,
         future: [state.present, ...state.future],
-      };
+      });
     }
 
     case 'redo': {
       if (state.future.length === 0) return state;
       const [next, ...rest] = state.future;
-      return {
+      return sanitizeSelection({
         ...state,
         past: [...state.past, state.present],
         present: next,
         future: rest,
-      };
+      });
     }
   }
+}
+
+/** Undo/redo swap `present` for an entirely different document, which can
+ *  leave `activeAreaId` pointing at an area that no longer exists (found in
+ *  the final review: this crashed the toolbar, which assumes the active
+ *  area is always real). Falls `activeAreaId` back to the document's first
+ *  area — there is always at least one, since the last area can never be
+ *  deleted — and clears `selectedPieceId` if it no longer names a piece in
+ *  that area. */
+function sanitizeSelection(state: EditorState): EditorState {
+  const activeAreaExists = state.present.areas.some((a) => a.id === state.activeAreaId);
+  const activeAreaId = activeAreaExists ? state.activeAreaId : state.present.areas[0].id;
+  const activeArea = state.present.areas.find((a) => a.id === activeAreaId);
+  const selectedPieceStillExists = activeArea
+    ? activeArea.pieces.some((p) => p.id === state.selectedPieceId)
+    : false;
+  return {
+    ...state,
+    activeAreaId,
+    selectedPieceId: selectedPieceStillExists ? state.selectedPieceId : null,
+  };
 }
 
 /** Pushes `state.present` onto history (capped at MAX_UNDO_STEPS), clears
