@@ -31,17 +31,33 @@ export function perimeter(outline: Point[]): number {
   return outlineEdges(outline).reduce((sum, [a, b]) => sum + distance(a, b), 0);
 }
 
-/** Shoelace-formula area. Always non-negative, regardless of winding
- *  direction, so a piece authored counter-clockwise doesn't read as
- *  negative square footage. */
-export function area(outline: Point[]): number {
+/** The raw (signed) shoelace sum — negative for the clockwise winding
+ *  every other piece of outline math in this app assumes (`rectOutline`,
+ *  `dxfDimensionBlock.ts`'s "left of travel = outward" rule, and this
+ *  file's own `transformOutline`), positive for the reverse. */
+function signedArea(outline: Point[]): number {
   let sum = 0;
   for (let i = 0; i < outline.length; i++) {
     const a = outline[i];
     const b = outline[(i + 1) % outline.length];
     sum += a.x * b.y - b.x * a.y;
   }
-  return Math.abs(sum) / 2;
+  return sum;
+}
+
+/** Shoelace-formula area. Always non-negative, regardless of winding
+ *  direction, so a piece authored counter-clockwise doesn't read as
+ *  negative square footage. */
+export function area(outline: Point[]): number {
+  return Math.abs(signedArea(outline)) / 2;
+}
+
+/** True when `outline` winds the same direction as `rectOutline`'s own
+ *  corners. A hand-clicked polygon (Task 3's polygon tool) can go either
+ *  way depending on click order; callers that assume this winding
+ *  (dimension layout, DXF export) need to normalize it first. */
+export function isClockwise(outline: Point[]): boolean {
+  return signedArea(outline) < 0;
 }
 
 const MM2_PER_FT2 = 92903.04;

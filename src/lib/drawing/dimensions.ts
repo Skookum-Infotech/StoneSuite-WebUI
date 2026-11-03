@@ -28,20 +28,24 @@ export function layoutEdgeDimensions(
   outline: Point[],
   offsetMm: number = DEFAULT_DIMENSION_OFFSET_MM,
 ): DimensionLineLayout[] {
-  return outlineEdges(outline).map(([from, to]) => {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const lengthMm = Math.hypot(dx, dy);
-    const direction = { x: dx / lengthMm, y: dy / lengthMm };
-    const outward = { x: -direction.y, y: direction.x };
+  return outlineEdges(outline)
+    // A duplicate point gives a zero-length edge — nothing to dimension,
+    // and dividing by its length below would give NaN.
+    .filter(([from, to]) => from.x !== to.x || from.y !== to.y)
+    .map(([from, to]) => {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const lengthMm = Math.hypot(dx, dy);
+      const direction = { x: dx / lengthMm, y: dy / lengthMm };
+      const outward = { x: -direction.y, y: direction.x };
 
-    const lineFrom = { x: from.x + outward.x * offsetMm, y: from.y + outward.y * offsetMm };
-    const lineTo = { x: to.x + outward.x * offsetMm, y: to.y + outward.y * offsetMm };
-    const textAt = { x: (lineFrom.x + lineTo.x) / 2, y: (lineFrom.y + lineTo.y) / 2 };
+      const lineFrom = { x: from.x + outward.x * offsetMm, y: from.y + outward.y * offsetMm };
+      const lineTo = { x: to.x + outward.x * offsetMm, y: to.y + outward.y * offsetMm };
+      const textAt = { x: (lineFrom.x + lineTo.x) / 2, y: (lineFrom.y + lineTo.y) / 2 };
 
-    const angle = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
-    const rotationDeg = angle > 90 && angle <= 270 ? angle - 180 : angle;
+      const angle = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+      const rotationDeg = angle > 90 && angle <= 270 ? angle - 180 : angle;
 
-    return { edgeFrom: from, edgeTo: to, lineFrom, lineTo, textAt, rotationDeg, lengthMm };
-  });
+      return { edgeFrom: from, edgeTo: to, lineFrom, lineTo, textAt, rotationDeg, lengthMm };
+    });
 }

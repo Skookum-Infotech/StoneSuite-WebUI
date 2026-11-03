@@ -17,4 +17,12 @@ describe('layoutEdgeDimensions', () => {
   it('defaults the offset to DEFAULT_DIMENSION_OFFSET_MM when omitted', () => {
     expect(layoutEdgeDimensions(rectOutline(600, 400))[0].lineFrom.y).toBeCloseTo(DEFAULT_DIMENSION_OFFSET_MM, 5);
   });
+
+  it('skips a zero-length edge (a duplicate point) instead of producing NaN geometry', () => {
+    // A rect with a duplicated corner — one edge has zero length.
+    const outlineWithDuplicate = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 600, y: 0 }, { x: 600, y: -400 }, { x: 0, y: -400 }];
+    const layouts = layoutEdgeDimensions(outlineWithDuplicate);
+    expect(layouts.every((l) => l.lengthMm > 0)).toBe(true);
+    expect(layouts.every((l) => Number.isFinite(l.lineFrom.x) && Number.isFinite(l.lineFrom.y))).toBe(true);
+  });
 });

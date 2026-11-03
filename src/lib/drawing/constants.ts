@@ -75,3 +75,11 @@ export const SHIFT_ARROW_KEY_STEP_MM = MM_PER_INCH;
 export const ZOOM_MIN = 0.25;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.25;
+
+/** The canvas SVG's fixed viewBox size, in viewBox units. The SVG renders
+ *  at whatever size its container gives it (`preserveAspectRatio="none"`,
+ *  so it always fills that size exactly) — every screen<->world
+ *  conversion in viewport.ts corrects for the rendered size being
+ *  anything other than exactly this. */
+export const VIEWPORT_WIDTH = 800;
+export const VIEWPORT_HEIGHT = 600;

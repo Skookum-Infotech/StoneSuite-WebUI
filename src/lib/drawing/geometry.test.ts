@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  area, bounds, lShapeOutline, outlineEdges, perimeter, rectOutline,
+  area, bounds, isClockwise, lShapeOutline, outlineEdges, perimeter, rectOutline,
   snapToGrid, squareFeet, transformOutline, uShapeOutline,
 } from './geometry';
 
@@ -99,6 +99,21 @@ describe('snapToGrid', () => {
     const snapped = snapToGrid(point, gridSizeMm);
     expect(snapped.x).toBeCloseTo(expected.x, 5);
     expect(snapped.y).toBeCloseTo(expected.y, 5);
+  });
+});
+
+describe('isClockwise', () => {
+  it('is true for rectOutline\'s own winding (the convention every dimension/export helper assumes)', () => {
+    expect(isClockwise(rectOutline(600, 400))).toBe(true);
+  });
+
+  it('is false for the same outline reversed', () => {
+    expect(isClockwise([...rectOutline(600, 400)].reverse())).toBe(false);
+  });
+
+  it('is true for a hand-clicked polygon going the same direction as rectOutline', () => {
+    // A right turn at every vertex, same as rectOutline's own corners.
+    expect(isClockwise([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: -10 }, { x: 0, y: -10 }])).toBe(true);
   });
 });
 
