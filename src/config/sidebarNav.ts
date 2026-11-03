@@ -693,6 +693,15 @@ export const sidebarNav: SidebarNavConfig = {
               // was checked, since both mapped to the same resource.
               permission: { resource: "import", action: "read" },
             },
+            {
+              type: "link",
+              id: "automation",
+              label: "Automation",
+              path: "/config/automation",
+              icon: Timer,
+              iconColor: "text-amber-500 dark:text-amber-400",
+              permission: { resource: "automation", action: "read" },
+            },
           ],
         },
       ],

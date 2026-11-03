@@ -81,6 +81,7 @@ describe('AutomationPage rows', () => {
     const link = await screen.findByRole('link', { name: 'Manage on Anomalies page' });
     expect(link).toHaveAttribute('href', '/anomalies');
     expect(screen.queryByRole('switch', { name: 'Anomaly detection' })).toBeNull();
+    expect(screen.getAllByText(/Not run yet|Last checked/)).toHaveLength(2);
   });
 
   it('shows Preview only for previewable rules and links to deliveries', async () => {
