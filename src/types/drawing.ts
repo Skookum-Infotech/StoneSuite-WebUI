@@ -44,6 +44,7 @@ export interface Piece {
   position: Point;
   rotationDeg: 0 | 90 | 180 | 270;
   thicknessMm: number;
+  cornerRadiusMm?: number;
   salesOrderLineId?: string;
   edges: PieceEdge[];
   seams: Seam[];
