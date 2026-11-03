@@ -7,6 +7,9 @@ import type { AutomationRule } from '@/types/automationRule';
 vi.mock('@/services/automationRuleService', () => ({
   automationRuleService: { list: vi.fn(), setEnabled: vi.fn() },
 }));
+vi.mock('@/services/automationSettingsService', () => ({
+  automationSettingsService: { get: vi.fn() },
+}));
 vi.mock('@/services/anomalyService', () => ({ anomalyService: { scanNow: vi.fn() } }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -14,6 +17,8 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import { AnomalyScanSwitch } from './AnomalyScanSwitch';
 import { automationRuleService } from '@/services/automationRuleService';
 import { anomalyService } from '@/services/anomalyService';
+import { automationSettingsService } from '@/services/automationSettingsService';
+import { makeSettings } from '@/test/automationFixtures';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { toast } from 'sonner';
 import { makeRule } from '@/test/automationFixtures';
@@ -45,6 +50,7 @@ function renderSwitch(): void {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(automationSettingsService.get).mockResolvedValue(makeSettings());
 });
 
 describe('AnomalyScanSwitch', () => {
@@ -125,5 +131,29 @@ describe('AnomalyScanSwitch', () => {
     renderSwitch();
     await userEvent.click(await screen.findByRole('button', { name: 'Run scan now' }));
     await waitFor(() => expect(toast.error).toHaveBeenCalled());
+  });
+
+  it('refuses to turn scanning on while the platform scheduler is off, with a clear message', async () => {
+    allow('automation:read', 'automation:configure');
+    vi.mocked(automationRuleService.list).mockResolvedValue([rule({ enabled: false })]);
+    vi.mocked(automationSettingsService.get).mockResolvedValue(makeSettings({ platformEnabled: false }));
+    renderSwitch();
+    const toggle = await screen.findByRole('switch', { name: 'Anomaly scanning' });
+    await waitFor(() => expect(automationSettingsService.get).toHaveBeenCalled());
+    await userEvent.click(toggle);
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/turned off for the whole platform/)),
+    );
+    expect(automationRuleService.setEnabled).not.toHaveBeenCalled();
+  });
+
+  it('still lets scanning be turned off while the platform scheduler is off', async () => {
+    allow('automation:read', 'automation:configure');
+    vi.mocked(automationRuleService.list).mockResolvedValue([rule()]);
+    vi.mocked(automationSettingsService.get).mockResolvedValue(makeSettings({ platformEnabled: false }));
+    vi.mocked(automationRuleService.setEnabled).mockResolvedValue(rule({ enabled: false }));
+    renderSwitch();
+    await userEvent.click(await screen.findByRole('switch', { name: 'Anomaly scanning' }));
+    await waitFor(() => expect(automationRuleService.setEnabled).toHaveBeenCalledWith('anomaly_scan', false));
   });
 });
