@@ -21,6 +21,10 @@ import {
   requisitionDefaults, toCreatePayload, calcHeaderTotals, invalidLinePositions,
   PAGE_TABS, type PageTab, type RequisitionLineItem,
 } from '@/lib/requisitionForm';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromRequisitionForCopy } from '@/lib/requisitionCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { Requisition } from '@/types/requisition';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface RequisitionDraft {
@@ -31,7 +35,16 @@ interface RequisitionDraft {
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that requisition (see CopySeedGate). */
 export default function AddRequisitionPage() {
+  return (
+    <CopySeedGate queryKey="requisition" load={(id) => requisitionService.getRequisition(id)}>
+      {(source) => <AddRequisitionForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddRequisitionForm({ source }: { source?: Requisition }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -40,14 +53,19 @@ export default function AddRequisitionPage() {
     'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
   );
   const restored = inventoryReturn.restored ?? vendorReturn.restored;
+  const seed = useMemo(() => (source ? fromRequisitionForCopy(source) : null), [source]);
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? requisitionDefaults());
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? requisitionDefaults());
   // A shortfall handed over from a Sales Order (opened in this tab from its "not
   // enough stock" dialog) starts the requisition with the missing items filled in.
-  const [lineItems, setLineItems] = useState<RequisitionLineItem[]>(() => restored?.lineItems ?? peekRequisitionPrefill() ?? []);
-  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [lineItems, setLineItems] = useState<RequisitionLineItem[]>(
+    () => restored?.lineItems ?? seed?.lineItems ?? peekRequisitionPrefill() ?? [],
+  );
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? seed?.vendor ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
 
   // The handed-over lines are used up once this page goes away.
   useEffect(() => clearRequisitionPrefill, []);
@@ -78,7 +96,7 @@ export default function AddRequisitionPage() {
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     true,
-    inventoryReturn.isRestored || vendorReturn.isRestored,
+    inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed),
   );
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
@@ -131,7 +149,7 @@ export default function AddRequisitionPage() {
           onBack={() => navigate('/purchases/requisition')}
           icon={ClipboardList}
           title="New Requisition"
-          subtitle="Fields marked * are required."
+          subtitle={source ? copySubtitle(source.requisitionNumber) : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">

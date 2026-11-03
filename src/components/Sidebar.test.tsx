@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
@@ -25,6 +26,7 @@ function setup({
   workflowsLoading = false,
   kind,
   unreadTickets = 0,
+  path = '/',
 }: {
   grants?: Grant[];
   isPlatformAdmin?: boolean;
@@ -35,6 +37,8 @@ function setup({
   kind?: 'portal';
   /** Tickets with unread replies, as the shared polling hook would report. */
   unreadTickets?: number;
+  /** The URL the sidebar is rendered at. */
+  path?: string;
 } = {}) {
   vi.mocked(useFeedbackUnreadCount).mockReturnValue(unreadTickets);
 
@@ -60,13 +64,16 @@ function setup({
   );
 
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <Sidebar isOpen onClose={() => {}} />
     </MemoryRouter>,
   );
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  localStorage.clear();
+});
 
 describe('Sidebar permission gating', () => {
   // Groups render only when at least one child passes its own check, so a
@@ -288,5 +295,62 @@ describe('Sidebar Created Orders link', () => {
     setup({ grants: [], isLoading: true });
 
     expect(screen.queryByText('Created Orders')).toBeNull();
+  });
+});
+
+describe('Sidebar groups', () => {
+  const ALL_ACCESS = [{ resource: '*', action: '*' }];
+  const salesToggle = () => screen.getByRole('button', { name: 'Toggle Sales menu' });
+
+  it('starts collapsed away from the group, and tells assistive tech so', () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('opens the group the current page lives in', () => {
+    setup({ grants: ALL_ACCESS, path: '/sales/invoice' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('takes the links of a collapsed group out of the tab order', () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    const panel = document.getElementById(salesToggle().getAttribute('aria-controls') ?? '');
+    expect(panel).toHaveAttribute('inert');
+  });
+
+  it('makes the links reachable again once the group is opened', async () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    await userEvent.setup().click(salesToggle());
+
+    const panel = document.getElementById(salesToggle().getAttribute('aria-controls') ?? '');
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'true');
+    expect(panel).not.toHaveAttribute('inert');
+  });
+
+  it('remembers a group the user opened for the next visit', async () => {
+    setup({ grants: ALL_ACCESS, path: '/' });
+    await userEvent.setup().click(salesToggle());
+
+    expect(JSON.parse(localStorage.getItem('ss.sidebar.open') ?? '{}')).toMatchObject({ sales: true });
+  });
+
+  it('starts with a remembered group open, even away from it', () => {
+    localStorage.setItem('ss.sidebar.open', JSON.stringify({ sales: true }));
+
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('ignores a corrupt remembered value instead of breaking the menu', () => {
+    localStorage.setItem('ss.sidebar.open', '{not json');
+
+    setup({ grants: ALL_ACCESS, path: '/' });
+
+    expect(salesToggle()).toHaveAttribute('aria-expanded', 'false');
   });
 });

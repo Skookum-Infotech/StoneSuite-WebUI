@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Wallet, Upload, Pencil, FileDown, Loader2 } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { expenseService } from '@/services/expenseService';
 import { lookupService } from '@/services/lookupService';
@@ -15,6 +16,7 @@ import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import {
   EXPENSE_STATUS_COLORS, EXPENSE_STATUS_CODES, EXPENSE_DELETABLE_STATUSES, EXPENSE_ALLOWED_TRANSITIONS, canRejectExpense,
 } from '@/lib/expenseForm';
@@ -60,6 +62,7 @@ export default function ExpenseDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('expense', 'update');
   const canDelete = permissionsLoading || hasPermission('expense', 'delete');
+  const canCopy = permissionsLoading || hasPermission('expense', 'create');
   const canTransition = permissionsLoading || hasPermission('expense', 'transition');
 
   const { data: exp, isLoading, error } = useQuery({
@@ -205,23 +208,20 @@ export default function ExpenseDetailPage() {
       )}
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            aria-label={`${tab.label} tab`}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              aria-label={`${tab.label} tab`}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -264,9 +264,9 @@ export default function ExpenseDetailPage() {
                 <tbody className="divide-y divide-stone-100">
                   {exp.items.map((line) => (
                     <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums">{line.lineNumber}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
-                        {line.categoryName || line.categoryCode || <span className="text-stone-300">—</span>}
+                        {line.categoryName || line.categoryCode || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap">{fmtDate(line.expenseDate)}</td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[220px] truncate">{line.description || '—'}</td>
@@ -274,7 +274,7 @@ export default function ExpenseDetailPage() {
                     </tr>
                   ))}
                   {exp.items.length === 0 && (
-                    <tr><td colSpan={5} className="py-8 text-center text-stone-400">No expense lines.</td></tr>
+                    <tr><td colSpan={5} className="py-8 text-center text-stone-500">No expense lines.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -290,7 +290,7 @@ export default function ExpenseDetailPage() {
         {/* Right sidebar */}
         <SalesDetailSidebar label="Expense Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -312,6 +312,9 @@ export default function ExpenseDetailPage() {
                   Edit expense
                 </button>
               )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="expense" addPath="/purchases/expense/new" sourceId={id} />
+              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -330,7 +333,7 @@ export default function ExpenseDetailPage() {
 
           {showActions && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Actions</p>
               <ExpenseStatusControl
                 order={{ statusCode: exp.statusCode, approvalStatus: exp.approvalStatus, gated: exp.gated, nextStatusCodes: exp.nextStatusCodes }}
                 onChange={(toCode) => transition.mutate(toCode)}
@@ -353,7 +356,7 @@ export default function ExpenseDetailPage() {
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{exp.status}</Badge>
@@ -390,7 +393,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }
@@ -398,7 +401,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

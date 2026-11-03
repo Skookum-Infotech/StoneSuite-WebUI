@@ -68,13 +68,13 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
         <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-3.5">
           <div>
             <h2 id="period-history-drawer-title" className="text-sm font-bold text-stone-900">History</h2>
-            <p className="mt-0.5 text-2xs text-stone-400">{period.fiscalYearName} · {period.name}</p>
+            <p className="mt-0.5 text-2xs text-stone-500">{period.fiscalYearName} · {period.name}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
@@ -86,7 +86,7 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
           ) : isError ? (
             <p className="text-xs text-destructive">{apiErrorMessage(error, 'Failed to load history.')}</p>
           ) : entries.length === 0 ? (
-            <p className="py-6 text-center text-xs italic text-stone-400">No history recorded yet.</p>
+            <p className="py-6 text-center text-xs italic text-stone-500">No history recorded yet.</p>
           ) : (
             <ul className="space-y-3">
               {entries.map((e) => (
@@ -95,17 +95,17 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
                     <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-2xs font-semibold', ACTION_COLORS[e.action] ?? 'bg-stone-100 text-stone-600')}>
                       {ACTION_LABELS[e.action] ?? e.action}
                     </span>
-                    <span className="whitespace-nowrap text-2xs text-stone-400">{new Date(e.at).toLocaleString()}</span>
+                    <span className="whitespace-nowrap text-2xs text-stone-500">{new Date(e.at).toLocaleString()}</span>
                   </div>
                   {(e.fromStatus || e.toStatus) && (
                     <p className="mt-1.5 text-xs text-stone-600">
-                      {e.fromStatus && <span className="text-stone-400">{e.fromStatus}</span>}
-                      {e.fromStatus && e.toStatus && <span className="mx-1.5 text-stone-300">→</span>}
+                      {e.fromStatus && <span className="text-stone-500">{e.fromStatus}</span>}
+                      {e.fromStatus && e.toStatus && <span className="mx-1.5 text-stone-500">→</span>}
                       {e.toStatus && <span className="font-medium text-stone-800">{e.toStatus}</span>}
                     </p>
                   )}
                   {e.note && <p className="mt-1.5 text-xs italic text-stone-500">&ldquo;{e.note}&rdquo;</p>}
-                  <p className="mt-1.5 text-2xs text-stone-400">
+                  <p className="mt-1.5 text-2xs text-stone-500">
                     {e.by ? employeeNames.get(String(e.by)) ?? 'system' : 'system'}
                   </p>
                 </li>

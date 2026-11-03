@@ -19,7 +19,7 @@ export function PasswordRequirements({ password }: PasswordRequirementsProps) {
           {met ? (
             <Check aria-hidden="true" className="size-3.5 shrink-0 text-emerald-600" />
           ) : (
-            <Circle aria-hidden="true" className="size-2 shrink-0 fill-stone-300 text-stone-300" />
+            <Circle aria-hidden="true" className="size-2 shrink-0 fill-stone-300 text-stone-400" />
           )}
           <span className={cn('text-xs', met ? 'font-medium text-emerald-700' : 'text-stone-500')}>
             {rule.label}

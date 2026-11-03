@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -48,13 +49,13 @@ export function FabricationLayoutAllocation({ jobId, version }: { jobId: string;
     {templates.isSuccess && !template && <p className="text-sm text-amber-800">Approve a measured template before reserving material.</p>}
     {template && <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); setSaved(false); if (slab && line && confirmed && placements.length) action.run({ slabId, templateId: template.id, sourceLineId: lineId, layout: { placements, kerfMm, suitabilityConfirmed: confirmed, reviewNote } }); }}>
       <fieldset disabled={action.isPending} className="space-y-4">
-        <label className="block text-xs font-medium">Approved template line<select className={fieldCls} value={lineId} required onChange={(event) => { setLineId(event.target.value); setSlabId(''); setPlacements([]); setConfirmed(false); }}><option value="">Choose measured work</option>{template.lines.map((item, index) => <option key={item.sourceLineId} value={item.sourceLineId}>Line {index + 1} · {item.scope || item.pieces.map((piece) => piece.name).join(', ')} · {item.pieces.length} pieces</option>)}</select></label>
+        <label className="block text-xs font-medium">Approved template line<Select className={fieldCls} value={lineId} required onChange={(event) => { setLineId(event.target.value); setSlabId(''); setPlacements([]); setConfirmed(false); }}><option value="">Choose measured work</option>{template.lines.map((item, index) => <option key={item.sourceLineId} value={item.sourceLineId}>Line {index + 1} · {item.scope || item.pieces.map((piece) => piece.name).join(', ')} · {item.pieces.length} pieces</option>)}</Select></label>
         {line && <>
           <p className="text-xs text-stone-600">Required finish: {line.finish || 'Confirm during physical review'}</p>
           <label className="block text-xs font-medium">Find slab or remnant<input className={fieldCls} value={search} onChange={(event) => { setSearch(event.target.value); setSlabId(''); setConfirmed(false); }} placeholder="Search serial number" /></label>
           {units.isLoading && <p role="status">Loading material…</p>}
           {units.error && <p role="alert">Unable to load available material.</p>}
-          <label className="block text-xs font-medium">Inspected material<select className={fieldCls} required value={slabId} onChange={(event) => { setSlabId(event.target.value); setConfirmed(false); }}><option value="">Choose an accepted slab or remnant</option>{candidates.map((unit) => <option key={unit.id} value={unit.id}>{unit.serial} · {unit.form} · {unit.lengthMm} × {unit.widthMm} × {unit.thicknessMm} mm · {unit.finish || 'Finish unspecified'}</option>)}</select></label>
+          <label className="block text-xs font-medium">Inspected material<Select className={fieldCls} required value={slabId} onChange={(event) => { setSlabId(event.target.value); setConfirmed(false); }}><option value="">Choose an accepted slab or remnant</option>{candidates.map((unit) => <option key={unit.id} value={unit.id}>{unit.serial} · {unit.form} · {unit.lengthMm} × {unit.widthMm} × {unit.thicknessMm} mm · {unit.finish || 'Finish unspecified'}</option>)}</Select></label>
           {units.isSuccess && !candidates.length && <p className="text-xs text-amber-800">No accepted material in these results. Check receipt inspection or search another serial number.</p>}
           {units.data?.hasMore && <p className="text-xs text-stone-500">Showing the first 100 results. Narrow the serial search to find more material.</p>}
           <div className="space-y-2">{line.pieces.map((piece, index) => {

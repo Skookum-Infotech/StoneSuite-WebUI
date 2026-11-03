@@ -18,6 +18,8 @@ import {
   fjDefaults, toJobFields, toPieceInput, PAGE_TABS, SITE_FIELDS, type PageTab, type FJPieceRow,
 } from '@/lib/fabricationForm';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 export default function AddFabricationJobPage() {
   const navigate = useNavigate();
@@ -54,6 +56,8 @@ export default function AddFabricationJobPage() {
     label: `#${line.lineNumber} ${line.itemName || line.description || ''}`.trim(),
   }));
 
+  const guard = useUnsavedChangesGuard({ data, pieces, sourceOrder, customFieldValues });
+
   const createKey = useIdempotencyKey();
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
@@ -76,6 +80,7 @@ export default function AddFabricationJobPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(job.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/installation');
     },
   });
@@ -83,6 +88,7 @@ export default function AddFabricationJobPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Installation / Fabrication"

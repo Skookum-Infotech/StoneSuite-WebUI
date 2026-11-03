@@ -101,7 +101,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
               <MessageSquare className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-semibold text-stone-700 dark:text-stone-200">{title}</span>
-                <span className="block text-2xs text-stone-400">{relativeTime(c.updatedAt)}</span>
+                <span className="block text-2xs text-stone-500">{relativeTime(c.updatedAt)}</span>
               </span>
             </button>
             {confirmingId === c.id ? (
@@ -120,7 +120,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
                 type="button"
                 onClick={() => setConfirmingId(c.id)}
                 aria-label={`Delete conversation ${title}`}
-                className="shrink-0 rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-destructive dark:hover:bg-white/10 cursor-pointer"
+                className="shrink-0 rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 hover:text-destructive dark:hover:bg-white/10 cursor-pointer"
               >
                 <Trash2 className="size-3.5" />
               </button>

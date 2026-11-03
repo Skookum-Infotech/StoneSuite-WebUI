@@ -23,15 +23,15 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
   });
 
   if (!purchaseOrderId) {
-    return <p className="py-12 text-center text-sm text-stone-400">Receipts will be available after saving the purchase order.</p>;
+    return <p className="py-12 text-center text-sm text-stone-500">Receipts will be available after saving the purchase order.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading receipts…" /></div>;
   if (error) return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load item receipts.</p>;
   if (receipts.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-12 text-center">
-        <Inbox className="size-6 text-stone-300" aria-hidden="true" />
-        <p className="text-sm text-stone-400">No goods have been received against this order yet.</p>
+        <Inbox className="size-6 text-stone-400" aria-hidden="true" />
+        <p className="text-sm text-stone-500">No goods have been received against this order yet.</p>
       </div>
     );
   }
@@ -71,8 +71,8 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
                 </td>
                 <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(r.receiptDate)}</td>
                 <td className="px-3 py-2.5 text-stone-500">{r.warehouseName || '—'}</td>
-                <td className="px-3 py-2.5 text-stone-400 tabular-nums whitespace-nowrap">{fmtDate(r.postedAt)}</td>
-                <td className="px-3 py-2.5 text-stone-400 tabular-nums whitespace-nowrap">{fmtDate(r.voidedAt)}</td>
+                <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(r.postedAt)}</td>
+                <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(r.voidedAt)}</td>
               </tr>
             );
           })}

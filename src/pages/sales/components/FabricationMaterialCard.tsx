@@ -34,7 +34,7 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h4 className="truncate text-sm font-semibold text-stone-900">{material.name}</h4>
-          <p className="font-mono text-2xs text-stone-400">{material.sku}</p>
+          <p className="font-mono text-2xs text-stone-500">{material.sku}</p>
         </div>
         <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-semibold', style.chip)}>
           {state === 'covered' ? <CheckCircle2 className="size-3" aria-hidden="true" />

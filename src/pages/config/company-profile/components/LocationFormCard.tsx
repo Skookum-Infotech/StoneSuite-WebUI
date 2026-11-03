@@ -89,7 +89,7 @@ export function LocationFormCard({
         </div>
 
         <div>
-          <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-400">
+          <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-500">
             <MapPin className="size-3.5" />
             Address
           </h3>
@@ -103,6 +103,7 @@ export function LocationFormCard({
                     field={fieldSpec}
                     registration={register('address.country')}
                     error={errors.address?.country?.message}
+                    value={values.address?.country ?? ''}
                     options={countryOptions(lookupsQ.data?.countries, values.address?.country ?? '')}
                   />
                 );
@@ -114,6 +115,7 @@ export function LocationFormCard({
                     field={fieldSpec}
                     registration={register('address.state')}
                     error={errors.address?.state?.message}
+                    value={values.address?.state ?? ''}
                     options={stateOptionsForCountry(lookupsQ.data, values.address?.country ?? '', values.address?.state ?? '')}
                   />
                 );

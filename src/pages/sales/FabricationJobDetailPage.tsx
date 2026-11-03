@@ -14,6 +14,7 @@ import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import {
   FJ_STATUS_COLORS, FJ_STATUS_CODES, APPROVAL_STATUS_LABELS, APPROVAL_STATUS_COLORS,
   canCancel, canDeleteJob, canEditPieces,
@@ -33,6 +34,7 @@ import { DeleteFabricationJobDialog } from './components/DeleteFabricationJobDia
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import type { FabricationJob } from '@/types/fabrication';
 import { formatDateValue } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -232,22 +234,19 @@ export default function FabricationJobDetailPage() {
         </>
       )}
 
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -307,7 +306,7 @@ export default function FabricationJobDetailPage() {
 
         <SalesDetailSidebar label="Job Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -345,13 +344,13 @@ export default function FabricationJobDetailPage() {
 
           {canEdit && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Status Actions</p>
+              <p className="text-xs font-semibold text-stone-500">Status Actions</p>
               <FabricationHoldResumeControl job={job} onChanged={applyUpdatedJob} />
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <FabricationStatusControl
@@ -369,7 +368,7 @@ export default function FabricationJobDetailPage() {
             )}
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Customer</span>
-              <span className="text-stone-700 truncate max-w-[140px]">{job.customer.name}</span>
+              <CustomerLink id={job.customer.id} name={job.customer.name} className="text-stone-700 truncate max-w-[140px] hover:text-accent-foreground hover:underline" />
             </div>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
@@ -383,7 +382,7 @@ export default function FabricationJobDetailPage() {
 
           {canEdit && canCancel(job.statusCode) && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-              <p className="text-xs font-semibold text-stone-400">Cancel</p>
+              <p className="text-xs font-semibold text-stone-500">Cancel</p>
               <CancelFabricationJobDialog job={job} onCancelled={applyUpdatedJob} />
             </div>
           )}
@@ -410,7 +409,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
   return (
     <div className={cn('space-y-1', full && 'col-span-full')}>
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

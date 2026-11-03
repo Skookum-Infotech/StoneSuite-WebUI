@@ -1,3 +1,5 @@
+import { chooseOpenOption, pickOption } from '@/test/selectHelpers';
+import userEvent from '@testing-library/user-event';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,7 +20,7 @@ describe('WIP movement', () => {
  beforeEach(() => vi.clearAllMocks());
  it('explains server blockers and prevents a blocked action', async () => {
   mount(false);
-  fireEvent.change(await screen.findByLabelText('Allocated slab'), { target: { value: 'slab' } });
+  await pickOption(await screen.findByLabelText('Allocated slab'), 'slab');
   expect(screen.getByText('Inspect and accept this slab first.')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Move to WIP' })).toBeDisabled();
   expect(tenantClient.post).not.toHaveBeenCalled();
@@ -26,9 +28,10 @@ describe('WIP movement', () => {
  it('offers same-location WIP bins and submits the versioned action', async () => {
   vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true } });
   mount(true);
-  fireEvent.change(await screen.findByLabelText('Allocated slab'), { target: { value: 'slab' } });
+  await userEvent.click(await screen.findByLabelText('Allocated slab'));
   expect(screen.queryByRole('option', { name: /OTHER-SAW/ })).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Destination WIP bin'), { target: { value: 'bin' } });
+  await chooseOpenOption('slab');
+  await pickOption(screen.getByLabelText('Destination WIP bin'), 'bin');
   fireEvent.click(screen.getByRole('button', { name: 'Move to WIP' }));
   await waitFor(() => expect(tenantClient.post).toHaveBeenCalledWith('/tenant/fabrication-jobs/job/wip-transfers', expect.objectContaining({ expectedVersion: 7, slabId: 'slab', binId: 'bin', requestId: expect.any(String) })));
   expect(await screen.findByText('Material moved to WIP.')).toBeVisible();

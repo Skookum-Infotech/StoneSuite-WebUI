@@ -7,6 +7,7 @@ vi.mock('@/services/tenantServices', () => ({
   onboardingService: { formSchema: vi.fn(), lookups: vi.fn() },
 }));
 
+import { DataMemoryRouter } from '@/test/DataMemoryRouter';
 import { OnboardingForm } from './OnboardingForm';
 import { onboardingService } from '@/services/tenantServices';
 import { DEFAULT_COUNTRY_NAME } from '@/lib/lookupDefaults';
@@ -43,7 +44,9 @@ function renderForm(prefill?: Record<string, unknown>, onSubmit: (data: Record<s
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <OnboardingForm prefill={prefill} submitting={false} onSubmit={onSubmit} />
+      <DataMemoryRouter initialEntries={['/']}>
+        <OnboardingForm prefill={prefill} submitting={false} onSubmit={onSubmit} />
+      </DataMemoryRouter>
     </QueryClientProvider>,
   );
 }

@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { Flag } from "@/components/ui/Flag";
+import { flagKindForLookup, type OptionFlag } from "@/lib/flags";
 import { lookupService, type LookupItem } from "@/services/lookupService";
 import {
   CRM_CORE_SECTIONS,
@@ -35,6 +37,14 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
     const items = lookups[field.lookupKey] as LookupItem[];
     const match = items.find((item) => String(item.id) === String(value));
     return match?.name ?? "";
+  }
+
+  function resolveFlag(field: CrmCoreField, value: unknown): OptionFlag | null {
+    const kind = flagKindForLookup(field.lookupKey);
+    if (!lookups || !field.lookupKey || !kind || field.type !== "lookup-select") return null;
+    const items = lookups[field.lookupKey] as LookupItem[];
+    const match = items.find((item) => String(item.id) === String(value));
+    return match?.code ? { kind, code: match.code } : null;
   }
 
   function isFieldVisible(field: CrmCoreField): boolean {
@@ -87,7 +97,7 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
         <div key={field.key} className="sm:col-span-2">
           <ModernFieldShell label={field.label}>
             <div className={`${readonlyCls} whitespace-pre-wrap`}>
-              {display || <span className="text-stone-400">—</span>}
+              {display || <span className="text-stone-500">—</span>}
             </div>
           </ModernFieldShell>
         </div>
@@ -99,17 +109,23 @@ export function CrmRecordDetail({ coreFields, showCustomerBalances }: Props) {
         <div key={field.key} className="col-span-full">
           <ModernFieldShell label={field.label}>
             <div className={`${readonlyCls} whitespace-pre-wrap`}>
-              {display || <span className="text-stone-400">—</span>}
+              {display || <span className="text-stone-500">—</span>}
             </div>
           </ModernFieldShell>
         </div>
       );
     }
 
+    const flag = display ? resolveFlag(field, coreFields[field.key]) : null;
     return (
       <ModernFieldShell key={field.key} label={field.label}>
         <div className={readonlyCls}>
-          {display || <span className="text-stone-400">—</span>}
+          {display ? (
+            <span className="inline-flex items-center gap-2">
+              {flag && <Flag {...flag} />}
+              {display}
+            </span>
+          ) : <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );

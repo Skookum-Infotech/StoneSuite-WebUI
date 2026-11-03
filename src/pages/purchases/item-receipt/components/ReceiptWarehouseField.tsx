@@ -23,7 +23,7 @@ export function ReceiptWarehouseField({ field, value, set }: {
         onChange={(uuid) => set(field.key, uuid)}
         required={field.required}
       />
-      {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+      {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
     </ModernFieldShell>
   );
 }

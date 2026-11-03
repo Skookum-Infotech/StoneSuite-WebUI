@@ -45,10 +45,10 @@ describe('AmountsStrip', () => {
       />,
     );
 
-    expect(figure('Discount')).toHaveClass('text-stone-400');
-    expect(figure('Tax')).not.toHaveClass('text-stone-400');
-    expect(figure('Grand Total')).not.toHaveClass('text-stone-400');
-    expect(figure('Balance Due')).not.toHaveClass('text-stone-400');
+    expect(figure('Discount')).toHaveClass('text-stone-500');
+    expect(figure('Tax')).not.toHaveClass('text-stone-500');
+    expect(figure('Grand Total')).not.toHaveClass('text-stone-500');
+    expect(figure('Balance Due')).not.toHaveClass('text-stone-500');
   });
 
   it('tints only the key figure', () => {

@@ -32,6 +32,10 @@ import {
   vendorBillDefaults, toCreatePayload, calcHeaderTotals, PAGE_TABS, type PageTab,
   type VendorBillLineItem,
 } from '@/lib/vendorBillForm';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromVendorBillForCopy } from '@/lib/vendorBillCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { VendorBill } from '@/types/vendorBill';
 
 const MANUAL_DUPLICATE_MESSAGE = 'A bill with this vendor invoice number already exists for this vendor.';
 
@@ -50,7 +54,16 @@ interface VendorBillDraft {
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that bill (see CopySeedGate). */
 export default function AddVendorBillPage() {
+  return (
+    <CopySeedGate queryKey="vendor-bill" load={(id) => vendorBillService.getVendorBill(id)}>
+      {(source) => <AddVendorBillForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddVendorBillForm({ source }: { source?: VendorBill }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -59,13 +72,16 @@ export default function AddVendorBillPage() {
     'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
   );
   const restored = inventoryReturn.restored ?? vendorReturn.restored;
+  const seed = useMemo(() => (source ? fromVendorBillForCopy(source) : null), [source]);
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? vendorBillDefaults());
-  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? []);
-  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? vendorBillDefaults());
+  const [lineItems, setLineItems] = useState<VendorBillLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? seed?.vendor ?? null);
   const [purchaseOrder, setPurchaseOrder] = useState<VendorBillPurchaseOrderRef | null>(restored?.purchaseOrder ?? null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
   const [manualDuplicate, setManualDuplicate] = useState<DuplicateConflict | null>(null);
 
   // A linked purchase order must belong to the bill's vendor, so switching (or
@@ -140,7 +156,8 @@ export default function AddVendorBillPage() {
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, purchaseOrder, customFieldValues },
     !review.active || review.hydrated,
-    inventoryReturn.isRestored || vendorReturn.isRestored || (review.active && !documentUsed && !documentFailed),
+    inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed)
+      || (review.active && !documentUsed && !documentFailed),
   );
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
@@ -202,7 +219,7 @@ export default function AddVendorBillPage() {
           onBack={() => navigate('/purchases/vendor_bill')}
           icon={FileCheck}
           title={review.active ? 'New Vendor Bill from Document' : 'New Vendor Bill'}
-          subtitle="Fields marked * are required."
+          subtitle={source ? copySubtitle(source.vendorBillNumber) : 'Fields marked * are required.'}
           actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">

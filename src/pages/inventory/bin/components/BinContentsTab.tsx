@@ -42,7 +42,7 @@ export function BinContentsTab({ binId }: { binId: string }) {
       <div className="flex flex-col items-center gap-2 rounded-xl border border-stone-200 bg-white py-12">
         <div className="rounded-2xl bg-stone-100 p-3"><Layers className="size-5 text-stone-400" aria-hidden="true" /></div>
         <p className="text-sm font-semibold text-stone-700">This bin is empty.</p>
-        <p className="text-xs text-stone-400">Slabs appear here once they are moved in.</p>
+        <p className="text-xs text-stone-500">Slabs appear here once they are moved in.</p>
       </div>
     );
   }

@@ -47,7 +47,7 @@ export function VendorTypeSwitcher({ value, onChange }: {
               <p className={cn('text-sm font-semibold', active ? 'text-stone-900' : 'text-stone-700')}>
                 {label}
               </p>
-              <p className="text-2xs text-stone-400 truncate">{description}</p>
+              <p className="text-2xs text-stone-500 truncate">{description}</p>
             </div>
           </button>
         );

@@ -13,6 +13,8 @@ import { toNumericWarehouseId } from '@/lib/inventoryWarehouse';
 import { ReasonSelect } from '@/components/inventory/ReasonSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { TRACKING_QUANTITY, TRACKING_SERIALIZED } from '@/types/inventory';
 import type { AdjustmentLineInput, InventoryItem, InventoryUnit, Adjustment, Warehouse } from '@/types/inventory';
@@ -108,6 +110,8 @@ export default function EditAdjustmentPage() {
   const setNotes = (v: string) => setLocal((p) => ({ ...p, notes: v }));
   const setLines = (v: AdjustmentDraftLine[]) => setLocal((p) => ({ ...p, lines: v }));
 
+  const guard = useUnsavedChangesGuard({ warehouseId, date, reasonId, notes, lines }, Boolean(mapped));
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -128,6 +132,7 @@ export default function EditAdjustmentPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-adjustments'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-adjustment', id] });
+      guard.markClean();
       navigate(`/inventory/adjustment/${id}`);
     },
   });
@@ -146,6 +151,7 @@ export default function EditAdjustmentPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <CrmPageHeader
           backLabel="Adjustments"

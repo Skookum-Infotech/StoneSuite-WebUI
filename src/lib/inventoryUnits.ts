@@ -3,7 +3,7 @@
 // are legal for a serialized (slab) item. Kept out of component files per
 // the eslint-plugin-react-refresh `vite` preset (non-component exports break
 // Fast Refresh for a component file).
-import type { LookupItem, UnitCategory } from '@/types/inventory';
+import { TRACKING_QUANTITY, TRACKING_SERIALIZED, type LookupItem, type TrackingMode, type UnitCategory } from '@/types/inventory';
 
 /** Reads a unit lookup row's `extra.category`, defaulting to 'count' (the
  *  safest default — a mis-typed/missing category should never silently
@@ -39,4 +39,10 @@ export function findUnit(units: LookupItem[], unitId: number | null | undefined)
  *  measured in. */
 export function unitCodeFor(units: LookupItem[], unitId: number | null | undefined): string {
   return findUnit(units, unitId)?.code ?? '';
+}
+
+/** An item measured in a square unit is a slab and is tracked slab by slab; any
+ *  other unit is a count. The unit decides — there is no separate choice. */
+export function trackingForUnit(unit: Pick<LookupItem, 'extra'> | undefined | null): TrackingMode {
+  return isAreaUnit(unit) ? TRACKING_SERIALIZED : TRACKING_QUANTITY;
 }

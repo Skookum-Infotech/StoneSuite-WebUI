@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { AlertCircle, Send } from 'lucide-react';
@@ -147,7 +148,7 @@ export function FeedbackSubmitForm({
             <label htmlFor="feedback-category" className={fieldLabelCls}>
               <span className="text-red-500">*</span> Category
             </label>
-            <select
+            <Select
               id="feedback-category"
               value={category}
               onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
@@ -156,12 +157,12 @@ export function FeedbackSubmitForm({
               {FEEDBACK_CATEGORY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
             <label htmlFor="feedback-area" className={fieldLabelCls}>Where did this happen?</label>
-            <select
+            <Select
               id="feedback-area"
               value={area}
               onChange={(e) => setArea(e.target.value as FeedbackArea)}
@@ -170,7 +171,7 @@ export function FeedbackSubmitForm({
               {FEEDBACK_AREA_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -194,12 +195,12 @@ export function FeedbackSubmitForm({
             {descriptionError ? (
               <p id="feedback-description-error" className="text-xs text-destructive">{descriptionError}</p>
             ) : <span />}
-            <span className="text-xs text-stone-400">{description.length}/{MAX_DESCRIPTION_LENGTH}</span>
+            <span className="text-xs text-stone-500">{description.length}/{MAX_DESCRIPTION_LENGTH}</span>
           </div>
         </div>
 
         <div>
-          <p className={fieldLabelCls}>Screenshot / File <span className="font-normal text-stone-400">(optional)</span></p>
+          <p className={fieldLabelCls}>Screenshot / File <span className="font-normal text-stone-500">(optional)</span></p>
           <div className="mt-1.5">
             <FeedbackAttachmentPicker files={stagedFiles} onFilesChange={setStagedFiles} disabled={submitMutation.isPending} />
           </div>

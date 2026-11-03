@@ -326,3 +326,54 @@ describe('expected slabs on a purchase order line', () => {
     expect(payload.items[0]).toMatchObject({ inventoryItemUuid: 'inv-slab', quantity: 600, expectedSlabs: 12 })
   })
 })
+
+describe('line thickness', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', order_date: '2026-10-30' }
+  const slabLine = {
+    id: 's', lineNo: 1, itemName: 'Absolute Black', itemDescription: '', quantity: '150', unitPrice: '10', discount: '0',
+    amount: '1500.00', total: '1500.00', inventoryItemUuid: 'inv-1', units: 'SQFT', tracking: 'serialized',
+    length: '120', width: '60', expectedSlabs: '3', dimensionUnit: 'in',
+  }
+
+  it('sends the thickness with the size, in the line\'s unit', () => {
+    const [item] = toCreatePayload(baseData, [{ ...slabLine, thickness: '0.75' }]).items
+    expect(item).toMatchObject({ length: 120, width: 60, thickness: 0.75, dimensionUnit: 'in' })
+  })
+
+  it('sends none when it is blank, zero or not a number', () => {
+    for (const thickness of ['', '0', 'abc', undefined]) {
+      const [item] = toCreatePayload(baseData, [{ ...slabLine, thickness }]).items
+      expect(item.thickness).toBeUndefined()
+    }
+  })
+
+  it('does not send one for a line that is not measured by area', () => {
+    const [item] = toCreatePayload(baseData, [{ ...slabLine, units: 'EA', thickness: '0.75' }]).items
+    expect(item.thickness).toBeUndefined()
+  })
+
+  it('names the unit when the line states a thickness but no size', () => {
+    const [item] = toCreatePayload(baseData, [{ ...slabLine, length: '', width: '', thickness: '2', dimensionUnit: 'cm' }]).items
+    expect(item).toMatchObject({ thickness: 2, dimensionUnit: 'cm' })
+    expect(item.length).toBeUndefined()
+  })
+
+  it('comes back onto the edit form from a saved order', () => {
+    const po = {
+      id: 'po-1', purchaseOrderNumber: 'PORD-000001', status: 'Draft', statusCode: 'DRFT', vendor: { id: 'v', name: 'V' }, shipTo: {},
+      items: [{
+        id: 'l1', lineNumber: 1, sku: 'AB', itemName: 'Absolute Black', description: '', unitCode: 'SQFT', quantity: 150,
+        qtyReceived: 0, qtyBilled: 0, unitPrice: 10, discountPercent: 0, taxPercent: 0, lineSubtotal: 1500, lineDiscount: 0,
+        lineTax: 0, lineTotal: 1500, length: 120, width: 60, thickness: 0.75, dimensionUnit: 'in', expectedSlabs: 3,
+      }, {
+        id: 'l2', lineNumber: 2, sku: 'EA', itemName: 'Sealer', description: '', unitCode: 'EA', quantity: 1,
+        qtyReceived: 0, qtyBilled: 0, unitPrice: 5, discountPercent: 0, taxPercent: 0, lineSubtotal: 5, lineDiscount: 0,
+        lineTax: 0, lineTotal: 5,
+      }],
+    } as unknown as PurchaseOrder
+
+    const { lineItems } = fromPurchaseOrder(po)
+    expect(lineItems[0].thickness).toBe('0.75')
+    expect(lineItems[1].thickness).toBe('')
+  })
+})

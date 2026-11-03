@@ -24,7 +24,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
           />
         ))}
       </div>
-      <p className="text-xs text-stone-400">
+      <p className="text-xs text-stone-500">
         Strength: <span className={cn('font-semibold', TEXT_COLORS[level])}>{label}</span>
       </p>
     </div>

@@ -81,14 +81,14 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search forms…"
         aria-label="Search forms by name"
-        className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-8 pr-8 text-sm text-stone-800 placeholder:text-stone-400 focus:border-brand-dark/40 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+        className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-8 pr-8 text-sm text-stone-800 placeholder:text-stone-500 focus:border-brand-dark/40 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
       />
       {value && (
         <button
           type="button"
           onClick={() => onChange('')}
           aria-label="Clear search"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:hover:bg-stone-800"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-600 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:hover:bg-stone-800"
         >
           <X className="size-3" />
         </button>
@@ -136,7 +136,7 @@ function ModuleSection({
               {workflows.length}
             </span>
             {disabledCount > 0 && (
-              <span className="flex items-center gap-1 text-2xs font-semibold text-stone-400">
+              <span className="flex items-center gap-1 text-2xs font-semibold text-stone-500">
                 <span
                   className="size-1.5 rounded-full border border-stone-400 dark:border-stone-500"
                   aria-hidden="true"
@@ -145,7 +145,7 @@ function ModuleSection({
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-xs text-stone-400">{group.description}</p>
+          <p className="mt-0.5 text-xs text-stone-500">{group.description}</p>
         </div>
       </div>
 
@@ -208,7 +208,7 @@ function WorkflowCard({ wf }: { wf: WorkflowType }) {
           whatever length the description runs to — including none at all. */}
       <div className="flex-1">
         {wf.description && (
-          <p className={cn('mt-1 line-clamp-2 text-xs', enabled ? 'text-stone-400' : 'text-stone-400/70')}>
+          <p className={cn('mt-1 line-clamp-2 text-xs', enabled ? 'text-stone-500' : 'text-stone-500/70')}>
             {wf.description}
           </p>
         )}
@@ -220,7 +220,7 @@ function WorkflowCard({ wf }: { wf: WorkflowType }) {
           enabled ? 'border-stone-100 dark:border-stone-800' : 'border-stone-200/70 dark:border-stone-800/70',
         )}
       >
-        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stone-400 transition-colors group-hover:text-brand-dark dark:group-hover:text-brand">
+        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stone-500 transition-colors group-hover:text-brand-dark dark:group-hover:text-brand">
           Configure
           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </span>

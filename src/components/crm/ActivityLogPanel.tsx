@@ -89,7 +89,7 @@ export function ActivityLogPanel({ recordId, workflowKey }: Props) {
         ) : error ? (
           <ErrorNote>{apiErrorMessage(error, 'Failed to load activity.')}</ErrorNote>
         ) : activities.length === 0 ? (
-          <p className="py-6 text-center text-xs text-stone-400 italic">No activity logged yet.</p>
+          <p className="py-6 text-center text-xs text-stone-500 italic">No activity logged yet.</p>
         ) : (
           <div className="divide-y divide-stone-50">
             {activities.map((a) => (
@@ -173,17 +173,17 @@ function ActivityRow({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-2xs font-semibold px-1 rounded bg-stone-100 text-stone-500">{typeLabel}</span>
           <p className="text-xs font-medium text-stone-700 truncate">
-            {activity.subject || <span className="text-stone-400">—</span>}
+            {activity.subject || <span className="text-stone-500">—</span>}
           </p>
         </div>
         {activity.body && (
           <p className="text-xs text-stone-500 mt-1 whitespace-pre-wrap">{activity.body}</p>
         )}
-        <div className="flex items-center gap-2 mt-1.5 text-2xs text-stone-400">
+        <div className="flex items-center gap-2 mt-1.5 text-2xs text-stone-500">
           <span>{formatOccurredAt(activity.occurredAt)}</span>
           {activity.author.name && (
             <>
-              <span className="text-stone-300">·</span>
+              <span className="text-stone-500">·</span>
               <span>{activity.author.name}</span>
             </>
           )}
@@ -217,7 +217,7 @@ function ActivityRow({
                 type="button"
                 onClick={onEdit}
                 aria-label={`Edit ${rowLabel}`}
-                className="p-1.5 rounded text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                className="p-1.5 rounded text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
@@ -227,7 +227,7 @@ function ActivityRow({
                 type="button"
                 onClick={onDeleteClick}
                 aria-label={`Delete ${rowLabel}`}
-                className="p-1.5 rounded text-stone-400 hover:text-destructive hover:bg-destructive/5 transition-colors"
+                className="p-1.5 rounded text-stone-500 hover:text-destructive hover:bg-destructive/5 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

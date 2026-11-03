@@ -78,7 +78,7 @@ export function FeedbackAssigneePicker({ candidates, selectedId, selectedName, o
         {open && (
           <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md dark:border-white/10 dark:bg-stone-900">
             {results.length === 0 ? (
-              <p className="px-3.5 py-2.5 text-2xs text-stone-400">
+              <p className="px-3.5 py-2.5 text-2xs text-stone-500">
                 {candidates.length === 0 ? 'No prior assignees available.' : 'No matching admins.'}
               </p>
             ) : (

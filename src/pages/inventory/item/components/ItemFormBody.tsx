@@ -1,3 +1,5 @@
+import { Select } from '@/components/ui/select';
+import { flagAttrs } from '@/lib/flags';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
@@ -7,10 +9,12 @@ import { KitSelect } from '@/components/inventory/KitSelect';
 import { WarehouseSelect } from '@/components/inventory/WarehouseSelect';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { lookupService } from '@/services/lookupService';
-import { findUnit, requiresDimensions } from '@/lib/inventoryUnits';
-import { TRACKING_OPTIONS } from '@/lib/inventoryItemForm';
+import { findUnit, requiresDimensions, trackingForUnit } from '@/lib/inventoryUnits';
 import { TRACKING_SERIALIZED, type KitRef } from '@/types/inventory';
-import { DIMENSION_UNITS, DIMENSION_UNIT_LABELS, normalizeUnit } from '@/lib/lineDimensions';
+import {
+  DIMENSION_UNITS, DIMENSION_UNIT_LABELS, dimensionToMm, normalizeUnit,
+} from '@/lib/lineDimensions';
+import { mmToFormText } from '@/lib/inventoryItemForm';
 
 const switchTileCls = 'flex flex-col gap-1 rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2.5';
 
@@ -22,6 +26,17 @@ export function ItemFormBody({ data, set }: {
   set: (key: string, value: unknown) => void;
 }) {
   const { lookups } = useInventoryLookups();
+
+  // Changing a unit re-expresses the number already typed, so the physical size
+  // stays the same (300 cm becomes 3000 mm) instead of silently changing meaning.
+  const changeUnit = (valueKey: string, unitKey: string, nextUnit: string) => {
+    const typed = parseFloat(String(data[valueKey] ?? ''));
+    if (Number.isFinite(typed) && typed > 0) {
+      const mm = dimensionToMm(typed, String(data[unitKey] ?? ''));
+      set(valueKey, mmToFormText(mm, nextUnit));
+    }
+    set(unitKey, nextUnit);
+  };
   const { data: crmLookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -31,8 +46,9 @@ export function ItemFormBody({ data, set }: {
   const units = lookups?.units ?? [];
   const selectedUnit = findUnit(units, Number(data.unit_id) || undefined);
   const showDimensions = requiresDimensions(selectedUnit);
-  // A slab item always has stock to run out of, so its switch is on and fixed.
-  const slabTracked = data.tracking === TRACKING_SERIALIZED;
+  // A square unit makes the item a slab, whatever an older save recorded. A slab
+  // item always has stock to run out of, so its switch is on and fixed.
+  const slabTracked = trackingForUnit(selectedUnit) === TRACKING_SERIALIZED;
 
   return (
     <div className="space-y-2">
@@ -65,7 +81,10 @@ export function ItemFormBody({ data, set }: {
               kind="units"
               items={units}
               value={String(data.unit_id ?? '')}
-              onChange={(v) => set('unit_id', v)}
+              onChange={(v) => {
+                set('unit_id', v);
+                set('tracking', trackingForUnit(findUnit(units, Number(v) || undefined)));
+              }}
               label="Unit"
               required
             />
@@ -97,7 +116,7 @@ export function ItemFormBody({ data, set }: {
             />
           </ModernFieldShell>
           <ModernFieldShell label="Currency">
-            <select
+            <Select
               value={String(data.currency_id ?? '')}
               onChange={(e) => set('currency_id', e.target.value)}
               className={fieldCls}
@@ -107,7 +126,7 @@ export function ItemFormBody({ data, set }: {
               {(crmLookups?.currencies ?? []).map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
           <ModernFieldShell label="Tax Rate">
             <LookupSelect
@@ -145,16 +164,20 @@ export function ItemFormBody({ data, set }: {
           {/* The unit length and width are measured in everywhere this item is used.
               Always shown: which unit applies doesn't depend on the Unit chosen above. */}
           <ModernFieldShell label="Length / Width Unit">
-            <select
+            <Select
               value={normalizeUnit(String(data.dimension_unit ?? ''))}
-              onChange={(e) => set('dimension_unit', e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                changeUnit('length', 'dimension_unit', next);
+                changeUnit('width', 'dimension_unit', next);
+              }}
               className={fieldCls}
               aria-label="Length / Width Unit"
             >
               {DIMENSION_UNITS.map((u) => (
                 <option key={u} value={u}>{DIMENSION_UNIT_LABELS[u]}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
           {/* The two on/off switches sit together on a row of their own, each in a tile,
               on the same three-column rhythm as the fields above. */}
@@ -206,16 +229,9 @@ export function ItemFormBody({ data, set }: {
       <ModernSection title="Stone Attributes" index={1}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <ModernFieldShell label="Tracking">
-            <select
-              value={String(data.tracking ?? '')}
-              onChange={(e) => set('tracking', e.target.value)}
-              className={fieldCls}
-              aria-label="Tracking"
-            >
-              {TRACKING_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <p data-testid="item-tracking" className="flex h-9 items-center text-xs text-stone-700">
+              {slabTracked ? 'Slab — tracked one by one (set by the square unit)' : 'Quantity — counted per location'}
+            </p>
           </ModernFieldShell>
           <ModernFieldShell label="Material">
             <LookupSelect
@@ -249,21 +265,63 @@ export function ItemFormBody({ data, set }: {
             />
           </ModernFieldShell>
           {showDimensions && (
-            <ModernFieldShell label="Thickness (mm)">
+            <ModernFieldShell label="Length">
               <input
                 type="number"
                 min={0}
-                step="1"
-                value={String(data.thickness_mm ?? '0')}
-                onChange={(e) => set('thickness_mm', e.target.value)}
-                placeholder="0 = n/a — typically 20 or 30"
+                step="any"
+                value={String(data.length ?? '0')}
+                onChange={(e) => set('length', e.target.value)}
+                placeholder="0 = n/a — a standard slab length"
                 className={fieldCls}
-                aria-label="Thickness (mm)"
+                aria-label="Length"
               />
             </ModernFieldShell>
           )}
+          {showDimensions && (
+            <ModernFieldShell label="Width">
+              <input
+                type="number"
+                min={0}
+                step="any"
+                value={String(data.width ?? '0')}
+                onChange={(e) => set('width', e.target.value)}
+                placeholder="0 = n/a — a standard slab width"
+                className={fieldCls}
+                aria-label="Width"
+              />
+            </ModernFieldShell>
+          )}
+          {showDimensions && (
+            <ModernFieldShell label="Thickness">
+              <input
+                type="number"
+                min={0}
+                step="any"
+                value={String(data.thickness ?? '0')}
+                onChange={(e) => set('thickness', e.target.value)}
+                placeholder="0 = n/a — typically 20 or 30 mm"
+                className={fieldCls}
+                aria-label="Thickness"
+              />
+            </ModernFieldShell>
+          )}
+          {showDimensions && (
+            <ModernFieldShell label="Thickness Unit">
+              <Select
+                value={normalizeUnit(String(data.thickness_unit ?? ''))}
+                onChange={(e) => changeUnit('thickness', 'thickness_unit', e.target.value)}
+                className={fieldCls}
+                aria-label="Thickness Unit"
+              >
+                {DIMENSION_UNITS.map((u) => (
+                  <option key={u} value={u}>{DIMENSION_UNIT_LABELS[u]}</option>
+                ))}
+              </Select>
+            </ModernFieldShell>
+          )}
           <ModernFieldShell label="Origin Country">
-            <select
+            <Select
               value={String(data.origin_country_id ?? '')}
               onChange={(e) => set('origin_country_id', e.target.value)}
               className={fieldCls}
@@ -271,9 +329,9 @@ export function ItemFormBody({ data, set }: {
             >
               <option value="">— Select Country —</option>
               {(crmLookups?.countries ?? []).map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id} {...flagAttrs('country', c.code)}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </ModernFieldShell>
         </div>
       </ModernSection>

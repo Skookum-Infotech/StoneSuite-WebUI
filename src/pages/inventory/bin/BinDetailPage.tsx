@@ -8,6 +8,7 @@ import { ErrorNote, Spinner } from '@/components/tenant/ui';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { BinContentsTab } from './components/BinContentsTab';
 import { BinHistoryTab } from './components/BinHistoryTab';
 
@@ -20,9 +21,9 @@ type Tab = (typeof TABS)[number]['key'];
 function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: 'warn' }) {
   return (
     <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">{label}</p>
+      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
       <p className={cn('mt-0.5 text-lg font-bold tabular-nums', tone === 'warn' ? 'text-amber-700' : 'text-stone-900')}>{value}</p>
-      {hint && <p className="text-2xs text-stone-400">{hint}</p>}
+      {hint && <p className="text-2xs text-stone-500">{hint}</p>}
     </div>
   );
 }
@@ -66,7 +67,7 @@ export default function BinDetailPage() {
           <span className="flex items-center gap-1.5">
             <span className="rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold capitalize text-stone-600">{bin.type}</span>
             {bin.isWip && <span className="rounded bg-violet-100 px-1.5 py-0.5 text-2xs font-semibold text-violet-700">WIP</span>}
-            {!bin.isActive && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-400">Inactive</span>}
+            {!bin.isActive && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-500">Inactive</span>}
           </span>
         )}
       />
@@ -77,22 +78,19 @@ export default function BinDetailPage() {
         <Stat label="Location" value={bin.warehouseName || '—'} />
       </div>
 
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'shrink-0 whitespace-nowrap border-b-2 -mb-px px-4 py-3 text-sm font-semibold transition-colors',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:border-stone-200 hover:text-stone-700',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 4xl:px-16 4xl:py-10">

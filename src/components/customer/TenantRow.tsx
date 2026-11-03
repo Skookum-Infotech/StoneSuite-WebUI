@@ -36,18 +36,18 @@ export function TenantRow({ tenant }: { tenant: Tenant }) {
             <TenantStatusBadges tenant={tenant} />
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-            <span className="font-mono text-label text-stone-400">{tenant.slug}</span>
+            <span className="font-mono text-label text-stone-500">{tenant.slug}</span>
             {contactEmail && <span className="text-label text-stone-500">{contactEmail}</span>}
             {phone && <span className="text-label text-stone-500">{phone}</span>}
           </div>
         </div>
 
         <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">
-          <span className="text-label text-stone-400">{formatTenantDate(tenant.createdAt)}</span>
-          {tenant.dbName && <span className="font-mono text-2xs text-stone-300">{tenant.dbName}</span>}
+          <span className="text-label text-stone-500">{formatTenantDate(tenant.createdAt)}</span>
+          {tenant.dbName && <span className="font-mono text-2xs text-stone-500">{tenant.dbName}</span>}
         </div>
 
-        <ChevronRight className="size-4 shrink-0 text-stone-300" aria-hidden="true" />
+        <ChevronRight className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
       </Link>
 
       <TenantActions tenant={tenant} />

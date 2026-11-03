@@ -19,6 +19,8 @@ import {
 } from '@/lib/creditMemoForm';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 
 export default function EditCreditMemoPage() {
   const { id = '' } = useParams();
@@ -71,6 +73,8 @@ export default function EditCreditMemoPage() {
     [mapped],
   );
 
+  const guard = useUnsavedChangesGuard({ data, customFieldValues }, Boolean(mapped));
+
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
   const adjustment = parseFloat(String(data.adjustment ?? '')) || 0;
   const { subtotal, taxTotal, total } = useMemo(
@@ -103,6 +107,7 @@ export default function EditCreditMemoPage() {
       if (creditMemo?.sourcePayment) {
         queryClient.invalidateQueries({ queryKey: ['payment', creditMemo.sourcePayment.id] });
       }
+      guard.markClean();
       navigate(`/sales/credit_memo/${id}`);
     },
   });
@@ -114,6 +119,7 @@ export default function EditCreditMemoPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="flex flex-col flex-1 min-h-0"

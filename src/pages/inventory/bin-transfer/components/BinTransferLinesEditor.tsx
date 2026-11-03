@@ -64,7 +64,7 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
             <Layers className="size-5 text-stone-400" aria-hidden="true" />
           </div>
           <p className="text-sm font-semibold text-stone-700">No slabs on this transfer yet</p>
-          <p className="max-w-xs text-xs text-stone-400">
+          <p className="max-w-xs text-xs text-stone-500">
             Add the slabs you are moving, then choose the bin each one is going to.
           </p>
         </div>
@@ -91,8 +91,8 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
                   <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-stone-700">
                     {l.area.toFixed(2)} {l.areaUnitCode}
                   </td>
-                  <td className="px-3 py-2.5 text-stone-500">{l.currentBinPath || <span className="text-stone-400">No bin</span>}</td>
-                  <td className="px-0 py-2.5 text-stone-300"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
+                  <td className="px-3 py-2.5 text-stone-500">{l.currentBinPath || <span className="text-stone-500">No bin</span>}</td>
+                  <td className="px-0 py-2.5 text-stone-400"><ArrowRight className="size-3.5" aria-hidden="true" /></td>
                   <td className="px-3 py-2">
                     <BinPicker
                       bins={bins}
@@ -107,7 +107,7 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
                       type="button"
                       onClick={() => removeLine(l.key)}
                       aria-label={`Remove line ${i + 1}, ${l.serial}`}
-                      className="rounded p-1.5 text-stone-400 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      className="rounded p-1.5 text-stone-500 transition-colors hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Trash2 className="size-3.5" />
                     </button>

@@ -3,7 +3,10 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  useNavigate: () => vi.fn(),
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/purchaseOrderService', () => ({
   purchaseOrderService: { searchPurchaseOrders: vi.fn(), transition: vi.fn() },
@@ -63,6 +66,30 @@ async function renderWithRow(row: PurchaseOrderSummary): Promise<HTMLElement> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+// The Received column (4th: PO #, Vendor, Status, Received): a segmented bar
+// once an order can receive goods, a dash before that (nothing can arrive on a
+// Draft).
+const RECEIVED_COLUMN = 3;
+
+describe('PurchaseOrderTable received column', () => {
+  it('shows the receiving bar for an order that is partially received', async () => {
+    mockPermissions();
+    const row = await renderWithRow({ ...draftOrder([]), status: 'Partially Received', statusCode: 'PART', receivedPercent: 40 });
+
+    expect(within(row).getByRole('button', { name: 'Receiving progress for PO-1001: 40%. Show details' })).toBeInTheDocument();
+    expect(within(row).getByText('40%')).toBeInTheDocument();
+  });
+
+  it('shows a dash instead of a bar for a draft order', async () => {
+    mockPermissions();
+    const row = await renderWithRow({ ...draftOrder([]), receivedPercent: 0 });
+
+    const receivedCell = row.querySelectorAll('td')[RECEIVED_COLUMN];
+    expect(within(row).queryByRole('button', { name: /Receiving progress/ })).not.toBeInTheDocument();
+    expect(receivedCell).toHaveTextContent('—');
+  });
 });
 
 // Only a super admin may change status from the list; everyone else sees the

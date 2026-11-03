@@ -15,7 +15,7 @@ import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
  *  a variant rather than a second component. */
 type TriggerVariant = 'menu' | 'icon';
 
-const ICON_TRIGGER_CLASSES = 'rounded p-1 text-stone-400 transition-colors hover:bg-destructive/10 hover:text-destructive';
+const ICON_TRIGGER_CLASSES = 'rounded p-1 text-stone-500 transition-colors hover:bg-destructive/10 hover:text-destructive';
 
 // Mirrors DeleteVendorDialog's look, but — unlike it — wires up
 // useModalDialog: every other dialog/drawer in this module traps focus and
@@ -108,7 +108,7 @@ function DeleteAccountDialogContent({ label, del, onClose }: {
             <h3 id="delete-account-dialog-title" className="text-sm font-bold text-stone-900">
               Delete account?
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">This action cannot be undone.</p>
+            <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
           </div>
         </div>
 

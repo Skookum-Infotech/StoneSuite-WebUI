@@ -8,6 +8,7 @@ import type {
   ItemReceiptVoidPayload,
   ItemReceiptSearchRequest,
   ItemReceiptPage,
+  OnOrderSlab,
   SlabSequence,
 } from '@/types/itemReceipt';
 
@@ -94,4 +95,15 @@ export const itemReceiptService = {
         `/tenant/purchase-orders/${purchaseOrderUuid}/next-slab-serial`,
       )
       .then((r) => ({ prefix: r.data.prefix, next: r.data.next })),
+
+  // GET /api/tenant/purchase-orders/{uuid}/on-order-slabs — the slabs this order
+  // put on order when it was sent and that have not arrived yet, so the receiving
+  // form can list them with a tick box each. Gated by the order's own
+  // permission, like nextSlabSerial.
+  onOrderSlabs: (purchaseOrderUuid: string): Promise<OnOrderSlab[]> =>
+    tenantClient
+      .get<{ success: boolean; slabs: OnOrderSlab[] | null }>(
+        `/tenant/purchase-orders/${purchaseOrderUuid}/on-order-slabs`,
+      )
+      .then((r) => r.data.slabs ?? []),
 };

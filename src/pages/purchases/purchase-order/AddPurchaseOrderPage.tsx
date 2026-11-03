@@ -34,6 +34,10 @@ import {
   type PurchaseOrderLineItem,
 } from '@/lib/purchaseOrderForm';
 import { firstInvalidPhoneLabel } from '@/lib/phoneValidation';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromPurchaseOrderForCopy } from '@/lib/purchaseOrderCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { PurchaseOrder } from '@/types/purchaseOrder';
 
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface PurchaseOrderDraft {
@@ -44,7 +48,16 @@ interface PurchaseOrderDraft {
   customFieldValues: Record<string, unknown>;
 }
 
+/** `?copyFrom=<id>` opens the form pre-filled from that purchase order (see CopySeedGate). */
 export default function AddPurchaseOrderPage() {
+  return (
+    <CopySeedGate queryKey="purchase-order" load={(id) => purchaseOrderService.getPurchaseOrder(id)}>
+      {(source) => <AddPurchaseOrderForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddPurchaseOrderForm({ source }: { source?: PurchaseOrder }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
@@ -53,12 +66,15 @@ export default function AddPurchaseOrderPage() {
     'vendor', '/purchases/vendor/new', { resource: 'vendor', action: 'create' },
   );
   const restored = inventoryReturn.restored ?? vendorReturn.restored;
+  const seed = useMemo(() => (source ? fromPurchaseOrderForCopy(source) : null), [source]);
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? purchaseOrderDefaults());
-  const [lineItems, setLineItems] = useState<PurchaseOrderLineItem[]>(restored?.lineItems ?? []);
-  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? null);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(restored?.customFieldValues ?? {});
+  const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? purchaseOrderDefaults());
+  const [lineItems, setLineItems] = useState<PurchaseOrderLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
+  const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? seed?.vendor ?? null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
+    restored?.customFieldValues ?? seed?.customFieldValues ?? {},
+  );
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -151,7 +167,8 @@ export default function AddPurchaseOrderPage() {
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     !review.active || review.hydrated,
-    inventoryReturn.isRestored || vendorReturn.isRestored || (review.active && !documentUsed && !documentFailed),
+    inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed)
+      || (review.active && !documentUsed && !documentFailed),
   );
 
   const headerTaxPercent = parseFloat(String(data.sales_tax_pct ?? '')) || 0;
@@ -204,7 +221,7 @@ export default function AddPurchaseOrderPage() {
           onBack={() => navigate('/purchases/purchase_order')}
           icon={Package}
           title={review.active ? 'New Purchase Order from Document' : 'New Purchase Order'}
-          subtitle="Fields marked * are required."
+          subtitle={source ? copySubtitle(source.purchaseOrderNumber) : 'Fields marked * are required.'}
           actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">

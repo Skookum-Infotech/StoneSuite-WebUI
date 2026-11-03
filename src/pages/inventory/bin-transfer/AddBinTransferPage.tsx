@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { binTransferService } from '@/services/binTransferService';
+import type { BinTransferInput } from '@/types/binTransfer';
 import { BinTransferEditor } from './components/BinTransferEditor';
 
 const LIST_PATH = '/inventory/bin_transfer';
@@ -18,9 +19,18 @@ export default function AddBinTransferPage() {
     onSuccess: (bt) => {
       toast.success(`${bt.number} saved as a draft.`);
       queryClient.invalidateQueries({ queryKey: ['bin-transfers'] });
-      navigate(`${LIST_PATH}/${bt.id}`);
     },
   });
+
+  // Navigating is done here, not in the mutation's onSuccess, so the editor's
+  // unsaved-changes guard can be cleared first. A failure needs no handling:
+  // it is shown through `create.error` and the guard stays armed.
+  async function handleSubmit(input: BinTransferInput, markClean: () => void): Promise<void> {
+    const bt = await create.mutateAsync(input).catch(() => null);
+    if (!bt) return;
+    markClean();
+    navigate(`${LIST_PATH}/${bt.id}`);
+  }
 
   return (
     <BinTransferEditor
@@ -30,7 +40,7 @@ export default function AddBinTransferPage() {
         backLabel: 'Bin Transfers',
         submitLabel: 'Save Draft',
       }}
-      onSubmit={(input) => create.mutate(input)}
+      onSubmit={(input, markClean) => { void handleSubmit(input, markClean); }}
       status={{ isPending: create.isPending, error: create.error }}
       onCancel={() => navigate(LIST_PATH)}
     />

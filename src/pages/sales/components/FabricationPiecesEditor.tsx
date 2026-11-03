@@ -1,10 +1,11 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EMPTY_PIECE_ROW, type FJPieceRow } from '@/lib/fabricationForm';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `piece-${rowCounter}`; }
@@ -89,15 +90,15 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineRow pieceNumber={row.pieceNumber} draft={draft} onChange={updateDraft} sourceOrderItems={sourceOrderItems} />
                   <td className="px-2 py-1.5">
-                    <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove piece">
+                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove piece">
                       <Trash2 className="size-3.5" />
                     </button>
                   </td>
                 </tr>
               ) : (
                 <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
-                  <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.pieceNumber}</td>
-                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.pieceName || <span className="text-stone-300">—</span>}</td>
+                  <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.pieceNumber}</td>
+                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.pieceName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500">{row.pieceType || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.lengthMm || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.widthMm || '—'}</td>
@@ -133,8 +134,8 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
 
       {pieces.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-400">No pieces added yet.</p>
-          <p className="text-2xs text-stone-300">Click <strong className="text-stone-500">+ Add Piece</strong> to add one.</p>
+          <p className="text-xs text-stone-500">No pieces added yet.</p>
+          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Piece</strong> to add one.</p>
         </div>
       )}
 
@@ -170,7 +171,7 @@ function InlineRow({ pieceNumber, draft, onChange, sourceOrderItems }: {
 }) {
   return (
     <>
-      <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{pieceNumber}</td>
+      <td className="px-2.5 py-1.5 text-stone-500 tabular-nums">{pieceNumber}</td>
       <td className="px-2 py-1.5"><input autoFocus type="text" value={draft.pieceName} onChange={(e) => onChange('pieceName', e.target.value)} placeholder="Island Top" className={cn(inlineCls, 'min-w-[110px]')} aria-label="Piece Name" /></td>
       <td className="px-2 py-1.5"><input type="text" value={draft.pieceType} onChange={(e) => onChange('pieceType', e.target.value)} placeholder="countertop" className={cn(inlineCls, 'min-w-[90px]')} aria-label="Piece Type" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.1" value={draft.lengthMm} onChange={(e) => onChange('lengthMm', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-20 text-right')} aria-label="Length mm" /></td>
@@ -180,10 +181,10 @@ function InlineRow({ pieceNumber, draft, onChange, sourceOrderItems }: {
       <td className="px-2 py-1.5"><input type="number" min="0" value={draft.cooktopCutoutCount} onChange={(e) => onChange('cooktopCutoutCount', e.target.value)} className={cn(inlineCls, 'w-14 text-right')} aria-label="Cooktop cutouts" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" value={draft.seamCount} onChange={(e) => onChange('seamCount', e.target.value)} className={cn(inlineCls, 'w-14 text-right')} aria-label="Seams" /></td>
       <td className="px-2 py-1.5">
-        <select value={draft.salesOrderItemUuid ?? ''} onChange={(e) => onChange('salesOrderItemUuid', e.target.value)} className={cn(inlineCls, 'min-w-[150px]')} aria-label="Linked sales order line">
+        <Select value={draft.salesOrderItemUuid ?? ''} onChange={(e) => onChange('salesOrderItemUuid', e.target.value)} className={cn(inlineCls, 'min-w-[150px]')} aria-label="Linked sales order line">
           <option value="">— Not linked —</option>
           {sourceOrderItems.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-        </select>
+        </Select>
       </td>
     </>
   );

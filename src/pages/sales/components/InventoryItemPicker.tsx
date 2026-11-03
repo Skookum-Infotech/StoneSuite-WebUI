@@ -16,7 +16,7 @@ const RESULTS_STALE_MS = 30 * 1000;
 const PANEL_WIDTH = 288; // w-72
 
 const inputCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 export interface InventoryItemPickerHandlers {
   onPick: (item: InventoryItem) => void;
@@ -209,7 +209,7 @@ export function InventoryItemPicker({
         >
           <div role="status">
             {results.length === 0 && shownKits.length === 0 && (searching || !settled) && (
-              <p className="px-3 py-2 text-2xs text-stone-400">Searching inventory…</p>
+              <p className="px-3 py-2 text-2xs text-stone-500">Searching inventory…</p>
             )}
             {nothingFound && (
               <div className="px-3 py-2">
@@ -241,7 +241,7 @@ export function InventoryItemPicker({
                 <Package className="mt-0.5 size-3 shrink-0 text-stone-400" aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-medium text-stone-800">{item.name}</span>
-                  <span className="block truncate font-mono text-2xs text-stone-400">
+                  <span className="block truncate font-mono text-2xs text-stone-500">
                     {item.sku} · ${itemPrice(item, priceKind).toFixed(2)}
                   </span>
                 </span>
@@ -269,7 +269,7 @@ export function InventoryItemPicker({
                       <span className="truncate">{kit.name}</span>{' '}
                       <span className="shrink-0 rounded bg-violet-700 px-1 py-px text-2xs font-bold text-white">KIT</span>
                     </span>{' '}
-                    <span className="block truncate text-2xs text-stone-400">
+                    <span className="block truncate text-2xs text-stone-500">
                       {kit.itemCount} {kit.itemCount === 1 ? 'item' : 'items'}
                     </span>
                   </span>

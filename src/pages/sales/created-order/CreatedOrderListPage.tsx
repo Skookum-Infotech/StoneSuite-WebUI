@@ -67,15 +67,15 @@ function OrderRow({ order }: { order: CreatedOrder }) {
       <td className={CELL_CLS}>
         <p className="font-medium text-stone-800">{builder[0] ?? '—'}</p>
         {builder[1] && <p className="text-stone-500">{builder[1]}</p>}
-        {order.plan && <p className="text-stone-400">Plan {order.plan}</p>}
+        {order.plan && <p className="text-stone-500">Plan {order.plan}</p>}
       </td>
       <td className={CELL_CLS}>
         <p>
-          <span className="text-stone-400">Measure </span>
+          <span className="text-stone-500">Measure </span>
           {listDate(order.measureDate)}
         </p>
         <p>
-          <span className="text-stone-400">Install </span>
+          <span className="text-stone-500">Install </span>
           {listDate(order.installDate)}
         </p>
       </td>

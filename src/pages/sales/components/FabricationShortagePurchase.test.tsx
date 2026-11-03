@@ -1,3 +1,5 @@
+import { pickOption } from '@/test/selectHelpers';
+import userEvent from '@testing-library/user-event';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -38,16 +40,18 @@ describe('Shortage purchase', () => {
     vi.mocked(tenantClient.post).mockResolvedValue({ data: { result: { relatedId: 'po' } } });
     mount();
     fireEvent.click(await screen.findByRole('button', { name: 'Select supplier' }));
-    fireEvent.change(screen.getByLabelText('Measured requirement'), { target: { value: 'first' } });
+    await pickOption(screen.getByLabelText('Measured requirement'), 'first');
     fireEvent.change(screen.getByLabelText('Quantity (catalog units)'), { target: { value: '40' } });
     fireEvent.change(screen.getByLabelText('Quoted unit price'), { target: { value: '12' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add measured requirement' }));
     expect(screen.getByRole('button', { name: 'Create linked draft purchase order' })).toBeDisabled();
-    expect(screen.getAllByRole('option', { name: 'Line 1 · Kitchen' })[1]).toBeDisabled();
+    await userEvent.click(screen.getAllByLabelText('Measured requirement')[1]);
+    expect(screen.getAllByRole('option', { name: 'Line 1 · Kitchen' })[0]).toBeDisabled();
+    await userEvent.keyboard('{Escape}');
     fireEvent.click(screen.getByRole('button', { name: 'Remove purchase line 2' }));
     expect(screen.getByLabelText('Quantity (catalog units)')).toHaveValue(40);
     fireEvent.click(screen.getByRole('button', { name: 'Add measured requirement' }));
-    fireEvent.change(screen.getAllByLabelText('Measured requirement')[1], { target: { value: 'second' } });
+    await pickOption(screen.getAllByLabelText('Measured requirement')[1], 'second');
     fireEvent.change(screen.getAllByLabelText('Quantity (catalog units)')[1], { target: { value: '20' } });
     fireEvent.change(screen.getAllByLabelText('Quoted unit price')[1], { target: { value: '15' } });
     fireEvent.change(screen.getByLabelText('Why is more material needed?'), { target: { value: 'Both rooms need material' } });
@@ -69,7 +73,7 @@ describe('Shortage purchase', () => {
     vi.mocked(tenantClient.post).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: { result: { relatedId: 'po' } } });
     mount();
     fireEvent.click(await screen.findByRole('button', { name: 'Select supplier' }));
-    fireEvent.change(screen.getByLabelText('Measured requirement'), { target: { value: 'line' } });
+    await pickOption(screen.getByLabelText('Measured requirement'), 'line');
     fireEvent.change(screen.getByLabelText('Quantity (catalog units)'), { target: { value: '40' } });
     fireEvent.change(screen.getByLabelText('Quoted unit price'), { target: { value: '12' } });
     fireEvent.change(screen.getByLabelText('Expected slabs (optional)'), { target: { value: '1' } });

@@ -4,10 +4,10 @@ import userEvent from '@testing-library/user-event';
 
 import { ApplyToAllPanel } from './ApplyToAllPanel';
 
-function renderPanel(slabCount = 3) {
+function renderPanel(slabCount = 3, dimensionUnit?: string) {
   const onApply = vi.fn();
   const onClose = vi.fn();
-  render(<ApplyToAllPanel slabCount={slabCount} onApply={onApply} onClose={onClose} />);
+  render(<ApplyToAllPanel slabCount={slabCount} dimensionUnit={dimensionUnit} onApply={onApply} onClose={onClose} />);
   return { onApply, onClose, user: userEvent.setup() };
 }
 
@@ -80,5 +80,35 @@ describe('ApplyToAllPanel', () => {
     const { onClose, user } = renderPanel();
     await user.click(screen.getByRole('button', { name: 'Done' }));
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('ApplyToAllPanel — thickness', () => {
+  it('stamps a thickness on every slab, stored in millimetres', async () => {
+    const { onApply, user } = renderPanel(3, 'in');
+    await user.type(screen.getByRole('spinbutton', { name: 'Thickness (in) for all slabs' }), '1.25');
+
+    await user.click(screen.getByRole('button', { name: 'Apply to all slabs' }));
+
+    expect(onApply).toHaveBeenCalledWith({ thicknessMm: '31.75' });
+  });
+
+  it('works in millimetres when the item is measured in them', async () => {
+    const { onApply, user } = renderPanel(3, 'mm');
+    await user.type(screen.getByRole('spinbutton', { name: 'Thickness (mm) for all slabs' }), '30');
+
+    await user.click(screen.getByRole('button', { name: 'Apply to all slabs' }));
+
+    expect(onApply).toHaveBeenCalledWith({ thicknessMm: '30' });
+  });
+
+  it('can go together with a lot', async () => {
+    const { onApply, user } = renderPanel(3, 'mm');
+    await user.type(screen.getByRole('textbox', { name: 'Lot for all slabs' }), 'B-1');
+    await user.type(screen.getByRole('spinbutton', { name: 'Thickness (mm) for all slabs' }), '20');
+
+    await user.click(screen.getByRole('button', { name: 'Apply to all slabs' }));
+
+    expect(onApply).toHaveBeenCalledWith({ lot: 'B-1', thicknessMm: '20' });
   });
 });

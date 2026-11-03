@@ -6,6 +6,8 @@ import type {
   AuthResponse,
   UserProfile,
   IdentifyResult,
+  MfaCodeSent,
+  MfaStatus,
   PortalWorkspace,
 } from '@/types/auth';
 import type { SAMLProvider } from '@/types/tenant';
@@ -35,6 +37,46 @@ export const authService = {
   // the user's tenant context + platform-admin flag, used to gate owner-only UI.
   login: async (data: LoginCredentials): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>('/auth/tenant-login', data);
+    return response.data;
+  },
+
+  // Second sign-in step for an account with two-step verification on: trades
+  // the emailed code (and the challenge token login returned) for the same
+  // response login gives when there is no code step.
+  verifyMfa: async (challengeToken: string, code: string): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/mfa/verify', { challengeToken, code });
+    return response.data;
+  },
+
+  // Emails a fresh code for a sign-in challenge. Refused (429) until the
+  // cooldown from the last send has passed.
+  resendMfa: async (challengeToken: string): Promise<MfaCodeSent> => {
+    const response = await apiClient.post<MfaCodeSent>('/auth/mfa/resend', { challengeToken });
+    return response.data;
+  },
+
+  // Account Settings: whether two-step verification is on for the signed-in
+  // staff user, and whether it can be (not for single sign-on accounts).
+  getMfaStatus: async (): Promise<MfaStatus> => {
+    const response = await apiClient.get<MfaStatus>('/auth/mfa');
+    return response.data;
+  },
+
+  // Emails the code that confirms turning two-step verification on. Calling it
+  // again sends a fresh code and retires the previous one.
+  startEnableMfa: async (): Promise<MfaCodeSent> => {
+    const response = await apiClient.post<MfaCodeSent>('/auth/mfa/enable/start');
+    return response.data;
+  },
+
+  confirmEnableMfa: async (code: string): Promise<{ success: boolean; enabled: boolean }> => {
+    const response = await apiClient.post('/auth/mfa/enable/confirm', { code });
+    return response.data;
+  },
+
+  // Needs the current password so a session left open can't drop the second step.
+  disableMfa: async (currentPassword: string): Promise<{ success: boolean; enabled: boolean }> => {
+    const response = await apiClient.post('/auth/mfa/disable', { currentPassword });
     return response.data;
   },
 

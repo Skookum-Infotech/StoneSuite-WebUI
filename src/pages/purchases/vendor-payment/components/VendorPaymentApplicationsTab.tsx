@@ -89,7 +89,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
                   </button>
                 </td>
                 <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(app.amount)}</td>
-                <td className="px-3 py-2.5 tabular-nums text-stone-400">{fmtDate(app.createdAt)}</td>
+                <td className="px-3 py-2.5 tabular-nums text-stone-500">{fmtDate(app.createdAt)}</td>
                 <td className="px-3 py-2.5 text-right">
                   {canEdit && (
                     <button
@@ -108,7 +108,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
             ))}
             {payment.applications.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-stone-400">
+                <td colSpan={4} className="py-8 text-center text-stone-500">
                   Not applied to any vendor bills yet.
                 </td>
               </tr>

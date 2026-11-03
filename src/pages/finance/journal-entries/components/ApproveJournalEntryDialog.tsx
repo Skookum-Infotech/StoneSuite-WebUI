@@ -74,7 +74,7 @@ export function ApproveJournalEntryDialog({ journalEntryId, onApproved }: {
               </div>
               <div>
                 <h3 id="approve-je-dialog-title" className="text-sm font-bold text-stone-900">Approve this journal entry?</h3>
-                <p className="text-xs text-stone-400 mt-0.5">It can then be posted to the ledger.</p>
+                <p className="text-xs text-stone-500 mt-0.5">It can then be posted to the ledger.</p>
               </div>
             </div>
 

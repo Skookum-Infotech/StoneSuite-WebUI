@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { documentService } from '@/services/documentService';
 import { documentSendsKey } from '@/lib/documentSends';
+import { recordEmailKey } from '@/lib/recordEmail';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { DocumentSendResult } from '@/services/documentService';
 
@@ -76,6 +77,8 @@ export function SendToCustomerDialog({
       // The send is recorded whether or not the email went, so the email
       // history changes either way.
       void queryClient.invalidateQueries({ queryKey: documentSendsKey(recordId) });
+      // ...and so does the record's Communication tab, which opens with this email.
+      void queryClient.invalidateQueries({ queryKey: recordEmailKey(recordId) });
       if (result.emailSent === false) {
         // The send is recorded, but reporting "Sent to …" here would be false.
         // Keep the dialog open with the reason so the user can see it and retry.
@@ -147,7 +150,7 @@ export function SendToCustomerDialog({
             <h3 id="send-to-recipient-dialog-title" className="text-sm font-bold text-stone-900">
               {copy.title}
             </h3>
-            <p className="text-xs text-stone-400 mt-0.5">{resend ? 'An email with this order will be sent again.' : 'An email with this order will be sent.'}</p>
+            <p className="text-xs text-stone-500 mt-0.5">{resend ? 'An email with this order will be sent again.' : 'An email with this order will be sent.'}</p>
           </div>
         </div>
 

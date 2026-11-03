@@ -61,7 +61,7 @@ export function AreaFields({ area, errors, onChange }: AreaFieldsProps) {
               />
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-stone-400"
+                className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-stone-500"
               >
                 in
               </span>

@@ -29,7 +29,7 @@ export function PasswordInput({
       {withLockIcon && (
         <Lock
           aria-hidden="true"
-          className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300"
+          className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400"
         />
       )}
       <Input
@@ -42,7 +42,7 @@ export function PasswordInput({
         onClick={() => setVisible((v) => !v)}
         aria-label={`${visible ? 'Hide' : 'Show'} ${toggleLabel}`}
         aria-controls={inputProps.id}
-        className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-sm text-stone-400 transition-colors hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-sm text-stone-500 transition-colors hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <Icon aria-hidden="true" className="size-4" />
       </button>

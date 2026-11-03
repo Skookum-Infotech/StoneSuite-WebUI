@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { downloadServerDocPdf } from './serverDocPdf';
 import { tenantClient } from '@/api/tenantClient';

@@ -10,23 +10,30 @@ vi.mock('@/services/authService', () => ({
 
 import { PasswordStep } from './PasswordStep'
 import { authService } from '@/services/authService'
-import type { AuthResponse } from '@/types/auth'
+import type { AuthResponse, MfaChallenge } from '@/types/auth'
 
 function renderStep(
   overrides: Partial<{
     email: string
     onSuccess: (response: AuthResponse) => void
+    onMfaRequired: (challenge: MfaChallenge) => void
     onBack: () => void
   }> = {},
 ) {
   const onSuccess = overrides.onSuccess ?? vi.fn()
+  const onMfaRequired = overrides.onMfaRequired ?? vi.fn()
   const onBack = overrides.onBack ?? vi.fn()
   render(
     <MemoryRouter>
-      <PasswordStep email={overrides.email ?? 'jane@acme.com'} onSuccess={onSuccess} onBack={onBack} />
+      <PasswordStep
+        email={overrides.email ?? 'jane@acme.com'}
+        onSuccess={onSuccess}
+        onMfaRequired={onMfaRequired}
+        onBack={onBack}
+      />
     </MemoryRouter>,
   )
-  return { onSuccess, onBack }
+  return { onSuccess, onMfaRequired, onBack }
 }
 
 const successResponse: AuthResponse = {
@@ -71,6 +78,35 @@ describe('PasswordStep', () => {
       password: 'hunter2',
       rememberMe: false,
     })
+  })
+
+  it('moves to the code step, not the app, when the account asks for an emailed code', async () => {
+    const user = userEvent.setup()
+    vi.mocked(authService.login).mockResolvedValue({
+      success: true,
+      mfaRequired: true,
+      challengeToken: 'chal-1',
+      maskedEmail: 'j•••@acme.com',
+      codeLength: 6,
+      expiresInSeconds: 600,
+      resendAfterSeconds: 60,
+    })
+    const { onSuccess, onMfaRequired } = renderStep()
+
+    await user.type(screen.getByLabelText('Password'), 'hunter2')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    await vi.waitFor(() =>
+      expect(onMfaRequired).toHaveBeenCalledWith({
+        success: true,
+        challengeToken: 'chal-1',
+        maskedEmail: 'j•••@acme.com',
+        codeLength: 6,
+        expiresInSeconds: 600,
+        resendAfterSeconds: 60,
+      }),
+    )
+    expect(onSuccess).not.toHaveBeenCalled()
   })
 
   it('shows the server message when login reports failure without a token', async () => {

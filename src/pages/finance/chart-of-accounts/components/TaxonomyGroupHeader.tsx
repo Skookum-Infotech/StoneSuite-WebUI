@@ -20,7 +20,7 @@ export interface TaxonomyGroupActions {
 
 const LABEL_CLASSES: Record<TaxonomyGroup['level'], string> = {
   category: 'text-xs font-semibold text-stone-700',
-  subcategory: 'text-2xs font-semibold uppercase tracking-wide text-stone-400',
+  subcategory: 'text-2xs font-semibold uppercase tracking-wide text-stone-500',
 };
 
 const NOUN: Record<TaxonomyGroup['level'], string> = {
@@ -65,7 +65,7 @@ export function TaxonomyGroupHeader({ group, collapsed, perms, actions }: {
             onClick={() => actions.onAddAccount(group)}
             aria-label={`Add an account under ${label}`}
             title={`Add account under this ${NOUN[group.level]}`}
-            className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
           >
             <Plus className="size-3.5" />
           </button>
@@ -76,7 +76,7 @@ export function TaxonomyGroupHeader({ group, collapsed, perms, actions }: {
             onClick={() => actions.onAddSubCategory(group)}
             aria-label={`Add a sub-category under ${label}`}
             title="Add sub-category"
-            className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
           >
             <FolderPlus className="size-3.5" />
           </button>
@@ -87,7 +87,7 @@ export function TaxonomyGroupHeader({ group, collapsed, perms, actions }: {
             onClick={() => actions.onRename(group)}
             aria-label={`Rename ${label}`}
             title={`Rename ${NOUN[group.level]}`}
-            className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
           >
             <Pencil className="size-3.5" />
           </button>

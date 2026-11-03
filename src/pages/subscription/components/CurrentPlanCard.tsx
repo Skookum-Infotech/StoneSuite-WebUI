@@ -39,7 +39,7 @@ export function CurrentPlanCard({ plan, onUpgrade, onCancel }: CurrentPlanCardPr
             </div>
             <p className="text-xs text-stone-500 mt-1">
               {isEnterprise ? 'Custom pricing' : `$${plan.tier.pricePerMonth}/mo`}
-              <span className="mx-1.5 text-stone-300">•</span>
+              <span className="mx-1.5 text-stone-500">•</span>
               Renews {fmtDate(plan.renewalDate)}
             </p>
           </div>

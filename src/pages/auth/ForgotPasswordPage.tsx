@@ -237,8 +237,8 @@ export default function ForgotPasswordPage() {
                   <MailCheck className="size-8 text-brand-dark" />
                 </div>
                 <h2 className="font-brand text-2xl font-bold tracking-tight text-stone-950">Request submitted</h2>
-                <p className="mt-2 text-sm font-light text-stone-400">{serverMessage}</p>
-                <p className="mt-3 text-xs leading-relaxed text-stone-400">
+                <p className="mt-2 text-sm font-light text-stone-500">{serverMessage}</p>
+                <p className="mt-3 text-xs leading-relaxed text-stone-500">
                   If a link was sent, it expires in 24 hours. Check your spam folder or{' '}
                   <button
                     type="button"
@@ -277,16 +277,16 @@ export default function ForgotPasswordPage() {
                     />
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight text-stone-950">Forgot password?</h2>
-                  <p className="mt-2 text-sm font-light text-stone-400">Enter your email and we'll send you a reset link.</p>
+                  <p className="mt-2 text-sm font-light text-stone-500">Enter your email and we'll send you a reset link.</p>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+                    <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
                       Email
                     </Label>
                     <div className="relative">
-                      <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+                      <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
                       <Input
                         id="email"
                         type="email"
@@ -295,7 +295,7 @@ export default function ForgotPasswordPage() {
                         aria-invalid={Boolean(errors.email)}
                         aria-describedby={errors.email ? 'email-error' : undefined}
                         {...register('email')}
-                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+                        className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
                       />
                     </div>
                     {errors.email && <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>}
@@ -324,7 +324,7 @@ export default function ForgotPasswordPage() {
                 <div className="mt-6 text-center">
                   <Link
                     to="/auth/login"
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors duration-150 hover:text-stone-900"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors duration-150 hover:text-stone-900"
                     aria-label="Go back to sign in"
                   >
                     <ArrowLeft className="size-3.5" />

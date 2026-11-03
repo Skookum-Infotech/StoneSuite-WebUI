@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -62,7 +63,7 @@ export function ExpenseFilterDrawer({ onClose, value, onApply }: {
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-4" />
           </button>
@@ -77,12 +78,12 @@ export function ExpenseFilterDrawer({ onClose, value, onApply }: {
           </FilterField>
 
           <FilterField label="Claimant">
-            <select value={draft.claimantId} onChange={(e) => set('claimantId', e.target.value)} className={fieldCls} aria-label="Claimant">
+            <Select value={draft.claimantId} onChange={(e) => set('claimantId', e.target.value)} className={fieldCls} aria-label="Claimant">
               <option value="">— Any —</option>
               {(lookups?.employees ?? []).map((emp) => (
                 <option key={emp.id} value={emp.id}>{emp.name}</option>
               ))}
-            </select>
+            </Select>
           </FilterField>
 
           <FilterField label="Total">

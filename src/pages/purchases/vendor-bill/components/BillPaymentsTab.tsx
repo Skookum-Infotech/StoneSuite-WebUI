@@ -46,7 +46,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
   });
 
   if (!vendorBillId) {
-    return <p className="py-12 text-center text-sm text-stone-400">Payments will be available after saving the vendor bill.</p>;
+    return <p className="py-12 text-center text-sm text-stone-500">Payments will be available after saving the vendor bill.</p>;
   }
 
   const payments = ledger?.payments ?? [];
@@ -90,9 +90,9 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
         <>
           {payments.length === 0 && billPayments.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
-              <Wallet className="size-6 text-stone-300" aria-hidden="true" />
-              <p className="text-sm text-stone-400">No vendor payments applied to this bill yet.</p>
-              <p className="text-xs text-stone-400">
+              <Wallet className="size-6 text-stone-400" aria-hidden="true" />
+              <p className="text-sm text-stone-500">No vendor payments applied to this bill yet.</p>
+              <p className="text-xs text-stone-500">
                 Bills are settled by applying a vendor payment — an approved bill with a balance due can be paid from the Vendor Payments module.
               </p>
             </div>
@@ -119,14 +119,14 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
                         </button>
                       </td>
                       <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums whitespace-nowrap">{fmtDate(entry.appliedAt)}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.appliedAt)}</td>
                     </tr>
                   ))}
                   {billPayments.map((entry) => (
                     <tr key={entry.id} className="hover:bg-stone-50/50 transition-colors">
                       <td className="px-3 py-2.5 text-stone-600">{entry.memo || entry.method || 'Recorded on bill'}</td>
                       <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
-                      <td className="px-3 py-2.5 text-stone-400 tabular-nums whitespace-nowrap">{fmtDate(entry.paidAt)}</td>
+                      <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.paidAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -163,7 +163,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
                         </td>
                         <td className="px-3 py-2.5 font-semibold text-stone-900 tabular-nums whitespace-nowrap">{currency(entry.amount)}</td>
                         <td className="px-3 py-2.5 text-stone-500 max-w-[220px] truncate">{entry.reason || '—'}</td>
-                        <td className="px-3 py-2.5 text-stone-400 tabular-nums whitespace-nowrap">{fmtDate(entry.refundedAt)}</td>
+                        <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(entry.refundedAt)}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -8,7 +8,7 @@ import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { parseCoaError } from '@/lib/coaErrors';
 import { attrFieldsFor, ACCOUNT_NUMBER_LAST4_KEY } from '@/lib/coaAttributes';
 import { placementLabel, placementOf } from '@/lib/coaPlacement';
@@ -163,26 +163,23 @@ export default function AccountDetailPage() {
         statusBadge={<Badge color={statusColor}>{statusLabel}</Badge>}
       />
 
-      <div role="tablist" aria-label="Account detail" className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            id={`account-tab-${tab.key}`}
-            aria-selected={activeTab === tab.key}
-            aria-controls={`account-tabpanel-${tab.key}`}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" aria-label="Account detail" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              id={`account-tab-${tab.key}`}
+              aria-selected={activeTab === tab.key}
+              aria-controls={`account-tabpanel-${tab.key}`}
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -206,7 +203,7 @@ export default function AccountDetailPage() {
               <OverviewRow label="Depth" value={account.depth === 0 ? 'Top-level account' : 'Sub-account'} />
               {attributeFields.length > 0 && (
                 <div className="border-t border-stone-100 pt-3 space-y-2">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">Attributes</p>
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Attributes</p>
                   {attributeFields.map((f) => (
                     <OverviewRow key={f.key} label={f.label} value={account.attributes[f.key] || '—'} />
                   ))}
@@ -231,7 +228,7 @@ export default function AccountDetailPage() {
 
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canUpdate && (
                 <button
@@ -268,7 +265,7 @@ export default function AccountDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={statusColor}>{statusLabel}</Badge>

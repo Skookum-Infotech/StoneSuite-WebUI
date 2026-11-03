@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -82,7 +83,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
           </div>
           <div>
             <h3 id="apply-existing-payment-title" className="text-sm font-bold text-stone-900">Apply existing payment</h3>
-            <p className="text-xs text-stone-400 mt-0.5">Balance due: {currency(balanceDue)}</p>
+            <p className="text-xs text-stone-500 mt-0.5">Balance due: {currency(balanceDue)}</p>
           </div>
         </div>
 
@@ -91,12 +92,12 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
         ) : error ? (
           <p role="alert" className="py-4 text-xs text-destructive">{apiErrorMessage(error, 'Failed to load payments.')}</p>
         ) : payments.length === 0 ? (
-          <p className="py-4 text-sm text-stone-400">{vendor.name} has no payments with an unapplied balance.</p>
+          <p className="py-4 text-sm text-stone-500">{vendor.name} has no payments with an unapplied balance.</p>
         ) : (
           <div className="space-y-3">
             <div>
               <label htmlFor="apply-existing-payment" className={fieldLabelCls}>Payment</label>
-              <select
+              <Select
                 id="apply-existing-payment"
                 value={paymentId}
                 onChange={(e) => choose(e.target.value)}
@@ -108,7 +109,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
                     {p.vendorPaymentNumber || 'Payment'} — {currency(p.unappliedAmount)} unapplied
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label htmlFor="apply-existing-amount" className={fieldLabelCls}>Amount</label>

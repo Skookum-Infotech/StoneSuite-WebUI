@@ -269,7 +269,7 @@ function PortalUserRow({
           {user.fullName && (
             <p className="text-xs text-stone-500 truncate">{user.email}</p>
           )}
-          <p className="text-2xs text-stone-400 mt-0.5">
+          <p className="text-2xs text-stone-500 mt-0.5">
             Granted {fmtDate(user.createdAt)}
           </p>
           {(user.inviteStatus === "pending" || user.inviteStatus === "expired") && (

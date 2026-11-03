@@ -104,7 +104,7 @@ describe('Inventory Items page — Kits tab', () => {
     const user = userEvent.setup();
     const router = renderList('/inventory/item?tab=kits');
 
-    await user.click(await screen.findByRole('button', { name: 'Kitchen' }));
+    await user.click(await screen.findByRole('link', { name: 'Kitchen' }));
     expect(await screen.findByText('Edit kit page')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/inventory/kit/k1');
 

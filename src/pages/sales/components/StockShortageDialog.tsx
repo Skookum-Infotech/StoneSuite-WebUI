@@ -60,7 +60,7 @@ export function StockShortageDialog({ shortages, onClose, onRestock }: {
                 <tr key={s.itemId}>
                   <td className="px-3 py-2">
                     <p className="font-semibold text-stone-900">{s.name}</p>
-                    <p className="font-mono text-2xs text-stone-400">{s.sku}</p>
+                    <p className="font-mono text-2xs text-stone-500">{s.sku}</p>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-stone-700">{formatStockQty(s.requested, s.unitCode)}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-stone-700">{formatStockQty(s.available, s.unitCode)}</td>

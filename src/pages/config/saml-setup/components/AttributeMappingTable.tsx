@@ -14,7 +14,7 @@ export function AttributeMappingTable({ nameHeader, valueHeader, rows }: Attribu
     <div className="overflow-hidden rounded-lg border border-stone-200">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="bg-stone-50 text-2xs font-semibold uppercase tracking-wide text-stone-400">
+          <tr className="bg-stone-50 text-2xs font-semibold uppercase tracking-wide text-stone-500">
             <th scope="col" className="px-3 py-2 font-semibold">
               {nameHeader}
             </th>

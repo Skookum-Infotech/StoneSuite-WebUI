@@ -20,7 +20,7 @@ import {
 } from '@/lib/estimateForm';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all no-spinner';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all no-spinner';
 
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `li-${rowCounter}`; }
@@ -192,15 +192,15 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
                 <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
-                    <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label="Remove">
+                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
                     </button>
                   </td>
                 </tr>
               ) : (
                 <tr className={cn('hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100', row.kitId && KIT_ROW_CLS)}>
-                  <td className="px-2.5 py-2.5 text-stone-400 tabular-nums">{row.lineNo}</td>
-                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-300">—</span>}</td>
+                  <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.lineNo}</td>
+                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
                   <LineDimensionViewCells length={row.length} width={row.width} slabs={row.slabs} unit={row.dimensionUnit} />
@@ -209,14 +209,14 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.unitPrice ? `$${parseFloat(row.unitPrice).toFixed(2)}` : '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{row.discount ? `${row.discount}%` : '0%'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-700 font-medium">{row.amount ? `$${row.amount}` : '—'}</td>
-                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-400">{headerTaxPercent}%</td>
+                  <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{headerTaxPercent}%</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{row.total ? `$${row.total}` : '—'}</td>
                   <td className={LINE_ACTIONS_CELL_CLS}>
                     <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => startEdit(row)} className="text-stone-300 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
+                      <button type="button" onClick={() => startEdit(row)} className="text-stone-500 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
-                      <button type="button" onClick={() => remove(row.id)} className="text-stone-300 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
+                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
@@ -237,8 +237,8 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
 
       {items.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-400">No line items yet.</p>
-          <p className="text-2xs text-stone-300">Click <strong className="text-stone-500">+ Add Line</strong> to add an item.</p>
+          <p className="text-xs text-stone-500">No line items yet.</p>
+          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Line</strong> to add an item.</p>
         </div>
       )}
 
@@ -289,26 +289,26 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
   const sized = isSized(draft, draft.units);
   return (
     <>
-      <td className="px-2.5 py-1.5 text-stone-400 tabular-nums">{lineNo}</td>
+      <td className="px-2.5 py-1.5 text-stone-500 tabular-nums">{lineNo}</td>
       <td className="px-2 py-1.5">
         <InventoryItemPicker {...picker} value={draft.itemName} className="min-w-[150px]" />
       </td>
       <td className="px-2 py-1.5">
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
-      <td className="px-2 py-1.5 text-stone-400 font-mono text-2xs">{draft.itemSku || '—'}</td>
+      <td className="px-2 py-1.5 text-stone-500 font-mono text-2xs">{draft.itemSku || '—'}</td>
       <LineDimensionInputCells
         dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '' }}
         unit={normalizeUnit(draft.dimensionUnit)}
         enabled={isAreaUnit(draft.units)}
         onChange={onChange}
       />
-      <td className="px-2 py-1.5 text-stone-400 text-2xs">{draft.units || '—'}</td>
+      <td className="px-2 py-1.5 text-stone-500 text-2xs">{draft.units || '—'}</td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="any" value={draft.quantity} readOnly={sized} title={sized ? 'Worked out from length × width × slabs' : undefined} onChange={(e) => onChange('quantity', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-16 text-right', sized && 'cursor-default bg-stone-50 text-stone-500')} aria-label="Quantity" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" step="0.01" value={draft.unitPrice} onChange={(e) => onChange('unitPrice', e.target.value)} placeholder="0.00" className={cn(inlineCls, 'w-20 text-right')} aria-label="Unit Price" /></td>
       <td className="px-2 py-1.5"><input type="number" min="0" max="100" step="any" value={draft.discount} onChange={(e) => onChange('discount', e.target.value)} placeholder="0" className={cn(inlineCls, 'w-14 text-right')} aria-label="Discount %" /></td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.amount ? `$${draft.amount}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-500 cursor-default text-right')} aria-label="Amount" /></td>
-      <td className="px-2 py-1.5 text-stone-400 text-2xs text-right">—</td>
+      <td className="px-2 py-1.5 text-stone-500 text-2xs text-right">—</td>
       <td className="px-2 py-1.5"><input type="text" readOnly value={draft.total ? `$${draft.total}` : ''} className={cn(inlineCls, 'w-20 bg-stone-50 text-stone-800 font-semibold cursor-default text-right')} aria-label="Total" /></td>
     </>
   );

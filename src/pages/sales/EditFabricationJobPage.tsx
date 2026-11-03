@@ -13,6 +13,8 @@ import { Spinner, ErrorNote } from '@/components/tenant/ui';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { FabricationJobFormBody } from './components/FabricationJobFormBody';
 import { FabricationStatusControl } from './components/FabricationStatusControl';
 import { FabricationHoldResumeControl } from './components/FabricationHoldResumeControl';
@@ -80,6 +82,10 @@ export default function EditFabricationJobPage() {
     [job],
   );
 
+  // Status changes are saved by their own transition mutation the moment they are
+  // picked, so they are excluded from the snapshot — only unsaved form edits count.
+  const guard = useUnsavedChangesGuard({ data, customFieldValues }, Boolean(mapped));
+
   function applyUpdatedJob(updated: FabricationJob) {
     queryClient.setQueryData(['fabrication-job', id], updated);
     queryClient.invalidateQueries({ queryKey: ['fabrication-jobs'] });
@@ -104,6 +110,7 @@ export default function EditFabricationJobPage() {
     },
     onSuccess: (updated) => {
       applyUpdatedJob(updated);
+      guard.markClean();
       navigate('/sales/installation');
     },
   });
@@ -121,6 +128,7 @@ export default function EditFabricationJobPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="flex flex-col flex-1 min-h-0"

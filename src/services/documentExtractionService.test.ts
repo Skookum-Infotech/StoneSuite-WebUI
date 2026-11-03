@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { classifyUploadStatus, attachmentService, UploadError } from './attachmentService';
-import { sha256Hex } from './documentExtractionService';
+import { AxiosError } from 'axios';
+import { tenantClient } from '@/api/tenantClient';
+import { documentExtractionService, sha256Hex } from './documentExtractionService';
 
 describe('sha256Hex', () => {
   it.each([
@@ -75,5 +77,35 @@ describe('attachmentService.uploadToR2 error classification', () => {
     const ctrl = new AbortController();
     ctrl.abort();
     await expect(attachmentService.uploadToR2('https://r2/x', file, undefined, ctrl.signal)).rejects.toMatchObject({ kind: 'aborted' });
+  });
+});
+
+describe('documentExtractionService.proposeEntity', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('POSTs overrides to the encoded propose path and returns the action', async () => {
+    const action = { id: 'pa-1', status: 'pending' };
+    const post = vi.spyOn(tenantClient, 'post').mockResolvedValue({ data: { success: true, action } });
+    const res = await documentExtractionService.proposeEntity('ext 1', 'vendor:acme/co', { contactEmail: 'a@b.co' });
+    expect(res).toBe(action);
+    expect(post).toHaveBeenCalledWith(
+      '/tenant/document-extractions/ext%201/proposed-entities/vendor%3Aacme%2Fco/propose',
+      { overrides: { contactEmail: 'a@b.co' } },
+    );
+  });
+
+  it('sends an empty body when there are no overrides', async () => {
+    const post = vi.spyOn(tenantClient, 'post').mockResolvedValue({ data: { success: true, action: {} } });
+    await documentExtractionService.proposeEntity('e', 'k');
+    expect(post).toHaveBeenCalledWith('/tenant/document-extractions/e/proposed-entities/k/propose', {});
+  });
+
+  it.each([403, 404, 409, 422])('maps a %i to an ExtractionApiError with the server message', async (status) => {
+    const err = new AxiosError('Request failed');
+    err.response = { status, data: { success: false, message: `msg ${status}` } } as never;
+    vi.spyOn(tenantClient, 'post').mockRejectedValue(err);
+    await expect(documentExtractionService.proposeEntity('e', 'k')).rejects.toMatchObject({
+      name: 'ExtractionApiError', status, message: `msg ${status}`,
+    });
   });
 });

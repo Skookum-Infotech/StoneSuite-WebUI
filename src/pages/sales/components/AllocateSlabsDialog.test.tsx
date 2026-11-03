@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -119,7 +120,7 @@ describe('AllocateSlabsDialog', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole('checkbox', { name: 'Select PO-1-001' }));
 
-    await user.selectOptions(screen.getByLabelText('Piece to allocate to'), 'piece-1');
+    await pickOption(screen.getByLabelText('Piece to allocate to'), 'piece-1');
     await user.click(screen.getByRole('button', { name: 'Allocate 1 slab' }));
 
     await waitFor(() => expect(fabricationService.allocateSlab).toHaveBeenCalledWith('job-1', 'big', 'piece-1'));

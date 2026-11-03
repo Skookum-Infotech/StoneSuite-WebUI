@@ -75,7 +75,7 @@ export function PostJournalEntryDialog({ journalEntryId, onPosted }: {
               </div>
               <div>
                 <h3 id="post-je-dialog-title" className="text-sm font-bold text-stone-900">Post this journal entry?</h3>
-                <p className="text-xs text-stone-400 mt-0.5">This creates a real ledger entry and updates both accounts&apos; balances.</p>
+                <p className="text-xs text-stone-500 mt-0.5">This creates a real ledger entry and updates both accounts&apos; balances.</p>
               </div>
             </div>
 

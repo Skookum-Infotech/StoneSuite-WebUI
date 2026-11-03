@@ -1,0 +1,547 @@
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+vi.mock('@/services/recordEmailService', () => ({
+  recordEmailService: { list: vi.fn(), reply: vi.fn(), downloadAttachment: vi.fn() },
+}));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
+import { RecordCommunicationTab } from './RecordCommunicationTab';
+import { recordEmailService } from '@/services/recordEmailService';
+import { toast } from 'sonner';
+import type { CommunicationAudience, RecordEmailMessage, RecordEmailThread } from '@/types/recordEmail';
+
+const ORDER_ID = 'so-1';
+const CUSTOMER = 'priya@gmail.com';
+
+function msg(over: Partial<RecordEmailMessage> = {}): RecordEmailMessage {
+  return {
+    id: 'm1', recordId: ORDER_ID, workflowKey: 'sales_order', direction: 'out',
+    fromName: 'Harish Narne', fromEmail: 'harish@acme.com', to: CUSTOMER, cc: '',
+    subject: 'Your Sales Order SO-1', body: 'Hello Priya, your order is ready.', attachmentCount: 0, attachments: [], internal: false,
+    createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(), ...over,
+  };
+}
+
+function thread(over: Partial<RecordEmailThread> = {}): RecordEmailThread {
+  return { enabled: true, attachmentsEnabled: true, replyTo: CUSTOMER, messages: [msg()], ...over };
+}
+
+function renderTab(canReply = true, audience: CommunicationAudience = 'customer') {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RecordCommunicationTab recordId={ORDER_ID} audience={audience} canReply={canReply} />
+    </QueryClientProvider>,
+  );
+}
+
+const replyBox = () => screen.getByRole('textbox');
+const sendButton = () => screen.getByRole('button', { name: /^(Send reply|Save internal note)$/ });
+const internalSwitch = () => screen.getByRole('switch', { name: 'Internal only' });
+
+// Radix's Switch (Internal only) measures itself with a ResizeObserver, which
+// jsdom does not provide.
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
+beforeAll(() => {
+  vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(recordEmailService.reply).mockResolvedValue({});
+});
+
+describe('RecordCommunicationTab conversation', () => {
+  it('tells staff how to start when there are no emails yet', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ replyTo: '', messages: [] }));
+    renderTab();
+
+    expect(await screen.findByText('No emails yet')).toBeInTheDocument();
+  });
+
+  it('reads oldest first with the newest at the bottom, staff and customer told apart', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [
+        msg({ id: 'm1', body: 'Hello Priya, your order is ready.' }),
+        msg({
+          id: 'm2', direction: 'in', fromName: 'Priya Shah', fromEmail: CUSTOMER, to: '',
+          body: 'Can you install on Friday?', attachmentCount: 2,
+          createdAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+        }),
+      ],
+    }));
+    renderTab();
+
+    const items = await screen.findAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('Harish Narne');
+    expect(items[0]).toHaveTextContent(`To ${CUSTOMER}`);
+    expect(items[1]).toHaveTextContent('Priya Shah');
+    expect(items[1]).toHaveTextContent('Can you install on Friday?');
+    expect(items[1]).toHaveTextContent('5m ago');
+    expect(items[1]).toHaveTextContent('This email had 2 attachments that were not kept.');
+    // Only the sent email carries a recipient line.
+    expect(items[1]).not.toHaveTextContent('To ');
+    expect(screen.getByText('2 emails')).toBeInTheDocument();
+    expect(screen.queryByText(/newest first/)).toBeNull();
+  });
+
+  it('shows an internal note as a marked, recipient-less card and counts it apart from the emails', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [
+        msg({ id: 'm1' }),
+        msg({ id: 'm2', to: '', subject: '', body: 'Customer wants granite.', internal: true }),
+      ],
+    }));
+    renderTab();
+
+    const items = await screen.findAllByRole('listitem');
+    expect(items[1]).toHaveTextContent('Internal note');
+    expect(items[1]).toHaveTextContent('Customer wants granite.');
+    expect(items[1]).not.toHaveTextContent('To ');
+    expect(items[0]).not.toHaveTextContent('Internal note');
+    expect(screen.getByText('1 email · 1 internal note')).toBeInTheDocument();
+  });
+
+  it('folds a long reply behind Show more', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [msg({ direction: 'in', fromName: 'Priya Shah', body: 'word '.repeat(200) })],
+    }));
+    renderTab();
+
+    const more = await screen.findByRole('button', { name: 'Show more' });
+    await userEvent.click(more);
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('explains when customer replies are not being captured, and still shows the history', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ enabled: false }));
+    renderTab();
+
+    expect(await screen.findByText(/Customer replies are not being captured yet/)).toBeInTheDocument();
+    expect(screen.getByText(/your order is ready/)).toBeInTheDocument();
+  });
+
+  it('shows an error when the conversation cannot be loaded', async () => {
+    vi.mocked(recordEmailService.list).mockRejectedValue(new Error('down'));
+    renderTab();
+
+    expect(await screen.findByText('Failed to load the conversation.')).toBeInTheDocument();
+  });
+});
+
+describe('RecordCommunicationTab reply box', () => {
+  beforeEach(() => vi.mocked(recordEmailService.list).mockResolvedValue(thread()));
+
+  it('is hidden from someone who cannot update the order', async () => {
+    renderTab(false);
+
+    expect(await screen.findByText(/your order is ready/)).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
+  it('says who the reply goes to and cannot send an empty message', async () => {
+    renderTab();
+
+    expect(await screen.findByLabelText('Reply to the customer')).toBeInTheDocument();
+    expect(screen.getByText(CUSTOMER, { selector: 'span' })).toBeInTheDocument();
+    expect(sendButton()).toBeDisabled();
+    await userEvent.type(replyBox(), '   ');
+    expect(sendButton()).toBeDisabled();
+  });
+
+  it('emails the message when the reply icon is clicked, then clears the box', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await userEvent.type(replyBox(), '  See you Friday.  ');
+    await userEvent.click(sendButton());
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, { message: 'See you Friday.', internalOnly: false });
+    await vi.waitFor(() => expect(replyBox()).toHaveValue(''));
+    expect(toast.success).toHaveBeenCalledWith(`Reply sent to ${CUSTOMER}.`);
+  });
+
+  it('sends with Ctrl+Enter too', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await userEvent.type(replyBox(), 'Quick one{Control>}{Enter}{/Control}');
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, { message: 'Quick one', internalOnly: false });
+  });
+
+  it('with Internal only on, saves a note instead and says nothing is emailed', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    expect(internalSwitch()).not.toBeChecked();
+
+    await userEvent.click(internalSwitch());
+
+    expect(internalSwitch()).toBeChecked();
+    expect(screen.getByText(/only your team sees this\. Nothing is emailed\./)).toBeInTheDocument();
+    expect(screen.queryByText(/Replying to/)).toBeNull();
+
+    await userEvent.type(screen.getByLabelText('Internal note'), 'Called Priya, she wants granite.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save internal note' }));
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, {
+      message: 'Called Priya, she wants granite.', internalOnly: true,
+    });
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith('Internal note saved.'));
+    // The next message starts as an email to the customer again.
+    await vi.waitFor(() => expect(internalSwitch()).not.toBeChecked());
+    expect(screen.getByLabelText('Reply to the customer')).toHaveValue('');
+  });
+
+  it('locks to internal notes until an email has been sent to the customer', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ replyTo: '', messages: [] }));
+    renderTab();
+
+    expect(await screen.findByLabelText('Internal note')).toBeInTheDocument();
+    expect(internalSwitch()).toBeChecked();
+    expect(internalSwitch()).toBeDisabled();
+    expect(screen.getByText(/use Send to customer first/)).toBeInTheDocument();
+
+    await userEvent.type(replyBox(), 'Waiting on the deposit.');
+    await userEvent.click(sendButton());
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, {
+      message: 'Waiting on the deposit.', internalOnly: true,
+    });
+  });
+
+  it('locks to internal notes when inbound email is not set up', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ enabled: false }));
+    renderTab();
+
+    expect(await screen.findByLabelText('Internal note')).toBeInTheDocument();
+    expect(internalSwitch()).toBeDisabled();
+    expect(screen.getByText(/Email replies are not set up for this workspace yet/)).toBeInTheDocument();
+  });
+
+  it('keeps the text and shows the reason when the send fails', async () => {
+    vi.mocked(recordEmailService.reply).mockRejectedValue(new Error('Failed to send the email.'));
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await userEvent.type(replyBox(), 'Important');
+    await userEvent.click(sendButton());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to send the email.');
+    expect(replyBox()).toHaveValue('Important');
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('says so when the reply was saved but the email was not delivered', async () => {
+    vi.mocked(recordEmailService.reply).mockResolvedValue({ emailSent: false, emailError: 'The address was rejected.' });
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await userEvent.type(replyBox(), 'Hello');
+    await userEvent.click(sendButton());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('The reply was saved, but the email could not be delivered. The address was rejected.');
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+});
+
+describe('RecordCommunicationTab for a vendor', () => {
+  it('says the conversation starts with Send to Vendor', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ replyTo: '', messages: [] }));
+    renderTab(true, 'vendor');
+
+    expect(await screen.findByText('No emails yet')).toBeInTheDocument();
+    expect(screen.getByText('Use Send to Vendor to start the conversation.')).toBeInTheDocument();
+    expect(screen.getByText(/There is no vendor email to reply to yet — use Send to Vendor first\./)).toBeInTheDocument();
+  });
+
+  it('names the vendor in the not-captured notice', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ enabled: false }));
+    renderTab(true, 'vendor');
+
+    expect(await screen.findByText(/Vendor replies are not being captured yet/)).toBeInTheDocument();
+  });
+
+  it('names the vendor in the reply box', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread());
+    renderTab(true, 'vendor');
+
+    expect(await screen.findByLabelText('Reply to the vendor')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Write a reply to the vendor…')).toBeInTheDocument();
+  });
+
+  it('calls an unnamed sender a vendor', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [msg({ direction: 'in', fromName: '', fromEmail: '', to: '', body: 'Shipping Tuesday.' })],
+    }));
+    renderTab(true, 'vendor');
+
+    const items = await screen.findAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Vendor');
+  });
+});
+
+describe('RecordCommunicationTab for a team-notes record', () => {
+  it('invites a first note instead of an email, even with inbound email off', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ enabled: false, replyTo: '', messages: [] }));
+    renderTab(true, 'internal');
+
+    expect(await screen.findByText('No notes yet')).toBeInTheDocument();
+    expect(screen.getByText('Add a note below to keep your team in the loop.')).toBeInTheDocument();
+    expect(screen.queryByText(/replies are not being captured/)).toBeNull();
+  });
+
+  it('counts plain notes and marks none of them as an internal note', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [
+        msg({ id: 'm1', to: '', subject: '', body: 'Need approval by Friday.', internal: true }),
+        msg({ id: 'm2', to: '', subject: '', body: 'Approved by finance.', internal: true }),
+      ],
+    }));
+    renderTab(true, 'internal');
+
+    const items = await screen.findAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).not.toHaveTextContent('Internal note');
+    expect(screen.getByText('2 notes')).toBeInTheDocument();
+  });
+
+  it('has no Internal only switch and no lock message, and only ever saves notes', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ messages: [] }));
+    renderTab(true, 'internal');
+
+    const box = await screen.findByLabelText('Internal note');
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.queryByText(/Replying to/)).toBeNull();
+    expect(screen.queryByText(/not set up/)).toBeNull();
+    expect(screen.queryByText(/Nothing is emailed/)).toBeNull();
+
+    await userEvent.type(box, 'Waiting on the vendor quote.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save internal note' }));
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, {
+      message: 'Waiting on the vendor quote.', internalOnly: true,
+    });
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith('Internal note saved.'));
+  });
+
+  it('hides the box from someone who cannot update the record', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ messages: [] }));
+    renderTab(false, 'internal');
+
+    expect(await screen.findByText('No notes yet')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).toBeNull();
+  });
+});
+
+describe('RecordCommunicationTab files on messages', () => {
+  it('shows a received file as a download and fetches it for that record', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({
+      messages: [msg({
+        direction: 'in', fromName: 'Priya Shah', attachmentCount: 2,
+        attachments: [
+          { id: 'att-1', fileName: 'kitchen.jpg', contentType: 'image/jpeg', sizeBytes: 4096, inline: false, status: 'stored' },
+          { id: 'att-2', fileName: 'setup.exe', contentType: '', sizeBytes: 10, inline: false, status: 'blocked' },
+        ],
+      })],
+    }));
+    vi.mocked(recordEmailService.downloadAttachment).mockResolvedValue({ downloadUrl: 'https://files.test/k', fileName: 'kitchen.jpg' });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    renderTab();
+
+    const download = await screen.findByRole('button', { name: 'Download kitchen.jpg' });
+    expect(screen.getByText('Not kept for safety')).toBeInTheDocument();
+    await userEvent.click(download);
+
+    expect(recordEmailService.downloadAttachment).toHaveBeenCalledWith(ORDER_ID, 'att-1');
+    await vi.waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+    click.mockRestore();
+  });
+});
+
+describe('RecordCommunicationTab attaching files to a reply', () => {
+  beforeEach(() => vi.mocked(recordEmailService.list).mockResolvedValue(thread()));
+
+  const picker = () => screen.getByLabelText('Choose files to attach');
+  const attachButton = () => screen.getByRole('button', { name: 'Attach files' });
+  const pdf = (name: string, size = 100) => new File([new Uint8Array(size)], name, { type: 'application/pdf' });
+  // The file input's own `accept` filter would stop a disallowed type before our check sees it.
+  const uploader = () => userEvent.setup({ applyAccept: false });
+
+  it('has a paperclip that offers the allowed types, and no chips until something is picked', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    expect(attachButton()).toBeEnabled();
+    expect(attachButton()).toHaveAttribute('title', 'Attach files (up to 5, 5 MB in total)');
+    expect(picker()).toHaveAttribute('multiple');
+    expect(picker().getAttribute('accept')).toContain('.pdf');
+    expect(screen.queryByRole('list', { name: 'Attached files' })).toBeNull();
+  });
+
+  it('is disabled, with the reason, when the workspace cannot keep files', async () => {
+    vi.mocked(recordEmailService.list).mockResolvedValue(thread({ attachmentsEnabled: false }));
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    expect(attachButton()).toBeDisabled();
+    expect(attachButton()).toHaveAttribute('title', expect.stringMatching(/File storage is not set up/));
+  });
+
+  it('shows each picked file as a chip with its size and a running total', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('plan.pdf', 2048), pdf('kitchen.pdf', 1024 * 1024)]);
+
+    const chips = within(screen.getByRole('list', { name: 'Attached files' })).getAllByRole('listitem');
+    expect(chips).toHaveLength(2);
+    expect(chips[0]).toHaveTextContent('plan.pdf');
+    expect(chips[0]).toHaveTextContent('2 KB');
+    expect(chips[1]).toHaveTextContent('kitchen.pdf');
+    expect(screen.getByText('1.0 MB of 5 MB')).toBeInTheDocument();
+  });
+
+  it('removes a file when its remove button is pressed', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    await uploader().upload(picker(), [pdf('a.pdf'), pdf('b.pdf')]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove a.pdf' }));
+
+    const chips = within(screen.getByRole('list', { name: 'Attached files' })).getAllByRole('listitem');
+    expect(chips).toHaveLength(1);
+    expect(chips[0]).toHaveTextContent('b.pdf');
+  });
+
+  it('refuses a file that cannot be attached, says why, and keeps the good ones', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('good.pdf'), new File(['MZ'], 'setup.exe')]);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('setup.exe is not a file type that can be attached.');
+    expect(screen.getByRole('button', { name: 'Remove good.pdf' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove setup.exe' })).toBeNull();
+  });
+
+  it('refuses files past the total size limit', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('big.pdf', 5 * 1024 * 1024 + 1)]);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('big.pdf was not added: attachments are limited to 5 MB in total.');
+    expect(screen.queryByRole('list', { name: 'Attached files' })).toBeNull();
+  });
+
+  it('stops at five files', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [1, 2, 3, 4, 5, 6].map((n) => pdf(`f${n}.pdf`)));
+
+    expect(within(screen.getByRole('list', { name: 'Attached files' })).getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getByRole('alert')).toHaveTextContent('Attach at most 5 files.');
+    expect(attachButton()).toBeDisabled();
+  });
+
+  it('sends the files with the message, then clears them', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    const plan = pdf('plan.pdf');
+
+    await uploader().upload(picker(), [plan]);
+    await userEvent.type(replyBox(), 'See attached.');
+    await userEvent.click(sendButton());
+
+    expect(recordEmailService.reply).toHaveBeenCalledTimes(1);
+    const [id, body] = vi.mocked(recordEmailService.reply).mock.calls[0];
+    expect(id).toBe(ORDER_ID);
+    expect(body.message).toBe('See attached.');
+    expect(body.internalOnly).toBe(false);
+    expect(body.files).toHaveLength(1);
+    expect(body.files?.[0]).toBe(plan);
+    await vi.waitFor(() => expect(screen.queryByRole('list', { name: 'Attached files' })).toBeNull());
+    expect(replyBox()).toHaveValue('');
+  });
+
+  it('sends no files key at all when nothing is attached', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await userEvent.type(replyBox(), 'Plain reply');
+    await userEvent.click(sendButton());
+
+    expect(recordEmailService.reply).toHaveBeenCalledWith(ORDER_ID, { message: 'Plain reply', internalOnly: false });
+  });
+
+  it('keeps the files, and the text, when the send fails', async () => {
+    vi.mocked(recordEmailService.reply).mockRejectedValue(new Error('Failed to send the email.'));
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+
+    await uploader().upload(picker(), [pdf('plan.pdf')]);
+    await userEvent.type(replyBox(), 'Important');
+    await userEvent.click(sendButton());
+
+    expect(await screen.findByText('Failed to send the email.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove plan.pdf' })).toBeInTheDocument();
+    expect(replyBox()).toHaveValue('Important');
+  });
+
+  it('attaches to an internal note too', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    await userEvent.click(internalSwitch());
+
+    await uploader().upload(picker(), [pdf('site.pdf')]);
+    await userEvent.type(screen.getByLabelText('Internal note'), 'Site photo.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save internal note' }));
+
+    const [, body] = vi.mocked(recordEmailService.reply).mock.calls[0];
+    expect(body.internalOnly).toBe(true);
+    expect(body.files).toHaveLength(1);
+  });
+
+  it('lets a team-notes record attach files, with no Internal only switch', async () => {
+    renderTab(true, 'internal');
+    await screen.findByLabelText('Internal note');
+
+    expect(screen.queryByRole('switch')).toBeNull();
+    await uploader().upload(picker(), [pdf('quote.pdf')]);
+    await userEvent.type(screen.getByLabelText('Internal note'), 'Vendor quote attached.');
+    await userEvent.click(screen.getByRole('button', { name: 'Save internal note' }));
+
+    const [, body] = vi.mocked(recordEmailService.reply).mock.calls[0];
+    expect(body.internalOnly).toBe(true);
+    expect(body.files).toHaveLength(1);
+  });
+
+  it('lets the same file be picked again after it was removed', async () => {
+    renderTab();
+    await screen.findByLabelText('Reply to the customer');
+    const user = uploader();
+    const plan = pdf('plan.pdf');
+
+    await user.upload(picker(), [plan]);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove plan.pdf' }));
+    await user.upload(picker(), [plan]);
+
+    expect(screen.getByRole('button', { name: 'Remove plan.pdf' })).toBeInTheDocument();
+  });
+});

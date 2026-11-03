@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AxiosError } from 'axios';
@@ -205,7 +206,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                 <h3 id="cancel-fj-dialog-title" className="text-sm font-bold text-stone-900">
                   {step === 'confirm' ? 'Cancel this fabrication job?' : 'Declare the fate of cut material'}
                 </h3>
-                <p className="text-xs text-stone-400 mt-0.5">
+                <p className="text-xs text-stone-500 mt-0.5">
                   {step === 'confirm'
                     ? 'Any reserved slabs will be released. This cannot be undone.'
                     : 'Every already-cut slab needs a disposition before the job can be cancelled.'}
@@ -237,7 +238,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
             {step === 'disposition' && (
               <>
                 {isFetching && pending.length === 0 && (
-                  <p className="py-4 text-center text-xs text-stone-400">Loading slabs…</p>
+                  <p className="py-4 text-center text-xs text-stone-500">Loading slabs…</p>
                 )}
 
                 {!isFetching && pending.length === 0 && (
@@ -254,10 +255,10 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                       <div key={slab.id} className="rounded-lg border border-stone-200 p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs font-semibold text-stone-800">{slab.serial}</span>
-                          <span className="text-2xs text-stone-400 tabular-nums">{slab.area} sq. area</span>
+                          <span className="text-2xs text-stone-500 tabular-nums">{slab.area} sq. area</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <select
+                          <Select
                             value={draft.disposition}
                             onChange={(e) => updateDraft(slab.id, { disposition: e.target.value as SlabDisposition })}
                             className={cn(fieldCls, 'h-8 py-1 w-48')}
@@ -267,7 +268,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                             {DISPOSITION_OPTIONS.map((opt) => (
                               <option key={opt} value={opt}>{DISPOSITION_LABELS[opt]}</option>
                             ))}
-                          </select>
+                          </Select>
                           {draft.disposition === 'recovered' && (
                             <input
                               type="number"
@@ -321,7 +322,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                               allowEmpty={false}
                               showWarehouse
                             />
-                            <p className="text-2xs text-stone-400">The bin must be in the same location as the slab.</p>
+                            <p className="text-2xs text-stone-500">The bin must be in the same location as the slab.</p>
                           </div>
                         )}
                         {rowErrors[slab.id] && (

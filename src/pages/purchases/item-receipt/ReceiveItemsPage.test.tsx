@@ -21,7 +21,9 @@ vi.mock('@/components/UnsavedChangesPrompt', () => ({ UnsavedChangesPrompt: () =
 // The form body pulls in lookups, the files panel and every field; the page's
 // save behaviour does not depend on it.
 vi.mock('./components/ItemReceiptFormBody', () => ({ ItemReceiptFormBody: () => null }));
-vi.mock('@/services/itemReceiptService', () => ({ itemReceiptService: { createItemReceipt: vi.fn() } }));
+vi.mock('@/services/itemReceiptService', () => ({
+  itemReceiptService: { createItemReceipt: vi.fn(), onOrderSlabs: vi.fn() },
+}));
 vi.mock('@/services/purchaseOrderService', () => ({ purchaseOrderService: { getPurchaseOrder: vi.fn() } }));
 vi.mock('@/services/lookupService', () => ({ lookupService: { getCrmLookups: vi.fn().mockResolvedValue({}) } }));
 
@@ -103,6 +105,8 @@ async function clickSave(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Most orders have nothing on order; the slab tests below say otherwise.
+  vi.mocked(itemReceiptService.onOrderSlabs).mockResolvedValue([]);
   // jsdom has no scrollIntoView; the page scrolls its error banner into view.
   Element.prototype.scrollIntoView = vi.fn();
 });
@@ -145,6 +149,26 @@ describe('ReceiveItemsPage — saving posts the receipt', () => {
   });
 
   it('skips a slab line that has no slabs, so a receipt of only that line is refused', async () => {
+    renderPage({ order: slabOrder });
+
+    await clickSave(userEvent.setup());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('At least one line item is required.');
+    expect(itemReceiptService.createItemReceipt).not.toHaveBeenCalled();
+  });
+
+  it('asks for the slabs the order put on order, and waits for them before showing the form', async () => {
+    renderPage();
+
+    expect((await screen.findAllByText(/Saving posts the receipt/)).length).toBeGreaterThan(0);
+    expect(itemReceiptService.onOrderSlabs).toHaveBeenCalledWith('po-1');
+  });
+
+  it('skips a slab line whose on-order slabs are all left unticked', async () => {
+    vi.mocked(itemReceiptService.onOrderSlabs).mockResolvedValue([{
+      id: 'slab-1', serial: 'PO-000001-001', purchaseOrderItemId: 'poi-slab',
+      lengthMm: 3048, widthMm: 1524, thicknessMm: 30, area: 50,
+    }]);
     renderPage({ order: slabOrder });
 
     await clickSave(userEvent.setup());

@@ -70,7 +70,7 @@ describe('FeedbackSubmitForm ticket context', () => {
 
     renderForm();
 
-    expect(screen.getByLabelText('Where did this happen?')).toHaveValue('sales');
+    expect(screen.getByLabelText('Where did this happen?')).toHaveAttribute('data-value', 'sales');
   });
 
   it('files the ticket against the page the reporter came from', async () => {

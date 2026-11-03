@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search, ArrowUp, ArrowDown, ArrowUpDown, X, Inbox, Pencil,
@@ -15,6 +15,7 @@ import { QUOTE_STATUS_COLORS } from '@/lib/quoteForm';
 import { exportPagedCsv, fmtCsvDate } from '@/lib/csvExport';
 import type { QuoteSearchRequest } from '@/types/quote';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
+import { CustomerLink } from '@/components/crm/CustomerLink';
 
 const EXPORT_PAGE_SIZE = 200;
 
@@ -184,14 +185,14 @@ export function QuoteTable() {
             placeholder="Search quote #, customer, PO…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
           />
         </div>
 
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-400 pr-0.5">Sort:</span>
+          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -275,16 +276,15 @@ export function QuoteTable() {
                   return (
                     <tr key={q.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/sales/quote/${q.id}`)}
+                        <Link
+                          to={`/sales/quote/${q.id}`}
                           className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
                         >
                           {q.quoteNumber || '—'}
-                        </button>
+                        </Link>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
-                        {q.customer?.name ?? '—'}
+                        {q.customer?.name ? <CustomerLink id={q.customer.id} name={q.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         {isSuperAdmin ? (
@@ -298,10 +298,10 @@ export function QuoteTable() {
                           <ReadOnlyStatusPill label={q.status} color={QUOTE_STATUS_COLORS[q.status]} />
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(q.quoteDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-400 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
                         {fmtDate(q.validUntil)}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
@@ -331,7 +331,7 @@ export function QuoteTable() {
                           <Inbox className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No quotes added yet.</p>
-                        <p className="text-xs text-stone-400">Create your first quote to get started.</p>
+                        <p className="text-xs text-stone-500">Create your first quote to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
@@ -339,7 +339,7 @@ export function QuoteTable() {
                           <Search className="size-6 text-stone-400" />
                         </div>
                         <p className="text-sm font-semibold text-stone-700">No quotes match the current search.</p>
-                        <p className="text-xs text-stone-400">Try adjusting your search terms.</p>
+                        <p className="text-xs text-stone-500">Try adjusting your search terms.</p>
                       </div>
                     )}
                   </td>

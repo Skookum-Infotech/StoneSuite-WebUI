@@ -7,7 +7,7 @@ import { paymentService } from '@/services/paymentService';
 import { invoiceService } from '@/services/invoiceService';
 import { lookupService, type CrmLookups } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { fieldCls } from '@/components/crm/formUtils';
 import { ModernSection, FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -24,6 +24,8 @@ import type { InvoiceRef } from './components/InvoicePicker';
 import { ExcessPaymentDialog, type ExcessPaymentPrompt } from './components/ExcessPaymentDialog';
 import { PaymentSectionGrid } from './components/PaymentFormFields';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import { useScrollToError } from '@/hooks/useScrollToError';
 import {
   PRIMARY_INFO_FIELDS, fromSourceInvoice, paymentDefaults, toCreatePayload, PAGE_TABS, type PageTab,
@@ -215,6 +217,15 @@ export default function AddPaymentPage() {
     [formData.amount, checkLines],
   );
 
+  // Opened from an invoice, the form is prefilled once that invoice loads, so
+  // the baseline waits for it. A draft restored from a return trip is unsaved
+  // work from the start, so leaving it must still prompt.
+  const guard = useUnsavedChangesGuard(
+    { data, customer, customFieldValues, applications, pendingInvoice, pendingAmount },
+    !fromInvoiceId || Boolean(prefill),
+    customerReturn.isRestored,
+  );
+
   // Shared with the return-trip hook — it may stash and restore this.
   const { startCreate: startCreateCustomer } = customerReturn.provide({
     activeTab,
@@ -226,7 +237,7 @@ export default function AddPaymentPage() {
     localAppliedInvoiceNumbers,
     localAppliedInvoiceBalances,
     pendingInvoice: pendingInvoiceState,
-  });
+  }, guard.markClean);
 
   const { data: allWorkflows = [] } = useQuery({ queryKey: ['workflows'], queryFn: workflowService.list });
   const paymentWorkflow = allWorkflows.find((wf) => wf.key.toLowerCase() === 'payment');
@@ -327,6 +338,7 @@ export default function AddPaymentPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(payment.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       const creditMemoAmount = confirmedOverage
         ? creditMemoExcessAmount(confirmedOverage.excessAmount, payment.unappliedAmount)
         : 0;
@@ -424,6 +436,7 @@ export default function AddPaymentPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); submitPayment(); }} className="flex flex-col flex-1 min-h-0">
 
         <CrmPageHeader
@@ -474,22 +487,19 @@ export default function AddPaymentPage() {
         ) : (
           <>
         {/* ── Page-level tab bar ── */}
-        <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-          {PAGE_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-                activeTab === tab.key
-                  ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {PAGE_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={tabClass(activeTab === tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Scrollable content ── */}
@@ -540,7 +550,7 @@ export default function AddPaymentPage() {
                                 type="button"
                                 onClick={() => removeApplication(app.invoiceUuid)}
                                 aria-label={`Remove application to ${appliedInvoiceNumbers[app.invoiceUuid]}`}
-                                className="rounded p-0.5 text-stone-400 hover:bg-stone-200 hover:text-stone-600 transition-colors"
+                                className="rounded p-0.5 text-stone-500 hover:bg-stone-200 hover:text-stone-600 transition-colors"
                               >
                                 <X className="size-3.5" />
                               </button>
@@ -585,7 +595,7 @@ export default function AddPaymentPage() {
                       </p>
                     )}
                     {!customer && (
-                      <p className="text-2xs text-stone-400">Select a customer above to apply this payment to their invoices.</p>
+                      <p className="text-2xs text-stone-500">Select a customer above to apply this payment to their invoices.</p>
                     )}
                   </div>
                 </ModernSection>
@@ -593,7 +603,7 @@ export default function AddPaymentPage() {
             )}
 
             {activeTab === 'audit' && (
-              <p className="py-12 text-center text-sm text-stone-400">
+              <p className="py-12 text-center text-sm text-stone-500">
                 Audit trail will be available after saving the payment.
               </p>
             )}

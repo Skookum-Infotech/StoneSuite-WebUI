@@ -6,10 +6,11 @@ import { ArrowRight, Eye, EyeOff, Lock, Loader2, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { apiErrorMessage } from '@/api/tenantClient'
+import { toMfaChallenge } from '@/lib/mfa'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { AuthResponse } from '@/types/auth'
+import type { AuthResponse, MfaChallenge } from '@/types/auth'
 
 const passwordSchema = z.object({
   password: z.string().min(1, 'Password is required'),
@@ -22,13 +23,16 @@ interface PasswordStepProps {
   // below so the button's loading state covers the whole handoff, not just
   // the login call itself.
   onSuccess: (response: AuthResponse) => void | Promise<void>
+  // The password was right but the account asks for an emailed code next: no
+  // session exists yet, only the challenge to answer.
+  onMfaRequired: (challenge: MfaChallenge) => void
   onBack: () => void
 }
 
 // Second step, shown once EmailStep resolves an email to "password". The
 // email itself is display-only here -- changing it means going back to
 // re-identify, since a different email could resolve to SSO instead.
-export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
+export function PasswordStep({ email, onSuccess, onMfaRequired, onBack }: PasswordStepProps) {
   const [showPassword, setShowPassword] = useState(false)
   const {
     register,
@@ -40,7 +44,10 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
   const onSubmit = async (data: PasswordFields) => {
     try {
       const response = await authService.login({ email, password: data.password, rememberMe: false })
-      if (response.success && response.user && response.token && response.expiresAt) {
+      const challenge = toMfaChallenge(response)
+      if (challenge) {
+        onMfaRequired(challenge)
+      } else if (response.success && response.user && response.token && response.expiresAt) {
         await onSuccess(response)
       } else {
         setError('root', { message: response.message ?? 'Login failed' })
@@ -59,18 +66,18 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
           type="button"
           onClick={onBack}
           aria-label="Use a different email"
-          className="shrink-0 text-xs font-semibold text-stone-400 underline underline-offset-2 transition-colors hover:text-stone-700"
+          className="shrink-0 text-xs font-semibold text-stone-500 underline underline-offset-2 transition-colors hover:text-stone-700"
         >
           Change
         </button>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-400">
+        <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
           Password
         </Label>
         <div className="relative">
-          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+          <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
@@ -80,7 +87,7 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? 'password-error' : undefined}
             {...register('password')}
-            className="h-12 rounded-xl border-stone-200 bg-white pl-11 pr-11 text-sm text-stone-950 placeholder:text-stone-300 transition-colors duration-150"
+            className="h-12 rounded-xl border-stone-200 bg-white pl-11 pr-11 text-sm text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
             style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
           />
           <button
@@ -88,7 +95,7 @@ export function PasswordStep({ email, onSuccess, onBack }: PasswordStepProps) {
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             aria-pressed={showPassword}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-stone-500 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>

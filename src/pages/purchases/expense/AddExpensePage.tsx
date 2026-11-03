@@ -16,16 +16,31 @@ import {
   expenseDefaults, toCreatePayload, calcHeaderTotal, invalidLinePositions,
   PAGE_TABS, type PageTab, type ExpenseLineItem,
 } from '@/lib/expenseForm';
+import { CopySeedGate } from '@/components/tenant/CopySeedGate';
+import { fromExpenseForCopy } from '@/lib/expenseCopy';
+import { copySubtitle } from '@/lib/recordCopy';
+import type { Expense } from '@/types/expense';
 
+/** `?copyFrom=<id>` opens the form pre-filled from that expense (see CopySeedGate). */
 export default function AddExpensePage() {
+  return (
+    <CopySeedGate queryKey="expense" load={(id) => expenseService.getExpense(id)}>
+      {(source) => <AddExpenseForm source={source} />}
+    </CopySeedGate>
+  );
+}
+
+function AddExpenseForm({ source }: { source?: Expense }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
 
+  const seed = useMemo(() => (source ? fromExpenseForCopy(source) : null), [source]);
+
   const [activeTab, setActiveTab] = useState<PageTab>(PAGE_TABS[0].key);
-  const [data, setData] = useState<Record<string, unknown>>(expenseDefaults);
-  const [lineItems, setLineItems] = useState<ExpenseLineItem[]>([]);
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>({});
+  const [data, setData] = useState<Record<string, unknown>>(() => seed?.data ?? expenseDefaults());
+  const [lineItems, setLineItems] = useState<ExpenseLineItem[]>(seed?.lineItems ?? []);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(seed?.customFieldValues ?? {});
 
   const set = useCallback((key: string, value: unknown) => setData((d) => ({ ...d, [key]: value })), []);
   const setCustomField = useCallback(
@@ -33,7 +48,7 @@ export default function AddExpensePage() {
     [],
   );
 
-  const guard = useUnsavedChangesGuard({ data, lineItems, customFieldValues });
+  const guard = useUnsavedChangesGuard({ data, lineItems, customFieldValues }, true, Boolean(seed));
 
   const total = useMemo(() => calcHeaderTotal(lineItems), [lineItems]);
 
@@ -72,7 +87,7 @@ export default function AddExpensePage() {
           onBack={() => navigate('/purchases/expense')}
           icon={Wallet}
           title="New Expense"
-          subtitle="Fields marked * are required."
+          subtitle={source ? copySubtitle(source.expenseNumber) : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">

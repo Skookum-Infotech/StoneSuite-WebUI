@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { CheckCircle2, ArrowRight, Building2, MapPin, ShieldCheck, Banknote, Warehouse } from 'lucide-react';
 import { onboardingService, type OnboardingFormData } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { LinkProblemCard } from '@/components/auth/LinkProblemCard';
 import { OnboardingForm } from '@/components/customer/OnboardingForm';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 
@@ -41,7 +42,14 @@ export default function OnboardingApplyPage() {
     </div>
   );
 
-  if (!token)        return centred(<ErrorNote>Missing invite token.</ErrorNote>);
+  if (!token) {
+    return centred(
+      <LinkProblemCard
+        title="This invite link is incomplete"
+        message="This invite link is incomplete or has expired. Ask the person who invited you to send a new one, or sign in if you already have an account."
+      />,
+    );
+  }
   if (inviteQ.isLoading) return centred(<Spinner label="Loading invite…" />);
   if (inviteQ.error) return centred(<ErrorNote>{apiErrorMessage(inviteQ.error)}</ErrorNote>);
 

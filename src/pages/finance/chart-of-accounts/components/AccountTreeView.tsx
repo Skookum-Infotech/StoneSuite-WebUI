@@ -213,7 +213,7 @@ export function AccountTreeView() {
             placeholder="Search code or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
             aria-label="Search accounts by code or name"
           />
           {term && (
@@ -221,7 +221,7 @@ export function AccountTreeView() {
               type="button"
               onClick={() => setTerm('')}
               aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600"
             >
               <X className="size-3.5" />
             </button>
@@ -247,7 +247,7 @@ export function AccountTreeView() {
             >
               <ChevronsDown className="size-3.5" /> Expand All
             </button>
-            <span className="text-stone-300" aria-hidden="true">|</span>
+            <span className="text-stone-500" aria-hidden="true">|</span>
             <button
               type="button"
               onClick={() => setCollapsed(new Set(allGroupKeys(sections)))}
@@ -307,7 +307,7 @@ export function AccountTreeView() {
               ))}
             </HighlightedAccountContext.Provider>
             {searchPage?.hasMore && (
-              <p className="px-2 py-2 text-2xs text-stone-400">
+              <p className="px-2 py-2 text-2xs text-stone-500">
                 Showing the first {SEARCH_RESULT_LIMIT} matches. Refine your search or use the table view for full pagination.
               </p>
             )}
@@ -386,7 +386,7 @@ export function AccountTreeView() {
 
                                   {!subCollapsed && (
                                     sub.accounts.length === 0 ? (
-                                      <p className="pl-8 py-1 text-2xs italic text-stone-300">No accounts yet.</p>
+                                      <p className="pl-8 py-1 text-2xs italic text-stone-500">No accounts yet.</p>
                                     ) : (
                                       <div>
                                         {sub.accounts.map((acct) => (
@@ -406,7 +406,7 @@ export function AccountTreeView() {
                             })}
 
                             {cat.accounts.length === 0 && cat.subCategories.length === 0 && (
-                              <p className="pl-2 py-1 text-2xs italic text-stone-300">
+                              <p className="pl-2 py-1 text-2xs italic text-stone-500">
                                 Nothing under this category yet.
                               </p>
                             )}

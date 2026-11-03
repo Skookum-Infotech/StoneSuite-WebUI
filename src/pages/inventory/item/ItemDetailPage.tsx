@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package, Pencil, FileDown, Loader2, History as HistoryIcon } from 'lucide-react';
+import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { inventoryService } from '@/services/inventoryService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -13,10 +14,11 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useInventoryLookups } from '@/hooks/useInventoryLookups';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { itemPrice } from '@/lib/itemPrice';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { DIMENSION_UNIT_LABELS, itemDimensionUnit } from '@/lib/lineDimensions';
+import { sizeText, thicknessUnitOf } from '@/lib/inventoryItemForm';
 import { DeleteItemDialog } from './components/DeleteItemDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 
@@ -47,6 +49,7 @@ export default function ItemDetailPage() {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const canEdit = permissionsLoading || hasPermission('inventory_item', 'update');
   const canDelete = permissionsLoading || hasPermission('inventory_item', 'delete');
+  const canCopy = permissionsLoading || hasPermission('inventory_item', 'create');
 
   const { data: item, isLoading, error } = useQuery({
     queryKey: ['inventory-item', id],
@@ -114,7 +117,9 @@ export default function ItemDetailPage() {
               ['Material', nameOf(lookups?.materials, item.materialId) || ''],
               ['Color', nameOf(lookups?.colors, item.colorId) || ''],
               ['Finish', nameOf(lookups?.finishes, item.finishId) || ''],
-              ['Thickness (mm)', item.thicknessMm ? String(item.thicknessMm) : ''],
+              ['Length', sizeText(item.lengthMm, itemDimensionUnit(item))],
+              ['Width', sizeText(item.widthMm, itemDimensionUnit(item))],
+              ['Thickness', sizeText(item.thicknessMm, thicknessUnitOf(item))],
               ['Origin Country', nameOf(crmLookups?.countries, item.originCountryId) || ''],
             ],
           },
@@ -139,20 +144,19 @@ export default function ItemDetailPage() {
         statusBadge={<Badge color={item.isActive ? '#22c55e' : '#a8a29e'}>{item.isActive ? 'Active' : 'Inactive'}</Badge>}
       />
 
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -180,7 +184,9 @@ export default function ItemDetailPage() {
                   <ReadonlyField label="Material" value={nameOf(lookups?.materials, item.materialId)} />
                   <ReadonlyField label="Color" value={nameOf(lookups?.colors, item.colorId)} />
                   <ReadonlyField label="Finish" value={nameOf(lookups?.finishes, item.finishId)} />
-                  {item.thicknessMm > 0 && <ReadonlyField label="Thickness (mm)" value={String(item.thicknessMm)} />}
+                  {Boolean(item.lengthMm) && <ReadonlyField label="Length" value={sizeText(item.lengthMm, itemDimensionUnit(item))} />}
+                  {Boolean(item.widthMm) && <ReadonlyField label="Width" value={sizeText(item.widthMm, itemDimensionUnit(item))} />}
+                  {item.thicknessMm > 0 && <ReadonlyField label="Thickness" value={sizeText(item.thicknessMm, thicknessUnitOf(item))} />}
                   <ReadonlyField label="Origin Country" value={nameOf(crmLookups?.countries, item.originCountryId)} />
                 </div>
               </ModernSection>
@@ -190,7 +196,7 @@ export default function ItemDetailPage() {
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
               {history.length === 0 ? (
-                <p className="py-8 text-center text-sm text-stone-400">No history recorded yet.</p>
+                <p className="py-8 text-center text-sm text-stone-500">No history recorded yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {history.map((h, i) => (
@@ -198,7 +204,7 @@ export default function ItemDetailPage() {
                       <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{h.action}</p>
-                        <p className="text-2xs text-stone-400">{fmtDateTime(h.at)} · {h.byName}</p>
+                        <p className="text-2xs text-stone-500">{fmtDateTime(h.at)} · {h.byName}</p>
                       </div>
                     </li>
                   ))}
@@ -212,7 +218,7 @@ export default function ItemDetailPage() {
 
         <SalesDetailSidebar label="Item Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               {canEdit && (
                 <button
@@ -223,6 +229,9 @@ export default function ItemDetailPage() {
                   <Pencil className="size-4 text-stone-400 shrink-0" />
                   Edit item
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="item" addPath="/inventory/item/new" sourceId={id} />
               )}
               <button
                 type="button"
@@ -239,7 +248,7 @@ export default function ItemDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={item.isActive ? '#22c55e' : '#a8a29e'}>{item.isActive ? 'Active' : 'Inactive'}</Badge>
@@ -276,7 +285,7 @@ function ReadonlyField({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
       <label className={fieldLabelCls}>{label}</label>
-      <div className={readonlyCls}>{value || <span className="text-stone-400">—</span>}</div>
+      <div className={readonlyCls}>{value || <span className="text-stone-500">—</span>}</div>
     </div>
   );
 }

@@ -85,7 +85,7 @@ export function BulkActionBar({ selectedIds, onClear }: { selectedIds: string[];
             type="button"
             onClick={onClear}
             aria-label="Clear selection"
-            className="ml-auto rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="ml-auto rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-3.5" />
           </button>
@@ -99,7 +99,7 @@ export function BulkActionBar({ selectedIds, onClear }: { selectedIds: string[];
             type="button"
             onClick={() => setResultMessage(null)}
             aria-label="Dismiss"
-            className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="shrink-0 rounded p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-600 transition-colors"
           >
             <X className="size-3" />
           </button>

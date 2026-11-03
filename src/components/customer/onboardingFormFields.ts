@@ -7,13 +7,13 @@ import { Building2, MapPin, Truck, RotateCcw, ShieldCheck, Banknote, Warehouse }
 // answer.
 
 // 'full' spans both columns inside a section card; default = 1 column.
-// 'country'/'state'/'currency' render as OnboardingSelectField
+// 'country'/'state'/'currency'/'timezone' render as OnboardingSelectField
 // (lookup-table-backed dropdowns) instead of a plain input.
 export type BaseField = {
   key: string;
   label: string;
   required?: boolean;
-  type?: 'tel' | 'email' | 'url' | 'country' | 'state' | 'currency';
+  type?: 'tel' | 'email' | 'url' | 'country' | 'state' | 'currency' | 'timezone';
   full?: boolean;
   placeholder?: string;
   // On a 'country' field: the sibling state field to clear when the country
@@ -77,7 +77,7 @@ export const SECTIONS: FormSection[] = [
       { key: 'website',      label: 'Website',    type: 'url', placeholder: 'e.g. https://acmestone.com' },
       { key: 'country',      label: 'Country', required: true, type: 'country', placeholder: 'Select a country' },
       { key: 'currency',     label: 'Currency', required: true, type: 'currency', placeholder: 'Select a currency' },
-      { key: 'timezone',     label: 'Timezone', placeholder: 'e.g. America/Chicago' },
+      { key: 'timezone',     label: 'Timezone', type: 'timezone', placeholder: 'Select a timezone' },
       { key: 'tax_id',       label: 'Tax / VAT ID', placeholder: 'e.g. 12-3456789' },
     ],
   },

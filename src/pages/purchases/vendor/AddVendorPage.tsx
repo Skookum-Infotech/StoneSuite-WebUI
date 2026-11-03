@@ -7,6 +7,8 @@ import { vendorService } from '@/services/vendorService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { DuplicateRecordDialog } from '@/components/DuplicateRecordDialog';
@@ -84,6 +86,8 @@ export default function AddVendorPage() {
     };
   }, [data, lookups]);
 
+  const guard = useUnsavedChangesGuard(data);
+
   function leave(createdVendor: Vendor | null) {
     const ref: VendorRef | null = createdVendor ? { id: createdVendor.id, name: createdVendor.displayName } : null;
     if (returnTo) navigate(returnTo, { state: returnRouterState(ref) });
@@ -95,6 +99,7 @@ export default function AddVendorPage() {
     onSuccess: (vendor) => {
       toast.success(returnTo ? 'Vendor created and added to your document.' : 'Vendor created.');
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      guard.markClean();
       leave(vendor);
     },
   });
@@ -105,6 +110,7 @@ export default function AddVendorPage() {
       toast.success(returnTo ? 'Vendor activated and added to your document.' : 'Vendor activated.');
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       setDuplicate(null);
+      guard.markClean();
       leave(vendor);
     },
   });
@@ -144,6 +150,7 @@ export default function AddVendorPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form
         onSubmit={(e) => {
           e.preventDefault();

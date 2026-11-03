@@ -46,7 +46,7 @@ export function AreaPicker({ areas, onAdd }: AreaPickerProps) {
                 <Plus className="size-3.5" aria-hidden="true" />
               )}
               {label}
-              {repeatable && count > 0 && <span className="text-stone-400">×{count}</span>}
+              {repeatable && count > 0 && <span className="text-stone-500">×{count}</span>}
             </button>
           );
         })}

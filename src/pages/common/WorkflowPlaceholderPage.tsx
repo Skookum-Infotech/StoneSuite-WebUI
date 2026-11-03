@@ -163,12 +163,12 @@ export default function WorkflowPlaceholderPage(): React.JSX.Element {
         <div className="mt-6 flex-1 flex items-center justify-center border-t border-stone-100 pt-6">
           <div className="text-center max-w-sm">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-stone-100">
-              <Icon className="size-9 text-stone-300" />
+              <Icon className="size-9 text-stone-400" />
             </div>
             <h2 className="text-base font-semibold text-stone-700">
               Under Development
             </h2>
-            <p className="mt-1.5 text-sm text-stone-400 leading-relaxed">
+            <p className="mt-1.5 text-sm text-stone-500 leading-relaxed">
               The <span className="font-medium text-stone-600">{meta.title}</span> module is
               being built. Full functionality will be available soon.
             </p>

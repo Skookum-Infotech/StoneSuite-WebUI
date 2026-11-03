@@ -27,7 +27,7 @@ export function DeleteBinDialog({ bin, onClose, onDeleted }: { bin: Bin; onClose
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="size-4 text-destructive" /></div>
             <div>
               <h3 id="delete-bin-title" className="text-sm font-bold text-stone-900">Delete bin?</h3>
-              <p className="text-xs text-stone-400 mt-0.5">This action cannot be undone.</p>
+              <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>

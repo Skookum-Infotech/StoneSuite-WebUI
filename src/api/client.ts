@@ -266,8 +266,9 @@ export function forceLogout(notice?: string): void {
 
 // Sign-in and refresh report a refused workspace themselves (the form shows the
 // message inline; attemptRefresh stores it), so the 403 handler below skips them.
-// '/auth/refresh' also matches '/portal/auth/refresh'.
-const WORKSPACE_NOTICE_SKIP_URLS = ['/auth/tenant-login', '/auth/refresh'];
+// '/auth/refresh' also matches '/portal/auth/refresh'. The emailed-code step
+// finishes a sign-in too, and re-checks the workspace when it does.
+const WORKSPACE_NOTICE_SKIP_URLS = ['/auth/tenant-login', '/auth/mfa/verify', '/auth/refresh'];
 
 // Response interceptor: on 401, silently attempt one token refresh and retry
 // the original request. If the refresh also fails, perform a full logout.

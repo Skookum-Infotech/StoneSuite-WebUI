@@ -81,7 +81,7 @@ export function AccountingSnapshot({
       )}
 
       {visible.length === 0 ? (
-        <p className="mt-4 text-xs text-stone-400">No journal entries posted yet.</p>
+        <p className="mt-4 text-xs text-stone-500">No journal entries posted yet.</p>
       ) : (
         <>
           <div className="mt-3 flex flex-col divide-y divide-stone-100">

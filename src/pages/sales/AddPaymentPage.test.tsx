@@ -1,8 +1,10 @@
+import { pickOption } from '@/test/selectHelpers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { DataMemoryRouter } from '@/test/DataMemoryRouter';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import type { Invoice } from '@/types/invoice';
 import type { Payment } from '@/types/payment';
 
@@ -120,14 +122,14 @@ function renderPage() {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/sales/payment/new?fromInvoice=inv-1']}>
+      <DataMemoryRouter initialEntries={['/sales/payment/new?fromInvoice=inv-1']}>
         <Routes>
           <Route path="/sales/payment/new" element={<AddPaymentPage />} />
           <Route path="/sales/invoice/:id" element={<LocationProbe />} />
           <Route path="/sales/credit_memo/new" element={<LocationProbe />} />
           <Route path="/sales/payment" element={<LocationProbe />} />
         </Routes>
-      </MemoryRouter>
+      </DataMemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -157,7 +159,7 @@ describe('AddPaymentPage from invoice', () => {
 
     expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
     expect(await screen.findByText('Acme Stoneworks')).toBeInTheDocument();
-    expect(screen.getByLabelText('Currency')).toHaveValue('2');
+    expect(screen.getByLabelText('Currency')).toHaveAttribute('data-value', '2');
     expect(screen.getByLabelText('Amount')).toHaveValue(125.5);
     expect(await screen.findByLabelText('Change invoice')).toBeInTheDocument();
 
@@ -174,7 +176,7 @@ describe('AddPaymentPage from invoice', () => {
     await userEvent.type(paymentAmount, '60');
     await waitFor(() => expect(paymentAmount).toHaveValue(60));
 
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalledWith(expect.objectContaining({
@@ -202,7 +204,7 @@ describe('AddPaymentPage from invoice', () => {
     await userEvent.type(paymentAmount, '150');
     await userEvent.type(screen.getByLabelText('Application amount'), '150');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
@@ -250,7 +252,7 @@ describe('AddPaymentPage from invoice', () => {
     await userEvent.type(paymentAmount, '200');
     await userEvent.type(screen.getByLabelText('Application amount'), '125.5');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
@@ -273,7 +275,7 @@ describe('AddPaymentPage from invoice', () => {
     expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
     await userEvent.type(screen.getByLabelText('Application amount'), '125.5');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     await waitFor(() => expect(paymentService.createPayment).toHaveBeenCalled());
@@ -287,7 +289,7 @@ describe('AddPaymentPage from invoice', () => {
   describe('when the invoice is selected but never added as a row', () => {
     async function save() {
       expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
-      await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+      await pickOption(screen.getByLabelText('Payment Method'), '3');
       await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
     }
 
@@ -373,7 +375,7 @@ describe('AddPaymentPage from invoice', () => {
     await userEvent.type(paymentAmount, '200');
     await userEvent.type(screen.getByLabelText('Application amount'), '125.5');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     await userEvent.click(await screen.findByRole('button', { name: 'No, enter a correct amount' }));
@@ -411,7 +413,7 @@ describe('AddPaymentPage from invoice', () => {
     await userEvent.type(paymentAmount, '150');
     await userEvent.type(screen.getByLabelText('Application amount'), '150');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
     await userEvent.click(await screen.findByRole('button', { name: 'No, enter a correct amount' }));
 
@@ -437,7 +439,7 @@ describe('AddPaymentPage from invoice', () => {
     // The Payment Amount stays at the prefilled balance (125.50); only the row is raised.
     await userEvent.type(screen.getByLabelText('Application amount'), '150');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
@@ -464,7 +466,7 @@ describe('AddPaymentPage from invoice', () => {
     expect((await screen.findAllByText('For invoice INV-000001')).length).toBeGreaterThan(0);
     await userEvent.type(screen.getByLabelText('Application amount'), '150');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
     await userEvent.click(await screen.findByRole('button', { name: 'No, enter a correct amount' }));
 
@@ -489,7 +491,7 @@ describe('AddPaymentPage from invoice', () => {
     const paymentAmount = screen.getByLabelText('Amount');
     await userEvent.clear(paymentAmount);
     await userEvent.type(paymentAmount, '200');
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
@@ -514,7 +516,7 @@ describe('AddPaymentPage from invoice', () => {
     const paymentAmount = screen.getByLabelText('Amount');
     await userEvent.clear(paymentAmount);
     await userEvent.type(paymentAmount, '200');
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
     await userEvent.click(await screen.findByRole('button', { name: 'No, enter a correct amount' }));
 
@@ -533,7 +535,7 @@ describe('AddPaymentPage from invoice', () => {
     await userEvent.type(paymentAmount, '200');
     await userEvent.type(screen.getByLabelText('Application amount'), '125.5');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
     expect(await screen.findByRole('button', {
@@ -563,7 +565,7 @@ describe('AddPaymentPage from invoice', () => {
     await userEvent.type(paymentAmount, '150');
     await userEvent.type(screen.getByLabelText('Application amount'), '150');
     await userEvent.click(screen.getByRole('button', { name: 'Add' }));
-    await userEvent.selectOptions(screen.getByLabelText('Payment Method'), '3');
+    await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
     await userEvent.click(await screen.findByRole('button', {
       name: 'Yes, save the payment and continue to a credit memo',

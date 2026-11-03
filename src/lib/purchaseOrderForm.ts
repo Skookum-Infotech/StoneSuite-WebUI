@@ -8,7 +8,8 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { toExpectedSlabs } from '@/lib/slabEstimate';
-import { dimensionsFromLine, dimensionsPayload, isAreaUnit, type LineDimensions } from '@/lib/lineDimensions';
+import { dimensionsFromLine, dimensionsPayload, isAreaUnit, normalizeUnit, type LineDimensions } from '@/lib/lineDimensions';
+import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
 import type {
   PurchaseOrder, PurchaseOrderCreatePayload, PurchaseOrderLineInput, PurchaseOrderLine,
 } from '@/types/purchaseOrder';
@@ -250,6 +251,8 @@ export interface PurchaseOrderLineItem extends Pick<LineDimensions, 'length' | '
   tracking?: string;
   /** Expected slab count while typing (a whole number, or blank). Only sent for a slab line. */
   expectedSlabs?: string;
+  /** Thickness of one slab while typing, in `dimensionUnit` (blank = not stated). */
+  thickness?: string;
 }
 
 export const EMPTY_LINE_ITEM: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'> = {
@@ -563,6 +566,7 @@ function toStr(v: unknown): string {
 function toLineInput(item: PurchaseOrderLineItem, lineNo: number): PurchaseOrderLineInput {
   // The slab count lives in expectedSlabs; only the size is added here.
   const size = dimensionsPayload({ length: item.length, width: item.width, dimensionUnit: item.dimensionUnit }, item.units);
+  const thickness = thicknessPayload(item.thickness, item.units);
   return {
     lineNumber: lineNo,
     inventoryItemUuid: item.inventoryItemUuid || undefined,
@@ -578,7 +582,10 @@ function toLineInput(item: PurchaseOrderLineItem, lineNo: number): PurchaseOrder
       ? toExpectedSlabs(item.expectedSlabs) : undefined,
     length: size.length,
     width: size.width,
-    dimensionUnit: size.dimensionUnit,
+    thickness,
+    // Thickness shares the unit of length and width, so it names that unit even
+    // when the line states no size to carry it.
+    dimensionUnit: size.dimensionUnit ?? (thickness !== undefined ? normalizeUnit(item.dimensionUnit) : undefined),
   };
 }
 
@@ -656,6 +663,7 @@ function fromLine(line: PurchaseOrderLine, i: number): PurchaseOrderLineItem {
     length: dimensionsFromLine(line).length,
     width: dimensionsFromLine(line).width,
     dimensionUnit: dimensionsFromLine(line).dimensionUnit,
+    thickness: thicknessText(line.thickness),
   };
 }
 

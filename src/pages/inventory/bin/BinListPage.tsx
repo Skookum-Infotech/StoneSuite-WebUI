@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronsDown, ChevronsUp, MapPin, Plus } from 'lucide-react';
@@ -80,10 +81,10 @@ export default function BinListPage() {
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} aria-label="Filter by location" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
+          <Select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} aria-label="Filter by location" className="h-9 rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700">
             <option value="">All Locations</option>
             {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-          </select>
+          </Select>
 
           <div className="ml-auto flex items-center gap-3">
             <button
@@ -94,7 +95,7 @@ export default function BinListPage() {
             >
               <ChevronsDown className="size-3.5" /> Expand All
             </button>
-            <span className="text-stone-300" aria-hidden="true">|</span>
+            <span className="text-stone-500" aria-hidden="true">|</span>
             <button
               type="button"
               onClick={() => setCollapsed(new Set(collectGroupKeys(tree)))}
@@ -115,7 +116,7 @@ export default function BinListPage() {
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="rounded-2xl bg-stone-100 p-4"><MapPin className="size-6 text-stone-400" /></div>
               <p className="text-sm font-semibold text-stone-700">No bins yet.</p>
-              <p className="text-xs text-stone-400">Create your first bin to start organizing the yard.</p>
+              <p className="text-xs text-stone-500">Create your first bin to start organizing the yard.</p>
             </div>
           ) : (
             tree.map((b) => (

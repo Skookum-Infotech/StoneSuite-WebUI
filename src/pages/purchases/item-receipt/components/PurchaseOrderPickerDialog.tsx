@@ -55,7 +55,7 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
       <div ref={contentRef} tabIndex={-1} className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-xl bg-white shadow-2xl outline-none">
         <div className="shrink-0 border-b border-stone-200 px-5 py-4">
           <h3 id="po-picker-dialog-title" className="text-sm font-bold text-stone-900">Receive against a purchase order</h3>
-          <p className="mt-0.5 text-xs text-stone-400">Only Sent or Partially Received orders can be received against.</p>
+          <p className="mt-0.5 text-xs text-stone-500">Only Sent or Partially Received orders can be received against.</p>
           <div className="relative mt-3">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
             <input
@@ -79,11 +79,11 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
             </div>
           ) : records.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-              <Inbox className="size-6 text-stone-300" aria-hidden="true" />
+              <Inbox className="size-6 text-stone-400" aria-hidden="true" />
               <p className="text-xs font-medium text-stone-500">
                 {debounced ? `No open purchase orders match "${debounced}".` : 'No purchase orders are open for receiving.'}
               </p>
-              <p className="text-2xs text-stone-400">
+              <p className="text-2xs text-stone-500">
                 {debounced
                   ? 'It may not exist yet, or may not have been sent to the vendor.'
                   : 'Send a purchase order to the vendor first, or create a new one.'}
@@ -115,7 +115,7 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
                       <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold text-stone-800">{po.purchaseOrderNumber || '—'}</p>
-                        <p className="truncate text-2xs text-stone-400">{po.vendor?.name ?? '—'}</p>
+                        <p className="truncate text-2xs text-stone-500">{po.vendor?.name ?? '—'}</p>
                       </div>
                       <span
                         className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-semibold text-stone-600 whitespace-nowrap"

@@ -15,7 +15,7 @@ function StatusChangeEntry({ comment }: { comment: FeedbackComment }) {
             {feedbackStatusLabel(comment.newStatus ?? '')}
           </span>
         </span>
-        <span className="text-stone-300 dark:text-stone-600" aria-hidden="true">·</span>
+        <span className="text-stone-500 dark:text-stone-600" aria-hidden="true">·</span>
         <span>{formatFeedbackTime(comment.createdAt)}</span>
       </span>
       <span className="h-px flex-1 bg-stone-200 dark:bg-white/10" aria-hidden="true" />
@@ -49,7 +49,7 @@ function ReplyBubble({ comment }: { comment: FeedbackComment }) {
 export function FeedbackConversation({ comments }: { comments: FeedbackComment[] }) {
   return (
     <section aria-label="Conversation">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400">Conversation</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Conversation</h3>
       {comments.length === 0 ? (
         <p className="mt-3 rounded-xl border border-dashed border-stone-300 px-4 py-6 text-center text-sm text-stone-500 dark:border-white/15 dark:text-stone-400">
           No replies yet. When support responds you&apos;ll see it here and get a notification.

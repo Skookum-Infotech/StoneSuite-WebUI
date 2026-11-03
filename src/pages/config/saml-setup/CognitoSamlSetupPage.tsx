@@ -55,7 +55,7 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
           <Link
             to="/config/saml-setup"
             aria-label="Back to identity providers"
-            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+            className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
           >
             <ChevronLeft className="size-3.5" />
             Identity providers

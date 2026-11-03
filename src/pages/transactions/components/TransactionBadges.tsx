@@ -11,8 +11,8 @@ import type { TransactionRow } from '@/types/myTransactions';
 // Badges shared by the table (wide screens) and the cards (narrow screens).
 
 /** The record's status, coloured by what the status code means; a dash if none. */
-export function StatusBadge({ row }: { row: TransactionRow }) {
-  if (!row.status) return <span className="text-stone-400">—</span>;
+export function StatusBadge({ row }: { row: Pick<TransactionRow, 'status' | 'statusCode'> }) {
+  if (!row.status) return <span className="text-stone-500">—</span>;
   const cfg = STATUS_TONE_CLASSES[statusTone(row.statusCode)];
   return (
     <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-2xs font-bold', cfg.badge)}>
@@ -37,7 +37,7 @@ export function RoleBadge({ role }: { role: TransactionRow['role'] }) {
 }
 
 /** The record type, one colour per domain. */
-export function TypeBadge({ row }: { row: TransactionRow }) {
+export function TypeBadge({ row }: { row: Pick<TransactionRow, 'domain' | 'typeLabel'> }) {
   return (
     <span
       className={cn(

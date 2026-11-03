@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import * as React from 'react';
 import type { PoLineChoice } from '@/hooks/documentReviewView';
 
@@ -16,7 +17,7 @@ export function PoLineSelect({ label, choices, value, onChange }: PoLineSelectPr
   return (
     <label className="flex flex-wrap items-center gap-1.5 text-stone-600 dark:text-stone-300">
       <span>Purchase order line</span>
-      <select
+      <Select
         value={value}
         aria-label={`Purchase order line for ${label}`}
         onChange={(e) => onChange(e.target.value)}
@@ -24,7 +25,7 @@ export function PoLineSelect({ label, choices, value, onChange }: PoLineSelectPr
       >
         <option value="">Not linked</option>
         {choices.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-      </select>
+      </Select>
     </label>
   );
 }

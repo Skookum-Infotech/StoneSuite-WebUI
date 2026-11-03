@@ -21,7 +21,7 @@ const SAVED_BANNER_MS = 4000
 // Everywhere the signed-in user's name is listed from a cached query.
 const NAME_QUERY_KEYS = [['users'], ['assignable-users']] as const
 
-const INPUT_BASE_CLASS = 'h-11 rounded-xl border-stone-200 text-stone-950 placeholder:text-stone-300'
+const INPUT_BASE_CLASS = 'h-11 rounded-xl border-stone-200 text-stone-950 placeholder:text-stone-500'
 const INPUT_EDITING_CLASS = `${INPUT_BASE_CLASS} bg-white`
 // Locked look while not editing: same box, muted, so it reads as a display value.
 const INPUT_LOCKED_CLASS = `${INPUT_BASE_CLASS} bg-stone-50 text-stone-600 cursor-default`
@@ -131,7 +131,7 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
       </div>
 
       <ReadOnlyField label="Email Address" value={email} icon={Mail} />
-      <p className="-mt-2 text-xs text-stone-400">
+      <p className="-mt-2 text-xs text-stone-500">
         Your email is your sign-in address, so it can&apos;t be changed here.
       </p>
 

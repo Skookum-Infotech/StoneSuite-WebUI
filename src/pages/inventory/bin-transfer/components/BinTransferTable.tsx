@@ -115,7 +115,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
             onChange={(e) => setTerm(e.target.value)}
             placeholder="Search number, slab serial, location…"
             aria-label="Search bin transfers"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
 
@@ -179,7 +179,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                     <td className="px-4 py-3.5 text-stone-700">{t.warehouseName || '—'}</td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-stone-700 tabular-nums">
                       {slabsLabel(t)}
-                      <span className="ml-1 text-stone-400">· {t.totalArea.toFixed(2)}</span>
+                      <span className="ml-1 text-stone-500">· {t.totalArea.toFixed(2)}</span>
                     </td>
                     <td className="max-w-[220px] truncate px-4 py-3.5 text-stone-600">{t.toBinSummary || '—'}</td>
                     <td className="px-4 py-3.5"><Badge color={BT_STATUS_COLORS[t.statusCode] ?? '#a8a29e'}>{t.statusName}</Badge></td>
@@ -197,7 +197,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                       </p>
                       {!filtered && emptyAction && (
                         <>
-                          <p className="max-w-xs text-xs text-stone-400">Move slabs between bins with a trail of who asked, who approved and when.</p>
+                          <p className="max-w-xs text-xs text-stone-500">Move slabs between bins with a trail of who asked, who approved and when.</p>
                           <button
                             type="button"
                             onClick={emptyAction}

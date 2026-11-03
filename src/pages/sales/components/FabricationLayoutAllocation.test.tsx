@@ -1,3 +1,5 @@
+import { chooseOpenOption, pickOption } from '@/test/selectHelpers';
+import userEvent from '@testing-library/user-event';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,10 +28,11 @@ describe('Reviewed allocation', () => {
   it('submits placements and physical review and reuses the command after a network failure', async () => {
     vi.mocked(tenantClient.post).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: { success: true } });
     mount();
-    fireEvent.change(await screen.findByLabelText('Approved template line'), { target: { value: 'line' } });
+    await pickOption(await screen.findByLabelText('Approved template line'), 'line');
+    await userEvent.click(screen.getByLabelText('Inspected material'));
     await screen.findByRole('option', { name: /S-1/ });
     expect(screen.queryByRole('option', { name: /PENDING/ })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Inspected material'), { target: { value: 'slab' } });
+    await chooseOpenOption('slab');
     fireEvent.click(screen.getByRole('checkbox', { name: /Island/ }));
     fireEvent.change(screen.getByLabelText('Island X position'), { target: { value: '50' } });
     fireEvent.click(screen.getByLabelText('Rotate 90°'));

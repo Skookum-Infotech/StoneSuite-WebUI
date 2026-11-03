@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { ModernSection, ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/crm/CrmSubTabsPanel';
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
@@ -82,22 +83,19 @@ export function CreditMemoFormBody({
   return (
     <>
       {/* Page-level tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-        {PAGE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-stone-800 text-stone-900'
-                : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {PAGE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -110,7 +108,7 @@ export function CreditMemoFormBody({
                 <ModernFieldShell label="Customer" required={!customerLocked}>
                   {customerLocked ? (
                     <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                      {customer?.name || <span className="text-stone-400">—</span>}
+                      {customer?.name || <span className="text-stone-500">—</span>}
                     </div>
                   ) : (
                     <CustomerPicker value={customer} onChange={setCustomer} required onCreateNew={onCreateCustomer} />
@@ -123,7 +121,7 @@ export function CreditMemoFormBody({
                   <ModernFieldShell label="Invoice">
                     {invoiceLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {invoice?.number || <span className="text-stone-400">—</span>}
+                        {invoice?.number || <span className="text-stone-500">—</span>}
                       </div>
                     ) : (
                       <InvoicePicker customer={customer} value={invoice} onChange={setInvoice} currencyCode={currencyCode} />
@@ -132,7 +130,7 @@ export function CreditMemoFormBody({
                   <ModernFieldShell label="Sales Order">
                     {salesOrderLocked ? (
                       <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
-                        {salesOrder?.number || <span className="text-stone-400">—</span>}
+                        {salesOrder?.number || <span className="text-stone-500">—</span>}
                       </div>
                     ) : (
                       <SalesOrderPicker customer={customer} value={salesOrder} onChange={setSalesOrder} />

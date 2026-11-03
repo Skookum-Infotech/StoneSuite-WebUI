@@ -3,7 +3,10 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  useNavigate: () => vi.fn(),
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/invoiceService', () => ({
   invoiceService: { searchInvoices: vi.fn(), transition: vi.fn() },
@@ -87,6 +90,14 @@ describe('InvoiceTable status pill', () => {
 
     expect(screen.getByRole('option', { name: 'Submit for Approval' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Sent' })).not.toBeInTheDocument();
+  });
+});
+
+describe('InvoiceTable customer link', () => {
+  it('links the customer name to the customer page', async () => {
+    mockPermissions();
+    const row = await renderWithRow(draftInvoice([]));
+    expect(within(row).getByRole('link', { name: 'View customer Fontaine Builders' })).toHaveAttribute('href', '/crm/customer/c-1');
   });
 });
 

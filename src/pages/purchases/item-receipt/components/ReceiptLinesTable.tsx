@@ -1,16 +1,17 @@
 import { Fragment } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { isSerializedLine, receivingQty, type ItemReceiptDraftLine, type ReceiptLineError } from '@/lib/itemReceiptForm';
+import { exceedsOverReceiptTolerance, isSerializedLine, onOrderOf, receivingQty, type ItemReceiptDraftLine, type ReceiptLineError } from '@/lib/itemReceiptForm';
 import type { ItemReceiptDraftSlab } from '@/lib/itemReceiptSlabs';
 import { unitLabel } from '@/lib/unitLabels';
+import { OnOrderSlabChecklist } from './OnOrderSlabChecklist';
 import { SlabRowsEditor } from './SlabRowsEditor';
 
 const COLUMN_COUNT = 9;
 const QTY_DISPLAY_DECIMALS = 3;
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-300 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 // Every row here is a fixed line inherited from the source purchase order —
 // unlike PurchaseOrderItemsTab, there is no add/remove: a receipt can only
@@ -20,8 +21,10 @@ const inlineCls =
 // rows," not composing a new document from scratch.
 //
 // A slab-tracked line is the exception to "type a quantity": its received
-// quantity is worked out from the slabs added under it (SlabRowsEditor), so the
-// Receiving cell is read-only there and there is no Rejected quantity.
+// quantity is worked out from its slabs, so the Receiving cell is read-only there
+// and there is no Rejected quantity. The slabs are the ones the order put on order
+// (ticked off in OnOrderSlabChecklist) or, when none are left, ones typed in
+// (SlabRowsEditor).
 export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, warehouseId }: {
   lines: ItemReceiptDraftLine[];
   onChange: (lines: ItemReceiptDraftLine[]) => void;
@@ -78,17 +81,17 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
               const serialized = isSerializedLine(line);
               const outstanding = Math.max(line.qtyOrdered - line.qtyAlreadyReceived, 0);
               const receiving = receivingQty(line);
-              const overOutstanding = receiving > outstanding;
+              const overOutstanding = exceedsOverReceiptTolerance(line);
               const lineError = serialized ? undefined : errorByLine.get(line.purchaseOrderItemId);
               const errorId = lineError ? `line-error-${line.purchaseOrderItemId}` : undefined;
               const outstandingId = overOutstanding ? `line-over-${line.purchaseOrderItemId}` : undefined;
               return (
                 <Fragment key={line.purchaseOrderItemId}>
                 <tr className="hover:bg-stone-50/70 transition-colors divide-x divide-stone-100">
-                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{line.itemName || <span className="text-stone-300">—</span>}</td>
+                  <td className="px-2.5 py-2.5 font-medium text-stone-800">{line.itemName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
-                    {unitLabel(line.unitCode) || <span className="text-stone-300">—</span>}
+                    {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                   </td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{line.qtyOrdered}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-500">{line.qtyAlreadyReceived}</td>
@@ -124,7 +127,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
                   </td>
                   <td className="px-2 py-1.5 align-top">
                     {serialized ? (
-                      <p className="w-16 py-1 text-right text-xs text-stone-300" title="A refused slab is simply left out.">—</p>
+                      <p className="w-16 py-1 text-right text-xs text-stone-500" title="A refused slab is simply left out.">—</p>
                     ) : (
                       <input
                         type="number"
@@ -159,13 +162,22 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
                 {serialized && (
                   <tr>
                     <td colSpan={COLUMN_COUNT} className="bg-white px-2.5 pb-3 pt-1">
-                      <SlabRowsEditor
-                        line={line}
-                        onChange={(slabs) => setSlabs(line.purchaseOrderItemId, slabs)}
-                        serials={serials[line.purchaseOrderItemId] ?? []}
-                        warehouseId={warehouseId}
-                        problems={problemsByLine.get(line.purchaseOrderItemId) ?? []}
-                      />
+                      {onOrderOf(line).length > 0 ? (
+                        <OnOrderSlabChecklist
+                          line={line}
+                          onChange={(change) => patch(line.purchaseOrderItemId, change)}
+                          warehouseId={warehouseId}
+                          problems={problemsByLine.get(line.purchaseOrderItemId) ?? []}
+                        />
+                      ) : (
+                        <SlabRowsEditor
+                          line={line}
+                          onChange={(slabs) => setSlabs(line.purchaseOrderItemId, slabs)}
+                          serials={serials[line.purchaseOrderItemId] ?? []}
+                          warehouseId={warehouseId}
+                          problems={problemsByLine.get(line.purchaseOrderItemId) ?? []}
+                        />
+                      )}
                     </td>
                   </tr>
                 )}
@@ -173,15 +185,15 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
               );
             })}
             {lines.length === 0 && (
-              <tr><td colSpan={COLUMN_COUNT} className="py-8 text-center text-stone-400">This order has no open lines.</td></tr>
+              <tr><td colSpan={COLUMN_COUNT} className="py-8 text-center text-stone-500">This order has no open lines.</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <p className="border-t border-stone-100 bg-stone-50/50 px-4 py-2.5 text-2xs text-stone-400">
+      <p className="border-t border-stone-100 bg-stone-50/50 px-4 py-2.5 text-2xs text-stone-500">
         Leave <span className="font-medium text-stone-500">Receiving</span> blank to skip a line. Receiving beyond a
         line&apos;s ordered quantity needs an over-receipt reason when posting. A slab item is received slab by slab:
-        add each slab under its line and the quantity is worked out from their areas.
+        tick the slabs that arrived (or add each slab under its line) and the quantity is worked out from their areas.
       </p>
     </div>
   );

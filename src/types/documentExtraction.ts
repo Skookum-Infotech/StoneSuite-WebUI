@@ -1,3 +1,5 @@
+import type { ProposedAction } from '@/types/proposedAction';
+
 // Mirrors the Go JSON shapes in StoneSuite-Backend: docextract/types.go,
 // docextractjob/store.go (Extraction, ResultDoc) and docextractjob/resolve*.go
 // (Resolution, CustomerMatch, LineMatch, TermsMatch), duplicates.go (Duplicate).
@@ -256,11 +258,63 @@ export interface ExtractionDuplicate {
   reason: string;
 }
 
+/** What a proposed new record is: a customer, vendor or catalog item. */
+export type ProposedEntityKind = 'customer' | 'vendor' | 'item';
+
+/** Inputs the user must supply before a proposal can be created. */
+export type ProposedEntityNeed = 'contactEmail' | 'sku';
+
+/** Details read from the document for a proposed record (all untrusted text). */
+export interface ProposedEntityFields {
+  address?: string;
+  taxId?: string;
+  sku?: string;
+  description?: string;
+  uom?: string;
+  unitPriceCents?: number;
+}
+
+/** Where on the document a proposed record was read from. */
+export interface ProposedEntitySource {
+  field: string;
+  page?: number;
+  row?: number;
+  /** 0-based indexes into extracted.lines (docIndex) the item covers. */
+  lines?: number[];
+}
+
+/** A customer/vendor/item the extraction could not match, offered as a new record. */
+export interface ProposedEntityView {
+  key: string;
+  kind: ProposedEntityKind;
+  name: string;
+  docType: string;
+  fields: ProposedEntityFields;
+  confidence: FieldConfidence;
+  source: ProposedEntitySource;
+  /** e.g. 'no_match'. */
+  unresolvedReason: string;
+  needs?: ProposedEntityNeed[];
+  /** False when the caller lacks create permission on the target resource. */
+  canCreate: boolean;
+  reason?: string;
+  /** Latest proposal for this key; may be expired, cancelled or failed. */
+  action?: ProposedAction;
+}
+
+/** Inputs for POST /{id}/proposed-entities/{key}/propose. */
+export interface ProposeEntityOverrides {
+  contactEmail?: string;
+  sku?: string;
+}
+
 /** docextractjob.ResultDoc — the stored `result` of a ready extraction. */
 export interface ExtractionResultDoc {
   extracted: ExtractedResult;
   resolution: ExtractionResolution;
   duplicates: ExtractionDuplicate[];
+  /** Absent or empty when the proposed-records feature is off. */
+  proposedEntities?: ProposedEntityView[];
 }
 
 /** docextractjob.Extraction, as returned by GET /{id} and the list. */

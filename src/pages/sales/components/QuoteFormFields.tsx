@@ -1,3 +1,5 @@
+import { Select } from '@/components/ui/select';
+import { lookupFlagAttrs } from '@/lib/flags';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import {
   fieldCls, textareaCls, readonlyCls, checkboxLabelCls,
@@ -48,7 +50,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );
@@ -79,7 +81,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
     // the id (string) — matching the create payload's *Id fields — rather
     // than a display label.
     const lookupRows = field.lookupKey && lookups
-      ? (lookups[field.lookupKey] as Array<{ id: number; name: string; countryId?: number }>)
+      ? (lookups[field.lookupKey] as Array<{ id: number; name: string; code?: string; countryId?: number }>)
       : null;
     const dependsOnUnset = Boolean(field.dependsOn) && !dependsOnValue;
     const filteredRows = lookupRows && field.dependsOn
@@ -89,7 +91,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
     return (
       <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -100,12 +102,12 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
             <option value="">{dependsOnUnset ? '— Select a country first —' : '— Select —'}</option>
             {filteredRows
               ? filteredRows.map((row) => (
-                  <option key={row.id} value={row.id}>{row.name}</option>
+                  <option key={row.id} value={row.id} {...lookupFlagAttrs(field.lookupKey, row)}>{row.name}</option>
                 ))
               : field.options?.filter(Boolean).map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
-          </select>
+          </Select>
         </ModernFieldShell>
       </div>
     );
@@ -134,7 +136,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
             placeholder={field.placeholder}
             aria-label={field.label}
           />
-          {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -156,7 +158,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

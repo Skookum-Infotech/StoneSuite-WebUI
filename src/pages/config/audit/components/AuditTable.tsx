@@ -54,7 +54,7 @@ export function AuditTable({ entries, names, isLoading }: Props) {
                       <Inbox className="size-6 text-stone-400" />
                     </div>
                     <p className="text-sm font-semibold text-stone-700">No audit entries match.</p>
-                    <p className="text-xs text-stone-400">Try adjusting the filters above.</p>
+                    <p className="text-xs text-stone-500">Try adjusting the filters above.</p>
                   </div>
                 </td>
               </tr>
@@ -83,7 +83,7 @@ function AuditRow({
   return (
     <Fragment>
       <tr className="hover:bg-stone-50/60 transition-colors duration-150">
-        <td className="px-4 py-3 text-stone-400">
+        <td className="px-4 py-3 text-stone-500">
           <button
             type="button"
             aria-label={
@@ -108,12 +108,12 @@ function AuditRow({
         <td
           className={cn(
             'px-4 py-3 whitespace-nowrap',
-            rawActor ? 'font-mono text-2xs text-stone-400' : 'text-stone-700',
+            rawActor ? 'font-mono text-2xs text-stone-500' : 'text-stone-700',
           )}
         >
           {actorLabel(entry, names)}
         </td>
-        <td className="px-4 py-3 font-mono text-2xs text-stone-400 truncate max-w-[160px]">
+        <td className="px-4 py-3 font-mono text-2xs text-stone-500 truncate max-w-[160px]">
           {entry.resourceId || '—'}
         </td>
       </tr>

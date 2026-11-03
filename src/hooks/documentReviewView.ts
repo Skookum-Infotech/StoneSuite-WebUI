@@ -1,7 +1,7 @@
 import type { HandoffBadges } from '@/lib/salesOrderHandoffTypes';
 import type { DocumentHandoffBase, HandoffParty, ReviewItem } from '@/lib/documentHandoffShared';
 import type {
-  DocumentExtractionDocType, ExtractedPageRows,
+  DocumentExtractionDocType, ExtractedPageRows, ProposedEntityView,
 } from '@/types/documentExtraction';
 import type { DocFocus, ReviewParty } from './documentReviewModeTypes';
 import type { ReviewPhase } from './useDocumentReview';
@@ -47,6 +47,11 @@ export interface DocumentReviewView {
   announcement: string;
   banner: { usedRecordUuid: string | undefined; aiUnavailable: boolean; injection: boolean };
   handoff: ReviewShellHandoff | null;
+  /** The extraction being reviewed (null/absent in manual-create mode). */
+  extractionId?: string | null;
+  /** Unmatched customers/vendors/items offered as new records; absent or empty
+   *  when the proposed-records feature is off. */
+  proposedEntities?: ProposedEntityView[];
   /** The resolved or candidate counterparty (customer, or vendor). */
   party: HandoffParty | null;
   /** The party currently on the form. */

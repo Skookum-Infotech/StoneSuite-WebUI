@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { DataMemoryRouter } from '@/test/DataMemoryRouter';
+import { Route, Routes } from 'react-router-dom';
 import type { CrmLookups } from '@/services/lookupService';
 import type { CreditMemo } from '@/types/creditMemo';
 
@@ -49,12 +50,12 @@ function renderPage() {
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/sales/credit_memo/cm-1/edit']}>
+      <DataMemoryRouter initialEntries={['/sales/credit_memo/cm-1/edit']}>
         <Routes>
           <Route path="/sales/credit_memo/:id/edit" element={<EditCreditMemoPage />} />
           <Route path="/sales/credit_memo/:id" element={<div>credit memo detail</div>} />
         </Routes>
-      </MemoryRouter>
+      </DataMemoryRouter>
     </QueryClientProvider>,
   );
 }

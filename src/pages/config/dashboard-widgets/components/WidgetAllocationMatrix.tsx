@@ -55,7 +55,7 @@ export function WidgetAllocationMatrix({
                 </colgroup>
                 <thead>
                   <tr className="border-b border-stone-100 bg-white">
-                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-400">
+                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-500">
                       Widget
                     </th>
                     {orderedRoles.map((role) => {
@@ -64,7 +64,7 @@ export function WidgetAllocationMatrix({
                         <th key={role.id} className="px-2 py-2 text-center">
                           {role.locked ? (
                             <span
-                              className="inline-flex items-center justify-center gap-1 text-2xs font-bold text-stone-400"
+                              className="inline-flex items-center justify-center gap-1 text-2xs font-bold text-stone-500"
                               title={`${role.name} always has every widget`}
                             >
                               <Lock className="size-2.5" aria-hidden="true" />

@@ -114,13 +114,13 @@ export function AccountTreeRow({
           onClick={() => navigate(`/finance/chart-of-accounts/${account.id}`)}
           className="flex flex-1 min-w-0 items-center gap-2 text-left"
         >
-          <span className="w-16 shrink-0 font-mono text-2xs text-stone-400">{account.code}</span>
-          <span className={cn('truncate text-xs', account.isActive ? 'text-stone-800' : 'italic text-stone-400')}>
+          <span className="w-16 shrink-0 font-mono text-2xs text-stone-500">{account.code}</span>
+          <span className={cn('truncate text-xs', account.isActive ? 'text-stone-800' : 'italic text-stone-500')}>
             {account.name}
           </span>
         </button>
 
-        <span className="hidden shrink-0 text-2xs text-stone-400 sm:inline">{ACCOUNT_TYPE_LABELS[account.type]}</span>
+        <span className="hidden shrink-0 text-2xs text-stone-500 sm:inline">{ACCOUNT_TYPE_LABELS[account.type]}</span>
         {account.isSystem && (
           <span className="hidden shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500 md:inline" title="Seeded system account">
             SYS
@@ -131,8 +131,8 @@ export function AccountTreeRow({
             HEADER
           </span>
         )}
-        {!account.isActive && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-400">Inactive</span>}
-        {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-400">Hidden</span>}
+        {!account.isActive && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500">Inactive</span>}
+        {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500">Hidden</span>}
 
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           {perms.canUpdate && visibilityActions.map((action) => {
@@ -157,7 +157,7 @@ export function AccountTreeRow({
               onClick={() => actions.onAddSubAccount(account)}
               aria-label={`Add sub-account under ${account.code} ${account.name}`}
               title="Add sub-account"
-              className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
             >
               <Plus className="size-3.5" />
             </button>
@@ -168,7 +168,7 @@ export function AccountTreeRow({
               onClick={() => actions.onEdit(account)}
               aria-label={`Edit ${account.code} ${account.name}`}
               title="Edit"
-              className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
+              className="rounded p-1 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
             >
               <Pencil className="size-3.5" />
             </button>

@@ -8,7 +8,7 @@ import { lookupService } from '@/services/lookupService';
 import { workflowService } from '@/services/tenantServices';
 import { activeCustomFields } from '@/lib/customFields';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { fieldLabelCls } from '@/components/crm/formUtils';
 import { ModernSection, FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -16,6 +16,8 @@ import { EditableFilesPanel, type EditableFilesPanelHandle } from '@/components/
 import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { AccountPicker, type AccountRef } from '@/components/finance/AccountPicker';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { JournalEntrySectionGrid } from './components/JournalEntryFormFields';
 import {
   JOURNAL_ENTRY_CREATE_FIELDS, journalEntryDefaults, toCreatePayload, PAGE_TABS, type PageTab,
@@ -53,6 +55,8 @@ export default function AddJournalEntryPage() {
   });
   const customFieldDefs = activeCustomFields(jeDef);
 
+  const guard = useUnsavedChangesGuard({ data, customFieldValues, fromAccount, toAccount });
+
   const { mutate: save, isPending, error: saveError } = useMutation({
     mutationFn: () => {
       if (!fromAccount || !toAccount) throw new Error('A From and To account are required.');
@@ -65,6 +69,7 @@ export default function AddJournalEntryPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(je.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/finance/journal-entries');
     },
   });
@@ -72,6 +77,7 @@ export default function AddJournalEntryPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
 
         <CrmPageHeader
@@ -107,22 +113,19 @@ export default function AddJournalEntryPage() {
         )}
 
         {/* Page-level tab bar */}
-        <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-          {PAGE_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-                activeTab === tab.key
-                  ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {PAGE_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={tabClass(activeTab === tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Scrollable content */}
@@ -187,7 +190,7 @@ export default function AddJournalEntryPage() {
             )}
 
             {activeTab === 'audit' && (
-              <p className="py-12 text-center text-sm text-stone-400">
+              <p className="py-12 text-center text-sm text-stone-500">
                 Audit trail will be available after saving the journal entry.
               </p>
             )}

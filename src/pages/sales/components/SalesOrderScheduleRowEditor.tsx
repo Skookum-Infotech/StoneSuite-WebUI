@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -90,7 +91,7 @@ export function SalesOrderScheduleRowEditor({ activity, saving, error, onSave, o
       <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1">
           <label className={fieldLabelCls} htmlFor={`status-${activity.code}`}>Status</label>
-          <select
+          <Select
             id={`status-${activity.code}`}
             value={status}
             disabled={statusLocked || saving}
@@ -99,8 +100,8 @@ export function SalesOrderScheduleRowEditor({ activity, saving, error, onSave, o
             aria-label={label('Status')}
           >
             {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          {statusLocked && <p className="text-2xs text-stone-400">Recorded automatically when the order is created.</p>}
+          </Select>
+          {statusLocked && <p className="text-2xs text-stone-500">Recorded automatically when the order is created.</p>}
         </div>
 
         <div className="space-y-1">
@@ -136,7 +137,7 @@ export function SalesOrderScheduleRowEditor({ activity, saving, error, onSave, o
                 aria-label={label('Completed time')}
               />
             </div>
-            {!completed && <p className="text-2xs text-stone-400">Leave blank to use the current time.</p>}
+            {!completed && <p className="text-2xs text-stone-500">Leave blank to use the current time.</p>}
           </div>
         )}
 

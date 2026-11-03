@@ -80,7 +80,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
               </tr>
             ))}
             {slabs.length === 0 && (
-              <tr><td colSpan={7} className="py-8 text-center text-stone-400">No slabs allocated to this job yet.</td></tr>
+              <tr><td colSpan={7} className="py-8 text-center text-stone-500">No slabs allocated to this job yet.</td></tr>
             )}
           </tbody>
         </table>

@@ -6,7 +6,10 @@ import type * as CrmServiceModule from '@/services/crmService';
 import type * as TenantServicesModule from '@/services/tenantServices';
 import type { StatusInfo, Workflow, WorkflowRecord } from '@/types/tenant';
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  useNavigate: () => vi.fn(),
+  Link: (await import('@/test/routerLinkStub')).RouterLinkStub,
+}));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/services/crmService', async (importOriginal) => {
   const actual = await importOriginal<typeof CrmServiceModule>();

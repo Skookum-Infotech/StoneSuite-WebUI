@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -34,8 +35,8 @@ export function FabricationWipTransfers({ jobId, version }: { jobId: string; ver
     {options.data?.length === 0 && <p className="text-sm text-stone-500">No material is available to move with your current permissions.</p>}
     {options.data && options.data.length > 0 && <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); setSaved(false); if (selected?.action.enabled && binId) action.run({ slabId, binId, note }); }}>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1 text-xs font-medium">Allocated slab<select aria-label="Allocated slab" className={fieldCls} value={slabId} onChange={(event) => { setSlabId(event.target.value); setBinId(''); }} required disabled={action.isPending}><option value="">Choose a slab</option>{options.data.map((option) => <option key={option.slabId} value={option.slabId}>{option.serial}</option>)}</select></label>
-        <label className="space-y-1 text-xs font-medium">Destination WIP bin<select aria-label="Destination WIP bin" className={fieldCls} value={binId} onChange={(event) => setBinId(event.target.value)} required disabled={action.isPending}><option value="">Choose a work area</option>{bins.data?.filter((bin) => bin.warehouseId === selected?.warehouseId).map((bin) => <option key={bin.id} value={bin.id}>{bin.warehouseName} · {bin.path} · {bin.machineLabel || 'Shared WIP'}</option>)}</select></label>
+        <label className="space-y-1 text-xs font-medium">Allocated slab<Select aria-label="Allocated slab" className={fieldCls} value={slabId} onChange={(event) => { setSlabId(event.target.value); setBinId(''); }} required disabled={action.isPending}><option value="">Choose a slab</option>{options.data.map((option) => <option key={option.slabId} value={option.slabId}>{option.serial}</option>)}</Select></label>
+        <label className="space-y-1 text-xs font-medium">Destination WIP bin<Select aria-label="Destination WIP bin" className={fieldCls} value={binId} onChange={(event) => setBinId(event.target.value)} required disabled={action.isPending}><option value="">Choose a work area</option>{bins.data?.filter((bin) => bin.warehouseId === selected?.warehouseId).map((bin) => <option key={bin.id} value={bin.id}>{bin.warehouseName} · {bin.path} · {bin.machineLabel || 'Shared WIP'}</option>)}</Select></label>
       </div>
       {bins.data?.length === 0 && <p className="text-xs text-stone-500">Create an active WIP bin in inventory before moving material.</p>}
       {selected?.action.blockers?.map((blocker) => <p key={blocker.code} className="text-xs text-amber-800">{blocker.message}</p>)}

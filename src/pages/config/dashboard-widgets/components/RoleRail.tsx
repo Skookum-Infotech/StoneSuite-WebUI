@@ -80,7 +80,7 @@ export function RoleRail({
               onSelect={() => onSelectRole(role.id)}
               progress={totalCount > 0 ? (count / totalCount) * 100 : 0}
               trailing={
-                <span className={cn('text-2xs shrink-0', count === 0 ? 'text-red-500' : 'text-stone-400')}>
+                <span className={cn('text-2xs shrink-0', count === 0 ? 'text-red-500' : 'text-stone-500')}>
                   {count}/{totalCount}
                 </span>
               }
@@ -106,7 +106,7 @@ export function RoleRail({
               role={role}
               selected={role.id === selectedRoleId}
               onSelect={() => onSelectRole(role.id)}
-              trailing={<span className="text-2xs shrink-0 text-stone-400">All</span>}
+              trailing={<span className="text-2xs shrink-0 text-stone-500">All</span>}
             >
               <Lock className="size-3 shrink-0 text-stone-400" aria-hidden="true" />
               <span className="truncate text-stone-500">{role.name}</span>

@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PAGE_SIZE_OPTIONS, buildPageItems, pageCount, pageRange } from '@/lib/myTransactions';
@@ -40,7 +41,7 @@ export function TransactionsPagination({
         </p>
         <label className="flex items-center gap-2 text-xs text-stone-500">
           <span>Rows per page</span>
-          <select
+          <Select
             value={pageSize}
             onChange={(e) => onPageSize(Number(e.target.value))}
             className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-xs font-semibold text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/40 cursor-pointer"
@@ -48,7 +49,7 @@ export function TransactionsPagination({
             {PAGE_SIZE_OPTIONS.map((size) => (
               <option key={size} value={size}>{size}</option>
             ))}
-          </select>
+          </Select>
         </label>
       </div>
 

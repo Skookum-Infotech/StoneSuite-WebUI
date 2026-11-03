@@ -1,3 +1,4 @@
+import { pickOption } from '@/test/selectHelpers';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -152,7 +153,8 @@ describe('SalesOrderSchedulingTab', () => {
     await screen.findByRole('table');
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit Saw' }));
-    const options = within(screen.getByRole('combobox', { name: 'Status for Saw' })).getAllByRole('option');
+    await userEvent.click(screen.getByRole('combobox', { name: 'Status for Saw' }));
+    const options = within(screen.getByRole('listbox')).getAllByRole('option');
     expect(options.map((o) => o.textContent)).toEqual(['Pending', 'In Progress', 'Completed']);
   });
 
@@ -162,7 +164,7 @@ describe('SalesOrderSchedulingTab', () => {
     await screen.findByRole('table');
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit Saw' }));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Status for Saw' }), 'completed');
+    await pickOption(screen.getByRole('combobox', { name: 'Status for Saw' }), 'completed');
     await userEvent.click(screen.getByRole('button', { name: 'Save changes for Saw' }));
 
     await waitFor(() => expect(salesOrderService.updateScheduleActivity).toHaveBeenCalledWith(ORDER_ID, 'saw', { status: 'completed' }));
@@ -177,7 +179,7 @@ describe('SalesOrderSchedulingTab', () => {
     await screen.findByRole('table');
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit Saw' }));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Status for Saw' }), 'in_progress');
+    await pickOption(screen.getByRole('combobox', { name: 'Status for Saw' }), 'in_progress');
     await userEvent.click(screen.getByRole('button', { name: 'Save changes for Saw' }));
 
     await waitFor(() => expect(salesOrderService.updateScheduleActivity).toHaveBeenCalledWith(ORDER_ID, 'saw', { status: 'in_progress' }));
@@ -218,7 +220,7 @@ describe('SalesOrderSchedulingTab', () => {
     await screen.findByRole('table');
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit Saw' }));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Status for Saw' }), 'completed');
+    await pickOption(screen.getByRole('combobox', { name: 'Status for Saw' }), 'completed');
     fireEvent.change(screen.getByLabelText('Completed time for Saw'), { target: { value: '10:00' } });
     await userEvent.click(screen.getByRole('button', { name: 'Save changes for Saw' }));
 
@@ -243,7 +245,7 @@ describe('SalesOrderSchedulingTab', () => {
     await screen.findByRole('table');
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit Saw' }));
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Status for Saw' }), 'completed');
+    await pickOption(screen.getByRole('combobox', { name: 'Status for Saw' }), 'completed');
     await userEvent.click(screen.getByRole('button', { name: 'Save changes for Saw' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Completed on cannot be in the future.');

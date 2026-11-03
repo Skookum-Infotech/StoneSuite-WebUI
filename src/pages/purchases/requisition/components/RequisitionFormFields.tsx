@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls } from '@/components/crm/formUtils';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -20,7 +21,7 @@ export function RequisitionField({ field, value, set, lookups }: {
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );
@@ -57,7 +58,7 @@ export function RequisitionField({ field, value, set, lookups }: {
     return (
       <div className={spanCls}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -72,8 +73,8 @@ export function RequisitionField({ field, value, set, lookups }: {
               : field.options?.filter(Boolean).map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
-          </select>
-          {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+          </Select>
+          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -104,7 +105,7 @@ export function RequisitionField({ field, value, set, lookups }: {
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-400">{field.hint}</p>}
+        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

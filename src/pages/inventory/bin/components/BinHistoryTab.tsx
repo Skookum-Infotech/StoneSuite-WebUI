@@ -84,7 +84,7 @@ export function BinHistoryTab({ binId }: { binId: string }) {
       {q.isError && <ErrorNote>{apiErrorMessage(q.error, 'Failed to load this bin’s history.')}</ErrorNote>}
 
       {!q.isLoading && !q.isError && entries.length === 0 && (
-        <p className="rounded-xl border border-stone-200 bg-white py-12 text-center text-sm text-stone-400">
+        <p className="rounded-xl border border-stone-200 bg-white py-12 text-center text-sm text-stone-500">
           {direction ? 'Nothing matches that filter yet.' : 'No slab has been moved into or out of this bin yet.'}
         </p>
       )}
@@ -112,7 +112,7 @@ export function BinHistoryTab({ binId }: { binId: string }) {
                     </button>
                     {counterpart && <span className="text-stone-500"> {counterpart}</span>}
                   </p>
-                  <p className="text-2xs text-stone-400">
+                  <p className="text-2xs text-stone-500">
                     {e.inventoryItemName && <>{e.inventoryItemName} · </>}
                     {fmtDateTime(e.at)} · {e.byName}
                     {e.transferNumber && (

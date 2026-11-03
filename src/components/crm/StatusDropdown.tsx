@@ -189,7 +189,7 @@ export function StatusDropdown({
       </button>
     );
   }) : (
-    <p className="px-3.5 py-2.5 text-sm text-stone-400">{optionsLoading ? 'Loading…' : NO_MOVES_MESSAGE}</p>
+    <p className="px-3.5 py-2.5 text-sm text-stone-500">{optionsLoading ? 'Loading…' : NO_MOVES_MESSAGE}</p>
   );
 
   const panelOpen = open && !disabled && !isFinal;

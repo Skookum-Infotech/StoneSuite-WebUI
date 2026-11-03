@@ -498,6 +498,21 @@ export interface WorkspaceUser {
   createdAt: string;
   updatedAt: string;
   roles: RoleSummary[];
+  // Two-step verification (emailed sign-in code). Optional so the page still
+  // works against a backend that predates the field.
+  mfaEnabled?: boolean;
+  // False for a single-sign-on member, who has no password step to add a code to.
+  mfaAvailable?: boolean;
+}
+
+// One member's outcome from POST /tenant/users/mfa. "skipped" carries a reason
+// (self, deactivated, mfa_unavailable, not_found); a "changed" member also
+// reports whether the notice email went out.
+export interface MfaChangeResult {
+  userId: string;
+  status: 'changed' | 'unchanged' | 'skipped' | 'failed';
+  reason?: string;
+  emailSent?: boolean;
 }
 
 // Minimal, non-admin-sensitive projection of a workspace user for "who owns

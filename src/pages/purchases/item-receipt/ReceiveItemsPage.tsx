@@ -59,6 +59,13 @@ export default function ReceiveItemsPage() {
     enabled: Boolean(purchaseOrderId),
   });
 
+  // The slabs the order put on order and that have not arrived: the checklist's rows.
+  const { data: onOrderSlabs, isLoading: onOrderLoading } = useQuery({
+    queryKey: ['po-on-order-slabs', purchaseOrderId],
+    queryFn: () => itemReceiptService.onOrderSlabs(purchaseOrderId),
+    enabled: Boolean(purchaseOrderId),
+  });
+
   const { data: lookups } = useQuery({
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
@@ -74,7 +81,10 @@ export default function ReceiveItemsPage() {
     [data, warehouses],
   );
 
-  const activeLines = useMemo(() => lines ?? (po ? mergeReceiptLines(po.items) : []), [lines, po]);
+  const activeLines = useMemo(
+    () => lines ?? (po ? mergeReceiptLines(po.items, [], onOrderSlabs ?? []) : []),
+    [lines, po, onOrderSlabs],
+  );
   const validationErrors = [...validateReceiptHeader(receiptData), ...validateReceiptLines(activeLines)];
   const lineErrors = useMemo(() => validateReceiptLineErrors(activeLines), [activeLines]);
 
@@ -83,7 +93,7 @@ export default function ReceiveItemsPage() {
   // baseline would flag those defaults as user edits.
   const guard = useUnsavedChangesGuard(
     { data: receiptData, activeLines, customFieldValues },
-    Boolean(po) && Boolean(inventoryLookups),
+    Boolean(po) && !onOrderLoading && Boolean(inventoryLookups),
   );
 
   const { mutate: save, isPending, error: saveError } = useMutation({
@@ -102,6 +112,7 @@ export default function ReceiveItemsPage() {
       queryClient.invalidateQueries({ queryKey: ['purchase-order-receipts', purchaseOrderId] });
       queryClient.invalidateQueries({ queryKey: ['purchase-order', purchaseOrderId] });
       queryClient.invalidateQueries({ queryKey: ['slab-sequence', purchaseOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['po-on-order-slabs', purchaseOrderId] });
       // Posting adds any slabs to Inventory and moves stock.
       for (const queryKey of INVENTORY_STOCK_QUERY_KEYS) queryClient.invalidateQueries({ queryKey });
       if (panelRef.current?.hasStagedFiles()) {
@@ -117,7 +128,7 @@ export default function ReceiveItemsPage() {
   if (!purchaseOrderId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <Inbox className="size-8 text-stone-300" aria-hidden="true" />
+        <Inbox className="size-8 text-stone-400" aria-hidden="true" />
         <p className="text-sm font-semibold text-stone-700">Choose a purchase order to receive against.</p>
         <button
           type="button"
@@ -131,7 +142,7 @@ export default function ReceiveItemsPage() {
     );
   }
 
-  if (isLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
+  if (isLoading || onOrderLoading) return <div className="p-6"><Spinner label="Loading purchase order…" /></div>;
   if (loadError || !po)
     return <div className="p-6"><ErrorNote>{apiErrorMessage(loadError, 'Failed to load purchase order.')}</ErrorNote></div>;
 
@@ -149,7 +160,7 @@ export default function ReceiveItemsPage() {
           <p className="text-sm font-semibold text-stone-700">
             {po.purchaseOrderNumber} is {po.status} and cannot be received against.
           </p>
-          <p className="text-xs text-stone-400">Only Sent or Partially Received purchase orders can accept a receipt.</p>
+          <p className="text-xs text-stone-500">Only Sent or Partially Received purchase orders can accept a receipt.</p>
           <button
             type="button"
             onClick={() => navigate(`/purchases/purchase_order/${po.id}`)}
@@ -171,7 +182,7 @@ export default function ReceiveItemsPage() {
           onBack={() => navigate('/purchases/item_receipt')}
           icon={Inbox}
           title="New Item Receipt"
-          subtitle={`Against ${po.purchaseOrderNumber} · Saving posts the receipt and moves stock; slabs are added to Inventory. Fields marked * are required.`}
+          subtitle={`Against ${po.purchaseOrderNumber} · Saving posts the receipt and moves stock; ticked slabs become available in Inventory. Fields marked * are required.`}
           actions={(
             <button type="submit" disabled={isPending}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">

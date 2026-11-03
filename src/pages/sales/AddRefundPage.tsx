@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { refundService } from '@/services/refundService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { fieldLabelCls } from '@/components/crm/formUtils';
 import { ModernSection, FormActionBar } from '@/components/crm/FormPrimitives';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
@@ -22,6 +22,8 @@ import { RefundSourcePicker, type RefundSourceRef } from './components/RefundSou
 import { RefundSectionGrid } from './components/RefundFormFields';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import {
   PRIMARY_INFO_FIELDS, refundDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/refundForm';
@@ -105,6 +107,7 @@ export default function AddRefundPage() {
       if (panelRef.current?.hasStagedFiles()) {
         try { await panelRef.current.uploadStagedTo(refund.id); } catch { /* non-fatal */ }
       }
+      guard.markClean();
       navigate('/sales/refund');
     },
   });
@@ -131,13 +134,23 @@ export default function AddRefundPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerReturn.createdRef]);
 
+  // A draft restored from a return trip is unsaved work from the start, so
+  // leaving it must still prompt.
+  const guard = useUnsavedChangesGuard(
+    { data, customer, lineagePayment, lineageCreditMemo, customFieldValues },
+    true,
+    customerReturn.isRestored,
+  );
+
   // Shared with the return-trip hook — it may stash and restore this.
   const { startCreate: startCreateCustomer } = customerReturn.provide(
     { activeTab, data, customer, lineagePayment, lineageCreditMemo, customFieldValues },
+    guard.markClean,
   );
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-stone-50">
+      <UnsavedChangesPrompt guard={guard} />
       <form onSubmit={(e) => { e.preventDefault(); save(); }} className="flex flex-col flex-1 min-h-0">
 
         <CrmPageHeader
@@ -173,22 +186,19 @@ export default function AddRefundPage() {
         )}
 
         {/* ── Page-level tab bar ── */}
-        <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar">
-          {PAGE_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-                activeTab === tab.key
-                  ? 'border-stone-800 text-stone-900'
-                  : 'border-transparent text-stone-400 hover:text-stone-600 hover:border-stone-300',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-10 4xl:px-16 modal-scrollbar py-2.5">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {PAGE_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={tabClass(activeTab === tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Scrollable content ── */}
@@ -257,7 +267,7 @@ export default function AddRefundPage() {
                     </div>
 
                     {!customer && (
-                      <p className="text-2xs text-stone-400">
+                      <p className="text-2xs text-stone-500">
                         Select a customer above to link this refund to one of their documents.
                       </p>
                     )}
@@ -267,7 +277,7 @@ export default function AddRefundPage() {
             )}
 
             {activeTab === 'audit' && (
-              <p className="py-12 text-center text-sm text-stone-400">
+              <p className="py-12 text-center text-sm text-stone-500">
                 Audit trail will be available after saving the refund.
               </p>
             )}

@@ -72,7 +72,7 @@ export function ConfirmVendorBillStatusDialog({ target, billNumber, pending, onC
             <h3 id="vb-status-confirm-title" className="text-sm font-bold text-stone-900">
               {copy.title(billNumber)}
             </h3>
-            <p className="mt-0.5 text-xs text-stone-400">This action cannot be undone.</p>
+            <p className="mt-0.5 text-xs text-stone-500">This action cannot be undone.</p>
           </div>
         </div>
 

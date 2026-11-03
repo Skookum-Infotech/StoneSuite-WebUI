@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2, CheckCircle2, X } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Layers, ArrowLeftRight, Scissors, AlertTriangle, History as HistoryIcon, FileDown, Loader2, CheckCircle2, X, UserCheck, UserX } from 'lucide-react';
 import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
@@ -10,12 +11,15 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { consumptionState, formatUnitArea, usageOf } from '@/lib/unitConsumption';
-import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, type UnitHistoryEntry } from '@/types/inventory';
+import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_IN_TRANSIT, UNIT_STATUS_ON_ORDER, UNIT_STATUS_RECEIVED, type UnitHistoryEntry } from '@/types/inventory';
+import { customerReservationOf } from '@/lib/unitAllocation';
 import { historyActionLabel } from '@/lib/inventoryWarehouse';
 import { ScrapUnitDialog } from './components/ScrapUnitDialog';
 import { CutUnitDialog } from './components/CutUnitDialog';
+import { ReserveUnitDialog } from './components/ReserveUnitDialog';
 import { UnitInspectionPanel } from './components/UnitInspectionPanel';
 import { UnitAllocationBanner } from './components/UnitAllocationBanner';
+import { UnitOnOrderBanner } from './components/UnitOnOrderBanner';
 import { UnitUsageTab } from './components/UnitUsageTab';
 import { UnitDetailsTab } from './components/UnitDetailsTab';
 
@@ -29,7 +33,7 @@ const TABS = [
 type Tab = (typeof TABS)[number]['key'];
 
 const STATUS_COLORS: Record<string, string> = {
-  available: '#22c55e', reserved: '#f59e0b', consumed: '#64748b', scrapped: '#ef4444', in_transit: '#6366f1',
+  available: '#22c55e', received: '#06b6d4', reserved: '#f59e0b', consumed: '#64748b', scrapped: '#ef4444', in_transit: '#6366f1', on_order: '#8b5cf6',
 };
 
 function fmtDateTime(iso?: string): string {
@@ -50,7 +54,7 @@ export default function UnitDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('usage');
-  const [dialog, setDialog] = useState<'scrap' | 'cut' | null>(null);
+  const [dialog, setDialog] = useState<'scrap' | 'cut' | 'reserve' | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
   const [cutMessage, setCutMessage] = useState<string | null>(null);
@@ -75,6 +79,15 @@ export default function UnitDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['inventory-unit-history', id] });
   }
 
+  const { mutate: releaseReservation, isPending: isReleasing, error: releaseError } = useMutation({
+    mutationFn: () => inventoryUnitService.release(id),
+    onSuccess: () => {
+      invalidateUnit();
+      queryClient.invalidateQueries({ queryKey: ['inventory-units'] });
+      setCutMessage('Reservation released — the slab is available again.');
+    },
+  });
+
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
   useEffect(() => {
@@ -88,10 +101,19 @@ export default function UnitDetailPage() {
   if (error || !unit) return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load unit.')}</ErrorNote></div>;
 
   const inTransit = unit.status === UNIT_STATUS_IN_TRANSIT;
+  const onOrder = unit.status === UNIT_STATUS_ON_ORDER;
   const actionable = unit.status === UNIT_STATUS_AVAILABLE;
+  const received = unit.status === UNIT_STATUS_RECEIVED;
+  const heldForCustomer = customerReservationOf(unit) !== null;
   const disabledReason = inTransit
     ? 'This unit is in transit between locations — it cannot be moved, cut or scrapped until received.'
-    : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
+    : onOrder
+      ? 'This slab is still on order — it cannot be moved, cut or scrapped until it arrives on an item receipt.'
+      : received
+        ? 'This slab has no bin yet — move it to a bin (Bin Transfer) before cutting or reserving it.'
+        : !actionable ? `Unit is ${unit.status.replace('_', ' ')}.` : undefined;
+  // A slab that has arrived but has no bin can still be written off.
+  const scrapDisabledReason = received ? undefined : disabledReason;
 
   async function handleExportPdf() {
     if (!unit) return;
@@ -153,6 +175,7 @@ export default function UnitDetailPage() {
         statusBadge={<Badge color={STATUS_COLORS[unit.status] ?? '#a8a29e'}>{unit.status.replace('_', ' ')}</Badge>}
       />
 
+      <UnitOnOrderBanner unit={unit} />
       <UnitAllocationBanner unit={unit} />
       <UnitInspectionPanel unit={unit} canInspect={canUpdate} />
 
@@ -166,12 +189,14 @@ export default function UnitDetailPage() {
         </div>
       )}
 
-      <div className="flex shrink-0 overflow-x-auto border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((t) => (
-          <button key={t.key} type="button" onClick={() => setActiveTab(t.key)} className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${activeTab === t.key ? 'border-brand text-stone-950' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
+      <div className="flex shrink-0 overflow-x-auto border-b border-stone-200 bg-white px-5 py-2.5 3xl:px-12 4xl:px-16 modal-scrollbar">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {TABS.map((t) => (
+          <button key={t.key} type="button" onClick={() => setActiveTab(t.key)} className={tabClass(activeTab === t.key)}>
             {t.label}
           </button>
         ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
@@ -193,7 +218,7 @@ export default function UnitDetailPage() {
           {activeTab === 'history' && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
               {history.length === 0 ? (
-                <p className="py-8 text-center text-sm text-stone-400">No history recorded yet.</p>
+                <p className="py-8 text-center text-sm text-stone-500">No history recorded yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {history.map((h, i) => (
@@ -202,7 +227,7 @@ export default function UnitDetailPage() {
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{historyActionLabel(h.action)}</p>
                         {describeHistoryEntry(h) && <p className="text-2xs text-stone-500">{describeHistoryEntry(h)}</p>}
-                        <p className="text-2xs text-stone-400">
+                        <p className="text-2xs text-stone-500">
                           {fmtDateTime(h.at)} · {h.byName}
                           {h.transferNumber && (
                             <>
@@ -226,7 +251,7 @@ export default function UnitDetailPage() {
 
         <SalesDetailSidebar label="Unit Details">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button type="button" onClick={handleExportPdf} disabled={exportingPdf} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed" aria-label="Export as PDF">
                 {exportingPdf ? <Loader2 className="size-4 text-stone-400 shrink-0 animate-spin" /> : <FileDown className="size-4 text-stone-400 shrink-0" />}
@@ -238,19 +263,29 @@ export default function UnitDetailPage() {
 
           {canUpdate && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-0.5 mb-4" title={disabledReason}>
-              <p className="text-xs font-semibold text-stone-400 mb-2">Actions</p>
+              <p className="text-xs font-semibold text-stone-500 mb-2">Actions</p>
               <button type="button" disabled={Boolean(disabledReason) || unit.inspectionStatus === 'pending' || unit.inspectionStatus === 'rejected'} onClick={() => setDialog('cut')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <Scissors className="size-4 text-stone-400 shrink-0" /> Cut
               </button>
-              <button type="button" disabled={Boolean(disabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+              {heldForCustomer ? (
+                <button type="button" disabled={isReleasing} onClick={() => releaseReservation()} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+                  <UserX className="size-4 text-stone-400 shrink-0" /> Release reservation
+                </button>
+              ) : (
+                <button type="button" disabled={!actionable} onClick={() => setDialog('reserve')} className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 text-xs text-stone-700 w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+                  <UserCheck className="size-4 text-stone-400 shrink-0" /> Reserve for customer
+                </button>
+              )}
+              <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <AlertTriangle className="size-4 shrink-0" /> Scrap
               </button>
-              {disabledReason && <p className="px-3 pt-1 text-2xs text-stone-400">{disabledReason}</p>}
+              {disabledReason && <p className="px-3 pt-1 text-2xs text-stone-500">{disabledReason}</p>}
+              {releaseError && <p role="alert" className="px-3 pt-1 text-2xs text-destructive">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
             </div>
           )}
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Created</span>
               <span className="text-stone-700">{fmtDateTime(unit.createdAt)}</span>
@@ -263,6 +298,13 @@ export default function UnitDetailPage() {
         </SalesDetailSidebar>
       </div>
 
+      {dialog === 'reserve' && (
+        <ReserveUnitDialog
+          unit={unit}
+          onClose={() => setDialog(null)}
+          onReserved={(customerName) => setCutMessage(`${unit.serial} is reserved for ${customerName}.`)}
+        />
+      )}
       {dialog === 'scrap' && <ScrapUnitDialog unit={unit} onClose={() => setDialog(null)} onScrapped={invalidateUnit} />}
       {dialog === 'cut' && (
         <CutUnitDialog

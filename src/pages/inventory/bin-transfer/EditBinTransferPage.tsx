@@ -5,6 +5,7 @@ import { binTransferService } from '@/services/binTransferService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { ErrorNote, Spinner } from '@/components/tenant/ui';
 import { btIsEditable } from '@/lib/binTransferStatus';
+import type { BinTransferInput } from '@/types/binTransfer';
 import { BinTransferEditor } from './components/BinTransferEditor';
 
 const LIST_PATH = '/inventory/bin_transfer';
@@ -24,14 +25,23 @@ export default function EditBinTransferPage() {
   });
 
   const update = useMutation({
-    mutationFn: (input: Parameters<typeof binTransferService.update>[1]) => binTransferService.update(id, input),
+    mutationFn: (input: BinTransferInput) => binTransferService.update(id, input),
     onSuccess: () => {
       toast.success('Bin transfer saved.');
       queryClient.invalidateQueries({ queryKey: ['bin-transfer', id] });
       queryClient.invalidateQueries({ queryKey: ['bin-transfers'] });
-      navigate(`${LIST_PATH}/${id}`);
     },
   });
+
+  // Navigating is done here, not in the mutation's onSuccess, so the editor's
+  // unsaved-changes guard can be cleared first. A failure needs no handling:
+  // it is shown through `update.error` and the guard stays armed.
+  async function handleSubmit(input: BinTransferInput, markClean: () => void): Promise<void> {
+    const saved = await update.mutateAsync(input).then(() => true, () => false);
+    if (!saved) return;
+    markClean();
+    navigate(`${LIST_PATH}/${id}`);
+  }
 
   if (isLoading) return <div className="p-6"><Spinner label="Loading bin transfer…" /></div>;
   if (!bt) return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load the bin transfer.')}</ErrorNote></div>;
@@ -62,7 +72,7 @@ export default function EditBinTransferPage() {
         backLabel: bt.number,
         submitLabel: 'Save Changes',
       }}
-      onSubmit={(input) => update.mutate(input)}
+      onSubmit={(input, markClean) => { void handleSubmit(input, markClean); }}
       status={{ isPending: update.isPending, error: update.error }}
       onCancel={() => navigate(`${LIST_PATH}/${id}`)}
     />

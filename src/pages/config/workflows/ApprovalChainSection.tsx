@@ -59,7 +59,7 @@ export function ApprovalChainSection({ workflowId }: { workflowId: string }) {
       {loading ? (
         <Spinner label="Loading approval chain…" />
       ) : gates.length === 0 ? (
-        <p className="text-xs text-stone-400">No approval gates configured for this workflow.</p>
+        <p className="text-xs text-stone-500">No approval gates configured for this workflow.</p>
       ) : (
         <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
           {gates.map((gate) => (
@@ -179,14 +179,14 @@ function ApprovalGateEditor({
       </p>
       {!canConfigure ? (
         gate.approverEmployeeIds.length === 0 ? (
-          <p className="text-2xs text-stone-400">No approvers configured.</p>
+          <p className="text-2xs text-stone-500">No approvers configured.</p>
         ) : (
           <p className="text-2xs text-stone-600 dark:text-stone-300">
             {gate.approverEmployeeIds.map((id) => byId.get(id)?.fullName || 'Unknown employee').join(', ')}
           </p>
         )
       ) : !enabled ? (
-        <p className="text-2xs text-stone-400">Approval is disabled — records can leave this status without sign-off.</p>
+        <p className="text-2xs text-stone-500">Approval is disabled — records can leave this status without sign-off.</p>
       ) : (
         <ApproverPicker
           users={employees}

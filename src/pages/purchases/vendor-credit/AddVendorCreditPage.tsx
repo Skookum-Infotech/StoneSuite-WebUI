@@ -132,7 +132,7 @@ export default function AddVendorCreditPage() {
           filesPanelRef={panelRef}
         >
           <ModernSection title="Note" index={2}>
-            <p className="text-2xs text-stone-400">
+            <p className="text-2xs text-stone-500">
               This credit starts as a Draft. Approve it from its detail page before applying it
               to a vendor bill.
             </p>

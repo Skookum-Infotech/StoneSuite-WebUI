@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -134,7 +135,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
             />
           </div>
           {pieces.length > 0 && (
-            <select
+            <Select
               value={pieceUuid}
               onChange={(e) => setPieceUuid(e.target.value)}
               aria-label="Piece to allocate to"
@@ -144,7 +145,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
               {pieces.map((p) => (
                 <option key={p.id} value={p.id}>{p.pieceName || `Piece ${p.pieceNumber}`}</option>
               ))}
-            </select>
+            </Select>
           )}
           <button
             type="button"
@@ -162,7 +163,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
           ) : error ? (
             <p role="alert" className="py-8 text-center text-xs text-destructive">{apiErrorMessage(error, 'Failed to load slabs.')}</p>
           ) : slabs.length === 0 ? (
-            <p className="py-8 text-center text-xs text-stone-400">
+            <p className="py-8 text-center text-xs text-stone-500">
               {debounced ? 'No slabs match that search.' : `No unallocated ${material.name} is in stock.`}
             </p>
           ) : (
@@ -200,7 +201,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
           )}
         </div>
         {data?.hasMore && (
-          <p className="mt-1.5 text-2xs text-stone-400">Showing the largest {CANDIDATE_LIMIT} — search to narrow the list.</p>
+          <p className="mt-1.5 text-2xs text-stone-500">Showing the largest {CANDIDATE_LIMIT} — search to narrow the list.</p>
         )}
 
         {failureMessage && <p role="alert" className="mt-3 text-xs text-destructive">{failureMessage}</p>}

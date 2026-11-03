@@ -78,7 +78,7 @@ export function GrantPortalAccessModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+            className="rounded-lg p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-stone-600"
           >
             <X className="size-4" />
           </button>
@@ -86,7 +86,7 @@ export function GrantPortalAccessModal({
 
         <div className="space-y-4">
           <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400">
+            <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
               Portal login
             </p>
             <p className="mt-0.5 text-sm font-semibold text-stone-800 break-all">

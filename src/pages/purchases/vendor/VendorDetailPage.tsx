@@ -10,21 +10,16 @@ import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { cn } from '@/lib/utils';
+import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { VENDOR_STATUS_COLORS, type Vendor } from '@/types/vendor';
 import type { PurchasesPdfSection } from '@/lib/purchasesPdfExport';
 import { VendorOverviewTab } from './components/VendorOverviewTab';
 import { VendorAuditTab } from './components/VendorAuditTab';
+import { VendorTransactionsTab } from './components/transactions/VendorTransactionsTab';
+import { VENDOR_TABS, useVendorTab } from './components/vendorTabs';
 import { DeleteVendorDialog } from './components/DeleteVendorDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { formatDateValue } from '@/lib/dateUtils';
-
-const TABS = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'audit', label: 'Audit' },
-  { key: 'files', label: 'Files' },
-] as const;
-type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -35,7 +30,7 @@ export default function VendorDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useVendorTab();
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string>();
 
@@ -69,9 +64,10 @@ export default function VendorDetailPage() {
     return <div className="p-6"><ErrorNote>{apiErrorMessage(error, 'Failed to load vendor.')}</ErrorNote></div>;
 
   const color = VENDOR_STATUS_COLORS[vendor.status] ?? '#a8a29e';
-  const countryName = vendor.nationalityCountryId !== null && vendor.nationalityCountryId !== undefined
-    ? lookups?.countries.find((c) => c.id === vendor.nationalityCountryId)?.name
+  const country = vendor.nationalityCountryId !== null && vendor.nationalityCountryId !== undefined
+    ? lookups?.countries.find((c) => c.id === vendor.nationalityCountryId)
     : undefined;
+  const countryName = country?.name;
 
   async function handleExportPdf() {
     if (!vendor) return;
@@ -167,29 +163,29 @@ export default function VendorDetailPage() {
       />
 
       {/* Tab bar */}
-      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 whitespace-nowrap shrink-0',
-              activeTab === tab.key
-                ? 'border-brand text-stone-950'
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-200',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-stone-200 bg-white px-5 3xl:px-12 4xl:px-16 modal-scrollbar py-2.5">
+        <div role="tablist" className={TAB_LIST_CLASS}>
+          {VENDOR_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={tabClass(activeTab === tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         {/* Left column */}
         <div className="flex-1 space-y-3 min-w-0">
-          {activeTab === 'overview' && <VendorOverviewTab vendor={vendor} countryName={countryName} />}
-          {activeTab === 'audit' && <VendorAuditTab vendorId={id} />}
+          {activeTab === 'overview' && <VendorOverviewTab vendor={vendor} countryName={countryName} countryCode={country?.code} />}
+          {activeTab === 'transactions' && <VendorTransactionsTab vendorId={id} />}
+          {activeTab === 'audit' &&<VendorAuditTab vendorId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={false} />}
 
           <div className="h-6" />
@@ -198,7 +194,7 @@ export default function VendorDetailPage() {
         {/* Right sidebar */}
         <div className="lg:w-72 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:h-fit lg:self-start">
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Quick Actions</p>
+            <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
               <button
                 type="button"
@@ -235,7 +231,7 @@ export default function VendorDetailPage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
-            <p className="text-xs font-semibold text-stone-400">Status</p>
+            <p className="text-xs font-semibold text-stone-500">Status</p>
             <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
               <span className="text-stone-500">Status</span>
               <Badge color={color}>{vendor.status}</Badge>

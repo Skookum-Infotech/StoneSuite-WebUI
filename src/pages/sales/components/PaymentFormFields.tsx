@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { useEffect, useRef } from 'react';
 import { ModernFieldShell } from '@/components/crm/FormPrimitives';
 import { fieldCls, textareaCls, readonlyCls, parseNumberFieldValue } from '@/components/crm/formUtils';
@@ -30,7 +31,7 @@ export function PaymentField({ field, value, set, lookups, error }: {
     return (
       <ModernFieldShell label={field.label}>
         <div className={`${readonlyCls} cursor-not-allowed select-none`}>
-          {str || <span className="text-stone-400">—</span>}
+          {str || <span className="text-stone-500">—</span>}
         </div>
       </ModernFieldShell>
     );
@@ -61,7 +62,7 @@ export function PaymentField({ field, value, set, lookups, error }: {
     return (
       <div className={field.colSpanFull ? 'col-span-full' : field.colSpan2 ? 'sm:col-span-2' : ''}>
         <ModernFieldShell label={field.label} required={field.required}>
-          <select
+          <Select
             required={field.required}
             value={str}
             onChange={(e) => set(field.key, e.target.value)}
@@ -76,7 +77,7 @@ export function PaymentField({ field, value, set, lookups, error }: {
               : field.options?.filter(Boolean).map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
-          </select>
+          </Select>
         </ModernFieldShell>
       </div>
     );

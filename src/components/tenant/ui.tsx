@@ -61,7 +61,7 @@ export function Badge({
 
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div role="status" className="flex items-center gap-2 py-10 text-sm text-stone-400">
+    <div role="status" className="flex items-center gap-2 py-10 text-sm text-stone-500">
       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
       {label}
     </div>
@@ -89,7 +89,7 @@ export function ErrorNote({
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-sm text-stone-400 dark:border-stone-700">
+    <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500 dark:border-stone-700">
       {children}
     </div>
   );
