@@ -61,3 +61,17 @@ export const SNAP_TOLERANCE_MM = 3;
 /** How far outside a piece's own edge its auto-placed dimension line sits
  *  — 1 inch. */
 export const DEFAULT_DIMENSION_OFFSET_MM = 25.4;
+
+/** The editor's undo/redo history depth (build spec Task 3). */
+export const MAX_UNDO_STEPS = 50;
+
+/** Arrow-key nudge distance: 1/16" plain, 1" with Shift held (build spec
+ *  Task 3). */
+export const ARROW_KEY_STEP_MM = MM_PER_INCH / 16;
+export const SHIFT_ARROW_KEY_STEP_MM = MM_PER_INCH;
+
+/** Zoom range and step, as a multiplier (1 = 100%) (build spec Task 3:
+ *  "zoom 25–400%"). */
+export const ZOOM_MIN = 0.25;
+export const ZOOM_MAX = 4;
+export const ZOOM_STEP = 0.25;
