@@ -11,9 +11,9 @@ import { ANOMALY_SCAN_RULE_KEY, findAnomalyScanRule, scanSummary } from '@/lib/a
 
 const RULES_QUERY_KEY = 'automation-rules';
 const SETTINGS_QUERY_KEY = 'automation-settings';
-/** Shown when someone tries to turn scanning on while StoneSuite support has automation off platform-wide. */
+/** Same wording the API returns (409) when scanning is turned on while platform automation is off. */
 const PLATFORM_OFF_MESSAGE =
-  'Automation is turned off for the whole platform by StoneSuite support, so anomaly scanning cannot be turned on yet.';
+  'Anomaly scanning cannot be turned on yet. A super admin must turn on Automation for the platform first, then you can enable it.';
 const ANOMALIES_QUERY_KEY = 'anomalies';
 
 /** Workspace-level controls for the anomaly scan: the on/off switch and a
