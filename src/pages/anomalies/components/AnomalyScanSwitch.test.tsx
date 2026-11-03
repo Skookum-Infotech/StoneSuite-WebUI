@@ -16,16 +16,16 @@ import { automationRuleService } from '@/services/automationRuleService';
 import { anomalyService } from '@/services/anomalyService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { toast } from 'sonner';
+import { makeRule } from '@/test/automationFixtures';
 
 function rule(overrides: Partial<AutomationRule> = {}): AutomationRule {
-  return {
+  return makeRule({
     ruleKey: 'anomaly_scan',
     name: 'Anomaly detection',
-    audience: 'internal',
-    enabled: true,
     enabledAt: '2026-10-27T10:00:00Z',
+    cadence: [],
     ...overrides,
-  };
+  });
 }
 
 function allow(...grants: string[]): void {
