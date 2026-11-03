@@ -171,6 +171,9 @@ const SalesOrderDetailPage = lazyWithRetry(
 const EditSalesOrderPage = lazyWithRetry(
   () => import("@/pages/sales/EditSalesOrderPage"),
 );
+const SalesOrderDrawingPage = lazyWithRetry(
+  () => import("@/pages/sales/drawing/SalesOrderDrawingPage"),
+);
 const FabricationJobListPage = lazyWithRetry(
   () => import("@/pages/sales/FabricationJobListPage"),
 );
@@ -684,6 +687,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sales_order" action="update" workflowKey="sales_order">
             <EditSalesOrderPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "sales/sales_order/:id/drawing",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="update" workflowKey="sales_order">
+            <SalesOrderDrawingPage />
           </PermissionGuard>,
         ),
       },
