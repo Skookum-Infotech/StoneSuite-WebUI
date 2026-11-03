@@ -57,3 +57,7 @@ export const GRID_SIZE_MM = 25.4;
  *  snaps to it. Not yet consumed — edge-snapping is deferred past this
  *  plan (see its Self-Review); this constant is reserved for it. */
 export const SNAP_TOLERANCE_MM = 3;
+
+/** How far outside a piece's own edge its auto-placed dimension line sits
+ *  — 1 inch. */
+export const DEFAULT_DIMENSION_OFFSET_MM = 25.4;
