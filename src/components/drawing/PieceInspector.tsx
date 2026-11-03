@@ -11,6 +11,18 @@ import { validatePieceLabel } from '@/lib/drawing/labels';
 import { formatLength, LengthParseError, parseLength } from '@/lib/drawing/units';
 import { useDrawingEditor } from './DrawingEditorContext';
 
+/** Tolerance for treating a re-typed length as "the same value" rather
+ *  than a real edit. An untouched field's displayed text already went
+ *  through one formatLength -> parseLength round-trip at the drawing's
+ *  1/32" fraction precision, which quantizes by up to half of 25.4/32mm
+ *  (~0.4mm) even when nothing changed — this has to clear that, not just
+ *  floating-point noise, or every untouched field reads as "changed". */
+const MM_EPSILON = 0.5;
+
+function almostEqualMm(a: number, b: number): boolean {
+  return Math.abs(a - b) < MM_EPSILON;
+}
+
 export function PieceInspector() {
   const { state } = useDrawingEditor();
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
@@ -48,20 +60,55 @@ function PieceFields({ piece }: { piece: Piece }) {
   ));
   const [cornerRadiusError, setCornerRadiusError] = useState<string | null>(null);
 
+  // Re-seed every field whenever the piece itself changes under us — found
+  // in the final review: undo/redo/rotate left these fields showing the
+  // pre-undo text, and tabbing through them again silently re-applied the
+  // undone edit. `piece` only gets a new reference when this specific
+  // piece's data actually changed (the reducer returns other pieces'
+  // objects untouched), so this doesn't fire on unrelated edits. Adjusting
+  // state during render (React's own recipe for "reset state when a prop
+  // changes") rather than in a useEffect, which would cascade an extra
+  // render for no benefit here.
+  const [seededFor, setSeededFor] = useState(piece);
+  if (seededFor !== piece) {
+    setSeededFor(piece);
+    setLabel(piece.label);
+    setLabelError(null);
+    setLength(formatLength(lengthMm, displayUnit, fractionDenominator));
+    setLengthError(null);
+    setWidth(formatLength(widthMm, displayUnit, fractionDenominator));
+    setWidthError(null);
+    setThickness(formatLength(piece.thicknessMm, displayUnit, fractionDenominator));
+    setThicknessError(null);
+    setCornerRadius(piece.cornerRadiusMm === undefined ? '' : formatLength(piece.cornerRadiusMm, displayUnit, fractionDenominator));
+    setCornerRadiusError(null);
+  }
+
   const dispatchPatch = (patch: Partial<Piece>) => {
     dispatch({ type: 'updatePiece', areaId: state.activeAreaId, pieceId: piece.id, patch });
   };
 
   const commitLabel = () => {
-    const error = validatePieceLabel(label, existingLabels, piece.label);
+    const trimmed = label.trim();
+    const error = validatePieceLabel(trimmed, existingLabels, piece.label);
     setLabelError(error);
-    if (!error) dispatchPatch({ label });
+    if (error) return;
+    setLabel(trimmed);
+    // Blur fires on every field whose focus is simply moving away — e.g.
+    // clicking Undo right after editing another field blurs this one
+    // first. Skipping an unchanged value stops that from pushing a
+    // redundant history entry on top of the real edit (found in the final
+    // review while testing the stale-field fix above: a single Undo was
+    // reverting this phantom re-commit instead of the user's actual edit).
+    if (trimmed === piece.label) return;
+    dispatchPatch({ label: trimmed });
   };
 
   const commitLengthOrWidth = (which: 'length' | 'width', value: string, setError: (e: string | null) => void) => {
     try {
       const mm = parseLength(value);
       setError(null);
+      if (almostEqualMm(mm, which === 'length' ? lengthMm : widthMm)) return;
       dispatchPatch({
         outline: which === 'length' ? rectOutline(mm, widthMm) : rectOutline(lengthMm, mm),
       });
@@ -72,8 +119,10 @@ function PieceFields({ piece }: { piece: Piece }) {
 
   const commitThickness = () => {
     try {
-      dispatchPatch({ thicknessMm: parseLength(thickness) });
+      const mm = parseLength(thickness);
       setThicknessError(null);
+      if (almostEqualMm(mm, piece.thicknessMm)) return;
+      dispatchPatch({ thicknessMm: mm });
     } catch (e) {
       setThicknessError(e instanceof LengthParseError ? e.message : 'Enter a value.');
     }
@@ -81,13 +130,16 @@ function PieceFields({ piece }: { piece: Piece }) {
 
   const commitCornerRadius = () => {
     if (!cornerRadius.trim()) {
-      dispatchPatch({ cornerRadiusMm: undefined });
       setCornerRadiusError(null);
+      if (piece.cornerRadiusMm === undefined) return;
+      dispatchPatch({ cornerRadiusMm: undefined });
       return;
     }
     try {
-      dispatchPatch({ cornerRadiusMm: parseLength(cornerRadius) });
+      const mm = parseLength(cornerRadius);
       setCornerRadiusError(null);
+      if (piece.cornerRadiusMm !== undefined && almostEqualMm(mm, piece.cornerRadiusMm)) return;
+      dispatchPatch({ cornerRadiusMm: mm });
     } catch (e) {
       setCornerRadiusError(e instanceof LengthParseError ? e.message : 'Enter a value.');
     }

@@ -46,11 +46,33 @@ function Selector({ pieceId }: { pieceId: string }) {
   return <button type="button" onClick={() => dispatch({ type: 'selectPiece', pieceId })}>select</button>;
 }
 
+function UndoButton() {
+  const { dispatch } = useDrawingEditor();
+  return <button type="button" onClick={() => dispatch({ type: 'undo' })}>undo</button>;
+}
+
+/** Exposes the real reducer state the inspector's buttons/fields are
+ *  supposed to affect, so tests assert on actual behavior rather than the
+ *  inspector's own (possibly stale) local echo of it. */
+function Readout() {
+  const { state } = useDrawingEditor();
+  const area = state.present.areas[0];
+  return (
+    <div>
+      <span data-testid="piece-count">{area.pieces.length}</span>
+      <span data-testid="past-length">{state.past.length}</span>
+      <span data-testid="pieces">{JSON.stringify(area.pieces.map((p) => ({ id: p.id, label: p.label, rotationDeg: p.rotationDeg, outline: p.outline })))}</span>
+    </div>
+  );
+}
+
 function renderInspector(pieces: Piece[], selectId?: string) {
   render(
     <DrawingEditorProvider drawing={drawingWithPieces(pieces)} materialLines={MATERIAL_LINES}>
       <PieceInspector />
       {selectId && <Selector pieceId={selectId} />}
+      <UndoButton />
+      <Readout />
     </DrawingEditorProvider>,
   );
 }
@@ -89,6 +111,23 @@ describe('PieceInspector — rect piece selected', () => {
     await userEvent.tab();
     expect(screen.getByText('A-2 is already used in this area.')).toBeDefined();
     expect(screen.getByLabelText('Label')).toHaveValue('A-2');
+    // The actual reducer state must still have the piece's original label —
+    // the error text alone doesn't prove the dispatch was refused.
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces.find((p: { id: string }) => p.id === 'p1').label).toBe('A-1');
+  });
+
+  it('trims surrounding whitespace before validating and storing a label', async () => {
+    renderInspector([makePiece('p1', 'A-1'), makePiece('p2', 'A-2')], 'p1');
+    await selectPiece();
+    const labelInput = screen.getByLabelText('Label');
+    await userEvent.clear(labelInput);
+    await userEvent.type(labelInput, 'A-2 ');
+    await userEvent.tab();
+    // "A-2 " is the same label as the other piece's "A-2" once trimmed.
+    expect(screen.getByText('A-2 is already used in this area.')).toBeDefined();
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces.find((p: { id: string }) => p.id === 'p1').label).toBe('A-1');
   });
 
   it('typing a valid new Length dispatches updatePiece with the resized outline', async () => {
@@ -98,11 +137,62 @@ describe('PieceInspector — rect piece selected', () => {
     await userEvent.clear(lengthInput);
     await userEvent.type(lengthInput, '30');
     await userEvent.tab();
-    expect(screen.getByLabelText('Length')).toHaveValue('30');
+    // Committing re-seeds the field from the piece (same fix that keeps it
+    // from going stale after undo — see below), so it now reads back the
+    // canonical formatted form rather than the raw typed text.
+    expect(screen.getByLabelText('Length')).toHaveValue('30"');
     // Width (untouched) still shows its original value, formatted the same
     // way every other dimension in this app displays — 400mm rounds to the
     // nearest 1/32" as 15 3/4".
     expect(screen.getByLabelText('Width')).toHaveValue('15 3/4"');
+    // And the actual reducer state has the resized outline — the input's
+    // own text doesn't prove anything was dispatched.
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    const outline = pieces.find((p: { id: string }) => p.id === 'p1').outline;
+    expect(outline[1].x).toBeCloseTo(30 * 25.4, 1); // the new length, in mm
+    expect(outline[2].y).toBeCloseTo(-400, 1); // the original width, unchanged
+  });
+
+  it('tabbing through unchanged fields after an edit does not push extra history entries', async () => {
+    renderInspector([makePiece('p1', 'A-1')], 'p1');
+    await selectPiece();
+    await userEvent.clear(screen.getByLabelText('Length'));
+    await userEvent.type(screen.getByLabelText('Length'), '30');
+    await userEvent.tab(); // commits Length -> past.length === 1
+    expect(screen.getByTestId('past-length').textContent).toBe('1');
+
+    // Tab/blur through the rest of the fields without changing them.
+    await userEvent.tab();
+    await userEvent.tab();
+    await userEvent.tab();
+    expect(screen.getByTestId('past-length').textContent).toBe('1');
+
+    // So a single Undo now reverts the actual edit, not a phantom re-commit
+    // of an untouched field.
+    await userEvent.click(screen.getByRole('button', { name: 'undo' }));
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces.find((p: { id: string }) => p.id === 'p1').outline[1].x).toBeCloseTo(600, 1);
+  });
+
+  it('re-seeds every field from the piece when something else (e.g. undo) changes it underneath', async () => {
+    renderInspector([makePiece('p1', 'A-1')], 'p1');
+    await selectPiece();
+    const lengthInput = screen.getByLabelText('Length');
+    await userEvent.clear(lengthInput);
+    await userEvent.type(lengthInput, '30');
+    await userEvent.tab();
+    expect(screen.getByLabelText('Length')).toHaveValue('30"');
+
+    await userEvent.click(screen.getByRole('button', { name: 'undo' }));
+
+    // The piece reverted; the field must show the reverted value, not the
+    // undone "30" — and tabbing through it again must not silently
+    // re-apply the undone edit.
+    expect(screen.getByLabelText('Length')).toHaveValue('23 5/8"');
+    await userEvent.click(screen.getByLabelText('Length'));
+    await userEvent.tab();
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces.find((p: { id: string }) => p.id === 'p1').outline[1].x).toBeCloseTo(600, 1);
   });
 
   it('selecting a material line dispatches updatePiece with salesOrderLineId', async () => {
@@ -124,14 +214,17 @@ describe('PieceInspector — rect piece selected', () => {
     renderInspector([makePiece('p1', 'A-1')], 'p1');
     await selectPiece();
     await userEvent.click(screen.getByRole('button', { name: 'Rotate A-1' }));
-    expect(screen.getByLabelText('Label')).toBeDefined(); // still rendered (not crashed)
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces.find((p: { id: string }) => p.id === 'p1').rotationDeg).toBe(90);
   });
 
-  it('Duplicate adds a second piece', async () => {
+  it('Duplicate adds a second piece with the next free label', async () => {
     renderInspector([makePiece('p1', 'A-1')], 'p1');
     await selectPiece();
     await userEvent.click(screen.getByRole('button', { name: 'Duplicate A-1' }));
-    expect(screen.getByRole('button', { name: 'Rotate A-1' })).toBeDefined();
+    expect(screen.getByTestId('piece-count').textContent).toBe('2');
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces.map((p: { label: string }) => p.label)).toEqual(['A-1', 'A-2']);
   });
 
   it('Delete removes the piece and clears the inspector', async () => {
