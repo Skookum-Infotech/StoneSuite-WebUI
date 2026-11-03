@@ -12,7 +12,7 @@ import { ANOMALY_SCAN_RULE_KEY, findAnomalyScanRule, scanSummary } from '@/lib/a
 const RULES_QUERY_KEY = 'automation-rules';
 const SETTINGS_QUERY_KEY = 'automation-settings';
 /** Same wording the API returns (409) when scanning is turned on while platform automation is off. */
-const PLATFORM_OFF_MESSAGE = 'Ask a super admin to turn on Automation first.';
+const PLATFORM_OFF_MESSAGE = "Anomaly scanning isn't available yet because Automation is off.";
 const ANOMALIES_QUERY_KEY = 'anomalies';
 
 /** Workspace-level controls for the anomaly scan: the on/off switch and a
