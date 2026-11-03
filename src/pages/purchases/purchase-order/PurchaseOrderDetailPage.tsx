@@ -17,6 +17,8 @@ import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationT
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
+import { OrderProgressTracker } from '@/components/tenant/OrderProgressTracker';
+import { buildPurchaseOrderProgress } from '@/lib/orderProgress';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
@@ -309,6 +311,12 @@ export default function PurchaseOrderDetailPage() {
         <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
+              <OrderProgressTracker
+                steps={buildPurchaseOrderProgress(po.statusCode)}
+                statusCode={po.statusCode}
+                statusLabel={po.status}
+                ariaLabel="Purchase order progress"
+              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Order Date" value={fmtDate(po.orderDate)} />

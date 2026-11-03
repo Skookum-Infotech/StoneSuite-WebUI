@@ -80,7 +80,8 @@ export function RuleRow({ rule, canConfigure, notSending, onPreview }: Props) {
       </div>
       <div className="min-w-0 text-xs text-stone-600 dark:text-stone-300">
         <p>{cadenceText(rule.ruleKey, rule.cadence)}</p>
-        <p className="mt-0.5 text-stone-500">{lastCheckedText(rule.lastPlannedAt)}</p>
+        {/* The anomaly scan never stamps last_planned_at, so "Not run yet" would be wrong for it. */}
+        {!isAnomalyScan && <p className="mt-0.5 text-stone-500">{lastCheckedText(rule.lastPlannedAt)}</p>}
       </div>
       <div className="flex items-center gap-3">
         {isAnomalyScan ? (
