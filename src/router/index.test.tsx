@@ -14,4 +14,10 @@ describe('router', () => {
     const paths = matches?.map((match) => match.route.path).filter(Boolean);
     expect(paths).toEqual(['/', 'support']);
   });
+
+  it('registers Configure > Automation inside the app shell', () => {
+    const matches = matchRoutes(router.routes, '/config/automation');
+    const paths = matches?.map((match) => match.route.path).filter(Boolean);
+    expect(paths).toEqual(['/', 'config/automation']);
+  });
 });

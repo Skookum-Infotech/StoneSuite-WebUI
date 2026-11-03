@@ -104,8 +104,10 @@ describe('ANOMALY_FILTERS', () => {
   });
 });
 
+import { makeRule } from '@/test/automationFixtures';
+
 describe('findAnomalyScanRule', () => {
-  const base = { name: 'x', audience: 'internal', enabled: true, enabledAt: null } as const;
+  const base = makeRule({ name: 'x', enabled: true, enabledAt: null });
   it('finds the scan switch among the workspace rules', () => {
     const rules = [{ ...base, ruleKey: 'ar_dunning' }, { ...base, ruleKey: 'anomaly_scan' }];
     expect(findAnomalyScanRule(rules)?.ruleKey).toBe('anomaly_scan');
