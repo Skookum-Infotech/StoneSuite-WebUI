@@ -62,7 +62,7 @@ jobs:
         run: npm ci
 
       - name: Restore ESLint cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules/.cache/eslint
           key: eslint-${{ hashFiles('package-lock.json', 'eslint.config.js') }}-${{ github.sha }}
@@ -119,7 +119,7 @@ jobs:
         run: npm ci
 
       - name: Restore tsc incremental cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules/.tmp
           key: tsc-${{ hashFiles('package-lock.json', 'tsconfig*.json') }}-${{ github.sha }}
