@@ -386,6 +386,9 @@ const AccountingPeriodsPage = lazyWithRetry(
 const ActivityPlannerPage = lazyWithRetry(
   () => import("@/pages/calendar/ActivityPlannerPage"),
 );
+const InstallSchedulePage = lazyWithRetry(
+  () => import("@/pages/calendar/InstallSchedulePage"),
+);
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -878,6 +881,17 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
             <ActivityPlannerPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Calendar: Install Schedule. Gated by its own install_appointment grant;
+      // no workflowKey because visits are not a workflow record.
+      {
+        path: "calendar/install-schedule",
+        element: lazy_(
+          <PermissionGuard resource="install_appointment" action="read">
+            <InstallSchedulePage />
           </PermissionGuard>,
         ),
       },

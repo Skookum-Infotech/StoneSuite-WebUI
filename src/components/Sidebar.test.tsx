@@ -252,10 +252,11 @@ describe('Sidebar Calendar group', () => {
     expect(screen.queryByText('Activity Planner')).toBeNull();
   });
 
-  it('hides Calendar once the Sales Order workflow is disabled', () => {
+  it('hides Activity Planner once the Sales Order workflow is disabled, keeping Install Schedule', () => {
     setup({ grants: [{ resource: '*', action: '*' }], disabledWorkflows: ['sales_order'] });
 
-    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.queryByText('Activity Planner')).toBeNull();
+    expect(screen.getByRole('link', { name: /Install Schedule/ })).toHaveAttribute('href', '/calendar/install-schedule');
   });
 
   // A portal session is granted sales_order:read for its own order pages, but
