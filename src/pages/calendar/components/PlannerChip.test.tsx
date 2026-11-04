@@ -17,6 +17,17 @@ describe('PlannerChip', () => {
     expect(screen.getByRole('button')).toHaveClass('line-through', 'opacity-60');
   });
 
+  it('shows a Job cancelled badge and names it in the label', () => {
+    render(<MemoryRouter><PlannerChip card={{ ...card, jobCancelled: true }} /></MemoryRouter>);
+    expect(screen.getByText('Job cancelled')).toBeInTheDocument();
+    expect(screen.getByRole('button')).toHaveAccessibleName(/job cancelled/);
+  });
+
+  it('has no badge when the job is open', () => {
+    render(<MemoryRouter><PlannerChip card={card} /></MemoryRouter>);
+    expect(screen.queryByText('Job cancelled')).not.toBeInTheDocument();
+  });
+
   it('leaves other cards alone', () => {
     render(<MemoryRouter><PlannerChip card={card} /></MemoryRouter>);
     expect(screen.getByRole('button')).not.toHaveClass('line-through');

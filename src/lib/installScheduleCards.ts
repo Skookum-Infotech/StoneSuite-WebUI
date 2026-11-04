@@ -18,6 +18,7 @@ const FALLBACK_TITLE = 'Visit';
 const NO_CREW = 'No crew';
 const META_SEPARATOR = ' · ';
 const RANGE_SEPARATOR = ' to ';
+export const JOB_CANCELLED_LABEL = 'Job cancelled';
 const MUTED_COLOR = '#a8a29e';
 
 const VISIT_LABELS: Record<VisitType, string> = { template: 'Template', install: 'Install', service: 'Service' };
@@ -57,6 +58,7 @@ function cardsFor(a: Appointment): PlannerCard[] {
   const when = whenLabel(a);
   const statusLabel = STATUS_LABELS[a.status];
   const crew = crewLabel(a.crew.length);
+  const jobCancelled = a.jobCancelled === true;
   const meta = [crew, a.siteCity].filter(Boolean).join(META_SEPARATOR);
 
   return daysCovered(a).map((day, index) => {
@@ -84,7 +86,8 @@ function cardsFor(a: Appointment): PlannerCard[] {
       done: a.status === 'completed',
       overdue: false,
       cancelled,
-      ariaLabel: `${VISIT_LABELS[a.visitType]}, ${title} ${a.customerName}, ${when}, ${crew.toLowerCase()}, ${statusLabel.toLowerCase()}`,
+      jobCancelled,
+      ariaLabel: `${VISIT_LABELS[a.visitType]}, ${title} ${a.customerName}, ${when}, ${crew.toLowerCase()}, ${statusLabel.toLowerCase()}${jobCancelled ? `, ${JOB_CANCELLED_LABEL.toLowerCase()}` : ''}`,
     };
   });
 }

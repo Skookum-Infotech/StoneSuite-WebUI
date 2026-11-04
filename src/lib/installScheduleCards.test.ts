@@ -57,6 +57,15 @@ describe('appointmentsToCards', () => {
     expect(card.ariaLabel).toContain('cancelled');
   });
 
+  it('flags a visit whose job is cancelled', () => {
+    const [on] = appointmentsToCards([appt({ jobCancelled: true })]);
+    expect(on.jobCancelled).toBe(true);
+    expect(on.ariaLabel).toContain('job cancelled');
+    const [off] = appointmentsToCards([appt()]);
+    expect(off.jobCancelled).toBe(false);
+    expect(off.ariaLabel).not.toContain('job cancelled');
+  });
+
   it('marks a completed visit done', () => {
     const [card] = appointmentsToCards([appt({ status: 'completed' })]);
     expect(card).toMatchObject({ statusLabel: 'Completed', done: true, cancelled: false });

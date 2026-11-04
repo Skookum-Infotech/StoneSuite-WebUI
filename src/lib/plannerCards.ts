@@ -58,6 +58,8 @@ export interface PlannerCard {
   overdue: boolean;
   /** A cancelled install visit: drawn muted and struck through, never hidden. */
   cancelled?: boolean;
+  /** The visit's fabrication job was cancelled: a "Job cancelled" badge is shown. */
+  jobCancelled?: boolean;
   ariaLabel: string;
 }
 

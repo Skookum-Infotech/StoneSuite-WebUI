@@ -4,20 +4,23 @@ import {
   NOTES_MAX, START_TIMES, VISIT_TYPES, VISIT_TYPE_LABELS, durationLabel, durationOptions, withVisitType,
 } from '@/lib/installAppointmentForm';
 import type { VisitForm } from '@/lib/installAppointmentForm';
-import type { CrewOption, VisitType } from '@/types/installSchedule';
+import type { CrewMember, CrewOption, VisitType } from '@/types/installSchedule';
 import { InstallCrewPicker } from './InstallCrewPicker';
+import { InstallCrewReadOnly } from './InstallCrewReadOnly';
 
 interface Props {
   form: VisitForm;
   onChange: (next: VisitForm) => void;
   crewOptions: CrewOption[];
+  /** When set, the crew is shown read-only from the visit instead of the picker. */
+  readOnlyCrew?: CrewMember[];
   idPrefix: string;
 }
 
 const labelCls = 'mb-1 block text-xs font-medium text-stone-600';
 
 /** The visit's own fields (type, when, crew, notes); the job is chosen above. */
-export function InstallVisitFields({ form, onChange, crewOptions, idPrefix }: Props) {
+export function InstallVisitFields({ form, onChange, crewOptions, readOnlyCrew, idPrefix }: Props) {
   const set = (patch: Partial<VisitForm>) => onChange({ ...form, ...patch });
   const timeId = `${idPrefix}-time`;
   const durId = `${idPrefix}-duration`;
@@ -81,7 +84,11 @@ export function InstallVisitFields({ form, onChange, crewOptions, idPrefix }: Pr
         All day
       </label>
 
-      <InstallCrewPicker value={form.crew} onChange={(crew) => set({ crew })} options={crewOptions} />
+      {readOnlyCrew ? (
+        <InstallCrewReadOnly crew={readOnlyCrew} />
+      ) : (
+        <InstallCrewPicker value={form.crew} onChange={(crew) => set({ crew })} options={crewOptions} />
+      )}
 
       <div>
         <label htmlFor={notesId} className={labelCls}>Notes</label>

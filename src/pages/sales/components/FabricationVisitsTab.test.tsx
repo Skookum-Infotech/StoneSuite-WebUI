@@ -61,6 +61,12 @@ describe('FabricationVisitsTab', () => {
     expect(svc.listForJob).toHaveBeenCalledWith('job-1');
   });
 
+  it('badges visits whose job was cancelled', async () => {
+    svc.listForJob.mockResolvedValue([{ ...visit('a1', 'install', '2099-03-03'), jobCancelled: true }, visit('a2', 'template', '2099-03-10')]);
+    renderTab();
+    expect(await screen.findAllByText('Job cancelled')).toHaveLength(1);
+  });
+
   it('shows the empty copy when there are no visits', async () => {
     svc.listForJob.mockResolvedValue([]);
     renderTab();

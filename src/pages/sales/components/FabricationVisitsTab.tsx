@@ -4,6 +4,7 @@ import { ErrorNote, Spinner } from '@/components/tenant/ui';
 import { useJobInstallAppointments } from '@/hooks/useJobInstallAppointments';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { InstallAppointmentDialog } from '@/pages/calendar/components/InstallAppointmentDialog';
+import { JOB_CANCELLED_LABEL } from '@/lib/installScheduleCards';
 import { formatDisplayDate } from '@/lib/dateUtils';
 import { PLANNER_CLOCK } from '@/lib/plannerPlacement';
 import { formatWallClock } from '@/lib/salesOrderSchedule';
@@ -56,7 +57,11 @@ export function FabricationVisitsTab({ jobId }: { jobId: string }) {
                 {VISIT_LABELS[a.visitType]} · {whenOf(a)}
               </p>
               <p className="text-xs text-stone-500">
-                {STATUS_LABELS[a.status]} · {a.crew.length === 0 ? 'No crew' : a.crew.map((c) => c.name).join(', ')}
+                {STATUS_LABELS[a.status]}
+                {a.jobCancelled && (
+                  <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-800">{JOB_CANCELLED_LABEL}</span>
+                )}
+                {' · '}{a.crew.length === 0 ? 'No crew' : a.crew.map((c) => c.name).join(', ')}
               </p>
             </div>
             <button

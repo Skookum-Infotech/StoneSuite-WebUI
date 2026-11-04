@@ -177,4 +177,23 @@ describe('InstallAppointmentDialog', () => {
     expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cancel visit' })).not.toBeInTheDocument();
   });
+
+  it('shows the visit crew read-only, without loading crew options, for a reader', async () => {
+    vi.mocked(useUserPermissions).mockReturnValue({
+      grants: [], isLoading: false, isSuperAdmin: false, activeRoleId: '',
+      hasPermission: (_r: string, a: string) => a === 'read',
+    } as ReturnType<typeof useUserPermissions>);
+    svc.getAppointment.mockResolvedValue({
+      ...visit,
+      crew: [{ employeeId: 12, name: 'Sam Lee', role: 'lead' }, { employeeId: 15, name: 'Pat Roe', role: 'member' }],
+    });
+    await openDialog({ mode: 'edit', appointmentId: 'a1' });
+    const list = await screen.findByRole('list', { name: 'Crew' });
+    expect(list).toHaveTextContent('Sam Lee');
+    expect(list).toHaveTextContent('Lead');
+    expect(list).toHaveTextContent('Pat Roe');
+    expect(screen.queryByText('No crew members available.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /Sam Lee/ })).not.toBeInTheDocument();
+    expect(svc.getCrewOptions).not.toHaveBeenCalled();
+  });
 });

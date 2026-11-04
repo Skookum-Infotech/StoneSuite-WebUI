@@ -1,5 +1,6 @@
 import { Check, TriangleAlert } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { JOB_CANCELLED_LABEL } from '@/lib/installScheduleCards';
 import { cn } from '@/lib/utils';
 import type { PlannerCard } from '@/lib/plannerCards';
 import { PlannerEventDetail } from './PlannerEventDetail';
@@ -16,7 +17,7 @@ export function PlannerChip({ card }: { card: PlannerCard }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`${card.title}, ${card.customer}, ${card.whenLabel}, ${card.statusLabel}`}
+          aria-label={`${card.title}, ${card.customer}, ${card.whenLabel}, ${card.statusLabel}${card.jobCancelled ? `, ${JOB_CANCELLED_LABEL.toLowerCase()}` : ''}`}
           // A status colour is data, not a design token, so it can't be a class —
           // the same inline fill the status Badge uses.
           style={{ backgroundColor: card.chipColor }}
@@ -31,6 +32,9 @@ export function PlannerChip({ card }: { card: PlannerCard }) {
         >
           {card.done && <Check className="size-3 shrink-0" aria-hidden="true" />}
           {card.overdue && <TriangleAlert className="size-3 shrink-0" aria-hidden="true" />}
+          {card.jobCancelled && (
+            <span className="shrink-0 rounded bg-white/25 px-1 font-semibold">{JOB_CANCELLED_LABEL}</span>
+          )}
           {!card.allDay && <span className="shrink-0 font-semibold tabular-nums">{card.timeLabel}</span>}
           <span className="min-w-0 truncate">
             <span className="font-semibold">{card.title}</span>

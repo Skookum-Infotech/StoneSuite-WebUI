@@ -44,6 +44,8 @@ export interface Appointment {
   crew: CrewMember[];
   notes: string;
   cancelReason: string | null;
+  /** The fabrication job was cancelled; the visit stays until cancelled by hand. */
+  jobCancelled?: boolean;
   version: number;
 }
 

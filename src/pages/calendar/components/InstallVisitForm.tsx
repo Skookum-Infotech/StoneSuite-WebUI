@@ -132,7 +132,8 @@ export function InstallVisitForm({ appointment, jobId, defaultDate, actions }: P
             )}
             {promised && <p className="mt-1 text-xs text-stone-500">Promised install date: {formatDisplayDate(promised)}</p>}
           </div>
-          <InstallVisitFields form={form} onChange={change} crewOptions={crew.data ?? []} idPrefix={idPrefix} />
+          <InstallVisitFields form={form} onChange={change} crewOptions={crew.data ?? []}
+            readOnlyCrew={appointment && !canWrite ? appointment.crew : undefined} idPrefix={idPrefix} />
         </fieldset>
 
         {conflict && (
