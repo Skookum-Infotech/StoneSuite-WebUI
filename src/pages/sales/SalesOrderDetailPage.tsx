@@ -34,10 +34,9 @@ import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
 import { SendToCustomerDialog } from '@/components/tenant/SendToCustomerDialog';
+import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
-import { OrderProgressTracker } from '@/components/tenant/OrderProgressTracker';
-import { buildSalesOrderProgress } from '@/lib/orderProgress';
 import { SalesOrderStatusControl } from './components/SalesOrderStatusControl';
 import { CustomerOrderFormAction } from './components/CustomerOrderFormAction';
 import { formatDateValue } from '@/lib/dateUtils';
@@ -300,12 +299,6 @@ export default function SalesOrderDetailPage() {
         <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
-              <OrderProgressTracker
-                steps={buildSalesOrderProgress(order.statusCode)}
-                statusCode={order.statusCode}
-                statusLabel={order.status}
-                ariaLabel="Sales order progress"
-              />
               <AmountsStrip
                 items={[
                   { label: 'Subtotal', value: order.subtotal },
@@ -412,6 +405,7 @@ export default function SalesOrderDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Order Details">
+          <RecordProgressCard module="salesOrder" recordId={id} statusCode={order.statusCode} statusLabel={order.status} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

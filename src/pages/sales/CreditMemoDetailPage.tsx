@@ -24,6 +24,7 @@ import { DeleteCreditMemoDialog } from './components/DeleteCreditMemoDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { VoidCreditMemoDialog } from './components/VoidCreditMemoDialog';
 import { ApplyCreditMemoDialog } from './components/ApplyCreditMemoDialog';
+import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import type { CreditMemoApplication } from '@/types/creditMemo';
@@ -378,6 +379,7 @@ export default function CreditMemoDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Credit Memo Details">
+          <RecordProgressCard module="creditMemo" recordId={id} statusCode={creditMemo.statusCode} statusLabel={creditMemo.status} />
           {!isReadOnly && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
               <p className="text-xs font-semibold text-stone-500">Quick Actions</p>

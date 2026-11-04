@@ -17,8 +17,6 @@ import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationT
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
-import { OrderProgressTracker } from '@/components/tenant/OrderProgressTracker';
-import { buildPurchaseOrderProgress } from '@/lib/orderProgress';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
@@ -44,6 +42,7 @@ import { documentSendsKey } from '@/lib/documentSends';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
+import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
 
@@ -311,12 +310,6 @@ export default function PurchaseOrderDetailPage() {
         <div className={cn('flex-1 space-y-3 min-w-0', activeTab === 'communication' && 'flex flex-col')}>
           {activeTab === 'overview' && (
             <>
-              <OrderProgressTracker
-                steps={buildPurchaseOrderProgress(po.statusCode)}
-                statusCode={po.statusCode}
-                statusLabel={po.status}
-                ariaLabel="Purchase order progress"
-              />
               <ModernSection title="Primary Information" index={0}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   <ReadonlyField label="Order Date" value={fmtDate(po.orderDate)} />
@@ -417,6 +410,7 @@ export default function PurchaseOrderDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Purchase Order Details">
+          <RecordProgressCard module="purchaseOrder" recordId={id} statusCode={po.statusCode} statusLabel={po.status} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

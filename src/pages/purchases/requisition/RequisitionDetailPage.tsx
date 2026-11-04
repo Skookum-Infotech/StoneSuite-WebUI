@@ -30,6 +30,7 @@ import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { RequisitionStatusControl } from './components/RequisitionStatusControl';
 import { ConvertToPurchaseOrderDialog } from './components/ConvertToPurchaseOrderDialog';
+import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
 import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
@@ -332,6 +333,7 @@ export default function RequisitionDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Requisition Details">
+          <RecordProgressCard module="requisition" recordId={id} statusCode={reqn.statusCode} statusLabel={reqn.status} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
