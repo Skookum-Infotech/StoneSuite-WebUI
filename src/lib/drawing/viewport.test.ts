@@ -15,6 +15,47 @@ describe('pixelDeltaToViewboxUnits', () => {
   });
 });
 
+// The canvas fills whatever space the page gives it, which is rarely 4:3.
+// The SVG keeps its drawing's proportions (a square piece stays square) by
+// scaling the 800x600 viewBox to fit and centring it, so one pixel is the
+// same number of viewBox units in both directions.
+describe('on a canvas that is not 4:3', () => {
+  it('scales both axes alike on a wide canvas, set by its height', () => {
+    expect(pixelDeltaToViewboxUnits(10, 10, { width: 1600, height: 600 })).toEqual({ x: 10, y: 10 });
+  });
+
+  it('scales both axes alike on a tall canvas, set by its width', () => {
+    expect(pixelDeltaToViewboxUnits(10, 10, { width: 400, height: 1200 })).toEqual({ x: 20, y: 20 });
+  });
+
+  it('still maps the middle of a wide canvas to the world origin', () => {
+    const rect = { left: 100, top: 50, width: 1600, height: 600 };
+    expectPoint(screenPointToMm(100 + 800, 50 + 300, rect, 1, { x: 0, y: 0 }), { x: 0, y: 0 });
+  });
+
+  // The old per-axis mapping put this click 50 units, not 100, from centre.
+  it('maps a click 100px right of the middle of a wide canvas to 100mm', () => {
+    const rect = { left: 0, top: 0, width: 1600, height: 600 };
+    expectPoint(screenPointToMm(800 + 100, 300, rect, 1, { x: 0, y: 0 }), { x: 100, y: 0 });
+  });
+
+  it('maps a click 100px above the middle of a tall canvas to 200mm at 2 units a pixel', () => {
+    const rect = { left: 0, top: 0, width: 400, height: 1200 };
+    expectPoint(screenPointToMm(200, 600 - 100, rect, 1, { x: 0, y: 0 }), { x: 0, y: 200 });
+  });
+
+  it('lets a click out in the extra width of a wide canvas land outside the 800 unit viewBox', () => {
+    const rect = { left: 0, top: 0, width: 1600, height: 600 };
+    expectPoint(screenPointToMm(0, 300, rect, 1, { x: 0, y: 0 }), { x: -800, y: 0 });
+  });
+
+  it('moves a drag the same distance on screen in both directions', () => {
+    const { x, y } = pixelDeltaToMm(50, 50, { width: 1600, height: 600 }, 2);
+    expect(x).toBeCloseTo(25, 9);
+    expect(y).toBeCloseTo(-25, 9);
+  });
+});
+
 describe('pixelDeltaToMm', () => {
   it('converts a pixel delta to world mm: viewbox-scaled, un-zoomed, y negated', () => {
     // 1:1 rendered size, zoom 1 -> pixels map straight to mm, y flips sign.

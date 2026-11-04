@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing } from '@/types/drawing';
 import { MM_PER_INCH } from '@/lib/drawing/constants';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { DrawingToolbar } from './DrawingToolbar';
+
+vi.mock('@/services/drawingService', () => ({
+  drawingService: { listVersions: vi.fn().mockResolvedValue({ items: [], nextCursor: null }) },
+}));
 
 function blankDrawing(): Drawing {
   return {
@@ -33,10 +37,10 @@ function Readout() {
   );
 }
 
-function renderToolbar() {
+function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveStatus'] = 'idle') {
   render(
     <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
-      <DrawingToolbar />
+      <DrawingToolbar saveStatus={saveStatus} />
       <Readout />
     </DrawingEditorProvider>,
   );
@@ -82,6 +86,31 @@ describe('DrawingToolbar — add rectangle', () => {
     expect(screen.getByText(/isn't a length/)).toBeDefined();
     expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(0);
   });
+
+  it('shows a specific error and does not add a piece when Length is zero — found in the final review as a silent refusal', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    await userEvent.type(screen.getByLabelText('Length'), '0');
+    await userEvent.type(screen.getByLabelText('Width'), '26');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    expect(screen.getByText(/greater than zero/)).toBeDefined();
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(0);
+  });
+
+  it('links an invalid field\'s error to its input via aria-describedby, and announces it as an alert', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
+    await userEvent.type(screen.getByLabelText('Length'), 'banana');
+    await userEvent.type(screen.getByLabelText('Width'), '26');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    const errorText = screen.getByText(/isn't a length/);
+    expect(errorText).toHaveAttribute('role', 'alert');
+    expect(screen.getByLabelText('Length').getAttribute('aria-describedby')).toBe(errorText.id);
+  });
 });
 
 describe('DrawingToolbar — undo/redo', () => {
@@ -106,5 +135,53 @@ describe('DrawingToolbar — undo/redo', () => {
     expect(redoButton).toBeEnabled();
     await userEvent.click(redoButton);
     expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(1);
+  });
+});
+
+describe('DrawingToolbar — add L-shape', () => {
+  it('adds an L-shaped piece built from lShapeOutline', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add L-shape' }));
+    await userEvent.type(screen.getByLabelText('Length'), '40');
+    await userEvent.type(screen.getByLabelText('Width'), '24');
+    await userEvent.type(screen.getByLabelText('Notch length'), '16');
+    await userEvent.type(screen.getByLabelText('Notch width'), '12');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    const pieces = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(pieces).toHaveLength(1);
+    expect(pieces[0].outline).toHaveLength(6);
+  });
+
+  it('rejects a notch as large as the piece itself, instead of building a degenerate outline', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Add L-shape' }));
+    await userEvent.type(screen.getByLabelText('Length'), '40');
+    await userEvent.type(screen.getByLabelText('Width'), '24');
+    await userEvent.type(screen.getByLabelText('Notch length'), '40'); // equal to Length
+    await userEvent.type(screen.getByLabelText('Notch width'), '12');
+    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
+    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+
+    expect(screen.getByText(/notch must be smaller than the piece/i)).toBeDefined();
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')).toHaveLength(0);
+  });
+});
+
+describe('DrawingToolbar — save status and version history', () => {
+  it.each([
+    ['dirty', 'Unsaved changes'],
+    ['saving', 'Saving…'],
+    ['saved', 'Saved'],
+  ] as const)('shows "%s" as "%s"', (status, label) => {
+    renderToolbar(status);
+    expect(screen.getByText(label)).toBeDefined();
+  });
+
+  it('"Version history" opens the version drawer', async () => {
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Version history' }));
+    expect(screen.getByRole('dialog')).toBeDefined();
   });
 });

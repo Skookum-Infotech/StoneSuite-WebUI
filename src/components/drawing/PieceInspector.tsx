@@ -4,7 +4,7 @@
 // path for them — DrawingCanvas's r/Delete keys (Task 7) are accelerators
 // on top of this, not a substitute for it.
 
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Piece } from '@/types/drawing';
 import { bounds, rectOutline } from '@/lib/drawing/geometry';
 import { validatePieceLabel } from '@/lib/drawing/labels';
@@ -27,17 +27,32 @@ export function PieceInspector() {
   const { state } = useDrawingEditor();
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
   const piece = area?.pieces.find((p) => p.id === state.selectedPieceId);
+  const noSelectionRef = useRef<HTMLParagraphElement>(null);
+  // Set only by the Delete button's own click below — deleting the piece
+  // unmounts the whole field tree (the button included), which would
+  // otherwise strand keyboard focus on <body> with no indication where it
+  // went. Scoped to that one action so other deselection paths (e.g. the
+  // canvas's own Delete key, which refocuses the canvas itself) aren't
+  // overridden by this effect firing too. Found in the a11y review.
+  const pendingFocusRef = useRef(false);
+
+  useEffect(() => {
+    if (!piece && pendingFocusRef.current) {
+      noSelectionRef.current?.focus();
+      pendingFocusRef.current = false;
+    }
+  }, [piece]);
 
   if (!area || !piece) {
-    return <p className="text-xs text-stone-500">No piece selected.</p>;
+    return <p ref={noSelectionRef} tabIndex={-1} className="text-xs text-stone-500 outline-none">No piece selected.</p>;
   }
 
   // Remounts (and so re-seeds every local field buffer) whenever the
   // selection changes.
-  return <PieceFields key={piece.id} piece={piece} />;
+  return <PieceFields key={piece.id} piece={piece} onDeleteClick={() => { pendingFocusRef.current = true; }} />;
 }
 
-function PieceFields({ piece }: { piece: Piece }) {
+function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: () => void }) {
   const { state, dispatch, materialLines } = useDrawingEditor();
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
   const { displayUnit, fractionDenominator } = state.present;
@@ -49,16 +64,21 @@ function PieceFields({ piece }: { piece: Piece }) {
 
   const [label, setLabel] = useState(piece.label);
   const [labelError, setLabelError] = useState<string | null>(null);
+  const labelErrorId = useId();
   const [length, setLength] = useState(() => formatLength(lengthMm, displayUnit, fractionDenominator));
   const [lengthError, setLengthError] = useState<string | null>(null);
+  const lengthErrorId = useId();
   const [width, setWidth] = useState(() => formatLength(widthMm, displayUnit, fractionDenominator));
   const [widthError, setWidthError] = useState<string | null>(null);
+  const widthErrorId = useId();
   const [thickness, setThickness] = useState(() => formatLength(piece.thicknessMm, displayUnit, fractionDenominator));
   const [thicknessError, setThicknessError] = useState<string | null>(null);
+  const thicknessErrorId = useId();
   const [cornerRadius, setCornerRadius] = useState(() => (
     piece.cornerRadiusMm === undefined ? '' : formatLength(piece.cornerRadiusMm, displayUnit, fractionDenominator)
   ));
   const [cornerRadiusError, setCornerRadiusError] = useState<string | null>(null);
+  const cornerRadiusErrorId = useId();
 
   // Re-seed every field whenever the piece itself changes under us — found
   // in the final review: undo/redo/rotate left these fields showing the
@@ -149,40 +169,42 @@ function PieceFields({ piece }: { piece: Piece }) {
     <div className="flex flex-col gap-2 text-xs">
       <label className="flex flex-col gap-0.5">
         Label
-        <input aria-label="Label" value={label} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} className="rounded border border-stone-200 px-1.5 py-1" />
-        {labelError && <span className="text-2xs text-destructive">{labelError}</span>}
+        <input aria-label="Label" aria-describedby={labelError ? labelErrorId : undefined} value={label} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} className="rounded border border-stone-200 px-1.5 py-1" />
+        {labelError && <span id={labelErrorId} role="alert" className="text-2xs text-destructive">{labelError}</span>}
       </label>
 
       <label className="flex flex-col gap-0.5">
         Length
         <input
           aria-label="Length"
+          aria-describedby={lengthError ? lengthErrorId : undefined}
           value={length}
           readOnly={!isRect}
           onChange={(e) => setLength(e.target.value)}
           onBlur={() => isRect && commitLengthOrWidth('length', length, setLengthError)}
           className="rounded border border-stone-200 px-1.5 py-1"
         />
-        {lengthError && <span className="text-2xs text-destructive">{lengthError}</span>}
+        {lengthError && <span id={lengthErrorId} role="alert" className="text-2xs text-destructive">{lengthError}</span>}
       </label>
 
       <label className="flex flex-col gap-0.5">
         Width
         <input
           aria-label="Width"
+          aria-describedby={widthError ? widthErrorId : undefined}
           value={width}
           readOnly={!isRect}
           onChange={(e) => setWidth(e.target.value)}
           onBlur={() => isRect && commitLengthOrWidth('width', width, setWidthError)}
           className="rounded border border-stone-200 px-1.5 py-1"
         />
-        {widthError && <span className="text-2xs text-destructive">{widthError}</span>}
+        {widthError && <span id={widthErrorId} role="alert" className="text-2xs text-destructive">{widthError}</span>}
       </label>
 
       <label className="flex flex-col gap-0.5">
         Thickness
-        <input aria-label="Thickness" value={thickness} onChange={(e) => setThickness(e.target.value)} onBlur={commitThickness} className="rounded border border-stone-200 px-1.5 py-1" />
-        {thicknessError && <span className="text-2xs text-destructive">{thicknessError}</span>}
+        <input aria-label="Thickness" aria-describedby={thicknessError ? thicknessErrorId : undefined} value={thickness} onChange={(e) => setThickness(e.target.value)} onBlur={commitThickness} className="rounded border border-stone-200 px-1.5 py-1" />
+        {thicknessError && <span id={thicknessErrorId} role="alert" className="text-2xs text-destructive">{thicknessError}</span>}
       </label>
 
       <label className="flex flex-col gap-0.5">
@@ -202,8 +224,8 @@ function PieceFields({ piece }: { piece: Piece }) {
 
       <label className="flex flex-col gap-0.5">
         Corner radius
-        <input aria-label="Corner radius" value={cornerRadius} onChange={(e) => setCornerRadius(e.target.value)} onBlur={commitCornerRadius} className="rounded border border-stone-200 px-1.5 py-1" />
-        {cornerRadiusError && <span className="text-2xs text-destructive">{cornerRadiusError}</span>}
+        <input aria-label="Corner radius" aria-describedby={cornerRadiusError ? cornerRadiusErrorId : undefined} value={cornerRadius} onChange={(e) => setCornerRadius(e.target.value)} onBlur={commitCornerRadius} className="rounded border border-stone-200 px-1.5 py-1" />
+        {cornerRadiusError && <span id={cornerRadiusErrorId} role="alert" className="text-2xs text-destructive">{cornerRadiusError}</span>}
       </label>
 
       <div className="flex gap-2 pt-1">
@@ -226,7 +248,10 @@ function PieceFields({ piece }: { piece: Piece }) {
         <button
           type="button"
           aria-label={`Delete ${piece.label}`}
-          onClick={() => dispatch({ type: 'deletePiece', areaId: state.activeAreaId, pieceId: piece.id })}
+          onClick={() => {
+            onDeleteClick();
+            dispatch({ type: 'deletePiece', areaId: state.activeAreaId, pieceId: piece.id });
+          }}
           className="rounded border border-stone-200 px-2 py-1 text-destructive"
         >
           Delete

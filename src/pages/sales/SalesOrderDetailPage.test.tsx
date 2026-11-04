@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -36,6 +37,9 @@ vi.mock('@/components/tenant/RecordCommunicationTab', () => ({
 }));
 vi.mock('./components/SalesOrderSchedulingTab', () => ({
   SalesOrderSchedulingTab: ({ orderId }: { orderId: string }) => <div>Scheduling tab for {orderId}</div>,
+}));
+vi.mock('./components/SalesOrderDrawingTab', () => ({
+  SalesOrderDrawingTab: ({ orderId }: { orderId: string }) => <div>Drawing tab for {orderId}</div>,
 }));
 
 import SalesOrderDetailPage from './SalesOrderDetailPage';
@@ -100,6 +104,7 @@ function renderPage(search = '') {
       <MemoryRouter initialEntries={[`/sales/sales_order/so-1${search}`]}>
         <Routes>
           <Route path="/sales/sales_order/:id" element={<SalesOrderDetailPage />} />
+          <Route path="/sales/sales_order/:id/drawing" element={<div>Drawing editor for so-1</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -140,6 +145,17 @@ describe('SalesOrderDetailPage ?tab=', () => {
     renderPage('?tab=nonsense');
 
     expect(await screen.findByText('Primary Information')).toBeInTheDocument();
+  });
+
+  it('Quick Actions has an "Open drawing editor" link to the countertop drawing editor', async () => {
+    renderPage();
+    await screen.findByText('Primary Information');
+
+    // SalesDetailSidebar mounts Quick Actions twice (desktop + the mobile
+    // bottom sheet, both present in the DOM, one hidden by CSS) — the first
+    // match is the desktop one.
+    await userEvent.click(screen.getAllByRole('button', { name: 'Open drawing editor' })[0]);
+    expect(await screen.findByText('Drawing editor for so-1')).toBeInTheDocument();
   });
 
   it('shows the Items tab with a kit heading above the lines that came from a kit', async () => {
@@ -188,5 +204,21 @@ describe('SalesOrderDetailPage ?tab=', () => {
     expect(await screen.findByText('Primary Information')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Scheduling' })).toBeNull();
     expect(screen.queryByText('Scheduling tab for so-1')).toBeNull();
+  });
+
+  it('opens the Drawing tab when the link asks for it', async () => {
+    renderPage('?tab=drawing');
+
+    expect(await screen.findByText('Drawing tab for so-1')).toBeInTheDocument();
+    expect(screen.queryByText('Primary Information')).toBeNull();
+  });
+
+  it('never opens the staff-only Drawing tab for a customer session', async () => {
+    vi.mocked(isPortalSession).mockReturnValue(true);
+    renderPage('?tab=drawing');
+
+    expect(await screen.findByText('Primary Information')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Drawing' })).toBeNull();
+    expect(screen.queryByText('Drawing tab for so-1')).toBeNull();
   });
 });

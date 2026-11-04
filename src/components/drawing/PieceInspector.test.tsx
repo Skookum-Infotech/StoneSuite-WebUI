@@ -233,6 +233,25 @@ describe('PieceInspector — rect piece selected', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Delete A-1' }));
     expect(screen.getByText(/no piece selected/i)).toBeDefined();
   });
+
+  it('Delete moves keyboard focus to the "no piece selected" message instead of stranding it', async () => {
+    renderInspector([makePiece('p1', 'A-1')], 'p1');
+    await selectPiece();
+    await userEvent.click(screen.getByRole('button', { name: 'Delete A-1' }));
+    expect(document.activeElement).toBe(screen.getByText(/no piece selected/i));
+  });
+
+  it('links an invalid field\'s error to the input via aria-describedby, and announces it as an alert', async () => {
+    renderInspector([makePiece('p1', 'A-1'), makePiece('p2', 'A-2')], 'p1');
+    await selectPiece();
+    const labelInput = screen.getByLabelText('Label');
+    await userEvent.clear(labelInput);
+    await userEvent.type(labelInput, 'A-2');
+    await userEvent.tab();
+    const errorText = screen.getByText('A-2 is already used in this area.');
+    expect(errorText).toHaveAttribute('role', 'alert');
+    expect(labelInput.getAttribute('aria-describedby')).toBe(errorText.id);
+  });
 });
 
 describe('PieceInspector — non-rect piece selected', () => {

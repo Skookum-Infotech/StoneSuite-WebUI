@@ -2,13 +2,11 @@
 // separate from geometry.ts (piece/outline math) since this is about the
 // canvas's own screen-space rendering, not a piece's shape.
 //
-// Fixes a real bug found in the final review of this feature: the canvas
-// previously treated one CSS pixel as exactly one viewBox unit, which is
-// only true when the SVG happens to render at exactly VIEWPORT_WIDTH x
-// VIEWPORT_HEIGHT pixels. Every real container is some other size, so
-// drag-to-move and polygon clicks landed at the wrong world position
-// everywhere except that one exact size. These functions correct for the
-// SVG's actual rendered size (its `getBoundingClientRect()`).
+// The canvas fills whatever room the page gives it, so one CSS pixel is not
+// one viewBox unit: drag-to-move and polygon clicks would otherwise land at
+// the wrong world position everywhere except one exact size. These functions
+// correct for the SVG's actual rendered size (its `getBoundingClientRect()`),
+// using the same fit-and-centre rule the SVG itself applies.
 
 import type { Point } from '@/types/drawing';
 import { VIEWPORT_HEIGHT, VIEWPORT_WIDTH } from './constants';
@@ -20,6 +18,14 @@ export interface ViewportRect {
   height: number;
 }
 
+/** ViewBox units per pixel. The canvas fills whatever room the page gives it,
+ *  and the SVG keeps its drawing's proportions by scaling the viewBox to the
+ *  tighter of the two dimensions ("meet") and centring it, so one pixel is the
+ *  same number of units in both directions. */
+function viewboxUnitsPerPixel(rect: Pick<ViewportRect, 'width' | 'height'>): number {
+  return Math.max(VIEWPORT_WIDTH / rect.width, VIEWPORT_HEIGHT / rect.height);
+}
+
 /** Scales a pixel distance on the rendered SVG into the same distance in
  *  viewBox units. */
 export function pixelDeltaToViewboxUnits(
@@ -27,10 +33,8 @@ export function pixelDeltaToViewboxUnits(
   dyPx: number,
   rect: Pick<ViewportRect, 'width' | 'height'>,
 ): Point {
-  return {
-    x: dxPx * (VIEWPORT_WIDTH / rect.width),
-    y: dyPx * (VIEWPORT_HEIGHT / rect.height),
-  };
+  const scale = viewboxUnitsPerPixel(rect);
+  return { x: dxPx * scale, y: dyPx * scale };
 }
 
 /** Converts a pixel distance (e.g. a drag's movementX/Y) into world
@@ -56,7 +60,12 @@ export function screenPointToMm(
   zoom: number,
   pan: Point,
 ): Point {
-  const local = pixelDeltaToViewboxUnits(clientX - rect.left, clientY - rect.top, rect);
-  const centered = { x: local.x - VIEWPORT_WIDTH / 2, y: local.y - VIEWPORT_HEIGHT / 2 };
+  // The viewBox is centred in the element, so its centre (the world origin
+  // before pan and zoom) is the element's centre, whatever the proportions.
+  const centered = pixelDeltaToViewboxUnits(
+    clientX - rect.left - rect.width / 2,
+    clientY - rect.top - rect.height / 2,
+    rect,
+  );
   return { x: (centered.x - pan.x) / zoom, y: -(centered.y - pan.y) / zoom };
 }

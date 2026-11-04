@@ -4,7 +4,7 @@
 // useModalDialog + createPortal pattern — this repo has no Dialog
 // primitive, every dialog hand-rolls its own overlay and focus handling.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { useDrawingEditor } from './DrawingEditorContext';
@@ -16,6 +16,20 @@ export function AreaTabs() {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const areas = state.present.areas;
   const onlyOneArea = areas.length <= 1;
+  const addAreaButtonRef = useRef<HTMLButtonElement>(null);
+  // Set only by the delete-confirm button below. useModalDialog restores
+  // focus to whatever opened the dialog (the area's own "×" button) on
+  // close, but confirming deletes that exact area — focusing a button
+  // that's been removed from the DOM is a no-op, stranding focus on
+  // <body>. Found in the a11y review.
+  const pendingDeleteFocusRef = useRef(false);
+
+  useEffect(() => {
+    if (pendingDeleteFocusRef.current) {
+      addAreaButtonRef.current?.focus();
+      pendingDeleteFocusRef.current = false;
+    }
+  }, [areas.length]);
 
   const startRename = (id: string, currentName: string) => {
     setRenamingId(id);
@@ -40,38 +54,33 @@ export function AreaTabs() {
     <div role="tablist" aria-label="Drawing areas" className="flex items-center gap-1 overflow-x-auto">
       {areas.map((area, index) => (
         <div key={area.id} className="flex items-center gap-0.5 rounded border border-stone-200 px-1 py-0.5">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={area.id === state.activeAreaId}
-            onClick={() => dispatch({ type: 'setActiveArea', areaId: area.id })}
-            className="px-2 py-1 text-xs"
-          >
-            {renamingId === area.id ? (
-              <input
-                autoFocus
-                aria-label={`Rename ${area.name}`}
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onBlur={() => commitRename(area.id)}
-                onKeyDown={(e) => e.key === 'Enter' && commitRename(area.id)}
-                onClick={(e) => e.stopPropagation()}
-                className="w-20 rounded border border-stone-200 px-1"
-              />
-            ) : (
-              area.name
-            )}
-          </button>
-          <input
-            aria-label={`${area.name} code`}
-            value={area.code}
-            onChange={(e) => dispatch({ type: 'setAreaCode', areaId: area.id, code: e.target.value })}
-            placeholder="Code"
-            className="w-14 rounded border border-stone-200 px-1 text-2xs"
-          />
-          <button type="button" aria-label={`Rename ${area.name}`} onClick={() => startRename(area.id, area.name)} className="px-1 text-2xs">
-            ✎
-          </button>
+          {renamingId === area.id ? (
+            <input
+              autoFocus
+              aria-label={`Rename ${area.name}`}
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={() => commitRename(area.id)}
+              onKeyDown={(e) => e.key === 'Enter' && commitRename(area.id)}
+              className="w-20 rounded border border-stone-200 px-1"
+            />
+          ) : (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={area.id === state.activeAreaId}
+              onClick={() => dispatch({ type: 'setActiveArea', areaId: area.id })}
+              className="px-2 py-1 text-xs"
+            >
+              {area.name}
+            </button>
+          )}
+          <AreaCodeInput areaId={area.id} areaName={area.name} code={area.code} />
+          {renamingId !== area.id && (
+            <button type="button" aria-label={`Rename ${area.name}`} onClick={() => startRename(area.id, area.name)} className="px-1 text-2xs">
+              ✎
+            </button>
+          )}
           <button type="button" aria-label={`Move ${area.name} left`} disabled={index === 0} onClick={() => move(area.id, -1)} className="px-1 text-2xs disabled:opacity-30">
             ←
           </button>
@@ -89,7 +98,7 @@ export function AreaTabs() {
           </button>
         </div>
       ))}
-      <button type="button" aria-label="Add area" onClick={() => dispatch({ type: 'addArea', name: `Area ${areas.length}` })} className="rounded border border-stone-200 px-2 py-1 text-xs">
+      <button ref={addAreaButtonRef} type="button" aria-label="Add area" onClick={() => dispatch({ type: 'addArea', name: `Area ${areas.length}` })} className="rounded border border-stone-200 px-2 py-1 text-xs">
         +
       </button>
 
@@ -97,6 +106,7 @@ export function AreaTabs() {
         <DeleteAreaDialog
           areaName={areas.find((a) => a.id === confirmingDeleteId)?.name ?? ''}
           onConfirm={() => {
+            pendingDeleteFocusRef.current = true;
             dispatch({ type: 'deleteArea', areaId: confirmingDeleteId });
             setConfirmingDeleteId(null);
           }}
@@ -104,6 +114,30 @@ export function AreaTabs() {
         />
       )}
     </div>
+  );
+}
+
+/** The area's code field, committing on blur/Enter rather than on every
+ *  keystroke — found in the final review: dispatching on `onChange`
+ *  pushed one undo-history entry per character typed. */
+function AreaCodeInput({ areaId, areaName, code }: { areaId: string; areaName: string; code: string }) {
+  const { dispatch } = useDrawingEditor();
+  const [value, setValue] = useState(code);
+
+  const commit = () => {
+    if (value !== code) dispatch({ type: 'setAreaCode', areaId, code: value });
+  };
+
+  return (
+    <input
+      aria-label={`${areaName} code`}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && commit()}
+      placeholder="Code"
+      className="w-14 rounded border border-stone-200 px-1 text-2xs"
+    />
   );
 }
 

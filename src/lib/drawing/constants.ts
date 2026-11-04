@@ -76,10 +76,9 @@ export const ZOOM_MIN = 0.25;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.25;
 
-/** The canvas SVG's fixed viewBox size, in viewBox units. The SVG renders
- *  at whatever size its container gives it (`preserveAspectRatio="none"`,
- *  so it always fills that size exactly) — every screen<->world
- *  conversion in viewport.ts corrects for the rendered size being
- *  anything other than exactly this. */
+/** The canvas SVG's viewBox size, in viewBox units. The SVG fills whatever
+ *  room its container gives it and keeps these proportions (`xMidYMid meet`:
+ *  scaled to fit the tighter dimension, centred, the grid running on past it)
+ *  — every screen<->world conversion in viewport.ts follows the same rule. */
 export const VIEWPORT_WIDTH = 800;
 export const VIEWPORT_HEIGHT = 600;

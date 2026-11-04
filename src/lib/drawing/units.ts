@@ -60,6 +60,22 @@ function inchesToMm(inches: number): number {
 }
 
 /**
+ * Like `parseLength`, but also rejects zero or negative lengths with a
+ * message — for any field a piece's own geometry is built from (a length,
+ * width, thickness), where 0 produces a degenerate shape rather than a
+ * meaningful one. `parseLength` alone treats "0" as perfectly valid (it
+ * is, as a length), so a caller checking the result with a plain
+ * truthiness test (`!mm`) silently swallows the error instead of
+ * reporting it — found in the final review as a toolbar form that simply
+ * refused to submit with no message when a field held "0".
+ */
+export function parsePositiveLength(input: string): number {
+  const mm = parseLength(input);
+  if (mm <= 0) throw new LengthParseError('Enter a length greater than zero.');
+  return mm;
+}
+
+/**
  * Formats a millimetre length for display. `unit: 'mm'` rounds to the
  * nearest 0.1mm ("648.2mm"); `unit: 'in'` reduces to the nearest
  * `denominator` fraction of an inch ("25 1/2\"", "120 5/16\""), the way the

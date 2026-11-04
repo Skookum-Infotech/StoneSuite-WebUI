@@ -6,18 +6,25 @@
 
 import { useState } from 'react';
 import type { Point } from '@/types/drawing';
-import { transformOutline } from '@/lib/drawing/geometry';
+import { isClockwise, transformOutline } from '@/lib/drawing/geometry';
 import { layoutEdgeDimensions } from '@/lib/drawing/dimensions';
 import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
-import { ARROW_KEY_STEP_MM, GRID_SIZE_MM, SHIFT_ARROW_KEY_STEP_MM, ZOOM_STEP } from '@/lib/drawing/constants';
+import {
+  ARROW_KEY_STEP_MM, GRID_SIZE_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
+} from '@/lib/drawing/constants';
+import { pixelDeltaToViewboxUnits, screenPointToMm } from '@/lib/drawing/viewport';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { PieceShape } from './PieceShape';
 import { DimensionLine } from './DimensionLine';
 
-const VIEWPORT_WIDTH = 800;
-const VIEWPORT_HEIGHT = 600;
 const VIEWPORT_CENTER_X = VIEWPORT_WIDTH / 2;
 const VIEWPORT_CENTER_Y = VIEWPORT_HEIGHT / 2;
+
+/** How close (in mm) a newly-clicked polygon point can be to the last one
+ *  before it's treated as a duplicate and dropped — found in the final
+ *  review: a double-click (used to finish a polygon) fires two
+ *  `pointerdown`s on almost the same spot, adding a zero-length edge. */
+const DUPLICATE_POINT_TOLERANCE_MM = 5;
 
 export function DrawingCanvas() {
   const { state, dispatch, tool, setTool } = useDrawingEditor();
@@ -55,6 +62,10 @@ export function DrawingCanvas() {
       case 'Delete':
       case 'Backspace':
         dispatch({ type: 'deletePiece', areaId: state.activeAreaId, pieceId });
+        // The deleted piece's own <g> held focus (it's how it got selected);
+        // removing it from the DOM would otherwise drop focus to <body> with
+        // no indication where it went — found in the a11y review.
+        e.currentTarget.focus();
         break;
       case 'r':
         dispatch({ type: 'rotatePiece', areaId: state.activeAreaId, pieceId });
@@ -69,16 +80,18 @@ export function DrawingCanvas() {
     dispatch({ type: 'setZoom', zoom: state.zoom * (e.deltaY < 0 ? 1 + ZOOM_STEP : 1 - ZOOM_STEP) });
   };
 
-  const screenToMm = (clientX: number, clientY: number, rect: DOMRect): Point => ({
-    x: (clientX - rect.left - VIEWPORT_CENTER_X - state.pan.x) / state.zoom,
-    y: -(clientY - rect.top - VIEWPORT_CENTER_Y - state.pan.y) / state.zoom,
-  });
-
   const onBackgroundPointerDown = (e: React.PointerEvent<SVGRectElement>) => {
     if (tool === 'polygon') {
       const svg = e.currentTarget.ownerSVGElement;
       if (!svg) return;
-      setDraftPoints((points) => [...points, screenToMm(e.clientX, e.clientY, svg.getBoundingClientRect())]);
+      const point = screenPointToMm(e.clientX, e.clientY, svg.getBoundingClientRect(), state.zoom, state.pan);
+      setDraftPoints((points) => {
+        const last = points[points.length - 1];
+        // A double-click's second pointerdown lands on (nearly) the same
+        // spot as the first — drop it rather than add a zero-length edge.
+        if (last && Math.hypot(point.x - last.x, point.y - last.y) < DUPLICATE_POINT_TOLERANCE_MM) return points;
+        return [...points, point];
+      });
       return;
     }
     setIsPanning(true);
@@ -89,7 +102,12 @@ export function DrawingCanvas() {
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
     if (!isPanning) return;
-    dispatch({ type: 'pan', delta: { x: e.movementX, y: e.movementY } });
+    const svg = e.currentTarget.ownerSVGElement;
+    if (!svg) return;
+    // pan is specified in the outer group's own (viewBox) coordinates, not
+    // world mm — scale by the SVG's rendered size, but don't un-zoom or
+    // y-negate it (unlike a world-space delta).
+    dispatch({ type: 'pan', delta: pixelDeltaToViewboxUnits(e.movementX, e.movementY, svg.getBoundingClientRect()) });
   };
 
   const onBackgroundPointerUp = () => setIsPanning(false);
@@ -100,6 +118,10 @@ export function DrawingCanvas() {
 
   function finalizePolygon() {
     if (!activeArea) return;
+    // A hand-clicked polygon can wind either direction depending on click
+    // order; dimension layout and DXF export both assume the same
+    // clockwise winding rectOutline uses.
+    const outline = isClockwise(draftPoints) ? draftPoints : [...draftPoints].reverse();
     dispatch({
       type: 'addPiece',
       areaId: state.activeAreaId,
@@ -107,7 +129,7 @@ export function DrawingCanvas() {
         id: crypto.randomUUID(),
         label: nextPieceLabel(areaLetter(areaIndex), activeArea.pieces.map((p) => p.label)),
         shape: 'polygon',
-        outline: draftPoints,
+        outline,
         position: { x: 0, y: 0 },
         rotationDeg: 0,
         thicknessMm: 30,
@@ -124,12 +146,29 @@ export function DrawingCanvas() {
     <div
       role="application"
       aria-label="Drawing canvas"
+      aria-describedby="drawing-canvas-shortcuts"
       tabIndex={0}
       onKeyDown={onKeyDown}
       onWheel={onWheel}
-      className="outline-none"
+      className="h-full w-full outline-none"
     >
-      <svg viewBox={`0 0 ${VIEWPORT_WIDTH} ${VIEWPORT_HEIGHT}`} width="100%" height="100%">
+      {/* role="application" hands off all keystrokes to this widget, which
+          makes its shortcuts undiscoverable to assistive tech otherwise —
+          found in the a11y review. */}
+      <p id="drawing-canvas-shortcuts" className="sr-only">
+        With a piece selected: arrow keys move it, Shift plus an arrow key
+        moves it in larger steps, R rotates it 90 degrees, and Delete or
+        Backspace removes it. With the polygon tool active, click to place
+        points, then press Enter or double-click to finish the shape once at
+        least three points are placed.
+      </p>
+      <svg
+        viewBox={`0 0 ${VIEWPORT_WIDTH} ${VIEWPORT_HEIGHT}`}
+        preserveAspectRatio="xMidYMid meet"
+        width="100%"
+        height="100%"
+        className="block"
+      >
         <defs>
           <pattern id="drawing-grid" width={GRID_SIZE_MM} height={GRID_SIZE_MM} patternUnits="userSpaceOnUse">
             <path d={`M 0 0 L 0 ${GRID_SIZE_MM} M 0 0 L ${GRID_SIZE_MM} 0`} className="stroke-stone-200" strokeWidth={0.5} />
@@ -138,6 +177,7 @@ export function DrawingCanvas() {
         <g transform={`translate(${VIEWPORT_CENTER_X},${VIEWPORT_CENTER_Y})`}>
           <g transform={`translate(${state.pan.x},${state.pan.y}) scale(${state.zoom})`}>
             <rect
+              data-testid="canvas-background"
               x={-5000}
               y={-5000}
               width={10000}

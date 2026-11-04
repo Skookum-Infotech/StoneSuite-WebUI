@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Drawing, DrawingArea, Piece } from '@/types/drawing';
-import { createInitialEditorState, editorReducer } from './drawingReducer';
+import { createInitialEditorState, editorReducer, type EditorState } from './drawingReducer';
 
 function makePiece(id: string, label: string, overrides: Partial<Piece> = {}): Piece {
   return {
@@ -195,5 +195,48 @@ describe('editorReducer — view-only actions and undo/redo', () => {
     s = editorReducer(s, { type: 'setActiveArea', areaId: s.present.areas[1].id });
     s = editorReducer(s, { type: 'undo' }); // active area no longer exists
     expect(() => editorReducer(s, { type: 'addPiece', areaId: s.activeAreaId, piece: makePiece('p1', 'A-1') })).not.toThrow();
+  });
+});
+
+describe('editorReducer — drawingSaved', () => {
+  it('updates version/updatedAt/updatedBy without touching past/future or the current content — a background save is not an undoable edit, and must not revert edits made while it was in flight', () => {
+    let s = blank();
+    s = editorReducer(s, { type: 'addArea', name: 'X' }); // past.length > 0, present has 2 areas now
+    const presentBeforeSave = s.present;
+    const pastBeforeSave = s.past;
+
+    s = editorReducer(s, {
+      type: 'drawingSaved', version: 5, updatedAt: '2026-11-04T00:00:00.000Z', updatedBy: { id: 'u9', name: 'Autosave' },
+    });
+
+    expect(s.present.version).toBe(5);
+    expect(s.present.updatedAt).toBe('2026-11-04T00:00:00.000Z');
+    expect(s.present.updatedBy).toEqual({ id: 'u9', name: 'Autosave' });
+    expect(s.present.areas).toBe(presentBeforeSave.areas); // content untouched
+    expect(s.past).toBe(pastBeforeSave); // not pushed onto undo history
+    expect(s.future).toEqual([]);
+  });
+});
+
+describe('editorReducer — loadDrawing', () => {
+  it('replaces present with the loaded drawing and resets past/future — loading a different document is not an undoable edit of the current one', () => {
+    let s = blank();
+    s = editorReducer(s, { type: 'addArea', name: 'X' }); // gives past.length > 0
+    expect(s.past.length).toBeGreaterThan(0);
+
+    const loaded = makeDrawing([makeArea('loaded-area', [makePiece('p1', 'A-1')])]);
+    s = editorReducer(s, { type: 'loadDrawing', drawing: loaded });
+
+    expect(s.present).toBe(loaded);
+    expect(s.past).toEqual([]);
+    expect(s.future).toEqual([]);
+  });
+
+  it('falls back activeAreaId/selectedPieceId to the loaded document — the old ones name nothing in it', () => {
+    let s: EditorState = { ...blank(), activeAreaId: 'stale-area', selectedPieceId: 'stale-piece' };
+    const loaded = makeDrawing([makeArea('loaded-area', [])]);
+    s = editorReducer(s, { type: 'loadDrawing', drawing: loaded });
+    expect(s.activeAreaId).toBe('loaded-area');
+    expect(s.selectedPieceId).toBeNull();
   });
 });

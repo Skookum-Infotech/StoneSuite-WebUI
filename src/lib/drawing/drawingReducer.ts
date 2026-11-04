@@ -35,7 +35,9 @@ export type EditorAction =
   | { type: 'setZoom'; zoom: number }
   | { type: 'pan'; delta: Point }
   | { type: 'undo' }
-  | { type: 'redo' };
+  | { type: 'redo' }
+  | { type: 'loadDrawing'; drawing: Drawing }
+  | { type: 'drawingSaved'; version: number; updatedAt: string; updatedBy: Drawing['updatedBy'] };
 
 const ROTATION_CYCLE = [0, 90, 180, 270] as const;
 
@@ -178,6 +180,35 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         future: rest,
       });
     }
+
+    // Loading a different document (initial load, "Reload latest" after a
+    // save conflict, or restoring a version) is not an undoable edit of the
+    // current one — past/future reset, same as opening a different file.
+    case 'loadDrawing':
+      return sanitizeSelection({
+        ...state,
+        past: [],
+        present: action.drawing,
+        future: [],
+      });
+
+    // A background autosave completing is not an undoable edit either, and
+    // must not revert any edit made while it was in flight — only the
+    // version/updatedAt/updatedBy the server just assigned are applied, on
+    // top of whatever `present` currently is (which may already be newer
+    // than what was actually saved). The next autosave then sends this
+    // version as its own recordVersion, so it doesn't spuriously conflict
+    // with the save that just succeeded.
+    case 'drawingSaved':
+      return {
+        ...state,
+        present: {
+          ...state.present,
+          version: action.version,
+          updatedAt: action.updatedAt,
+          updatedBy: action.updatedBy,
+        },
+      };
   }
 }
 

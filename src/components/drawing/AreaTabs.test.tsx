@@ -25,11 +25,17 @@ function ActiveAreaReadout() {
   return <span data-testid="active-area">{state.activeAreaId}</span>;
 }
 
+function HistoryReadout() {
+  const { state } = useDrawingEditor();
+  return <span data-testid="past-length">{state.past.length}</span>;
+}
+
 function renderTabs(areaCount: number) {
   render(
     <DrawingEditorProvider drawing={drawing(areaCount)} materialLines={[]}>
       <AreaTabs />
       <ActiveAreaReadout />
+      <HistoryReadout />
     </DrawingEditorProvider>,
   );
 }
@@ -82,5 +88,34 @@ describe('AreaTabs', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
     await userEvent.click(screen.getByRole('button', { name: 'Delete area' }));
     expect(screen.getAllByRole('tab')).toHaveLength(1);
+  });
+
+  it('commits the area code on blur, not on every keystroke — typing a 7-letter code uses one history entry, not seven', async () => {
+    renderTabs(1);
+    const codeInput = screen.getByLabelText('Area 0 code');
+    await userEvent.type(codeInput, 'Kitchen');
+    expect(screen.getByTestId('past-length').textContent).toBe('0');
+    await userEvent.tab();
+    expect(screen.getByTestId('past-length').textContent).toBe('1');
+    expect(codeInput).toHaveValue('Kitchen');
+  });
+
+  it('renaming replaces the tab with a text input rather than nesting one inside it (invalid HTML otherwise)', async () => {
+    renderTabs(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Rename Area 0' }));
+    const input = screen.getByLabelText('Rename Area 0');
+    expect(input.closest('[role="tab"]')).toBeNull();
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Kitchen');
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByRole('tab')).toHaveTextContent('Kitchen');
+  });
+
+  it('confirming area delete moves focus to "Add area" instead of stranding it on the removed delete button', async () => {
+    renderTabs(2);
+    const deleteButtons = screen.getAllByRole('button', { name: /^Delete Area/ });
+    await userEvent.click(deleteButtons[0]);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete area' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Add area' }));
   });
 });

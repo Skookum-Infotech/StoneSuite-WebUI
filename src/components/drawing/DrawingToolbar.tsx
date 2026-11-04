@@ -3,19 +3,34 @@
 // parseLength-bound text inputs; polygon is a toggle that hands off to
 // DrawingCanvas's click-to-place-points mode (see its own task).
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { lShapeOutline, rectOutline, uShapeOutline } from '@/lib/drawing/geometry';
 import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
-import { parseLength, LengthParseError } from '@/lib/drawing/units';
+import { parsePositiveLength, LengthParseError } from '@/lib/drawing/units';
 import { ZOOM_STEP } from '@/lib/drawing/constants';
-import type { Piece } from '@/types/drawing';
+import type { Piece, Drawing } from '@/types/drawing';
+import type { AutosaveStatus } from './useDrawingAutosave';
+import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
+
+const SAVE_STATUS_LABEL: Record<AutosaveStatus, string> = {
+  idle: '',
+  dirty: 'Unsaved changes',
+  saving: 'Saving…',
+  saved: 'Saved',
+  error: 'Save failed',
+};
 
 type AddTool = 'none' | 'rect' | 'L' | 'U';
 
 function parseFieldOrError(value: string): { mm: number; error: null } | { mm: null; error: string } {
   try {
-    return { mm: parseLength(value), error: null };
+    // A piece dimension must be a real, positive length — parseLength
+    // alone accepts "0" as valid (it is, as a length), which a caller
+    // checking the result with a plain truthiness test treats as both
+    // "invalid" and "no error message" at once. Found in the final review
+    // as a form that silently refused to submit on a zero-length field.
+    return { mm: parsePositiveLength(value), error: null };
   } catch (e) {
     return { mm: null, error: e instanceof LengthParseError ? e.message : 'Enter a value.' };
   }
@@ -26,16 +41,18 @@ function parseFieldOrError(value: string): { mm: number; error: null } | { mm: n
 function LengthField({ label, value, onChange, error }: {
   label: string; value: string; onChange: (v: string) => void; error: string | null;
 }) {
+  const errorId = useId();
   return (
     <label className="flex flex-col gap-0.5 text-xs">
       {label}
       <input
         aria-label={label}
+        aria-describedby={error ? errorId : undefined}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-20 rounded border border-stone-200 px-1.5 py-1"
       />
-      {error && <span className="text-2xs text-destructive">{error}</span>}
+      {error && <span id={errorId} role="alert" className="text-2xs text-destructive">{error}</span>}
     </label>
   );
 }
@@ -74,7 +91,7 @@ function AddRectangleForm({ onDone }: { onDone: () => void }) {
     const length = parseFieldOrError(values.length);
     const width = parseFieldOrError(values.width);
     const thickness = parseFieldOrError(values.thickness);
-    if (!length.mm || !width.mm || !thickness.mm) {
+    if (length.mm === null || width.mm === null || thickness.mm === null) {
       setErrors({ length: length.error ?? undefined, width: width.error ?? undefined, thickness: thickness.error ?? undefined });
       return;
     }
@@ -117,6 +134,16 @@ function AddNotchedForm({ shape, onDone }: { shape: 'L' | 'U'; onDone: () => voi
       });
       return;
     }
+    // A notch as large as (or larger than) the piece collapses an edge to
+    // zero length or crosses outside the piece entirely — found in the
+    // final review as a degenerate/self-intersecting outline with no
+    // warning. Every field above is confirmed non-null by now; the casts
+    // match the ones the outline-building call below already needs.
+    if ((parsed.notchLength.mm as number) >= (parsed.length.mm as number)
+      || (parsed.notchDepth.mm as number) >= (parsed.width.mm as number)) {
+      setErrors({ notchLength: 'The notch must be smaller than the piece.' });
+      return;
+    }
     const outline = shape === 'L'
       ? lShapeOutline(parsed.length.mm as number, parsed.width.mm as number, parsed.notchLength.mm as number, parsed.notchDepth.mm as number)
       : uShapeOutline(parsed.length.mm as number, parsed.width.mm as number, parsed.notchLength.mm as number, parsed.notchDepth.mm as number);
@@ -140,11 +167,16 @@ function AddNotchedForm({ shape, onDone }: { shape: 'L' | 'U'; onDone: () => voi
   );
 }
 
-export function DrawingToolbar() {
+export function DrawingToolbar({ saveStatus }: { saveStatus: AutosaveStatus }) {
   const { state, dispatch, tool, setTool, fitToArea } = useDrawingEditor();
   const [addTool, setAddTool] = useState<AddTool>('none');
+  const [showVersions, setShowVersions] = useState(false);
 
   const toggleAddTool = (next: AddTool) => setAddTool((current) => (current === next ? 'none' : next));
+  const restoreVersion = (restored: Drawing) => {
+    dispatch({ type: 'loadDrawing', drawing: restored });
+    setShowVersions(false);
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -188,11 +220,29 @@ export function DrawingToolbar() {
         <button type="button" aria-label="Fit area" onClick={fitToArea} className="rounded border border-stone-200 px-2 py-1 text-xs">
           Fit
         </button>
+
+        <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
+
+        <button type="button" onClick={() => setShowVersions(true)} className="rounded border border-stone-200 px-2 py-1 text-xs">
+          Version history
+        </button>
+        {saveStatus !== 'idle' && (
+          <span role="status" className="text-2xs text-stone-500">{SAVE_STATUS_LABEL[saveStatus]}</span>
+        )}
       </div>
 
       {addTool === 'rect' && <AddRectangleForm onDone={() => setAddTool('none')} />}
       {addTool === 'L' && <AddNotchedForm shape="L" onDone={() => setAddTool('none')} />}
       {addTool === 'U' && <AddNotchedForm shape="U" onDone={() => setAddTool('none')} />}
+
+      {showVersions && (
+        <VersionDrawer
+          salesOrderId={state.present.salesOrderId}
+          currentVersion={state.present.version}
+          onRestored={restoreVersion}
+          onClose={() => setShowVersions(false)}
+        />
+      )}
     </div>
   );
 }

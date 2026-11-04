@@ -12,6 +12,7 @@ import { attachmentService, type Attachment } from '@/services/attachmentService
 import { Spinner } from '@/components/tenant/ui';
 import { AuditChanges } from '@/components/tenant/AuditChanges';
 import { apiErrorMessage } from '@/api/tenantClient';
+import { DXF_CONTENT_TYPE, withDxfContentType } from '@/lib/drawing/dxfFiles';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,13 +50,14 @@ const ALLOWED_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
   'image/png': 'png',
   'image/jpeg': 'jpg',
+  [DXF_CONTENT_TYPE]: 'dxf',
 };
-const ALLOWED_EXTS = ['.pdf', '.docx', '.xlsx', '.png', '.jpg', '.jpeg'];
+const ALLOWED_EXTS = ['.pdf', '.docx', '.xlsx', '.png', '.jpg', '.jpeg', '.dxf'];
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 
 function validateFile(file: File): string | null {
   if (!ALLOWED_TYPES[file.type] && !ALLOWED_EXTS.some((e) => file.name.toLowerCase().endsWith(e))) {
-    return `${file.name}: Unsupported type. Allowed: PDF, DOCX, XLSX, PNG, JPG`;
+    return `${file.name}: Unsupported type. Allowed: PDF, DOCX, XLSX, PNG, JPG, DXF`;
   }
   if (file.size > MAX_FILE_SIZE) {
     return `${file.name}: Exceeds 25 MB limit`;
@@ -355,7 +357,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
       const valid: File[] = [];
       files.forEach((f) => {
         const err = validateFile(f);
-        if (err) errors.push(err); else valid.push(f);
+        if (err) errors.push(err); else valid.push(withDxfContentType(f));
       });
       setValidationErrors(errors);
       if (valid.length === 0) return;
@@ -436,7 +438,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
                 : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50/50',
             )}
           >
-            <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg"
+            <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.dxf"
               className="sr-only" onChange={onFileChange} />
             <div className={cn(
               'inline-flex items-center justify-center w-10 h-10 rounded-full mb-3 transition-colors',
@@ -447,7 +449,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             <p className="text-xs font-medium text-stone-600 mb-1">
               {dragging ? 'Release to add' : 'Drop files here or click to browse'}
             </p>
-            <p className="text-2xs text-stone-500">PDF, DOCX, XLSX, PNG, JPG · Max 25 MB each</p>
+            <p className="text-2xs text-stone-500">PDF, DOCX, XLSX, PNG, JPG, DXF · Max 25 MB each</p>
             {!recordId && (
               <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-3 py-1">
                 <CloudUpload className="h-3 w-3 text-warning" />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatLength, LengthParseError, parseLength } from './units';
+import { formatLength, LengthParseError, parseLength, parsePositiveLength } from './units';
 
 describe('parseLength', () => {
   it.each([
@@ -20,6 +20,29 @@ describe('parseLength', () => {
 
   it.each([[''], ['   '], ['banana'], ['25 1/0'], ['25/']])('rejects %j', (input) => {
     expect(() => parseLength(input)).toThrow(LengthParseError);
+  });
+});
+
+describe('parsePositiveLength', () => {
+  it('parses a positive length the same as parseLength', () => {
+    expect(parsePositiveLength('25.5')).toBeCloseTo(647.7, 5);
+  });
+
+  it.each([['0'], ['0mm']])('rejects a zero length with a specific message, not a silent null', (input) => {
+    // A real bug found in the final review: a piece-size field treated 0 as
+    // "invalid" via a falsy check but never set an error message, so the
+    // form silently refused to submit. This must always throw with a
+    // message, never succeed with 0.
+    expect(() => parsePositiveLength(input)).toThrow(LengthParseError);
+    expect(() => parsePositiveLength(input)).toThrow(/greater than zero/);
+  });
+
+  it.each([['-1'], ['-5mm']])('rejects a negative length too (parseLength itself already refuses to parse it)', (input) => {
+    expect(() => parsePositiveLength(input)).toThrow(LengthParseError);
+  });
+
+  it('still rejects unparseable input with parseLength\'s own message', () => {
+    expect(() => parsePositiveLength('banana')).toThrow(LengthParseError);
   });
 });
 
