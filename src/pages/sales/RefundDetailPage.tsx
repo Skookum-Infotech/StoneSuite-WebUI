@@ -22,7 +22,7 @@ import { RefundAuditTab } from './components/RefundAuditTab';
 import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
-import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { RefundStatusControl } from './components/RefundStatusControl';
@@ -233,7 +233,7 @@ export default function RefundDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Refund Details">
-          <RecordProgressCard module="refund" recordId={id} statusCode={refund.statusCode} statusLabel={refund.status} />
+          <WorkflowCard module="refund" recordId={id} statusCode={refund.statusCode} statusLabel={refund.status} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

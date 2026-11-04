@@ -11,7 +11,7 @@ import { readonlyCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { FilesContent } from '@/components/crm/CrmSubTabsPanel';
 import { CrmPageHeader } from '@/pages/crm/components/CrmPageHeader';
 import { RecordApprovalBanner } from '@/components/tenant/RecordApprovalBanner';
-import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -247,7 +247,7 @@ export default function VendorCreditDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Vendor Credit Details">
-          <RecordProgressCard module="vendorCredit" recordId={id} statusCode={credit.statusCode} statusLabel={credit.status} />
+          <WorkflowCard module="vendorCredit" recordId={id} statusCode={credit.statusCode} statusLabel={credit.status} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

@@ -42,7 +42,7 @@ import { documentSendsKey } from '@/lib/documentSends';
 import { PurchaseOrderStatusControl } from './components/PurchaseOrderStatusControl';
 import { PurchaseOrderHeaderActions } from './components/PurchaseOrderHeaderActions';
 import { ConvertToBillDialog } from './components/ConvertToBillDialog';
-import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
 
@@ -410,7 +410,7 @@ export default function PurchaseOrderDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Purchase Order Details">
-          <RecordProgressCard module="purchaseOrder" recordId={id} statusCode={po.statusCode} statusLabel={po.status} />
+          <WorkflowCard module="purchaseOrder" recordId={id} statusCode={po.statusCode} statusLabel={po.status} workflow={po.workflow} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

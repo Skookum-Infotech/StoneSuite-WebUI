@@ -22,7 +22,7 @@ import { PostReceiptDialog } from './components/PostReceiptDialog';
 import { VoidReceiptDialog } from './components/VoidReceiptDialog';
 import { ReceiptSlabsTable } from './components/ReceiptSlabsTable';
 import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
-import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
 
@@ -273,7 +273,7 @@ export default function ItemReceiptDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Item Receipt Details">
-          <RecordProgressCard module="itemReceipt" recordId={id} statusCode={ir.statusCode} statusLabel={ir.status} />
+          <WorkflowCard module="itemReceipt" recordId={id} statusCode={ir.statusCode} statusLabel={ir.status} workflow={ir.workflow} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

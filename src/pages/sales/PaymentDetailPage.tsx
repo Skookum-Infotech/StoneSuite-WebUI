@@ -26,7 +26,7 @@ import { DeletePaymentDialog } from './components/DeletePaymentDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { InvoicePicker } from './components/InvoicePicker';
 import type { InvoiceRef } from './components/InvoicePicker';
-import { RecordProgressCard } from '@/components/tenant/RecordProgressCard';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { PaymentStatusControl } from './components/PaymentStatusControl';
@@ -333,7 +333,7 @@ export default function PaymentDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Payment Details">
-          <RecordProgressCard module="payment" recordId={id} statusCode={payment.statusCode} statusLabel={payment.status} />
+          <WorkflowCard module="payment" recordId={id} statusCode={payment.statusCode} statusLabel={payment.status} workflow={payment.workflow} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

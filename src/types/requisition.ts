@@ -11,6 +11,7 @@
 // no address block, no per-line discount or tax, no shipping/adjustment, and
 // three live statuses instead of seven. A requisition is a rough ask, not a
 // priced commitment.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -98,6 +99,8 @@ export type RequisitionPriority = 'low' | 'normal' | 'high' | 'urgent';
  *  the create/update contract accepts round-trips back here, so the Edit page
  *  can reload a requisition and re-save it without blanking a header field. */
 export interface Requisition {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   requisitionNumber: string;
   status: string;                  // human label, e.g. "Draft"

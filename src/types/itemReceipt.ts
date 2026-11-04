@@ -8,6 +8,7 @@
 // arriving against a finalized purchase order; it is the only writer of
 // purchase_order_item.qty_received and drives the PO's SENT → PART → RCVD
 // rollup.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, SortKey } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -181,6 +182,8 @@ export interface ItemReceiptLineSlab {
 // Full detail response (GET/Create/Update/Post/Void/Transition). Every field
 // the create/update contract accepts round-trips back here too.
 export interface ItemReceipt {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   itemReceiptNumber: string;
   status: string;                     // human label, e.g. "Pending"
