@@ -169,3 +169,12 @@ describe('portal-only links', () => {
     expect(isCustomerAllowedPath(NEW_CREATED_ORDER_PATH)).toBe(true);
   });
 });
+
+describe('Install Schedule nav entry', () => {
+  it('links to the route and is gated by install_appointment:read', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'install-schedule');
+    expect(entry?.link.path).toBe('/calendar/install-schedule');
+    expect(entry?.link.permission).toEqual({ resource: 'install_appointment', action: 'read' });
+    expect(entry?.trail).toContain('Calendar');
+  });
+});
