@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send, PencilRuler } from 'lucide-react';
 import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
@@ -28,6 +28,7 @@ import { SO_DRAFT_CODE, SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LA
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
+import { SalesOrderDrawingTab } from './components/SalesOrderDrawingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
 import { RecordCommunicationTab } from '@/components/tenant/RecordCommunicationTab';
 import { DeleteSalesOrderDialog } from './components/DeleteSalesOrderDialog';
@@ -50,14 +51,16 @@ const TABS = [
   { key: 'inventory', label: 'Inventory' },
   { key: 'scheduling', label: 'Scheduling' },
   { key: 'communication', label: 'Communication' },
+  { key: 'drawing', label: 'Drawing' },
   { key: 'audit', label: 'Audit' },
   { key: 'files', label: 'Files' },
 ] as const;
 type Tab = (typeof TABS)[number]['key'];
 
 // Tabs a customer-portal session never gets: both read staff-only endpoints
-// (the production schedule, and the order's email thread with the customer).
-const STAFF_ONLY_TABS: readonly Tab[] = ['scheduling', 'communication'];
+// (the production schedule, the order's email thread with the customer, and
+// the internal production drawing).
+const STAFF_ONLY_TABS: readonly Tab[] = ['scheduling', 'communication', 'drawing'];
 
 // The tab a `?tab=` link asks for — the Activity Planner's cards open the
 // Scheduling tab. Anything unknown, or a tab this session doesn't have (a
@@ -404,6 +407,7 @@ export default function SalesOrderDetailPage() {
             <SalesOrderSchedulingTab orderId={id} installDate={order.scheduledInstallDate} canEdit={canEdit} />
           )}
           {activeTab === 'communication' && <RecordCommunicationTab recordId={id} audience="customer" canReply={canEdit} />}
+          {activeTab === 'drawing' && <SalesOrderDrawingTab orderId={id} canEdit={canEdit} />}
           {activeTab === 'audit' && <SalesOrderAuditTab orderId={id} />}
           {activeTab === 'files' && <FilesContent ref={null} recordId={id} readOnly={!canEdit} />}
 
@@ -438,6 +442,15 @@ export default function SalesOrderDetailPage() {
               {canCopy && (
                 <CopyQuickAction recordLabel="sales order" addPath="/sales/sales_order/new" sourceId={id} />
               )}
+              <button
+                type="button"
+                onClick={() => navigate(`/sales/sales_order/${id}/drawing`)}
+                className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                aria-label="Open drawing editor"
+              >
+                <PencilRuler className="size-4 text-stone-400 shrink-0" />
+                Drawing editor
+              </button>
               {canEdit && (
                 <button
                   type="button"
