@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { makeArDunning, makeRule, makeSettings } from '@/test/automationFixtures';
 
 vi.mock('@/services/automationRuleService', () => ({
-  automationRuleService: { list: vi.fn(), setEnabled: vi.fn(), preview: vi.fn() },
+  automationRuleService: { list: vi.fn(), create: vi.fn(), setEnabled: vi.fn(), preview: vi.fn() },
 }));
 vi.mock('@/services/automationSettingsService', () => ({
   automationSettingsService: { get: vi.fn(), setKillSwitch: vi.fn() },
@@ -167,5 +167,39 @@ describe('AutomationPage banners', () => {
     await userEvent.click(sw);
     await waitFor(() => expect(automationSettingsService.setKillSwitch).toHaveBeenCalledWith(true));
     expect(within(document.body).queryByRole('alertdialog')).toBeNull();
+  });
+});
+
+describe('AutomationPage add rule', () => {
+  it('read-only: no Add rule button', async () => {
+    allow('automation:read');
+    renderPage();
+    await screen.findByText('Invoice payment reminders');
+    expect(screen.queryByRole('button', { name: 'Add rule' })).not.toBeInTheDocument();
+  });
+
+  it('configure: validates, then creates the rule', async () => {
+    allow('automation:read', 'automation:configure');
+    vi.mocked(automationRuleService.create).mockResolvedValue(
+      makeRule({ ruleKey: 'x', name: 'Early nudge', enabled: false }),
+    );
+    renderPage();
+    await screen.findByText('Invoice payment reminders');
+    await userEvent.click(screen.getByRole('button', { name: 'Add rule' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add rule' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Give the rule a name.');
+    expect(automationRuleService.create).not.toHaveBeenCalled();
+    await userEvent.type(within(dialog).getByLabelText('Rule name'), 'Early nudge');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add rule' }));
+    await waitFor(() =>
+      expect(automationRuleService.create).toHaveBeenCalledWith({
+        name: 'Early nudge',
+        kind: 'ar_dunning',
+        audience: 'external',
+        cadence: [{ offsetDays: -3 }],
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });

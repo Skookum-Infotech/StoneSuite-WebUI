@@ -15,3 +15,14 @@ export interface AutomationRule {
   previewSupported: boolean;
   lastPlannedAt: string | null;
 }
+
+export type AutomationAudience = AutomationRule['audience'];
+
+/** Body of POST /api/tenant/automation/rules; the server assigns the ruleKey. */
+export interface AutomationRuleInput {
+  name: string;
+  /** The built-in rule kind this rule behaves like (e.g. ar_dunning). */
+  kind: string;
+  audience: AutomationAudience;
+  cadence: AutomationCadenceStage[];
+}
