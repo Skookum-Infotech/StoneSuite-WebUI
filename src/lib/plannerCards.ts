@@ -20,7 +20,7 @@ import type { ScheduleFeedEvent } from '@/types/salesOrder';
 
 export interface PlannerCard {
   id: string;
-  kind: 'schedule' | 'invoice';
+  kind: 'schedule' | 'invoice' | 'appointment';
   /** Where the card sits: wall-clock `yyyy-mm-ddThh:mm`. */
   at: string;
   /** Tiebreak for cards at the same minute. */
@@ -56,6 +56,8 @@ export interface PlannerCard {
   doneLabel: string;
   done: boolean;
   overdue: boolean;
+  /** A cancelled install visit: drawn muted and struck through, never hidden. */
+  cancelled?: boolean;
   ariaLabel: string;
 }
 
@@ -74,10 +76,16 @@ const NEUTRAL_STATUS_COLOR = '#a8a29e';
 const META_SEPARATOR = ' · ';
 const JOB_NOUN = 'job';
 const INVOICE_NOUN = 'invoice';
+const APPOINTMENT_NOUN = 'visit';
+const CARD_NOUNS: Record<PlannerCard['kind'], string> = {
+  schedule: JOB_NOUN,
+  invoice: INVOICE_NOUN,
+  appointment: APPOINTMENT_NOUN,
+};
 
-/** What a count of cards is a count of: "job"/"jobs", "invoice"/"invoices". */
+/** What a count of cards is a count of: "job"/"jobs", "invoice"/"invoices", "visit"/"visits". */
 export function cardNoun(kind: PlannerCard['kind'], count: number): string {
-  const noun = kind === 'invoice' ? INVOICE_NOUN : JOB_NOUN;
+  const noun = CARD_NOUNS[kind];
   return count === 1 ? noun : `${noun}s`;
 }
 
