@@ -24,6 +24,9 @@ export function PlannerChip({ card }: { card: PlannerCard }) {
             'flex w-full min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-left text-xs text-white',
             'outline-none transition-[filter] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring',
             'focus-visible:ring-offset-1 aria-expanded:ring-2 aria-expanded:ring-stone-900/60',
+            // A cancelled visit stays on the calendar, muted and struck through;
+            // the status label in its name says so for everyone else.
+            card.cancelled && 'line-through opacity-60',
           )}
         >
           {card.done && <Check className="size-3 shrink-0" aria-hidden="true" />}
