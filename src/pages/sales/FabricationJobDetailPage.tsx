@@ -19,6 +19,7 @@ import { FabricationMaterialsTab } from './components/FabricationMaterialsTab';
 import { FabricationTemplatesPanel } from './components/FabricationTemplatesPanel';
 import { FabricationStepsTab } from './components/FabricationStepsTab';
 import { FabricationJobOverviewTab } from './components/FabricationJobOverviewTab';
+import { FabricationVisitsTab } from './components/FabricationVisitsTab';
 import { FabricationJobSidebar } from './components/FabricationJobSidebar';
 import { ApprovalBanner } from '@/components/tenant/ApprovalBanner';
 import type { FabricationJob } from '@/types/fabrication';
@@ -38,6 +39,7 @@ export default function FabricationJobDetailPage() {
   const canDelete = permissionsLoading || hasPermission('installation', 'delete');
   // Materials tab needs BOTH grants — installation:read and inventory_item:read.
   const canReadSlabs = permissionsLoading || (hasPermission('installation', 'read') && hasPermission('inventory_item', 'read'));
+  const canReadVisits = !permissionsLoading && hasPermission('install_appointment', 'read');
   const canAllocateSlabs = hasPermission('installation', 'update') && hasPermission('inventory_item', 'update');
 
   const TABS = [
@@ -45,6 +47,7 @@ export default function FabricationJobDetailPage() {
     { key: 'pieces', label: 'Pieces' },
     { key: 'templates', label: 'Template & approvals' },
     ...(canReadSlabs ? [{ key: 'materials', label: 'Materials' }] as const : []),
+    ...(canReadVisits ? [{ key: 'visits', label: 'Visits' }] as const : []),
     { key: 'checklist', label: 'Checklist' },
     { key: 'files', label: 'Files' },
   ] as const;
@@ -163,6 +166,7 @@ export default function FabricationJobDetailPage() {
           {activeTab === 'materials' && canReadSlabs && (
             <FabricationMaterialsTab workflowVersion={job.workflowVersion} version={job.version} jobId={id} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
           )}
+          {activeTab === 'visits' && canReadVisits && <FabricationVisitsTab jobId={id} />}
           {activeTab === 'checklist' && (
             <FabricationStepsTab jobId={id} steps={job.steps ?? []} canEdit={canEdit} />
           )}
