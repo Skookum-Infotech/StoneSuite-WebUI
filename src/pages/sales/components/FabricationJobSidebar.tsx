@@ -52,7 +52,7 @@ export function FabricationJobSidebar({ id, job, salesOrderNumber, canEdit, canD
 
   return (
     <SalesDetailSidebar label="Job Details">
-      <WorkflowCard module="fabrication" statusCode={job.statusCode} statusLabel={job.status} workflow={job.workflow} />
+      <WorkflowCard module="fabrication" statusCode={job.statusCode} statusLabel={job.status} workflow={job.workflow} links={{ salesOrderId: job.salesOrderId }} />
       <FabricationQuickActionsCard
         jobId={id}
         canEdit={canEdit}

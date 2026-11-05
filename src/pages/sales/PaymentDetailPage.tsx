@@ -333,7 +333,7 @@ export default function PaymentDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Payment Details">
-          <WorkflowCard module="payment" statusCode={payment.statusCode} statusLabel={payment.status} workflow={payment.workflow} />
+          <WorkflowCard module="payment" statusCode={payment.statusCode} statusLabel={payment.status} workflow={payment.workflow} links={{ invoiceId: payment.applications[0]?.invoiceId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
