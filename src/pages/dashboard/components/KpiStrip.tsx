@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useValueFlash } from '@/hooks/useValueFlash';
 import { ErrorNote } from '@/components/tenant/ui';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { APPROVALS_PATH, approvalsHref } from '@/lib/approvalInbox';
 import { KpiSparkline } from './KpiSparkline';
 import { DeltaIndicator, type DeltaDirection, type DeltaTone } from './DeltaIndicator';
 import type { KpiMetric } from '@/types/dashboardData';
@@ -13,8 +15,8 @@ interface MetricMeta {
   sparklineColor: string;
   format: 'currency' | 'count';
   icon: LucideIcon;
-  // The list page this KPI drills into, or null when the metric has no single
-  // destination (Needs Approval spans every document module's approver queue).
+  // The page this KPI drills into (Needs Approval -> the Approvals inbox), or
+  // null when the metric has no destination.
   href: string | null;
 }
 
@@ -28,7 +30,7 @@ const METRIC_META: Record<KpiMetric['id'], MetricMeta> = {
   revenue: { label: 'Revenue', sparklineColor: '#719c3b', format: 'currency', icon: DollarSign, href: '/sales/invoice' },
   'open-leads': { label: 'Open Leads', sparklineColor: '#a855f7', format: 'count', icon: Users, href: '/crm/lead' },
   'sales-orders-fabrication': { label: 'Sales Orders', sparklineColor: '#059669', format: 'count', icon: ClipboardList, href: '/sales/sales_order' },
-  'needs-approval': { label: 'Needs Approval', sparklineColor: '#d97706', format: 'count', icon: ShieldCheck, href: null },
+  'needs-approval': { label: 'Needs Approval', sparklineColor: '#d97706', format: 'count', icon: ShieldCheck, href: APPROVALS_PATH },
 };
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -144,6 +146,7 @@ export function KpiStrip({
 
 function KpiTile({ metric, className }: { metric: KpiMetric; className?: string }) {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useUserPermissions();
   const meta = METRIC_META[metric.id];
   const Icon = meta.icon;
   const shown = useCountUp(metric.value);
@@ -184,7 +187,8 @@ function KpiTile({ metric, className }: { metric: KpiMetric; className?: string 
     return <div className={cn(TILE, className)}>{body}</div>;
   }
 
-  const href = meta.href;
+  // A super admin sees every pending item, so the tile's drill-through must too.
+  const href = metric.id === 'needs-approval' ? approvalsHref(isSuperAdmin) : meta.href;
   return (
     <button
       type="button"

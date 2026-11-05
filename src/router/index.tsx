@@ -124,6 +124,9 @@ const TransactionsPage = lazyWithRetry(
   () => import("@/pages/transactions/TransactionsPage"),
 );
 const SupportPage = lazyWithRetry(() => import("@/pages/support/SupportPage"));
+const ApprovalsInboxPage = lazyWithRetry(
+  () => import("@/pages/approvals/ApprovalsInboxPage"),
+);
 const AnomaliesPage = lazyWithRetry(
   () => import("@/pages/anomalies/AnomaliesPage"),
 );
@@ -442,6 +445,10 @@ export const router = createBrowserRouter([
       // and deliberately no PermissionGuard: the server addresses each finding to
       // specific people and returns only theirs, so there is no RBAC resource.
       { path: "anomalies", element: lazy_(<AnomaliesPage />) },
+      // Staff only (not in CUSTOMER_ALLOWED_PATH_PREFIXES) and no PermissionGuard:
+      // the server returns only what the caller may approve, so a non-approver
+      // simply sees the empty state.
+      { path: "approvals", element: lazy_(<ApprovalsInboxPage />) },
       {
         path: "subscription",
         element: lazy_(

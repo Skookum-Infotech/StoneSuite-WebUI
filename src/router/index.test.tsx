@@ -20,4 +20,10 @@ describe('router', () => {
     const paths = matches?.map((match) => match.route.path).filter(Boolean);
     expect(paths).toEqual(['/', 'config/automation']);
   });
+
+  it('registers the Approvals inbox inside the app shell', () => {
+    const matches = matchRoutes(router.routes, '/approvals');
+    const paths = matches?.map((match) => match.route.path).filter(Boolean);
+    expect(paths).toEqual(['/', 'approvals']);
+  });
 });
