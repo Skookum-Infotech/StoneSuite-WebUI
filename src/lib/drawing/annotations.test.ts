@@ -12,10 +12,11 @@ describe('layoutDimension', () => {
     expect(d.lineFrom.x).toBeCloseTo(-8);
     expect(d.lineFrom.y).toBeCloseTo(6);
   });
-  it('matches the per-edge layout for the same edge', () => {
+  it('matches the per-edge layout for the same edge, which also carries the side index', () => {
     const outline = rectOutline(1000, 500);
     const [first] = layoutEdgeDimensions(outline, 50);
-    expect(layoutDimension(first.edgeFrom, first.edgeTo, 50)).toEqual(first);
+    expect(first.edgeIndex).toBe(0);
+    expect(layoutDimension(first.edgeFrom, first.edgeTo, 50)).toEqual({ ...first, edgeIndex: undefined });
   });
 });
 

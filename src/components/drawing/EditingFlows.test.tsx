@@ -191,13 +191,13 @@ describe('Piece sides', () => {
 
   it('lists every side with its exact length', async () => {
     await open();
-    expect(screen.getByLabelText('Side 1 length')).toHaveProperty('value', '2000mm');
-    expect(screen.getByLabelText('Side 2 length')).toHaveProperty('value', '800mm');
+    expect(screen.getByLabelText('Side A length')).toHaveProperty('value', '2000mm');
+    expect(screen.getByLabelText('Side B length')).toHaveProperty('value', '800mm');
   });
 
   it('setting a side length resizes the piece and keeps it square', async () => {
     const user = await open();
-    const side = screen.getByLabelText('Side 1 length');
+    const side = screen.getByLabelText('Side A length');
     await user.clear(side);
     await user.type(side, '2400mm');
     await user.tab();
@@ -206,7 +206,7 @@ describe('Piece sides', () => {
 
   it('refuses a length that would leave a cutout outside the piece', async () => {
     const user = await open({ cutouts: [{ ...sink, center: { x: 1700, y: -400 } }] });
-    const side = screen.getByLabelText('Side 1 length');
+    const side = screen.getByLabelText('Side A length');
     await user.clear(side);
     await user.type(side, '1800mm');
     await user.tab();
@@ -235,7 +235,7 @@ describe('Corner handles and selection on the canvas', () => {
   it('adds a corner at the middle of a side as one undoable step, turning the piece into a polygon', async () => {
     const user = setup([piece('p1', 'A-1')], { ids: ['p1'] }, 'canvas');
     await user.click(screen.getByRole('button', { name: 'select' }));
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Add corner on side 1' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Add corner on side A' }));
     const [p] = piecesNow();
     expect(p.outline).toHaveLength(5);
     expect(p.outline[1]).toEqual({ x: 1000, y: 0 });

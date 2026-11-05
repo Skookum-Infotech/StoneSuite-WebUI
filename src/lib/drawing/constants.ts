@@ -24,6 +24,7 @@ export const DXF_LAYER = {
   CUTOUTS: 'CUTOUTS',
   EDGES: 'EDGES',
   NOTES: 'NOTES',
+  SEAMS: 'SEAMS',
 } as const;
 
 export const DXF_LINETYPE = {

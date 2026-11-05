@@ -32,7 +32,7 @@ export function dxfFileName(orderNumber: string, areaName: string, meta: Pick<Dx
  *  label, one aligned dimension per outer edge, each cutout's outline (round
  *  ones as 48-sided polylines) on the CUTOUTS layer, per-side edge notes
  *  (profile, backsplash, waterfall) on EDGES, and the area's notes and manual
- *  dimensions. Seams are not exported yet. */
+ *  dimensions, and each seam as an open LINE. */
 export function buildAreaDxf(area: DrawingArea, meta: DxfExportMeta): string {
   const writer = new DxfWriter();
 
@@ -53,6 +53,11 @@ export function buildAreaDxf(area: DrawingArea, meta: DxfExportMeta): string {
     for (const cutout of piece.cutouts) {
       const opening = cutoutOutline(cutout);
       if (opening.length >= 3) writer.addOutline(toWorldInches(opening, piece), DXF_LAYER.CUTOUTS);
+    }
+
+    for (const seam of piece.seams) {
+      const [from, to] = toWorldInches([seam.from, seam.to], piece);
+      writer.addLine(from, to, DXF_LAYER.SEAMS);
     }
 
     const sides = outlineEdges(worldMm);

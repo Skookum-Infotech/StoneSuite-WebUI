@@ -168,6 +168,15 @@ describe('buildAreaDxf — production detail', () => {
     expect(entities.filter((e) => e.type === 'DIMENSION' as string)).toHaveLength(5); // 4 sides + 1 manual
   });
 
+  it('exports each seam as an open LINE on the SEAMS layer, in world position', () => {
+    const area = detailedArea();
+    area.pieces[0].seams = [{ from: { x: 0, y: 0 }, to: { x: MM_PER_INCH * 50, y: 0 } }];
+    const lines = parse(buildAreaDxf(area, meta)).filter((e) => e.type === 'LINE' && e.layer === 'SEAMS');
+    expect(lines).toHaveLength(1);
+    // The piece sits 10in from the origin, so the seam does too.
+    expect((lines[0] as unknown as { vertices: { x: number }[] }).vertices[0].x).toBeCloseTo(10);
+  });
+
   it('skips edge settings pointing at a side that no longer exists', () => {
     const area = singlePieceArea(1000, 500, 'A-1');
     area.pieces[0].edges = [{ index: 9, code: 'BN' }];

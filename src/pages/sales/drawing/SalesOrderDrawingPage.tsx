@@ -5,7 +5,7 @@
 // immediately on Ctrl/Cmd+S), with a conflict dialog on a 409 and a
 // beforeunload guard while a save is pending (build spec §5 Task 5).
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { salesOrderService } from '@/services/salesOrderService';
@@ -18,10 +18,7 @@ import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
 import { AreaTabs } from '@/components/drawing/AreaTabs';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { PieceInspector } from '@/components/drawing/PieceInspector';
-import { ShapePalette } from '@/components/drawing/ShapePalette';
-import { CutoutLibrary } from '@/components/drawing/CutoutLibrary';
-import { AnnotationPanel } from '@/components/drawing/AnnotationPanel';
-import { MaterialSummary } from '@/components/drawing/MaterialSummary';
+import { ToolRail } from '@/components/drawing/ToolRail';
 import { AreaSummary } from '@/components/drawing/AreaSummary';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
@@ -95,9 +92,22 @@ export default function SalesOrderDrawingPage() {
 function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
   salesOrderId: string; order: SalesOrder; onOrderUpdated: (order: SalesOrder) => void;
 }) {
-  const { state, dispatch } = useDrawingEditor();
+  const { state, dispatch, fitToArea } = useDrawingEditor();
   const [conflictOpen, setConflictOpen] = useState(false);
   const fillRef = useFillViewport<HTMLDivElement>();
+  const hasFitted = useRef(false);
+
+  // Frame the saved work on open. A drawing of 200"-wide pieces opens at
+  // 1mm = 1 unit otherwise, which puts most of it outside the viewport with
+  // no sign that it is there. Once only: re-fitting later would fight the
+  // user's own zoom and pan.
+  useEffect(() => {
+    if (hasFitted.current) return;
+    hasFitted.current = true;
+    if (state.present.areas.some((a) => a.pieces.length > 0)) fitToArea();
+    // fitToArea is rebuilt every render; this runs once, guarded by the ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSaved = useCallback((saved: Drawing) => {
     dispatch({ type: 'drawingSaved', version: saved.version, updatedAt: saved.updatedAt, updatedBy: saved.updatedBy });
@@ -173,12 +183,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       <AreaTabs />
       <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
       <div className="flex min-h-0 flex-1 gap-2">
-        <aside aria-label="Drawing tools" className="modal-scrollbar flex w-56 shrink-0 flex-col gap-3 overflow-y-auto overflow-x-hidden border-r border-stone-200 pr-2">
-          <ShapePalette />
-          <CutoutLibrary />
-          <AnnotationPanel />
-          <MaterialSummary />
-        </aside>
+        <ToolRail />
         <div className="min-h-0 min-w-0 flex-1">
           <DrawingCanvas />
         </div>

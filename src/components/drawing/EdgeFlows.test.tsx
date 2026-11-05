@@ -58,17 +58,17 @@ const edges = () => JSON.parse(screen.getByTestId('edges').textContent ?? '[]');
 describe('side settings', () => {
   it('sets a profile from the tenant list and draws its code on the side', async () => {
     const user = await open();
-    await user.click(screen.getByRole('button', { name: 'Select side 1' }));
+    await user.click(screen.getByRole('button', { name: 'Select side A' }));
     await screen.findAllByRole('option', { name: 'Bullnose' });
-    await user.selectOptions(screen.getByLabelText('Side 1 edge profile'), 'BN');
+    await user.selectOptions(screen.getByLabelText('Side A edge profile'), 'BN');
     expect(edges()).toEqual([{ index: 0, code: 'BN' }]);
     expect(screen.getByText('BN')).toBeTruthy();
   });
 
   it('stores a backsplash height in millimetres and clears it when set to 0', async () => {
     const user = await open();
-    await user.click(screen.getByRole('button', { name: 'Select side 1' }));
-    const field = screen.getByLabelText('Side 1 backsplash height');
+    await user.click(screen.getByRole('button', { name: 'Select side A' }));
+    const field = screen.getByLabelText('Side A backsplash height');
     await user.clear(field);
     await user.type(field, '100mm');
     await user.tab();
@@ -81,8 +81,8 @@ describe('side settings', () => {
 
   it('refuses a negative waterfall height and keeps the message next to the field', async () => {
     const user = await open();
-    await user.click(screen.getByRole('button', { name: 'Select side 2' }));
-    const field = screen.getByLabelText('Side 2 waterfall height');
+    await user.click(screen.getByRole('button', { name: 'Select side B' }));
+    const field = screen.getByLabelText('Side B waterfall height');
     await user.clear(field);
     await user.type(field, '-5');
     await user.tab();

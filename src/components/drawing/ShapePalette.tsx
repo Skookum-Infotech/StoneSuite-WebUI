@@ -10,7 +10,7 @@ type AddTool = 'none' | 'rect' | 'L' | 'U' | 'island' | 'peninsula';
 
 const BUTTON_CLASS = 'rounded border border-stone-200 px-2 py-1 text-left text-xs aria-pressed:border-brand aria-pressed:bg-brand/10';
 
-export function ShapePalette() {
+export function ShapePalette({ bare }: { bare?: boolean } = {}) {
   const { tool, setTool } = useDrawingEditor();
   const [addTool, setAddTool] = useState<AddTool>('none');
   const toggle = (next: AddTool) => setAddTool((current) => (current === next ? 'none' : next));
@@ -23,7 +23,7 @@ export function ShapePalette() {
   );
 
   return (
-    <PanelSection title="Shapes">
+    <PanelSection title="Shapes" bare={bare}>
       <div className="grid grid-cols-2 gap-1.5">
       {button('rect', 'Add rectangle')}
       {button('L', 'Add L-shape')}

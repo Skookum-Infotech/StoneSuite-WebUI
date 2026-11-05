@@ -13,6 +13,7 @@ import {
   ARROW_KEY_STEP_MM, EDGE_HIT_WIDTH_PX, FINE_SNAP_MM, HANDLE_RADIUS_VB, SHIFT_ARROW_KEY_STEP_MM,
 } from '@/lib/drawing/constants';
 import { outlineEdges, rotatePoint, snapToGrid, toWorldPoint } from '@/lib/drawing/geometry';
+import { edgeLetter } from '@/lib/drawing/labels';
 import { validatePiece } from '@/lib/drawing/validation';
 import { insertVertex, moveVertex, removeVertex } from '@/lib/drawing/vertexEdit';
 import { pixelDeltaToMm } from '@/lib/drawing/viewport';
@@ -131,7 +132,7 @@ export function PieceHandles({ piece }: { piece: Piece }) {
               x1={sa.x} y1={sa.y} x2={sb.x} y2={sb.y}
               role="button"
               tabIndex={0}
-              aria-label={`Side ${i + 1} of ${piece.label}${selected ? ', selected' : ''}`}
+              aria-label={`Side ${edgeLetter(i)} of ${piece.label}${selected ? ', selected' : ''}`}
               stroke="transparent"
               strokeWidth={EDGE_HIT_WIDTH_PX}
               vectorEffect="non-scaling-stroke"
@@ -161,7 +162,7 @@ export function PieceHandles({ piece }: { piece: Piece }) {
             cx={mid.x} cy={mid.y} r={radius * 0.8}
             role="button"
             tabIndex={0}
-            aria-label={`Add corner on side ${i + 1}`}
+            aria-label={`Add corner on side ${edgeLetter(i)}`}
             className="cursor-copy fill-white stroke-stone-400 outline-none"
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"

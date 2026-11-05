@@ -11,13 +11,13 @@ const AREA_UNIT_CODE = 'SQFT';
 
 const sqFt = (mm2: number): string => mm2ToSqFt(mm2).toFixed(1);
 
-export function MaterialSummary() {
+export function MaterialSummary({ bare }: { bare?: boolean } = {}) {
   const { state, materialLines } = useDrawingEditor();
   const usage = materialUsage(state.present.areas);
   if (usage.length === 0) return null;
 
   return (
-    <PanelSection title="Materials">
+    <PanelSection title="Materials" bare={bare}>
       {usage.map((u) => {
         const line = materialLines.find((l) => l.id === u.lineId);
         const ordered = line?.unitCode === AREA_UNIT_CODE ? line.quantity : undefined;

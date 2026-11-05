@@ -11,7 +11,7 @@ import { bounds } from '@/lib/drawing/geometry';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { PanelSection } from './PanelSection';
 
-export function CutoutLibrary() {
+export function CutoutLibrary({ bare }: { bare?: boolean } = {}) {
   const { state, dispatch } = useDrawingEditor();
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
   const piece = area?.pieces.find((p) => p.id === state.selectedPieceId);
@@ -29,7 +29,7 @@ export function CutoutLibrary() {
   };
 
   return (
-    <PanelSection title="Cutouts">
+    <PanelSection title="Cutouts" bare={bare}>
       {!piece && <p className="text-2xs text-stone-500">Select a piece to add a cutout to it.</p>}
       <div className="grid grid-cols-2 gap-1.5">
       {CUTOUT_TYPES.map((type) => (

@@ -44,6 +44,7 @@ export function DrawingCanvas() {
   const [panMovedPx, setPanMovedPx] = useState(0);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
   const annotate = useAnnotationTool();
 
   const activeArea = state.present.areas.find((a) => a.id === state.activeAreaId);
@@ -74,6 +75,14 @@ export function DrawingCanvas() {
       return;
     }
     if (e.key === 'Escape') {
+      // A half-drawn line or dimension is what Escape is for first — only
+      // once no tool is armed does it clear the selection.
+      if (tool !== 'select') {
+        annotate.cancel();
+        setTool('select');
+        setHoverPoint(null);
+        return;
+      }
       dispatch({ type: 'selectPiece', pieceId: null });
       return;
     }
@@ -119,6 +128,10 @@ export function DrawingCanvas() {
   const onBackgroundPointerDown = (e: React.PointerEvent<SVGRectElement>) => {
     const point = pointerMm(e);
     if (!point) return;
+    // Captured up front so a drag that leaves the viewport still delivers its
+    // pointerup here — that release is what finishes a dragged line.
+    // jsdom lacks pointer capture on SVG elements; every real browser has it.
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     if (tool === 'polygon') {
       setDraftPoints((points) => {
         const last = points[points.length - 1];
@@ -129,8 +142,10 @@ export function DrawingCanvas() {
       });
       return;
     }
-    if (annotate.place(point)) return;
-    e.currentTarget.setPointerCapture?.(e.pointerId); // optional: jsdom lacks it
+    if (annotate.place(point)) {
+      setHoverPoint(null);
+      return;
+    }
     if (e.shiftKey) {
       setMarquee({ from: point, to: point });
       return;
@@ -140,6 +155,10 @@ export function DrawingCanvas() {
   };
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
+    // The second point of a two-click tool follows the cursor, so the user
+    // can see what they are about to draw before they commit to it.
+    if (annotate.pendingFrom) setHoverPoint(pointerMm(e));
+    else if (hoverPoint) setHoverPoint(null);
     if (marquee) {
       const point = pointerMm(e);
       if (point) setMarquee({ from: marquee.from, to: point });
@@ -155,7 +174,15 @@ export function DrawingCanvas() {
     dispatch({ type: 'pan', delta: pixelDeltaToViewboxUnits(e.movementX, e.movementY, svg.getBoundingClientRect()) });
   };
 
-  const onBackgroundPointerUp = () => {
+  const onBackgroundPointerUp = (e: React.PointerEvent<SVGRectElement>) => {
+    // A press-drag-release on an armed line/dimension tool finishes it here;
+    // a release that barely moved is just the first click of a click-click,
+    // and leaves the pending point standing.
+    const released = pointerMm(e);
+    if (released && annotate.release(released)) {
+      setHoverPoint(null);
+      return;
+    }
     if (marquee) {
       const minX = Math.min(marquee.from.x, marquee.to.x);
       const maxX = Math.max(marquee.from.x, marquee.to.x);
@@ -231,7 +258,10 @@ export function DrawingCanvas() {
         side and corner: arrow keys move a corner and Delete removes it. With
         the polygon tool active, click to place points, then press Enter or
         double-click to finish the shape once at least three points are
-        placed; Backspace removes the last point and Escape cancels.
+        placed; Backspace removes the last point and Escape cancels. With the
+        line, dimension or note tool active, click the canvas to place each
+        point — a line and a dimension take two, either by dragging from one
+        to the other or by clicking each in turn — and Escape cancels.
       </p>
       <svg
         viewBox={`0 0 ${VIEWPORT_WIDTH} ${VIEWPORT_HEIGHT}`}
@@ -273,7 +303,29 @@ export function DrawingCanvas() {
             </DragPreviewContext.Provider>
             {singleSelected && tool === 'select' && <PieceHandles piece={singleSelected} />}
             <CanvasOverlays marquee={marquee} draftPoints={tool === 'polygon' ? draftPoints : []} />
-            <AnnotationLayer pendingFrom={annotate.pendingFrom} />
+            <AnnotationLayer pendingFrom={annotate.pendingFrom} hoverPoint={hoverPoint} />
+            {/* While a drawing tool is armed, every click belongs to that
+                tool — including clicks over a piece, which is where a seam
+                or a note usually goes. The background rect below cannot
+                receive those: SVG delivers the event to the topmost shape
+                and it bubbles up the tree, never sideways to a sibling
+                underneath. So this transparent sheet sits above the
+                geometry and takes the clicks instead. */}
+            {tool !== 'select' && (
+              <rect
+                data-testid="tool-capture"
+                x={-5000}
+                y={-5000}
+                width={10000}
+                height={10000}
+                fill="transparent"
+                className="cursor-crosshair"
+                onPointerDown={onBackgroundPointerDown}
+                onPointerMove={onBackgroundPointerMove}
+                onPointerUp={onBackgroundPointerUp}
+                onDoubleClick={onBackgroundDoubleClick}
+              />
+            )}
           </g>
         </g>
       </svg>

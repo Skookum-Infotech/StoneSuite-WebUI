@@ -13,7 +13,7 @@ import { PanelSection } from './PanelSection';
 
 const BUTTON_CLASS = 'rounded border border-stone-200 px-2 py-1 text-left text-xs aria-pressed:border-brand aria-pressed:bg-brand/10';
 
-export function AnnotationPanel() {
+export function AnnotationPanel({ bare }: { bare?: boolean } = {}) {
   const { state, dispatch, tool, setTool } = useDrawingEditor();
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
   if (!area) return null;
@@ -25,7 +25,7 @@ export function AnnotationPanel() {
   const setDimensions = (next: Dimension[]) => dispatch({ type: 'setAnnotations', areaId, dimensions: next });
 
   return (
-    <PanelSection title="Annotations">
+    <PanelSection title="Annotations" bare={bare}>
       <div className="grid grid-cols-2 gap-1.5">
       <button type="button" aria-label="Add note" aria-pressed={tool === 'note'} onClick={() => toggle('note')} className={BUTTON_CLASS}>
         Add note

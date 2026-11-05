@@ -1,11 +1,13 @@
 // The auto-placed dimension lines (and edge marks) around one piece. Drawn
-// after the shape so they sit on top of its fill. Memoised on the piece's
-// geometry so dragging another piece doesn't recompute every outline's lines.
+// after the shape so they sit on top of its fill. Each side carries the same
+// letter the inspector's Sides list uses, so "B: 121.7"" on the drawing and
+// "Side 2" in the panel name the same edge.
 
 import { memo, useMemo } from 'react';
 import type { Piece } from '@/types/drawing';
 import { layoutEdgeDimensions } from '@/lib/drawing/dimensions';
 import { transformOutline } from '@/lib/drawing/geometry';
+import { edgeLetter } from '@/lib/drawing/labels';
 import { DimensionLine } from './DimensionLine';
 import { EdgeMarks } from './EdgeMarks';
 
@@ -21,10 +23,14 @@ export const PieceDimensions = memo(function PieceDimensions(
   return (
     <>
       <EdgeMarks piece={piece} />
-      {layouts.map((layout, i) => (
-        // Index key: edges have no stable id of their own, and this list is
-        // rebuilt fresh from the piece whenever its geometry changes.
-        <DimensionLine key={i} layout={layout} displayUnit={displayUnit} fractionDenominator={fractionDenominator} />
+      {layouts.map((layout) => (
+        <DimensionLine
+          key={layout.edgeIndex}
+          layout={layout}
+          displayUnit={displayUnit}
+          fractionDenominator={fractionDenominator}
+          letter={edgeLetter(layout.edgeIndex ?? 0)}
+        />
       ))}
     </>
   );

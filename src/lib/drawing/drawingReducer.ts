@@ -4,7 +4,7 @@
 // (capped at MAX_UNDO_STEPS) and clear `future`; "view-only" actions
 // (selection, zoom, pan) touch neither.
 
-import type { Cutout, Dimension, Drawing, Note, Piece, Point } from '@/types/drawing';
+import type { Cutout, Dimension, Drawing, Note, Piece, Point, Seam } from '@/types/drawing';
 import { ZOOM_MAX, ZOOM_MIN } from './constants';
 import {
   NO_SELECTION, copyPieces, duplicateInto, keepSavedVersion, movePieces, mutateDocument, newArea, normalizeDegrees,
@@ -36,6 +36,8 @@ export type EditorAction =
   | { type: 'addCutout'; areaId: string; pieceId: string; cutout: Cutout }
   | { type: 'updateCutout'; areaId: string; pieceId: string; cutoutId: string; patch: Partial<Cutout> }
   | { type: 'deleteCutout'; areaId: string; pieceId: string; cutoutId: string }
+  /** Replaces one piece's seams — the cut lines drawn across it. */
+  | { type: 'setSeams'; areaId: string; pieceId: string; seams: Seam[] }
   /** Replaces an area's notes and/or manual dimensions as one undo step. */
   | { type: 'setAnnotations'; areaId: string; notes?: Note[]; dimensions?: Dimension[] }
   | { type: 'selectPiece'; pieceId: string | null; additive?: boolean }
@@ -186,6 +188,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return sanitizeSelection(mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
         ...p, cutouts: p.cutouts.filter((c) => c.id !== action.cutoutId),
       }))));
+
+    case 'setSeams':
+      return mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
+        ...p, seams: action.seams,
+      })));
 
     case 'setAnnotations':
       return mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({

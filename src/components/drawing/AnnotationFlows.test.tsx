@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 import type { Drawing } from '@/types/drawing';
 import { rectOutline } from '@/lib/drawing/geometry';
 import { AnnotationPanel } from './AnnotationPanel';
+import { ToolRail } from './ToolRail';
 import { DrawingCanvas } from './DrawingCanvas';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 
@@ -25,7 +26,12 @@ const drawing: Drawing = {
 function Readout() {
   const { state } = useDrawingEditor();
   const area = state.present.areas[0];
-  return <span data-testid="annotations">{JSON.stringify({ notes: area.notes, dimensions: area.dimensions ?? [] })}</span>;
+  return (
+    <>
+      <span data-testid="annotations">{JSON.stringify({ notes: area.notes, dimensions: area.dimensions ?? [] })}</span>
+      <span data-testid="pieces">{JSON.stringify(area.pieces)}</span>
+    </>
+  );
 }
 
 const annotations = () => JSON.parse(screen.getByTestId('annotations').textContent ?? '{}');
@@ -38,6 +44,7 @@ function open() {
   render(
     <DrawingEditorProvider drawing={drawing} materialLines={[]}>
       <AnnotationPanel />
+      <ToolRail />
       <DrawingCanvas />
       <Readout />
     </DrawingEditorProvider>,
@@ -100,5 +107,86 @@ describe('manual dimensions', () => {
     expect([after.from, after.to]).toEqual([before.to, before.from]);
     await user.click(screen.getByRole('button', { name: 'Delete Dimension 1' }));
     expect(annotations().dimensions).toEqual([]);
+  });
+});
+
+describe('line tool', () => {
+  // The clicks that draw a seam land ON a piece, so they never reach the
+  // grid rect underneath it: SVG sends the event to the topmost shape and it
+  // bubbles up the tree, not sideways to a sibling below. An armed tool puts
+  // a transparent sheet above the geometry to catch them — without it the
+  // tool looked armed and did nothing at all.
+  const capture = () => screen.getByTestId('tool-capture');
+
+  it('puts the capture sheet above every piece while a tool is armed, and takes it away in select mode', async () => {
+    const user = open();
+    expect(screen.queryByTestId('tool-capture')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Line' }));
+    const sheet = capture();
+    const siblings = Array.from(sheet.parentElement?.children ?? []);
+    expect(siblings[siblings.length - 1]).toBe(sheet);
+    await user.click(screen.getByRole('button', { name: 'Select' }));
+    expect(screen.queryByTestId('tool-capture')).toBeNull();
+  });
+
+  it("draws a seam across the piece it is drawn on, in that piece's own coordinates", async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Line' }));
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 }); // world (50, -20), inside the piece
+    fireEvent.pointerDown(capture(), { clientX: 600, clientY: 400 }); // world (200, -100), inside the piece
+    const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(piece.seams).toEqual([{ from: { x: 50, y: -20 }, to: { x: 200, y: -100 } }]);
+  });
+
+  it('draws in one press-drag-release, the way a line tool is normally used', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Line' }));
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 }); // world (50, -20)
+    fireEvent.pointerMove(capture(), { clientX: 600, clientY: 400 });
+    fireEvent.pointerUp(capture(), { clientX: 600, clientY: 400 }); // world (200, -100)
+    const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(piece.seams).toEqual([{ from: { x: 50, y: -20 }, to: { x: 200, y: -100 } }]);
+    expect(screen.queryByTestId('tool-capture')).toBeNull();
+  });
+
+  it('treats a press and release on the same spot as the first of two clicks, not a zero-length line', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Line' }));
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 });
+    fireEvent.pointerUp(capture(), { clientX: 451, clientY: 320 });
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')[0].seams).toEqual([]);
+    // Still armed, with the first point standing — the second click lands it.
+    fireEvent.pointerDown(capture(), { clientX: 600, clientY: 400 });
+    expect(JSON.parse(screen.getByTestId('pieces').textContent ?? '[]')[0].seams)
+      .toEqual([{ from: { x: 50, y: -20 }, to: { x: 200, y: -100 } }]);
+  });
+
+  it('rubber-bands from the first point to the cursor before the second click', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Line' }));
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 });
+    fireEvent.pointerMove(capture(), { clientX: 600, clientY: 400 });
+    const preview = document.querySelector('line.stroke-brand');
+    expect(preview?.getAttribute('x1')).toBe('50');
+    expect(preview?.getAttribute('x2')).toBe('200');
+  });
+
+  it('Escape throws away a half-drawn line and disarms the tool', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Line' }));
+    fireEvent.pointerDown(capture(), { clientX: 450, clientY: 320 });
+    fireEvent.keyDown(screen.getByRole('application', { name: 'Drawing canvas' }), { key: 'Escape' });
+    expect(screen.queryByTestId('tool-capture')).toBeNull();
+    const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(piece.seams).toEqual([]);
+  });
+
+  it('drops a line drawn entirely off any piece rather than storing one nothing can cut', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Line' }));
+    fireEvent.pointerDown(capture(), { clientX: 100, clientY: 560 }); // world (-300, -260): empty canvas
+    fireEvent.pointerDown(capture(), { clientX: 150, clientY: 560 });
+    const [piece] = JSON.parse(screen.getByTestId('pieces').textContent ?? '[]');
+    expect(piece.seams).toEqual([]);
   });
 });

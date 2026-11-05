@@ -6,6 +6,7 @@
 
 import type { Piece } from '@/types/drawing';
 import { distance } from '@/lib/drawing/geometry';
+import { edgeLetter } from '@/lib/drawing/labels';
 import { pieceMetrics } from '@/lib/drawing/metrics';
 import { validatePiece } from '@/lib/drawing/validation';
 import { setEdgeLength } from '@/lib/drawing/vertexEdit';
@@ -35,15 +36,15 @@ export function PieceEdgesPanel({ piece }: { piece: Piece }) {
           <div key={edge.index} className={selected ? 'rounded bg-brand/10 p-1' : 'p-1'}>
             <button
               type="button"
-              aria-label={`Select side ${edge.index + 1}`}
+              aria-label={`Select side ${edgeLetter(edge.index)}`}
               aria-pressed={selected}
               onClick={() => dispatch({ type: 'selectEdge', pieceId: piece.id, edgeIndex: edge.index })}
               className="mb-0.5 text-2xs text-stone-500 underline-offset-2 hover:underline"
             >
-              Side {edge.index + 1} · {Math.round(edge.startAngleDeg * 10) / 10}° corner
+              Side {edgeLetter(edge.index)} · {Math.round(edge.startAngleDeg * 10) / 10}° corner
             </button>
             <LengthInput
-              label={`Side ${edge.index + 1} length`}
+              label={`Side ${edgeLetter(edge.index)} length`}
               valueMm={distance(piece.outline[edge.index], piece.outline[(edge.index + 1) % piece.outline.length])}
               onCommit={(mm) => setLength(edge.index, mm)}
             />

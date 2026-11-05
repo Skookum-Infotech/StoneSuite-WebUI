@@ -12,7 +12,7 @@
 // through viewport.ts, which corrects for the SVG rendering at any size other
 // than its fixed 800x600 viewBox.
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useId, useMemo, useState } from 'react';
 import type { Piece, Point } from '@/types/drawing';
 import { centroid, snapToGrid, transformOutline } from '@/lib/drawing/geometry';
 import { GRID_SIZE_MM, MIN_DRAG_MM, SNAP_TOLERANCE_MM } from '@/lib/drawing/constants';
@@ -36,6 +36,9 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
   const { preview, setPreview } = useDragPreview();
   const [drag, setDrag] = useState<DragState | null>(null);
   const [previewPosition, setPreviewPosition] = useState<Point | null>(null);
+  // useId() contains colons; they are legal in a url(#...) fragment but
+  // trip up some tooling, so strip them.
+  const seamClipId = `seam-clip-${useId().replace(/:/g, '')}`;
 
   // Another piece in the same selection is being dragged: follow it.
   const followDelta = !drag && preview?.pieceIds.includes(piece.id) ? preview.delta : null;
@@ -125,14 +128,45 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
       onPointerUp={onPointerUp}
       className="cursor-move outline-none"
     >
+      {/* Strokes and text are divided by the zoom so they keep the same size
+          on screen at any scale — a 200" piece zoomed out to fit would
+          otherwise draw its outline and label too fine to read. */}
       <polygon
         points={points}
         className={selected ? 'fill-brand/20 stroke-brand' : 'fill-stone-100 stroke-stone-400'}
-        strokeWidth={selected ? 2 : 1}
+        strokeWidth={(selected ? 2 : 1) / state.zoom}
       />
       {/* Local coordinates -> screen: position, then rotation, then the
           y-flip every world point gets on its way to SVG. */}
       <g transform={`translate(${displayPosition.x},${-displayPosition.y}) rotate(${piece.rotationDeg}) scale(1,-1)`}>
+        {piece.seams.length > 0 && (
+          // Clipped to the outline: a seam is drawn by eye, usually with its
+          // ends a little past the edge to be sure it crosses, and the
+          // overhang would read as a line leaving the stone.
+          <>
+            <defs>
+              <clipPath id={seamClipId}>
+                <polygon points={piece.outline.map((p) => `${p.x},${p.y}`).join(' ')} />
+              </clipPath>
+            </defs>
+            <g clipPath={`url(#${seamClipId})`}>
+              {piece.seams.map((seam, i) => (
+                // Index key: seams have no id of their own, and the list is
+                // replaced wholesale whenever it changes.
+                <line
+                  key={i}
+                  x1={seam.from.x}
+                  y1={seam.from.y}
+                  x2={seam.to.x}
+                  y2={seam.to.y}
+                  className="stroke-stone-700"
+                  strokeWidth={2 / state.zoom}
+                  strokeDasharray={`${10 / state.zoom} ${5 / state.zoom}`}
+                />
+              ))}
+            </g>
+          </>
+        )}
         {piece.cutouts.map((cutout) => (
           <CutoutShape
             key={cutout.id}
@@ -143,7 +177,7 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           />
         ))}
       </g>
-      <text x={labelAt.x} y={-labelAt.y} textAnchor="middle" fontSize={14} className="fill-stone-800 select-none">
+      <text x={labelAt.x} y={-labelAt.y} textAnchor="middle" fontSize={14 / state.zoom} className="fill-stone-800 select-none">
         {piece.label}
       </text>
     </g>

@@ -18,6 +18,9 @@ export interface DimensionLineLayout {
    *  upside-down. */
   rotationDeg: number;
   lengthMm: number;
+  /** Which side of the outline this measures, for its letter. Absent on a
+   *  manual dimension, which belongs to the area rather than to a piece. */
+  edgeIndex?: number;
 }
 
 /** One dimension line per outer edge of `outline`, offset `offsetMm`
@@ -29,9 +32,10 @@ export function layoutEdgeDimensions(
   offsetMm: number = DEFAULT_DIMENSION_OFFSET_MM,
 ): DimensionLineLayout[] {
   return outlineEdges(outline)
+    .map((edge, edgeIndex) => ({ edge, edgeIndex }))
     // A duplicate point gives a zero-length edge — nothing to dimension.
-    .filter(([from, to]) => from.x !== to.x || from.y !== to.y)
-    .map(([from, to]) => layoutDimension(from, to, offsetMm));
+    .filter(({ edge: [from, to] }) => from.x !== to.x || from.y !== to.y)
+    .map(({ edge: [from, to], edgeIndex }) => ({ ...layoutDimension(from, to, offsetMm), edgeIndex }));
 }
 
 /** The line + label measuring `from` -> `to`, pushed `offsetMm` to the left of

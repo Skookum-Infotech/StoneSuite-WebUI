@@ -55,6 +55,23 @@ function AreaPreview({ area }: { area: DrawingArea }) {
                 className="fill-stone-100 stroke-stone-400"
                 strokeWidth={2}
               />
+              {piece.seams.map((seam, s) => {
+                // Index key: seams carry no id of their own.
+                const from = toWorldPoint(seam.from, piece.position, piece.rotationDeg);
+                const to = toWorldPoint(seam.to, piece.position, piece.rotationDeg);
+                return (
+                  <line
+                    key={s}
+                    x1={from.x}
+                    y1={-from.y}
+                    x2={to.x}
+                    y2={-to.y}
+                    className="stroke-stone-700"
+                    strokeWidth={2}
+                    strokeDasharray="10 5"
+                  />
+                );
+              })}
               {piece.cutouts.map((cutout) => (
                 <polygon
                   key={cutout.id}

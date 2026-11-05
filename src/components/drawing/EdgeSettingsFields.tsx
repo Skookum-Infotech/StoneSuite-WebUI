@@ -3,6 +3,7 @@
 
 import type { Piece } from '@/types/drawing';
 import { edgeAt, edgeSettingsProblem, setEdgeSettings, type EdgeSettings } from '@/lib/drawing/edges';
+import { edgeLetter } from '@/lib/drawing/labels';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { LengthInput } from './LengthInput';
 import { useEdgeCodes } from './useEdgeCodes';
@@ -19,7 +20,7 @@ export function EdgeSettingsFields({ piece, index }: { piece: Piece; index: numb
   const { state, dispatch } = useDrawingEditor();
   const codes = useEdgeCodes();
   const edge = edgeAt(piece.edges, index);
-  const side = `Side ${index + 1}`;
+  const side = `Side ${edgeLetter(index)}`;
 
   const apply = (patch: EdgeSettings): string | null => {
     const problem = edgeSettingsProblem(patch);
