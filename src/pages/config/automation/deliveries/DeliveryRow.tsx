@@ -13,8 +13,10 @@ import { deliveryReasonLabel } from '@/lib/deliveryReasons';
 import { cn } from '@/lib/utils';
 import type { AutomationDelivery, DeliveryStatus } from '@/types/automationDelivery';
 
+// minmax(0, …) tracks keep every column the same width in the header and in each row;
+// plain `fr` tracks grow with their content (e.g. a long email), which made rows drift out of line.
 export const DELIVERY_GRID =
-  'md:grid md:grid-cols-[1fr_1fr_0.9fr_1.4fr_0.9fr_0.7fr_1.3fr_1fr_1fr_0.5fr] md:items-center md:gap-3';
+  'md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,0.6fr)] md:items-center md:gap-3';
 
 const STATUS_CLASS: Readonly<Record<DeliveryStatus, string>> = {
   planned: '',
@@ -37,7 +39,7 @@ function Cell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-xs text-stone-600 md:block dark:text-stone-300">
       <span className="text-2xs font-semibold uppercase text-stone-400 md:hidden">{label}</span>
-      <span className="min-w-0 break-words text-right md:text-left">{children}</span>
+      <span className="min-w-0 break-words text-right md:text-center">{children}</span>
     </div>
   );
 }
