@@ -134,7 +134,9 @@ export default function DeliveryLogPage() {
             className={`hidden border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs font-semibold text-stone-500 dark:border-stone-800 dark:bg-stone-900 ${DELIVERY_GRID}`}
           >
             {HEADERS.map((h) => (
-              <span key={h}>{h}</span>
+              <span key={h} className="text-center">
+                {h}
+              </span>
             ))}
           </div>
           {q.isLoading ? (
