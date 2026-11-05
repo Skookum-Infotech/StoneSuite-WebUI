@@ -8,6 +8,7 @@
 
 import type { DrawingArea, Piece } from '@/types/drawing';
 import { cutoutArea } from './cutouts';
+import { edgeTotals, type EdgeTotals } from './edges';
 import { area, distance, outlineEdges, perimeter } from './geometry';
 import { interiorAngles } from './polygon';
 
@@ -21,6 +22,8 @@ export interface EdgeMetric {
 }
 
 export interface PieceMetrics {
+  /** Finished edge length plus backsplash / waterfall quantities. */
+  edgeTotals: EdgeTotals;
   grossAreaMm2: number;
   cutoutAreaMm2: number;
   netAreaMm2: number;
@@ -28,11 +31,12 @@ export interface PieceMetrics {
   edges: EdgeMetric[];
 }
 
-export function pieceMetrics(piece: Pick<Piece, 'outline' | 'cutouts'>): PieceMetrics {
+export function pieceMetrics(piece: Pick<Piece, 'outline' | 'cutouts'> & { edges?: Piece['edges'] }): PieceMetrics {
   const grossAreaMm2 = area(piece.outline);
   const cutoutAreaMm2 = piece.cutouts.reduce((sum, c) => sum + cutoutArea(c), 0);
   const angles = interiorAngles(piece.outline);
   return {
+    edgeTotals: edgeTotals({ outline: piece.outline, edges: piece.edges ?? [] }),
     grossAreaMm2,
     cutoutAreaMm2,
     netAreaMm2: Math.max(0, grossAreaMm2 - cutoutAreaMm2),

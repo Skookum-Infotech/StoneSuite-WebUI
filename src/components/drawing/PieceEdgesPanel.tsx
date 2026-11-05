@@ -10,6 +10,7 @@ import { pieceMetrics } from '@/lib/drawing/metrics';
 import { validatePiece } from '@/lib/drawing/validation';
 import { setEdgeLength } from '@/lib/drawing/vertexEdit';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { EdgeSettingsFields } from './EdgeSettingsFields';
 import { LengthInput } from './LengthInput';
 
 export function PieceEdgesPanel({ piece }: { piece: Piece }) {
@@ -46,6 +47,7 @@ export function PieceEdgesPanel({ piece }: { piece: Piece }) {
               valueMm={distance(piece.outline[edge.index], piece.outline[(edge.index + 1) % piece.outline.length])}
               onCommit={(mm) => setLength(edge.index, mm)}
             />
+            <EdgeSettingsFields piece={piece} index={edge.index} />
           </div>
         );
       })}

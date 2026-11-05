@@ -17,7 +17,7 @@ import {
  *  "Fit" doesn't crop a piece flush against the edge. */
 const FIT_MARGIN = 0.9;
 
-export type EditorTool = 'select' | 'polygon';
+export type EditorTool = 'select' | 'polygon' | 'note' | 'dimension';
 
 export interface DrawingEditorContextValue {
   state: EditorState;

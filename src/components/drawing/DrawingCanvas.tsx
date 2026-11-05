@@ -19,6 +19,9 @@ import { useDrawingEditor } from './DrawingEditorContext';
 import { PieceShape } from './PieceShape';
 import { PieceHandles } from './PieceHandles';
 import { PieceDimensions } from './PieceDimensions';
+import { AnnotationLayer } from './AnnotationLayer';
+import { CanvasOverlays, type Marquee } from './CanvasOverlays';
+import { useAnnotationTool } from './useAnnotationTool';
 
 const VIEWPORT_CENTER_X = VIEWPORT_WIDTH / 2;
 const VIEWPORT_CENTER_Y = VIEWPORT_HEIGHT / 2;
@@ -34,11 +37,6 @@ const CLICK_SLOP_PX = 3;
 
 const DEFAULT_THICKNESS_MM = 30;
 
-interface Marquee {
-  from: Point;
-  to: Point;
-}
-
 export function DrawingCanvas() {
   const { state, dispatch, tool, setTool, copySelection, pasteClipboard, duplicateSelection } = useDrawingEditor();
   const [draftPoints, setDraftPoints] = useState<Point[]>([]);
@@ -46,6 +44,7 @@ export function DrawingCanvas() {
   const [panMovedPx, setPanMovedPx] = useState(0);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const annotate = useAnnotationTool();
 
   const activeArea = state.present.areas.find((a) => a.id === state.activeAreaId);
   const areaIndex = state.present.areas.findIndex((a) => a.id === state.activeAreaId);
@@ -130,6 +129,7 @@ export function DrawingCanvas() {
       });
       return;
     }
+    if (annotate.place(point)) return;
     e.currentTarget.setPointerCapture?.(e.pointerId); // optional: jsdom lacks it
     if (e.shiftKey) {
       setMarquee({ from: point, to: point });
@@ -262,36 +262,18 @@ export function DrawingCanvas() {
             <DragPreviewContext.Provider value={dragPreviewValue}>
               {activeArea?.pieces.map((piece) => (
                 <g key={piece.id}>
+                  <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
                   <PieceDimensions
                     piece={piece}
                     displayUnit={state.present.displayUnit}
                     fractionDenominator={state.present.fractionDenominator}
                   />
-                  <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
                 </g>
               ))}
             </DragPreviewContext.Provider>
             {singleSelected && tool === 'select' && <PieceHandles piece={singleSelected} />}
-            {marquee && (
-              <rect
-                x={Math.min(marquee.from.x, marquee.to.x)}
-                y={-Math.max(marquee.from.y, marquee.to.y)}
-                width={Math.abs(marquee.to.x - marquee.from.x)}
-                height={Math.abs(marquee.to.y - marquee.from.y)}
-                className="fill-brand/10 stroke-brand"
-                strokeDasharray="4 4"
-                aria-hidden="true"
-              />
-            )}
-            {tool === 'polygon' && draftPoints.length > 0 && (
-              <polyline
-                points={draftPoints.map((p) => `${p.x},${-p.y}`).join(' ')}
-                fill="none"
-                className="stroke-brand"
-                strokeDasharray="4 4"
-                aria-hidden="true"
-              />
-            )}
+            <CanvasOverlays marquee={marquee} draftPoints={tool === 'polygon' ? draftPoints : []} />
+            <AnnotationLayer pendingFrom={annotate.pendingFrom} />
           </g>
         </g>
       </svg>

@@ -95,7 +95,10 @@ export class DxfWriter {
     paperSpaceRecordHandle: string,
     dimensionBlocks: DimensionBlock[],
   ): string {
-    const layerNames = [DXF_LAYER.OUTLINE, DXF_LAYER.TEXT, DXF_LAYER.DIMENSIONS, DXF_LAYER.CABINETS, DXF_LAYER.DEFPOINTS];
+    const layerNames = [
+      DXF_LAYER.OUTLINE, DXF_LAYER.TEXT, DXF_LAYER.DIMENSIONS, DXF_LAYER.CABINETS, DXF_LAYER.DEFPOINTS,
+      DXF_LAYER.CUTOUTS, DXF_LAYER.EDGES, DXF_LAYER.NOTES,
+    ];
     return (
       pair(0, 'SECTION') + pair(2, 'TABLES') +
       this.table('VPORT', []) +

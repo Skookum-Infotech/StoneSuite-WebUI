@@ -21,6 +21,9 @@ export const DXF_LAYER = {
   CABINETS: 'CABINETS',
   DIMENSIONS: 'DIMENSIONS',
   DEFPOINTS: 'DEFPOINTS',
+  CUTOUTS: 'CUTOUTS',
+  EDGES: 'EDGES',
+  NOTES: 'NOTES',
 } as const;
 
 export const DXF_LINETYPE = {

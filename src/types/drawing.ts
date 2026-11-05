@@ -25,9 +25,14 @@ export type PieceKind = 'countertop' | 'island' | 'peninsula';
 
 export interface PieceEdge {
   index: number;
+  /** Edge profile — a code from the tenant's edge list (lkp_edge_code). */
   code?: EdgeCode;
+  /** How far the stone projects past its support. Informational. */
   overhangMm?: number;
+  /** Backsplash standing along this side. */
   splashHeightMm?: number;
+  /** Waterfall panel dropping from this side. */
+  waterfallHeightMm?: number;
 }
 
 export interface Seam {
@@ -82,6 +87,15 @@ export interface Note {
   pieceId?: string;
 }
 
+/** A manual measurement between two points, in the area's world millimetres.
+ *  `offsetMm` pushes the drawn line to the left of from -> to. */
+export interface Dimension {
+  id: string;
+  from: Point;
+  to: Point;
+  offsetMm: number;
+}
+
 export interface DrawingArea {
   id: string;
   name: string;
@@ -90,6 +104,8 @@ export interface DrawingArea {
   pieces: Piece[];
   cabinets: Point[][];
   notes: Note[];
+  /** Manual dimensions; absent on drawings saved before they existed. */
+  dimensions?: Dimension[];
 }
 
 export const DRAWING_SCHEMA_VERSION = 1;

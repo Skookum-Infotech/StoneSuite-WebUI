@@ -6,15 +6,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Select } from '@/components/ui/select';
 import { ItemPicker } from '@/components/inventory/ItemPicker';
 import { inventoryService } from '@/services/inventoryService';
-import { drawingService } from '@/services/drawingService';
 import type { Cutout, CutoutType, Piece } from '@/types/drawing';
 import { CUTOUT_TYPES, CUTOUT_TYPE_LABELS } from '@/lib/drawing/cutouts';
 import { CutoutGeometryFields } from './CutoutGeometryFields';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { useEdgeCodes } from './useEdgeCodes';
 
 export function CutoutInspector({ piece, cutout }: { piece: Piece; cutout: Cutout }) {
   const { state, dispatch } = useDrawingEditor();
-  const edgeCodes = useQuery({ queryKey: ['drawing-edge-codes'], queryFn: () => drawingService.getEdgeCodes(), staleTime: Infinity });
+  const edgeCodes = useEdgeCodes();
   const itemQuery = useQuery({
     queryKey: ['inventory-item', cutout.inventoryItemId],
     queryFn: () => inventoryService.getItem(cutout.inventoryItemId as string),
@@ -73,7 +73,7 @@ export function CutoutInspector({ piece, cutout }: { piece: Piece; cutout: Cutou
           className="rounded border border-stone-200 px-1.5 py-1"
         >
           <option value="">— none —</option>
-          {(edgeCodes.data ?? []).map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+          {edgeCodes.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
         </Select>
       </label>
 

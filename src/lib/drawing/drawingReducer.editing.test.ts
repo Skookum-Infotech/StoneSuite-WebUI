@@ -150,3 +150,25 @@ describe('cutouts', () => {
     expect(s).toMatchObject({ selectedPieceId: 'p2', selectedEdgeIndex: 2, selectedCutoutId: null });
   });
 });
+
+describe('setAnnotations', () => {
+  const start = () => createInitialEditorState({
+    schemaVersion: 1, salesOrderId: 's', version: 3, displayUnit: 'mm', fractionDenominator: 32,
+    areas: [{ id: 'a', name: 'A', code: '', sortOrder: 0, pieces: [], cabinets: [], notes: [] }],
+    updatedAt: '', updatedBy: { id: 'u', name: 'U' },
+  });
+  const note = { id: 'n1', text: 'Seam', at: { x: 1, y: 2 } };
+  const dim = { id: 'd1', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, offsetMm: 25.4 };
+
+  it('sets notes and dimensions in one undoable step, leaving the other list alone when omitted', () => {
+    let state = editorReducer(start(), { type: 'setAnnotations', areaId: 'a', notes: [note] });
+    state = editorReducer(state, { type: 'setAnnotations', areaId: 'a', dimensions: [dim] });
+    expect(state.present.areas[0].notes).toEqual([note]);
+    expect(state.present.areas[0].dimensions).toEqual([dim]);
+    expect(state.past).toHaveLength(2);
+    state = editorReducer(state, { type: 'undo' });
+    expect(state.present.areas[0].dimensions).toBeUndefined();
+    expect(state.present.areas[0].notes).toEqual([note]);
+    expect(state.present.version).toBe(3);
+  });
+});

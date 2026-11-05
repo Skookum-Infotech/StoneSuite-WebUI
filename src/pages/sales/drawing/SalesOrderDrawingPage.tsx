@@ -20,6 +20,8 @@ import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { PieceInspector } from '@/components/drawing/PieceInspector';
 import { ShapePalette } from '@/components/drawing/ShapePalette';
 import { CutoutLibrary } from '@/components/drawing/CutoutLibrary';
+import { AnnotationPanel } from '@/components/drawing/AnnotationPanel';
+import { MaterialSummary } from '@/components/drawing/MaterialSummary';
 import { AreaSummary } from '@/components/drawing/AreaSummary';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
@@ -114,7 +116,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
     [areas, displayUnit, fractionDenominator],
   );
 
-  const { status } = useDrawingAutosave({
+  const { status, saveNow } = useDrawingAutosave({
     salesOrderId,
     present: presentForAutosave,
     recordVersion: state.present.version,
@@ -166,13 +168,15 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       data-testid="drawing-editor"
       className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden p-2"
     >
-      <DrawingToolbar saveStatus={status} />
+      <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
       <AreaTabs />
       <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
       <div className="flex min-h-0 flex-1 gap-2">
         <aside aria-label="Drawing tools" className="flex w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-stone-200 pr-2">
           <ShapePalette />
           <CutoutLibrary />
+          <AnnotationPanel />
+          <MaterialSummary />
         </aside>
         <div className="min-h-0 min-w-0 flex-1">
           <DrawingCanvas />
