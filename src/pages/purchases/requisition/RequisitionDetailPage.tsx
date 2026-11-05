@@ -333,7 +333,7 @@ export default function RequisitionDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Requisition Details">
-          <WorkflowCard module="requisition" statusCode={reqn.statusCode} statusLabel={reqn.status} workflow={reqn.workflow} />
+          <WorkflowCard module="requisition" statusCode={reqn.statusCode} statusLabel={reqn.status} workflow={reqn.workflow} links={{ purchaseOrderId: reqn.convertedPurchaseOrderId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

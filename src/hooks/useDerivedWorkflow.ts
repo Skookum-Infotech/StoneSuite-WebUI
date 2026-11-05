@@ -3,10 +3,11 @@ import { salesOrderService } from '@/services/salesOrderService';
 import { invoiceService } from '@/services/invoiceService';
 import { paymentService } from '@/services/paymentService';
 import { mergeWorkflow, type DerivedRecords } from '@/lib/derivedWorkflow';
+import { usePurchaseDerivedWorkflow, type PurchaseWorkflowLinks } from '@/hooks/usePurchaseDerivedWorkflow';
 import type { WorkflowBlock } from '@/types/workflow';
 
 /** Links a page already holds on its own record. */
-export interface WorkflowLinks {
+export interface WorkflowLinks extends PurchaseWorkflowLinks {
   salesOrderId?: string;
   invoiceId?: string;
   paymentId?: string;
@@ -36,6 +37,7 @@ export function useDerivedWorkflow(links: WorkflowLinks, server?: WorkflowBlock)
     enabled: Boolean(salesOrderId),
   });
 
+  const purchaseDerived = usePurchaseDerivedWorkflow(links);
   const derived: DerivedRecords = {};
   if (payment.data) {
     derived.payment = { id: payment.data.id, number: payment.data.paymentNumber, statusCode: payment.data.statusCode, status: payment.data.status };
@@ -46,5 +48,5 @@ export function useDerivedWorkflow(links: WorkflowLinks, server?: WorkflowBlock)
   if (order.data) {
     derived.salesOrder = { id: order.data.id, number: order.data.salesOrderNumber, statusCode: order.data.statusCode, status: order.data.status };
   }
-  return mergeWorkflow(server, derived);
+  return mergeWorkflow(server, { ...derived, ...purchaseDerived });
 }
