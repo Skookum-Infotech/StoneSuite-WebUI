@@ -33,7 +33,7 @@ describe('WorkflowCard', () => {
     renderCard(workflow);
     expect(screen.getByRole('list', { name: 'Progress Bar' })).toBeInTheDocument();
     expect(screen.getByText('Stage 2 of 5')).toBeInTheDocument();
-    expect(screen.getByText('REQ-0014 · Approved')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Requisition/ })).toHaveTextContent('REQ-0014 · Approved');
     expect(screen.getByText('Sent to Vendor').closest('li')).toHaveAttribute('aria-current', 'step');
     expect(screen.getAllByText('Not started')).toHaveLength(3);
   });
@@ -64,5 +64,11 @@ describe('WorkflowCard', () => {
     const link = await screen.findByRole('link', { name: /Sales order/ });
     expect(link).toHaveAttribute('href', '/sales/sales_order/so-1');
     expect(link).toHaveTextContent('SO-0042');
+  });
+
+  it("colours the current status below the stage name with that status's pill colour", () => {
+    render(withClient(<WorkflowCard module="invoice" statusCode="SENT" statusLabel="Sent" />));
+    const status = within(screen.getByRole('listitem', { current: 'step' })).getAllByText('Sent')[0];
+    expect(status.style.color).not.toBe('');
   });
 });

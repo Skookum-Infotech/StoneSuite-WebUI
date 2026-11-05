@@ -2,6 +2,7 @@ import { buildWorkflowStages } from '@/lib/workflowStages';
 import type { ProgressModule } from '@/lib/orderProgress';
 import type { WorkflowBlock } from '@/types/workflow';
 import { useDerivedWorkflow, type WorkflowLinks } from '@/hooks/useDerivedWorkflow';
+import { connectorColor } from '@/components/tenant/workflowStagePalette';
 import { WorkflowStageRow } from '@/components/tenant/WorkflowStageRow';
 
 interface WorkflowCardProps {
@@ -36,7 +37,13 @@ export function WorkflowCard({ module, statusCode, statusLabel, workflow = NO_WO
       </div>
       <ol aria-label="Progress Bar">
         {view.stages.map((stage, idx) => (
-          <WorkflowStageRow key={stage.key} stage={stage} isLast={idx === view.stages.length - 1} hereStatusCode={statusCode} />
+          <WorkflowStageRow
+            key={stage.key}
+            stage={stage}
+            isLast={idx === view.stages.length - 1}
+            hereStatusCode={statusCode}
+            lineColor={connectorColor(view.stages, idx)}
+          />
         ))}
       </ol>
     </div>

@@ -8,3 +8,17 @@ const VOID_PALETTE: StagePalette = { tint: '#fff1f2', ring: '#ef4444', ink: '#be
 export function stagePalette(stage: WorkflowStageView): StagePalette {
   return stage.state === 'void' ? VOID_PALETTE : stage.color ?? NEUTRAL_PALETTE;
 }
+
+/** Colour of the line below stage `idx`, or undefined to leave it grey. The line
+ *  is drawn when the flow has actually reached a stage at or above it and one
+ *  below it, so a Sales order that became an Invoice lights the whole run
+ *  between them (the skipped Fabrication and Installation markers stay grey,
+ *  only the line passes through). It takes the nearest reached stage's colour. */
+export function connectorColor(stages: WorkflowStageView[], idx: number): string | undefined {
+  const reached = (s: WorkflowStageView) => s.state !== 'upcoming';
+  if (!stages.slice(idx + 1).some(reached)) return undefined;
+  for (let i = idx; i >= 0; i -= 1) {
+    if (reached(stages[i])) return stagePalette(stages[i]).ring;
+  }
+  return undefined;
+}
