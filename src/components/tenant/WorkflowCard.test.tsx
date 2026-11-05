@@ -25,7 +25,7 @@ function renderCard(wf?: WorkflowBlock) {
 describe('WorkflowCard', () => {
   it('shows the five purchase stages with the current one marked', () => {
     renderCard(workflow);
-    expect(screen.getByRole('list', { name: 'Workflow' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Progress Bar' })).toBeInTheDocument();
     expect(screen.getByText('Stage 2 of 5')).toBeInTheDocument();
     expect(screen.getByText('REQ-0014 · Approved')).toBeInTheDocument();
     expect(screen.getByText('Sent to Vendor').closest('li')).toHaveAttribute('aria-current', 'step');
