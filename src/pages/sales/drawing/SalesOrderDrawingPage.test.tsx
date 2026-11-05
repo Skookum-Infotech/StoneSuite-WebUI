@@ -85,6 +85,7 @@ beforeEach(() => {
 describe('SalesOrderDrawingPage', () => {
   it('renders the toolbar, one area tab, an empty canvas, and the empty-state inspector when no drawing exists yet', async () => {
     renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
     expect(await screen.findByRole('button', { name: 'Add rectangle' })).toBeDefined();
     expect(screen.getAllByRole('tab')).toHaveLength(1);
     expect(screen.getByRole('application', { name: 'Drawing canvas' })).toBeDefined();
@@ -93,6 +94,7 @@ describe('SalesOrderDrawingPage', () => {
 
   it('sets the breadcrumb label on mount and clears it on unmount', async () => {
     const { unmount } = renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
     await screen.findByRole('button', { name: 'Add rectangle' });
     expect(useBreadcrumbStore.getState().labels['so-1']).toBe('SO-1042');
     unmount();
@@ -101,6 +103,7 @@ describe('SalesOrderDrawingPage', () => {
 
   it('adding a piece, selecting it, and undoing removes it again', async () => {
     renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
     await screen.findByRole('button', { name: 'Add rectangle' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
@@ -134,6 +137,7 @@ describe('SalesOrderDrawingPage', () => {
 
   it('keeps the editor and its in-memory work when a background order refetch fails, instead of replacing it with an error screen', async () => {
     const { queryClient } = renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
     await screen.findByRole('button', { name: 'Add rectangle' });
 
     // Add a piece — in-memory work that a wrongly-triggered error screen
@@ -178,13 +182,13 @@ describe('SalesOrderDrawingPage — fills the screen', () => {
     expect(editor.className).toContain('overflow-hidden');
   });
 
-  it('gives the canvas all the room the toolbar and summary leave, and lets only the inspector scroll', async () => {
+  it('gives the canvas all the room the toolbar and summary leave, and lets only the side panels scroll', async () => {
     renderPage();
     const canvas = await screen.findByRole('application', { name: 'Drawing canvas' });
     expect(canvas.className).toContain('h-full');
     expect(canvas.parentElement?.className).toContain('min-h-0');
     expect(canvas.parentElement?.className).toContain('flex-1');
-    const inspectorColumn = (await screen.findByText(/no piece selected/i)).closest('div.overflow-y-auto');
+    const inspectorColumn = (await screen.findByText(/no piece selected/i)).closest('aside.overflow-y-auto');
     expect(inspectorColumn).not.toBeNull();
   });
 
@@ -204,6 +208,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
   // mixing fake timers with userEvent + TanStack Query at the page level
   // hangs (findByRole's internal polling never advances).
   async function addAPieceAndSave(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(await screen.findByRole('button', { name: 'Shapes' }));
     await screen.findByRole('button', { name: 'Add rectangle' });
     await user.click(screen.getByRole('button', { name: 'Add rectangle' }));
     await user.type(screen.getByLabelText('Length'), '96');
@@ -268,6 +273,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
     const user = userEvent.setup();
     vi.mocked(drawingService.saveDrawing).mockResolvedValue(drawing({ version: 2 }));
     renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Shapes' }));
     await screen.findByRole('button', { name: 'Add rectangle' });
     await user.click(screen.getByRole('button', { name: 'Add rectangle' }));
     await user.type(screen.getByLabelText('Length'), '96');

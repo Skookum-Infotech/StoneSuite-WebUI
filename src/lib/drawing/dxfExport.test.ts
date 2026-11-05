@@ -32,6 +32,28 @@ function singlePieceArea(lengthMm: number, widthMm: number, label: string): Draw
   };
 }
 
+describe('buildAreaDxf — piece placement', () => {
+  const outlineOf = (dxf: string) =>
+    (new DxfParser().parseSync(dxf)?.entities.find((e) => e.type === 'POLYLINE') as IPolylineEntity).vertices;
+  const meta = { orderNumber: '1', areaIndex: 1, seq: 1, fractionDenominator: 32 as const };
+
+  it('exports a piece where it sits in the drawing, not at the origin', () => {
+    const area = singlePieceArea(MM_PER_INCH * 10, MM_PER_INCH * 5, 'A-1');
+    area.pieces[0].position = { x: MM_PER_INCH * 100, y: MM_PER_INCH * 20 };
+    const xs = outlineOf(buildAreaDxf(area, meta)).map((v) => v.x);
+    expect(Math.min(...xs)).toBeCloseTo(100, 3);
+    expect(Math.max(...xs)).toBeCloseTo(110, 3);
+  });
+
+  it('applies the piece rotation, so a 90 degree piece swaps its extents', () => {
+    const area = singlePieceArea(MM_PER_INCH * 10, MM_PER_INCH * 5, 'A-1');
+    area.pieces[0].rotationDeg = 90;
+    const vs = outlineOf(buildAreaDxf(area, meta));
+    const xs = vs.map((v) => v.x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(5, 3);
+  });
+});
+
 describe('dxfFileName', () => {
   it.each([
     ['9073', 'Kitchen', 1, 1, 'SO_9073_Kitchen_P1_1.dxf'],
@@ -102,5 +124,62 @@ describe('buildAreaDxf', () => {
     const block = parsed?.blocks[lengthDim?.block as string];
     const mtext = block?.entities.find((e) => e.type === 'MTEXT') as { text?: string } | undefined;
     expect(mtext?.text).toContain('24{\\H1x;\\S1/32;}"');
+  });
+});
+
+describe('buildAreaDxf — production detail', () => {
+  const meta = { orderNumber: '1', areaIndex: 1, seq: 1, fractionDenominator: 32 as const, displayUnit: 'in' as const };
+  const parse = (dxf: string) => new DxfParser().parseSync(dxf)?.entities ?? [];
+
+  function detailedArea(): DrawingArea {
+    const area = singlePieceArea(MM_PER_INCH * 100, MM_PER_INCH * 30, 'A-1');
+    area.pieces[0].position = { x: MM_PER_INCH * 10, y: 0 };
+    area.pieces[0].cutouts = [
+      { id: 'c1', type: 'sink', shape: 'rect', center: { x: MM_PER_INCH * 50, y: -MM_PER_INCH * 15 }, widthMm: MM_PER_INCH * 30, depthMm: MM_PER_INCH * 16 },
+      { id: 'c2', type: 'faucet', shape: 'round', center: { x: MM_PER_INCH * 80, y: -MM_PER_INCH * 15 }, diameterMm: MM_PER_INCH * 2 },
+    ];
+    area.pieces[0].edges = [{ index: 0, code: 'BN', splashHeightMm: MM_PER_INCH * 4 }, { index: 1, waterfallHeightMm: MM_PER_INCH * 36 }];
+    area.notes = [{ id: 'n1', text: 'Seam here', at: { x: 0, y: 0 } }];
+    area.dimensions = [{ id: 'd1', from: { x: 0, y: 0 }, to: { x: MM_PER_INCH * 20, y: 0 }, offsetMm: 25.4 }];
+    return area;
+  }
+
+  it('writes each cutout as a closed outline on the CUTOUTS layer, in world position', () => {
+    const cutouts = parse(buildAreaDxf(detailedArea(), meta))
+      .filter((e) => e.type === 'POLYLINE' && e.layer === 'CUTOUTS') as IPolylineEntity[];
+    expect(cutouts).toHaveLength(2);
+    expect(cutouts[0].vertices).toHaveLength(4);
+    expect(cutouts[1].vertices).toHaveLength(48);
+    const xs = cutouts[0].vertices.map((v) => v.x);
+    // sink centre is 50in along the piece, which sits 10in from the origin; 30in wide
+    expect(Math.min(...xs)).toBeCloseTo(45);
+    expect(Math.max(...xs)).toBeCloseTo(75);
+  });
+
+  it('writes edge profile, backsplash and waterfall notes on the EDGES layer', () => {
+    const texts = (parse(buildAreaDxf(detailedArea(), meta)).filter((e) => e.type === 'TEXT' && e.layer === 'EDGES') as ITextEntity[])
+      .map((t) => t.text);
+    expect(texts).toEqual(['BN BS 4"', 'WF 36"']);
+  });
+
+  it('writes notes on NOTES and manual dimensions as extra dimensions', () => {
+    const entities = parse(buildAreaDxf(detailedArea(), meta));
+    expect((entities.filter((e) => e.type === 'TEXT' && e.layer === 'NOTES') as ITextEntity[]).map((t) => t.text)).toEqual(['Seam here']);
+    expect(entities.filter((e) => e.type === 'DIMENSION' as string)).toHaveLength(5); // 4 sides + 1 manual
+  });
+
+  it('exports each seam as an open LINE on the SEAMS layer, in world position', () => {
+    const area = detailedArea();
+    area.pieces[0].seams = [{ from: { x: 0, y: 0 }, to: { x: MM_PER_INCH * 50, y: 0 } }];
+    const lines = parse(buildAreaDxf(area, meta)).filter((e) => e.type === 'LINE' && e.layer === 'SEAMS');
+    expect(lines).toHaveLength(1);
+    // The piece sits 10in from the origin, so the seam does too.
+    expect((lines[0] as unknown as { vertices: { x: number }[] }).vertices[0].x).toBeCloseTo(10);
+  });
+
+  it('skips edge settings pointing at a side that no longer exists', () => {
+    const area = singlePieceArea(1000, 500, 'A-1');
+    area.pieces[0].edges = [{ index: 9, code: 'BN' }];
+    expect(parse(buildAreaDxf(area, meta)).filter((e) => e.layer === 'EDGES')).toHaveLength(0);
   });
 });

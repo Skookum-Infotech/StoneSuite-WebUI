@@ -6,10 +6,16 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Piece } from '@/types/drawing';
-import { bounds, rectOutline } from '@/lib/drawing/geometry';
+import { bounds } from '@/lib/drawing/geometry';
 import { validatePieceLabel } from '@/lib/drawing/labels';
-import { formatLength, LengthParseError, parseLength } from '@/lib/drawing/units';
+import { formatLength, LengthParseError, parseLength, parsePositiveLength } from '@/lib/drawing/units';
+import { validatePiece } from '@/lib/drawing/validation';
+import { CutoutInspector } from './CutoutInspector';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { MultiSelectionPanel } from './MultiSelectionPanel';
+import { PieceCutoutList } from './PieceCutoutList';
+import { PieceEdgesPanel } from './PieceEdgesPanel';
+import { PieceTransformFields } from './PieceTransformFields';
 
 /** Tolerance for treating a re-typed length as "the same value" rather
  *  than a real edit. An untouched field's displayed text already went
@@ -43,9 +49,14 @@ export function PieceInspector() {
     }
   }, [piece]);
 
+  if (state.selectedPieceIds.length > 1) return <MultiSelectionPanel />;
+
   if (!area || !piece) {
     return <p ref={noSelectionRef} tabIndex={-1} className="text-xs text-stone-500 outline-none">No piece selected.</p>;
   }
+
+  const cutout = piece.cutouts.find((c) => c.id === state.selectedCutoutId);
+  if (cutout) return <CutoutInspector key={cutout.id} piece={piece} cutout={cutout} />;
 
   // Remounts (and so re-seeds every local field buffer) whenever the
   // selection changes.
@@ -129,9 +140,20 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
       const mm = parseLength(value);
       setError(null);
       if (almostEqualMm(mm, which === 'length' ? lengthMm : widthMm)) return;
-      dispatchPatch({
-        outline: which === 'length' ? rectOutline(mm, widthMm) : rectOutline(lengthMm, mm),
-      });
+      // Keeps the top-left corner where it is, so cutouts (which are measured
+      // from the piece's own corner) stay put as the piece grows or shrinks.
+      const l = which === 'length' ? mm : lengthMm;
+      const w = which === 'width' ? mm : widthMm;
+      const outline = [
+        { x: b.minX, y: b.maxY }, { x: b.minX + l, y: b.maxY },
+        { x: b.minX + l, y: b.maxY - w }, { x: b.minX, y: b.maxY - w },
+      ];
+      const issues = validatePiece({ ...piece, outline });
+      if (issues.length > 0) {
+        setError(issues[0]);
+        return;
+      }
+      dispatchPatch({ outline });
     } catch (e) {
       setError(e instanceof LengthParseError ? e.message : 'Enter a value.');
     }
@@ -139,7 +161,7 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
 
   const commitThickness = () => {
     try {
-      const mm = parseLength(thickness);
+      const mm = parsePositiveLength(thickness);
       setThicknessError(null);
       if (almostEqualMm(mm, piece.thicknessMm)) return;
       dispatchPatch({ thicknessMm: mm });
@@ -167,7 +189,8 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
 
   return (
     <div className="flex flex-col gap-2 text-xs">
-      <label className="flex flex-col gap-0.5">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+      <label className="col-span-2 flex flex-col gap-0.5">
         Label
         <input aria-label="Label" aria-describedby={labelError ? labelErrorId : undefined} value={label} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} className="rounded border border-stone-200 px-1.5 py-1" />
         {labelError && <span id={labelErrorId} role="alert" className="text-2xs text-destructive">{labelError}</span>}
@@ -207,7 +230,15 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
         {thicknessError && <span id={thicknessErrorId} role="alert" className="text-2xs text-destructive">{thicknessError}</span>}
       </label>
 
+      <PieceTransformFields piece={piece} />
+
       <label className="flex flex-col gap-0.5">
+        Corner radius
+        <input aria-label="Corner radius" aria-describedby={cornerRadiusError ? cornerRadiusErrorId : undefined} value={cornerRadius} onChange={(e) => setCornerRadius(e.target.value)} onBlur={commitCornerRadius} className="rounded border border-stone-200 px-1.5 py-1" />
+        {cornerRadiusError && <span id={cornerRadiusErrorId} role="alert" className="text-2xs text-destructive">{cornerRadiusError}</span>}
+      </label>
+
+      <label className="col-span-2 flex flex-col gap-0.5">
         Material line
         <select
           aria-label="Material line"
@@ -222,13 +253,9 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
         </select>
       </label>
 
-      <label className="flex flex-col gap-0.5">
-        Corner radius
-        <input aria-label="Corner radius" aria-describedby={cornerRadiusError ? cornerRadiusErrorId : undefined} value={cornerRadius} onChange={(e) => setCornerRadius(e.target.value)} onBlur={commitCornerRadius} className="rounded border border-stone-200 px-1.5 py-1" />
-        {cornerRadiusError && <span id={cornerRadiusErrorId} role="alert" className="text-2xs text-destructive">{cornerRadiusError}</span>}
-      </label>
+      </div>
 
-      <div className="flex gap-2 pt-1">
+      <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
           aria-label={`Rotate ${piece.label}`}
@@ -257,6 +284,9 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
           Delete
         </button>
       </div>
+
+      <PieceEdgesPanel piece={piece} />
+      <PieceCutoutList piece={piece} />
     </div>
   );
 }

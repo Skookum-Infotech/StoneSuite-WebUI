@@ -5,7 +5,7 @@
 // immediately on Ctrl/Cmd+S), with a conflict dialog on a 409 and a
 // beforeunload guard while a save is pending (build spec §5 Task 5).
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { salesOrderService } from '@/services/salesOrderService';
@@ -18,6 +18,7 @@ import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
 import { AreaTabs } from '@/components/drawing/AreaTabs';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { PieceInspector } from '@/components/drawing/PieceInspector';
+import { ToolRail } from '@/components/drawing/ToolRail';
 import { AreaSummary } from '@/components/drawing/AreaSummary';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
@@ -91,9 +92,22 @@ export default function SalesOrderDrawingPage() {
 function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
   salesOrderId: string; order: SalesOrder; onOrderUpdated: (order: SalesOrder) => void;
 }) {
-  const { state, dispatch } = useDrawingEditor();
+  const { state, dispatch, fitToArea } = useDrawingEditor();
   const [conflictOpen, setConflictOpen] = useState(false);
   const fillRef = useFillViewport<HTMLDivElement>();
+  const hasFitted = useRef(false);
+
+  // Frame the saved work on open. A drawing of 200"-wide pieces opens at
+  // 1mm = 1 unit otherwise, which puts most of it outside the viewport with
+  // no sign that it is there. Once only: re-fitting later would fight the
+  // user's own zoom and pan.
+  useEffect(() => {
+    if (hasFitted.current) return;
+    hasFitted.current = true;
+    if (state.present.areas.some((a) => a.pieces.length > 0)) fitToArea();
+    // fitToArea is rebuilt every render; this runs once, guarded by the ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSaved = useCallback((saved: Drawing) => {
     dispatch({ type: 'drawingSaved', version: saved.version, updatedAt: saved.updatedAt, updatedBy: saved.updatedBy });
@@ -112,7 +126,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
     [areas, displayUnit, fractionDenominator],
   );
 
-  const { status } = useDrawingAutosave({
+  const { status, saveNow } = useDrawingAutosave({
     salesOrderId,
     present: presentForAutosave,
     recordVersion: state.present.version,
@@ -162,18 +176,20 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
     <div
       ref={fillRef}
       data-testid="drawing-editor"
-      className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden p-2"
+      data-drawing-editor
+      className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
     >
-      <DrawingToolbar saveStatus={status} />
+      <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
       <AreaTabs />
       <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
       <div className="flex min-h-0 flex-1 gap-2">
+        <ToolRail />
         <div className="min-h-0 min-w-0 flex-1">
           <DrawingCanvas />
         </div>
-        <div className="w-64 shrink-0 overflow-y-auto border-l border-stone-200 pl-2">
+        <aside aria-label="Properties" className="modal-scrollbar w-72 shrink-0 overflow-y-auto overflow-x-hidden border-l border-stone-200 pl-2">
           <PieceInspector />
-        </div>
+        </aside>
       </div>
       <AreaSummary />
       {conflictOpen && (

@@ -22,7 +22,8 @@ export function outlineEdges(outline: Point[]): Array<[Point, Point]> {
   return outline.map((point, i) => [point, outline[(i + 1) % outline.length]] as [Point, Point]);
 }
 
-function distance(a: Point, b: Point): number {
+/** Straight-line distance between two points. */
+export function distance(a: Point, b: Point): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
@@ -118,22 +119,44 @@ export function snapToGrid(point: Point, gridSizeMm: number): Point {
   };
 }
 
-/** Converts a piece's local outline into world/drawing coordinates: rotate
- *  clockwise about the origin by `rotationDeg` (screen/DXF convention,
- *  y-up), then translate by `position`. A piece's `outline` field never
- *  changes on move/rotate — only `position`/`rotationDeg` do — so this is
- *  always how a piece's rendered or exported shape is derived. */
-export function transformOutline(outline: Point[], position: Point, rotationDeg: 0 | 90 | 180 | 270): Point[] {
-  const rotate = (p: Point): Point => {
-    switch (rotationDeg) {
-      case 0: return { x: p.x, y: p.y };
-      case 90: return { x: p.y, y: -p.x };
-      case 180: return { x: -p.x, y: -p.y };
-      case 270: return { x: -p.y, y: p.x };
-    }
-  };
-  return outline.map((p) => {
-    const r = rotate(p);
-    return { x: r.x + position.x, y: r.y + position.y };
-  });
+/** Rotates a point clockwise about the origin by rotationDeg degrees (y-up, the
+ *  screen/DXF convention). Exact for multiples of 90 so right-angle shapes
+ *  never pick up floating-point noise. */
+export function rotatePoint(p: Point, rotationDeg: number): Point {
+  const turns = ((rotationDeg % 360) + 360) % 360;
+  if (turns === 0) return { x: p.x, y: p.y };
+  if (turns === 90) return { x: p.y, y: -p.x };
+  if (turns === 180) return { x: -p.x, y: -p.y };
+  if (turns === 270) return { x: -p.y, y: p.x };
+  const rad = (turns * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return { x: p.x * cos + p.y * sin, y: -p.x * sin + p.y * cos };
+}
+
+/** One local point to world coordinates: rotate, then translate. */
+export function toWorldPoint(p: Point, position: Point, rotationDeg: number): Point {
+  const r = rotatePoint(p, rotationDeg);
+  return { x: r.x + position.x, y: r.y + position.y };
+}
+
+/** The inverse of toWorldPoint: a world point in the piece's local space. */
+export function toLocalPoint(world: Point, position: Point, rotationDeg: number): Point {
+  return rotatePoint({ x: world.x - position.x, y: world.y - position.y }, -rotationDeg);
+}
+
+/** Converts a piece's local outline into world/drawing coordinates. A
+ *  piece's outline never changes on move/rotate — only
+ *  position or rotationDeg do — so this is always how a piece's rendered
+ *  or exported shape is derived. */
+export function transformOutline(outline: Point[], position: Point, rotationDeg: number): Point[] {
+  return outline.map((p) => toWorldPoint(p, position, rotationDeg));
+}
+
+/** Mean of the vertices — good enough for placing a label. */
+export function centroid(points: Point[]): Point {
+  return points.reduce(
+    (acc, p) => ({ x: acc.x + p.x / points.length, y: acc.y + p.y / points.length }),
+    { x: 0, y: 0 },
+  );
 }

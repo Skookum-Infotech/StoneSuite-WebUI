@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing, Piece } from '@/types/drawing';
 import type { SalesOrderLine } from '@/types/salesOrder';
+vi.mock('@/services/drawingService', () => ({ drawingService: { getEdgeCodes: vi.fn().mockResolvedValue([]) } }));
+
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { PieceInspector } from './PieceInspector';
 
@@ -68,12 +71,14 @@ function Readout() {
 
 function renderInspector(pieces: Piece[], selectId?: string) {
   render(
-    <DrawingEditorProvider drawing={drawingWithPieces(pieces)} materialLines={MATERIAL_LINES}>
-      <PieceInspector />
-      {selectId && <Selector pieceId={selectId} />}
-      <UndoButton />
-      <Readout />
-    </DrawingEditorProvider>,
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <DrawingEditorProvider drawing={drawingWithPieces(pieces)} materialLines={MATERIAL_LINES}>
+        <PieceInspector />
+        {selectId && <Selector pieceId={selectId} />}
+        <UndoButton />
+        <Readout />
+      </DrawingEditorProvider>
+    </QueryClientProvider>,
   );
 }
 
