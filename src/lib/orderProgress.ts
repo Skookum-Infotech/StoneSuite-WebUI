@@ -10,28 +10,12 @@ export interface ProgressStep {
   code: string;
   label: string;
   state: ProgressStepState;
-  /** ISO timestamp the record entered this step, when the audit trail has it. */
-  at?: string;
-  /** Who moved it into this step, when the audit trail has it. */
-  actor?: string;
 }
 
 export interface StatusCatalogEntry {
   code: string;
   label: string;
 }
-
-/** Subset of the audit entry the progress card needs. */
-export interface ProgressAuditEntry {
-  action: string;
-  actorName: string;
-  newValue?: Record<string, unknown>;
-  at: string;
-}
-
-const STATUS_KEY_PATTERN = /status/i;
-const APPROVAL_KEY_PATTERN = /approv/i;
-const CREATE_ACTION = 'create';
 
 /** Marks every step before the current status done, the current one current,
  *  and the rest upcoming. A status outside the path (e.g. Cancelled) leaves
@@ -52,33 +36,6 @@ export function buildProgressSteps(
       else if (idx === currentIdx) state = 'current';
     }
     return { code, label: catalog.find((s) => s.code === code)?.label ?? code, state };
-  });
-}
-
-/** Whether an audit entry moved the record into the given step's status. */
-function enteredStatus(entry: ProgressAuditEntry, step: ProgressStep): boolean {
-  const value = entry.newValue;
-  if (!value) return false;
-  return Object.entries(value).some(
-    ([key, v]) =>
-      STATUS_KEY_PATTERN.test(key) &&
-      !APPROVAL_KEY_PATTERN.test(key) &&
-      (v === step.code || v === step.label),
-  );
-}
-
-/** Stamps each reached step with when and by whom the record entered it, read
- *  from the audit trail (oldest first). The first step falls back to the
- *  record's creation entry. Steps the trail does not mention stay unstamped. */
-export function attachStepHistory(steps: ProgressStep[], audit: ProgressAuditEntry[]): ProgressStep[] {
-  const ordered = [...audit].sort((a, b) => a.at.localeCompare(b.at));
-  return steps.map((step, idx) => {
-    if (step.state === 'upcoming') return step;
-    const hit =
-      ordered.find((e) => enteredStatus(e, step)) ??
-      (idx === 0 ? ordered.find((e) => e.action === CREATE_ACTION) : undefined);
-    if (!hit) return step;
-    return { ...step, at: hit.at, actor: hit.actorName || undefined };
   });
 }
 

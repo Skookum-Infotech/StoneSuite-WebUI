@@ -273,7 +273,7 @@ export default function ItemReceiptDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Item Receipt Details">
-          <WorkflowCard module="itemReceipt" recordId={id} statusCode={ir.statusCode} statusLabel={ir.status} workflow={ir.workflow} />
+          <WorkflowCard module="itemReceipt" statusCode={ir.statusCode} statusLabel={ir.status} workflow={ir.workflow} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

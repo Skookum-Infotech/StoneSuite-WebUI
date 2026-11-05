@@ -26,7 +26,6 @@ import { DeleteExpenseDialog } from './components/DeleteExpenseDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { ExpenseStatusControl } from './components/ExpenseStatusControl';
 import { RejectExpenseDialog } from './components/RejectExpenseDialog';
-import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
 
@@ -290,7 +289,6 @@ export default function ExpenseDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Expense Details">
-          <WorkflowCard module="expense" recordId={id} statusCode={exp.statusCode} statusLabel={exp.status} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

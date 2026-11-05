@@ -1,11 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkflowCard } from './WorkflowCard';
 import type { WorkflowBlock } from '@/types/workflow';
-
-vi.mock('@/services/purchaseOrderService', () => ({ purchaseOrderService: { getAudit: vi.fn().mockResolvedValue([]) } }));
 
 const workflow: WorkflowBlock = {
   stages: [
@@ -19,11 +16,9 @@ const workflow: WorkflowBlock = {
 
 function renderCard(wf?: WorkflowBlock) {
   return render(
-    <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter>
-        <WorkflowCard module="purchaseOrder" recordId="p1" statusCode="SENT" statusLabel="Sent to Vendor" workflow={wf} />
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <MemoryRouter>
+        <WorkflowCard module="purchaseOrder" statusCode="SENT" statusLabel="Sent to Vendor" workflow={wf} />
+    </MemoryRouter>,
   );
 }
 
@@ -49,8 +44,9 @@ describe('WorkflowCard', () => {
     expect(panel.getByText(/Sent/)).toBeInTheDocument();
   });
 
-  it('falls back to the per-document progress list without a workflow block', () => {
+  it('shows the other stages as "Not linked" without a workflow block', () => {
     renderCard(undefined);
-    expect(screen.getByRole('list', { name: 'Purchase order progress' })).toBeInTheDocument();
+    expect(screen.getByText('Sent to Vendor')).toBeInTheDocument();
+    expect(screen.getAllByText('Not linked')).toHaveLength(4);
   });
 });
