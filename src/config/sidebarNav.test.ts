@@ -178,3 +178,13 @@ describe('Install Schedule nav entry', () => {
     expect(entry?.trail).toContain('Calendar');
   });
 });
+
+describe('Approvals nav entry', () => {
+  it('points at /approvals, shows a badge, and is staff-only', () => {
+    const entry = allLinks().find(({ link }) => link.id === 'approvals');
+    expect(entry?.link.path).toBe('/approvals');
+    expect(entry?.link.badge).toBe('approvals-pending');
+    expect(entry?.link.customerVisible).toBeUndefined();
+    expect(isCustomerAllowedPath('/approvals')).toBe(false);
+  });
+});

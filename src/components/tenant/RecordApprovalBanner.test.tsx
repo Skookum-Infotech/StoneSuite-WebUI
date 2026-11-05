@@ -39,7 +39,9 @@ function renderBanner(record: ApprovalOverlay, props: { withReject?: boolean; re
 describe('RecordApprovalBanner', () => {
   it('renders nothing for a record that is neither awaiting approval nor rejected', () => {
     const { container } = render(
-      <RecordApprovalBanner record={{ ...pending, gated: false, canReject: false }} onApprove={vi.fn()} />,
+      <QueryClientProvider client={new QueryClient()}>
+        <RecordApprovalBanner record={{ ...pending, gated: false, canReject: false }} onApprove={vi.fn()} />
+      </QueryClientProvider>,
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -90,5 +92,22 @@ describe('RecordApprovalBanner', () => {
     renderBanner({ ...pending, rejection }, { resubmitVia });
 
     expect(screen.getByText(hint)).toBeInTheDocument();
+  });
+
+  it('invalidates the inbox and KPI queries once an approve settles', () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, 'invalidateQueries');
+    const ui = (approving: boolean) => (
+      <QueryClientProvider client={queryClient}>
+        <RecordApprovalBanner record={pending} onApprove={vi.fn()} approving={approving} />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(ui(true));
+    expect(spy).not.toHaveBeenCalled();
+
+    rerender(ui(false));
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['approvals-inbox'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['dashboard-kpi-strip'] });
   });
 });

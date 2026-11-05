@@ -6,12 +6,14 @@ import { MemoryRouter } from 'react-router-dom';
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
 vi.mock('@/hooks/useWorkflows', () => ({ useWorkflows: vi.fn() }));
 vi.mock('@/hooks/useFeedbackUnreadCount', () => ({ useFeedbackUnreadCount: vi.fn() }));
+vi.mock('@/hooks/useApprovalInboxSummary', () => ({ useApprovalInboxSummary: vi.fn() }));
 vi.mock('@/store/useAuthStore', () => ({ useAuthStore: vi.fn() }));
 
 import Sidebar from './Sidebar';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
 import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
+import { useApprovalInboxSummary } from '@/hooks/useApprovalInboxSummary';
 import { useAuthStore } from '@/store/useAuthStore';
 
 type Grant = { resource: string; action: string };
@@ -26,6 +28,7 @@ function setup({
   workflowsLoading = false,
   kind,
   unreadTickets = 0,
+  approvals = { total: 0, isApprover: false },
   path = '/',
 }: {
   grants?: Grant[];
@@ -37,10 +40,13 @@ function setup({
   kind?: 'portal';
   /** Tickets with unread replies, as the shared polling hook would report. */
   unreadTickets?: number;
+  /** Pending approvals, as the shared summary hook would report. */
+  approvals?: { total: number; isApprover: boolean };
   /** The URL the sidebar is rendered at. */
   path?: string;
 } = {}) {
   vi.mocked(useFeedbackUnreadCount).mockReturnValue(unreadTickets);
+  vi.mocked(useApprovalInboxSummary).mockReturnValue(approvals);
 
   vi.mocked(useUserPermissions).mockReturnValue({
     grants,
@@ -353,5 +359,31 @@ describe('Sidebar groups', () => {
     setup({ grants: ALL_ACCESS, path: '/' });
 
     expect(salesToggle()).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
+describe('Sidebar Approvals link', () => {
+  it('shows the pending count beside the link', () => {
+    setup({ grants: [], approvals: { total: 7, isApprover: true } });
+
+    expect(screen.getByRole('link', { name: /Approvals/ })).toHaveTextContent('7');
+  });
+
+  it('hides the link when nothing is pending and the user is not an approver', () => {
+    setup({ grants: [], approvals: { total: 0, isApprover: false } });
+
+    expect(screen.queryByRole('link', { name: /Approvals/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps the link for an approver with nothing pending right now', () => {
+    setup({ grants: [], approvals: { total: 0, isApprover: true } });
+
+    expect(screen.getByRole('link', { name: /Approvals/ })).toBeInTheDocument();
+  });
+
+  it('never offers the link to a customer-portal session', () => {
+    setup({ kind: 'portal', approvals: { total: 3, isApprover: true } });
+
+    expect(screen.queryByRole('link', { name: /Approvals/ })).not.toBeInTheDocument();
   });
 });

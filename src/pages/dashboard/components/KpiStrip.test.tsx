@@ -9,8 +9,16 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
 }));
 
+let superAdmin = false;
+vi.mock('@/hooks/useUserPermissions', () => ({
+  useUserPermissions: () => ({ isSuperAdmin: superAdmin }),
+}));
+
 describe('KpiStrip', () => {
-  beforeEach(() => navigateMock.mockClear());
+  beforeEach(() => {
+    navigateMock.mockClear();
+    superAdmin = false;
+  });
 
   it('shows a loading state while the query is in flight', () => {
     render(<KpiStrip metrics={undefined} isLoading={true} isError={false} />);
@@ -144,9 +152,24 @@ describe('KpiStrip', () => {
     expect(navigateMock).toHaveBeenCalledWith('/sales/invoice');
   });
 
-  it('does not make Needs Approval a link — it has no dedicated destination', () => {
+  it('links Needs Approval to the Approvals inbox', async () => {
+    const user = userEvent.setup();
     const metrics: KpiMetric[] = [{ id: 'needs-approval', value: 5, subLabel: 'oldest 2 days' }];
     render(<KpiStrip metrics={metrics} isLoading={false} isError={false} />);
-    expect(screen.queryByRole('button', { name: /needs approval/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /needs approval/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/approvals');
+  });
+
+  it('appends scope=all to the Needs Approval drill-through for a super admin', async () => {
+    superAdmin = true;
+    const user = userEvent.setup();
+    const metrics: KpiMetric[] = [{ id: 'needs-approval', value: 7, subLabel: 'x' }];
+    render(<KpiStrip metrics={metrics} isLoading={false} isError={false} />);
+
+    await user.click(screen.getByRole('button', { name: /needs approval/i }));
+
+    expect(navigateMock).toHaveBeenCalledWith('/approvals?scope=all');
   });
 });
