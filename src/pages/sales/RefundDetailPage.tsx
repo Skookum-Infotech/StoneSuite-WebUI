@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { REFUND_STATUS_COLORS, REFUND_STATUS_CODES } from '@/lib/refundForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { RefundAuditTab } from './components/RefundAuditTab';
 import { RefundApplicationsTab } from './components/RefundApplicationsTab';
 import { DeleteRefundDialog } from './components/DeleteRefundDialog';
@@ -232,6 +233,7 @@ export default function RefundDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Refund Details">
+          <WorkflowCard module="refund" statusCode={refund.statusCode} statusLabel={refund.status} workflow={refund.workflow} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

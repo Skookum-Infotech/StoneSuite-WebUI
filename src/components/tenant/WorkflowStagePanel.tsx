@@ -1,7 +1,17 @@
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { buildPanelSteps, type WorkflowStageView } from '@/lib/workflowStages';
-import type { ProgressModule } from '@/lib/orderProgress';
+import { progressStatusColor } from '@/lib/progressStatusColor';
+import { STAGE_ICONS } from '@/components/tenant/workflowStageIcons';
+import { stagePalette } from '@/components/tenant/workflowStagePalette';
+
+const UPCOMING_RING = '#e0dedb';
+const WHITE = '#ffffff';
+/** Hex alpha suffixes: a done step's faded ring, its pale fill, and the
+ *  connector between two done steps. */
+const DONE_RING_ALPHA = '66';
+const DONE_FILL_ALPHA = '1f';
+const CONNECTOR_ALPHA = '88';
 
 interface WorkflowStagePanelProps {
   stage: WorkflowStageView;
@@ -20,7 +30,7 @@ export function WorkflowStagePanel({ stage, hereStatusCode }: WorkflowStagePanel
       role="tooltip"
       className="absolute right-full top-0 z-30 mr-2 hidden w-52 rounded-xl border border-stone-200 bg-white p-3 shadow-md group-hover:block group-focus-within:block"
     >
-      {statusCode ? <SubStatusList module={stage.module} statusCode={statusCode} title={single ? `${stage.label} ${single.number}` : stage.label} /> : (
+      {statusCode ? <SubStatusList stage={stage} statusCode={statusCode} title={single ? `${stage.label} ${single.number}` : stage.label} /> : (
         <>
           <p className="mb-1.5 text-2xs font-semibold text-stone-500">{stage.label} records</p>
           <ul className="space-y-1">
@@ -38,25 +48,56 @@ export function WorkflowStagePanel({ stage, hereStatusCode }: WorkflowStagePanel
   );
 }
 
-function SubStatusList({ module, statusCode, title }: { module: ProgressModule; statusCode: string; title: string }) {
-  const { steps, hiddenCount } = buildPanelSteps(module, statusCode);
+/** Sub-statuses as a dot list. Every marker is a 16px circle with its dot
+ *  centred: a passed status a faded ring with a dot in its own status colour (the
+ *  one its pill uses), the current one a crisp ring with a larger dot, anything
+ *  not reached yet an empty grey ring. The connector runs only in the gap between
+ *  two circles (8px, touching both), so it never draws inside one. The header
+ *  keeps the stage's palette. */
+function SubStatusList({ stage, statusCode, title }: { stage: WorkflowStageView; statusCode: string; title: string }) {
+  const { steps, hiddenCount } = buildPanelSteps(stage.module, statusCode, stage.window);
+  const pal = stagePalette(stage);
+  const Icon = STAGE_ICONS[stage.key];
   return (
     <>
-      <p className="mb-1.5 text-2xs font-semibold text-stone-500">{title}</p>
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <span className="grid size-[18px] place-items-center rounded-[5px]" style={{ backgroundColor: pal.tint }}>
+          <Icon className="size-3" style={{ color: pal.ink }} aria-hidden="true" />
+        </span>
+        <p className="text-2xs font-semibold" style={{ color: pal.ink }}>{title}</p>
+      </div>
       <ul>
-        {steps.map((s) => (
-          <li key={s.code} className={cn('flex h-5 items-center gap-2 text-xs', s.state === 'upcoming' ? 'text-stone-400' : 'text-stone-900', s.state === 'current' && 'font-semibold')}>
-            <span
-              aria-hidden="true"
-              className={cn('size-2 shrink-0 rounded-full', s.state === 'upcoming' ? 'bg-stone-300' : 'bg-brand-dark', s.state === 'current' && 'ring-2 ring-brand')}
-            />
-            {s.label}
-            {s.state === 'current' && <span className="sr-only"> (current)</span>}
-          </li>
-        ))}
+        {steps.map((s, i) => {
+          const color = progressStatusColor(stage.module, s.code);
+          const reached = s.state !== 'upcoming';
+          return (
+            <li key={s.code} className={cn('relative flex h-6 items-center gap-2.5 text-xs', reached ? 'text-stone-900' : 'text-stone-400')}>
+              {(i < steps.length - 1 || hiddenCount > 0) && (
+                <span
+                  aria-hidden="true"
+                  className={cn('absolute left-[7px] top-5 h-2 w-0.5', s.state !== 'done' && 'bg-stone-200')}
+                  style={s.state === 'done' ? { backgroundColor: `${color}${CONNECTOR_ALPHA}` } : undefined}
+                />
+              )}
+              <span
+                aria-hidden="true"
+                className="relative z-10 grid size-4 shrink-0 place-items-center rounded-full border-2"
+                style={{
+                  borderColor: s.state === 'done' ? `${color}${DONE_RING_ALPHA}` : reached ? color : UPCOMING_RING,
+                  backgroundColor: s.state === 'done' ? `${color}${DONE_FILL_ALPHA}` : WHITE,
+                }}
+              >
+                {s.state === 'done' && <span className="size-1.5 rounded-full" style={{ backgroundColor: color }} />}
+                {s.state === 'current' && <span className="size-2 rounded-full" style={{ backgroundColor: color }} />}
+              </span>
+              <span className={cn(s.state === 'current' && 'font-semibold')}>{s.label}</span>
+              {s.state === 'current' && <span className="sr-only"> (current)</span>}
+            </li>
+          );
+        })}
         {hiddenCount > 0 && (
-          <li className="flex h-5 items-center gap-2 text-xs text-stone-400">
-            <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-stone-300" />
+          <li className="flex h-6 items-center gap-2.5 text-xs text-stone-400">
+            <span aria-hidden="true" className="size-4 shrink-0 rounded-full border-2 border-stone-200 bg-white" />
             + {hiddenCount} more steps
           </li>
         )}
