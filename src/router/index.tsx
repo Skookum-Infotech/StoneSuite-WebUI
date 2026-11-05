@@ -74,6 +74,7 @@ const AIAssistantConfigPage = lazyWithRetry(
   () => import("@/pages/config/ai-assistant/AIAssistantConfigPage"),
 );
 const AutomationPage = lazyWithRetry(() => import("@/pages/config/automation/AutomationPage"));
+const DeliveryLogPage = lazyWithRetry(() => import("@/pages/config/automation/deliveries/DeliveryLogPage"));
 const RecordNumberingPage = lazyWithRetry(
   () => import("@/pages/config/record-numbering/RecordNumberingPage"),
 );
@@ -170,6 +171,9 @@ const SalesOrderDetailPage = lazyWithRetry(
 );
 const EditSalesOrderPage = lazyWithRetry(
   () => import("@/pages/sales/EditSalesOrderPage"),
+);
+const SalesOrderDrawingPage = lazyWithRetry(
+  () => import("@/pages/sales/drawing/SalesOrderDrawingPage"),
 );
 const FabricationJobListPage = lazyWithRetry(
   () => import("@/pages/sales/FabricationJobListPage"),
@@ -381,6 +385,9 @@ const AccountingPeriodsPage = lazyWithRetry(
 // Calendar module
 const ActivityPlannerPage = lazyWithRetry(
   () => import("@/pages/calendar/ActivityPlannerPage"),
+);
+const InstallSchedulePage = lazyWithRetry(
+  () => import("@/pages/calendar/InstallSchedulePage"),
 );
 
 const PageLoader = () => (
@@ -687,6 +694,14 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+      {
+        path: "sales/sales_order/:id/drawing",
+        element: lazy_(
+          <PermissionGuard resource="sales_order" action="update" workflowKey="sales_order">
+            <SalesOrderDrawingPage />
+          </PermissionGuard>,
+        ),
+      },
 
       // Installation / Fabrication (specific routes must come before the catch-all)
       {
@@ -866,6 +881,17 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="sales_order" action="read" workflowKey="sales_order">
             <ActivityPlannerPage />
+          </PermissionGuard>,
+        ),
+      },
+
+      // Calendar: Install Schedule. Gated by its own install_appointment grant;
+      // no workflowKey because visits are not a workflow record.
+      {
+        path: "calendar/install-schedule",
+        element: lazy_(
+          <PermissionGuard resource="install_appointment" action="read">
+            <InstallSchedulePage />
           </PermissionGuard>,
         ),
       },
@@ -1545,6 +1571,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="automation" action="read">
             <AutomationPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "config/automation/deliveries",
+        element: lazy_(
+          <PermissionGuard resource="automation" action="read">
+            <DeliveryLogPage />
           </PermissionGuard>,
         ),
       },
