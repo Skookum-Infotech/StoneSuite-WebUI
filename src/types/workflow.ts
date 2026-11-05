@@ -2,7 +2,7 @@
 // BACKEND_SPEC_workflow_links.md at the repo root.
 
 export type WorkflowStageKey =
-  | 'quote' | 'salesOrder' | 'fabrication' | 'invoice' | 'payment'
+  | 'quote' | 'salesOrder' | 'fabrication' | 'installation' | 'invoice' | 'payment' | 'refund'
   | 'requisition' | 'purchaseOrder' | 'receiving' | 'vendorBill' | 'vendorPayment';
 
 export interface WorkflowRecordRef {

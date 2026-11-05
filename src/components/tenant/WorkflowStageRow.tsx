@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkflowStageView } from '@/lib/workflowStages';
+import { STAGE_ICONS } from '@/components/tenant/workflowStageIcons';
+import { stagePalette } from '@/components/tenant/workflowStagePalette';
 import { WorkflowStagePanel } from '@/components/tenant/WorkflowStagePanel';
 
 interface WorkflowStageRowProps {
@@ -10,35 +11,53 @@ interface WorkflowStageRowProps {
   hereStatusCode: string;
 }
 
-const MARKER_BY_STATE: Record<WorkflowStageView['state'], string> = {
-  done: 'border-lime-800 bg-lime-800 text-white',
-  here: 'border-lime-800 bg-white',
-  progress: 'border-lime-800 bg-white',
-  upcoming: 'border-stone-300 bg-white',
-  void: 'border-red-500 bg-red-50',
-};
+const UPCOMING_RING = '#e8e8e8';
+const UPCOMING_ICON = '#c9c5c0';
+const WHITE = '#ffffff';
 
-/** One row of the workflow card: marker, stage name, linked record + status.
+/** Ring, fill and icon colours for a marker. A finished stage (or a viewed
+ *  record at its last status) gets the pale fill, mid-tone ring and dark icon;
+ *  a live one a white fill with a ring-coloured icon; an unstarted one grey. */
+function markerColors(stage: WorkflowStageView): { ring: string; fill: string; icon: string } {
+  const pal = stagePalette(stage);
+  if (stage.state === 'upcoming') return { ring: UPCOMING_RING, fill: WHITE, icon: UPCOMING_ICON };
+  if (stage.state === 'done' || stage.state === 'void' || (stage.state === 'here' && stage.complete)) {
+    return { ring: pal.ring, fill: pal.tint, icon: pal.ink };
+  }
+  return { ring: pal.ring, fill: WHITE, icon: pal.ring };
+}
+
+/** One row of the progress card: icon marker, stage name, linked record + status.
  *  Hovering or focusing it opens the sub-status panel; a single linked record
- *  is a link to that record. */
+ *  is a link to that record. The marker is a 20px grid cell with a centred icon.
+ *  The colours come from a per-stage palette (data), so they are set inline like
+ *  the shared Badge does. */
 export function WorkflowStageRow({ stage, isLast, hereStatusCode }: WorkflowStageRowProps) {
   const single = stage.records.length === 1 ? stage.records[0] : undefined;
   const hasPanel = stage.state === 'here' || stage.records.length > 0;
   const href = single && stage.state !== 'here' ? `${stage.route}/${single.id}` : undefined;
   const rowCls = cn(
-    'group relative flex min-h-9 gap-2.5 rounded-lg px-1.5 py-1 -mx-1.5 outline-none focus-visible:ring-2 focus-visible:ring-lime-700',
+    'group relative flex min-h-9 gap-2.5 rounded-lg px-1.5 py-1 -mx-1.5 outline-none focus-visible:ring-2 focus-visible:ring-brand-dark',
     hasPanel && 'hover:bg-stone-50',
   );
+  const pal = stagePalette(stage);
+  const { ring, fill, icon } = markerColors(stage);
+  const Icon = STAGE_ICONS[stage.key];
 
   const body = (
     <>
       {!isLast && (
-        <span aria-hidden="true" className={cn('absolute left-[14px] top-6 -bottom-1 w-0.5', stage.state === 'done' ? 'bg-lime-800' : 'bg-stone-200')} />
+        <span
+          aria-hidden="true"
+          className={cn('absolute left-[15px] top-7 -bottom-1 w-0.5', stage.state !== 'done' && 'bg-stone-200')}
+          style={stage.state === 'done' ? { backgroundColor: ring } : undefined}
+        />
       )}
-      <span className={cn('relative z-10 mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full border-2', MARKER_BY_STATE[stage.state])}>
-        {stage.state === 'done' && <Check className="size-3" aria-hidden="true" />}
-        {stage.state === 'here' && <span className="size-[7px] rounded-full bg-lime-800" />}
-        {stage.state === 'progress' && <span className="size-[7px] rounded-full border-[1.5px] border-lime-800" />}
+      <span
+        className="relative z-10 mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2"
+        style={{ borderColor: ring, backgroundColor: fill }}
+      >
+        <Icon className="size-3" style={{ color: icon }} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-1.5">
@@ -46,7 +65,14 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode }: WorkflowStag
             {stage.label}
             {stage.state === 'done' && <span className="sr-only"> (completed)</span>}
           </span>
-          {stage.state === 'here' && <span className="rounded-full bg-lime-100 px-1.5 text-[9.5px] text-lime-900">this record</span>}
+          {stage.state === 'here' && (
+            <span
+              className="rounded-full border px-1.5 text-[9.5px] font-semibold"
+              style={{ backgroundColor: pal.tint, color: pal.ink, borderColor: pal.ring }}
+            >
+              this record
+            </span>
+          )}
         </span>
         <span className={cn('block truncate text-2xs', stage.state === 'void' ? 'text-red-700' : stage.state === 'upcoming' ? 'text-stone-400' : 'text-stone-500')}>
           {stage.subtitle}

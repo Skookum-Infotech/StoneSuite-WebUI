@@ -132,7 +132,13 @@ export default function SalesOrderDetailPage() {
   // (idempotent replay) — either way, navigate to it.
   const convert = useMutation({
     mutationFn: () => salesOrderService.convertToInvoice(id),
-    onSuccess: ({ invoice }) => navigate(`/sales/invoice/${invoice.id}`),
+    onSuccess: ({ invoice }) => {
+      // The order's progress card now has an invoice; refresh it and the lists.
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      navigate(`/sales/invoice/${invoice.id}`);
+    },
   });
 
   // The request id is stable across retries for this order, so a second click
@@ -142,6 +148,7 @@ export default function SalesOrderDetailPage() {
     mutationFn: () => fabricationService.fabricateFromOrder(id, undefined, fabricateKey.keyFor(id)),
     onSuccess: (job) => {
       fabricateKey.reset();
+      queryClient.invalidateQueries({ queryKey: ['sales-order', id] });
       navigate(`/sales/installation/${job.id}`);
     },
   });
