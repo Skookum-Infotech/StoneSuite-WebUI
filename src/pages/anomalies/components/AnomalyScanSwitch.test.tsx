@@ -142,7 +142,7 @@ describe('AnomalyScanSwitch', () => {
     await waitFor(() => expect(automationSettingsService.get).toHaveBeenCalled());
     await userEvent.click(toggle);
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/super admin must turn on Automation/)),
+      expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/isn't available yet because Automation is off/)),
     );
     expect(automationRuleService.setEnabled).not.toHaveBeenCalled();
   });
