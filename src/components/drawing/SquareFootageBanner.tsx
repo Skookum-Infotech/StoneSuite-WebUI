@@ -5,7 +5,8 @@
 // ever compared — a line in "each" or similar is never flagged.
 
 import { useState } from 'react';
-import { squareFeet } from '@/lib/drawing/geometry';
+import { materialUsage } from '@/lib/drawing/materials';
+import { mm2ToSqFt } from '@/lib/drawing/metrics';
 import { fromOrder, toCreatePayload } from '@/lib/salesOrderForm';
 import { salesOrderService } from '@/services/salesOrderService';
 import type { DrawingArea } from '@/types/drawing';
@@ -22,13 +23,10 @@ interface LineMismatch {
 }
 
 function computeMismatches(areas: DrawingArea[], lines: SalesOrder['items']): LineMismatch[] {
+  // Outline area plus backsplash / waterfall panels (see materials.ts).
   const sqFtByLine = new Map<string, number>();
-  for (const area of areas) {
-    for (const piece of area.pieces) {
-      if (!piece.salesOrderLineId) continue;
-      const current = sqFtByLine.get(piece.salesOrderLineId) ?? 0;
-      sqFtByLine.set(piece.salesOrderLineId, current + squareFeet(piece.outline));
-    }
+  for (const usage of materialUsage(areas)) {
+    if (usage.lineId) sqFtByLine.set(usage.lineId, mm2ToSqFt(usage.billableAreaMm2));
   }
   const mismatches: LineMismatch[] = [];
   for (const [lineId, drawingSqFt] of sqFtByLine) {

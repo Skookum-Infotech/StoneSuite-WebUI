@@ -9,6 +9,19 @@ export function areaLetter(areaIndex: number): string {
   return String.fromCharCode(65 + areaIndex);
 }
 
+/** The letter shown against one side of a piece in the dimension labels and
+ *  the shop drawing: 0 -> 'A', 25 -> 'Z', 26 -> 'AA'. Pieces with more than
+ *  26 sides are rare but must not collide. */
+export function edgeLetter(index: number): string {
+  let n = index;
+  let out = '';
+  do {
+    out = String.fromCharCode(65 + (n % 26)) + out;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return out;
+}
+
 /** The next free `${prefix}-${n}` label in an area: the smallest positive
  *  integer `n` not already present in `existingLabels`. */
 export function nextPieceLabel(prefix: string, existingLabels: string[]): string {

@@ -19,7 +19,14 @@ const AREAS: DrawingArea[] = [];
 // re-render, re-triggering it endlessly.
 const DEFAULT_PRESENT = { areas: AREAS, displayUnit: 'in' as const, fractionDenominator: 32 as const };
 
-function renderAutosave(overrides: Partial<Parameters<typeof useDrawingAutosave>[0]> = {}) {
+// What the editor "was opened with" — a different object from DEFAULT_PRESENT,
+// so the first render below is the unedited document and the rerender to
+// DEFAULT_PRESENT is the user's first edit.
+const OPENED_PRESENT = { areas: AREAS, displayUnit: 'in' as const, fractionDenominator: 32 as const };
+
+/** Renders the hook and, unless `untouched`, makes one edit — saving only
+ *  ever starts from an edit, never from merely opening the drawing. */
+function renderAutosave(overrides: Partial<Parameters<typeof useDrawingAutosave>[0]> = {}, untouched = false) {
   const base = {
     salesOrderId: 'so1',
     present: DEFAULT_PRESENT,
@@ -29,10 +36,12 @@ function renderAutosave(overrides: Partial<Parameters<typeof useDrawingAutosave>
     paused: false,
     ...overrides,
   };
-  return renderHook(
+  const hook = renderHook(
     (props: Partial<Parameters<typeof useDrawingAutosave>[0]>) => useDrawingAutosave({ ...base, ...props }),
-    { initialProps: {} },
+    { initialProps: { present: OPENED_PRESENT } as Partial<Parameters<typeof useDrawingAutosave>[0]> },
   );
+  if (!untouched) act(() => hook.rerender({}));
+  return hook;
 }
 
 beforeEach(() => {
@@ -50,6 +59,14 @@ describe('useDrawingAutosave — debounce', () => {
     vi.mocked(drawingService.saveDrawing).mockResolvedValue({} as never);
     renderAutosave();
     act(() => vi.advanceTimersByTime(2999));
+    expect(drawingService.saveDrawing).not.toHaveBeenCalled();
+  });
+
+  it('never saves just because the drawing was opened', () => {
+    vi.useFakeTimers();
+    vi.mocked(drawingService.saveDrawing).mockResolvedValue({} as never);
+    renderAutosave({}, true);
+    act(() => vi.advanceTimersByTime(10_000));
     expect(drawingService.saveDrawing).not.toHaveBeenCalled();
   });
 

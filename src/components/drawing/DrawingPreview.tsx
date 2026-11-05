@@ -4,7 +4,8 @@
 // from the interactive editor's DrawingCanvas/PieceShape rather than a
 // shared one: this view only ever shows a static snapshot.
 
-import { bounds, transformOutline } from '@/lib/drawing/geometry';
+import { bounds, toWorldPoint, transformOutline } from '@/lib/drawing/geometry';
+import { cutoutOutline } from '@/lib/drawing/cutouts';
 import type { Drawing, DrawingArea } from '@/types/drawing';
 
 const PREVIEW_PADDING_MM = 200;
@@ -54,6 +55,34 @@ function AreaPreview({ area }: { area: DrawingArea }) {
                 className="fill-stone-100 stroke-stone-400"
                 strokeWidth={2}
               />
+              {piece.seams.map((seam, s) => {
+                // Index key: seams carry no id of their own.
+                const from = toWorldPoint(seam.from, piece.position, piece.rotationDeg);
+                const to = toWorldPoint(seam.to, piece.position, piece.rotationDeg);
+                return (
+                  <line
+                    key={s}
+                    x1={from.x}
+                    y1={-from.y}
+                    x2={to.x}
+                    y2={-to.y}
+                    className="stroke-stone-700"
+                    strokeWidth={2}
+                    strokeDasharray="10 5"
+                  />
+                );
+              })}
+              {piece.cutouts.map((cutout) => (
+                <polygon
+                  key={cutout.id}
+                  points={cutoutOutline(cutout)
+                    .map((pt) => toWorldPoint(pt, piece.position, piece.rotationDeg))
+                    .map((pt) => `${pt.x},${-pt.y}`)
+                    .join(' ')}
+                  className="fill-white stroke-stone-500"
+                  strokeWidth={1}
+                />
+              ))}
               <text
                 x={(center.minX + center.maxX) / 2}
                 y={(center.minY + center.maxY) / 2}

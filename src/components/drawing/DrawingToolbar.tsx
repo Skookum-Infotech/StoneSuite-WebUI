@@ -1,239 +1,108 @@
-// Top toolbar: add-piece tools (rectangle/L/U/polygon), undo/redo, and
-// zoom controls. Each add-piece tool is a small inline form of
-// parseLength-bound text inputs; polygon is a toggle that hands off to
-// DrawingCanvas's click-to-place-points mode (see its own task).
+// Top toolbar: save, undo/redo, zoom, DXF export and version history. The tools
+// that add pieces and cutouts live in the left panel (ShapePalette,
+// CutoutLibrary).
 
-import { useId, useState } from 'react';
-import { lShapeOutline, rectOutline, uShapeOutline } from '@/lib/drawing/geometry';
-import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
-import { parsePositiveLength, LengthParseError } from '@/lib/drawing/units';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { buildAreaExport, downloadDxf } from '@/lib/drawing/dxfDownload';
 import { ZOOM_STEP } from '@/lib/drawing/constants';
-import type { Piece, Drawing } from '@/types/drawing';
+import type { Drawing } from '@/types/drawing';
 import type { AutosaveStatus } from './useDrawingAutosave';
 import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { useFullscreen } from './useFullscreen';
 
-const SAVE_STATUS_LABEL: Record<AutosaveStatus, string> = {
-  idle: '',
-  dirty: 'Unsaved changes',
+const SAVE_BUTTON_LABEL: Record<AutosaveStatus, string> = {
+  idle: 'Saved',
+  dirty: 'Save',
   saving: 'Saving…',
   saved: 'Saved',
-  error: 'Save failed',
+  error: 'Retry save',
 };
 
-type AddTool = 'none' | 'rect' | 'L' | 'U';
+const SAVE_STATUS_TEXT: Record<AutosaveStatus, string> = {
+  idle: '',
+  dirty: 'Unsaved changes — autosaves shortly',
+  saving: 'Saving…',
+  saved: 'All changes saved',
+  error: 'Save failed — your changes are not saved',
+};
 
-function parseFieldOrError(value: string): { mm: number; error: null } | { mm: null; error: string } {
-  try {
-    // A piece dimension must be a real, positive length — parseLength
-    // alone accepts "0" as valid (it is, as a length), which a caller
-    // checking the result with a plain truthiness test treats as both
-    // "invalid" and "no error message" at once. Found in the final review
-    // as a form that silently refused to submit on a zero-length field.
-    return { mm: parsePositiveLength(value), error: null };
-  } catch (e) {
-    return { mm: null, error: e instanceof LengthParseError ? e.message : 'Enter a value.' };
-  }
-}
+const BUTTON_CLASS = 'rounded border border-stone-200 px-2 py-1 text-xs disabled:opacity-40';
 
-/** One labeled length input with its own inline error, used by every
- *  add-piece form below. */
-function LengthField({ label, value, onChange, error }: {
-  label: string; value: string; onChange: (v: string) => void; error: string | null;
-}) {
-  const errorId = useId();
-  return (
-    <label className="flex flex-col gap-0.5 text-xs">
-      {label}
-      <input
-        aria-label={label}
-        aria-describedby={error ? errorId : undefined}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-20 rounded border border-stone-200 px-1.5 py-1"
-      />
-      {error && <span id={errorId} role="alert" className="text-2xs text-destructive">{error}</span>}
-    </label>
-  );
-}
-
-function useAddPiece() {
-  const { state, dispatch } = useDrawingEditor();
-  const areaIndex = state.present.areas.findIndex((a) => a.id === state.activeAreaId);
-  const area = state.present.areas[areaIndex];
-
-  return (shape: Piece['shape'], outline: Piece['outline'], thicknessMm: number) => {
-    dispatch({
-      type: 'addPiece',
-      areaId: state.activeAreaId,
-      piece: {
-        id: crypto.randomUUID(),
-        label: nextPieceLabel(areaLetter(areaIndex), area.pieces.map((p) => p.label)),
-        shape,
-        outline,
-        position: { x: 0, y: 0 },
-        rotationDeg: 0,
-        thicknessMm,
-        edges: [],
-        seams: [],
-        cutouts: [],
-      },
-    });
-  };
-}
-
-function AddRectangleForm({ onDone }: { onDone: () => void }) {
-  const addPiece = useAddPiece();
-  const [values, setValues] = useState({ length: '', width: '', thickness: '' });
-  const [errors, setErrors] = useState<{ length?: string; width?: string; thickness?: string }>({});
-
-  const submit = () => {
-    const length = parseFieldOrError(values.length);
-    const width = parseFieldOrError(values.width);
-    const thickness = parseFieldOrError(values.thickness);
-    if (length.mm === null || width.mm === null || thickness.mm === null) {
-      setErrors({ length: length.error ?? undefined, width: width.error ?? undefined, thickness: thickness.error ?? undefined });
-      return;
-    }
-    addPiece('rect', rectOutline(length.mm, width.mm), thickness.mm);
-    onDone();
-  };
-
-  return (
-    <div className="flex items-end gap-2 rounded border border-stone-200 bg-white p-2">
-      <LengthField label="Length" value={values.length} onChange={(v) => setValues((s) => ({ ...s, length: v }))} error={errors.length ?? null} />
-      <LengthField label="Width" value={values.width} onChange={(v) => setValues((s) => ({ ...s, width: v }))} error={errors.width ?? null} />
-      <LengthField label="Thickness" value={values.thickness} onChange={(v) => setValues((s) => ({ ...s, thickness: v }))} error={errors.thickness ?? null} />
-      <button type="button" onClick={submit} className="rounded bg-brand px-2 py-1 text-xs font-semibold">
-        Add piece
-      </button>
-    </div>
-  );
-}
-
-function AddNotchedForm({ shape, onDone }: { shape: 'L' | 'U'; onDone: () => void }) {
-  const addPiece = useAddPiece();
-  const [values, setValues] = useState({ length: '', width: '', notchLength: '', notchDepth: '', thickness: '' });
-  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
-
-  const submit = () => {
-    const parsed = {
-      length: parseFieldOrError(values.length),
-      width: parseFieldOrError(values.width),
-      notchLength: parseFieldOrError(values.notchLength),
-      notchDepth: parseFieldOrError(values.notchDepth),
-      thickness: parseFieldOrError(values.thickness),
-    };
-    if (Object.values(parsed).some((p) => p.mm === null)) {
-      setErrors({
-        length: parsed.length.error ?? undefined,
-        width: parsed.width.error ?? undefined,
-        notchLength: parsed.notchLength.error ?? undefined,
-        notchDepth: parsed.notchDepth.error ?? undefined,
-        thickness: parsed.thickness.error ?? undefined,
-      });
-      return;
-    }
-    // A notch as large as (or larger than) the piece collapses an edge to
-    // zero length or crosses outside the piece entirely — found in the
-    // final review as a degenerate/self-intersecting outline with no
-    // warning. Every field above is confirmed non-null by now; the casts
-    // match the ones the outline-building call below already needs.
-    if ((parsed.notchLength.mm as number) >= (parsed.length.mm as number)
-      || (parsed.notchDepth.mm as number) >= (parsed.width.mm as number)) {
-      setErrors({ notchLength: 'The notch must be smaller than the piece.' });
-      return;
-    }
-    const outline = shape === 'L'
-      ? lShapeOutline(parsed.length.mm as number, parsed.width.mm as number, parsed.notchLength.mm as number, parsed.notchDepth.mm as number)
-      : uShapeOutline(parsed.length.mm as number, parsed.width.mm as number, parsed.notchLength.mm as number, parsed.notchDepth.mm as number);
-    addPiece(shape, outline, parsed.thickness.mm as number);
-    onDone();
-  };
-
-  const notchDepthLabel = shape === 'L' ? 'Notch width' : 'Notch depth';
-
-  return (
-    <div className="flex items-end gap-2 rounded border border-stone-200 bg-white p-2">
-      <LengthField label="Length" value={values.length} onChange={(v) => setValues((s) => ({ ...s, length: v }))} error={errors.length ?? null} />
-      <LengthField label="Width" value={values.width} onChange={(v) => setValues((s) => ({ ...s, width: v }))} error={errors.width ?? null} />
-      <LengthField label="Notch length" value={values.notchLength} onChange={(v) => setValues((s) => ({ ...s, notchLength: v }))} error={errors.notchLength ?? null} />
-      <LengthField label={notchDepthLabel} value={values.notchDepth} onChange={(v) => setValues((s) => ({ ...s, notchDepth: v }))} error={errors.notchDepth ?? null} />
-      <LengthField label="Thickness" value={values.thickness} onChange={(v) => setValues((s) => ({ ...s, thickness: v }))} error={errors.thickness ?? null} />
-      <button type="button" onClick={submit} className="rounded bg-brand px-2 py-1 text-xs font-semibold">
-        Add piece
-      </button>
-    </div>
-  );
-}
-
-export function DrawingToolbar({ saveStatus }: { saveStatus: AutosaveStatus }) {
-  const { state, dispatch, tool, setTool, fitToArea } = useDrawingEditor();
-  const [addTool, setAddTool] = useState<AddTool>('none');
+export function DrawingToolbar(
+  { saveStatus, onSave, orderNumber }: { saveStatus: AutosaveStatus; onSave: () => void; orderNumber: string },
+) {
+  const { state, dispatch, fitToArea } = useDrawingEditor();
   const [showVersions, setShowVersions] = useState(false);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 
-  const toggleAddTool = (next: AddTool) => setAddTool((current) => (current === next ? 'none' : next));
   const restoreVersion = (restored: Drawing) => {
     dispatch({ type: 'loadDrawing', drawing: restored });
     setShowVersions(false);
   };
 
+  const exportDxf = () => {
+    const file = buildAreaExport(state.present, state.activeAreaId, orderNumber);
+    if (!file) return;
+    downloadDxf(file.fileName, file.content);
+    toast.success(`Exported ${file.fileName}`);
+  };
+  const canSave = saveStatus === 'dirty' || saveStatus === 'error';
+  const statusTone = saveStatus === 'error' ? 'text-destructive' : saveStatus === 'dirty' ? 'text-amber-700' : 'text-stone-500';
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={() => toggleAddTool('rect')} aria-pressed={addTool === 'rect'} className="rounded border border-stone-200 px-2 py-1 text-xs">
-          Add rectangle
-        </button>
-        <button type="button" onClick={() => toggleAddTool('L')} aria-pressed={addTool === 'L'} className="rounded border border-stone-200 px-2 py-1 text-xs">
-          Add L-shape
-        </button>
-        <button type="button" onClick={() => toggleAddTool('U')} aria-pressed={addTool === 'U'} className="rounded border border-stone-200 px-2 py-1 text-xs">
-          Add U-shape
-        </button>
-        <button
-          type="button"
-          onClick={() => setTool(tool === 'polygon' ? 'select' : 'polygon')}
-          aria-pressed={tool === 'polygon'}
-          aria-label="Add polygon"
-          className="rounded border border-stone-200 px-2 py-1 text-xs"
-        >
-          Add polygon
-        </button>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        aria-label="Save drawing"
+        disabled={!canSave}
+        onClick={onSave}
+        className="rounded bg-brand px-3 py-1 text-xs font-medium text-white disabled:bg-stone-200 disabled:text-stone-500"
+      >
+        {SAVE_BUTTON_LABEL[saveStatus]}
+      </button>
+      <span role="status" className={`min-w-44 text-2xs ${statusTone}`}>{SAVE_STATUS_TEXT[saveStatus]}</span>
 
-        <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
+      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
 
-        <button type="button" aria-label="Undo" disabled={state.past.length === 0} onClick={() => dispatch({ type: 'undo' })} className="rounded border border-stone-200 px-2 py-1 text-xs disabled:opacity-40">
-          Undo
-        </button>
-        <button type="button" aria-label="Redo" disabled={state.future.length === 0} onClick={() => dispatch({ type: 'redo' })} className="rounded border border-stone-200 px-2 py-1 text-xs disabled:opacity-40">
-          Redo
-        </button>
+      <button type="button" aria-label="Undo" disabled={state.past.length === 0} onClick={() => dispatch({ type: 'undo' })} className={BUTTON_CLASS}>
+        Undo
+      </button>
+      <button type="button" aria-label="Redo" disabled={state.future.length === 0} onClick={() => dispatch({ type: 'redo' })} className={BUTTON_CLASS}>
+        Redo
+      </button>
 
-        <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
+      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
 
-        <button type="button" aria-label="Zoom out" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom - ZOOM_STEP })} className="rounded border border-stone-200 px-2 py-1 text-xs">
-          −
-        </button>
-        <button type="button" aria-label="Zoom in" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom + ZOOM_STEP })} className="rounded border border-stone-200 px-2 py-1 text-xs">
-          +
-        </button>
-        <button type="button" aria-label="Fit area" onClick={fitToArea} className="rounded border border-stone-200 px-2 py-1 text-xs">
-          Fit
-        </button>
+      <button type="button" aria-label="Zoom out" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom - ZOOM_STEP })} className={BUTTON_CLASS}>
+        −
+      </button>
+      <span className="w-10 text-center text-2xs text-stone-500" aria-label="Zoom level">{Math.round(state.zoom * 100)}%</span>
+      <button type="button" aria-label="Zoom in" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom + ZOOM_STEP })} className={BUTTON_CLASS}>
+        +
+      </button>
+      <button type="button" aria-label="Fit area" onClick={fitToArea} className={BUTTON_CLASS}>
+        Fit
+      </button>
 
-        <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
+      <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
 
-        <button type="button" onClick={() => setShowVersions(true)} className="rounded border border-stone-200 px-2 py-1 text-xs">
-          Version history
-        </button>
-        {saveStatus !== 'idle' && (
-          <span role="status" className="text-2xs text-stone-500">{SAVE_STATUS_LABEL[saveStatus]}</span>
-        )}
-      </div>
-
-      {addTool === 'rect' && <AddRectangleForm onDone={() => setAddTool('none')} />}
-      {addTool === 'L' && <AddNotchedForm shape="L" onDone={() => setAddTool('none')} />}
-      {addTool === 'U' && <AddNotchedForm shape="U" onDone={() => setAddTool('none')} />}
+      <button
+        type="button"
+        aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
+        aria-pressed={isFullscreen}
+        onClick={(e) => toggleFullscreen(e.currentTarget.closest('[data-drawing-editor]'))}
+        className={`${BUTTON_CLASS} ml-auto`}
+      >
+        {isFullscreen ? 'Exit full screen' : 'Full screen'}
+      </button>
+      <button type="button" aria-label="Export DXF" onClick={exportDxf} className={BUTTON_CLASS}>
+        Export DXF
+      </button>
+      <button type="button" onClick={() => setShowVersions(true)} className={BUTTON_CLASS}>
+        Version history
+      </button>
 
       {showVersions && (
         <VersionDrawer

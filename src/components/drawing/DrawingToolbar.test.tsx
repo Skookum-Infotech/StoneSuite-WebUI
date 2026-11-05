@@ -5,6 +5,7 @@ import type { Drawing } from '@/types/drawing';
 import { MM_PER_INCH } from '@/lib/drawing/constants';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { DrawingToolbar } from './DrawingToolbar';
+import { ShapePalette } from './ShapePalette';
 
 vi.mock('@/services/drawingService', () => ({
   drawingService: { listVersions: vi.fn().mockResolvedValue({ items: [], nextCursor: null }) },
@@ -37,10 +38,12 @@ function Readout() {
   );
 }
 
-function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveStatus'] = 'idle') {
+function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveStatus'] = 'idle', onSave: () => void = () => {}) {
   render(
     <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
-      <DrawingToolbar saveStatus={saveStatus} />
+      <div data-drawing-editor><DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" /></div>
+      {/* The add-piece buttons live in the left panel, not the toolbar. */}
+      <ShapePalette />
       <Readout />
     </DrawingEditorProvider>,
   );
@@ -171,17 +174,67 @@ describe('DrawingToolbar — add L-shape', () => {
 
 describe('DrawingToolbar — save status and version history', () => {
   it.each([
-    ['dirty', 'Unsaved changes'],
-    ['saving', 'Saving…'],
-    ['saved', 'Saved'],
-  ] as const)('shows "%s" as "%s"', (status, label) => {
+    ['dirty', 'Unsaved changes — autosaves shortly', 'Save'],
+    ['saving', 'Saving…', 'Saving…'],
+    ['saved', 'All changes saved', 'Saved'],
+    ['error', 'Save failed — your changes are not saved', 'Retry save'],
+  ] as const)('shows "%s" as status "%s" and button "%s"', (status, text, button) => {
     renderToolbar(status);
-    expect(screen.getByText(label)).toBeDefined();
+    expect(screen.getByRole('status').textContent).toBe(text);
+    expect(screen.getByRole('button', { name: 'Save drawing' }).textContent).toBe(button);
+  });
+
+  it.each([['dirty', false], ['error', false], ['saving', true], ['saved', true], ['idle', true]] as const)(
+    'when status is %s, Save disabled is %s', (status, disabled) => {
+      renderToolbar(status);
+      expect(screen.getByRole('button', { name: 'Save drawing' })).toHaveProperty('disabled', disabled);
+    },
+  );
+
+  it('Save button saves immediately', async () => {
+    const onSave = vi.fn();
+    renderToolbar('dirty', onSave);
+    await userEvent.click(screen.getByRole('button', { name: 'Save drawing' }));
+    expect(onSave).toHaveBeenCalledTimes(1);
   });
 
   it('"Version history" opens the version drawer', async () => {
     renderToolbar();
     await userEvent.click(screen.getByRole('button', { name: 'Version history' }));
     expect(screen.getByRole('dialog')).toBeDefined();
+  });
+});
+
+describe('DrawingToolbar — Export DXF', () => {
+  it('downloads the active area under the spec file name', async () => {
+    const created: Blob[] = [];
+    vi.stubGlobal('URL', { createObjectURL: (b: Blob) => { created.push(b); return 'blob:x'; }, revokeObjectURL: vi.fn() });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    renderToolbar();
+    await userEvent.click(screen.getByRole('button', { name: 'Export DXF' }));
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(created).toHaveLength(1);
+    expect(created[0].type).toBe('application/dxf');
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('DrawingToolbar — full screen', () => {
+  it('asks the editor container to go full screen, then offers to exit', async () => {
+    const request = vi.fn().mockResolvedValue(undefined);
+    const exit = vi.fn().mockResolvedValue(undefined);
+    let current: Element | null = null;
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => current });
+    document.exitFullscreen = exit;
+    renderToolbar();
+    const host = document.querySelector('[data-drawing-editor]') as HTMLElement;
+    host.requestFullscreen = () => { current = host; document.dispatchEvent(new Event('fullscreenchange')); return request(); };
+
+    await userEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('button', { name: 'Exit full screen' })).toBeDefined();
+    await userEvent.click(screen.getByRole('button', { name: 'Exit full screen' }));
+    expect(exit).toHaveBeenCalledTimes(1);
   });
 });

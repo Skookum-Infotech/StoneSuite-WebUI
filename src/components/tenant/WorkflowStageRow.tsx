@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { WorkflowStageView } from '@/lib/workflowStages';
 import { STAGE_ICONS } from '@/components/tenant/workflowStageIcons';
+import { progressStatusColor } from '@/lib/progressStatusColor';
 import { stagePalette } from '@/components/tenant/workflowStagePalette';
 import { WorkflowStagePanel } from '@/components/tenant/WorkflowStagePanel';
 
@@ -9,6 +10,8 @@ interface WorkflowStageRowProps {
   stage: WorkflowStageView;
   isLast: boolean;
   hereStatusCode: string;
+  /** Colour of the line down to the next stage; grey when absent. */
+  lineColor?: string;
 }
 
 const UPCOMING_RING = '#e8e8e8';
@@ -27,12 +30,20 @@ function markerColors(stage: WorkflowStageView): { ring: string; fill: string; i
   return { ring: pal.ring, fill: WHITE, icon: pal.ring };
 }
 
+/** The subtitle with its status word in that status's own pill colour, so the
+ *  last active status reads the same here as on the record's page. */
+function withStatusColour(stage: WorkflowStageView, number: string | undefined, statusCode: string) {
+  const status = stage.state === 'here' ? stage.subtitle : stage.records[0]?.status;
+  const coloured = <span className="font-medium" style={{ color: progressStatusColor(stage.module, statusCode) }}>{status}</span>;
+  return stage.state === 'here' || !number ? coloured : <>{number} · {coloured}</>;
+}
+
 /** One row of the progress card: icon marker, stage name, linked record + status.
  *  Hovering or focusing it opens the sub-status panel; a single linked record
  *  is a link to that record. The marker is a 20px grid cell with a centred icon.
  *  The colours come from a per-stage palette (data), so they are set inline like
  *  the shared Badge does. */
-export function WorkflowStageRow({ stage, isLast, hereStatusCode }: WorkflowStageRowProps) {
+export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor }: WorkflowStageRowProps) {
   const single = stage.records.length === 1 ? stage.records[0] : undefined;
   const hasPanel = stage.state === 'here' || stage.records.length > 0;
   const href = single && stage.state !== 'here' ? `${stage.route}/${single.id}` : undefined;
@@ -43,14 +54,15 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode }: WorkflowStag
   const pal = stagePalette(stage);
   const { ring, fill, icon } = markerColors(stage);
   const Icon = STAGE_ICONS[stage.key];
+  const statusCode = stage.state === 'here' ? hereStatusCode : single?.statusCode;
 
   const body = (
     <>
       {!isLast && (
         <span
           aria-hidden="true"
-          className={cn('absolute left-[15px] top-7 -bottom-1 w-0.5', stage.state !== 'done' && 'bg-stone-200')}
-          style={stage.state === 'done' ? { backgroundColor: ring } : undefined}
+          className={cn('absolute left-[15px] top-7 -bottom-1 w-0.5', !lineColor && 'bg-stone-200')}
+          style={lineColor ? { backgroundColor: lineColor } : undefined}
         />
       )}
       <span
@@ -75,7 +87,7 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode }: WorkflowStag
           )}
         </span>
         <span className={cn('block truncate text-2xs', stage.state === 'void' ? 'text-red-700' : stage.state === 'upcoming' ? 'text-stone-400' : 'text-stone-500')}>
-          {stage.subtitle}
+          {statusCode && stage.state !== 'void' ? withStatusColour(stage, single?.number, statusCode) : stage.subtitle}
         </span>
       </span>
       {hasPanel && <WorkflowStagePanel stage={stage} hereStatusCode={hereStatusCode} />}

@@ -36,6 +36,7 @@ export class DxfWriter {
   private readonly handles = new HandleAllocator();
   private readonly outlines: Array<{ points: Point[]; layer: string }> = [];
   private readonly labels: Array<{ text: string; at: Point; layer: string }> = [];
+  private readonly lines: Array<{ from: Point; to: Point; layer: string }> = [];
   private readonly dimensions: DimensionLine[] = [];
 
   addOutline(points: Point[], layer: string = DXF_LAYER.OUTLINE): void {
@@ -44,6 +45,11 @@ export class DxfWriter {
 
   addLabel(text: string, at: Point, layer: string = DXF_LAYER.TEXT): void {
     this.labels.push({ text, at, layer });
+  }
+
+  /** An open two-point LINE — a seam, not a closed outline. */
+  addLine(from: Point, to: Point, layer: string): void {
+    this.lines.push({ from, to, layer });
   }
 
   addAlignedDimension(from: Point, to: Point, measurementMm: number, fractionDenominator: 16 | 32): void {
@@ -95,7 +101,10 @@ export class DxfWriter {
     paperSpaceRecordHandle: string,
     dimensionBlocks: DimensionBlock[],
   ): string {
-    const layerNames = [DXF_LAYER.OUTLINE, DXF_LAYER.TEXT, DXF_LAYER.DIMENSIONS, DXF_LAYER.CABINETS, DXF_LAYER.DEFPOINTS];
+    const layerNames = [
+      DXF_LAYER.OUTLINE, DXF_LAYER.TEXT, DXF_LAYER.DIMENSIONS, DXF_LAYER.CABINETS, DXF_LAYER.DEFPOINTS,
+      DXF_LAYER.CUTOUTS, DXF_LAYER.EDGES, DXF_LAYER.NOTES, DXF_LAYER.SEAMS,
+    ];
     return (
       pair(0, 'SECTION') + pair(2, 'TABLES') +
       this.table('VPORT', []) +
@@ -212,12 +221,13 @@ export class DxfWriter {
   private buildEntities(modelSpaceRecordHandle: string, dimensionBlocks: DimensionBlock[]): string {
     const polylines = this.outlines.map(({ points, layer }) => this.polyline(points, layer, modelSpaceRecordHandle));
     const texts = this.labels.map(({ text, at, layer }) => this.text(text, at, layer, modelSpaceRecordHandle));
+    const lineEntities = this.lines.map(({ from, to, layer }) => this.line(from, to, layer, modelSpaceRecordHandle));
     const dimensionEntities = this.dimensions.map((dim, index) =>
       this.dimensionEntity(dim, dimensionBlocks[index].name, modelSpaceRecordHandle),
     );
     return (
       pair(0, 'SECTION') + pair(2, 'ENTITIES') +
-      polylines.join('') + texts.join('') + dimensionEntities.join('') +
+      polylines.join('') + lineEntities.join('') + texts.join('') + dimensionEntities.join('') +
       pair(0, 'ENDSEC')
     );
   }
@@ -236,6 +246,14 @@ export class DxfWriter {
       .join('');
     const seqend = pair(0, 'SEQEND') + pair(5, this.handles.alloc()) + pair(100, 'AcDbEntity') + pair(8, layer);
     return header + vertices + seqend;
+  }
+
+  private line(from: Point, to: Point, layer: string, ownerHandle: string): string {
+    return (
+      pair(0, 'LINE') + pair(5, this.handles.alloc()) + pair(330, ownerHandle) + pair(100, 'AcDbEntity') +
+      pair(8, layer) + pair(6, DXF_LINETYPE.CONTINUOUS) + pair(100, 'AcDbLine') +
+      pair(10, from.x) + pair(20, from.y) + pair(30, 0) + pair(11, to.x) + pair(21, to.y) + pair(31, 0)
+    );
   }
 
   private text(content: string, at: Point, layer: string, ownerHandle: string): string {
