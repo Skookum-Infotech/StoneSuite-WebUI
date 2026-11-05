@@ -2,8 +2,10 @@
 // components/drawing/* control can dispatch into it and read its state
 // without prop-drilling past the 5-prop cap (CLAUDE.md).
 
-import { createContext, useContext, useMemo, useReducer, useState, type Dispatch, type ReactNode } from 'react';
-import type { Drawing } from '@/types/drawing';
+import {
+  createContext, useCallback, useContext, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode,
+} from 'react';
+import type { Drawing, Piece } from '@/types/drawing';
 import type { SalesOrderLine } from '@/types/salesOrder';
 import { bounds, transformOutline } from '@/lib/drawing/geometry';
 import { VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_MAX, ZOOM_MIN } from '@/lib/drawing/constants';
@@ -15,13 +17,19 @@ import {
  *  "Fit" doesn't crop a piece flush against the edge. */
 const FIT_MARGIN = 0.9;
 
+export type EditorTool = 'select' | 'polygon';
+
 export interface DrawingEditorContextValue {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
-  tool: 'select' | 'polygon';
-  setTool: (tool: 'select' | 'polygon') => void;
+  tool: EditorTool;
+  setTool: (tool: EditorTool) => void;
   materialLines: SalesOrderLine[];
   fitToArea: () => void;
+  /** Copy / paste / duplicate act on the current multi-selection. */
+  copySelection: () => void;
+  pasteClipboard: () => void;
+  duplicateSelection: () => void;
 }
 
 const DrawingEditorContext = createContext<DrawingEditorContextValue | undefined>(undefined);
@@ -30,7 +38,40 @@ export function DrawingEditorProvider(
   { drawing, materialLines, children }: { drawing: Drawing; materialLines: SalesOrderLine[]; children: ReactNode },
 ) {
   const [state, dispatch] = useReducer(editorReducer, createInitialEditorState(drawing));
-  const [tool, setTool] = useState<'select' | 'polygon'>('select');
+  const [tool, setTool] = useState<EditorTool>('select');
+  // Copied pieces live outside the document so copying is not an edit, and
+  // survive switching area (paste lands in whichever area is active).
+  const clipboard = useRef<Piece[]>([]);
+
+  const activeAreaPieces = useCallback(
+    () => state.present.areas.find((a) => a.id === state.activeAreaId)?.pieces ?? [],
+    [state.present.areas, state.activeAreaId],
+  );
+
+  const copySelection = useCallback(() => {
+    const selected = activeAreaPieces().filter((p) => state.selectedPieceIds.includes(p.id));
+    if (selected.length > 0) clipboard.current = selected;
+  }, [activeAreaPieces, state.selectedPieceIds]);
+
+  const pasteClipboard = useCallback(() => {
+    if (clipboard.current.length === 0) return;
+    dispatch({
+      type: 'pastePieces',
+      areaId: state.activeAreaId,
+      pieces: clipboard.current,
+      newIds: clipboard.current.map(() => crypto.randomUUID()),
+    });
+  }, [state.activeAreaId]);
+
+  const duplicateSelection = useCallback(() => {
+    if (state.selectedPieceIds.length === 0) return;
+    dispatch({
+      type: 'duplicatePieces',
+      areaId: state.activeAreaId,
+      pieceIds: state.selectedPieceIds,
+      newIds: state.selectedPieceIds.map(() => crypto.randomUUID()),
+    });
+  }, [state.activeAreaId, state.selectedPieceIds]);
 
   const fitToArea = () => {
     const area = state.present.areas.find((a) => a.id === state.activeAreaId);
@@ -55,9 +96,7 @@ export function DrawingEditorProvider(
     // Matches DrawingCanvas's own render transform exactly: outer
     // translate(400,300), inner translate(pan.x,pan.y) scale(zoom), world
     // points drawn as (x, -y). Centering the content requires
-    // pan.x = -zoom*centerX and pan.y = +zoom*centerY — a sign the
-    // original version of this function got backwards, pushing every
-    // piece off the bottom of the viewport instead of centering it.
+    // pan.x = -zoom*centerX and pan.y = +zoom*centerY.
     const targetPanX = -zoom * centerX;
     const targetPanY = zoom * centerY;
     dispatch({ type: 'setZoom', zoom });
@@ -65,11 +104,13 @@ export function DrawingEditorProvider(
   };
 
   const value = useMemo<DrawingEditorContextValue>(
-    () => ({ state, dispatch, tool, setTool, materialLines, fitToArea }),
+    () => ({
+      state, dispatch, tool, setTool, materialLines, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+    }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, tool, materialLines],
+    [state, tool, materialLines, copySelection, pasteClipboard, duplicateSelection],
   );
 
   return <DrawingEditorContext.Provider value={value}>{children}</DrawingEditorContext.Provider>;

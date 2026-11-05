@@ -46,6 +46,12 @@ export function useDrawingAutosave(options: UseDrawingAutosaveOptions): { status
     onConflictRef.current = onConflict;
   });
 
+  // What the editor was opened with. Opening a drawing is not an edit: until
+  // `present` actually changes from this, nothing is saved (otherwise every
+  // visit to the page writes a new version, and a never-saved order gets a
+  // blank drawing created just by looking at it).
+  const openedWith = useRef(present);
+
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryCount = useRef(0);
@@ -115,6 +121,7 @@ export function useDrawingAutosave(options: UseDrawingAutosaveOptions): { status
   // itself (a side effect on an external clock) belongs in an effect; only
   // the status change above had to move out of one.
   useEffect(() => {
+    if (present === openedWith.current) return undefined;
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
       debounceTimer.current = null;

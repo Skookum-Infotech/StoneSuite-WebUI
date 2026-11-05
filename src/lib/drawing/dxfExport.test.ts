@@ -32,6 +32,28 @@ function singlePieceArea(lengthMm: number, widthMm: number, label: string): Draw
   };
 }
 
+describe('buildAreaDxf — piece placement', () => {
+  const outlineOf = (dxf: string) =>
+    (new DxfParser().parseSync(dxf)?.entities.find((e) => e.type === 'POLYLINE') as IPolylineEntity).vertices;
+  const meta = { orderNumber: '1', areaIndex: 1, seq: 1, fractionDenominator: 32 as const };
+
+  it('exports a piece where it sits in the drawing, not at the origin', () => {
+    const area = singlePieceArea(MM_PER_INCH * 10, MM_PER_INCH * 5, 'A-1');
+    area.pieces[0].position = { x: MM_PER_INCH * 100, y: MM_PER_INCH * 20 };
+    const xs = outlineOf(buildAreaDxf(area, meta)).map((v) => v.x);
+    expect(Math.min(...xs)).toBeCloseTo(100, 3);
+    expect(Math.max(...xs)).toBeCloseTo(110, 3);
+  });
+
+  it('applies the piece rotation, so a 90 degree piece swaps its extents', () => {
+    const area = singlePieceArea(MM_PER_INCH * 10, MM_PER_INCH * 5, 'A-1');
+    area.pieces[0].rotationDeg = 90;
+    const vs = outlineOf(buildAreaDxf(area, meta));
+    const xs = vs.map((v) => v.x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(5, 3);
+  });
+});
+
 describe('dxfFileName', () => {
   it.each([
     ['9073', 'Kitchen', 1, 1, 'SO_9073_Kitchen_P1_1.dxf'],

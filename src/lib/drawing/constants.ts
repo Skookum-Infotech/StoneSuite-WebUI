@@ -53,10 +53,28 @@ export const DIMENSION_TEXT_HEIGHT_INCHES = 0.18;
  *  — 1 inch. */
 export const GRID_SIZE_MM = 25.4;
 
-/** How close (in mm) a dragged point must be to a piece edge before it
- *  snaps to it. Not yet consumed — edge-snapping is deferred past this
- *  plan (see its Self-Review); this constant is reserved for it. */
-export const SNAP_TOLERANCE_MM = 3;
+/** How close (in mm) a dragged piece's edge or corner must come to another
+ *  piece's edge or corner before it snaps onto it. */
+export const SNAP_TOLERANCE_MM = 12;
+
+/** An edge shorter than this is treated as a degenerate (zero-length) edge. */
+export const MIN_EDGE_LENGTH_MM = 1;
+
+/** Offset applied to a duplicated or pasted piece so the copy does not sit
+ *  exactly on top of its source — 2 inches each way. */
+export const COPY_OFFSET_MM = 50.8;
+
+/** Cutouts must keep at least this much stone between their edge and the
+ *  piece's outer edge (1/2"), and between each other (1/8"). These are
+ *  defaults chosen here, not shop-confirmed figures. */
+export const CUTOUT_EDGE_CLEARANCE_MM = 12.7;
+export const CUTOUT_SPACING_MM = 3.2;
+
+/** Segments used to approximate a round cutout as a polygon. */
+export const ROUND_CUTOUT_SEGMENTS = 48;
+
+/** Largest piece/cutout dimension accepted, in mm (30 m) — a typo guard. */
+export const MAX_DIMENSION_MM = 30000;
 
 /** How far outside a piece's own edge its auto-placed dimension line sits
  *  — 1 inch. */
@@ -82,3 +100,16 @@ export const ZOOM_STEP = 0.25;
  *  — every screen<->world conversion in viewport.ts follows the same rule. */
 export const VIEWPORT_WIDTH = 800;
 export const VIEWPORT_HEIGHT = 600;
+
+/** A dragged cutout or vertex snaps to this step — 1/4". */
+export const FINE_SNAP_MM = MM_PER_INCH / 4;
+
+/** Radius of an on-canvas handle (vertex / mid-edge add), in viewBox units
+ *  before dividing by the zoom, so handles stay the same size on screen. */
+export const HANDLE_RADIUS_VB = 5;
+
+/** Width of the invisible strip around an edge that counts as clicking it. */
+export const EDGE_HIT_WIDTH_PX = 12;
+
+/** A piece dragged to this many mm from where it started counts as moved. */
+export const MIN_DRAG_MM = 0.01;

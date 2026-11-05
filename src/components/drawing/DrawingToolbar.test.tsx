@@ -5,6 +5,7 @@ import type { Drawing } from '@/types/drawing';
 import { MM_PER_INCH } from '@/lib/drawing/constants';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { DrawingToolbar } from './DrawingToolbar';
+import { ShapePalette } from './ShapePalette';
 
 vi.mock('@/services/drawingService', () => ({
   drawingService: { listVersions: vi.fn().mockResolvedValue({ items: [], nextCursor: null }) },
@@ -41,6 +42,8 @@ function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveSta
   render(
     <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
       <DrawingToolbar saveStatus={saveStatus} />
+      {/* The add-piece buttons live in the left panel, not the toolbar. */}
+      <ShapePalette />
       <Readout />
     </DrawingEditorProvider>,
   );

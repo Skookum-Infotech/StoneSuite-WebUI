@@ -178,13 +178,13 @@ describe('SalesOrderDrawingPage — fills the screen', () => {
     expect(editor.className).toContain('overflow-hidden');
   });
 
-  it('gives the canvas all the room the toolbar and summary leave, and lets only the inspector scroll', async () => {
+  it('gives the canvas all the room the toolbar and summary leave, and lets only the side panels scroll', async () => {
     renderPage();
     const canvas = await screen.findByRole('application', { name: 'Drawing canvas' });
     expect(canvas.className).toContain('h-full');
     expect(canvas.parentElement?.className).toContain('min-h-0');
     expect(canvas.parentElement?.className).toContain('flex-1');
-    const inspectorColumn = (await screen.findByText(/no piece selected/i)).closest('div.overflow-y-auto');
+    const inspectorColumn = (await screen.findByText(/no piece selected/i)).closest('aside.overflow-y-auto');
     expect(inspectorColumn).not.toBeNull();
   });
 

@@ -18,6 +18,8 @@ import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
 import { AreaTabs } from '@/components/drawing/AreaTabs';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { PieceInspector } from '@/components/drawing/PieceInspector';
+import { ShapePalette } from '@/components/drawing/ShapePalette';
+import { CutoutLibrary } from '@/components/drawing/CutoutLibrary';
 import { AreaSummary } from '@/components/drawing/AreaSummary';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
@@ -168,12 +170,16 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       <AreaTabs />
       <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
       <div className="flex min-h-0 flex-1 gap-2">
+        <aside aria-label="Drawing tools" className="flex w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-stone-200 pr-2">
+          <ShapePalette />
+          <CutoutLibrary />
+        </aside>
         <div className="min-h-0 min-w-0 flex-1">
           <DrawingCanvas />
         </div>
-        <div className="w-64 shrink-0 overflow-y-auto border-l border-stone-200 pl-2">
+        <aside aria-label="Properties" className="w-72 shrink-0 overflow-y-auto border-l border-stone-200 pl-2">
           <PieceInspector />
-        </div>
+        </aside>
       </div>
       <AreaSummary />
       {conflictOpen && (

@@ -1,22 +1,18 @@
 // The drawing editor's document state + undo/redo. Pure: every action
 // returns a new EditorState, never mutates its input. "Document-mutating"
-// actions (area/piece CRUD, move, rotate) push `present` onto `past`
+// actions (area/piece/cutout CRUD, move, rotate) push `present` onto `past`
 // (capped at MAX_UNDO_STEPS) and clear `future`; "view-only" actions
 // (selection, zoom, pan) touch neither.
 
-import type { Drawing, DrawingArea, Piece, Point } from '@/types/drawing';
-import { areaLetter, nextPieceLabel } from './labels';
-import { MAX_UNDO_STEPS, ZOOM_MAX, ZOOM_MIN } from './constants';
+import type { Cutout, Drawing, Piece, Point } from '@/types/drawing';
+import { ZOOM_MAX, ZOOM_MIN } from './constants';
+import {
+  NO_SELECTION, copyPieces, duplicateInto, keepSavedVersion, movePieces, mutateDocument, newArea, normalizeDegrees,
+  sanitizeSelection, selectionOf, updateArea,
+  updatePieceIn, type EditorState,
+} from './editorState';
 
-export interface EditorState {
-  past: Drawing[];
-  present: Drawing;
-  future: Drawing[];
-  activeAreaId: string;
-  selectedPieceId: string | null;
-  zoom: number;
-  pan: Point;
-}
+export type { EditorState } from './editorState';
 
 export type EditorAction =
   | { type: 'addArea'; name: string }
@@ -30,8 +26,20 @@ export type EditorAction =
   | { type: 'deletePiece'; areaId: string; pieceId: string }
   | { type: 'duplicatePiece'; areaId: string; pieceId: string; newId: string }
   | { type: 'movePiece'; areaId: string; pieceId: string; delta: Point }
-  | { type: 'rotatePiece'; areaId: string; pieceId: string }
-  | { type: 'selectPiece'; pieceId: string | null }
+  | { type: 'movePieces'; areaId: string; pieceIds: string[]; delta: Point }
+  /** A quarter turn. `pieceIds` rotates a whole selection as one undo step. */
+  | { type: 'rotatePiece'; areaId: string; pieceId: string; pieceIds?: string[] }
+  | { type: 'setPieceRotation'; areaId: string; pieceIds: string[]; rotationDeg: number }
+  | { type: 'deletePieces'; areaId: string; pieceIds: string[] }
+  | { type: 'duplicatePieces'; areaId: string; pieceIds: string[]; newIds: string[] }
+  | { type: 'pastePieces'; areaId: string; pieces: Piece[]; newIds: string[] }
+  | { type: 'addCutout'; areaId: string; pieceId: string; cutout: Cutout }
+  | { type: 'updateCutout'; areaId: string; pieceId: string; cutoutId: string; patch: Partial<Cutout> }
+  | { type: 'deleteCutout'; areaId: string; pieceId: string; cutoutId: string }
+  | { type: 'selectPiece'; pieceId: string | null; additive?: boolean }
+  | { type: 'selectPieces'; pieceIds: string[] }
+  | { type: 'selectCutout'; pieceId: string; cutoutId: string | null }
+  | { type: 'selectEdge'; pieceId: string; edgeIndex: number | null }
   | { type: 'setZoom'; zoom: number }
   | { type: 'pan'; delta: Point }
   | { type: 'undo' }
@@ -39,7 +47,7 @@ export type EditorAction =
   | { type: 'loadDrawing'; drawing: Drawing }
   | { type: 'drawingSaved'; version: number; updatedAt: string; updatedBy: Drawing['updatedBy'] };
 
-const ROTATION_CYCLE = [0, 90, 180, 270] as const;
+const QUARTER_TURN = 90;
 
 export function createInitialEditorState(drawing: Drawing): EditorState {
   return {
@@ -47,7 +55,7 @@ export function createInitialEditorState(drawing: Drawing): EditorState {
     present: drawing,
     future: [],
     activeAreaId: drawing.areas[0]?.id ?? '',
-    selectedPieceId: null,
+    ...NO_SELECTION,
     zoom: 1,
     pan: { x: 0, y: 0 },
   };
@@ -85,16 +93,16 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       if (state.present.areas.length <= 1) return state;
       const remaining = state.present.areas.filter((a) => a.id !== action.areaId);
       const next = mutateDocument(state, (drawing) => ({ ...drawing, areas: remaining }));
-      return {
+      return sanitizeSelection({
         ...next,
         activeAreaId: state.activeAreaId === action.areaId ? remaining[0].id : state.activeAreaId,
-      };
+      });
     }
 
     case 'setActiveArea':
       // A piece selected in the area being left has no meaning in the new
       // one — clear it so the inspector doesn't keep showing it.
-      return { ...state, activeAreaId: action.areaId, selectedPieceId: null };
+      return { ...state, activeAreaId: action.areaId, ...NO_SELECTION };
 
     case 'addPiece':
       return mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
@@ -103,55 +111,91 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       })));
 
     case 'updatePiece':
-      return mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
-        ...area,
-        pieces: area.pieces.map((p) => (p.id === action.pieceId ? { ...p, ...action.patch } : p)),
+      return mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
+        ...p, ...action.patch,
       })));
 
-    case 'deletePiece': {
-      const next = mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
+    case 'deletePiece':
+      return sanitizeSelection(mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
         ...area,
         pieces: area.pieces.filter((p) => p.id !== action.pieceId),
-      })));
-      return {
-        ...next,
-        selectedPieceId: state.selectedPieceId === action.pieceId ? null : state.selectedPieceId,
-      };
-    }
+      }))));
+
+    case 'deletePieces':
+      return sanitizeSelection(mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
+        ...area,
+        pieces: area.pieces.filter((p) => !action.pieceIds.includes(p.id)),
+      }))));
 
     case 'duplicatePiece':
-      return mutateDocument(state, (drawing) => {
-        const areaIndex = drawing.areas.findIndex((a) => a.id === action.areaId);
-        const area = drawing.areas[areaIndex];
-        const source = area.pieces.find((p) => p.id === action.pieceId);
-        if (!source) return drawing;
-        const existingLabels = area.pieces.map((p) => p.label);
-        const copy: Piece = {
-          ...source,
-          id: action.newId,
-          label: nextPieceLabel(areaLetter(areaIndex), existingLabels),
-        };
-        return updateArea(drawing, action.areaId, (a) => ({ ...a, pieces: [...a.pieces, copy] }));
-      });
+      return mutateDocument(state, (drawing) => duplicateInto(drawing, action.areaId, [action.pieceId], [action.newId]));
+
+    case 'duplicatePieces':
+      return mutateDocument(state, (drawing) => duplicateInto(drawing, action.areaId, action.pieceIds, action.newIds));
+
+    case 'pastePieces': {
+      const areaIndex = state.present.areas.findIndex((a) => a.id === action.areaId);
+      if (areaIndex < 0 || action.pieces.length === 0) return state;
+      const next = mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (a) => ({
+        ...a, pieces: [...a.pieces, ...copyPieces(action.pieces, action.newIds, areaIndex, a.pieces)],
+      })));
+      return { ...next, ...selectionOf(action.newIds.slice(0, action.pieces.length)) };
+    }
 
     case 'movePiece':
+      return mutateDocument(state, (drawing) => movePieces(drawing, action.areaId, [action.pieceId], action.delta));
+
+    case 'movePieces':
+      return mutateDocument(state, (drawing) => movePieces(drawing, action.areaId, action.pieceIds, action.delta));
+
+    case 'rotatePiece': {
+      const ids = action.pieceIds ?? [action.pieceId];
       return mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
         ...area,
-        pieces: area.pieces.map((p) => (p.id === action.pieceId
-          ? { ...p, position: { x: p.position.x + action.delta.x, y: p.position.y + action.delta.y } }
+        pieces: area.pieces.map((p) => (ids.includes(p.id)
+          ? { ...p, rotationDeg: normalizeDegrees(p.rotationDeg + QUARTER_TURN) }
+          : p)),
+      })));
+    }
+
+    case 'setPieceRotation':
+      return mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
+        ...area,
+        pieces: area.pieces.map((p) => (action.pieceIds.includes(p.id)
+          ? { ...p, rotationDeg: normalizeDegrees(action.rotationDeg) }
           : p)),
       })));
 
-    case 'rotatePiece':
-      return mutateDocument(state, (drawing) => updateArea(drawing, action.areaId, (area) => ({
-        ...area,
-        pieces: area.pieces.map((p) => (p.id === action.pieceId
-          ? { ...p, rotationDeg: ROTATION_CYCLE[(ROTATION_CYCLE.indexOf(p.rotationDeg) + 1) % ROTATION_CYCLE.length] }
-          : p)),
+    case 'addCutout':
+      return {
+        ...mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
+          ...p, cutouts: [...p.cutouts, action.cutout],
+        }))),
+        ...selectionOf([action.pieceId]),
+        selectedCutoutId: action.cutout.id,
+      };
+
+    case 'updateCutout':
+      return mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
+        ...p, cutouts: p.cutouts.map((c) => (c.id === action.cutoutId ? { ...c, ...action.patch } : c)),
       })));
+
+    case 'deleteCutout':
+      return sanitizeSelection(mutateDocument(state, (drawing) => updatePieceIn(drawing, action.areaId, action.pieceId, (p) => ({
+        ...p, cutouts: p.cutouts.filter((c) => c.id !== action.cutoutId),
+      }))));
 
     case 'selectPiece':
-      return { ...state, selectedPieceId: action.pieceId };
+      return selectPiece(state, action.pieceId, action.additive === true);
+
+    case 'selectPieces':
+      return { ...state, ...selectionOf(action.pieceIds) };
+
+    case 'selectCutout':
+      return { ...state, ...selectionOf([action.pieceId]), selectedCutoutId: action.cutoutId };
+
+    case 'selectEdge':
+      return { ...state, ...selectionOf([action.pieceId]), selectedEdgeIndex: action.edgeIndex };
 
     case 'setZoom':
       return { ...state, zoom: Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, action.zoom)) };
@@ -165,7 +209,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return sanitizeSelection({
         ...state,
         past: state.past.slice(0, -1),
-        present: previous,
+        present: keepSavedVersion(previous, state.present),
         future: [state.present, ...state.future],
       });
     }
@@ -176,7 +220,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return sanitizeSelection({
         ...state,
         past: [...state.past, state.present],
-        present: next,
+        present: keepSavedVersion(next, state.present),
         future: rest,
       });
     }
@@ -185,12 +229,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     // save conflict, or restoring a version) is not an undoable edit of the
     // current one — past/future reset, same as opening a different file.
     case 'loadDrawing':
-      return sanitizeSelection({
-        ...state,
-        past: [],
-        present: action.drawing,
-        future: [],
-      });
+      return sanitizeSelection({ ...state, past: [], present: action.drawing, future: [] });
 
     // A background autosave completing is not an undoable edit either, and
     // must not revert any edit made while it was in flight — only the
@@ -212,43 +251,24 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
   }
 }
 
-/** Undo/redo swap `present` for an entirely different document, which can
- *  leave `activeAreaId` pointing at an area that no longer exists (found in
- *  the final review: this crashed the toolbar, which assumes the active
- *  area is always real). Falls `activeAreaId` back to the document's first
- *  area — there is always at least one, since the last area can never be
- *  deleted — and clears `selectedPieceId` if it no longer names a piece in
- *  that area. */
-function sanitizeSelection(state: EditorState): EditorState {
-  const activeAreaExists = state.present.areas.some((a) => a.id === state.activeAreaId);
-  const activeAreaId = activeAreaExists ? state.activeAreaId : state.present.areas[0].id;
-  const activeArea = state.present.areas.find((a) => a.id === activeAreaId);
-  const selectedPieceStillExists = activeArea
-    ? activeArea.pieces.some((p) => p.id === state.selectedPieceId)
-    : false;
-  return {
-    ...state,
-    activeAreaId,
-    selectedPieceId: selectedPieceStillExists ? state.selectedPieceId : null,
-  };
+function selectPiece(state: EditorState, pieceId: string | null, additive: boolean): EditorState {
+  if (pieceId === null) return { ...state, ...NO_SELECTION };
+  if (!additive) {
+    // A plain click on a piece that is already part of a multi-selection keeps
+    // the group, so it can be dragged together; the inspector just focuses
+    // the clicked one.
+    const keepGroup = state.selectedPieceIds.length > 1 && state.selectedPieceIds.includes(pieceId);
+    return {
+      ...state,
+      selectedPieceId: pieceId,
+      selectedPieceIds: keepGroup ? state.selectedPieceIds : [pieceId],
+      selectedCutoutId: null,
+      selectedEdgeIndex: null,
+    };
+  }
+  const ids = state.selectedPieceIds.includes(pieceId)
+    ? state.selectedPieceIds.filter((x) => x !== pieceId)
+    : [...state.selectedPieceIds, pieceId];
+  return { ...state, ...selectionOf(ids) };
 }
 
-/** Pushes `state.present` onto history (capped at MAX_UNDO_STEPS), clears
- *  `future`, and replaces `present` with the result of `update`. Every
- *  document-mutating action shares this shape. */
-function mutateDocument(state: EditorState, update: (drawing: Drawing) => Drawing): EditorState {
-  return {
-    ...state,
-    past: [...state.past, state.present].slice(-MAX_UNDO_STEPS),
-    present: update(state.present),
-    future: [],
-  };
-}
-
-function updateArea(drawing: Drawing, areaId: string, update: (area: DrawingArea) => DrawingArea): Drawing {
-  return { ...drawing, areas: drawing.areas.map((a) => (a.id === areaId ? update(a) : a)) };
-}
-
-function newArea(name: string, sortOrder: number): DrawingArea {
-  return { id: crypto.randomUUID(), name, code: '', sortOrder, pieces: [], cabinets: [], notes: [] };
-}

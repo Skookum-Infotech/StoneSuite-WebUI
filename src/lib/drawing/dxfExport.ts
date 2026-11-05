@@ -4,7 +4,7 @@
 // save/export flow and its tests can call this the same way.
 
 import type { DrawingArea, Point } from '@/types/drawing';
-import { outlineEdges } from './geometry';
+import { outlineEdges, transformOutline } from './geometry';
 import { MM_PER_INCH } from './constants';
 import { DxfWriter } from './dxfWriter';
 
@@ -32,11 +32,15 @@ export function buildAreaDxf(area: DrawingArea, meta: DxfExportMeta): string {
   const writer = new DxfWriter();
 
   for (const piece of area.pieces) {
-    const outlineIn = piece.outline.map(mmPointToInches);
+    // World coordinates: the piece's own outline never carries its position
+    // or rotation, so without this every piece would export stacked at the
+    // origin instead of where it sits in the drawing.
+    const worldMm = transformOutline(piece.outline, piece.position, piece.rotationDeg);
+    const outlineIn = worldMm.map(mmPointToInches);
     writer.addOutline(outlineIn);
     writer.addLabel(piece.label, centroid(outlineIn));
 
-    for (const [fromMm, toMm] of outlineEdges(piece.outline)) {
+    for (const [fromMm, toMm] of outlineEdges(worldMm)) {
       const measurementMm = Math.hypot(toMm.x - fromMm.x, toMm.y - fromMm.y);
       writer.addAlignedDimension(mmPointToInches(fromMm), mmPointToInches(toMm), measurementMm, meta.fractionDenominator);
     }
