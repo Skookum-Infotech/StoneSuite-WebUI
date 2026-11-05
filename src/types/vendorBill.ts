@@ -8,6 +8,7 @@
 // served from `/api/tenant/vendor-bills*`. Unlike Purchase Order, a vendor
 // bill has no shipping/address block and carries its own settlement ledger
 // (payments) plus optional Purchase Order lineage.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -162,6 +163,8 @@ export type VendorBillStatusCode =
 // so the Edit page can reload a vendor bill and re-save it without silently
 // blanking any header field.
 export interface VendorBill {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   vendorBillNumber: string;
 

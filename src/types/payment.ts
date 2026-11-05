@@ -6,6 +6,7 @@
 // sibling of Invoice — a money ledger with cross-invoice application — served
 // from /api/tenant/payments*, distinct from the generic WorkflowRecord JSONB
 // CRM router.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -54,6 +55,8 @@ export interface PaymentApplication {
 }
 
 export interface Payment {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   paymentNumber: string;
   status: string;              // human label, e.g. "Pending"

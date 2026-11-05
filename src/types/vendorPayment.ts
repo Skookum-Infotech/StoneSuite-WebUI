@@ -6,6 +6,7 @@
 // served from `/api/tenant/vendor-payments*`, not the generic WorkflowRecord
 // JSONB CRM router. Its sibling on the receivables side is `types/payment.ts`;
 // the document it settles is `types/vendorBill.ts`.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -81,6 +82,8 @@ export type VendorPaymentStatusCode =
 
 // Full detail response (GET/Create/Update/Transition/Approve/Apply/Unapply).
 export interface VendorPayment {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   vendorPaymentNumber: string;
 

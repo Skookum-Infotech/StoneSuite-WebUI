@@ -6,6 +6,7 @@
 // v1 JSONB CRM router — Invoices are a relational sibling of `sales_order` with
 // ordered line items, snapshots, and stored money totals (incl. amountPaid/
 // balanceDue), served from `/api/tenant/invoices*`.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -139,6 +140,8 @@ export interface InvoiceLine {
 // Edit page can reload an invoice and re-save it without silently blanking
 // billing/shipping or any header field.
 export interface Invoice {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   invoiceNumber: string;
   status: string;              // human label, e.g. "Draft"
