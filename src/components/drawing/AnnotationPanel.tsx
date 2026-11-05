@@ -9,6 +9,7 @@ import { distance } from '@/lib/drawing/geometry';
 import { formatLength } from '@/lib/drawing/units';
 import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
 import { LengthInput } from './LengthInput';
+import { PanelSection } from './PanelSection';
 
 const BUTTON_CLASS = 'rounded border border-stone-200 px-2 py-1 text-left text-xs aria-pressed:border-brand aria-pressed:bg-brand/10';
 
@@ -24,14 +25,15 @@ export function AnnotationPanel() {
   const setDimensions = (next: Dimension[]) => dispatch({ type: 'setAnnotations', areaId, dimensions: next });
 
   return (
-    <section aria-label="Annotations" className="flex flex-col gap-1.5">
-      <h3 className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Annotations</h3>
+    <PanelSection title="Annotations">
+      <div className="grid grid-cols-2 gap-1.5">
       <button type="button" aria-label="Add note" aria-pressed={tool === 'note'} onClick={() => toggle('note')} className={BUTTON_CLASS}>
         Add note
       </button>
       <button type="button" aria-label="Add dimension" aria-pressed={tool === 'dimension'} onClick={() => toggle('dimension')} className={BUTTON_CLASS}>
         Add dimension
       </button>
+      </div>
       {tool === 'note' && <p className="text-2xs text-stone-500">Click the canvas where the note goes.</p>}
       {tool === 'dimension' && <p className="text-2xs text-stone-500">Click two points. Corners snap.</p>}
       {area.notes.map((note) => (
@@ -51,7 +53,7 @@ export function AnnotationPanel() {
           onDelete={() => setDimensions(dimensions.filter((d) => d.id !== dim.id))}
         />
       ))}
-    </section>
+    </PanelSection>
   );
 }
 

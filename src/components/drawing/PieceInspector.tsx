@@ -189,7 +189,8 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
 
   return (
     <div className="flex flex-col gap-2 text-xs">
-      <label className="flex flex-col gap-0.5">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+      <label className="col-span-2 flex flex-col gap-0.5">
         Label
         <input aria-label="Label" aria-describedby={labelError ? labelErrorId : undefined} value={label} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} className="rounded border border-stone-200 px-1.5 py-1" />
         {labelError && <span id={labelErrorId} role="alert" className="text-2xs text-destructive">{labelError}</span>}
@@ -232,6 +233,12 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
       <PieceTransformFields piece={piece} />
 
       <label className="flex flex-col gap-0.5">
+        Corner radius
+        <input aria-label="Corner radius" aria-describedby={cornerRadiusError ? cornerRadiusErrorId : undefined} value={cornerRadius} onChange={(e) => setCornerRadius(e.target.value)} onBlur={commitCornerRadius} className="rounded border border-stone-200 px-1.5 py-1" />
+        {cornerRadiusError && <span id={cornerRadiusErrorId} role="alert" className="text-2xs text-destructive">{cornerRadiusError}</span>}
+      </label>
+
+      <label className="col-span-2 flex flex-col gap-0.5">
         Material line
         <select
           aria-label="Material line"
@@ -246,13 +253,9 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
         </select>
       </label>
 
-      <label className="flex flex-col gap-0.5">
-        Corner radius
-        <input aria-label="Corner radius" aria-describedby={cornerRadiusError ? cornerRadiusErrorId : undefined} value={cornerRadius} onChange={(e) => setCornerRadius(e.target.value)} onBlur={commitCornerRadius} className="rounded border border-stone-200 px-1.5 py-1" />
-        {cornerRadiusError && <span id={cornerRadiusErrorId} role="alert" className="text-2xs text-destructive">{cornerRadiusError}</span>}
-      </label>
+      </div>
 
-      <div className="flex gap-2 pt-1">
+      <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
           aria-label={`Rotate ${piece.label}`}

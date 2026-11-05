@@ -10,6 +10,7 @@ import type { Drawing } from '@/types/drawing';
 import type { AutosaveStatus } from './useDrawingAutosave';
 import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { useFullscreen } from './useFullscreen';
 
 const SAVE_BUTTON_LABEL: Record<AutosaveStatus, string> = {
   idle: 'Saved',
@@ -34,6 +35,7 @@ export function DrawingToolbar(
 ) {
   const { state, dispatch, fitToArea } = useDrawingEditor();
   const [showVersions, setShowVersions] = useState(false);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 
   const restoreVersion = (restored: Drawing) => {
     dispatch({ type: 'loadDrawing', drawing: restored });
@@ -86,6 +88,15 @@ export function DrawingToolbar(
 
       <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
 
+      <button
+        type="button"
+        aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
+        aria-pressed={isFullscreen}
+        onClick={(e) => toggleFullscreen(e.currentTarget.closest('[data-drawing-editor]'))}
+        className={`${BUTTON_CLASS} ml-auto`}
+      >
+        {isFullscreen ? 'Exit full screen' : 'Full screen'}
+      </button>
       <button type="button" aria-label="Export DXF" onClick={exportDxf} className={BUTTON_CLASS}>
         Export DXF
       </button>

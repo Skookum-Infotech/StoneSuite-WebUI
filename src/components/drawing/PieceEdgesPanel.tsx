@@ -12,6 +12,7 @@ import { setEdgeLength } from '@/lib/drawing/vertexEdit';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { EdgeSettingsFields } from './EdgeSettingsFields';
 import { LengthInput } from './LengthInput';
+import { PanelSection } from './PanelSection';
 
 export function PieceEdgesPanel({ piece }: { piece: Piece }) {
   const { state, dispatch } = useDrawingEditor();
@@ -27,8 +28,7 @@ export function PieceEdgesPanel({ piece }: { piece: Piece }) {
   };
 
   return (
-    <section aria-label="Sides" className="flex flex-col gap-2 border-t border-stone-200 pt-2">
-      <h3 className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Sides</h3>
+    <PanelSection title={`Sides (${edges.length})`} label="Sides" defaultOpen={false}>
       {edges.map((edge) => {
         const selected = state.selectedEdgeIndex === edge.index;
         return (
@@ -47,10 +47,10 @@ export function PieceEdgesPanel({ piece }: { piece: Piece }) {
               valueMm={distance(piece.outline[edge.index], piece.outline[(edge.index + 1) % piece.outline.length])}
               onCommit={(mm) => setLength(edge.index, mm)}
             />
-            <EdgeSettingsFields piece={piece} index={edge.index} />
+            {selected && <EdgeSettingsFields piece={piece} index={edge.index} />}
           </div>
         );
       })}
-    </section>
+    </PanelSection>
   );
 }

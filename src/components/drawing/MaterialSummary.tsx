@@ -5,6 +5,7 @@
 import { materialUsage } from '@/lib/drawing/materials';
 import { mm2ToSqFt } from '@/lib/drawing/metrics';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { PanelSection } from './PanelSection';
 
 const AREA_UNIT_CODE = 'SQFT';
 
@@ -16,8 +17,7 @@ export function MaterialSummary() {
   if (usage.length === 0) return null;
 
   return (
-    <section aria-label="Materials" className="flex flex-col gap-1.5">
-      <h3 className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Materials</h3>
+    <PanelSection title="Materials">
       {usage.map((u) => {
         const line = materialLines.find((l) => l.id === u.lineId);
         const ordered = line?.unitCode === AREA_UNIT_CODE ? line.quantity : undefined;
@@ -35,6 +35,6 @@ export function MaterialSummary() {
           </div>
         );
       })}
-    </section>
+    </PanelSection>
   );
 }

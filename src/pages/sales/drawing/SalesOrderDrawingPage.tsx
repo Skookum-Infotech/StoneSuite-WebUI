@@ -166,13 +166,14 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
     <div
       ref={fillRef}
       data-testid="drawing-editor"
-      className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden p-2"
+      data-drawing-editor
+      className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
     >
       <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
       <AreaTabs />
       <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
       <div className="flex min-h-0 flex-1 gap-2">
-        <aside aria-label="Drawing tools" className="flex w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-stone-200 pr-2">
+        <aside aria-label="Drawing tools" className="modal-scrollbar flex w-56 shrink-0 flex-col gap-3 overflow-y-auto overflow-x-hidden border-r border-stone-200 pr-2">
           <ShapePalette />
           <CutoutLibrary />
           <AnnotationPanel />
@@ -181,7 +182,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
         <div className="min-h-0 min-w-0 flex-1">
           <DrawingCanvas />
         </div>
-        <aside aria-label="Properties" className="w-72 shrink-0 overflow-y-auto border-l border-stone-200 pl-2">
+        <aside aria-label="Properties" className="modal-scrollbar w-72 shrink-0 overflow-y-auto overflow-x-hidden border-l border-stone-200 pl-2">
           <PieceInspector />
         </aside>
       </div>

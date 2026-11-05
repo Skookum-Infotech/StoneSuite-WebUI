@@ -41,7 +41,7 @@ function Readout() {
 function renderToolbar(saveStatus: Parameters<typeof DrawingToolbar>[0]['saveStatus'] = 'idle', onSave: () => void = () => {}) {
   render(
     <DrawingEditorProvider drawing={blankDrawing()} materialLines={[]}>
-      <DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" />
+      <div data-drawing-editor><DrawingToolbar saveStatus={saveStatus} onSave={onSave} orderNumber="1001" /></div>
       {/* The add-piece buttons live in the left panel, not the toolbar. */}
       <ShapePalette />
       <Readout />
@@ -217,5 +217,24 @@ describe('DrawingToolbar — Export DXF', () => {
     expect(created[0].type).toBe('application/dxf');
     click.mockRestore();
     vi.unstubAllGlobals();
+  });
+});
+
+describe('DrawingToolbar — full screen', () => {
+  it('asks the editor container to go full screen, then offers to exit', async () => {
+    const request = vi.fn().mockResolvedValue(undefined);
+    const exit = vi.fn().mockResolvedValue(undefined);
+    let current: Element | null = null;
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => current });
+    document.exitFullscreen = exit;
+    renderToolbar();
+    const host = document.querySelector('[data-drawing-editor]') as HTMLElement;
+    host.requestFullscreen = () => { current = host; document.dispatchEvent(new Event('fullscreenchange')); return request(); };
+
+    await userEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('button', { name: 'Exit full screen' })).toBeDefined();
+    await userEvent.click(screen.getByRole('button', { name: 'Exit full screen' }));
+    expect(exit).toHaveBeenCalledTimes(1);
   });
 });

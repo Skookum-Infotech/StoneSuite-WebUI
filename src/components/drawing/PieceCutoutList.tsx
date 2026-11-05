@@ -5,6 +5,7 @@ import type { Piece } from '@/types/drawing';
 import { CUTOUT_TYPE_LABELS, cutoutArea, validateCutouts } from '@/lib/drawing/cutouts';
 import { MM2_PER_FT2 } from '@/lib/drawing/metrics';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { PanelSection } from './PanelSection';
 
 const SQ_IN_PER_SQ_FT = 144;
 
@@ -14,8 +15,7 @@ export function PieceCutoutList({ piece }: { piece: Piece }) {
   const issues = validateCutouts(piece);
 
   return (
-    <section aria-label="Cutouts on this piece" className="flex flex-col gap-1 border-t border-stone-200 pt-2">
-      <h3 className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Cutouts</h3>
+    <PanelSection title={`Cutouts (${piece.cutouts.length})`} label="Cutouts on this piece">
       {piece.cutouts.map((cutout) => {
         const name = cutout.label || CUTOUT_TYPE_LABELS[cutout.type];
         const problem = issues.find((i) => i.cutoutId === cutout.id || i.otherId === cutout.id);
@@ -36,6 +36,6 @@ export function PieceCutoutList({ piece }: { piece: Piece }) {
           </div>
         );
       })}
-    </section>
+    </PanelSection>
   );
 }

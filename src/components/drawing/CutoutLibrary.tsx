@@ -9,6 +9,7 @@ import type { CutoutType } from '@/types/drawing';
 import { CUTOUT_TYPES, CUTOUT_TYPE_LABELS, newCutout, validateCutouts } from '@/lib/drawing/cutouts';
 import { bounds } from '@/lib/drawing/geometry';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { PanelSection } from './PanelSection';
 
 export function CutoutLibrary() {
   const { state, dispatch } = useDrawingEditor();
@@ -28,9 +29,9 @@ export function CutoutLibrary() {
   };
 
   return (
-    <section aria-label="Cutouts" className="flex flex-col gap-1.5">
-      <h3 className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Cutouts</h3>
+    <PanelSection title="Cutouts">
       {!piece && <p className="text-2xs text-stone-500">Select a piece to add a cutout to it.</p>}
+      <div className="grid grid-cols-2 gap-1.5">
       {CUTOUT_TYPES.map((type) => (
         <button
           key={type}
@@ -43,6 +44,7 @@ export function CutoutLibrary() {
           {CUTOUT_TYPE_LABELS[type]}
         </button>
       ))}
-    </section>
+      </div>
+    </PanelSection>
   );
 }

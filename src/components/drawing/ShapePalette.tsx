@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { AddNotchedForm, AddRectangleForm } from './AddPieceForms';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { PanelSection } from './PanelSection';
 
 type AddTool = 'none' | 'rect' | 'L' | 'U' | 'island' | 'peninsula';
 
@@ -22,18 +23,13 @@ export function ShapePalette() {
   );
 
   return (
-    <section aria-label="Shapes" className="flex flex-col gap-1.5">
-      <h3 className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Shapes</h3>
+    <PanelSection title="Shapes">
+      <div className="grid grid-cols-2 gap-1.5">
       {button('rect', 'Add rectangle')}
-      {addTool === 'rect' && <AddRectangleForm onDone={done} />}
       {button('L', 'Add L-shape')}
-      {addTool === 'L' && <AddNotchedForm shape="L" onDone={done} />}
       {button('U', 'Add U-shape')}
-      {addTool === 'U' && <AddNotchedForm shape="U" onDone={done} />}
       {button('island', 'Add island')}
-      {addTool === 'island' && <AddRectangleForm kind="island" onDone={done} />}
       {button('peninsula', 'Add peninsula')}
-      {addTool === 'peninsula' && <AddRectangleForm kind="peninsula" onDone={done} />}
       <button
         type="button"
         onClick={() => setTool(tool === 'polygon' ? 'select' : 'polygon')}
@@ -43,6 +39,12 @@ export function ShapePalette() {
       >
         Add polygon
       </button>
-    </section>
+      </div>
+      {addTool === 'rect' && <AddRectangleForm onDone={done} />}
+      {addTool === 'L' && <AddNotchedForm shape="L" onDone={done} />}
+      {addTool === 'U' && <AddNotchedForm shape="U" onDone={done} />}
+      {addTool === 'island' && <AddRectangleForm kind="island" onDone={done} />}
+      {addTool === 'peninsula' && <AddRectangleForm kind="peninsula" onDone={done} />}
+    </PanelSection>
   );
 }
