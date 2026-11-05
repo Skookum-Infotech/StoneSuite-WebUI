@@ -7,7 +7,14 @@ import type { WorkflowBlock } from '@/types/workflow';
 import { salesOrderService } from '@/services/salesOrderService';
 import type { SalesOrder } from '@/types/salesOrder';
 
+import { purchaseOrderService } from '@/services/purchaseOrderService';
+import { itemReceiptService } from '@/services/itemReceiptService';
+import type { PurchaseOrder } from '@/types/purchaseOrder';
+import type { ItemReceipt } from '@/types/itemReceipt';
+
 vi.mock('@/services/salesOrderService', () => ({ salesOrderService: { getOrder: vi.fn() } }));
+vi.mock('@/services/purchaseOrderService', () => ({ purchaseOrderService: { getPurchaseOrder: vi.fn() } }));
+vi.mock('@/services/itemReceiptService', () => ({ itemReceiptService: { forPurchaseOrder: vi.fn() } }));
 
 function withClient(ui: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -64,6 +71,28 @@ describe('WorkflowCard', () => {
     const link = await screen.findByRole('link', { name: /Sales order/ });
     expect(link).toHaveAttribute('href', '/sales/sales_order/so-1');
     expect(link).toHaveTextContent('SO-0042');
+  });
+
+  it('shows the source purchase order on an item receipt even when the server sent no workflow block', async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(
+      { id: 'po-1', purchaseOrderNumber: 'PORD-000020', statusCode: 'PART', status: 'Partially Received' } as PurchaseOrder,
+    );
+    vi.mocked(itemReceiptService.forPurchaseOrder).mockResolvedValue([
+      { id: 'ir-1', itemReceiptNumber: 'IRCT-000034', statusCode: 'PART', status: 'Partial' } as ItemReceipt,
+    ]);
+    render(withClient(<WorkflowCard module="itemReceipt" statusCode="PART" statusLabel="Partial" links={{ purchaseOrderId: 'po-1' }} />));
+    const link = await screen.findByRole('link', { name: /Purchase order/ });
+    expect(link).toHaveAttribute('href', '/purchases/purchase_order/po-1');
+    expect(link).toHaveTextContent('PORD-000020');
+  });
+
+  it('shows the receipt on a purchase order once one is created', async () => {
+    vi.mocked(itemReceiptService.forPurchaseOrder).mockResolvedValue([
+      { id: 'ir-1', itemReceiptNumber: 'IRCT-000034', statusCode: 'PART', status: 'Partial' } as ItemReceipt,
+    ]);
+    render(withClient(<WorkflowCard module="purchaseOrder" statusCode="PART" statusLabel="Partially Received" links={{ purchaseOrderId: 'po-1' }} />));
+    const link = await screen.findByRole('link', { name: /Receiving/ });
+    expect(link).toHaveAttribute('href', '/purchases/item_receipt/ir-1');
   });
 
   it("colours the current status below the stage name with that status's pill colour", () => {
