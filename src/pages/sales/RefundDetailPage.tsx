@@ -233,7 +233,7 @@ export default function RefundDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Refund Details">
-          <WorkflowCard module="refund" statusCode={refund.statusCode} statusLabel={refund.status} workflow={refund.workflow} />
+          <WorkflowCard module="refund" statusCode={refund.statusCode} statusLabel={refund.status} workflow={refund.workflow} links={{ paymentId: refund.paymentId, invoiceId: refund.invoiceId }} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">
