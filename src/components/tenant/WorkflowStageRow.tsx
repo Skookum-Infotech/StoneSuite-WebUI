@@ -11,9 +11,9 @@ interface WorkflowStageRowProps {
 }
 
 const MARKER_BY_STATE: Record<WorkflowStageView['state'], string> = {
-  done: 'border-lime-800 bg-lime-800 text-white',
-  here: 'border-lime-800 bg-white',
-  progress: 'border-lime-800 bg-white',
+  done: 'border-brand-dark bg-brand text-stone-950',
+  here: 'border-brand-dark bg-white',
+  progress: 'border-brand-dark bg-white',
   upcoming: 'border-stone-300 bg-white',
   void: 'border-red-500 bg-red-50',
 };
@@ -26,19 +26,19 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode }: WorkflowStag
   const hasPanel = stage.state === 'here' || stage.records.length > 0;
   const href = single && stage.state !== 'here' ? `${stage.route}/${single.id}` : undefined;
   const rowCls = cn(
-    'group relative flex min-h-9 gap-2.5 rounded-lg px-1.5 py-1 -mx-1.5 outline-none focus-visible:ring-2 focus-visible:ring-lime-700',
+    'group relative flex min-h-9 gap-2.5 rounded-lg px-1.5 py-1 -mx-1.5 outline-none focus-visible:ring-2 focus-visible:ring-brand-dark',
     hasPanel && 'hover:bg-stone-50',
   );
 
   const body = (
     <>
       {!isLast && (
-        <span aria-hidden="true" className={cn('absolute left-[14px] top-6 -bottom-1 w-0.5', stage.state === 'done' ? 'bg-lime-800' : 'bg-stone-200')} />
+        <span aria-hidden="true" className={cn('absolute left-[14px] top-6 -bottom-1 w-0.5', stage.state === 'done' ? 'bg-brand-dark' : 'bg-stone-200')} />
       )}
       <span className={cn('relative z-10 mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full border-2', MARKER_BY_STATE[stage.state])}>
         {stage.state === 'done' && <Check className="size-3" aria-hidden="true" />}
-        {stage.state === 'here' && <span className="size-[7px] rounded-full bg-lime-800" />}
-        {stage.state === 'progress' && <span className="size-[7px] rounded-full border-[1.5px] border-lime-800" />}
+        {stage.state === 'here' && <span className="size-[7px] rounded-full bg-brand-dark" />}
+        {stage.state === 'progress' && <span className="size-[7px] rounded-full border-[1.5px] border-brand-dark" />}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-1.5">
@@ -46,7 +46,7 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode }: WorkflowStag
             {stage.label}
             {stage.state === 'done' && <span className="sr-only"> (completed)</span>}
           </span>
-          {stage.state === 'here' && <span className="rounded-full bg-lime-100 px-1.5 text-[9.5px] text-lime-900">this record</span>}
+          {stage.state === 'here' && <span className="rounded-full bg-accent-lime px-1.5 text-[9.5px] font-medium text-accent-lime-text">this record</span>}
         </span>
         <span className={cn('block truncate text-2xs', stage.state === 'void' ? 'text-red-700' : stage.state === 'upcoming' ? 'text-stone-400' : 'text-stone-500')}>
           {stage.subtitle}

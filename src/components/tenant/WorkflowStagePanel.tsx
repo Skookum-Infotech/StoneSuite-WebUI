@@ -48,7 +48,7 @@ function SubStatusList({ module, statusCode, title }: { module: ProgressModule; 
           <li key={s.code} className={cn('flex h-5 items-center gap-2 text-xs', s.state === 'upcoming' ? 'text-stone-400' : 'text-stone-900', s.state === 'current' && 'font-semibold')}>
             <span
               aria-hidden="true"
-              className={cn('size-2 shrink-0 rounded-full', s.state === 'upcoming' ? 'bg-stone-300' : 'bg-lime-800', s.state === 'current' && 'ring-2 ring-lime-200')}
+              className={cn('size-2 shrink-0 rounded-full', s.state === 'upcoming' ? 'bg-stone-300' : 'bg-brand-dark', s.state === 'current' && 'ring-2 ring-brand')}
             />
             {s.label}
             {s.state === 'current' && <span className="sr-only"> (current)</span>}
