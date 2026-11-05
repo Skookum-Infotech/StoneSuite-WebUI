@@ -6,6 +6,7 @@
 // generic `WorkflowRecord` used by the v1 JSONB CRM router — Sales Orders are a
 // relational sibling of `customer` with ordered line items, snapshots, and
 // stored money totals, served from `/api/tenant/sales-orders*`.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, SortKey, RecordApprover, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -146,6 +147,8 @@ export interface SalesOrderLine {
 // header field (server backfilled this after an earlier gap where Get only
 // returned display-only summary fields).
 export interface SalesOrder {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   salesOrderNumber: string;
   status: string;             // human label, e.g. "Draft"

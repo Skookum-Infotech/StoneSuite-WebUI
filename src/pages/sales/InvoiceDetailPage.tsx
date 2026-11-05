@@ -29,6 +29,7 @@ import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { DocumentSendHistory } from '@/components/tenant/DocumentSendHistory';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './components/SalesDetailSidebar';
 import { AmountsStrip } from './components/AmountsStrip';
 import { InvoiceStatusControl } from './components/InvoiceStatusControl';
@@ -328,6 +329,7 @@ export default function InvoiceDetailPage() {
 
         {/* Right sidebar */}
         <SalesDetailSidebar label="Invoice Details">
+          <WorkflowCard module="invoice" statusCode={invoice.statusCode} statusLabel={invoice.status} workflow={invoice.workflow} />
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
             <p className="text-xs font-semibold text-stone-500">Quick Actions</p>
             <div className="space-y-0.5">

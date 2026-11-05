@@ -7,6 +7,7 @@
 // router — served from `/api/tenant/purchase-orders*`. Structurally
 // identical to Estimate, with a vendor instead of a customer and a single
 // ship-to address instead of a billing/shipping pair.
+import type { WorkflowBlock } from '@/types/workflow';
 import type { FilterClause, RecordApprover, SortKey, ApprovalRejection } from '@/types/tenant';
 
 // ── Create / update inputs (client → server) ─────────────────────────────────
@@ -147,6 +148,8 @@ export type PurchaseOrderStatusCode =
 // page can reload a purchase order and re-save it without silently blanking
 // the ship-to block or any header field.
 export interface PurchaseOrder {
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   id: string;
   purchaseOrderNumber: string;
   status: string;                       // human label, e.g. "Draft"

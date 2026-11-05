@@ -10,6 +10,7 @@ import {
 } from '@/lib/fabricationForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import type { FabricationJob } from '@/types/fabrication';
+import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from './SalesDetailSidebar';
 import { FabricationHoldResumeControl } from './FabricationHoldResumeControl';
 import { FabricationStatusControl } from './FabricationStatusControl';
@@ -51,6 +52,7 @@ export function FabricationJobSidebar({ id, job, salesOrderNumber, canEdit, canD
 
   return (
     <SalesDetailSidebar label="Job Details">
+      <WorkflowCard module="fabrication" statusCode={job.statusCode} statusLabel={job.status} workflow={job.workflow} />
       <FabricationQuickActionsCard
         jobId={id}
         canEdit={canEdit}
