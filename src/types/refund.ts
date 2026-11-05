@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 // Refund module — frontend contract types.
 //
 // Mirrors the dedicated relational Refund backend module
@@ -79,6 +80,8 @@ export interface Refund {
   refundNumber: string;
   status: string;              // human label, e.g. "Pending"
   statusCode: string;          // lkp_record_status code, e.g. "PEND" — drives transitions
+  /** End-to-end flow this record belongs to; see BACKEND_SPEC_workflow_links.md. */
+  workflow?: WorkflowBlock;
   approvalStatus: 'none' | 'pending' | 'approved';
   gated: boolean;
   approvers: RecordApprover[];

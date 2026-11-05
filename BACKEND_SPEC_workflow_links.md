@@ -106,3 +106,11 @@ Payments are the payments applied to the flow's invoices. Vendor payments are th
 - A caller without invoice permission gets `invoice.records: []` and `hidden: true`, and the rest of the response is unchanged.
 - A cancelled invoice still appears, with its `statusCode`.
 - The extra work does not add more than a few queries per detail request.
+
+## Addendum: Installation and Refund stages (sales flow)
+
+The sales card now has seven stages: Quote, Sales order, Fabrication, Installation, Invoice, Payment, Refund.
+
+- **Installation** needs no new data. It reads the same `fabrication` records: a job is on Fabrication up to `RSHP` (Ready for Shipping) and on Installation from `TRAN` (In Transit) to `COMP`.
+- **Refund** is a new stage key, `refund`. Add `{ "key": "refund", "records": [...] }` to the `workflow` block of Quote, Sales order, Fabrication job, Invoice and Payment detail responses, listing refunds against the order's payments (same record shape; empty array when none). A Refund detail response should also carry the `workflow` block, with its own record in the `refund` stage.
+- Whenever a conversion creates a record (Sales order to Invoice, Sales order to Fabrication job, Payment to Refund), the parent's next detail response must already list it, so the card updates live.

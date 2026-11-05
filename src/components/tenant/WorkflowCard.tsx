@@ -18,7 +18,7 @@ const NO_WORKFLOW: WorkflowBlock = { stages: [] };
  *  (Quote to Payment, or Requisition to Payment), with each stage's linked
  *  record and status. Hovering a stage lists its sub-statuses. */
 export function WorkflowCard({ module, statusCode, statusLabel, workflow = NO_WORKFLOW }: WorkflowCardProps) {
-  const view = buildWorkflowStages(module, statusLabel, workflow);
+  const view = buildWorkflowStages(module, statusLabel, workflow, statusCode);
   if (!view) return null;
 
   return (
