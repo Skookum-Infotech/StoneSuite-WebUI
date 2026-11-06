@@ -23,10 +23,10 @@ describe('ReportsHubPage', () => {
   });
 
   it('lists planned reports as coming soon, not as links', () => {
-    renderHub('inventory');
-    const planned = screen.getByLabelText('Stock on Hand & Valuation (coming soon)');
+    renderHub('calendar');
+    const planned = screen.getByLabelText('Upcoming Installs (coming soon)');
     expect(planned.tagName).toBe('LI');
-    expect(screen.queryByRole('link', { name: /Stock on Hand/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Upcoming Installs/ })).not.toBeInTheDocument();
   });
 
   it('says so for an unknown module', () => {
@@ -51,5 +51,15 @@ describe('ReportsHubPage Purchases', () => {
     expect(screen.getByRole('link', { name: 'Open Purchases by Item' })).toHaveAttribute('href', '/reports/purchases/by-item');
     expect(screen.getByRole('link', { name: 'Open Open POs & Receiving' })).toHaveAttribute('href', '/reports/purchases/open-pos');
     expect(screen.getByRole('link', { name: 'Open AP Aging' })).toHaveAttribute('href', '/reports/purchases/ap-aging');
+  });
+});
+
+describe('ReportsHubPage Inventory', () => {
+  it('links all four built Inventory reports', () => {
+    renderHub('inventory');
+    expect(screen.getByRole('link', { name: 'Open Stock on Hand & Valuation' })).toHaveAttribute('href', '/reports/inventory/stock');
+    expect(screen.getByRole('link', { name: 'Open Slab Availability' })).toHaveAttribute('href', '/reports/inventory/slabs');
+    expect(screen.getByRole('link', { name: 'Open Low Stock' })).toHaveAttribute('href', '/reports/inventory/low-stock');
+    expect(screen.getByRole('link', { name: 'Open Stock Movement' })).toHaveAttribute('href', '/reports/inventory/movement');
   });
 });

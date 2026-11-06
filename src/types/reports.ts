@@ -259,3 +259,106 @@ export interface PurchasesReport<Row, Totals> {
 export interface ApAgingReport extends PurchasesReport<ApAgingRow, ApAgingTotals> {
   labels: string[];
 }
+
+/** The date window the Stock Movement report sends. */
+export interface InventoryMovementParams {
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  from: string;
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  to: string;
+}
+
+export interface StockRow {
+  itemId: string;
+  sku: string;
+  name: string;
+  tracking: string;
+  unit: string;
+  location: string;
+  onHand: number;
+  allocated: number;
+  available: number;
+  unitCost: number;
+  value: number;
+}
+
+export interface StockTotals {
+  value: number;
+  items: number;
+  locations: number;
+  rows: number;
+}
+
+export interface SlabRow {
+  itemId: string;
+  sku: string;
+  name: string;
+  unit: string;
+  /** Slab counts, one per label, in label order. */
+  counts: number[];
+  /** Slab area in the item's unit, one per label. */
+  areas: number[];
+  totalSlabs: number;
+  totalArea: number;
+}
+
+export interface SlabTotals {
+  counts: number[];
+  areas: number[];
+  totalSlabs: number;
+}
+
+export interface SlabReport {
+  labels: string[];
+  totals: SlabTotals;
+  rows: SlabRow[];
+}
+
+export type LowStockState = 'out' | 'below';
+
+export interface LowStockRow {
+  itemId: string;
+  sku: string;
+  name: string;
+  unit: string;
+  location: string;
+  onHand: number;
+  allocated: number;
+  available: number;
+  reorderPoint: number;
+  onOrder: number;
+  suggestedOrder: number;
+  state: LowStockState;
+}
+
+export interface LowStockTotals {
+  rows: number;
+  outOfStock: number;
+  items: number;
+}
+
+export interface MovementRow {
+  itemId: string;
+  sku: string;
+  name: string;
+  unit: string;
+  received: number;
+  returned: number;
+  consumed: number;
+  scrapped: number;
+  adjusted: number;
+  net: number;
+  movements: number;
+}
+
+export interface MovementTotals {
+  items: number;
+  movements: number;
+  growing: number;
+  shrinking: number;
+}
+
+export interface InventoryReport<Row, Totals> {
+  totals: Totals;
+  rows: Row[];
+}

@@ -44,10 +44,10 @@ export const REPORT_MODULES: ReportModuleInfo[] = [
     description: 'What is in stock, what it is worth, and what is running low.',
     resource: 'report_inventory',
     reports: [
-      { id: 'stock-valuation', title: 'Stock on Hand & Valuation', description: 'Quantity on hand and value per item, location and bin.' },
-      { id: 'slab-availability', title: 'Slab Availability', description: 'Available, reserved and on-order slabs by material.' },
-      { id: 'low-stock', title: 'Low Stock', description: 'Items at or below their reorder point, with what is already on order.' },
-      { id: 'stock-movement', title: 'Stock Movement', description: 'Receipts, consumption, adjustments and transfers per item.' },
+      { id: 'stock-valuation', title: 'Stock on Hand & Valuation', description: 'Quantity on hand and value per item and location.', path: '/reports/inventory/stock' },
+      { id: 'slab-availability', title: 'Slab Availability', description: 'Available, reserved and on-order slabs by material.', path: '/reports/inventory/slabs' },
+      { id: 'low-stock', title: 'Low Stock', description: 'Items at or below their reorder point, with what is already on order.', path: '/reports/inventory/low-stock' },
+      { id: 'stock-movement', title: 'Stock Movement', description: 'Receipts, consumption, adjustments and transfers per item.', path: '/reports/inventory/movement' },
     ],
   },
   {

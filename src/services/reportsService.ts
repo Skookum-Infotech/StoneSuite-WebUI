@@ -1,5 +1,16 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
+  InventoryMovementParams,
+  InventoryReport,
+  LowStockRow,
+  LowStockTotals,
+  MovementRow,
+  MovementTotals,
+  SlabReport,
+  SlabRow,
+  SlabTotals,
+  StockRow,
+  StockTotals,
   ApAgingReport,
   ApAgingRow,
   ApAgingTotals,
@@ -78,6 +89,17 @@ function toPurchases<Row, Totals>(w: PurchasesWire<Row, Totals>): PurchasesRepor
   return { totals: w.totals, rows: w.rows ?? [] };
 }
 
+interface InventoryWire<Row, Totals> {
+  success: boolean;
+  totals: Totals;
+  rows?: Row[];
+  labels?: string[];
+}
+
+function toInventory<Row, Totals>(w: InventoryWire<Row, Totals>): InventoryReport<Row, Totals> {
+  return { totals: w.totals, rows: w.rows ?? [] };
+}
+
 // Window + basis (+ bucket) go as query params. The server resolves tenant,
 // user and data scope from the JWT — never pass them from here.
 export const reportsService = {
@@ -135,4 +157,24 @@ export const reportsService = {
     tenantClient
       .get<PurchasesWire<ApAgingRow, ApAgingTotals>>('/tenant/reports/purchases/ap-aging')
       .then((r) => ({ ...toPurchases(r.data), labels: r.data.labels ?? [] })),
+
+  stockOnHand: (): Promise<InventoryReport<StockRow, StockTotals>> =>
+    tenantClient
+      .get<InventoryWire<StockRow, StockTotals>>('/tenant/reports/inventory/stock')
+      .then((r) => toInventory(r.data)),
+
+  slabAvailability: (): Promise<SlabReport> =>
+    tenantClient
+      .get<InventoryWire<SlabRow, SlabTotals>>('/tenant/reports/inventory/slabs')
+      .then((r) => ({ ...toInventory(r.data), labels: r.data.labels ?? [] })),
+
+  lowStock: (): Promise<InventoryReport<LowStockRow, LowStockTotals>> =>
+    tenantClient
+      .get<InventoryWire<LowStockRow, LowStockTotals>>('/tenant/reports/inventory/low-stock')
+      .then((r) => toInventory(r.data)),
+
+  stockMovement: (params: InventoryMovementParams): Promise<InventoryReport<MovementRow, MovementTotals>> =>
+    tenantClient
+      .get<InventoryWire<MovementRow, MovementTotals>>('/tenant/reports/inventory/movement', { params })
+      .then((r) => toInventory(r.data)),
 };

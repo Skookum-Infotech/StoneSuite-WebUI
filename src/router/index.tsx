@@ -404,6 +404,10 @@ const PurchasesByVendorPage = lazyWithRetry(() => import("@/pages/reports/purcha
 const PurchasesByItemPage = lazyWithRetry(() => import("@/pages/reports/purchases/PurchasesByItemPage"));
 const OpenPurchaseOrdersPage = lazyWithRetry(() => import("@/pages/reports/purchases/OpenPurchaseOrdersPage"));
 const ApAgingPage = lazyWithRetry(() => import("@/pages/reports/purchases/ApAgingPage"));
+const StockOnHandPage = lazyWithRetry(() => import("@/pages/reports/inventory/StockOnHandPage"));
+const SlabAvailabilityPage = lazyWithRetry(() => import("@/pages/reports/inventory/SlabAvailabilityPage"));
+const LowStockPage = lazyWithRetry(() => import("@/pages/reports/inventory/LowStockPage"));
+const StockMovementPage = lazyWithRetry(() => import("@/pages/reports/inventory/StockMovementPage"));
 const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
 const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
 const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
@@ -983,6 +987,38 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="report_purchases" action="read">
             <ApAgingPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/stock",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <StockOnHandPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/slabs",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <SlabAvailabilityPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/low-stock",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <LowStockPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/movement",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <StockMovementPage />
           </PermissionGuard>,
         ),
       },
