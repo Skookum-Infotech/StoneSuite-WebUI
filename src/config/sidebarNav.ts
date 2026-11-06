@@ -52,6 +52,7 @@ import {
   Upload,
   ShieldAlert,
   PackagePlus,
+  BarChart3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -595,6 +596,83 @@ export const sidebarNav: SidebarNavConfig = {
               icon: CalendarClock,
               iconColor: "text-emerald-500 dark:text-emerald-400",
               permission: { resource: "install_appointment", action: "read" },
+            },
+          ],
+        },
+        {
+          type: "group",
+          id: "reports",
+          label: "Reports",
+          icon: BarChart3,
+          iconColor: "text-fuchsia-600 dark:text-fuchsia-400",
+          matchPaths: ["/reports"],
+          // One read grant per sub-module (report_<module>:read), so a role can
+          // get Sales reports without CRM reports. These are the only rows the
+          // role matrix shows for the group. Custom Reports is a parked page
+          // with no resource yet, visible to every signed-in staff user.
+          children: [
+            {
+              type: "link",
+              id: "reports-crm",
+              label: "CRM Reports",
+              path: "/reports/crm",
+              icon: Building2,
+              iconColor: "text-blue-600 dark:text-blue-400",
+              permission: { resource: "report_crm", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-sales",
+              label: "Sales Reports",
+              path: "/reports/sales",
+              icon: TrendingUp,
+              iconColor: "text-emerald-600 dark:text-emerald-400",
+              permission: { resource: "report_sales", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-purchases",
+              label: "Purchases Reports",
+              path: "/reports/purchases",
+              icon: ShoppingCart,
+              iconColor: "text-amber-600 dark:text-amber-400",
+              permission: { resource: "report_purchases", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-inventory",
+              label: "Inventory Reports",
+              path: "/reports/inventory",
+              icon: Boxes,
+              iconColor: "text-purple-600 dark:text-purple-400",
+              permission: { resource: "report_inventory", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-calendar",
+              label: "Calendar Reports",
+              path: "/reports/calendar",
+              icon: CalendarDays,
+              iconColor: "text-sky-600 dark:text-sky-400",
+              permission: { resource: "report_calendar", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-finance",
+              label: "Finance Reports",
+              path: "/reports/finance",
+              icon: Landmark,
+              iconColor: "text-slate-600 dark:text-slate-400",
+              permission: { resource: "report_finance", action: "read" },
+            },
+            {
+              type: "link",
+              id: "reports-custom",
+              label: "Custom Reports",
+              path: "/reports/custom",
+              icon: SlidersHorizontal,
+              iconColor: "text-violet-500 dark:text-violet-400",
+              alwaysVisible: true,
             },
           ],
         },

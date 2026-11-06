@@ -7,6 +7,7 @@ import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import RouteErrorPage from "@/pages/common/RouteErrorPage";
 
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { REPORT_MODULES } from "@/lib/reportsRegistry";
 import { PortalOnlyGuard } from "@/components/PortalOnlyGuard";
 
 const FabricationApprovalPage = lazyWithRetry(() => import("@/pages/customer/FabricationApprovalPage"));
@@ -392,6 +393,29 @@ const ActivityPlannerPage = lazyWithRetry(
 const InstallSchedulePage = lazyWithRetry(
   () => import("@/pages/calendar/InstallSchedulePage"),
 );
+
+// Reports module
+const ReportsHubPage = lazyWithRetry(() => import("@/pages/reports/ReportsHubPage"));
+const CustomReportsPage = lazyWithRetry(() => import("@/pages/reports/CustomReportsPage"));
+const ConversionFunnelPage = lazyWithRetry(() => import("@/pages/reports/crm/ConversionFunnelPage"));
+const LeadSourcePage = lazyWithRetry(() => import("@/pages/reports/crm/LeadSourcePage"));
+const StaleRecordsPage = lazyWithRetry(() => import("@/pages/reports/crm/StaleRecordsPage"));
+const PurchasesByVendorPage = lazyWithRetry(() => import("@/pages/reports/purchases/PurchasesByVendorPage"));
+const PurchasesByItemPage = lazyWithRetry(() => import("@/pages/reports/purchases/PurchasesByItemPage"));
+const OpenPurchaseOrdersPage = lazyWithRetry(() => import("@/pages/reports/purchases/OpenPurchaseOrdersPage"));
+const ApAgingPage = lazyWithRetry(() => import("@/pages/reports/purchases/ApAgingPage"));
+const StockOnHandPage = lazyWithRetry(() => import("@/pages/reports/inventory/StockOnHandPage"));
+const SlabAvailabilityPage = lazyWithRetry(() => import("@/pages/reports/inventory/SlabAvailabilityPage"));
+const LowStockPage = lazyWithRetry(() => import("@/pages/reports/inventory/LowStockPage"));
+const StockMovementPage = lazyWithRetry(() => import("@/pages/reports/inventory/StockMovementPage"));
+const UpcomingInstallsPage = lazyWithRetry(() => import("@/pages/reports/calendar/UpcomingInstallsPage"));
+const OverdueActivitiesPage = lazyWithRetry(() => import("@/pages/reports/calendar/OverdueActivitiesPage"));
+const OnTimeCompletionPage = lazyWithRetry(() => import("@/pages/reports/calendar/OnTimeCompletionPage"));
+const LeadTimePage = lazyWithRetry(() => import("@/pages/reports/calendar/LeadTimePage"));
+const ProfitLossPage = lazyWithRetry(() => import("@/pages/reports/finance/ProfitLossPage"));
+const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
+const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
+const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -902,6 +926,173 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+
+      // Reports. Each module hub (/reports/<module>) is gated by that module's
+      // own report_<module>:read grant; the data scope (all/team/own) is
+      // applied by the server. Staff only: /reports is not in
+      // CUSTOMER_ALLOWED_PATH_PREFIXES.
+      ...REPORT_MODULES.map((m) => ({
+        path: `reports/${m.slug}`,
+        element: lazy_(
+          <PermissionGuard resource={m.resource} action="read">
+            <ReportsHubPage slug={m.slug} />
+          </PermissionGuard>,
+        ),
+      })),
+      {
+        path: "reports/crm/funnel",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <ConversionFunnelPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/crm/lead-sources",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <LeadSourcePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/crm/stale",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <StaleRecordsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/by-vendor",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <PurchasesByVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/by-item",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <PurchasesByItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/open-pos",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <OpenPurchaseOrdersPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/ap-aging",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <ApAgingPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/stock",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <StockOnHandPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/slabs",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <SlabAvailabilityPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/low-stock",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <LowStockPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/inventory/movement",
+        element: lazy_(
+          <PermissionGuard resource="report_inventory" action="read">
+            <StockMovementPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/upcoming-installs",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <UpcomingInstallsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/overdue",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <OverdueActivitiesPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/on-time",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <OnTimeCompletionPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/lead-time",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <LeadTimePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/finance/profit-loss",
+        element: lazy_(
+          <PermissionGuard resource="report_finance" action="read">
+            <ProfitLossPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/by-customer",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesByCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/by-item",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesByItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/trend",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesTrendPage />
+          </PermissionGuard>,
+        ),
+      },
+      // Parked page: no permission of its own until custom reports exist.
+      { path: "reports/custom", element: lazy_(<CustomReportsPage />) },
 
       // Vendors (specific routes must come before the purchases catch-all)
       {
