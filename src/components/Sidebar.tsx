@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
 import { useFeedbackUnreadCount } from '@/hooks/useFeedbackUnreadCount';
+import { useApprovalInboxSummary } from '@/hooks/useApprovalInboxSummary';
 import { sidebarNav } from '@/config/sidebarNav';
 import { isCustomerAllowedPath } from '@/config/customerPortal';
 import type { NavLink as NavLinkItem, NavGroup, NavEntry, NavSection, NavBadge } from '@/config/sidebarNav';
@@ -85,6 +86,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
   const { isWorkflowEnabled, isLoading: workflowsLoading } = useWorkflows();
   const unreadTickets = useFeedbackUnreadCount();
+  const approvals = useApprovalInboxSummary();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     withActiveGroupsOpen(readRememberedOpenGroups(), location.pathname),
   );
@@ -98,7 +100,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }
 
   // The numbers behind each `badge` a nav link can name (see NavBadge).
-  const badgeCounts: Record<NavBadge, number> = { 'support-unread': unreadTickets };
+  const badgeCounts: Record<NavBadge, number> = {
+    'support-unread': unreadTickets,
+    'approvals-pending': approvals.total,
+  };
 
   function toggleGroup(id: string) {
     const next = { ...openGroups, [id]: !openGroups[id] };
@@ -112,6 +117,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     // A portal-only page has no staff counterpart — checked before the
     // permissions-loading shortcut below so staff never see it flash up.
     if (item.customerOnly && !isCustomer) return false;
+    // An idle Approvals link (nothing pending, not an approver anywhere) is noise.
+    if (item.hideWhenIdle && item.badge && badgeCounts[item.badge] === 0 && !approvals.isApprover) return false;
     // Independent of the viewer's permissions: a workflow an admin disabled
     // in Configuration > Workflows is hidden from every user, not just those
     // without the resource grant.
@@ -188,7 +195,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {badgeCount > 0 && (
           <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
             {badgeCount}
-            <span className="sr-only"> unread</span>
+            <span className="sr-only"> {item.badge === 'approvals-pending' ? 'pending' : 'unread'}</span>
           </span>
         )}
       </NavLink>

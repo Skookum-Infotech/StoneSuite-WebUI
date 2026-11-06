@@ -10,6 +10,32 @@
  *  approving or rejecting it are the only ways on. */
 export const CRM_ALWAYS_ALLOWED_EXIT_CODES = new Set(['LUNQ', 'PCLL']);
 
+/** CRM workflows that can gate a stage behind approval, in display order. */
+export const CRM_APPROVAL_WORKFLOWS: readonly { key: string; label: string }[] = [
+  { key: 'lead', label: 'Lead' },
+  { key: 'prospect', label: 'Prospect' },
+  { key: 'customer', label: 'Customer' },
+];
+
+/** The CRM workflows whose pending approvals the caller may see: read grant
+ *  and workflow enabled. The server still scopes each response. */
+export function readableCrmApprovalWorkflows(
+  hasPermission: (resource: string, action: string) => boolean,
+  isWorkflowEnabled: (key: string) => boolean,
+): { key: string; label: string }[] {
+  return CRM_APPROVAL_WORKFLOWS.filter((w) => hasPermission(w.key, 'read') && isWorkflowEnabled(w.key));
+}
+
+/** Display title for a CRM record row: its customer name, else its number. */
+export function crmRecordTitle(record: {
+  recordNumber?: string;
+  coreFields: Record<string, unknown>;
+}): string {
+  const name = record.coreFields.customer_name;
+  if (typeof name === 'string' && name.trim() !== '') return name;
+  return record.recordNumber ?? 'Untitled record';
+}
+
 /** Whether a transition to targetStatusCode is blocked while the record's
  *  stage is gated (awaiting or rejected from approval) — used to disable
  *  status-picker options instead of letting the click 409. */
