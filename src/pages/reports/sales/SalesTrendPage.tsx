@@ -66,7 +66,7 @@ export default function SalesTrendPage() {
           <ReportKpiStrip totals={q.data.totals} recordsLabel={BASIS_LABELS[params.basis]} />
           <ReportTrendChart data={chartData} label={`Revenue and margin by ${bucket}`} />
           <ReportDataTable
-            caption="Sales trend"
+            copy={{ caption: "Sales trend" }}
             columns={columns}
             rows={q.data.rows}
             getRowKey={(r) => r.period}

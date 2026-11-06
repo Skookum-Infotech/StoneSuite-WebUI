@@ -23,14 +23,23 @@ describe('ReportsHubPage', () => {
   });
 
   it('lists planned reports as coming soon, not as links', () => {
-    renderHub('crm');
-    const planned = screen.getByLabelText('Conversion Funnel (coming soon)');
+    renderHub('purchases');
+    const planned = screen.getByLabelText('Purchases by Vendor (coming soon)');
     expect(planned.tagName).toBe('LI');
-    expect(screen.queryByRole('link', { name: /Conversion Funnel/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Purchases by Vendor/ })).not.toBeInTheDocument();
   });
 
   it('says so for an unknown module', () => {
     renderHub('nope');
     expect(screen.getByText('This report group does not exist.')).toBeInTheDocument();
+  });
+});
+
+describe('ReportsHubPage CRM', () => {
+  it('links the built CRM reports to their pages', () => {
+    renderHub('crm');
+    expect(screen.getByRole('link', { name: 'Open Conversion Funnel' })).toHaveAttribute('href', '/reports/crm/funnel');
+    expect(screen.getByRole('link', { name: 'Open Lead Source Performance' })).toHaveAttribute('href', '/reports/crm/lead-sources');
+    expect(screen.getByRole('link', { name: 'Open Stale Leads & Prospects' })).toHaveAttribute('href', '/reports/crm/stale');
   });
 });

@@ -397,6 +397,9 @@ const InstallSchedulePage = lazyWithRetry(
 // Reports module
 const ReportsHubPage = lazyWithRetry(() => import("@/pages/reports/ReportsHubPage"));
 const CustomReportsPage = lazyWithRetry(() => import("@/pages/reports/CustomReportsPage"));
+const ConversionFunnelPage = lazyWithRetry(() => import("@/pages/reports/crm/ConversionFunnelPage"));
+const LeadSourcePage = lazyWithRetry(() => import("@/pages/reports/crm/LeadSourcePage"));
+const StaleRecordsPage = lazyWithRetry(() => import("@/pages/reports/crm/StaleRecordsPage"));
 const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
 const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
 const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
@@ -923,6 +926,30 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       })),
+      {
+        path: "reports/crm/funnel",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <ConversionFunnelPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/crm/lead-sources",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <LeadSourcePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/crm/stale",
+        element: lazy_(
+          <PermissionGuard resource="report_crm" action="read">
+            <StaleRecordsPage />
+          </PermissionGuard>,
+        ),
+      },
       {
         path: "reports/sales/by-customer",
         element: lazy_(

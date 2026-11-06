@@ -65,7 +65,7 @@ export default function SalesByCustomerPage() {
           <ReportKpiStrip totals={q.data.totals} recordsLabel={BASIS_LABELS[params.basis]} />
           <ReportTopBarChart data={chartData} label="Top customers by revenue" />
           <ReportDataTable
-            caption="Sales by customer"
+            copy={{ caption: "Sales by customer" }}
             columns={columns}
             rows={q.data.rows}
             getRowKey={(r) => r.customerId}

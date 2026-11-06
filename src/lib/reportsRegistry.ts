@@ -10,9 +10,9 @@ export const REPORT_MODULES: ReportModuleInfo[] = [
     description: 'How leads become customers, and where they stall.',
     resource: 'report_crm',
     reports: [
-      { id: 'conversion-funnel', title: 'Conversion Funnel', description: 'Leads to prospects to customers, with the percentage that move on at each step.' },
-      { id: 'lead-source', title: 'Lead Source Performance', description: 'Which sources produce leads that qualify, convert and bring in revenue.' },
-      { id: 'stale-leads', title: 'Stale Leads & Prospects', description: 'Open records with no activity for a set number of days.' },
+      { id: 'conversion-funnel', title: 'Conversion Funnel', description: 'Leads to prospects to customers, with the percentage that move on at each step.', path: '/reports/crm/funnel' },
+      { id: 'lead-source', title: 'Lead Source Performance', description: 'Which sources produce leads that qualify, convert and bring in revenue.', path: '/reports/crm/lead-sources' },
+      { id: 'stale-leads', title: 'Stale Leads & Prospects', description: 'Open records with no activity for a set number of days.', path: '/reports/crm/stale' },
     ],
   },
   {

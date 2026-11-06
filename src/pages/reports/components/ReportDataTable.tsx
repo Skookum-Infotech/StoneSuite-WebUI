@@ -5,10 +5,14 @@ export interface ReportColumn<Row> {
   label: string;
   align?: "left" | "right";
   render: (row: Row) => string;
+  /** Accessible name for the first column's row button; defaults to the
+   *  drill-down wording ("Show records for …"). */
+  actionLabel?: (text: string) => string;
 }
 
 interface ReportDataTableProps<Row> {
-  caption: string;
+  /** Accessible table name, and the message shown when there are no rows. */
+  copy: { caption: string; empty?: string };
   columns: ReportColumn<Row>[];
   rows: Row[];
   getRowKey: (row: Row) => string;
@@ -16,20 +20,20 @@ interface ReportDataTableProps<Row> {
   onRowClick?: (row: Row) => void;
 }
 
-const EMPTY_TEXT = "No records in this period.";
+const DEFAULT_EMPTY_TEXT = "No records in this period.";
 
-export function ReportDataTable<Row>({ caption, columns, rows, getRowKey, onRowClick }: ReportDataTableProps<Row>) {
+export function ReportDataTable<Row>({ copy, columns, rows, getRowKey, onRowClick }: ReportDataTableProps<Row>) {
   if (rows.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-500">
-        {EMPTY_TEXT}
+        {copy.empty ?? DEFAULT_EMPTY_TEXT}
       </p>
     );
   }
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
       <table className="w-full text-sm">
-        <caption className="sr-only">{caption}</caption>
+        <caption className="sr-only">{copy.caption}</caption>
         <thead className="bg-stone-50 text-label text-stone-500">
           <tr>
             {columns.map((c) => (
@@ -60,7 +64,7 @@ export function ReportDataTable<Row>({ caption, columns, rows, getRowKey, onRowC
                     {i === 0 && onRowClick ? (
                       <button
                         type="button"
-                        aria-label={`Show records for ${text}`}
+                        aria-label={c.actionLabel ? c.actionLabel(text) : `Show records for ${text}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onRowClick(row);

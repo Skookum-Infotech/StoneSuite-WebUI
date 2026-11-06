@@ -101,3 +101,64 @@ export interface ReportModuleInfo {
   resource: string;
   reports: ReportCardInfo[];
 }
+
+/** The lead-creation window CRM cohort reports send. */
+export interface CrmReportParams {
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  from: string;
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  to: string;
+}
+
+export interface CrmFunnelStage {
+  key: string;
+  label: string;
+  count: number;
+  percentOfLeads: number;
+  percentOfPrevious: number;
+  /** Average days from lead creation to this stage; null where not measured. */
+  avgDaysFromLead: number | null;
+}
+
+export interface CrmFunnel {
+  stages: CrmFunnelStage[];
+  unqualified: number;
+}
+
+export interface CrmSourceRow {
+  source: string;
+  leads: number;
+  qualified: number;
+  prospects: number;
+  customers: number;
+  conversionPercent: number;
+  revenue: number;
+  revenuePerLead: number;
+}
+
+export interface CrmSourceTotals {
+  leads: number;
+  customers: number;
+  conversionPercent: number;
+  revenue: number;
+}
+
+export interface CrmSourceReport {
+  totals: CrmSourceTotals;
+  rows: CrmSourceRow[];
+}
+
+export interface CrmStaleRecord {
+  id: string;
+  stage: 'lead' | 'prospect';
+  name: string;
+  status: string;
+  owner: string;
+  lastTouch: string;
+  daysIdle: number;
+}
+
+export interface CrmStaleReport {
+  days: number;
+  rows: CrmStaleRecord[];
+}

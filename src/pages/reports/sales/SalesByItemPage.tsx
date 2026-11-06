@@ -64,7 +64,7 @@ export default function SalesByItemPage() {
           <ReportKpiStrip totals={q.data.totals} />
           <ReportTopBarChart data={chartData} label="Top items by revenue" />
           <ReportDataTable
-            caption="Sales by item"
+            copy={{ caption: "Sales by item" }}
             columns={COLUMNS}
             rows={q.data.rows}
             getRowKey={(r) => r.itemId}
