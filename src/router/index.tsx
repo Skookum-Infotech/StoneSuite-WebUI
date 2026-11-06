@@ -7,6 +7,7 @@ import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import RouteErrorPage from "@/pages/common/RouteErrorPage";
 
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { REPORT_MODULES } from "@/lib/reportsRegistry";
 import { PortalOnlyGuard } from "@/components/PortalOnlyGuard";
 
 const FabricationApprovalPage = lazyWithRetry(() => import("@/pages/customer/FabricationApprovalPage"));
@@ -392,6 +393,13 @@ const ActivityPlannerPage = lazyWithRetry(
 const InstallSchedulePage = lazyWithRetry(
   () => import("@/pages/calendar/InstallSchedulePage"),
 );
+
+// Reports module
+const ReportsHubPage = lazyWithRetry(() => import("@/pages/reports/ReportsHubPage"));
+const CustomReportsPage = lazyWithRetry(() => import("@/pages/reports/CustomReportsPage"));
+const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
+const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
+const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -902,6 +910,45 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
+
+      // Reports. Each module hub (/reports/<module>) is gated by that module's
+      // own report_<module>:read grant; the data scope (all/team/own) is
+      // applied by the server. Staff only: /reports is not in
+      // CUSTOMER_ALLOWED_PATH_PREFIXES.
+      ...REPORT_MODULES.map((m) => ({
+        path: `reports/${m.slug}`,
+        element: lazy_(
+          <PermissionGuard resource={m.resource} action="read">
+            <ReportsHubPage slug={m.slug} />
+          </PermissionGuard>,
+        ),
+      })),
+      {
+        path: "reports/sales/by-customer",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesByCustomerPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/by-item",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesByItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/sales/trend",
+        element: lazy_(
+          <PermissionGuard resource="report_sales" action="read">
+            <SalesTrendPage />
+          </PermissionGuard>,
+        ),
+      },
+      // Parked page: no permission of its own until custom reports exist.
+      { path: "reports/custom", element: lazy_(<CustomReportsPage />) },
 
       // Vendors (specific routes must come before the purchases catch-all)
       {
