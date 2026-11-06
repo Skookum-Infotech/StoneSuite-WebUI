@@ -362,3 +362,100 @@ export interface InventoryReport<Row, Totals> {
   totals: Totals;
   rows: Row[];
 }
+
+/** The completion-date window the On-time and Lead Time reports send. */
+export interface CalendarWindowParams {
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  from: string;
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  to: string;
+}
+
+export type InstallSource = 'appointment' | 'plan';
+
+export interface UpcomingInstall {
+  orderId: string;
+  order: string;
+  customer: string;
+  day: string;
+  weekStart: string;
+  /** A booked install visit, or the order's planned Installation date. */
+  source: InstallSource;
+  /** Lead of the crew on a booked visit; empty for a planned date. */
+  lead: string;
+}
+
+export interface WeekCount {
+  weekStart: string;
+  count: number;
+}
+
+export interface UpcomingInstallsReport {
+  weeks: number;
+  perWeek: WeekCount[];
+  rows: UpcomingInstall[];
+}
+
+export interface OverdueActivity {
+  orderId: string;
+  order: string;
+  customer: string;
+  orderStatus: string;
+  code: string;
+  activity: string;
+  scheduledAt: string;
+  daysOverdue: number;
+}
+
+export interface ActivityCount {
+  code: string;
+  activity: string;
+  count: number;
+}
+
+export interface OverdueTotals {
+  activities: number;
+  orders: number;
+  oldestDays: number;
+  byActivity: ActivityCount[];
+}
+
+export interface OnTimeRow {
+  code: string;
+  activity: string;
+  completed: number;
+  onTime: number;
+  late: number;
+  onTimePercent: number;
+  /** Average days late among the late completions; null when none were late. */
+  avgDaysLate: number | null;
+}
+
+export interface OnTimeTotals {
+  completed: number;
+  onTime: number;
+  late: number;
+  onTimePercent: number;
+}
+
+export interface LeadTimeRow {
+  /** ISO `yyyy-mm-dd`, first day of the month. */
+  period: string;
+  orders: number;
+  avgDays: number;
+  medianDays: number;
+  minDays: number;
+  maxDays: number;
+}
+
+export interface LeadTimeTotals {
+  orders: number;
+  avgDays: number;
+  minDays: number;
+  maxDays: number;
+}
+
+export interface CalendarReport<Row, Totals> {
+  totals: Totals;
+  rows: Row[];
+}

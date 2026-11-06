@@ -1,5 +1,16 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
+  CalendarReport,
+  CalendarWindowParams,
+  LeadTimeRow,
+  LeadTimeTotals,
+  OnTimeRow,
+  OnTimeTotals,
+  OverdueActivity,
+  OverdueTotals,
+  UpcomingInstall,
+  UpcomingInstallsReport,
+  WeekCount,
   InventoryMovementParams,
   InventoryReport,
   LowStockRow,
@@ -100,6 +111,23 @@ function toInventory<Row, Totals>(w: InventoryWire<Row, Totals>): InventoryRepor
   return { totals: w.totals, rows: w.rows ?? [] };
 }
 
+interface CalendarWire<Row, Totals> {
+  success: boolean;
+  totals: Totals;
+  rows?: Row[];
+}
+
+interface UpcomingInstallsWire {
+  success: boolean;
+  weeks: number;
+  perWeek?: WeekCount[];
+  rows?: UpcomingInstall[];
+}
+
+function toCalendar<Row, Totals>(w: CalendarWire<Row, Totals>): CalendarReport<Row, Totals> {
+  return { totals: w.totals, rows: w.rows ?? [] };
+}
+
 // Window + basis (+ bucket) go as query params. The server resolves tenant,
 // user and data scope from the JWT — never pass them from here.
 export const reportsService = {
@@ -177,4 +205,24 @@ export const reportsService = {
     tenantClient
       .get<InventoryWire<MovementRow, MovementTotals>>('/tenant/reports/inventory/movement', { params })
       .then((r) => toInventory(r.data)),
+
+  upcomingInstalls: (weeks: number): Promise<UpcomingInstallsReport> =>
+    tenantClient
+      .get<UpcomingInstallsWire>('/tenant/reports/calendar/upcoming-installs', { params: { weeks } })
+      .then((r) => ({ weeks: r.data.weeks, perWeek: r.data.perWeek ?? [], rows: r.data.rows ?? [] })),
+
+  overdueActivities: (): Promise<CalendarReport<OverdueActivity, OverdueTotals>> =>
+    tenantClient
+      .get<CalendarWire<OverdueActivity, OverdueTotals>>('/tenant/reports/calendar/overdue')
+      .then((r) => toCalendar(r.data)),
+
+  onTimeCompletion: (params: CalendarWindowParams): Promise<CalendarReport<OnTimeRow, OnTimeTotals>> =>
+    tenantClient
+      .get<CalendarWire<OnTimeRow, OnTimeTotals>>('/tenant/reports/calendar/on-time', { params })
+      .then((r) => toCalendar(r.data)),
+
+  orderToInstallLeadTime: (params: CalendarWindowParams): Promise<CalendarReport<LeadTimeRow, LeadTimeTotals>> =>
+    tenantClient
+      .get<CalendarWire<LeadTimeRow, LeadTimeTotals>>('/tenant/reports/calendar/lead-time', { params })
+      .then((r) => toCalendar(r.data)),
 };

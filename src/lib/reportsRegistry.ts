@@ -56,10 +56,10 @@ export const REPORT_MODULES: ReportModuleInfo[] = [
     description: 'Installs and scheduled activities: what is coming and what is late.',
     resource: 'report_calendar',
     reports: [
-      { id: 'upcoming-installs', title: 'Upcoming Installs', description: 'Installs by week for the weeks ahead.' },
-      { id: 'overdue-activities', title: 'Overdue Activities', description: 'Scheduled activities past their planned date and not completed.' },
-      { id: 'on-time', title: 'On-time Completion', description: 'Share of activities completed on or before their planned date.' },
-      { id: 'lead-time', title: 'Order-to-Install Lead Time', description: 'Average days from order to install, by month.' },
+      { id: 'upcoming-installs', title: 'Upcoming Installs', description: 'Installs by week for the weeks ahead.', path: '/reports/calendar/upcoming-installs' },
+      { id: 'overdue-activities', title: 'Overdue Activities', description: 'Scheduled activities past their planned date and not completed.', path: '/reports/calendar/overdue' },
+      { id: 'on-time', title: 'On-time Completion', description: 'Share of activities completed on or before their planned date.', path: '/reports/calendar/on-time' },
+      { id: 'lead-time', title: 'Order-to-Install Lead Time', description: 'Average days from order to install, by month.', path: '/reports/calendar/lead-time' },
     ],
   },
   {

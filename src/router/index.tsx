@@ -408,6 +408,10 @@ const StockOnHandPage = lazyWithRetry(() => import("@/pages/reports/inventory/St
 const SlabAvailabilityPage = lazyWithRetry(() => import("@/pages/reports/inventory/SlabAvailabilityPage"));
 const LowStockPage = lazyWithRetry(() => import("@/pages/reports/inventory/LowStockPage"));
 const StockMovementPage = lazyWithRetry(() => import("@/pages/reports/inventory/StockMovementPage"));
+const UpcomingInstallsPage = lazyWithRetry(() => import("@/pages/reports/calendar/UpcomingInstallsPage"));
+const OverdueActivitiesPage = lazyWithRetry(() => import("@/pages/reports/calendar/OverdueActivitiesPage"));
+const OnTimeCompletionPage = lazyWithRetry(() => import("@/pages/reports/calendar/OnTimeCompletionPage"));
+const LeadTimePage = lazyWithRetry(() => import("@/pages/reports/calendar/LeadTimePage"));
 const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
 const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
 const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
@@ -1019,6 +1023,38 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="report_inventory" action="read">
             <StockMovementPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/upcoming-installs",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <UpcomingInstallsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/overdue",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <OverdueActivitiesPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/on-time",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <OnTimeCompletionPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/calendar/lead-time",
+        element: lazy_(
+          <PermissionGuard resource="report_calendar" action="read">
+            <LeadTimePage />
           </PermissionGuard>,
         ),
       },
