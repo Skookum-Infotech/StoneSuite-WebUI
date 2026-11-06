@@ -1,5 +1,16 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
+  ApAgingReport,
+  ApAgingRow,
+  ApAgingTotals,
+  OpenPoRow,
+  OpenPoTotals,
+  PurchaseItemRow,
+  PurchaseItemTotals,
+  PurchaseVendorRow,
+  PurchaseVendorTotals,
+  PurchasesReport,
+  PurchasesReportParams,
   CrmFunnel,
   CrmFunnelStage,
   CrmReportParams,
@@ -56,6 +67,17 @@ interface CrmStaleWire {
   rows?: CrmStaleRecord[];
 }
 
+interface PurchasesWire<Row, Totals> {
+  success: boolean;
+  totals: Totals;
+  rows?: Row[];
+  labels?: string[];
+}
+
+function toPurchases<Row, Totals>(w: PurchasesWire<Row, Totals>): PurchasesReport<Row, Totals> {
+  return { totals: w.totals, rows: w.rows ?? [] };
+}
+
 // Window + basis (+ bucket) go as query params. The server resolves tenant,
 // user and data scope from the JWT — never pass them from here.
 export const reportsService = {
@@ -93,4 +115,24 @@ export const reportsService = {
     tenantClient
       .get<CrmStaleWire>('/tenant/reports/crm/stale', { params: { days } })
       .then((r) => ({ days: r.data.days, rows: r.data.rows ?? [] })),
+
+  purchasesByVendor: (params: PurchasesReportParams): Promise<PurchasesReport<PurchaseVendorRow, PurchaseVendorTotals>> =>
+    tenantClient
+      .get<PurchasesWire<PurchaseVendorRow, PurchaseVendorTotals>>('/tenant/reports/purchases/by-vendor', { params })
+      .then((r) => toPurchases(r.data)),
+
+  purchasesByItem: (params: PurchasesReportParams): Promise<PurchasesReport<PurchaseItemRow, PurchaseItemTotals>> =>
+    tenantClient
+      .get<PurchasesWire<PurchaseItemRow, PurchaseItemTotals>>('/tenant/reports/purchases/by-item', { params })
+      .then((r) => toPurchases(r.data)),
+
+  openPurchaseOrders: (): Promise<PurchasesReport<OpenPoRow, OpenPoTotals>> =>
+    tenantClient
+      .get<PurchasesWire<OpenPoRow, OpenPoTotals>>('/tenant/reports/purchases/open-pos')
+      .then((r) => toPurchases(r.data)),
+
+  apAging: (): Promise<ApAgingReport> =>
+    tenantClient
+      .get<PurchasesWire<ApAgingRow, ApAgingTotals>>('/tenant/reports/purchases/ap-aging')
+      .then((r) => ({ ...toPurchases(r.data), labels: r.data.labels ?? [] })),
 };

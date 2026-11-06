@@ -400,6 +400,10 @@ const CustomReportsPage = lazyWithRetry(() => import("@/pages/reports/CustomRepo
 const ConversionFunnelPage = lazyWithRetry(() => import("@/pages/reports/crm/ConversionFunnelPage"));
 const LeadSourcePage = lazyWithRetry(() => import("@/pages/reports/crm/LeadSourcePage"));
 const StaleRecordsPage = lazyWithRetry(() => import("@/pages/reports/crm/StaleRecordsPage"));
+const PurchasesByVendorPage = lazyWithRetry(() => import("@/pages/reports/purchases/PurchasesByVendorPage"));
+const PurchasesByItemPage = lazyWithRetry(() => import("@/pages/reports/purchases/PurchasesByItemPage"));
+const OpenPurchaseOrdersPage = lazyWithRetry(() => import("@/pages/reports/purchases/OpenPurchaseOrdersPage"));
+const ApAgingPage = lazyWithRetry(() => import("@/pages/reports/purchases/ApAgingPage"));
 const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
 const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
 const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
@@ -947,6 +951,38 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="report_crm" action="read">
             <StaleRecordsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/by-vendor",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <PurchasesByVendorPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/by-item",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <PurchasesByItemPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/open-pos",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <OpenPurchaseOrdersPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/purchases/ap-aging",
+        element: lazy_(
+          <PermissionGuard resource="report_purchases" action="read">
+            <ApAgingPage />
           </PermissionGuard>,
         ),
       },

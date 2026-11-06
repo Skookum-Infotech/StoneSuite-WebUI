@@ -32,10 +32,10 @@ export const REPORT_MODULES: ReportModuleInfo[] = [
     description: 'What you buy, from whom, and what you still owe.',
     resource: 'report_purchases',
     reports: [
-      { id: 'by-vendor', title: 'Purchases by Vendor', description: 'Billed amount, PO count and open PO value per vendor.' },
-      { id: 'by-item', title: 'Purchases by Item', description: 'Quantity bought and average, lowest and highest unit cost per item.' },
-      { id: 'open-pos', title: 'Open POs & Receiving', description: 'Purchase orders not fully received, and how late they are.' },
-      { id: 'ap-aging', title: 'AP Aging', description: 'Unpaid vendor bills by vendor in 0-30, 31-60, 61-90 and 90+ day buckets.' },
+      { id: 'by-vendor', title: 'Purchases by Vendor', description: 'Billed amount, PO count and open PO value per vendor.', path: '/reports/purchases/by-vendor' },
+      { id: 'by-item', title: 'Purchases by Item', description: 'Quantity bought and average, lowest and highest unit cost per item.', path: '/reports/purchases/by-item' },
+      { id: 'open-pos', title: 'Open POs & Receiving', description: 'Purchase orders not fully received, and how late they are.', path: '/reports/purchases/open-pos' },
+      { id: 'ap-aging', title: 'AP Aging', description: 'Unpaid vendor bills by vendor in 0-30, 31-60, 61-90 and 90+ day buckets.', path: '/reports/purchases/ap-aging' },
     ],
   },
   {

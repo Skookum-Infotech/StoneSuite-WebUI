@@ -162,3 +162,100 @@ export interface CrmStaleReport {
   days: number;
   rows: CrmStaleRecord[];
 }
+
+/** The date window the windowed Purchases reports send. */
+export interface PurchasesReportParams {
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  from: string;
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  to: string;
+}
+
+export interface PurchaseVendorRow {
+  vendorId: string;
+  name: string;
+  poCount: number;
+  poValue: number;
+  avgPoValue: number;
+  openPoValue: number;
+  billCount: number;
+  billed: number;
+  balanceOwed: number;
+}
+
+export interface PurchaseVendorTotals {
+  poCount: number;
+  poValue: number;
+  openPoValue: number;
+  billCount: number;
+  billed: number;
+  balanceOwed: number;
+}
+
+export interface PurchaseItemRow {
+  itemId: string;
+  sku: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  received: number;
+  poCount: number;
+  spend: number;
+  avgCost: number;
+  minCost: number;
+  maxCost: number;
+  firstCost: number;
+  lastCost: number;
+  /** Move from the first to the last unit cost in the window; null with no starting cost. */
+  costChangePercent: number | null;
+}
+
+export interface PurchaseItemTotals {
+  spend: number;
+  items: number;
+  poCount: number;
+}
+
+export interface OpenPoRow {
+  id: string;
+  number: string;
+  vendor: string;
+  status: string;
+  orderDate: string;
+  expectedDate: string | null;
+  value: number;
+  outstanding: number;
+  receivedPercent: number;
+  daysOverdue: number;
+}
+
+export interface OpenPoTotals {
+  count: number;
+  outstanding: number;
+  overdueCount: number;
+  overdueValue: number;
+}
+
+export interface ApAgingRow {
+  vendorId: string;
+  name: string;
+  bills: number;
+  /** One amount per label, in label order. */
+  buckets: number[];
+  total: number;
+}
+
+export interface ApAgingTotals {
+  bills: number;
+  buckets: number[];
+  total: number;
+}
+
+export interface PurchasesReport<Row, Totals> {
+  totals: Totals;
+  rows: Row[];
+}
+
+export interface ApAgingReport extends PurchasesReport<ApAgingRow, ApAgingTotals> {
+  labels: string[];
+}
