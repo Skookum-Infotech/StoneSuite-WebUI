@@ -68,7 +68,7 @@ export const REPORT_MODULES: ReportModuleInfo[] = [
     description: 'Profit and loss from your posted journal entries.',
     resource: 'report_finance',
     reports: [
-      { id: 'profit-loss', title: 'Profit & Loss', description: 'Income minus expenses by account for the period.' },
+      { id: 'profit-loss', title: 'Profit & Loss', description: 'Income minus expenses by account for the period.', path: '/reports/finance/profit-loss' },
     ],
   },
 ];

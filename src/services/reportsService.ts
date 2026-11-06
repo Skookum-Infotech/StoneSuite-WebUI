@@ -1,5 +1,8 @@
 import { tenantClient } from '@/api/tenantClient';
 import type {
+  FinanceWindowParams,
+  LedgerLine,
+  ProfitLoss,
   CalendarReport,
   CalendarWindowParams,
   LeadTimeRow,
@@ -225,4 +228,14 @@ export const reportsService = {
     tenantClient
       .get<CalendarWire<LeadTimeRow, LeadTimeTotals>>('/tenant/reports/calendar/lead-time', { params })
       .then((r) => toCalendar(r.data)),
+
+  profitLoss: (params: FinanceWindowParams): Promise<ProfitLoss> =>
+    tenantClient
+      .get<{ success: boolean; report: ProfitLoss }>('/tenant/reports/finance/profit-loss', { params })
+      .then((r) => r.data.report),
+
+  accountLines: (accountId: string, params: FinanceWindowParams): Promise<LedgerLine[]> =>
+    tenantClient
+      .get<{ success: boolean; lines?: LedgerLine[] }>('/tenant/reports/finance/account-lines', { params: { accountId, ...params } })
+      .then((r) => r.data.lines ?? []),
 };

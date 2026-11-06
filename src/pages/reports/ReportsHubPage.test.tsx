@@ -1,7 +1,27 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import type * as Registry from '@/lib/reportsRegistry';
 import ReportsHubPage from './ReportsHubPage';
+
+// Every real module is fully built now, so one fake module with a planned report
+// stands in for the "coming soon" card.
+vi.mock('@/lib/reportsRegistry', async (importOriginal) => {
+  const actual = await importOriginal<typeof Registry>();
+  return {
+    ...actual,
+    findReportModule: (slug: string | undefined) =>
+      slug === 'planned-demo'
+        ? {
+            slug: 'planned-demo',
+            label: 'Demo',
+            description: 'A module with a report still planned.',
+            resource: 'report_demo',
+            reports: [{ id: 'later', title: 'Future Report', description: 'Not built yet.' }],
+          }
+        : actual.findReportModule(slug),
+  };
+});
 
 // The router registers each hub as a static path (reports/sales), so the page
 // gets its module as a prop, not from a URL param.
@@ -23,10 +43,10 @@ describe('ReportsHubPage', () => {
   });
 
   it('lists planned reports as coming soon, not as links', () => {
-    renderHub('finance');
-    const planned = screen.getByLabelText('Profit & Loss (coming soon)');
+    renderHub('planned-demo');
+    const planned = screen.getByLabelText('Future Report (coming soon)');
     expect(planned.tagName).toBe('LI');
-    expect(screen.queryByRole('link', { name: /Profit/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Future Report/ })).not.toBeInTheDocument();
   });
 
   it('says so for an unknown module', () => {
@@ -71,5 +91,12 @@ describe('ReportsHubPage Calendar', () => {
     expect(screen.getByRole('link', { name: 'Open Overdue Activities' })).toHaveAttribute('href', '/reports/calendar/overdue');
     expect(screen.getByRole('link', { name: 'Open On-time Completion' })).toHaveAttribute('href', '/reports/calendar/on-time');
     expect(screen.getByRole('link', { name: 'Open Order-to-Install Lead Time' })).toHaveAttribute('href', '/reports/calendar/lead-time');
+  });
+});
+
+describe('ReportsHubPage Finance', () => {
+  it('links the Profit & Loss report', () => {
+    renderHub('finance');
+    expect(screen.getByRole('link', { name: 'Open Profit & Loss' })).toHaveAttribute('href', '/reports/finance/profit-loss');
   });
 });

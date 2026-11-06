@@ -459,3 +459,55 @@ export interface CalendarReport<Row, Totals> {
   totals: Totals;
   rows: Row[];
 }
+
+/** The journal-entry date window the Finance reports send. */
+export interface FinanceWindowParams {
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  from: string;
+  /** ISO `yyyy-mm-dd`, inclusive. */
+  to: string;
+}
+
+export interface PlAccount {
+  /** The account's uuid, used to load its journal lines. */
+  id: string;
+  code: string;
+  name: string;
+  amount: number;
+}
+
+export interface PlSubcategory {
+  name: string;
+  total: number;
+  accounts: PlAccount[];
+}
+
+export type PlKind = 'income' | 'expense';
+
+export interface PlSection {
+  code: number;
+  name: string;
+  /** Income sections are credit less debit, expense sections debit less credit. */
+  kind: PlKind;
+  total: number;
+  subcategories: PlSubcategory[];
+}
+
+export interface ProfitLoss {
+  sections: PlSection[];
+  income: number;
+  expenses: number;
+  grossProfit: number;
+  netProfit: number;
+  netMarginPercent: number;
+}
+
+export interface LedgerLine {
+  entryId: string;
+  number: string;
+  date: string;
+  memo: string;
+  sourceType: string;
+  debit: number;
+  credit: number;
+}

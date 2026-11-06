@@ -412,6 +412,7 @@ const UpcomingInstallsPage = lazyWithRetry(() => import("@/pages/reports/calenda
 const OverdueActivitiesPage = lazyWithRetry(() => import("@/pages/reports/calendar/OverdueActivitiesPage"));
 const OnTimeCompletionPage = lazyWithRetry(() => import("@/pages/reports/calendar/OnTimeCompletionPage"));
 const LeadTimePage = lazyWithRetry(() => import("@/pages/reports/calendar/LeadTimePage"));
+const ProfitLossPage = lazyWithRetry(() => import("@/pages/reports/finance/ProfitLossPage"));
 const SalesByCustomerPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByCustomerPage"));
 const SalesByItemPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesByItemPage"));
 const SalesTrendPage = lazyWithRetry(() => import("@/pages/reports/sales/SalesTrendPage"));
@@ -1055,6 +1056,14 @@ export const router = createBrowserRouter([
         element: lazy_(
           <PermissionGuard resource="report_calendar" action="read">
             <LeadTimePage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/finance/profit-loss",
+        element: lazy_(
+          <PermissionGuard resource="report_finance" action="read">
+            <ProfitLossPage />
           </PermissionGuard>,
         ),
       },
