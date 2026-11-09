@@ -99,7 +99,7 @@ export type PaymentSummary = Pick<
   Payment,
   | 'id' | 'paymentNumber' | 'status' | 'statusCode' | 'approvalStatus' | 'customer'
   | 'paymentDate' | 'amount' | 'unappliedAmount' | 'createdAt' | 'updatedAt'
-> & Partial<Pick<Payment, 'applications'>>;
+>;
 
 export interface PaymentSearchRequest {
   filters?: FilterClause[];

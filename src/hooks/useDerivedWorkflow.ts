@@ -3,7 +3,6 @@ import { salesOrderService } from '@/services/salesOrderService';
 import { invoiceService } from '@/services/invoiceService';
 import { paymentService } from '@/services/paymentService';
 import { mergeWorkflow, type DerivedRecords } from '@/lib/derivedWorkflow';
-import { useSalesOrderDownstream } from '@/hooks/useSalesOrderDownstream';
 import { usePurchaseDerivedWorkflow, type PurchaseWorkflowLinks } from '@/hooks/usePurchaseDerivedWorkflow';
 import type { WorkflowBlock } from '@/types/workflow';
 
@@ -39,26 +38,15 @@ export function useDerivedWorkflow(links: WorkflowLinks, server?: WorkflowBlock)
   });
 
   const purchaseDerived = usePurchaseDerivedWorkflow(links);
-  const downstream = useSalesOrderDownstream({ id: order.data?.id, number: order.data?.salesOrderNumber, customerName: order.data?.customer?.name });
   const derived: DerivedRecords = {};
   if (payment.data) {
     derived.payment = { id: payment.data.id, number: payment.data.paymentNumber, statusCode: payment.data.statusCode, status: payment.data.status };
   }
-  const otherPayments = Array.isArray(downstream.payment) ? downstream.payment : [];
-  if (otherPayments.length) {
-    const own = derived.payment && !Array.isArray(derived.payment) ? [derived.payment] : [];
-    derived.payment = [...own, ...otherPayments.filter((p) => p.id !== own[0]?.id)];
-  }
   if (invoice.data) {
     derived.invoice = { id: invoice.data.id, number: invoice.data.invoiceNumber, statusCode: invoice.data.statusCode, status: invoice.data.status };
-  }
-  const siblings = Array.isArray(downstream.invoice) ? downstream.invoice : [];
-  if (siblings.length) {
-    const own = derived.invoice && !Array.isArray(derived.invoice) ? [derived.invoice] : [];
-    derived.invoice = [...own, ...siblings.filter((s) => s.id !== own[0]?.id)];
   }
   if (order.data) {
     derived.salesOrder = { id: order.data.id, number: order.data.salesOrderNumber, statusCode: order.data.statusCode, status: order.data.status };
   }
-  return mergeWorkflow(server, { ...downstream, ...derived, ...purchaseDerived });
+  return mergeWorkflow(server, { ...derived, ...purchaseDerived });
 }
