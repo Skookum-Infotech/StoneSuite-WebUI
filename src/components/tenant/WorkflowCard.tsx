@@ -1,4 +1,4 @@
-import { buildWorkflowStages } from '@/lib/workflowStages';
+import { buildWorkflowStages, onlyLinkedStages } from '@/lib/workflowStages';
 import type { ProgressModule } from '@/lib/orderProgress';
 import type { WorkflowBlock } from '@/types/workflow';
 import { useDerivedWorkflow, type WorkflowLinks } from '@/hooks/useDerivedWorkflow';
@@ -26,7 +26,8 @@ const NO_WORKFLOW: WorkflowBlock = { stages: [] };
  *  record and status. Hovering a stage lists its sub-statuses. */
 export function WorkflowCard({ module, statusCode, statusLabel, workflow = NO_WORKFLOW, links = NO_LINKS }: WorkflowCardProps) {
   const merged = useDerivedWorkflow(links, workflow);
-  const view = buildWorkflowStages(module, statusLabel, merged, statusCode);
+  const full = buildWorkflowStages(module, statusLabel, merged, statusCode);
+  const view = full && onlyLinkedStages(full);
   if (!view) return null;
 
   return (
