@@ -35,9 +35,9 @@ describe('REPORT_MODULES', () => {
     }
   });
 
-  it('shows one row per report resource in the role matrix, and none for the parked Custom page', () => {
+  it('shows one row per report resource in the role matrix, then Custom Reports with its own resource', () => {
     const rows = buildPermModules().find((m) => m.id === 'reports')?.rows ?? [];
-    expect(rows.map((r) => r.resource)).toEqual(REPORT_MODULES.map((m) => m.resource));
+    expect(rows.map((r) => r.resource)).toEqual([...REPORT_MODULES.map((m) => m.resource), 'custom_report']);
   });
 });
 

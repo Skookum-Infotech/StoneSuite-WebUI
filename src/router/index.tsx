@@ -397,6 +397,7 @@ const InstallSchedulePage = lazyWithRetry(
 // Reports module
 const ReportsHubPage = lazyWithRetry(() => import("@/pages/reports/ReportsHubPage"));
 const CustomReportsPage = lazyWithRetry(() => import("@/pages/reports/CustomReportsPage"));
+const CustomReportBuilderPage = lazyWithRetry(() => import("@/pages/reports/custom/CustomReportBuilderPage"));
 const ConversionFunnelPage = lazyWithRetry(() => import("@/pages/reports/crm/ConversionFunnelPage"));
 const LeadSourcePage = lazyWithRetry(() => import("@/pages/reports/crm/LeadSourcePage"));
 const StaleRecordsPage = lazyWithRetry(() => import("@/pages/reports/crm/StaleRecordsPage"));
@@ -1091,8 +1092,30 @@ export const router = createBrowserRouter([
           </PermissionGuard>,
         ),
       },
-      // Parked page: no permission of its own until custom reports exist.
-      { path: "reports/custom", element: lazy_(<CustomReportsPage />) },
+      {
+        path: "reports/custom",
+        element: lazy_(
+          <PermissionGuard resource="custom_report" action="read">
+            <CustomReportsPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/custom/new",
+        element: lazy_(
+          <PermissionGuard resource="custom_report" action="read">
+            <CustomReportBuilderPage />
+          </PermissionGuard>,
+        ),
+      },
+      {
+        path: "reports/custom/:id",
+        element: lazy_(
+          <PermissionGuard resource="custom_report" action="read">
+            <CustomReportBuilderPage />
+          </PermissionGuard>,
+        ),
+      },
 
       // Vendors (specific routes must come before the purchases catch-all)
       {

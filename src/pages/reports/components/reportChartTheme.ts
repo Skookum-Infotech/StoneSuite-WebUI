@@ -33,3 +33,12 @@ export function compactMoney(value: number): string {
 export function tooltipMoney(value: unknown): string {
   return formatMoney(typeof value === "number" ? value : Number(value));
 }
+
+const MAX_TOOLTIP_DECIMALS = 4;
+
+/** A count or quantity: grouped digits, never a currency symbol. */
+export function tooltipNumber(value: unknown): string {
+  return (typeof value === "number" ? value : Number(value)).toLocaleString(undefined, {
+    maximumFractionDigits: MAX_TOOLTIP_DECIMALS,
+  });
+}
