@@ -192,16 +192,6 @@ export function buildWorkflowStages(
   return { stages, hereIndex: stages.findIndex((s) => s.state === 'here') };
 }
 
-/** Narrows the full flow to what this customer actually has: the page's own
- *  stage, every stage holding at least one record that has started, and a stage
- *  the server says has records the caller may not see. Empty stages (Not linked,
- *  Not started, No refund) are dropped, so a record that went Quote, then Invoice
- *  shows just those, not the whole A to Z. */
-export function onlyLinkedStages(view: { stages: WorkflowStageView[] }): { stages: WorkflowStageView[]; hereIndex: number } {
-  const stages = view.stages.filter((s) => s.state === 'here' || s.hidden || (s.records.length > 0 && s.state !== 'upcoming'));
-  return { stages, hereIndex: stages.findIndex((s) => s.state === 'here') };
-}
-
 const MAX_PANEL_STEPS = 8;
 const PANEL_STEPS_AFTER_CURRENT = 3;
 
