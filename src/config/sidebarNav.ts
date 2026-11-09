@@ -608,8 +608,9 @@ export const sidebarNav: SidebarNavConfig = {
           matchPaths: ["/reports"],
           // One read grant per sub-module (report_<module>:read), so a role can
           // get Sales reports without CRM reports. These are the only rows the
-          // role matrix shows for the group. Custom Reports is a parked page
-          // with no resource yet, visible to every signed-in staff user.
+          // role matrix shows for the group. Custom Reports has its own
+          // resource (read = open/run, create = save/share); each source a
+          // custom report uses also needs that module's report grant.
           children: [
             {
               type: "link",
@@ -672,7 +673,7 @@ export const sidebarNav: SidebarNavConfig = {
               path: "/reports/custom",
               icon: SlidersHorizontal,
               iconColor: "text-violet-500 dark:text-violet-400",
-              alwaysVisible: true,
+              permission: { resource: "custom_report", action: "read" },
             },
           ],
         },

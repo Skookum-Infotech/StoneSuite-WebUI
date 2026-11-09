@@ -12,6 +12,7 @@ import {
   compactMoney,
   shortLabel,
   tooltipMoney,
+  tooltipNumber,
   type ChartDatum,
 } from "./reportChartTheme";
 
@@ -28,6 +29,8 @@ interface ReportTopBarChartProps {
   label: string;
   /** Series names; Sales reports use the Revenue / Margin default. */
   names?: SeriesNames;
+  /** How the values read in the tooltip; counts and quantities are not money. */
+  valueFormat?: "money" | "number";
 }
 
 const SALES_NAMES: SeriesNames = { primary: "Revenue", secondary: "Margin" };
@@ -36,7 +39,7 @@ const MIN_ROW_HEIGHT = 34;
 /** Horizontal money bars for the first TOP_N rows (the server already ranks
  *  them). Used by Sales (revenue + margin), Purchases (PO value + billed,
  *  spend) and AP aging (balance per bucket). */
-export function ReportTopBarChart({ data, label, names = SALES_NAMES }: ReportTopBarChartProps) {
+export function ReportTopBarChart({ data, label, names = SALES_NAMES, valueFormat = "money" }: ReportTopBarChartProps) {
   const top = data.slice(0, TOP_N);
   if (top.length === 0) return null;
   return (
@@ -54,7 +57,7 @@ export function ReportTopBarChart({ data, label, names = SALES_NAMES }: ReportTo
               tickFormatter={shortLabel}
               tick={{ fontSize: AXIS_FONT_SIZE, fill: AXIS_COLOR }}
             />
-            <Tooltip formatter={tooltipMoney} />
+            <Tooltip formatter={valueFormat === "number" ? tooltipNumber : tooltipMoney} />
             {names.secondary && <Legend wrapperStyle={{ fontSize: AXIS_FONT_SIZE }} />}
             <Bar dataKey="revenue" name={names.primary} fill={REVENUE_COLOR} radius={[0, BAR_RADIUS, BAR_RADIUS, 0]} />
             {names.secondary && (
