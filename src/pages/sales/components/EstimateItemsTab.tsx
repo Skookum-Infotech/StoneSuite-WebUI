@@ -7,10 +7,10 @@ import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
-import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInputCells';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LineSizeInputCells, LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { THICKNESS_COL, sizeFromItemMm, thicknessFromItemMm } from '@/lib/lineThickness';
 import {
-  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
 import { blockEnterSubmit } from '@/lib/lineEntryKeys';
 import { KitHeadingRow, KIT_ROW_CLS } from '@/components/inventory/KitHeadingRow';
@@ -34,6 +34,7 @@ const ITEM_COLS = [
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
   ...LINE_DIMENSION_COLS,
+  THICKNESS_COL,
   { label: 'Units', w: 'w-16' },
   { label: 'Qty', w: 'w-20', right: true },
   { label: 'Unit Price', w: 'w-20', right: true },
@@ -66,16 +67,25 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
   const unitCodeFor = useItemUnitCode();
-  const applyCatalogItem = (prev: Omit<EstimateLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc(withoutUnsupportedSize({
-    ...prev,
-    itemName: item.name,
-    units: unitCodeFor(item),
-    itemDescription: item.description,
-    itemSku: item.sku,
-    unitPrice: String(item.unitPrice),
-    inventoryItemUuid: item.id,
-    dimensionUnit: itemDimensionUnit(item),
-  }));
+  const applyCatalogItem = (prev: Omit<EstimateLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
+    const units = unitCodeFor(item);
+    const dimensionUnit = itemDimensionUnit(item);
+    return recalc(withoutUnsupportedSize({
+      ...prev,
+      // Thickness, length and width start at the item's own standard slab, in the
+      // unit the line will be measured in; blank when the item states none.
+      thickness: thicknessFromItemMm(item.thicknessMm, dimensionUnit, units),
+      length: sizeFromItemMm(item.lengthMm, dimensionUnit, units),
+      width: sizeFromItemMm(item.widthMm, dimensionUnit, units),
+      itemName: item.name,
+      units,
+      itemDescription: item.description,
+      itemSku: item.sku,
+      unitPrice: String(item.unitPrice),
+      inventoryItemUuid: item.id,
+      dimensionUnit,
+    }));
+  };
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
@@ -95,7 +105,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
     returnedKit,
   });
 
-  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'length' | 'width' | 'slabs', val: string) => {
+  const updateDraft = (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'length' | 'width' | 'slabs' | 'thickness', val: string) => {
     const nextVal = key === 'discount' ? clampPercent(val) : clampDimensionField(key, val, draft.dimensionUnit);
     setDraft((prev) => recalc({ ...prev, [key]: nextVal }));
   };
@@ -203,7 +213,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
-                  <LineDimensionViewCells length={row.length} width={row.width} slabs={row.slabs} unit={row.dimensionUnit} />
+                  <LineSizeViewCells size={row} unit={row.dimensionUnit} units={row.units} />
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.unitPrice ? `$${parseFloat(row.unitPrice).toFixed(2)}` : '—'}</td>
@@ -281,7 +291,7 @@ export function EstimateItemsTab({ items, onUpdate, headerTaxPercent }: {
 function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
   draft: Omit<EstimateLineItem, 'id' | 'lineNo'>;
-  onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'length' | 'width' | 'slabs', val: string) => void;
+  onChange: (key: 'quantity' | 'unitPrice' | 'discount' | 'itemDescription' | 'length' | 'width' | 'slabs' | 'thickness', val: string) => void;
   picker: InventoryItemPickerHandlers;
 }) {
   // Quantity is worked out from the dimensions while they are stated, so it is
@@ -297,10 +307,10 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
       <td className="px-2 py-1.5 text-stone-500 font-mono text-2xs">{draft.itemSku || '—'}</td>
-      <LineDimensionInputCells
-        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '' }}
-        unit={normalizeUnit(draft.dimensionUnit)}
-        enabled={isAreaUnit(draft.units)}
+      <LineSizeInputCells
+        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '', thickness: draft.thickness ?? '' }}
+        dimensionUnit={draft.dimensionUnit}
+        units={draft.units}
         onChange={onChange}
       />
       <td className="px-2 py-1.5 text-stone-500 text-2xs">{draft.units || '—'}</td>

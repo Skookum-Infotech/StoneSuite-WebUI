@@ -7,6 +7,7 @@ import type { CrmLookups } from '@/services/lookupService';
 import type { Invoice, InvoiceCreatePayload, InvoiceLineInput } from '@/types/invoice';
 import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
+import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -520,6 +521,7 @@ function toLineInput(item: InvoiceLineItem, lineNo: number): InvoiceLineInput {
     discountPercent: toNum(item.discount),
     ...kitPayload(item),
     ...dimensionsPayload(item, item.units),
+    thickness: thicknessPayload(item.thickness, item.units),
   };
 }
 
@@ -658,6 +660,7 @@ export function fromInvoice(invoice: Invoice): {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     ...kitFromLine(line),
     ...dimensionsFromLine(line),
+    thickness: thicknessText(line.thickness),
   }));
 
   return {

@@ -61,6 +61,8 @@ export interface SalesOrderLineInput {
    *  the item's unit, then cm. */
   dimensionUnit?: string;
   slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
 }
 
 export interface SalesOrderCreatePayload {
@@ -139,6 +141,8 @@ export interface SalesOrderLine {
   /** The unit length and width were measured in. */
   dimensionUnit?: string | null;
   slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
 }
 
 // Full detail response (GET/Create/Update). Every field the create/update
