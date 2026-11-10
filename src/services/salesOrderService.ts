@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { isAxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
 import type { ApprovalRejection } from '@/types/tenant';
@@ -72,7 +73,7 @@ export const salesOrderService = {
     }
     return tenantClient
       .get<{
-        success: boolean; salesOrder: SalesOrder;
+        success: boolean; workflow?: WorkflowBlock; salesOrder: SalesOrder;
         approval?: {
           gated?: boolean; approvers?: SalesOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
@@ -82,6 +83,7 @@ export const salesOrderService = {
         const a = r.data.approval;
         return {
           ...r.data.salesOrder,
+          workflow: r.data.workflow ?? r.data.salesOrder.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,

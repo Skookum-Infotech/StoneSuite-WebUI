@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
@@ -40,7 +41,7 @@ export const purchaseOrderService = {
   getPurchaseOrder: (uuid: string): Promise<PurchaseOrder> =>
     tenantClient
       .get<{
-        success: boolean; purchaseOrder: PurchaseOrder; approval?: {
+        success: boolean; workflow?: WorkflowBlock; purchaseOrder: PurchaseOrder; approval?: {
           gated?: boolean; approvers?: PurchaseOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
         };
@@ -49,6 +50,7 @@ export const purchaseOrderService = {
         const a = r.data.approval;
         return {
           ...r.data.purchaseOrder,
+          workflow: r.data.workflow ?? r.data.purchaseOrder.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
