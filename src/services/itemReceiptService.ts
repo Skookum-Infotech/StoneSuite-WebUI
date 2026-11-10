@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type { AuditEntry } from '@/services/crmService';
 import type {
@@ -37,8 +38,8 @@ export const itemReceiptService = {
 
   getItemReceipt: (uuid: string): Promise<ItemReceipt> =>
     tenantClient
-      .get<{ success: boolean; itemReceipt: ItemReceipt }>(`${BASE}/${uuid}`)
-      .then((r) => r.data.itemReceipt),
+      .get<{ success: boolean; workflow?: WorkflowBlock; itemReceipt: ItemReceipt }>(`${BASE}/${uuid}`)
+      .then((r) => ({ ...r.data.itemReceipt, workflow: r.data.workflow ?? r.data.itemReceipt.workflow })),
 
   createItemReceipt: (payload: ItemReceiptCreatePayload): Promise<ItemReceipt> =>
     tenantClient
