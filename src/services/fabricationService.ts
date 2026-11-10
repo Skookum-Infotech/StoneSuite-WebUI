@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type {
   FabricationJob,
@@ -47,7 +48,7 @@ export const fabricationService = {
   getJob: (uuid: string): Promise<FabricationJob> =>
     tenantClient
       .get<{
-        success: boolean; fabricationJob: FabricationJob; approval?: {
+        success: boolean; workflow?: WorkflowBlock; fabricationJob: FabricationJob; approval?: {
           gated?: boolean; approvers?: FabricationJob['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean;
         };
@@ -56,6 +57,7 @@ export const fabricationService = {
         const a = r.data.approval;
         return {
           ...r.data.fabricationJob,
+          workflow: r.data.workflow ?? r.data.fabricationJob.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,

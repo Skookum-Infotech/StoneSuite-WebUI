@@ -1,3 +1,4 @@
+import type { WorkflowBlock } from '@/types/workflow';
 import { tenantClient } from '@/api/tenantClient';
 import type { ApprovalRejection } from '@/types/tenant';
 import type { AuditEntry } from '@/services/crmService';
@@ -35,7 +36,7 @@ export const quoteService = {
   getQuote: (uuid: string): Promise<Quote> =>
     tenantClient
       .get<{
-        success: boolean; quote: Quote;
+        success: boolean; workflow?: WorkflowBlock; quote: Quote;
         approval?: {
           gated?: boolean; approvers?: Quote['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
@@ -45,6 +46,7 @@ export const quoteService = {
         const a = r.data.approval;
         return {
           ...r.data.quote,
+          workflow: r.data.workflow ?? r.data.quote.workflow,
           gated: a?.gated ?? false,
           approvers: a?.approvers ?? [],
           requiredApprovals: a?.requiredApprovals ?? 0,
