@@ -36,14 +36,13 @@ function renderCard(wf?: WorkflowBlock) {
 }
 
 describe('WorkflowCard', () => {
-  it('shows only the stages that have records, with the current one marked', () => {
+  it('shows the five purchase stages with the current one marked', () => {
     renderCard(workflow);
     expect(screen.getByRole('list', { name: 'Progress Bar' })).toBeInTheDocument();
-    expect(screen.getByText('Stage 2 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Stage 2 of 5')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Requisition/ })).toHaveTextContent('REQ-0014 · Approved');
     expect(screen.getByText('Sent to Vendor').closest('li')).toHaveAttribute('aria-current', 'step');
-    expect(screen.queryByText('Not started')).not.toBeInTheDocument();
-    expect(screen.queryByText('Receiving')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Not started')).toHaveLength(3);
   });
 
   it('links a completed stage to its record', () => {
@@ -58,11 +57,10 @@ describe('WorkflowCard', () => {
     expect(panel.getByText(/Sent/)).toBeInTheDocument();
   });
 
-  it('shows just the current stage, with no empty rows, without a workflow block', () => {
+  it('shows the other stages as "Not linked" without a workflow block', () => {
     renderCard(undefined);
     expect(screen.getByText('Sent to Vendor')).toBeInTheDocument();
-    expect(screen.queryByText('Not linked')).not.toBeInTheDocument();
-    expect(screen.getByText('Stage 1 of 1')).toBeInTheDocument();
+    expect(screen.getAllByText('Not linked')).toHaveLength(4);
   });
 
   it('shows the source sales order on an invoice even when the server sent no workflow block', async () => {
