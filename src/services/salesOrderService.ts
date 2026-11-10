@@ -12,6 +12,7 @@ import type {
   SalesOrderSearchRequest,
   SalesOrderPage,
   SalesOrderInventoryRow,
+  StockShortage,
   SalesOrderScheduleActivity,
   SalesOrderScheduleActivityPatch,
   ScheduleFeed,
@@ -73,7 +74,7 @@ export const salesOrderService = {
     }
     return tenantClient
       .get<{
-        success: boolean; workflow?: WorkflowBlock; salesOrder: SalesOrder;
+        success: boolean; workflow?: WorkflowBlock; salesOrder: SalesOrder; stockShortages?: StockShortage[] | null;
         approval?: {
           gated?: boolean; approvers?: SalesOrder['approvers']; requiredApprovals?: number; approvedCount?: number;
           canApprove?: boolean; isOverride?: boolean; callerAlreadyApproved?: boolean; canReject?: boolean; rejection?: ApprovalRejection;
@@ -93,19 +94,20 @@ export const salesOrderService = {
           callerAlreadyApproved: a?.callerAlreadyApproved ?? false,
           canReject: a?.canReject ?? false,
           rejection: a?.rejection,
+          stockShortages: r.data.stockShortages ?? [],
         };
       });
   },
 
   createOrder: (payload: SalesOrderCreatePayload): Promise<SalesOrder> =>
     tenantClient
-      .post<{ success: boolean; salesOrder: SalesOrder }>(BASE, payload)
-      .then((r) => r.data.salesOrder),
+      .post<{ success: boolean; salesOrder: SalesOrder; stockShortages?: StockShortage[] | null }>(BASE, payload)
+      .then((r) => ({ ...r.data.salesOrder, stockShortages: r.data.stockShortages ?? [] })),
 
   updateOrder: (uuid: string, payload: SalesOrderUpdatePayload): Promise<SalesOrder> =>
     tenantClient
-      .patch<{ success: boolean; salesOrder: SalesOrder }>(`${BASE}/${uuid}`, payload)
-      .then((r) => r.data.salesOrder),
+      .patch<{ success: boolean; salesOrder: SalesOrder; stockShortages?: StockShortage[] | null }>(`${BASE}/${uuid}`, payload)
+      .then((r) => ({ ...r.data.salesOrder, stockShortages: r.data.stockShortages ?? [] })),
 
   deleteOrder: (uuid: string): Promise<void> =>
     tenantClient.delete(`${BASE}/${uuid}`).then(() => undefined),

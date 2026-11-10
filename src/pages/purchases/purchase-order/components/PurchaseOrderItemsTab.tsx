@@ -5,8 +5,8 @@ import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CL
 // from its current home rather than duplicated (mirrors EstimateItemsTab's
 // usage one folder over).
 import { InventoryItemPicker, type InventoryItemPickerHandlers } from '@/pages/sales/components/InventoryItemPicker';
-import { itemPrice } from '@/lib/itemPrice';
-import { TRACKING_SERIALIZED, type InventoryItem } from '@/types/inventory';
+import { withCatalogItem } from '@/lib/purchaseOrderCatalogLine';
+import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
@@ -15,9 +15,9 @@ import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInp
 import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
 import { LineThicknessInputCell } from '@/components/inventory/LineThicknessInputCell';
 import { LineThicknessViewCell } from '@/components/inventory/LineThicknessViewCell';
-import { THICKNESS_COL, sizeFromItemMm, thicknessFromItemMm } from '@/lib/lineThickness';
+import { THICKNESS_COL } from '@/lib/lineThickness';
 import {
-  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, clampSlabs, hasSize, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+  LINE_DIMENSION_COLS, clampDimensionField, normalizeUnit, clampSlabs, hasSize, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
 import { blockEnterSubmit } from '@/lib/lineEntryKeys';
 import {
@@ -73,29 +73,8 @@ export function PurchaseOrderItemsTab({ items, onUpdate, headerTaxPercent }: {
   // Picking an inventory item snapshots its display fields into the draft;
   // the server re-snapshots authoritatively from inventoryItemUuid at save time.
   const unitCodeFor = useItemUnitCode();
-  const applyCatalogItem = (prev: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
-    const units = unitCodeFor(item);
-    const dimensionUnit = itemDimensionUnit(item);
-    return recalc(withoutUnsupportedSize({
-      ...prev,
-      // Thickness starts at the item's own, in the unit the line will be measured in.
-      thickness: thicknessFromItemMm(item.thicknessMm, dimensionUnit, units),
-      // Likewise the item's standard slab length and width, when it states them.
-      length: sizeFromItemMm(item.lengthMm, dimensionUnit, units),
-      width: sizeFromItemMm(item.widthMm, dimensionUnit, units),
-      itemName: item.name,
-      units,
-      tracking: item.tracking,
-      // A slab count is kept for a slab-tracked item and for any area unit, where
-      // it is the Slabs of a length x width x slabs line.
-      expectedSlabs: item.tracking === TRACKING_SERIALIZED || isAreaUnit(units) ? prev.expectedSlabs : '',
-      itemDescription: item.description,
-      itemSku: item.sku,
-      unitPrice: String(itemPrice(item, 'purchasing')),
-      inventoryItemUuid: item.id,
-      dimensionUnit,
-    }));
-  };
+  const applyCatalogItem = (prev: Omit<PurchaseOrderLineItem, 'id' | 'lineNo'>, item: InventoryItem) =>
+    recalc(withCatalogItem(prev, item, unitCodeFor(item)));
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,

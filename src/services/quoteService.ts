@@ -9,7 +9,7 @@ import type {
   QuoteSearchRequest,
   QuotePage,
 } from '@/types/quote';
-import type { SalesOrder } from '@/types/salesOrder';
+import type { SalesOrder, StockShortage } from '@/types/salesOrder';
 
 // Quote API wrapper. Talks to the dedicated relational module under
 // `/api/tenant/quotes*` (NOT the generic `/api/tenant/crm/*` JSONB router).
@@ -108,8 +108,10 @@ export const quoteService = {
   // Snapshot-copies this quote into a new Sales Order (idempotent — replaying
   // against an already-converted quote returns the existing Sales Order with
   // created: false rather than erroring).
-  convertToSalesOrder: (uuid: string): Promise<{ salesOrder: SalesOrder; created: boolean }> =>
+  // Short stock never stops the conversion: the order is created and
+  // stockShortages lists what inventory cannot cover yet (empty when none).
+  convertToSalesOrder: (uuid: string): Promise<{ salesOrder: SalesOrder; created: boolean; stockShortages: StockShortage[] }> =>
     tenantClient
-      .post<{ success: boolean; salesOrder: SalesOrder; created: boolean }>(`${BASE}/${uuid}/convert`, {})
-      .then((r) => ({ salesOrder: r.data.salesOrder, created: r.data.created })),
+      .post<{ success: boolean; salesOrder: SalesOrder; created: boolean; stockShortages?: StockShortage[] | null }>(`${BASE}/${uuid}/convert`, {})
+      .then((r) => ({ salesOrder: r.data.salesOrder, created: r.data.created, stockShortages: r.data.stockShortages ?? [] })),
 };

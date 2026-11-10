@@ -33,7 +33,7 @@ describe('LineSizeViewCells', () => {
   it('shows the size, slab count and thickness with their unit', () => {
     render(<InTable><LineSizeViewCells size={{ length: 120, width: 60, slabs: 2, thickness: 0.75 }} unit="in" units="SQFT" /></InTable>);
     const cells = screen.getAllByRole('cell').map((c) => c.textContent);
-    expect(cells).toEqual(['120 in', '60 in', '2', '0.75 in']);
+    expect(cells).toEqual(['120 in', '60 in', '0.75 in', '2']);
   });
 
   it('folds a piece-priced line with no size into one merged dash', () => {

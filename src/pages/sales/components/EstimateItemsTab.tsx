@@ -8,9 +8,9 @@ import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
 import { LineSizeInputCells, LineSizeViewCells } from '@/components/inventory/LineSizeCells';
-import { THICKNESS_COL, sizeFromItemMm, thicknessFromItemMm } from '@/lib/lineThickness';
+import { SALES_SIZE_COLS, sizeFromItemMm, thicknessFromItemMm } from '@/lib/lineThickness';
 import {
-  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+  clampDimensionField, itemDimensionUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
 import { blockEnterSubmit } from '@/lib/lineEntryKeys';
 import { KitHeadingRow, KIT_ROW_CLS } from '@/components/inventory/KitHeadingRow';
@@ -33,8 +33,7 @@ const ITEM_COLS = [
   { label: 'Item Name *', w: 'min-w-[160px]' },
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
-  ...LINE_DIMENSION_COLS,
-  THICKNESS_COL,
+  ...SALES_SIZE_COLS,
   { label: 'Units', w: 'w-16' },
   { label: 'Qty', w: 'w-20', right: true },
   { label: 'Unit Price', w: 'w-20', right: true },

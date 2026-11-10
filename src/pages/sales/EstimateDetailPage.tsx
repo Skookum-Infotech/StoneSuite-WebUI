@@ -23,9 +23,8 @@ import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
-import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
-import { THICKNESS_COL } from '@/lib/lineThickness';
-import { ESTIMATE_STATUS_COLORS, ESTIMATE_STATUS_CODES, ESTIMATE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/estimateForm';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
+import { ESTIMATE_STATUS_COLORS, ESTIMATE_STATUS_CODES, ESTIMATE_CONVERTIBLE_STATUSES, ESTIMATE_ALLOWED_TRANSITIONS, validateForSend } from '@/lib/estimateForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { EstimateAuditTab } from './components/EstimateAuditTab';
 import { DeleteEstimateDialog } from './components/DeleteEstimateDialog';
@@ -59,6 +58,8 @@ function fmtDate(iso?: string): string {
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
+
+const SENT_STATUS_CODE = 'SENT';
 
 export default function EstimateDetailPage() {
   const { id = '' } = useParams();
@@ -184,18 +185,44 @@ export default function EstimateDetailPage() {
         subtitle={estimate.customer.name}
         recordNumber={estimate.estimateNumber}
         statusBadge={<Badge color={color}>{estimate.status}</Badge>}
-        actions={canConvert && ESTIMATE_CONVERTIBLE_STATUSES.has(estimate.statusCode) && (
-          <button
-            type="button"
-            onClick={() => convert.mutate()}
-            disabled={convert.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
-          >
-            {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
-            Convert to Quote
-          </button>
+        actions={(
+          <>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={handleSendClick}
+                aria-label="Send estimate to customer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Send className="size-3.5" />
+                Send to Customer
+              </button>
+            )}
+            {canConvert && ESTIMATE_CONVERTIBLE_STATUSES.has(estimate.statusCode) && (
+              <button
+                type="button"
+                onClick={() => convert.mutate()}
+                disabled={convert.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+                Convert to Quote
+              </button>
+            )}
+          </>
         )}
       />
+
+      {sendErrors.length > 0 && (
+        <div role="alert" className="space-y-0.5 border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16">
+          {sendErrors.map((e) => (
+            <p key={e} className="text-2xs text-destructive">{e}</p>
+          ))}
+        </div>
+      )}
+      {sendSuccess && (
+        <p role="status" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-emerald-600 3xl:px-12 4xl:px-16">{sendSuccess}</p>
+      )}
 
       {convert.isError && (
         <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
@@ -285,8 +312,7 @@ export default function EstimateDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
-                      THICKNESS_COL,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -359,17 +385,6 @@ export default function EstimateDetailPage() {
               {canCopy && (
                 <CopyQuickAction recordLabel="estimate" addPath="/sales/estimate/new" sourceId={id} />
               )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={handleSendClick}
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send estimate to customer"
-                >
-                  <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Customer
-                </button>
-              )}
               <button
                 type="button"
                 onClick={handleExportPdf}
@@ -383,16 +398,6 @@ export default function EstimateDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
-            )}
-            {sendErrors.length > 0 && (
-              <div role="alert" className="space-y-0.5">
-                {sendErrors.map((e) => (
-                  <p key={e} className="text-2xs text-destructive">{e}</p>
-                ))}
-              </div>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -444,11 +449,14 @@ export default function EstimateDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={estimate.billing.email ?? ''}
         label={`Estimate ${estimate.estimateNumber}`}
-        onSent={(result) =>
+        onSent={(result) => {
           setSendSuccess(
             result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
+          );
+          // Sending is what makes the estimate "Sent": move it there when that is a legal next step.
+          const next = estimate.nextStatusCodes ?? ESTIMATE_ALLOWED_TRANSITIONS[estimate.statusCode] ?? [];
+          if (next.includes(SENT_STATUS_CODE)) transition.mutate(SENT_STATUS_CODE);
+        }}
       />
     </div>
   );

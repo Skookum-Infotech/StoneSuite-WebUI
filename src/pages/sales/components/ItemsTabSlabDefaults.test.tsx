@@ -77,10 +77,11 @@ beforeEach(() => {
 });
 
 describe.each(HARNESSES)('%s items table — slab defaults from the picked item', (_name, Harness) => {
-  it('has a Thick column right after Slabs', () => {
+  it('has a Thick column right after Width, before Slabs', () => {
     renderWith(<Harness />);
     const headers = screen.getAllByRole('columnheader').map((h) => h.textContent);
-    expect(headers.indexOf('Thick')).toBe(headers.indexOf('Slabs') + 1);
+    expect(headers.indexOf('Thick')).toBe(headers.indexOf('W') + 1);
+    expect(headers.indexOf('Slabs')).toBe(headers.indexOf('Thick') + 1);
   });
 
   it('fills length, width and thickness from a slab item and works the quantity out', async () => {

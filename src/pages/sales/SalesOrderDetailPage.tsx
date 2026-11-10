@@ -23,11 +23,11 @@ import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
-import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
-import { THICKNESS_COL } from '@/lib/lineThickness';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
 import { SO_DRAFT_CODE, SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
+import { StockShortageBanner } from './components/StockShortageBanner';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
 import { SalesOrderDrawingTab } from './components/SalesOrderDrawingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
@@ -274,6 +274,8 @@ export default function SalesOrderDetailPage() {
         </p>
       )}
 
+      <StockShortageBanner orderNumber={order.salesOrderNumber} shortages={order.stockShortages ?? []} />
+
       <RecordApprovalBanner
         record={order}
         onApprove={() => approve.mutate()}
@@ -358,8 +360,7 @@ export default function SalesOrderDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
-                      THICKNESS_COL,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },

@@ -22,8 +22,7 @@ import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
-import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
-import { THICKNESS_COL } from '@/lib/lineThickness';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
 import { INVOICE_PAYABLE_STATUSES, INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
@@ -282,8 +281,7 @@ export default function InvoiceDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
-                      THICKNESS_COL,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },

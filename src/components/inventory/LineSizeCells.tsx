@@ -20,8 +20,8 @@ const foldsAway = (units: string | undefined) => Boolean(units?.trim()) && !isAr
 
 const foldedCellCls = 'px-2.5 py-2.5 text-center text-stone-500';
 
-/** The four editable slab-size cells of a line-item row (length, width, slabs,
- *  thickness), or one merged cell when the line's unit is not an area unit. */
+/** The four editable slab-size cells of a line-item row (length, width, thickness,
+ *  slabs), or one merged cell when the line's unit is not an area unit. */
 export function LineSizeInputCells({ dims, dimensionUnit, units, onChange }: {
   dims: Record<DimensionField | 'thickness', string>;
   dimensionUnit: string | undefined;
@@ -33,20 +33,20 @@ export function LineSizeInputCells({ dims, dimensionUnit, units, onChange }: {
   }
   const enabled = isAreaUnit(units);
   return (
-    <>
-      <LineDimensionInputCells
-        dims={dims}
-        unit={normalizeUnit(dimensionUnit)}
-        enabled={enabled}
-        onChange={onChange}
-      />
-      <LineThicknessInputCell
-        value={dims.thickness}
-        unit={dimensionUnit}
-        enabled={enabled}
-        onChange={(val) => onChange('thickness', val)}
-      />
-    </>
+    <LineDimensionInputCells
+      dims={dims}
+      unit={normalizeUnit(dimensionUnit)}
+      enabled={enabled}
+      onChange={onChange}
+      afterWidth={(
+        <LineThicknessInputCell
+          value={dims.thickness}
+          unit={dimensionUnit}
+          enabled={enabled}
+          onChange={(val) => onChange('thickness', val)}
+        />
+      )}
+    />
   );
 }
 
@@ -63,9 +63,9 @@ export function LineSizeViewCells({ size, unit, units }: {
     return <td colSpan={SIZE_COLUMN_COUNT} className={foldedCellCls}>—</td>;
   }
   return (
-    <>
-      <LineDimensionViewCells length={size.length} width={size.width} slabs={size.slabs} unit={unit} />
-      <LineThicknessViewCell value={size.thickness} unit={unit} />
-    </>
+    <LineDimensionViewCells
+      length={size.length} width={size.width} slabs={size.slabs} unit={unit}
+      afterWidth={<LineThicknessViewCell value={size.thickness} unit={unit} />}
+    />
   );
 }
