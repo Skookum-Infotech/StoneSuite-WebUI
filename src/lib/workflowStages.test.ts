@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPanelSteps, buildWorkflowStages } from './workflowStages';
+import { buildPanelSteps, buildWorkflowStages, onlyLinkedStages } from './workflowStages';
 import type { WorkflowBlock, WorkflowRecordRef } from '@/types/workflow';
 
 const rec = (number: string, statusCode: string, status: string): WorkflowRecordRef => ({ id: number, number, statusCode, status });
@@ -87,6 +87,48 @@ describe('buildWorkflowStages', () => {
 
   it('returns null for a document outside both flows', () => {
     expect(buildWorkflowStages('expense', 'Draft', { stages: [] })).toBeNull();
+  });
+});
+
+describe('onlyLinkedStages', () => {
+  const keys = (block: WorkflowBlock, module: Parameters<typeof buildWorkflowStages>[0], label: string, code?: string) =>
+    onlyLinkedStages(buildWorkflowStages(module, label, block, code)!).stages.map((s) => s.key);
+
+  it('keeps only the stages the customer has records for, plus the page itself', () => {
+    expect(keys({ stages: [
+      { key: 'quote', records: [rec('QT-1', 'SENT', 'Sent')] },
+      { key: 'invoice', records: [rec('INV-1', 'SENT', 'Sent')] },
+    ] }, 'salesOrder', 'Open')).toEqual(['quote', 'salesOrder', 'invoice']);
+  });
+
+  it('drops every empty stage when nothing else is linked', () => {
+    expect(keys({ stages: [] }, 'itemReceipt', 'Partial')).toEqual(['receiving']);
+  });
+
+  it('keeps a purchase flow that skipped Receiving as Requisition, PO, Bill, Payment', () => {
+    expect(keys({ stages: [
+      { key: 'requisition', records: [rec('R-1', 'APPV', 'Approved')] },
+      { key: 'purchaseOrder', records: [rec('PO-1', 'SENT', 'Sent')] },
+      { key: 'vendorPayment', records: [rec('VP-1', 'SENT', 'Sent')] },
+    ] }, 'vendorBill', 'Paid')).toEqual(['requisition', 'purchaseOrder', 'vendorBill', 'vendorPayment']);
+  });
+
+  it('hides Installation until a fabrication job has been handed to shipping', () => {
+    const block: WorkflowBlock = { stages: [{ key: 'fabrication', records: [rec('FJ-1', 'CUTG', 'Cutting')] }] };
+    expect(keys(block, 'salesOrder', 'Open')).toEqual(['salesOrder', 'fabrication']);
+  });
+
+  it('keeps a stage with void records and one whose records the caller may not see', () => {
+    expect(keys({ stages: [
+      { key: 'invoice', records: [rec('INV-1', 'VOID', 'Void')] },
+      { key: 'payment', records: [], hidden: true },
+    ] }, 'salesOrder', 'Open')).toEqual(['salesOrder', 'invoice', 'payment']);
+  });
+
+  it('recomputes where the page sits', () => {
+    const view = onlyLinkedStages(buildWorkflowStages('invoice', 'Sent', { stages: [{ key: 'quote', records: [rec('QT-1', 'SENT', 'Sent')] }] })!);
+    expect(view.stages.map((s) => s.key)).toEqual(['quote', 'invoice']);
+    expect(view.hereIndex).toBe(1);
   });
 });
 
