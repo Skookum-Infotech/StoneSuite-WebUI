@@ -34,8 +34,8 @@ function markerColors(stage: WorkflowStageView): { ring: string; fill: string; i
  *  last active status reads the same here as on the record's page. */
 function withStatusColour(stage: WorkflowStageView, number: string | undefined, statusCode: string) {
   const status = stage.state === 'here' ? stage.subtitle : stage.records[0]?.status;
-  const coloured = <span className="font-medium" style={{ color: progressStatusColor(stage.module, statusCode) }}>{status}</span>;
-  return stage.state === 'here' || !number ? coloured : <>{number} · {coloured}</>;
+  const text = stage.state === 'here' || !number ? status : `${number} · ${status}`;
+  return <span className="font-medium" style={{ color: progressStatusColor(stage.module, statusCode) }}>{text}</span>;
 }
 
 /** One row of the progress card: icon marker, stage name, linked record + status.
