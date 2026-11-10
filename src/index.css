@@ -9,6 +9,13 @@
 @theme {
   --breakpoint-3xl: 128rem;  /* 2048px — must use rem so Tailwind sorts after 2xl (96rem) */
   --breakpoint-4xl: 240rem;  /* 3840px */
+
+  /* Progress bar: a ring that expands and fades around the current stage's marker. */
+  --animate-stage-pulse: stage-pulse 2.2s ease-out infinite;
+  @keyframes stage-pulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    70%, 100% { transform: scale(1.5); opacity: 0; }
+  }
 }
 
 /* ── Fluid sidebar width ────────────────────────────────────────────────────

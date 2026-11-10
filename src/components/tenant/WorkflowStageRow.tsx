@@ -55,6 +55,8 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor }: W
   const { ring, fill, icon } = markerColors(stage);
   const Icon = STAGE_ICONS[stage.key];
   const statusCode = stage.state === 'here' ? hereStatusCode : single?.statusCode;
+  /** The viewed record's own stage blinks, so it is clear where we stand. */
+  const isLive = stage.state === 'here';
 
   const body = (
     <>
@@ -69,6 +71,14 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor }: W
         className="relative z-10 mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2"
         style={{ borderColor: ring, backgroundColor: fill }}
       >
+        {isLive && (
+          <span
+            aria-hidden="true"
+            data-testid="stage-pulse"
+            className="pointer-events-none absolute -inset-0.5 animate-stage-pulse rounded-full border-2 motion-reduce:hidden"
+            style={{ borderColor: ring }}
+          />
+        )}
         <Icon className="size-3" style={{ color: icon }} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
