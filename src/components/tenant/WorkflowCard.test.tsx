@@ -45,6 +45,14 @@ describe('WorkflowCard', () => {
     expect(screen.getAllByText('Not started')).toHaveLength(3);
   });
 
+  it('pulses only the current stage, as a decorative ring', () => {
+    renderCard(workflow);
+    const rings = screen.getAllByTestId('stage-pulse');
+    expect(rings).toHaveLength(1);
+    expect(rings[0]).toHaveAttribute('aria-hidden', 'true');
+    expect(rings[0].closest('li')).toHaveAttribute('aria-current', 'step');
+  });
+
   it('links a completed stage to its record', () => {
     renderCard(workflow);
     expect(screen.getByRole('link', { name: /Requisition/ })).toHaveAttribute('href', '/purchases/requisition/r1');
