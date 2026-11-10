@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   toCreatePayload, toUpdatePayload, fromPayment, fromSourceInvoice, toRFC3339OrUndefined, fromRFC3339DateOnly,
   PAYMENT_ALLOWED_TRANSITIONS,
+  paymentHeaderTransitions,
 } from './paymentForm'
 import type { Payment } from '@/types/payment'
 
@@ -167,5 +168,17 @@ describe('PAYMENT_ALLOWED_TRANSITIONS', () => {
   it('has no moves out of DEPO or VOID (terminal)', () => {
     expect(PAYMENT_ALLOWED_TRANSITIONS.DEPO).toEqual([])
     expect(PAYMENT_ALLOWED_TRANSITIONS.VOID).toEqual([])
+  })
+})
+
+describe('paymentHeaderTransitions', () => {
+  it.each([
+    ['PEND', false, ['VOID']],
+    ['APPV', false, ['DEPO', 'VOID']],
+    ['DEPO', false, []],
+    ['VOID', false, []],
+    ['PEND', true, []],
+  ])('%s (gated %s) offers %j', (statusCode, gated, want) => {
+    expect(paymentHeaderTransitions({ statusCode, approvalStatus: 'none', gated })).toEqual(want)
   })
 })

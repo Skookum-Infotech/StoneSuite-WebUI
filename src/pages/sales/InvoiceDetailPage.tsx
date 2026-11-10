@@ -23,7 +23,7 @@ import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
 import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
 import { SALES_SIZE_COLS } from '@/lib/lineThickness';
-import { INVOICE_PAYABLE_STATUSES, INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
+import { INVOICE_ALLOWED_TRANSITIONS, INVOICE_PAYABLE_STATUSES, INVOICE_STATUS_COLORS, INVOICE_STATUS_CODES, validateForSend } from '@/lib/invoiceForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { InvoiceAuditTab } from './components/InvoiceAuditTab';
 import { DeleteInvoiceDialog } from './components/DeleteInvoiceDialog';
@@ -55,6 +55,8 @@ function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
+
+const SENT_STATUS_CODE = 'SENT';
 
 export default function InvoiceDetailPage() {
   const { id = '' } = useParams();
@@ -171,18 +173,44 @@ export default function InvoiceDetailPage() {
         subtitle={invoice.customer.name}
         recordNumber={invoice.invoiceNumber}
         statusBadge={<Badge color={color}>{invoice.status}</Badge>}
-        actions={canRecordPayment && INVOICE_PAYABLE_STATUSES.has(invoice.statusCode) && (
-          <button
-            type="button"
-            onClick={() => navigate(`/sales/payment/new?fromInvoice=${encodeURIComponent(id)}`)}
-            aria-label={`Record payment for invoice ${invoice.invoiceNumber}`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
-          >
-            <DollarSign className="size-3.5" />
-            Record payment
-          </button>
+        actions={(
+          <>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={handleSendClick}
+                aria-label="Send invoice to customer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Send className="size-3.5" />
+                Send to Customer
+              </button>
+            )}
+            {canRecordPayment && INVOICE_PAYABLE_STATUSES.has(invoice.statusCode) && (
+              <button
+                type="button"
+                onClick={() => navigate(`/sales/payment/new?fromInvoice=${encodeURIComponent(id)}`)}
+                aria-label={`Record payment for invoice ${invoice.invoiceNumber}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <DollarSign className="size-3.5" />
+                Record payment
+              </button>
+            )}
+          </>
         )}
       />
+
+      {sendErrors.length > 0 && (
+        <div role="alert" className="space-y-0.5 border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16">
+          {sendErrors.map((e) => (
+            <p key={e} className="text-2xs text-destructive">{e}</p>
+          ))}
+        </div>
+      )}
+      {sendSuccess && (
+        <p role="status" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-emerald-600 3xl:px-12 4xl:px-16">{sendSuccess}</p>
+      )}
 
       <RecordApprovalBanner
         record={invoice}
@@ -358,10 +386,10 @@ export default function InvoiceDetailPage() {
                   type="button"
                   onClick={handleSendClick}
                   className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send invoice to customer"
+                  aria-label="Resend invoice email to customer"
                 >
                   <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Customer
+                  Resend to Customer
                 </button>
               )}
               <button
@@ -377,16 +405,6 @@ export default function InvoiceDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
-            )}
-            {sendErrors.length > 0 && (
-              <div role="alert" className="space-y-0.5">
-                {sendErrors.map((e) => (
-                  <p key={e} className="text-2xs text-destructive">{e}</p>
-                ))}
-              </div>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -438,11 +456,14 @@ export default function InvoiceDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={invoice.billing.email ?? ''}
         label={`Invoice ${invoice.invoiceNumber}`}
-        onSent={(result) =>
+        onSent={(result) => {
           setSendSuccess(
             result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
+          );
+          // Sending is what makes the invoice "Sent": move it there when that is a legal next step.
+          const next = invoice.nextStatusCodes ?? INVOICE_ALLOWED_TRANSITIONS[invoice.statusCode] ?? [];
+          if (next.includes(SENT_STATUS_CODE)) transition.mutate(SENT_STATUS_CODE);
+        }}
       />
     </div>
   );

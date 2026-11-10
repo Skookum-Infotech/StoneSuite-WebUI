@@ -382,6 +382,17 @@ export default function EstimateDetailPage() {
                   Edit estimate
                 </button>
               )}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleSendClick}
+                  aria-label="Resend estimate email to customer"
+                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
+                >
+                  <Send className="size-4 text-stone-400 shrink-0" />
+                  Resend to Customer
+                </button>
+              )}
               {canCopy && (
                 <CopyQuickAction recordLabel="estimate" addPath="/sales/estimate/new" sourceId={id} />
               )}
