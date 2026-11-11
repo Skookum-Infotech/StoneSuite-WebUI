@@ -302,3 +302,34 @@ describe('toCreatePayload header mapping', () => {
     expect(payload.paymentTermsId).toBeNull()
   })
 })
+
+describe('toCreatePayload line thickness', () => {
+  const baseData: Record<string, unknown> = { priority: 'Normal' }
+
+  it.each([
+    { name: 'sends the thickness of an area-unit line', units: 'SQFT', thickness: '1.25', want: 1.25 },
+    { name: 'drops a thickness on a per-piece line', units: 'EA', thickness: '1.25', want: undefined },
+    { name: 'sends none when the line states none', units: 'SQFT', thickness: '', want: undefined },
+  ])('$name', ({ units, thickness, want }) => {
+    const payload = toCreatePayload(baseData, [
+      line({ itemName: 'Slab', quantity: '50', estimatedUnitPrice: '10', inventoryItemUuid: 'inv-1', units, thickness, length: '120', width: '60', dimensionUnit: 'in' }),
+    ])
+    expect(payload.items[0].thickness).toBe(want)
+  })
+})
+
+describe('toCreatePayload line kit label', () => {
+  const baseData: Record<string, unknown> = { priority: 'Normal' }
+
+  it('sends the kit a line was added from', () => {
+    const payload = toCreatePayload(baseData, [
+      line({ itemName: 'Sink', quantity: '1', estimatedUnitPrice: '10', inventoryItemUuid: 'inv-1', kitId: 'kit-1', kitName: 'Kitchen' }),
+    ])
+    expect(payload.items[0]).toMatchObject({ kitUuid: 'kit-1', kitName: 'Kitchen' })
+  })
+
+  it('sends no kit for an ordinary line', () => {
+    const payload = toCreatePayload(baseData, [line({ itemName: 'Sink', quantity: '1', estimatedUnitPrice: '10', inventoryItemUuid: 'inv-1' })])
+    expect(payload.items[0]).not.toHaveProperty('kitUuid')
+  })
+})

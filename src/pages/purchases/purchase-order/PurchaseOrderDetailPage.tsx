@@ -19,11 +19,11 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { unitLabel } from '@/lib/unitLabels';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
-import { LineThicknessViewCell } from '@/components/inventory/LineThicknessViewCell';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { INVENTORY_STOCK_QUERY_KEYS } from '@/lib/inventoryQueryKeys';
-import { PDF_THICKNESS_HEAD, THICKNESS_COL, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
-import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { PDF_THICKNESS_HEAD, SALES_SIZE_COLS, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
+import { PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
 import { slabProgressText } from '@/lib/itemReceiptSlabs';
 import {
   PO_STATUS_COLORS, PO_STATUS_CODES, PO_DELETABLE_STATUSES, PO_HEADER_TRANSITION_CODES, PO_RESENDABLE_STATUSES,
@@ -59,6 +59,8 @@ const TABS = [
 // tab show up without a manual reload — same cadence as NotificationBell's
 // unread poll.
 const DETAIL_POLL_MS = 60_000;
+/** Columns in the Items table — a kit heading and the empty row span them all. */
+const PO_ITEM_COLUMNS = 15;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -348,8 +350,7 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
-                      THICKNESS_COL,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Received' },
@@ -363,16 +364,20 @@ export default function PurchaseOrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {po.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
+                  <KitLineRows lines={po.items} colSpan={PO_ITEM_COLUMNS} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 min-w-[200px] max-w-md whitespace-pre-wrap break-words">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
-                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.expectedSlabs} unit={line.dimensionUnit} />
-                      <LineThicknessViewCell value={line.thickness} unit={line.dimensionUnit} />
+                      <LineSizeViewCells
+                        size={{ length: line.length, width: line.width, slabs: line.expectedSlabs, thickness: line.thickness }}
+                        unit={line.dimensionUnit}
+                        units={line.unitCode}
+                      />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -391,9 +396,9 @@ export default function PurchaseOrderDetailPage() {
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {po.items.length === 0 && (
-                    <tr><td colSpan={15} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={PO_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

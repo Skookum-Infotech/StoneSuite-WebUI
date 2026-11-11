@@ -7,10 +7,13 @@
 import type { CrmLookups } from '@/services/lookupService';
 import type { FieldDefinition } from '@/types/tenant';
 import { dimensionsFromLine, dimensionsPayload, type LineDimensions } from '@/lib/lineDimensions';
+import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
+import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import type {
   VendorBill, CreateVendorBillPayload, VendorBillLineInput, VendorBillLine,
   VendorBillPurchaseOrderRef,
 } from '@/types/vendorBill';
+import type { PurchaseOrderLine } from '@/types/purchaseOrder';
 
 export const PAGE_TABS = [
   { key: 'details', label: 'Details' },
@@ -140,7 +143,7 @@ export const PRIMARY_INFO_FIELDS: VendorBillFormField[] = [
 // is accepted by the backend but has no lookup UI yet (matches every other
 // sales/purchases module), so every line's tax preview follows the header's
 // Sales Tax % rather than a per-line rate.
-export interface VendorBillLineItem extends LineDimensions {
+export interface VendorBillLineItem extends KitLabeled, LineDimensions {
   id: string;
   lineNo: number;
   itemName: string;
@@ -450,6 +453,8 @@ function toLineInput(item: VendorBillLineItem, lineNo: number): VendorBillLineIn
     unitPrice: toNum(item.unitPrice),
     discountPercent: toNum(item.discount),
     ...dimensionsPayload(item, item.units),
+    thickness: thicknessPayload(item.thickness, item.units),
+    ...kitPayload(item),
   };
 }
 
@@ -512,7 +517,45 @@ function fromLine(line: VendorBillLine, i: number): VendorBillLineItem {
     inventoryItemUuid: line.inventoryItemId ?? undefined,
     purchaseOrderItemId: line.purchaseOrderItemId ?? undefined,
     ...dimensionsFromLine(line),
+    thickness: thicknessText(line.thickness),
+    ...kitFromLine(line),
   };
+}
+
+/** Maps one purchase order line onto a fresh vendor bill line — used when the
+ *  Add page's Purchase Order picker fills the items table from the order a
+ *  bill is being raised for. Copied with the order's own item, price and
+ *  size, same as `fromLine` copies a saved bill's own lines; the picker's
+ *  link itself stays a plain reference with no purchaseOrderItemId lineage —
+ *  that billed-quantity tracking belongs to the PO's own "Create Bill"
+ *  button, not a plain manual bill. A PO line's slab count is `expectedSlabs`,
+ *  not `slabs` (dimensionsFromLine's field), so it's renamed on the way in. */
+function fromPurchaseOrderLine(line: PurchaseOrderLine, headerTaxPercent: number, i: number): VendorBillLineItem {
+  const base = {
+    itemName: line.itemName || line.description,
+    itemDescription: line.description ?? '',
+    itemSku: line.sku,
+    units: line.unitCode,
+    quantity: String(line.quantity),
+    unitPrice: String(line.unitPrice),
+    discount: String(line.discountPercent),
+    inventoryItemUuid: line.inventoryItemId ?? undefined,
+    ...dimensionsFromLine({ length: line.length, width: line.width, slabs: line.expectedSlabs, dimensionUnit: line.dimensionUnit }),
+    thickness: thicknessText(line.thickness),
+    ...kitFromLine(line),
+  };
+  const { amount, total } = calcLineItem(base, headerTaxPercent);
+  return { id: `po-line-${i}`, lineNo: i + 1, ...base, amount, total };
+}
+
+/** The lines a vendor bill's items table takes on once the Add page's
+ *  Purchase Order picker selects an order — every one of its lines, same
+ *  values, ready to edit before saving. */
+export function vendorBillLinesFromPurchaseOrder(
+  items: PurchaseOrderLine[],
+  headerTaxPercent: number,
+): VendorBillLineItem[] {
+  return items.map((line, i) => fromPurchaseOrderLine(line, headerTaxPercent, i));
 }
 
 /** Maps a loaded VendorBill (GET response) back to the Edit form's state —

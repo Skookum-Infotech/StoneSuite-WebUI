@@ -10,6 +10,7 @@ import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { toExpectedSlabs } from '@/lib/slabEstimate';
 import { dimensionsFromLine, dimensionsPayload, isAreaUnit, normalizeUnit, type LineDimensions } from '@/lib/lineDimensions';
 import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
+import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import type {
   PurchaseOrder, PurchaseOrderCreatePayload, PurchaseOrderLineInput, PurchaseOrderLine,
 } from '@/types/purchaseOrder';
@@ -230,7 +231,7 @@ export const SHIP_TO_FIELDS: PurchaseOrderFormField[] = [
 // seeded "No Tax" row and no endpoint exposes it — matches Estimate/Quote/
 // Invoice/SalesOrder), so every line's tax preview follows the header's
 // Sales Tax % rather than a per-line rate.
-export interface PurchaseOrderLineItem extends Pick<LineDimensions, 'length' | 'width' | 'dimensionUnit'> {
+export interface PurchaseOrderLineItem extends KitLabeled, Pick<LineDimensions, 'length' | 'width' | 'dimensionUnit'> {
   id: string;
   lineNo: number;
   itemName: string;
@@ -586,6 +587,7 @@ function toLineInput(item: PurchaseOrderLineItem, lineNo: number): PurchaseOrder
     // Thickness shares the unit of length and width, so it names that unit even
     // when the line states no size to carry it.
     dimensionUnit: size.dimensionUnit ?? (thickness !== undefined ? normalizeUnit(item.dimensionUnit) : undefined),
+    ...kitPayload(item),
   };
 }
 
@@ -664,6 +666,7 @@ function fromLine(line: PurchaseOrderLine, i: number): PurchaseOrderLineItem {
     width: dimensionsFromLine(line).width,
     dimensionUnit: dimensionsFromLine(line).dimensionUnit,
     thickness: thicknessText(line.thickness),
+    ...kitFromLine(line),
   };
 }
 

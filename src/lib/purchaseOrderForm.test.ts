@@ -377,3 +377,18 @@ describe('line thickness', () => {
     expect(lineItems[1].thickness).toBe('')
   })
 })
+
+describe('toCreatePayload line kit label', () => {
+  const baseData: Record<string, unknown> = { vendor_uuid: 'vnd-1', order_date: '2026-08-11' }
+  const line = { id: 'k', lineNo: 1, itemName: 'Sink', itemDescription: '', quantity: '1', unitPrice: '10', discount: '0', amount: '10.00', total: '10.00', inventoryItemUuid: 'inv-1' }
+
+  it('sends the kit a line was added from', () => {
+    const payload = toCreatePayload(baseData, [{ ...line, kitId: 'kit-1', kitName: 'Kitchen' }])
+    expect(payload.items[0]).toMatchObject({ kitUuid: 'kit-1', kitName: 'Kitchen' })
+  })
+
+  it('sends no kit for an ordinary line', () => {
+    const payload = toCreatePayload(baseData, [line])
+    expect(payload.items[0]).not.toHaveProperty('kitUuid')
+  })
+})
