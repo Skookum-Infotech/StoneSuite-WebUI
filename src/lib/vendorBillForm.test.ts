@@ -12,9 +12,10 @@ describe('VB_ALLOWED_TRANSITIONS', () => {
   it.each([
     ['DRFT', ['PAPV', 'VOID']],
     ['PAPV', ['APPV', 'DRFT', 'VOID']],
-    ['APPV', ['PART', 'PAID', 'ODUE', 'VOID']],
-    ['PART', ['PAID', 'ODUE', 'VOID']],
-    ['ODUE', ['PART', 'PAID', 'VOID']],
+    ['APPV', ['PINI', 'PART', 'PAID', 'ODUE', 'VOID']],
+    ['PINI', ['PART', 'PAID', 'ODUE', 'VOID']],
+    ['PART', ['PINI', 'PAID', 'ODUE', 'VOID']],
+    ['ODUE', ['PINI', 'PART', 'PAID', 'VOID']],
     ['PAID', []],
     ['VOID', []],
   ])('from(%p) -> %p', (code, expected) => {

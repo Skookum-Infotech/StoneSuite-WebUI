@@ -366,23 +366,32 @@ export const PO_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'SENT', label: 'Sent' },
   { code: 'PART', label: 'Partially Received' },
   { code: 'RCVD', label: 'Received' },
+  // Derived from the bills raised against the order, not requested: it reads
+  // Paid once every live vendor bill against it is paid
+  // (backend purchaseorder/paid_rollup.go).
+  { code: 'PAID', label: 'Paid' },
   { code: 'CLSD', label: 'Closed' },
   { code: 'CANC', label: 'Cancelled' },
 ];
 
 /** Legal next-moves per status — mirrors the backend
  *  purchaseorder/transitions.go `allowedTransitions` map (spec AD-5).
- *  Terminal statuses (CLSD, CANC) map to an empty list. The backend
- *  (ValidateTransition) stays authoritative; an illegal pick is rejected
- *  with 409, so this only keeps the UI from offering one. */
+ *  CANC is terminal. PAID is normally derived from the order's bills, not
+ *  picked; it stays here so a super admin can correct state by hand, and so a
+ *  paid order can still be closed. The backend (ValidateTransition) stays
+ *  authoritative; an illegal pick is rejected with 409, so this only keeps the
+ *  UI from offering one. */
 export const PO_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   DRFT: ['PAPV', 'CANC'],
   PAPV: ['APPV', 'DRFT', 'CANC'],
   APPV: ['SENT', 'DRFT', 'CANC'],
-  SENT: ['PART', 'RCVD', 'CLSD', 'CANC'],
-  PART: ['RCVD', 'CLSD'],
-  RCVD: ['CLSD'],
-  CLSD: [],
+  SENT: ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC'],
+  PART: ['RCVD', 'PAID', 'CLSD'],
+  RCVD: ['PAID', 'CLSD'],
+  // Not a dead end: more goods can still arrive against a part-received order
+  // that was paid for its first delivery.
+  PAID: ['PART', 'RCVD', 'CLSD'],
+  CLSD: ['PAID'],
   CANC: [],
 };
 
@@ -401,11 +410,18 @@ export const PO_TRANSITION_LABELS: Record<string, string> = {
   'APPV:CANC': 'Cancel',
   'SENT:PART': 'Mark Partially Received',
   'SENT:RCVD': 'Mark Received',
+  'SENT:PAID': 'Mark Paid',
   'SENT:CLSD': 'Short-Close',
   'SENT:CANC': 'Cancel',
   'PART:RCVD': 'Mark Received',
+  'PART:PAID': 'Mark Paid',
   'PART:CLSD': 'Short-Close',
+  'RCVD:PAID': 'Mark Paid',
   'RCVD:CLSD': 'Close',
+  'PAID:PART': 'Mark Partially Received',
+  'PAID:RCVD': 'Mark Received',
+  'PAID:CLSD': 'Close',
+  'CLSD:PAID': 'Mark Paid',
 };
 
 export function poTransitionLabel(from: string, to: string): string {
@@ -481,7 +497,7 @@ export function poDropdownOverrideTransitions(order: { statusCode: string; nextS
 /** Statuses a vendor bill may be raised from — anything that has received goods
  *  (backend vendorbill.IsConvertibleStatus). Partially Received is included so a
  *  first delivery can be billed before the order is complete. */
-export const PO_BILLABLE_STATUSES: ReadonlySet<string> = new Set(['PART', 'RCVD', 'CLSD']);
+export const PO_BILLABLE_STATUSES: ReadonlySet<string> = new Set(['PART', 'RCVD', 'CLSD', 'PAID']);
 
 /** One order line a new bill would cover, and how much of it. */
 export interface BillableLine {
@@ -529,6 +545,7 @@ export const PO_STATUS_COLORS: Record<string, string> = {
   SENT: '#6366f1',
   PART: '#f97316',
   RCVD: '#22c55e',
+  PAID: '#10b981',
   CLSD: '#64748b',
   CANC: '#ef4444',
 };

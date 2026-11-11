@@ -13,10 +13,11 @@ describe('PO_ALLOWED_TRANSITIONS', () => {
     ['DRFT', ['PAPV', 'CANC']],
     ['PAPV', ['APPV', 'DRFT', 'CANC']],
     ['APPV', ['SENT', 'DRFT', 'CANC']],
-    ['SENT', ['PART', 'RCVD', 'CLSD', 'CANC']],
-    ['PART', ['RCVD', 'CLSD']],
-    ['RCVD', ['CLSD']],
-    ['CLSD', []],
+    ['SENT', ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC']],
+    ['PART', ['RCVD', 'PAID', 'CLSD']],
+    ['RCVD', ['PAID', 'CLSD']],
+    ['PAID', ['PART', 'RCVD', 'CLSD']],
+    ['CLSD', ['PAID']],
     ['CANC', []],
   ])('from(%p) -> %p', (code, expected) => {
     expect(PO_ALLOWED_TRANSITIONS[code]).toEqual(expected)
@@ -33,8 +34,8 @@ describe('poNextCodes / poHeaderTransitions / poDropdownTransitions', () => {
     ['draft, nobody to approve (backend collapsed the checkpoint)', { statusCode: 'DRFT', nextStatusCodes: ['CANC', 'SENT'] }, ['CANC', 'SENT'], ['SENT'], ['CANC']],
     ['pending approval', { statusCode: 'PAPV' }, ['APPV', 'DRFT', 'CANC'], [], ['APPV', 'DRFT', 'CANC']],
     ['approved', { statusCode: 'APPV' }, ['SENT', 'DRFT', 'CANC'], ['SENT'], ['DRFT', 'CANC']],
-    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'CLSD', 'CANC'], [], ['PART', 'RCVD', 'CLSD', 'CANC']],
-    ['closed is terminal', { statusCode: 'CLSD' }, [], [], []],
+    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC'], [], ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC']],
+    ['closed can still be marked paid', { statusCode: 'CLSD' }, ['PAID'], [], ['PAID']],
     ['record nextStatusCodes wins over the static map', { statusCode: 'DRFT', nextStatusCodes: [] }, [], [], []],
     ['unknown status has no moves', { statusCode: 'XXXX' }, [], [], []],
   ])('%s', (_label, order, next, header, dropdown) => {
@@ -56,8 +57,8 @@ describe('poDropdownOverrideTransitions', () => {
     ['draft, approvers configured', { statusCode: 'DRFT' }, ['CANC']],
     ['draft, nobody to approve', { statusCode: 'DRFT', nextStatusCodes: ['CANC', 'SENT'] }, ['CANC', 'SENT']],
     ['approved', { statusCode: 'APPV' }, ['SENT', 'DRFT', 'CANC']],
-    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'CLSD', 'CANC']],
-    ['closed is terminal', { statusCode: 'CLSD' }, []],
+    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC']],
+    ['closed can still be marked paid', { statusCode: 'CLSD' }, ['PAID']],
   ])('%s', (_label, order, expected) => {
     expect(poDropdownOverrideTransitions(order)).toEqual(expected)
   })
@@ -271,7 +272,7 @@ describe('poBillableLines', () => {
   })
 
   it('agrees with the statuses the backend converts', () => {
-    expect([...PO_BILLABLE_STATUSES].sort()).toEqual(['CLSD', 'PART', 'RCVD'])
+    expect([...PO_BILLABLE_STATUSES].sort()).toEqual(['CLSD', 'PAID', 'PART', 'RCVD'])
   })
 })
 
