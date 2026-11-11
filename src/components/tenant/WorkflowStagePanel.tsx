@@ -6,6 +6,8 @@ import { progressStatusColor } from '@/lib/progressStatusColor';
 import { STAGE_ICONS } from '@/components/tenant/workflowStageIcons';
 import { stagePalette } from '@/components/tenant/workflowStagePalette';
 
+/** One text size for the heading, every step and the more-steps control. */
+const PANEL_TEXT = 'text-xs leading-4';
 const UPCOMING_RING = '#e0dedb';
 const WHITE = '#ffffff';
 /** Hex alpha suffixes: a done step's faded ring, its pale fill, and the
@@ -39,9 +41,6 @@ export function WorkflowStagePanel({ stage, hereStatusCode, open }: WorkflowStag
           stage={stage}
           statusCode={statusCode}
           title={single ? `${stage.label} ${single.number}` : stage.label}
-          href={single && stage.state !== 'here' ? `${stage.route}/${single.id}` : undefined}
-          linkLabel={`${stage.label}: ${stage.subtitle}`}
-          linkText={single ? `Open ${single.number}` : ''}
         />
       ) : (
         <>
@@ -65,10 +64,6 @@ interface SubStatusListProps {
   stage: WorkflowStageView;
   statusCode: string;
   title: string;
-  /** Route of the stage's record; absent on the viewed record's own stage. */
-  href?: string;
-  linkLabel: string;
-  linkText: string;
 }
 
 /** Sub-statuses as a dot list. Every marker is a 16px circle with its dot
@@ -77,7 +72,7 @@ interface SubStatusListProps {
  *  not reached yet an empty grey ring. The connector runs only in the gap between
  *  two circles (8px, touching both), so it never draws inside one. The header
  *  keeps the stage's palette. */
-function SubStatusList({ stage, statusCode, title, href, linkLabel, linkText }: SubStatusListProps) {
+function SubStatusList({ stage, statusCode, title }: SubStatusListProps) {
   const [expanded, setExpanded] = useState(false);
   const { steps, hiddenCount } = buildPanelSteps(stage.module, statusCode, stage.window, expanded);
   const pal = stagePalette(stage);
@@ -88,17 +83,14 @@ function SubStatusList({ stage, statusCode, title, href, linkLabel, linkText }: 
         <span className="grid size-[18px] place-items-center rounded-[5px]" style={{ backgroundColor: pal.tint }}>
           <Icon className="size-3" style={{ color: pal.ink }} aria-hidden="true" />
         </span>
-        <p className="text-xs font-semibold" style={{ color: pal.ink }}>{title}</p>
+        <p className={cn(PANEL_TEXT, 'font-semibold')} style={{ color: pal.ink }}>{title}</p>
       </div>
-      {href && (
-        <Link to={href} aria-label={linkLabel} className="mb-1.5 block text-xs font-medium text-stone-900 hover:underline">{linkText} →</Link>
-      )}
       <ul>
         {steps.map((s, i) => {
           const color = progressStatusColor(stage.module, s.code);
           const reached = s.state !== 'upcoming';
           return (
-            <li key={s.code} className={cn('relative flex h-6 items-center gap-2.5 text-xs', reached ? 'text-stone-900' : 'text-stone-400')}>
+            <li key={s.code} className={cn('relative flex h-6 items-center gap-2.5', PANEL_TEXT, reached ? 'text-stone-900' : 'text-stone-400')}>
               {(i < steps.length - 1 || hiddenCount > 0) && (
                 <span
                   aria-hidden="true"
@@ -123,7 +115,7 @@ function SubStatusList({ stage, statusCode, title, href, linkLabel, linkText }: 
           );
         })}
         {(hiddenCount > 0 || expanded) && (
-          <li className="flex h-6 items-center text-xs text-stone-500">
+          <li className={cn('flex h-6 items-center text-stone-500', PANEL_TEXT)}>
             <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center gap-2.5 hover:text-stone-900">
               <span aria-hidden="true" className="size-4 shrink-0 rounded-full border-2 border-stone-200 bg-white" />
               {expanded ? 'Show fewer' : `+ ${hiddenCount} more steps`}
