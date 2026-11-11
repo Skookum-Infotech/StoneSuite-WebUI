@@ -207,11 +207,13 @@ const PANEL_STEPS_AFTER_CURRENT = 3;
 
 /** The sub-status list a stage's hover panel shows for one record, cut to a
  *  short window that always includes the current step. A stage that covers
- *  only part of a document's path lists just that part. */
+ *  only part of a document's path lists just that part. `expanded` lists every
+ *  step instead of the short window. */
 export function buildPanelSteps(
   module: ProgressModule,
   statusCode: string,
   window?: PathWindow,
+  expanded = false,
 ): { steps: ProgressStep[]; hiddenCount: number } {
   const path = PROGRESS_PATHS[module];
   const from = window ? path.indexOf(window.start) : 0;
@@ -219,6 +221,6 @@ export function buildPanelSteps(
   const all = buildProgressSteps(path, RECORD_PROGRESS_CONFIG[module].catalog, statusCode, PROGRESS_STATUS_ALIASES[module]).slice(from, to);
   const currentIdx = all.findIndex((s) => s.state === 'current');
   const visible = Math.min(all.length, Math.max(MAX_PANEL_STEPS, currentIdx + PANEL_STEPS_AFTER_CURRENT));
-  const shown = all.length - visible <= 1 ? all.length : visible;
+  const shown = expanded || all.length - visible <= 1 ? all.length : visible;
   return { steps: all.slice(0, shown), hiddenCount: all.length - shown };
 }

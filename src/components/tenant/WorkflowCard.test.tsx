@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { WorkflowCard } from './WorkflowCard';
 import type { WorkflowBlock } from '@/types/workflow';
@@ -40,17 +41,47 @@ describe('WorkflowCard', () => {
     renderCard(workflow);
     expect(screen.getByRole('list', { name: 'Progress Bar' })).toBeInTheDocument();
     expect(screen.getByText('Stage 2 of 5')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Requisition/ })).toHaveTextContent('REQ-0014 · Approved');
+    expect(screen.getByRole('button', { name: /Requisition/ })).toHaveTextContent('REQ-0014 · Approved');
     expect(screen.getByText('Sent to Vendor').closest('li')).toHaveAttribute('aria-current', 'step');
     expect(screen.getAllByText('Not started')).toHaveLength(3);
   });
 
-  it('links a completed stage to its record', () => {
+  it('pulses only the current stage, as a decorative ring', () => {
     renderCard(workflow);
-    expect(screen.getByRole('link', { name: /Requisition/ })).toHaveAttribute('href', '/purchases/requisition/r1');
+    const rings = screen.getAllByTestId('stage-pulse');
+    expect(rings).toHaveLength(1);
+    expect(rings[0]).toHaveAttribute('aria-hidden', 'true');
+    expect(rings[0].closest('li')).toHaveAttribute('aria-current', 'step');
   });
 
-  it("lists the current record's sub-statuses in the hover panel", () => {
+  it('opens one pinned panel at a time and locks the other stages until it closes', async () => {
+    const user = userEvent.setup();
+    renderCard(workflow);
+    const req = screen.getByRole('button', { name: /Requisition/ });
+    const po = screen.getByRole('button', { name: /Purchase order/ });
+    await user.click(req);
+    expect(req).toHaveAttribute('aria-expanded', 'true');
+    await user.click(po);
+    expect(po).toHaveAttribute('aria-expanded', 'false');
+    expect(req).toHaveAttribute('aria-expanded', 'true');
+    await user.keyboard('{Escape}');
+    expect(req).toHaveAttribute('aria-expanded', 'false');
+    await user.click(po);
+    expect(po).toHaveAttribute('aria-expanded', 'true');
+    await user.click(document.body);
+    expect(po).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('expands the hidden steps in place instead of navigating', async () => {
+    const user = userEvent.setup();
+    render(withClient(<WorkflowCard module="fabrication" statusCode="ORCV" statusLabel="Order Received" />));
+    await user.click(screen.getByRole('button', { name: /Fabrication/ }));
+    await user.click(screen.getByRole('button', { name: /3 more steps/ }));
+    expect(screen.getByRole('button', { name: 'Show fewer' })).toBeInTheDocument();
+    expect(screen.queryByText(/more steps/)).not.toBeInTheDocument();
+  });
+
+  it("lists the current record's sub-statuses in the panel", () => {
     renderCard(workflow);
     const panel = within(screen.getAllByRole('tooltip')[1]);
     expect(panel.getByText('Partially Received')).toBeInTheDocument();
@@ -68,8 +99,7 @@ describe('WorkflowCard', () => {
       { id: 'so-1', salesOrderNumber: 'SO-0042', statusCode: 'APPV', status: 'Approved' } as SalesOrder,
     );
     render(withClient(<WorkflowCard module="invoice" statusCode="SENT" statusLabel="Sent" links={{ salesOrderId: 'so-1' }} />));
-    const link = await screen.findByRole('link', { name: /Sales order/ });
-    expect(link).toHaveAttribute('href', '/sales/sales_order/so-1');
+    const link = await screen.findByRole('button', { name: /Sales order/ });
     expect(link).toHaveTextContent('SO-0042');
   });
 
@@ -81,8 +111,7 @@ describe('WorkflowCard', () => {
       { id: 'ir-1', itemReceiptNumber: 'IRCT-000034', statusCode: 'PART', status: 'Partial' } as ItemReceipt,
     ]);
     render(withClient(<WorkflowCard module="itemReceipt" statusCode="PART" statusLabel="Partial" links={{ purchaseOrderId: 'po-1' }} />));
-    const link = await screen.findByRole('link', { name: /Purchase order/ });
-    expect(link).toHaveAttribute('href', '/purchases/purchase_order/po-1');
+    const link = await screen.findByRole('button', { name: /Purchase order/ });
     expect(link).toHaveTextContent('PORD-000020');
   });
 
@@ -91,8 +120,8 @@ describe('WorkflowCard', () => {
       { id: 'ir-1', itemReceiptNumber: 'IRCT-000034', statusCode: 'PART', status: 'Partial' } as ItemReceipt,
     ]);
     render(withClient(<WorkflowCard module="purchaseOrder" statusCode="PART" statusLabel="Partially Received" links={{ purchaseOrderId: 'po-1' }} />));
-    const link = await screen.findByRole('link', { name: /Receiving/ });
-    expect(link).toHaveAttribute('href', '/purchases/item_receipt/ir-1');
+    const link = await screen.findByRole('button', { name: /Receiving/ });
+    expect(link).toHaveTextContent('IRCT-000034');
   });
 
   it("colours the current status below the stage name with that status's pill colour", () => {

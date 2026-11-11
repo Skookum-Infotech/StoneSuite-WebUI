@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { WorkflowStageView } from '@/lib/workflowStages';
 import { STAGE_ICONS } from '@/components/tenant/workflowStageIcons';
@@ -12,6 +11,11 @@ interface WorkflowStageRowProps {
   hereStatusCode: string;
   /** Colour of the line down to the next stage; grey when absent. */
   lineColor?: string;
+  /** Whether this row's panel is pinned open. */
+  open: boolean;
+  /** Another row's panel is open, so this one cannot open until it closes. */
+  locked: boolean;
+  onToggle: () => void;
 }
 
 const UPCOMING_RING = '#e8e8e8';
@@ -39,22 +43,26 @@ function withStatusColour(stage: WorkflowStageView, number: string | undefined, 
 }
 
 /** One row of the progress card: icon marker, stage name, linked record + status.
- *  Hovering or focusing it opens the sub-status panel; a single linked record
- *  is a link to that record. The marker is a 20px grid cell with a centred icon.
+ *  Clicking it pins the sub-status panel open until it is clicked again (or Esc /
+ *  an outside click, handled by the card); the panel carries the link to the
+ *  record, so a click on the row itself never navigates. The marker is a 20px grid cell with a centred icon.
  *  The colours come from a per-stage palette (data), so they are set inline like
  *  the shared Badge does. */
-export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor }: WorkflowStageRowProps) {
+export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor, open, locked, onToggle }: WorkflowStageRowProps) {
   const single = stage.records.length === 1 ? stage.records[0] : undefined;
   const hasPanel = stage.state === 'here' || stage.records.length > 0;
-  const href = single && stage.state !== 'here' ? `${stage.route}/${single.id}` : undefined;
   const rowCls = cn(
-    'group relative flex min-h-9 gap-2.5 rounded-lg px-1.5 py-1 -mx-1.5 outline-none focus-visible:ring-2 focus-visible:ring-brand-dark',
-    hasPanel && 'hover:bg-stone-50',
+    'relative flex min-h-9 w-full gap-2.5 rounded-lg px-1.5 py-1 -mx-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-dark',
+    hasPanel && !locked && 'hover:bg-stone-50',
+    hasPanel && open && 'bg-stone-50',
+    hasPanel && locked && 'cursor-default',
   );
   const pal = stagePalette(stage);
   const { ring, fill, icon } = markerColors(stage);
   const Icon = STAGE_ICONS[stage.key];
   const statusCode = stage.state === 'here' ? hereStatusCode : single?.statusCode;
+  /** The viewed record's own stage blinks, so it is clear where we stand. */
+  const isLive = stage.state === 'here';
 
   const body = (
     <>
@@ -69,6 +77,14 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor }: W
         className="relative z-10 mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2"
         style={{ borderColor: ring, backgroundColor: fill }}
       >
+        {isLive && (
+          <span
+            aria-hidden="true"
+            data-testid="stage-pulse"
+            className="pointer-events-none absolute -inset-0.5 animate-stage-pulse rounded-full border-2 motion-reduce:hidden"
+            style={{ borderColor: ring }}
+          />
+        )}
         <Icon className="size-3" style={{ color: icon }} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
@@ -90,20 +106,17 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor }: W
           {statusCode && stage.state !== 'void' ? withStatusColour(stage, single?.number, statusCode) : stage.subtitle}
         </span>
       </span>
-      {hasPanel && <WorkflowStagePanel stage={stage} hereStatusCode={hereStatusCode} />}
     </>
   );
 
-  if (href) {
-    return (
-      <li aria-current={undefined}>
-        <Link to={href} className={rowCls} aria-label={`${stage.label}: ${stage.subtitle}`}>{body}</Link>
-      </li>
-    );
-  }
   return (
-    <li aria-current={stage.state === 'here' ? 'step' : undefined}>
-      <div className={rowCls} tabIndex={hasPanel ? 0 : undefined}>{body}</div>
+    <li aria-current={stage.state === 'here' ? 'step' : undefined} className="relative">
+      {hasPanel ? (
+        <button type="button" className={rowCls} aria-expanded={open} aria-disabled={locked || undefined} onClick={onToggle}>{body}</button>
+      ) : (
+        <div className={rowCls}>{body}</div>
+      )}
+      {hasPanel && <WorkflowStagePanel stage={stage} hereStatusCode={hereStatusCode} open={open} />}
     </li>
   );
 }
