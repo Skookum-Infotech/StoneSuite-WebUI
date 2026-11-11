@@ -121,6 +121,7 @@ describe('WorkflowCard', () => {
     ]);
     render(withClient(<WorkflowCard module="purchaseOrder" statusCode="PART" statusLabel="Partially Received" links={{ purchaseOrderId: 'po-1' }} />));
     const link = await screen.findByRole('button', { name: /Receiving/ });
+    expect(link).toHaveTextContent('IRCT-000034');
   });
 
   it("colours the current status below the stage name with that status's pill colour", () => {
