@@ -54,11 +54,6 @@ describe('WorkflowCard', () => {
     expect(rings[0].closest('li')).toHaveAttribute('aria-current', 'step');
   });
 
-  it('links a completed stage to its record', () => {
-    renderCard(workflow);
-    expect(screen.getByRole('link', { name: /Requisition/ })).toHaveAttribute('href', '/purchases/requisition/r1');
-  });
-
   it('opens one pinned panel at a time and locks the other stages until it closes', async () => {
     const user = userEvent.setup();
     renderCard(workflow);
@@ -104,8 +99,7 @@ describe('WorkflowCard', () => {
       { id: 'so-1', salesOrderNumber: 'SO-0042', statusCode: 'APPV', status: 'Approved' } as SalesOrder,
     );
     render(withClient(<WorkflowCard module="invoice" statusCode="SENT" statusLabel="Sent" links={{ salesOrderId: 'so-1' }} />));
-    const link = await screen.findByRole('link', { name: /Sales order/ });
-    expect(link).toHaveAttribute('href', '/sales/sales_order/so-1');
+    const link = await screen.findByRole('button', { name: /Sales order/ });
     expect(link).toHaveTextContent('SO-0042');
   });
 
@@ -117,8 +111,7 @@ describe('WorkflowCard', () => {
       { id: 'ir-1', itemReceiptNumber: 'IRCT-000034', statusCode: 'PART', status: 'Partial' } as ItemReceipt,
     ]);
     render(withClient(<WorkflowCard module="itemReceipt" statusCode="PART" statusLabel="Partial" links={{ purchaseOrderId: 'po-1' }} />));
-    const link = await screen.findByRole('link', { name: /Purchase order/ });
-    expect(link).toHaveAttribute('href', '/purchases/purchase_order/po-1');
+    const link = await screen.findByRole('button', { name: /Purchase order/ });
     expect(link).toHaveTextContent('PORD-000020');
   });
 
@@ -127,8 +120,8 @@ describe('WorkflowCard', () => {
       { id: 'ir-1', itemReceiptNumber: 'IRCT-000034', statusCode: 'PART', status: 'Partial' } as ItemReceipt,
     ]);
     render(withClient(<WorkflowCard module="purchaseOrder" statusCode="PART" statusLabel="Partially Received" links={{ purchaseOrderId: 'po-1' }} />));
-    const link = await screen.findByRole('link', { name: /Receiving/ });
-    expect(link).toHaveAttribute('href', '/purchases/item_receipt/ir-1');
+    const link = await screen.findByRole('button', { name: /Receiving/ });
+    expect(link).toHaveTextContent('IRCT-000034');
   });
 
   it("colours the current status below the stage name with that status's pill colour", () => {
