@@ -82,6 +82,10 @@ export interface LineDimensions {
   slabs?: string;
   /** The one unit length and width are measured in; blank reads as inches. */
   dimensionUnit?: string;
+  /** Thickness of one slab, in the same unit. Descriptive: never enters the
+   *  quantity. Sent separately (see lineThickness.ts), so the payload helpers
+   *  here ignore it. */
+  thickness?: string;
 }
 
 /** What the server returns for a saved line. */
@@ -174,7 +178,7 @@ export function sizedQuantity(d: LineDimensions, areaUnit: string | undefined): 
 }
 
 function anyStated(d: LineDimensions): boolean {
-  return Boolean(d.length || d.width || d.slabs);
+  return Boolean(d.length || d.width || d.slabs || d.thickness);
 }
 
 /** Brings a line's quantity in step with its dimensions as the user edits: in an
@@ -192,12 +196,14 @@ export function withSizedQuantity<T extends LineDimensions & { quantity: string;
   return quantity === '' ? line : { ...line, quantity };
 }
 
-/** Drops the dimensions from a line whose item can't be sized (Each, a service,
- *  no item yet), so a stale 300 × 150 never rides along when the line is switched
+/** Drops the dimensions (and thickness) from a line whose item can't be sized
+ *  (Each, a service, no item yet), so a stale 300 × 150 never rides along when the line is switched
  *  to a per-piece item. Call it when the line's ITEM changes, not on every edit. */
 export function withoutUnsupportedSize<T extends LineDimensions & { units?: string }>(line: T): T {
   if (isAreaUnit(line.units) || !anyStated(line)) return line;
-  return { ...line, length: '', width: '', slabs: '' };
+  // Only a line that carries a thickness field gets it cleared, so the other
+  // line shapes (vendor bill, requisition) keep exactly the keys they had.
+  return { ...line, length: '', width: '', slabs: '', ...(line.thickness ? { thickness: '' } : {}) };
 }
 
 /** The longest length or width the server accepts, in `unit`: 100 m is 10 000 cm,
@@ -285,7 +291,7 @@ export function dimensionsPayload(d: LineDimensions, areaUnit: string | undefine
 }
 
 /** Rebuilds a form line's dimensions from a saved line. */
-export function dimensionsFromLine(line: LineDimensionsResponse): Required<LineDimensions> {
+export function dimensionsFromLine(line: LineDimensionsResponse): Required<Omit<LineDimensions, 'thickness'>> {
   const text = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(n));
   return {
     length: text(line.length),

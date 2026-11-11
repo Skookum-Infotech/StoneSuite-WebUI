@@ -138,6 +138,16 @@ describe('withoutUnsupportedSize', () => {
     const line = { quantity: '4', units: 'EA' };
     expect(withoutUnsupportedSize(line)).toBe(line);
   });
+
+  it('clears a stated thickness along with the size', () => {
+    const line = { quantity: '4', units: 'EA', thickness: '3' };
+    expect(withoutUnsupportedSize(line)).toEqual({ quantity: '4', units: 'EA', length: '', width: '', slabs: '', thickness: '' });
+  });
+
+  it('keeps a thickness in an area unit', () => {
+    const line = { quantity: '50', units: 'SQFT', thickness: '3' };
+    expect(withoutUnsupportedSize(line)).toBe(line);
+  });
 });
 
 describe('dimensionsPayload', () => {

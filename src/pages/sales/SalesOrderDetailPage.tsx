@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send, PencilRuler } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send, PencilRuler, Receipt } from 'lucide-react';
 import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
+import { useSalesOrderDownstream } from '@/hooks/useSalesOrderDownstream';
 import { fabricationService } from '@/services/fabricationService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -22,11 +23,12 @@ import { cn } from '@/lib/utils';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
-import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
 import { SO_DRAFT_CODE, SO_STATUS_COLORS, SO_STATUS_CODES, FULFILLMENT_STATUS_LABELS, FULFILLMENT_STATUS_COLORS, SO_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/salesOrderForm';
 import { statusToastLabel } from '@/lib/statusToast';
 import { SalesOrderInventoryTab } from './components/SalesOrderInventoryTab';
+import { StockShortageBanner } from './components/StockShortageBanner';
 import { SalesOrderSchedulingTab } from './components/SalesOrderSchedulingTab';
 import { SalesOrderDrawingTab } from './components/SalesOrderDrawingTab';
 import { SalesOrderAuditTab } from './components/SalesOrderAuditTab';
@@ -103,6 +105,7 @@ export default function SalesOrderDetailPage() {
   // Convert targets a new Invoice, so gate on the Invoice module's create
   // permission (backend checks source sales_order:read + target invoice:create).
   const canConvert = permissionsLoading || hasPermission('invoice', 'create');
+  const canViewInvoice = permissionsLoading || hasPermission('invoice', 'read');
   // A fabrication job always originates from a sales order (backend spec
   // §2.2), so gate this on installation:create.
   const canFabricate = permissionsLoading || hasPermission('installation', 'create');
@@ -118,6 +121,12 @@ export default function SalesOrderDetailPage() {
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
   });
+
+  // A sales order converts to one invoice only (backend uq_invoice_sales_order_once).
+  // Once it exists, the header offers to open it instead of "creating" it again.
+  // Shares its query with the Progress Bar, so this costs no extra request.
+  const downstream = useSalesOrderDownstream({ id: order?.id, number: order?.salesOrderNumber, customerName: order?.customer?.name });
+  const existingInvoice = Array.isArray(downstream.invoice) ? downstream.invoice[0] : downstream.invoice;
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -236,10 +245,23 @@ export default function SalesOrderDetailPage() {
         actions={(
           <>
             <CustomerOrderFormAction orderId={id} isDraft={order.statusCode === SO_DRAFT_CODE} />
-            {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+            {existingInvoice && canViewInvoice && (
+              <button
+                type="button"
+                onClick={() => navigate(`/sales/invoice/${existingInvoice.id}`)}
+                aria-label={`View invoice ${existingInvoice.number}`}
+                title={`Open ${existingInvoice.number}, the invoice created from this order`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Receipt className="size-3.5" />
+                View Invoice
+              </button>
+            )}
+            {!existingInvoice && canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
               <button
                 type="button"
                 onClick={() => convert.mutate()}
+                aria-label="Create invoice from this sales order"
                 disabled={convert.isPending}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
               >
@@ -272,6 +294,8 @@ export default function SalesOrderDetailPage() {
           {apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}
         </p>
       )}
+
+      <StockShortageBanner orderNumber={order.salesOrderNumber} shortages={order.stockShortages ?? []} />
 
       <RecordApprovalBanner
         record={order}
@@ -357,7 +381,7 @@ export default function SalesOrderDetailPage() {
                       { label: '#' },
                       { label: 'Item' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -371,14 +395,14 @@ export default function SalesOrderDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  <KitLineRows lines={order.items} colSpan={13} renderRow={(line, kitCls) => (
+                  <KitLineRows lines={order.items} colSpan={14} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
-                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -395,7 +419,7 @@ export default function SalesOrderDetailPage() {
                     </tr>
                   )} />
                   {order.items.length === 0 && (
-                    <tr><td colSpan={13} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

@@ -21,6 +21,7 @@ vi.mock('@/services/lookupService', () => ({
   },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
+vi.mock('@/hooks/useSalesOrderDownstream', () => ({ useSalesOrderDownstream: vi.fn() }));
 vi.mock('@/store/useAuthStore', async (importOriginal) => ({
   ...((await importOriginal()) as Record<string, unknown>),
   isPortalSession: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock('./components/SalesOrderDrawingTab', () => ({
 import SalesOrderDetailPage from './SalesOrderDetailPage';
 import { salesOrderService } from '@/services/salesOrderService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useSalesOrderDownstream } from '@/hooks/useSalesOrderDownstream';
 import { isPortalSession } from '@/store/useAuthStore';
 import type { SalesOrder } from '@/types/salesOrder';
 
@@ -105,6 +107,7 @@ function renderPage(search = '') {
         <Routes>
           <Route path="/sales/sales_order/:id" element={<SalesOrderDetailPage />} />
           <Route path="/sales/sales_order/:id/drawing" element={<div>Drawing editor for so-1</div>} />
+          <Route path="/sales/invoice/:id" element={<div>Invoice page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -114,6 +117,7 @@ function renderPage(search = '') {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(isPortalSession).mockReturnValue(false);
+  vi.mocked(useSalesOrderDownstream).mockReturnValue({});
   vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
   // Not placed from the portal: no Customer Order Form action.
   vi.mocked(salesOrderService.getCustomerOrderForm).mockResolvedValue(null);
@@ -220,5 +224,38 @@ describe('SalesOrderDetailPage ?tab=', () => {
     expect(await screen.findByText('Primary Information')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Drawing' })).toBeNull();
     expect(screen.queryByText('Drawing tab for so-1')).toBeNull();
+  });
+});
+
+describe('SalesOrderDetailPage invoice button', () => {
+  it('offers Create Invoice while the order has no invoice', async () => {
+    renderPage();
+
+    // CrmPageHeader renders its actions twice (desktop row + mobile menu).
+    expect((await screen.findAllByRole('button', { name: 'Create invoice from this sales order' })).length).toBeGreaterThan(0);
+    expect(screen.queryAllByRole('button', { name: /^View invoice/ })).toHaveLength(0);
+  });
+
+  it('offers View Invoice once the order has one, and opens it without converting again', async () => {
+    vi.mocked(useSalesOrderDownstream).mockReturnValue({
+      invoice: [{ id: 'inv-9', number: 'INVC-000001', statusCode: 'DRFT', status: 'Draft' }],
+    });
+    renderPage();
+
+    await userEvent.click((await screen.findAllByRole('button', { name: 'View invoice INVC-000001' }))[0]);
+
+    expect(await screen.findByText('Invoice page')).toBeInTheDocument();
+    expect(salesOrderService.convertToInvoice).not.toHaveBeenCalled();
+  });
+
+  it('still links the invoice after the order has moved past an invoiceable status', async () => {
+    vi.mocked(salesOrderService.getOrder).mockResolvedValue(order({ status: 'Cancelled', statusCode: 'CANC' }));
+    vi.mocked(useSalesOrderDownstream).mockReturnValue({
+      invoice: [{ id: 'inv-9', number: 'INVC-000001', statusCode: 'VOID', status: 'Void' }],
+    });
+    renderPage();
+
+    expect((await screen.findAllByRole('button', { name: 'View invoice INVC-000001' })).length).toBeGreaterThan(0);
+    expect(screen.queryAllByRole('button', { name: 'Create invoice from this sales order' })).toHaveLength(0);
   });
 });
