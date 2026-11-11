@@ -460,6 +460,22 @@ export function poDropdownTransitions(order: { statusCode: string; nextStatusCod
   return poNextCodes(order).filter((code) => !PO_HEADER_TRANSITION_CODES.includes(code));
 }
 
+/** Codes the Detail page's admin status dropdown hides because a header
+ *  button already offers them — just PAPV (Submit for Approval). Unlike
+ *  poDropdownTransitions' usual exactly-once split with the header buttons,
+ *  SENT stays in BOTH places on purpose: the header button is the normal
+ *  move, which only lands once the vendor email is confirmed sent, while the
+ *  dropdown is the admin-only override that lands on Sent regardless (see
+ *  purchaseOrderService.transition's `force`). */
+export const PO_DROPDOWN_HIDDEN_CODES: readonly string[] = ['PAPV'];
+
+/** Legal next-moves offered in the Detail page's admin status dropdown —
+ *  poDropdownTransitions plus SENT, the one deliberate overlap with the
+ *  header buttons (see PO_DROPDOWN_HIDDEN_CODES). */
+export function poDropdownOverrideTransitions(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  return poNextCodes(order).filter((code) => !PO_DROPDOWN_HIDDEN_CODES.includes(code));
+}
+
 // ── Billing (Create Bill) ─────────────────────────────────────────────────────
 
 /** Statuses a vendor bill may be raised from — anything that has received goods

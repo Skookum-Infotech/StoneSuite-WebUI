@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   PO_ALLOWED_TRANSITIONS, isPoTransitionBlocked, poTransitionLabel, poStatusLabel,
-  poNextCodes, poHeaderTransitions, poDropdownTransitions,
+  poNextCodes, poHeaderTransitions, poDropdownTransitions, poDropdownOverrideTransitions,
   billableQuantity, poBillableLines, PO_BILLABLE_STATUSES,
   calcLineItem, calcHeaderTotals, toCreatePayload, validatePurchaseOrderCustomFields, fromPurchaseOrder,
 } from './purchaseOrderForm'
@@ -45,6 +45,21 @@ describe('poNextCodes / poHeaderTransitions / poDropdownTransitions', () => {
 
   it('lists Submit for Approval before Send to Vendor when both are legal', () => {
     expect(poHeaderTransitions({ statusCode: 'DRFT', nextStatusCodes: ['SENT', 'PAPV', 'CANC'] })).toEqual(['PAPV', 'SENT'])
+  })
+})
+
+// The admin dropdown's own option list: like poDropdownTransitions, but Send
+// to Vendor stays in it too (the deliberate overlap with its header button —
+// an admin-only override onto Sent regardless of the vendor email).
+describe('poDropdownOverrideTransitions', () => {
+  it.each([
+    ['draft, approvers configured', { statusCode: 'DRFT' }, ['CANC']],
+    ['draft, nobody to approve', { statusCode: 'DRFT', nextStatusCodes: ['CANC', 'SENT'] }, ['CANC', 'SENT']],
+    ['approved', { statusCode: 'APPV' }, ['SENT', 'DRFT', 'CANC']],
+    ['sent', { statusCode: 'SENT' }, ['PART', 'RCVD', 'CLSD', 'CANC']],
+    ['closed is terminal', { statusCode: 'CLSD' }, []],
+  ])('%s', (_label, order, expected) => {
+    expect(poDropdownOverrideTransitions(order)).toEqual(expected)
   })
 })
 
