@@ -1,4 +1,4 @@
-import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
+import type { FocusEvent, KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
   DIMENSIONS_UNIT_HINT, DIMENSION_STEP, DIMENSION_STEP_COARSE, sanitizeDimensionInput, stepDimension,
@@ -45,11 +45,13 @@ function focusNextBox(from: HTMLInputElement) {
  *  Here only digits (and one decimal point) get in, the whole value is selected
  *  on focus, Enter moves on instead of saving the document, and the arrow keys
  *  still step the value (Shift for ten). */
-export function LineDimensionInputCells({ dims, unit, enabled, onChange }: {
+export function LineDimensionInputCells({ dims, unit, enabled, onChange, afterWidth }: {
   dims: Record<DimensionField, string>;
   unit: DimensionUnit;
   enabled: boolean;
   onChange: (key: DimensionField, value: string) => void;
+  /** A cell to render between Width and Slabs (the Sales tables' thickness). */
+  afterWidth?: ReactNode;
 }) {
   const title = enabled ? undefined : DIMENSIONS_UNIT_HINT;
 
@@ -88,6 +90,7 @@ export function LineDimensionInputCells({ dims, unit, enabled, onChange }: {
     <>
       {box('length', 'Length')}
       {box('width', 'Width')}
+      {afterWidth}
       {box('slabs', 'Slabs')}
     </>
   );

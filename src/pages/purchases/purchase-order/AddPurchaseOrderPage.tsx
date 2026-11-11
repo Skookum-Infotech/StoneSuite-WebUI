@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Package, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import { purchaseOrderShipToDefaults } from '@/lib/purchaseOrderShipToDefaults';
 import { InventoryItemReturnContext, useInventoryItemReturn } from '@/hooks/useInventoryItemReturn';
 import { useRecordCreateReturn } from '@/hooks/useRecordCreateReturn';
 import { useScrollToError } from '@/hooks/useScrollToError';
+import { purchaseOrderPrefillFrom } from '@/lib/purchaseOrderPrefill';
 import { PurchaseOrderFormBody } from './components/PurchaseOrderFormBody';
 import { DocumentReviewShell } from '@/components/tenant/documentReview/DocumentReviewShell';
 import { ReviewDialogs } from '@/components/tenant/documentReview/ReviewDialogs';
@@ -59,6 +60,7 @@ export default function AddPurchaseOrderPage() {
 
 function AddPurchaseOrderForm({ source }: { source?: PurchaseOrder }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const panelRef = useRef<EditableFilesPanelHandle>(null);
   const inventoryReturn = useInventoryItemReturn<PurchaseOrderDraft>();
@@ -70,7 +72,9 @@ function AddPurchaseOrderForm({ source }: { source?: PurchaseOrder }) {
 
   const [activeTab, setActiveTab] = useState<PageTab>(restored?.activeTab ?? PAGE_TABS[0].key);
   const [data, setData] = useState<Record<string, unknown>>(() => restored?.data ?? seed?.data ?? purchaseOrderDefaults());
-  const [lineItems, setLineItems] = useState<PurchaseOrderLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? []);
+  // Lines handed over by a sales order's "Order shortage items" (purchaseOrderPrefill.ts).
+  const [prefill] = useState(() => (restored || seed ? null : purchaseOrderPrefillFrom(location.state)));
+  const [lineItems, setLineItems] = useState<PurchaseOrderLineItem[]>(restored?.lineItems ?? seed?.lineItems ?? prefill ?? []);
   const [vendor, setVendor] = useState<VendorRef | null>(restored?.vendor ?? seed?.vendor ?? null);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, unknown>>(
     restored?.customFieldValues ?? seed?.customFieldValues ?? {},
@@ -167,7 +171,7 @@ function AddPurchaseOrderForm({ source }: { source?: PurchaseOrder }) {
   const guard = useUnsavedChangesGuard(
     { data, lineItems, vendor, customFieldValues },
     !review.active || review.hydrated,
-    inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed)
+    inventoryReturn.isRestored || vendorReturn.isRestored || Boolean(seed) || Boolean(prefill)
       || (review.active && !documentUsed && !documentFailed),
   );
 

@@ -7,7 +7,7 @@
 // dimension unit). The server (backend `linedim.ResolveThickness`) is
 // authoritative; this mirrors its limits so the form can stop a typo early.
 import {
-  mmToDimension, normalizeUnit, isAreaUnit, sanitizeDimensionInput, type DimensionUnit,
+  LINE_DIMENSION_COLS, mmToDimension, normalizeUnit, isAreaUnit, sanitizeDimensionInput, type DimensionUnit,
 } from '@/lib/lineDimensions';
 
 /** Thickest slab a line accepts (1 m), measured in centimetres so it means the
@@ -20,6 +20,9 @@ const CM_PER_UNIT: Record<DimensionUnit, number> = { mm: 0.1, cm: 1, in: 2.54, f
 
 /** Table column for the thickness cell, appended after L / W / Slabs. */
 export const THICKNESS_COL = { label: 'Thick', w: 'w-20', right: true } as const;
+
+/** Slab-size columns of the Sales tables: Thick sits between Width and Slabs. */
+export const SALES_SIZE_COLS = [LINE_DIMENSION_COLS[0], LINE_DIMENSION_COLS[1], THICKNESS_COL, LINE_DIMENSION_COLS[2]] as const;
 
 /** The thickest value a line accepts, in `unit`. */
 export function maxThickness(unit: string | undefined): number {

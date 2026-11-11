@@ -178,3 +178,73 @@ describe('PaymentDetailPage create credit memo', () => {
     expect(createButtons()).toHaveLength(0);
   });
 });
+
+describe('PaymentDetailPage status buttons', () => {
+  it.each([
+    ['an approved payment', 'APPV', ['Mark payment PAY-000001 as deposited', 'Void payment PAY-000001']],
+    ['a pending payment', 'PEND', ['Void payment PAY-000001']],
+    ['a deposited payment', 'DEPO', []],
+    ['a voided payment', 'VOID', []],
+  ])('offers the legal final moves for %s', async (_label, statusCode, want) => {
+    vi.mocked(paymentService.getPayment).mockResolvedValue(payment({ statusCode }));
+    renderPage();
+    await screen.findAllByText('PAY-000001');
+
+    const offered = [/as deposited/, /^Void payment/]
+      .flatMap((name) => screen.queryAllByRole('button', { name }))
+      .map((b) => b.getAttribute('aria-label'));
+    // The header renders its actions twice (desktop + mobile).
+    expect([...new Set(offered)]).toEqual(want);
+  });
+
+  it('offers nothing while the payment waits on approval', async () => {
+    vi.mocked(paymentService.getPayment).mockResolvedValue(payment({ statusCode: 'PEND', gated: true, approvalStatus: 'pending' }));
+    renderPage();
+    await screen.findAllByText('PAY-000001');
+
+    expect(screen.queryByRole('button', { name: /^Void payment/ })).not.toBeInTheDocument();
+  });
+
+  it('marks the payment deposited once confirmed', async () => {
+    vi.mocked(paymentService.getPayment).mockResolvedValue(payment());
+    vi.mocked(paymentService.transition).mockResolvedValue(payment({ status: 'Deposited', statusCode: 'DEPO' }));
+    renderPage();
+
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Mark payment PAY-000001 as deposited' }))[0]);
+    expect(paymentService.transition).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Mark Deposited' }));
+
+    expect(paymentService.transition).toHaveBeenCalledWith('pay-1', 'DEPO');
+  });
+
+  it('does nothing when the void is cancelled', async () => {
+    vi.mocked(paymentService.getPayment).mockResolvedValue(payment());
+    renderPage();
+
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Void payment PAY-000001' }))[0]);
+    expect(screen.getByText('Void PAY-000001?')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByText('Void PAY-000001?')).not.toBeInTheDocument();
+    expect(paymentService.transition).not.toHaveBeenCalled();
+  });
+
+  it('hides them without permission to change status', async () => {
+    vi.mocked(paymentService.getPayment).mockResolvedValue(payment());
+    vi.mocked(useUserPermissions).mockReturnValue({
+      grants: [], isLoading: false, activeRoleId: '', isSuperAdmin: false,
+      hasPermission: (_resource: string, action: string) => action !== 'transition',
+    } as ReturnType<typeof useUserPermissions>);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/sales/payment/pay-1']}>
+          <Routes><Route path="/sales/payment/:id" element={<PaymentDetailPage />} /></Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await screen.findAllByText('PAY-000001');
+
+    expect(screen.queryByRole('button', { name: /as deposited/ })).not.toBeInTheDocument();
+  });
+});

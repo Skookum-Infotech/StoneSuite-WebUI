@@ -58,6 +58,8 @@ export interface QuoteLineInput {
    *  the item's unit, then cm. */
   dimensionUnit?: string;
   slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
 }
 
 export interface QuoteCreatePayload {
@@ -134,6 +136,8 @@ export interface QuoteLine {
   /** The unit length and width were measured in. */
   dimensionUnit?: string | null;
   slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
 }
 
 // Full detail response (GET/Create/Update/Transition/Approve). Every field the

@@ -61,6 +61,8 @@ export interface SalesOrderLineInput {
    *  the item's unit, then cm. */
   dimensionUnit?: string;
   slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
 }
 
 export interface SalesOrderCreatePayload {
@@ -139,6 +141,8 @@ export interface SalesOrderLine {
   /** The unit length and width were measured in. */
   dimensionUnit?: string | null;
   slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
 }
 
 // Full detail response (GET/Create/Update). Every field the create/update
@@ -164,6 +168,8 @@ export interface SalesOrder {
   callerAlreadyApproved: boolean; // true if the requesting user already signed off this round (quorum may still need others)
   canReject?: boolean;            // whether the requesting user can reject it right now (configured approver OR super admin, while it awaits approval)
   rejection?: ApprovalRejection;  // who rejected it and why -- present while it still sits in the status the rejection left it in
+  /** What the order holds that inventory cannot cover yet (staff reads and saves only; absent on portal reads). */
+  stockShortages?: StockShortage[];
   customer: SalesOrderCustomerRef;
   orderDate: string;
   expectedDelivery?: string;
@@ -318,8 +324,10 @@ export interface SalesOrderInventoryRow {
   tracked?: boolean;
 }
 
-/** One item a Sales Order asked for more of than is free — the 409 the server
- *  answers a save with (code `insufficient_stock`). */
+/** One item a Sales Order holds more of than inventory has in stock. Short stock
+ *  never stops a save: the server saves the order and lists these next to it so
+ *  the screen can warn that delivery may be delayed — by stock already on order
+ *  (`onOrder`), or by stock nobody has ordered yet (`short`). */
 export interface StockShortage {
   /** inventory_item uuid */
   itemId: string;
@@ -328,8 +336,14 @@ export interface StockShortage {
   unitCode: string;
   /** What the order still needs. */
   requested: number;
-  /** What is free for it (never negative). */
+  /** What is free for it in stock (never negative). */
   available: number;
-  /** requested - available. */
+  /** Of the rest, what purchase orders already sent to a vendor are bringing
+   *  (absent from an older server, read as 0). */
+  onOrder?: number;
+  /** What nothing covers yet: requested - available - onOrder. What a new
+   *  purchase order should be for; 0 when sent POs cover it all. */
   short: number;
+  /** Numbers of the sent purchase orders bringing `onOrder`. */
+  purchaseOrders?: string[] | null;
 }

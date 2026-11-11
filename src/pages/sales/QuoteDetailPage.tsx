@@ -22,10 +22,11 @@ import { cn } from '@/lib/utils';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { KitLineRows } from '@/components/inventory/KitLineRows';
 import { unitLabel } from '@/lib/unitLabels';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
-import { LINE_DIMENSION_COLS } from '@/lib/lineDimensions';
-import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, validateForSend } from '@/lib/quoteForm';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS } from '@/lib/lineThickness';
+import { QUOTE_STATUS_COLORS, QUOTE_STATUS_CODES, QUOTE_CONVERTIBLE_STATUSES, QUOTE_ALLOWED_TRANSITIONS, validateForSend } from '@/lib/quoteForm';
 import { statusToastLabel } from '@/lib/statusToast';
+import { itemsShortLabel, uncoveredShortages } from '@/lib/stockShortage';
 import { QuoteAuditTab } from './components/QuoteAuditTab';
 import { DeleteQuoteDialog } from './components/DeleteQuoteDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
@@ -59,6 +60,8 @@ function fmtDate(iso?: string): string {
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
+
+const SENT_STATUS_CODE = 'SENT';
 
 export default function QuoteDetailPage() {
   const { id = '' } = useParams();
@@ -104,7 +107,15 @@ export default function QuoteDetailPage() {
   // (idempotent replay) — either way, navigate to it.
   const convert = useMutation({
     mutationFn: () => quoteService.convertToSalesOrder(id),
-    onSuccess: ({ salesOrder }) => navigate(`/sales/sales_order/${salesOrder.id}`),
+    // Short stock never stops the conversion; the order opens with its
+    // "items short" banner, and this toast says so straight away.
+    onSuccess: ({ salesOrder, stockShortages: all }) => {
+      const stockShortages = uncoveredShortages(all);
+      if (stockShortages.length > 0) {
+        toast.warning(`${quote?.quoteNumber || 'Quote'} converted to ${salesOrder.salesOrderNumber || 'a sales order'}. ${itemsShortLabel(stockShortages)} in inventory: delivery may be delayed.`);
+      }
+      navigate(`/sales/sales_order/${salesOrder.id}`);
+    },
   });
 
   // Inline status change from the sidebar's Status row — mirrors the Edit
@@ -184,18 +195,44 @@ export default function QuoteDetailPage() {
         subtitle={quote.customer.name}
         recordNumber={quote.quoteNumber}
         statusBadge={<Badge color={color}>{quote.status}</Badge>}
-        actions={canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
-          <button
-            type="button"
-            onClick={() => convert.mutate()}
-            disabled={convert.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
-          >
-            {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
-            Convert to Sales Order
-          </button>
+        actions={(
+          <>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={handleSendClick}
+                aria-label="Send quote to customer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Send className="size-3.5" />
+                Send to Customer
+              </button>
+            )}
+            {canConvert && QUOTE_CONVERTIBLE_STATUSES.has(quote.statusCode) && (
+              <button
+                type="button"
+                onClick={() => convert.mutate()}
+                disabled={convert.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+              >
+                {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
+                Convert to Sales Order
+              </button>
+            )}
+          </>
         )}
       />
+
+      {sendErrors.length > 0 && (
+        <div role="alert" className="space-y-0.5 border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16">
+          {sendErrors.map((e) => (
+            <p key={e} className="text-2xs text-destructive">{e}</p>
+          ))}
+        </div>
+      )}
+      {sendSuccess && (
+        <p role="status" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-emerald-600 3xl:px-12 4xl:px-16">{sendSuccess}</p>
+      )}
 
       {convert.isError && (
         <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
@@ -297,7 +334,7 @@ export default function QuoteDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -310,7 +347,7 @@ export default function QuoteDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  <KitLineRows lines={quote.items} colSpan={13} renderRow={(line, kitCls) => (
+                  <KitLineRows lines={quote.items} colSpan={14} renderRow={(line, kitCls) => (
                     <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
@@ -318,7 +355,7 @@ export default function QuoteDetailPage() {
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
-                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -330,7 +367,7 @@ export default function QuoteDetailPage() {
                     </tr>
                   )} />
                   {quote.items.length === 0 && (
-                    <tr><td colSpan={13} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={14} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -368,19 +405,19 @@ export default function QuoteDetailPage() {
                   Edit quote
                 </button>
               )}
-              {canCopy && (
-                <CopyQuickAction recordLabel="quote" addPath="/sales/quote/new" sourceId={id} />
-              )}
               {canEdit && (
                 <button
                   type="button"
                   onClick={handleSendClick}
+                  aria-label="Resend quote email to customer"
                   className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                  aria-label="Send quote to customer"
                 >
                   <Send className="size-4 text-stone-400 shrink-0" />
-                  Send to Customer
+                  Resend to Customer
                 </button>
+              )}
+              {canCopy && (
+                <CopyQuickAction recordLabel="quote" addPath="/sales/quote/new" sourceId={id} />
               )}
               <button
                 type="button"
@@ -395,16 +432,6 @@ export default function QuoteDetailPage() {
             </div>
             {exportPdfError && (
               <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
-            )}
-            {sendErrors.length > 0 && (
-              <div role="alert" className="space-y-0.5">
-                {sendErrors.map((e) => (
-                  <p key={e} className="text-2xs text-destructive">{e}</p>
-                ))}
-              </div>
-            )}
-            {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
             )}
           </div>
 
@@ -456,11 +483,14 @@ export default function QuoteDetailPage() {
         onOpenChange={setSendDialogOpen}
         recipientEmail={quote.billing.email ?? ''}
         label={`Quote ${quote.quoteNumber}`}
-        onSent={(result) =>
+        onSent={(result) => {
           setSendSuccess(
             result.sentTo.length ? `Sent to ${result.sentTo.join(', ')}.` : 'Send completed, but no recipients were found.',
-          )
-        }
+          );
+          // Sending is what makes the quote "Sent": move it there when that is a legal next step.
+          const next = quote.nextStatusCodes ?? QUOTE_ALLOWED_TRANSITIONS[quote.statusCode] ?? [];
+          if (next.includes(SENT_STATUS_CODE)) transition.mutate(SENT_STATUS_CODE);
+        }}
       />
     </div>
   );
