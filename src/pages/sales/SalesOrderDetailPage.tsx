@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { AddressGeoLine } from '@/components/tenant/AddressGeoLine';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send, PencilRuler } from 'lucide-react';
+import { ShoppingCart, Upload, Pencil, ArrowRightLeft, Loader2, Wrench, FileDown, Send, PencilRuler, Receipt } from 'lucide-react';
 import { CopyQuickAction } from '@/components/tenant/CopyQuickAction';
 import { toast } from 'sonner';
 import { salesOrderService } from '@/services/salesOrderService';
 import { useIdempotencyKey } from '@/hooks/useIdempotencyKey';
+import { useSalesOrderDownstream } from '@/hooks/useSalesOrderDownstream';
 import { fabricationService } from '@/services/fabricationService';
 import { lookupService } from '@/services/lookupService';
 import { apiErrorMessage } from '@/api/tenantClient';
@@ -104,6 +105,7 @@ export default function SalesOrderDetailPage() {
   // Convert targets a new Invoice, so gate on the Invoice module's create
   // permission (backend checks source sales_order:read + target invoice:create).
   const canConvert = permissionsLoading || hasPermission('invoice', 'create');
+  const canViewInvoice = permissionsLoading || hasPermission('invoice', 'read');
   // A fabrication job always originates from a sales order (backend spec
   // §2.2), so gate this on installation:create.
   const canFabricate = permissionsLoading || hasPermission('installation', 'create');
@@ -119,6 +121,12 @@ export default function SalesOrderDetailPage() {
     queryKey: ['crm-lookups'],
     queryFn: lookupService.getCrmLookups,
   });
+
+  // A sales order converts to one invoice only (backend uq_invoice_sales_order_once).
+  // Once it exists, the header offers to open it instead of "creating" it again.
+  // Shares its query with the Progress Bar, so this costs no extra request.
+  const downstream = useSalesOrderDownstream({ id: order?.id, number: order?.salesOrderNumber, customerName: order?.customer?.name });
+  const existingInvoice = Array.isArray(downstream.invoice) ? downstream.invoice[0] : downstream.invoice;
 
   const setLabel = useBreadcrumbStore((s) => s.setLabel);
   const clearLabel = useBreadcrumbStore((s) => s.clearLabel);
@@ -237,10 +245,23 @@ export default function SalesOrderDetailPage() {
         actions={(
           <>
             <CustomerOrderFormAction orderId={id} isDraft={order.statusCode === SO_DRAFT_CODE} />
-            {canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
+            {existingInvoice && canViewInvoice && (
+              <button
+                type="button"
+                onClick={() => navigate(`/sales/invoice/${existingInvoice.id}`)}
+                aria-label={`View invoice ${existingInvoice.number}`}
+                title={`Open ${existingInvoice.number}, the invoice created from this order`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+              >
+                <Receipt className="size-3.5" />
+                View Invoice
+              </button>
+            )}
+            {!existingInvoice && canConvert && SO_CONVERTIBLE_STATUSES.has(order.statusCode) && (
               <button
                 type="button"
                 onClick={() => convert.mutate()}
+                aria-label="Create invoice from this sales order"
                 disabled={convert.isPending}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
               >

@@ -40,6 +40,21 @@ describe('useSalesOrderDownstream', () => {
     expect(result.current.fabrication).toEqual([{ id: 'j1', number: 'FAB-1', statusCode: 'DRFT', status: 'Draft' }]);
   });
 
+  it('finds the invoice by customer name, since invoice search does not match the order number', async () => {
+    mocks.searchInvoices.mockReset().mockResolvedValue({ records: [
+      { id: 'i3', invoiceNumber: 'INV-3', statusCode: 'DRFT', status: 'Draft', salesOrder: { id: 'so-1', number: 'SO-1' } },
+      { id: 'i1', invoiceNumber: 'INV-1', statusCode: 'SENT', status: 'Sent', salesOrder: { id: 'so-1', number: 'SO-1' } },
+    ] });
+    mocks.searchJobs.mockResolvedValue({ records: [] });
+    mocks.searchPayments.mockResolvedValue({ records: [] });
+    const { result } = renderHook(() => useSalesOrderDownstream(SO), { wrapper });
+    await waitFor(() => expect(result.current.invoice).toBeDefined());
+
+    expect(mocks.searchInvoices).toHaveBeenCalledWith(expect.objectContaining({ search: 'Acme', sort: [{ field: 'created_at', dir: 'desc' }] }));
+    // Read newest first, shown oldest first.
+    expect((result.current.invoice as { id: string }[]).map((i) => i.id)).toEqual(['i1', 'i3']);
+  });
+
   it('searches nothing until the order has loaded', () => {
     mocks.searchInvoices.mockClear();
     renderHook(() => useSalesOrderDownstream({}), { wrapper });

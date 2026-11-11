@@ -15,21 +15,22 @@ export interface SalesOrderIdentity {
 
 /** Finds the invoices, fabrication jobs and payments raised from a sales order. The order
  *  cannot list them and the searches cannot filter by its id, so each is searched
- *  by a term it does carry (the order number on an invoice, the customer name on
- *  a job or payment) and only records that point back at this order (or at one of
- *  its invoices) are kept. */
+ *  by the customer name (the invoice search does not match a sales order number)
+ *  and only records that point back at this order (or at one of its invoices) are
+ *  kept. Invoices are read newest first so a just-created one is always inside the
+ *  page, then put back in creation order for the Progress Bar. */
 export function useSalesOrderDownstream(order: SalesOrderIdentity): DerivedRecords {
   const invoices = useQuery({
-    queryKey: ['invoices', 'of-sales-order', order.id, order.number],
+    queryKey: ['invoices', 'of-sales-order', order.id, order.customerName],
     queryFn: async () => {
       const page = await invoiceService.searchInvoices({
-        search: order.number,
-        sort: [{ field: 'created_at', dir: 'asc' }],
+        search: order.customerName,
+        sort: [{ field: 'created_at', dir: 'desc' }],
         limit: DOWNSTREAM_LIMIT,
       });
-      return page.records.filter((i) => i.salesOrder?.id === order.id);
+      return page.records.filter((i) => i.salesOrder?.id === order.id).reverse();
     },
-    enabled: Boolean(order.id) && Boolean(order.number),
+    enabled: Boolean(order.id) && Boolean(order.customerName),
   });
   const jobs = useQuery({
     queryKey: ['fabrication-jobs', 'of-sales-order', order.id, order.customerName],
