@@ -1,6 +1,8 @@
 import axios, { isAxiosError, type AxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 import { setAuthNotice, workspaceUnavailableMessage } from '@/lib/authNotice';
+import { isSessionReplacedBody, isSessionReplacedError } from '@/lib/singleSession';
+import type { ReplacedSessionInfo } from '@/types/auth';
 
 /** Base URL every API call goes to — shared by apiClient and by `fetch`-based
  *  callers that can't go through axios (aiService's streaming ask). */
@@ -52,8 +54,32 @@ let refreshPromise: Promise<RefreshOutcome> | null = null;
 
 /** How a refresh attempt ended. Only `rejected` means the server said the
  *  session is over; `transient` means we could not find out (network error,
- *  timeout, 5xx — e.g. a Fly/Neon cold start) and the session may be fine. */
-export type RefreshOutcome = 'ok' | 'rejected' | 'transient';
+ *  timeout, 5xx — e.g. a Fly/Neon cold start) and the session may be fine.
+ *  `replaced` means another sign-in took this session over: callers must not
+ *  log out themselves — the countdown overlay does that at 0:00. */
+export type RefreshOutcome = 'ok' | 'rejected' | 'transient' | 'replaced';
+
+/** BroadcastChannel message telling other tabs this session was replaced. */
+export const SESSION_REPLACED_MESSAGE = 'SESSION_REPLACED';
+
+/**
+ * Records that another sign-in took over this session, which shows the
+ * countdown overlay, and tells this browser's other tabs. Only the first
+ * report counts, so the countdown is never restarted.
+ */
+export function reportSessionReplaced(info: ReplacedSessionInfo, broadcast = true): void {
+  const store = useAuthStore.getState();
+  if (store.replacedSession || !store.isAuthenticated) return;
+  store.markSessionReplaced(info);
+  if (!broadcast) return;
+  try {
+    const ch = new BroadcastChannel('session-sync');
+    ch.postMessage({ type: SESSION_REPLACED_MESSAGE, info });
+    ch.close();
+  } catch {
+    // BroadcastChannel not available — each tab still learns it from its own poll.
+  }
+}
 
 // Waits between retries of a transient refresh failure. Sized to outlast a
 // scale-to-zero cold start (~1-2s) so a reload that lands on a stopped backend
@@ -202,6 +228,11 @@ async function refreshOnce(): Promise<RefreshOutcome> {
     }
     return res.data.success === true ? 'ok' : 'rejected';
   } catch (err) {
+    // Another sign-in took this session over: the overlay handles sign-out.
+    if (isSessionReplacedError(err)) {
+      reportSessionReplaced({});
+      return 'replaced';
+    }
     // Only an explicit refusal ends the session. A network error, timeout or
     // 5xx says nothing about the refresh token, so it must not log anyone out.
     if (!isRefreshRejection(err)) return 'transient';
@@ -268,7 +299,7 @@ export function forceLogout(notice?: string): void {
 // message inline; attemptRefresh stores it), so the 403 handler below skips them.
 // '/auth/refresh' also matches '/portal/auth/refresh'. The emailed-code step
 // finishes a sign-in too, and re-checks the workspace when it does.
-const WORKSPACE_NOTICE_SKIP_URLS = ['/auth/tenant-login', '/auth/mfa/verify', '/auth/refresh'];
+const WORKSPACE_NOTICE_SKIP_URLS = ['/auth/tenant-login', '/auth/mfa/verify', '/auth/refresh', '/auth/session/takeover'];
 
 // Response interceptor: on 401, silently attempt one token refresh and retry
 // the original request. If the refresh also fails, perform a full logout.
@@ -276,6 +307,14 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retried?: boolean };
+
+    // This session was taken over by a sign-in elsewhere (409 for a write
+    // during the handover, 401 after it). A refresh cannot help — it is
+    // refused the same way — so show the countdown overlay instead.
+    if (isSessionReplacedBody(error.response?.data) && !isLoggingOut) {
+      reportSessionReplaced({});
+      return Promise.reject(error as Error);
+    }
 
     // A 403 whose body says the workspace itself is unusable (suspended, deleted,
     // ...) means every further request will fail the same way. End the session
@@ -301,6 +340,7 @@ apiClient.interceptors.response.use(
       !originalRequest.url?.includes('/auth/refresh') &&
       !originalRequest.url?.includes('/portal/auth/refresh') &&
       !originalRequest.url?.includes('/auth/tenant-login') &&
+      !originalRequest.url?.includes('/auth/session/takeover') &&
       !originalRequest.url?.includes('/auth/register') &&
       !isLoggingOut
     ) {

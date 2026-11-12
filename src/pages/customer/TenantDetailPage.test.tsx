@@ -13,6 +13,7 @@ vi.mock('@/services/tenantServices', () => ({
     retryJob: vi.fn(),
     lifecycle: vi.fn(),
     purgeTenant: vi.fn(),
+    setSingleSession: vi.fn(),
   },
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -209,5 +210,77 @@ describe('TenantDetailPage — lifecycle actions', () => {
     await screen.findByRole('heading', { level: 1, name: 'Acme Stone Co.' });
     expect(screen.getByText('Platform owner')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /suspend|delete/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('TenantDetailPage — General and Settings tabs', () => {
+  it('opens on General, which holds the existing sections', async () => {
+    renderPage();
+
+    await screen.findByRole('heading', { level: 1, name: 'Acme Stone Co.' });
+    expect(screen.getByRole('tab', { name: 'General' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Settings' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByText('tenant_acme')).toBeInTheDocument();
+    expect(screen.queryByText('Enforce single session')).not.toBeInTheDocument();
+  });
+
+  it('switches to Settings by click and by arrow key, and back', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('tab', { name: 'Settings' }));
+    expect(screen.getByRole('tab', { name: 'Settings' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Enforce single session')).toBeInTheDocument();
+    expect(screen.queryByText('tenant_acme')).not.toBeInTheDocument();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'General' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'General' })).toHaveFocus();
+  });
+
+  it('opens straight on Settings from ?tab=settings', async () => {
+    renderPage('/customer/onboarding/t-1?tab=settings');
+    expect(await screen.findByText('Enforce single session')).toBeInTheDocument();
+  });
+
+  it('shows the single-session switch on by default and turns it off after confirming', async () => {
+    const user = userEvent.setup();
+    vi.mocked(platformService.setSingleSession).mockResolvedValue({ success: true, singleSessionEnforced: false });
+    renderPage('/customer/onboarding/t-1?tab=settings');
+
+    const toggle = await screen.findByRole('switch', { name: 'Enforce single session' });
+    expect(toggle).toBeChecked();
+
+    await user.click(toggle);
+    const dialog = screen.getByRole('dialog');
+    expect(platformService.setSingleSession).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Turn off single session' }));
+
+    await waitFor(() => expect(platformService.setSingleSession).toHaveBeenCalledWith('t-1', false));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('cancelling the confirmation changes nothing', async () => {
+    const user = userEvent.setup();
+    vi.mocked(platformService.listTenants).mockResolvedValue([makeTenant({ singleSessionEnforced: false })]);
+    renderPage('/customer/onboarding/t-1?tab=settings');
+
+    const toggle = await screen.findByRole('switch', { name: 'Enforce single session' });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(platformService.setSingleSession).not.toHaveBeenCalled();
+  });
+
+  it('keeps the platform owner exempt: switch off and disabled', async () => {
+    vi.mocked(platformService.listTenants).mockResolvedValue([makeTenant({ isPlatformOwner: true, singleSessionEnforced: false })]);
+    renderPage('/customer/onboarding/t-1?tab=settings');
+
+    const toggle = await screen.findByRole('switch', { name: 'Enforce single session' });
+    expect(toggle).not.toBeChecked();
+    expect(toggle).toBeDisabled();
+    expect(screen.getByText('Platform users are always exempt.')).toBeInTheDocument();
   });
 });

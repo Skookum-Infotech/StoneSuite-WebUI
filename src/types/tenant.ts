@@ -32,6 +32,9 @@ export interface Tenant {
   // suspend or delete it; both fields are absent on an older backend.
   isPlatformOwner?: boolean;
   r2Bucket?: string;
+  // One browser session per user (licence enforcement). Absent on an older
+  // backend; always false for the platform owner.
+  singleSessionEnforced?: boolean;
 }
 
 export interface CreateTenantResult {

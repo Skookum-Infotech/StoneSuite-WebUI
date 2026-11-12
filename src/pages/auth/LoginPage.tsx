@@ -11,12 +11,13 @@ import { SAML_PENDING_PROVIDER_KEY } from '@/lib/samlSession'
 import { EmailStep } from './components/EmailStep'
 import { PasswordStep } from './components/PasswordStep'
 import { CodeStep } from './components/CodeStep'
+import { TakeoverPrompt } from './components/TakeoverPrompt'
 import { AuthNotice } from './components/AuthNotice'
 import { LoginHero } from './components/LoginHero'
-import type { UserRole, AuthResponse, IdentifyResult, MfaChallenge } from '@/types/auth'
+import type { UserRole, AuthResponse, IdentifyResult, MfaChallenge, ActiveSessionPrompt } from '@/types/auth'
 import type { SAMLProvider } from '@/types/tenant'
 
-type Step = 'email' | 'password' | 'code' | 'redirecting'
+type Step = 'email' | 'password' | 'code' | 'takeover' | 'redirecting'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -30,6 +31,8 @@ export default function LoginPage() {
   // Set while the code step is showing: the password was right, a code was
   // emailed, and no session exists until it is entered.
   const [challenge, setChallenge] = useState<MfaChallenge | null>(null)
+  // Set while asking whether to end the session open on another browser.
+  const [takeover, setTakeover] = useState<ActiveSessionPrompt | null>(null)
 
   const loggedOut = searchParams.get('logged_out') === 'true'
 
@@ -106,6 +109,18 @@ export default function LoginPage() {
   function handleMfaRequired(next: MfaChallenge) {
     setChallenge(next)
     setStep('code')
+  }
+
+  function handleActiveSession(prompt: ActiveSessionPrompt) {
+    setTakeover(prompt)
+    setStep('takeover')
+  }
+
+  // Cancel keeps the other session: start over, signed out.
+  function handleTakeoverCancel() {
+    setTakeover(null)
+    setChallenge(null)
+    setStep('email')
   }
 
   // Back from the code step lands on the password step: the code belongs to
@@ -226,11 +241,13 @@ export default function LoginPage() {
                     />
                   </div>
                   <h2 className="text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl">
-                    {step === 'code' ? 'Check your email' : 'Welcome back'}
+                    {step === 'code' ? 'Check your email' : step === 'takeover' ? 'Already signed in' : 'Welcome back'}
                   </h2>
                   <p className="mt-1 text-xs text-stone-500 sm:mt-2 sm:text-sm">
                     {step === 'code'
                       ? 'Enter the code we emailed you to finish signing in'
+                      : step === 'takeover'
+                        ? 'Choose where to stay signed in'
                       : step === 'password'
                         ? 'Enter your password to continue'
                         : 'Sign in to your Stone Suite workspace'}
@@ -252,13 +269,21 @@ export default function LoginPage() {
               <div className="flex justify-center py-6">
                 <Loader2 className="size-6 animate-spin text-stone-400" aria-hidden="true" />
               </div>
+            ) : step === 'takeover' && takeover ? (
+              <TakeoverPrompt prompt={takeover} onSuccess={handleLoginSuccess} onCancel={handleTakeoverCancel} />
             ) : step === 'code' && challenge ? (
-              <CodeStep challenge={challenge} onSuccess={handleLoginSuccess} onBack={handleCodeBack} />
+              <CodeStep
+                challenge={challenge}
+                onSuccess={handleLoginSuccess}
+                onBack={handleCodeBack}
+                onActiveSession={handleActiveSession}
+              />
             ) : step === 'password' ? (
               <PasswordStep
                 email={email}
                 onSuccess={handleLoginSuccess}
                 onMfaRequired={handleMfaRequired}
+                onActiveSession={handleActiveSession}
                 onBack={handleBack}
               />
             ) : (

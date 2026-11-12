@@ -96,6 +96,15 @@ export const platformService = {
       .then((r) => r.data),
   rejectTenant: (tenantId: string) =>
     tenantClient.post(`/platform/tenants/${tenantId}/reject`).then((r) => r.data),
+  // Turns the one-browser-per-user rule on or off for a customer. The backend
+  // refuses to turn it on for the platform owner.
+  setSingleSession: (tenantId: string, enforced: boolean) =>
+    tenantClient
+      .put<{ success: boolean; singleSessionEnforced: boolean }>(
+        `/platform/tenants/${tenantId}/single-session`,
+        { enforced },
+      )
+      .then((r) => r.data),
   lifecycle: (tenantId: string, action: 'suspend' | 'restore' | 'delete') =>
     tenantClient.post(`/platform/tenants/${tenantId}/${action}`).then((r) => r.data),
   // Irreversibly removes the tenant: its storage bucket, database and records.
