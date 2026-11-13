@@ -76,7 +76,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
               onClick={close}
               disabled={save.isPending}
               aria-label="Cancel"
-              className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+              className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -85,7 +85,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
               onClick={() => save.mutate(pending)}
               disabled={save.isPending}
               aria-label={pending ? 'Turn on single session' : 'Turn off single session'}
-              className="rounded-lg bg-warning px-3 py-1.5 text-xs font-semibold text-white hover:bg-warning/90 disabled:opacity-50"
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-stone-950 transition-all hover:bg-amber-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {save.isPending ? 'Saving…' : pending ? 'Turn on' : 'Turn off'}
             </button>

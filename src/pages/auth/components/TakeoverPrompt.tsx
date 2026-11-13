@@ -58,9 +58,9 @@ export function TakeoverPrompt({ prompt, onSuccess, onCancel }: TakeoverPromptPr
     <div className="space-y-5" role="region" aria-labelledby="takeover-title">
       <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
         <MonitorSmartphone className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden="true" />
-        <div className="min-w-0 text-sm text-amber-900">
+        <div className="min-w-0 text-sm text-amber-800">
           <p id="takeover-title" className="font-semibold">You&apos;re already signed in on another device</p>
-          <p className="mt-1 text-xs text-amber-800">
+          <p className="mt-1 text-xs text-amber-700">
             {prompt.deviceLabel}, active {lastActiveLabel(prompt.lastSeenAt, shownAt)}. Your account can be
             signed in on only one browser at a time. End that session and continue here?
           </p>

@@ -76,7 +76,7 @@ export function TenantSwitchLimits({ tenant }: { tenant: Tenant }) {
           onClick={() => save.mutate()}
           disabled={!dirty || !valid || save.isPending}
           aria-label="Save device switch limits"
-          className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-all hover:bg-brand/80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {save.isPending ? 'Saving…' : 'Save'}
         </button>

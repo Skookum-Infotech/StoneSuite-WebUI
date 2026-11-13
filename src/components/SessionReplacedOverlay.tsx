@@ -68,7 +68,7 @@ export function SessionReplacedOverlay({ info }: SessionReplacedOverlayProps): R
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-stone-950/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="session-replaced-title"
