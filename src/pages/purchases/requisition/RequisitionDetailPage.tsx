@@ -23,8 +23,10 @@ import {
   PRIORITY_COLORS, priorityLabel, canConvertToPurchaseOrder,
 } from '@/lib/requisitionForm';
 import { statusToastLabel } from '@/lib/statusToast';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
-import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
+import { PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { PDF_THICKNESS_HEAD, SALES_SIZE_COLS, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
 import { RequisitionAuditTab } from './components/RequisitionAuditTab';
 import { DeleteRequisitionDialog } from './components/DeleteRequisitionDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
@@ -48,6 +50,8 @@ type Tab = (typeof TABS)[number]['key'];
 // tab show up without a manual reload — same cadence as NotificationBell's
 // unread poll.
 const DETAIL_POLL_MS = 60_000;
+/** Columns in the Items table — a kit heading and the empty row span them all. */
+const REQN_ITEM_COLUMNS = 12;
 
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
@@ -159,8 +163,9 @@ export default function RequisitionDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
-      // The three size columns only appear when some line states a size.
-      const sized = anyDimensions(reqn.items);
+      // The size columns only appear when some line states a size (or a thickness).
+      const thick = anyThickness(reqn.items);
+      const sized = anyDimensions(reqn.items) || thick;
       await exportPurchasesRecordToPdf({
         recordType: 'requisition',
         title: reqn.requisitionNumber || 'Requisition',
@@ -184,12 +189,13 @@ export default function RequisitionDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), 'Qty', 'Est. Unit Price', 'Amount'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), ...(thick ? [PDF_THICKNESS_HEAD] : []), 'Qty', 'Est. Unit Price', 'Amount'],
           rows: reqn.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
             ...(sized ? dimensionCells(line) : []),
+            ...(thick ? [thicknessPdfCell(line)] : []),
             String(line.quantity),
             currency(line.estimatedUnitPrice),
             currency(line.estimatedAmount),
@@ -220,6 +226,17 @@ export default function RequisitionDetailPage() {
         subtitle={reqn.department || undefined}
         recordNumber={reqn.requisitionNumber}
         statusBadge={<Badge color={color}>{reqn.status}</Badge>}
+        actions={showConvert && (
+          <button
+            type="button"
+            onClick={() => setConvertOpen(true)}
+            aria-label="Convert this requisition to a purchase order"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover"
+          >
+            <ArrowRightLeft className="size-3.5" aria-hidden="true" />
+            Convert to Purchase Order
+          </button>
+        )}
       />
 
       <RecordApprovalBanner
@@ -290,7 +307,7 @@ export default function RequisitionDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
+                      ...SALES_SIZE_COLS,
                       { label: 'Units' },
                       { label: 'Qty', right: true },
                       { label: 'Est. Unit Price', right: true },
@@ -301,23 +318,24 @@ export default function RequisitionDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {reqn.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
+                  <KitLineRows lines={reqn.items} colSpan={REQN_ITEM_COLUMNS} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
-                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500">{line.unitCode || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.estimatedUnitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.estimatedAmount)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {reqn.items.length === 0 && (
-                    <tr><td colSpan={11} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={REQN_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -346,17 +364,6 @@ export default function RequisitionDetailPage() {
                 <Upload className="size-4 text-stone-400 shrink-0" />
                 Upload file
               </button>
-              {showConvert && (
-                <button
-                  type="button"
-                  onClick={() => setConvertOpen(true)}
-                  aria-label="Convert this requisition to a purchase order"
-                  className="flex items-center gap-2.5 hover:bg-stone-50 rounded-lg px-3 py-2 cursor-pointer text-xs text-stone-700 w-full transition-colors text-left"
-                >
-                  <ArrowRightLeft className="size-4 text-stone-400 shrink-0" />
-                  Convert to Purchase Order
-                </button>
-              )}
               {canEdit && reqn.statusCode === 'DRFT' && (
                 <button
                   type="button"

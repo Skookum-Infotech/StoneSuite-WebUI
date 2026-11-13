@@ -29,7 +29,7 @@ export function VendorBillFormBody({
   activeTab, setActiveTab, vendorBillId,
   data, set, lineItems, setLineItems,
   vendor, setVendor, vendorLocked = false, onCreateVendor,
-  purchaseOrder, setPurchaseOrder,
+  purchaseOrder, setPurchaseOrder, purchaseOrderItemsError,
   customFieldValues, setCustomField,
   lookups, subtotal, discountAmt, taxTotal, adjustment, total, filesPanelRef,
 }: {
@@ -57,6 +57,9 @@ export function VendorBillFormBody({
    *  the bill actually has one. */
   purchaseOrder: VendorBillPurchaseOrderRef | null;
   setPurchaseOrder?: (v: VendorBillPurchaseOrderRef | null) => void;
+  /** Set when picking a purchase order failed to load its items into the
+   *  table below — Add mode only; Edit never fetches (the link is fixed). */
+  purchaseOrderItemsError?: string;
   customFieldValues: Record<string, unknown>;
   setCustomField: (key: string, value: unknown) => void;
   lookups?: CrmLookups;
@@ -124,6 +127,9 @@ export function VendorBillFormBody({
                             <div className={cn(readonlyCls, 'cursor-not-allowed select-none')}>
                               {purchaseOrder?.number}
                             </div>
+                          )}
+                          {purchaseOrderItemsError && (
+                            <p role="alert" className="mt-1 text-2xs text-destructive">{purchaseOrderItemsError}</p>
                           )}
                         </ModernFieldShell>
                       )}

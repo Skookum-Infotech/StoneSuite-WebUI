@@ -38,6 +38,12 @@ export interface VendorBillLineInput {
    *  the item's unit, then cm. */
   dimensionUnit?: string;
   slabs?: number;
+  /** Thickness of one slab, in `dimensionUnit`. Descriptive only: it never enters the quantity. */
+  thickness?: number;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface CreateVendorBillPayload {
@@ -110,6 +116,12 @@ export interface VendorBillLine {
   /** The unit length and width were measured in. */
   dimensionUnit?: string | null;
   slabs?: number | null;
+  /** Thickness of one slab, in `dimensionUnit`. */
+  thickness?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  Consecutive lines with the same kitId sit under one kit heading. */
+  kitId?: string;
+  kitName?: string;
 }
 
 /** One live vendor payment application against this bill — read-only. A bill

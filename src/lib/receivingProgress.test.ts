@@ -89,7 +89,7 @@ describe('progressTone', () => {
 describe('showsReceivingProgress', () => {
   it.each([
     ['DRFT', false], ['PAPV', false], ['APPV', false], ['CANC', false],
-    ['SENT', true], ['PART', true], ['RCVD', true], ['CLSD', true],
+    ['SENT', true], ['PART', true], ['RCVD', true], ['PAID', true], ['CLSD', true],
   ])('%s → %s', (code, want) => {
     expect(showsReceivingProgress(code)).toBe(want);
   });

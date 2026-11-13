@@ -19,7 +19,7 @@ vi.mock('@/services/documentService', () => ({
   documentService: { sendToCustomer: vi.fn(), listSends: vi.fn().mockResolvedValue([]) },
 }));
 vi.mock('@/hooks/useUserPermissions', () => ({ useUserPermissions: vi.fn() }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
 
 import PurchaseOrderDetailPage from './PurchaseOrderDetailPage';
 import { purchaseOrderService } from '@/services/purchaseOrderService';
@@ -197,7 +197,7 @@ describe('PurchaseOrderDetailPage — header actions and the admin-only status d
     await waitFor(() => expect(purchaseOrderService.transition).toHaveBeenCalledWith('po-1', 'PAPV'));
   });
 
-  it('gives a super admin the status dropdown, without the moves that are header buttons', async () => {
+  it('gives a super admin the status dropdown, without Submit for Approval but with Send to Vendor as an override', async () => {
     vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
     renderPage({ isSuperAdmin: true });
     const user = userEvent.setup();
@@ -208,16 +208,33 @@ describe('PurchaseOrderDetailPage — header actions and the admin-only status d
 
     expect(screen.getByRole('option', { name: 'Revise' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Cancel' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'Send to Vendor' })).not.toBeInTheDocument();
+    // Send to Vendor sits in both the header (the normal, email-gated move)
+    // and the dropdown (the admin override onto Sent regardless) on purpose.
+    expect(screen.getByRole('option', { name: 'Send to Vendor' })).toBeInTheDocument();
   });
 
-  it('hides the status dropdown from a super admin once only header-button moves remain', async () => {
+  it("forces a purchase order to Sent from the admin dropdown, bypassing the vendor-email gate", async () => {
+    vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue(approvedOrder);
+    vi.mocked(purchaseOrderService.transition).mockResolvedValue({ ...sentOrder, emailSent: false, emailError: 'The email could not be delivered.' });
+    renderPage({ isSuperAdmin: true });
+    const user = userEvent.setup();
+
+    await user.click((await screen.findAllByRole('button', { name: 'Approved' }))[0]);
+    await user.click(screen.getByRole('option', { name: 'Send to Vendor' }));
+
+    await waitFor(() => expect(purchaseOrderService.transition).toHaveBeenCalledWith('po-1', 'SENT', { force: true }));
+    await waitFor(() => expect(toast.warning).toHaveBeenCalledWith(
+      'Moved to Sent, but the vendor email failed: The email could not be delivered.',
+    ));
+  });
+
+  it('hides the status dropdown from a super admin once no move is left at all', async () => {
     vi.mocked(purchaseOrderService.getPurchaseOrder).mockResolvedValue({
-      ...approvedOrder, nextStatusCodes: ['SENT'],
+      ...approvedOrder, nextStatusCodes: [],
     } as unknown as PurchaseOrder);
     renderPage({ isSuperAdmin: true });
 
-    expect(await screen.findAllByRole('button', { name: 'Send to Vendor' })).toHaveLength(HEADER_COPIES);
+    await screen.findAllByText('Approved');
     expect(screen.queryAllByText('Actions')).toHaveLength(0);
   });
 

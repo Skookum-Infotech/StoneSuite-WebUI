@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Plus, Pencil, Trash2, Copy, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CLS } from '@/lib/lineActionsColumn';
@@ -10,12 +11,14 @@ import type { InventoryItem } from '@/types/inventory';
 import { useCatalogLineDraft } from '@/hooks/useCatalogLineDraft';
 import { useAddKitLines } from '@/hooks/useAddKitLines';
 import { useItemUnitCode } from '@/hooks/useItemUnitCode';
-import { LineDimensionInputCells } from '@/components/inventory/LineDimensionInputCells';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
+import { LineSizeInputCells, LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { SALES_SIZE_COLS, sizeFromItemMm, thicknessFromItemMm } from '@/lib/lineThickness';
 import {
-  LINE_DIMENSION_COLS, clampDimensionField, itemDimensionUnit, normalizeUnit, isAreaUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
+  clampDimensionField, itemDimensionUnit, isSized, withoutUnsupportedSize, withSizedQuantity,
 } from '@/lib/lineDimensions';
 import { blockEnterSubmit } from '@/lib/lineEntryKeys';
+import { KitHeadingRow, KIT_ROW_CLS } from '@/components/inventory/KitHeadingRow';
+import { kitHeadings, labelWithKit, removeKitRun } from '@/lib/kitLines';
 import { EMPTY_LINE_ITEM, calcLineItem, type RequisitionLineItem } from '@/lib/requisitionForm';
 
 const inlineCls =
@@ -32,7 +35,8 @@ const ITEM_COLS = [
   { label: 'Item Name *', w: 'min-w-[160px]' },
   { label: 'Description', w: 'min-w-[140px]' },
   { label: 'SKU', w: 'min-w-[90px]' },
-  ...LINE_DIMENSION_COLS,
+  // L, W, Thick, Slabs — the same order as the Sales tables.
+  ...SALES_SIZE_COLS,
   { label: 'Units', w: 'w-16' },
   { label: 'Qty', w: 'w-20', right: true },
   { label: 'Est. Unit Price', w: 'w-24', right: true },
@@ -62,29 +66,39 @@ export function RequisitionLinesTable({ items, onUpdate }: {
   // time. The item's unit price seeds the *estimate* — the requester is
   // free to overwrite it, since a requisition predates any vendor quote.
   const unitCodeFor = useItemUnitCode();
-  const applyCatalogItem = (prev: Omit<RequisitionLineItem, 'id' | 'lineNo'>, item: InventoryItem) => recalc(withoutUnsupportedSize({
-    ...prev,
-    itemName: item.name,
-    units: unitCodeFor(item),
-    itemDescription: item.description,
-    itemSku: item.sku,
-    estimatedUnitPrice: String(itemPrice(item, 'purchasing')),
-    inventoryItemUuid: item.id,
-    dimensionUnit: itemDimensionUnit(item),
-  }));
+  const applyCatalogItem = (prev: Omit<RequisitionLineItem, 'id' | 'lineNo'>, item: InventoryItem) => {
+    const units = unitCodeFor(item);
+    const dimensionUnit = itemDimensionUnit(item);
+    return recalc(withoutUnsupportedSize({
+      ...prev,
+      // Length, width and thickness start at the item's own standard slab, in the
+      // unit the line is measured in; blank when the item states none.
+      length: sizeFromItemMm(item.lengthMm, dimensionUnit, units),
+      width: sizeFromItemMm(item.widthMm, dimensionUnit, units),
+      thickness: thicknessFromItemMm(item.thicknessMm, dimensionUnit, units),
+      itemName: item.name,
+      units,
+      itemDescription: item.description,
+      itemSku: item.sku,
+      estimatedUnitPrice: String(itemPrice(item, 'purchasing')),
+      inventoryItemUuid: item.id,
+      dimensionUnit,
+    }));
+  };
 
   const {
     draft, setDraft, editId, setEditId, isAdding, setIsAdding, lineError, requireCatalogItem, addToInventory,
     addNewKit, returnedKit, reportLineError,
   } = useCatalogLineDraft(EMPTY_LINE_ITEM, applyCatalogItem);
 
-  // Picking a kit adds its items as ordinary lines — Purchases tables show no
-  // kit heading, so the lines carry no kit label.
+  // Picking a kit appends its items as lines under the kit's heading, as in
+  // the Sales tables.
   const { addKit, isAddingKit } = useAddKitLines({
     items,
     onUpdate,
     emptyDraft: EMPTY_LINE_ITEM,
     applyItem: applyCatalogItem,
+    label: labelWithKit,
     newId: genId,
     onAdded: () => { setDraft(EMPTY_LINE_ITEM); setIsAdding(false); },
     onError: reportLineError,
@@ -140,15 +154,24 @@ export function RequisitionLinesTable({ items, onUpdate }: {
     if (editId === id) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
   };
 
+  // The heading's remove button takes the whole kit group out.
+  const removeRun = (firstId: string) => {
+    const next = removeKitRun(items, firstId);
+    onUpdate(next);
+    if (editId && !next.some((r) => r.id === editId)) { setEditId(null); setDraft(EMPTY_LINE_ITEM); }
+  };
+
   const copyPrev = () => {
     if (!items.length) return;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, lineNo, ...rest } = items[items.length - 1];
-    setDraft(rest);
+    // A copy is a new line of its own, not another member of the kit.
+    setDraft({ ...rest, kitId: undefined, kitName: undefined });
     setIsAdding(true);
     setEditId(null);
   };
 
+  const headings = kitHeadings(items);
   const activeDraft = isAdding || editId !== null;
 
   return (
@@ -165,9 +188,18 @@ export function RequisitionLinesTable({ items, onUpdate }: {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {items.map((row) =>
-              editId === row.id ? (
-                <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
+            {items.map((row) => (
+              <Fragment key={row.id}>
+                {headings.get(row.id) && (
+                  <KitHeadingRow
+                    name={headings.get(row.id)?.kitName ?? ''}
+                    count={headings.get(row.id)?.count ?? 0}
+                    colSpan={ITEM_COLS.length}
+                    onRemove={() => removeRun(row.id)}
+                  />
+                )}
+              {editId === row.id ? (
+                <tr className="bg-brand/5 divide-x divide-stone-100">
                   <InlineItemRow lineNo={row.lineNo} draft={draft} onChange={updateDraft} picker={picker} />
                   <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
                     <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
@@ -176,12 +208,12 @@ export function RequisitionLinesTable({ items, onUpdate }: {
                   </td>
                 </tr>
               ) : (
-                <tr key={row.id} className="hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100">
+                <tr className={cn('hover:bg-stone-50/70 transition-colors group divide-x divide-stone-100', row.kitId && KIT_ROW_CLS)}>
                   <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku || '—'}</td>
-                  <LineDimensionViewCells length={row.length} width={row.width} slabs={row.slabs} unit={row.dimensionUnit} />
+                  <LineSizeViewCells size={row} unit={row.dimensionUnit} units={row.units} />
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units || '—'}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.estimatedUnitPrice ? `$${parseFloat(row.estimatedUnitPrice).toFixed(2)}` : '—'}</td>
@@ -197,8 +229,9 @@ export function RequisitionLinesTable({ items, onUpdate }: {
                     </div>
                   </td>
                 </tr>
-              ),
-            )}
+              )}
+              </Fragment>
+            ))}
             {isAdding && (
               <tr className="bg-brand/5 divide-x divide-stone-100">
                 <InlineItemRow lineNo={items.length + 1} draft={draft} onChange={updateDraft} picker={picker} />
@@ -252,7 +285,7 @@ export function RequisitionLinesTable({ items, onUpdate }: {
   );
 }
 
-type DraftKey = 'quantity' | 'estimatedUnitPrice' | 'itemDescription' | 'length' | 'width' | 'slabs';
+type DraftKey = 'quantity' | 'estimatedUnitPrice' | 'itemDescription' | 'length' | 'width' | 'slabs' | 'thickness';
 
 function InlineItemRow({ lineNo, draft, onChange, picker }: {
   lineNo: number;
@@ -273,10 +306,11 @@ function InlineItemRow({ lineNo, draft, onChange, picker }: {
         <input type="text" value={draft.itemDescription} onChange={(e) => onChange('itemDescription', e.target.value)} placeholder="Description" className={cn(inlineCls, 'min-w-[120px]')} aria-label="Description" />
       </td>
       <td className="px-2 py-1.5 text-stone-500 font-mono text-2xs">{draft.itemSku || '—'}</td>
-      <LineDimensionInputCells
-        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '' }}
-        unit={normalizeUnit(draft.dimensionUnit)}
-        enabled={isAreaUnit(draft.units)}
+      {/* A per-piece item (a sink) folds the four size cells into one dash. */}
+      <LineSizeInputCells
+        dims={{ length: draft.length ?? '', width: draft.width ?? '', slabs: draft.slabs ?? '', thickness: draft.thickness ?? '' }}
+        dimensionUnit={draft.dimensionUnit}
+        units={draft.units}
         onChange={onChange}
       />
       <td className="px-2 py-1.5 text-stone-500 text-2xs">{draft.units || '—'}</td>
