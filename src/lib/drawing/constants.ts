@@ -117,3 +117,15 @@ export const EDGE_HIT_WIDTH_PX = 12;
 
 /** A piece dragged to this many mm from where it started counts as moved. */
 export const MIN_DRAG_MM = 0.01;
+
+/** The square the Draw tool drops on a click: 25 5/8" long by 25 1/2" deep —
+ *  25 1/2" being the standard countertop depth. */
+export const DEFAULT_DRAW_LENGTH_MM = (25 + 5 / 8) * MM_PER_INCH;
+export const DEFAULT_DRAW_DEPTH_MM = 25.5 * MM_PER_INCH;
+
+/** Dragging a side with the Draw tool grows or shrinks the piece in steps of
+ *  1/16", and a newly drawn square lands on the same 1/16" grid. */
+export const DRAW_RESIZE_STEP_MM = MM_PER_INCH / 16;
+
+/** Thickness given to a piece drawn on the canvas (no thickness is asked for). */
+export const DEFAULT_PIECE_THICKNESS_MM = 30;

@@ -16,6 +16,15 @@ export function SelectIcon() {
   return <svg {...SVG_PROPS}><path d="M4 3l12 6-5 1.5L9 16 4 3z" /></svg>;
 }
 
+export function PencilIcon() {
+  return (
+    <svg {...SVG_PROPS}>
+      <path d="M3.5 16.5l1-4L13.8 3.2a1.4 1.4 0 012 0l1 1a1.4 1.4 0 010 2L7.5 15.5l-4 1z" />
+      <path d="M12 5l3 3" />
+    </svg>
+  );
+}
+
 export function LineIcon() {
   return (
     <svg {...SVG_PROPS}>

@@ -46,6 +46,12 @@ export type EditorAction =
   | { type: 'selectEdge'; pieceId: string; edgeIndex: number | null }
   | { type: 'setZoom'; zoom: number }
   | { type: 'pan'; delta: Point }
+  /** Puts the drawing point `center` in the middle of the canvas — the corner
+   *  map's way to move the view. Absolute, so repeating it is harmless
+   *  (unlike `pan`, which adds up). */
+  | { type: 'centerView'; center: Point }
+  /** Zooms by `factor` about whatever is in the middle of the canvas. */
+  | { type: 'zoomView'; factor: number }
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'loadDrawing'; drawing: Drawing }
@@ -218,6 +224,17 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
 
     case 'pan':
       return { ...state, pan: { x: state.pan.x + action.delta.x, y: state.pan.y + action.delta.y } };
+
+    // The canvas draws world points at (x, -y) inside translate(pan) scale(zoom),
+    // so the point in the middle of the canvas is (-pan.x / zoom, pan.y / zoom).
+    case 'centerView':
+      return { ...state, pan: { x: -state.zoom * action.center.x, y: state.zoom * action.center.y } };
+
+    case 'zoomView': {
+      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom * action.factor));
+      const center = { x: -state.pan.x / state.zoom, y: state.pan.y / state.zoom };
+      return { ...state, zoom, pan: { x: -zoom * center.x, y: zoom * center.y } };
+    }
 
     case 'undo': {
       if (state.past.length === 0) return state;

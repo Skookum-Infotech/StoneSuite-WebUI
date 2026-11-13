@@ -17,6 +17,8 @@ import { DrawingEditorProvider, useDrawingEditor } from '@/components/drawing/Dr
 import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
 import { AreaTabs } from '@/components/drawing/AreaTabs';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
+import { DrawModeBar } from '@/components/drawing/DrawModeBar';
+import { MiniMap } from '@/components/drawing/MiniMap';
 import { PieceInspector } from '@/components/drawing/PieceInspector';
 import { ToolRail } from '@/components/drawing/ToolRail';
 import { AreaSummary } from '@/components/drawing/AreaSummary';
@@ -184,8 +186,10 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
       <div className="flex min-h-0 flex-1 gap-2">
         <ToolRail />
-        <div className="min-h-0 min-w-0 flex-1">
+        <div className="relative min-h-0 min-w-0 flex-1">
           <DrawingCanvas />
+          <DrawModeBar />
+          <MiniMap />
         </div>
         <aside aria-label="Properties" className="modal-scrollbar w-72 shrink-0 overflow-y-auto overflow-x-hidden border-l border-stone-200 pl-2">
           <PieceInspector />

@@ -11,7 +11,7 @@ import { bounds, isClockwise, transformOutline } from '@/lib/drawing/geometry';
 import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
 import { validateOutline } from '@/lib/drawing/validation';
 import {
-  ARROW_KEY_STEP_MM, GRID_SIZE_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
+  ARROW_KEY_STEP_MM, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
 } from '@/lib/drawing/constants';
 import { pixelDeltaToViewboxUnits, screenPointToMm } from '@/lib/drawing/viewport';
 import { DragPreviewContext, type DragPreview } from './DragPreviewContext';
@@ -21,7 +21,10 @@ import { PieceHandles } from './PieceHandles';
 import { PieceDimensions } from './PieceDimensions';
 import { AnnotationLayer } from './AnnotationLayer';
 import { CanvasOverlays, type Marquee } from './CanvasOverlays';
+import { EdgeDragLayer } from './EdgeDragLayer';
 import { useAnnotationTool } from './useAnnotationTool';
+import { useDrawTool } from './useDrawTool';
+import { useEdgeDrag } from './useEdgeDrag';
 
 const VIEWPORT_CENTER_X = VIEWPORT_WIDTH / 2;
 const VIEWPORT_CENTER_Y = VIEWPORT_HEIGHT / 2;
@@ -35,7 +38,7 @@ const DUPLICATE_POINT_TOLERANCE_MM = 5;
 /** A background press that moves less than this many pixels is a click, not a pan. */
 const CLICK_SLOP_PX = 3;
 
-const DEFAULT_THICKNESS_MM = 30;
+const PRIMARY_MOUSE_BUTTON = 0;
 
 export function DrawingCanvas() {
   const { state, dispatch, tool, setTool, copySelection, pasteClipboard, duplicateSelection } = useDrawingEditor();
@@ -46,6 +49,8 @@ export function DrawingCanvas() {
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
   const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
   const annotate = useAnnotationTool();
+  const draw = useDrawTool();
+  const edgeDrag = useEdgeDrag();
 
   const activeArea = state.present.areas.find((a) => a.id === state.activeAreaId);
   const areaIndex = state.present.areas.findIndex((a) => a.id === state.activeAreaId);
@@ -79,6 +84,7 @@ export function DrawingCanvas() {
       // once no tool is armed does it clear the selection.
       if (tool !== 'select') {
         annotate.cancel();
+        edgeDrag.cancel();
         setTool('select');
         setHoverPoint(null);
         return;
@@ -196,8 +202,16 @@ export function DrawingCanvas() {
       setMarquee(null);
       return;
     }
+    // With the Draw tool a click that never became a pan drops a square; a
+    // drag still pans, so the canvas stays navigable while drawing.
+    const isClick = isPanning && panMovedPx < CLICK_SLOP_PX;
+    if (tool === 'draw') {
+      if (isClick && released && e.button === PRIMARY_MOUSE_BUTTON) draw.place(released);
+      setIsPanning(false);
+      return;
+    }
     // A press on empty canvas that never became a pan is a click: deselect.
-    if (isPanning && panMovedPx < CLICK_SLOP_PX && selectedIds.length > 0) dispatch({ type: 'selectPiece', pieceId: null });
+    if (isClick && selectedIds.length > 0) dispatch({ type: 'selectPiece', pieceId: null });
     setIsPanning(false);
   };
 
@@ -225,7 +239,7 @@ export function DrawingCanvas() {
         outline,
         position: { x: 0, y: 0 },
         rotationDeg: 0,
-        thicknessMm: DEFAULT_THICKNESS_MM,
+        thicknessMm: DEFAULT_PIECE_THICKNESS_MM,
         edges: [],
         seams: [],
         cutouts: [],
@@ -256,7 +270,9 @@ export function DrawingCanvas() {
         duplicates them, and Control plus A selects every piece. Shift-click
         adds a piece to the selection. On a selected piece, Tab reaches each
         side and corner: arrow keys move a corner and Delete removes it. With
-        the polygon tool active, click to place points, then press Enter or
+        the draw tool active, click empty canvas to drop a square, then drag
+        any side to grow or shrink the piece in sixteenths of an inch; set
+        exact lengths in the inspector. With the polygon tool active, click to place points, then press Enter or
         double-click to finish the shape once at least three points are
         placed; Backspace removes the last point and Escape cancels. With the
         line, dimension or note tool active, click the canvas to place each
@@ -268,13 +284,8 @@ export function DrawingCanvas() {
         preserveAspectRatio="xMidYMid meet"
         width="100%"
         height="100%"
-        className="block"
+        className="block bg-white"
       >
-        <defs>
-          <pattern id="drawing-grid" width={GRID_SIZE_MM} height={GRID_SIZE_MM} patternUnits="userSpaceOnUse">
-            <path d={`M 0 0 L 0 ${GRID_SIZE_MM} M 0 0 L ${GRID_SIZE_MM} 0`} className="stroke-stone-200" strokeWidth={0.5} />
-          </pattern>
-        </defs>
         <g transform={`translate(${VIEWPORT_CENTER_X},${VIEWPORT_CENTER_Y})`}>
           <g transform={`translate(${state.pan.x},${state.pan.y}) scale(${state.zoom})`}>
             <rect
@@ -283,23 +294,28 @@ export function DrawingCanvas() {
               y={-5000}
               width={10000}
               height={10000}
-              fill="url(#drawing-grid)"
+              fill="white"
               onPointerDown={onBackgroundPointerDown}
               onPointerMove={onBackgroundPointerMove}
               onPointerUp={onBackgroundPointerUp}
               onDoubleClick={onBackgroundDoubleClick}
             />
             <DragPreviewContext.Provider value={dragPreviewValue}>
-              {activeArea?.pieces.map((piece) => (
-                <g key={piece.id}>
-                  <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
-                  <PieceDimensions
-                    piece={piece}
-                    displayUnit={state.present.displayUnit}
-                    fractionDenominator={state.present.fractionDenominator}
-                  />
-                </g>
-              ))}
+              {activeArea?.pieces.map((original) => {
+                // The side being dragged with the Draw tool is shown in its new
+                // place (and its dimensions re-measured) before it is saved.
+                const piece = edgeDrag.shown(original);
+                return (
+                  <g key={piece.id}>
+                    <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
+                    <PieceDimensions
+                      piece={piece}
+                      displayUnit={state.present.displayUnit}
+                      fractionDenominator={state.present.fractionDenominator}
+                    />
+                  </g>
+                );
+              })}
             </DragPreviewContext.Provider>
             {singleSelected && tool === 'select' && <PieceHandles piece={singleSelected} />}
             <CanvasOverlays marquee={marquee} draftPoints={tool === 'polygon' ? draftPoints : []} />
@@ -326,6 +342,7 @@ export function DrawingCanvas() {
                 onDoubleClick={onBackgroundDoubleClick}
               />
             )}
+            {tool === 'draw' && <EdgeDragLayer edgeDrag={edgeDrag} pieces={activeArea?.pieces ?? []} />}
           </g>
         </g>
       </svg>

@@ -9,7 +9,7 @@ import { CutoutLibrary } from './CutoutLibrary';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { MaterialSummary } from './MaterialSummary';
 import { ShapePalette } from './ShapePalette';
-import { CutoutsIcon, LineIcon, MaterialsIcon, NotesIcon, SelectIcon, ShapesIcon } from './ToolRailIcons';
+import { CutoutsIcon, LineIcon, MaterialsIcon, NotesIcon, PencilIcon, SelectIcon, ShapesIcon } from './ToolRailIcons';
 
 type Section = 'shapes' | 'cutouts' | 'annotations' | 'materials';
 
@@ -62,6 +62,15 @@ export function ToolRail() {
           className={RAIL_BUTTON_CLASS}
         >
           <SelectIcon />
+        </button>
+        <button
+          type="button"
+          aria-label="Draw"
+          aria-pressed={tool === 'draw'}
+          onClick={() => { setTool(tool === 'draw' ? 'select' : 'draw'); setOpen(null); }}
+          className={RAIL_BUTTON_CLASS}
+        >
+          <PencilIcon />
         </button>
         <button
           type="button"
