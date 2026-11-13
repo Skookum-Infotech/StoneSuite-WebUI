@@ -6,6 +6,9 @@ import { samlAuthService } from '@/services/samlAuthService'
 import { useAuthStore } from '@/store/useAuthStore'
 import { apiErrorMessage } from '@/api/tenantClient'
 import { SAML_PENDING_PROVIDER_KEY, SAML_ACTIVE_PROVIDER_KEY } from '@/lib/samlSession'
+import { activeSessionPrompt } from '@/lib/singleSession'
+import { TakeoverPrompt } from './components/TakeoverPrompt'
+import type { AuthResponse } from '@/types/auth'
 
 // Lands here after POST /api/auth/saml/exchange redirects the IdP round
 // trip back to the app (via ACS -> this page). Trades the one-time code for
@@ -18,23 +21,29 @@ export default function SsoCallbackPage() {
   const returnTo = searchParams.get('return_to')
   const started = useRef(false)
 
+  // Shared by the exchange itself and by confirming the "already signed in
+  // elsewhere" prompt, whose takeover answers with the same login response.
+  const finishSignIn = (response: AuthResponse) => {
+    if (!response.success || !response.user || !response.token || !response.expiresAt) {
+      return
+    }
+    setAuth(response.user, response.token, response.expiresAt)
+
+    const pendingProvider = sessionStorage.getItem(SAML_PENDING_PROVIDER_KEY)
+    if (pendingProvider) {
+      sessionStorage.setItem(SAML_ACTIVE_PROVIDER_KEY, pendingProvider)
+      sessionStorage.removeItem(SAML_PENDING_PROVIDER_KEY)
+    }
+
+    navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard', { replace: true })
+  }
+
   const exchange = useMutation({
     mutationFn: (c: string) => samlAuthService.exchange(c),
-    onSuccess: (response) => {
-      if (!response.success || !response.user || !response.token || !response.expiresAt) {
-        return
-      }
-      setAuth(response.user, response.token, response.expiresAt)
-
-      const pendingProvider = sessionStorage.getItem(SAML_PENDING_PROVIDER_KEY)
-      if (pendingProvider) {
-        sessionStorage.setItem(SAML_ACTIVE_PROVIDER_KEY, pendingProvider)
-        sessionStorage.removeItem(SAML_PENDING_PROVIDER_KEY)
-      }
-
-      navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard', { replace: true })
-    },
+    onSuccess: finishSignIn,
   })
+  // The sign-in worked but the account is in use on another browser.
+  const takeover = exchange.isError ? activeSessionPrompt(exchange.error) : null
 
   useEffect(() => {
     if (started.current || !code) return
@@ -44,12 +53,21 @@ export default function SsoCallbackPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 
-  const failed = !code || exchange.isError || (exchange.isSuccess && !exchange.data?.success)
+  const failed = !code || (exchange.isError && !takeover) || (exchange.isSuccess && !exchange.data?.success)
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
-        {failed ? (
+        {takeover ? (
+          <div className="text-left">
+            <h1 className="mb-4 text-center text-sm font-bold text-stone-900">Already signed in</h1>
+            <TakeoverPrompt
+              prompt={takeover}
+              onSuccess={finishSignIn}
+              onCancel={() => navigate('/auth/login', { replace: true })}
+            />
+          </div>
+        ) : failed ? (
           <>
             <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-red-50">
               <AlertTriangle className="size-5 text-red-500" />

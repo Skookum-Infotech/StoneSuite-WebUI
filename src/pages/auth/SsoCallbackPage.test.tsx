@@ -7,9 +7,14 @@ import { AxiosError } from 'axios'
 vi.mock('@/services/samlAuthService', () => ({
   samlAuthService: { exchange: vi.fn() },
 }))
+vi.mock('@/services/authService', () => ({
+  authService: { takeoverSession: vi.fn() },
+}))
 
 import SsoCallbackPage from './SsoCallbackPage'
 import { samlAuthService } from '@/services/samlAuthService'
+import { authService } from '@/services/authService'
+import userEvent from '@testing-library/user-event'
 import { useAuthStore } from '@/store/useAuthStore'
 import { SAML_PENDING_PROVIDER_KEY, SAML_ACTIVE_PROVIDER_KEY } from '@/lib/samlSession'
 
@@ -92,5 +97,41 @@ describe('SsoCallbackPage', () => {
 
     expect(await screen.findByText('Sign-in link expired')).toBeInTheDocument()
     expect(samlAuthService.exchange).not.toHaveBeenCalled()
+  })
+
+  it('asks before ending the session open elsewhere, then signs in on Continue', async () => {
+    const user = userEvent.setup()
+    vi.mocked(samlAuthService.exchange).mockRejectedValue(
+      new AxiosError('conflict', undefined, undefined, undefined, {
+        status: 409,
+        data: { success: false, code: 'active_session', activeSession: { deviceLabel: 'Chrome on Windows', lastSeenAt: Date.now() } },
+      } as never),
+    )
+    vi.mocked(authService.takeoverSession).mockResolvedValue({
+      success: true, token: 'tok', expiresAt: Date.now() + 60_000,
+      user: { id: 'u1', email: 'jane@acme.com', fullName: 'Jane', tenantId: 't1' },
+    })
+    renderAt('/auth/sso/callback?code=abc')
+
+    expect(await screen.findByText(/Chrome on Windows/)).toBeInTheDocument()
+    expect(screen.queryByText('Sign-in link expired')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'End the other session and continue here' }))
+
+    expect(await screen.findByText('Dashboard')).toBeInTheDocument()
+    expect(useAuthStore.getState().token).toBe('tok')
+  })
+
+  it('goes back to sign-in on Cancel', async () => {
+    const user = userEvent.setup()
+    vi.mocked(samlAuthService.exchange).mockRejectedValue(
+      new AxiosError('conflict', undefined, undefined, undefined, {
+        status: 409, data: { success: false, code: 'active_session' },
+      } as never),
+    )
+    renderAt('/auth/sso/callback?code=abc')
+
+    await user.click(await screen.findByRole('button', { name: 'Cancel and keep the other session' }))
+    expect(await screen.findByText('Sign in')).toBeInTheDocument()
+    expect(authService.takeoverSession).not.toHaveBeenCalled()
   })
 })
