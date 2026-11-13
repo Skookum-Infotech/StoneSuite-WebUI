@@ -1,6 +1,6 @@
 // The bar along the bottom of the editor: the active area (click it to open
-// the Areas sidebar), its square footage, the zoom controls, and the map
-// on/off switch.
+// the Areas sidebar), its square footage, the zoom controls, and the
+// Dimensions / Properties / Map on-off switches.
 
 import { useState } from 'react';
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from '@/lib/drawing/constants';
@@ -15,7 +15,9 @@ const PERCENT = 100;
 const BAR_BUTTON_CLASS = 'flex h-8 items-center justify-center rounded-md px-2.5 text-sm font-medium text-stone-200 hover:bg-stone-700 disabled:opacity-40 disabled:hover:bg-transparent aria-pressed:bg-brand aria-pressed:text-stone-900 aria-expanded:bg-brand aria-expanded:text-stone-900';
 
 export function DrawingStatusBar() {
-  const { state, dispatch, mapOpen, toggleMap } = useDrawingEditor();
+  const {
+    state, dispatch, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties,
+  } = useDrawingEditor();
   const [areasOpen, setAreasOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const activeArea = state.present.areas.find((a) => a.id === state.activeAreaId);
@@ -82,6 +84,28 @@ export function DrawingStatusBar() {
             +
           </button>
         </div>
+
+        <button
+          type="button"
+          aria-label="Dimensions"
+          aria-pressed={dimensionsOn}
+          title="Toggle dimensions"
+          onClick={toggleDimensions}
+          className={BAR_BUTTON_CLASS}
+        >
+          Dimensions
+        </button>
+
+        <button
+          type="button"
+          aria-label="Properties"
+          aria-pressed={propertiesOpen}
+          title="Toggle properties panel"
+          onClick={toggleProperties}
+          className={BAR_BUTTON_CLASS}
+        >
+          Properties
+        </button>
 
         <button
           type="button"

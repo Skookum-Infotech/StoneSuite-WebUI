@@ -1,41 +1,24 @@
-// The Properties panel, floating over the right side of the board only while
-// something is selected. It used to be a permanent column beside the board,
-// mostly saying "No piece selected." and taking a fifth of the width from
-// the drawing; floating, it also leaves the board's size alone, so the
-// drawing does not jump sideways each time a piece is clicked.
+// The Properties panel, floating over the right side of the board. It used
+// to pop open on its own the moment a piece was clicked and close again on
+// deselect — which the user found it popping up uninvited and taking space
+// they hadn't asked for. It's now purely a toggle (the bottom bar's own
+// Properties button), the same as Dimensions and Map: selecting a piece
+// never opens or closes it, only changes what it shows while it's open.
 
-import { useEffect, useRef } from 'react';
 import { PieceInspector } from './PieceInspector';
 import { useDrawingEditor } from './DrawingEditorContext';
 
 export function InspectorPanel() {
-  const { state } = useDrawingEditor();
-  const open = state.selectedPieceIds.length > 0;
-  const anchorRef = useRef<HTMLSpanElement>(null);
-  const wasOpen = useRef(open);
+  const { propertiesOpen } = useDrawingEditor();
 
-  // Deleting the piece from the panel's own Delete button closes the panel
-  // with focus inside it; hand that focus to the canvas so the keyboard user
-  // is not left on <body>. Any other way of deselecting leaves focus alone.
-  useEffect(() => {
-    const closed = wasOpen.current && !open;
-    wasOpen.current = open;
-    if (!closed || document.activeElement !== document.body) return;
-    const canvas = anchorRef.current?.closest('[data-drawing-editor]')?.querySelector<HTMLElement>('[role="application"]');
-    canvas?.focus();
-  }, [open]);
+  if (!propertiesOpen) return null;
 
   return (
-    <>
-      <span ref={anchorRef} hidden />
-      {open && (
-        <aside
-          aria-label="Properties"
-          className="modal-scrollbar absolute right-3 top-3 z-20 max-h-[calc(100%-10rem)] w-72 overflow-y-auto overflow-x-hidden rounded-lg border border-stone-200 bg-white p-3 shadow-lg"
-        >
-          <PieceInspector />
-        </aside>
-      )}
-    </>
+    <aside
+      aria-label="Properties"
+      className="modal-scrollbar absolute right-3 top-3 z-20 max-h-[calc(100%-10rem)] w-72 overflow-y-auto overflow-x-hidden rounded-lg border border-stone-200 bg-white p-3 shadow-lg"
+    >
+      <PieceInspector />
+    </aside>
   );
 }

@@ -122,3 +122,15 @@ describe('DrawingStatusBar — map', () => {
     expect(toggle).toHaveAttribute('aria-pressed', 'true');
   });
 });
+
+describe('DrawingStatusBar — dimensions', () => {
+  it('starts off, and the Dimensions button flips it on and off', async () => {
+    open();
+    const toggle = screen.getByRole('button', { name: 'Dimensions' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
+});

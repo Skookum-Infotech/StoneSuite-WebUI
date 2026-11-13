@@ -130,10 +130,15 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
     >
       {/* Strokes and text are divided by the zoom so they keep the same size
           on screen at any scale — a 200" piece zoomed out to fit would
-          otherwise draw its outline and label too fine to read. */}
+          otherwise draw its outline and label too fine to read.
+          A selected piece's own outline stays sharp and dark, like an
+          unselected one, just heavier — brand green is reserved for a
+          specific side (PieceHandles' highlighted edge) and for a side
+          being dragged (EdgeDragLayer), so green always means "this one
+          side", never "this whole piece is selected". */}
       <polygon
         points={points}
-        className={selected ? 'fill-brand/20 stroke-brand' : 'fill-stone-100 stroke-stone-400'}
+        className={selected ? 'fill-stone-100 stroke-stone-900' : 'fill-stone-100 stroke-stone-400'}
         strokeWidth={(selected ? 2 : 1) / state.zoom}
       />
       {/* Local coordinates -> screen: position, then rotation, then the

@@ -120,6 +120,10 @@ export const HANDLE_RADIUS_VB = 5;
 /** Width of the invisible strip around an edge that counts as clicking it. */
 export const EDGE_HIT_WIDTH_PX = 12;
 
+/** How far outside the piece a side's "Split" menu sits, clear of the side
+ *  itself, before dividing by zoom. */
+export const SPLIT_MENU_OFFSET_PX = 20;
+
 /** A piece dragged to this many mm from where it started counts as moved. */
 export const MIN_DRAG_MM = 0.01;
 

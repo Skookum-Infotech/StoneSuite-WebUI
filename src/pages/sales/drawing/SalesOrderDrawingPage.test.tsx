@@ -124,7 +124,9 @@ describe('SalesOrderDrawingPage', () => {
     const pieceButton = screen.getByRole('button', { name: /Piece A-1/ });
     expect(pieceButton).toBeDefined();
     await userEvent.click(pieceButton);
-    expect(screen.getByLabelText('Label')).toHaveValue('A-1');
+    // The Properties panel is off by default (toggled separately, see
+    // DrawingStatusBar) — selecting a piece shows up in its own aria-label.
+    expect(screen.getByRole('button', { name: 'Piece A-1, selected' })).toBeDefined();
 
     const undoButton = screen.getByRole('button', { name: 'Undo' });
     expect(undoButton).toBeEnabled();

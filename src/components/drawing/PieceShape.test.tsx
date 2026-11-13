@@ -69,6 +69,36 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('PieceShape — border colour', () => {
+  it('stays a sharp dark outline when selected, not brand green — green is reserved for one side at a time', () => {
+    const piece = drawingWithOnePiece().areas[0].pieces[0];
+    render(
+      <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+        <svg>
+          <PieceShape piece={piece} selected />
+        </svg>
+      </DrawingEditorProvider>,
+    );
+    const polygon = document.querySelector('polygon');
+    expect(polygon?.getAttribute('class')).toContain('stroke-stone-900');
+    expect(polygon?.getAttribute('class')).not.toContain('stroke-brand');
+    expect(polygon?.getAttribute('class')).not.toContain('fill-brand');
+  });
+
+  it('is a lighter, thinner outline when not selected', () => {
+    const piece = drawingWithOnePiece().areas[0].pieces[0];
+    render(
+      <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+        <svg>
+          <PieceShape piece={piece} selected={false} />
+        </svg>
+      </DrawingEditorProvider>,
+    );
+    const polygon = document.querySelector('polygon');
+    expect(polygon?.getAttribute('class')).toContain('stroke-stone-400');
+  });
+});
+
 describe('PieceShape drag', () => {
   beforeEach(() => {
     mockSvgRect(800, 600);

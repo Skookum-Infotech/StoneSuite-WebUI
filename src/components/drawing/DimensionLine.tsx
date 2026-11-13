@@ -1,9 +1,9 @@
 // Renders one dimension on the SVG canvas, in the shop-drawing shape: dotted
-// extension lines running out from the two measured points, a solid dimension
-// line between them with a tick at each end, and the measurement — prefixed
-// with the side's letter where it has one ("B: 121.7""). Purely
-// presentational: nothing on it is interactive, so it stays out of the tab
-// order and screen readers skip it.
+// extension lines running out from the two measured points, a DASHED
+// dimension line between them with a solid tick at each end, and the
+// measurement — prefixed with the side's letter where it has one
+// ("B: 121.7""). Purely presentational: nothing on it is interactive, so it
+// stays out of the tab order and screen readers skip it.
 //
 // Strokes and text are divided by the current zoom, so they stay the same
 // size on screen however far the drawing is zoomed out — the whole point of
@@ -18,11 +18,21 @@ const FONT_SIZE_PX = 11;
 const STROKE_PX = 1;
 const TICK_PX = 4;
 /** Clear of the dimension line itself, so the text never sits on the stroke. */
-const TEXT_GAP_PX = 5;
+const TEXT_GAP_PX = 6;
 /** How far the extension line stops short of the point it measures. */
 const EXTENSION_GAP_PX = 3;
 /** How far it carries on past the dimension line. */
 const EXTENSION_OVERSHOOT_PX = 4;
+/** The extension line's own dot size and the gap between dots — a true round
+ *  dot (via strokeLinecap) rather than a dash, and spaced further apart than
+ *  the dot itself so the line reads as a light, clean row of dots. */
+const EXTENSION_DOT_PX = 0.1;
+const EXTENSION_DOT_GAP_PX = 4.5;
+/** The dimension line's own dash and gap — a real dash, not the extension
+ *  lines' fine dots, so the line itself reads as clean and dashed rather
+ *  than a plain solid rule. */
+const DASH_PX = 4;
+const DASH_GAP_PX = 3;
 
 /** World coordinates treat +y as "up" (geometry.ts/dimensions.ts); SVG y grows
  *  downward — negate every y the moment a world point reaches markup. */
@@ -71,25 +81,30 @@ export function DimensionLine(
       y2={end.y + outward.y * px(EXTENSION_OVERSHOOT_PX)}
       stroke="currentColor"
       strokeWidth={px(STROKE_PX)}
-      strokeDasharray={`${px(2)} ${px(2)}`}
-      opacity={0.6}
+      strokeLinecap="round"
+      strokeDasharray={`${px(EXTENSION_DOT_PX)} ${px(EXTENSION_DOT_GAP_PX)}`}
+      className="text-stone-400"
     />
   );
 
   return (
-    <g aria-hidden="true" className="text-stone-500" pointerEvents="none">
+    <g aria-hidden="true" pointerEvents="none">
       {extension(edgeFrom, from)}
       {extension(edgeTo, to)}
-      <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke="currentColor" strokeWidth={px(STROKE_PX)} />
+      <line
+        x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+        stroke="currentColor" strokeWidth={px(STROKE_PX)} className="text-stone-500"
+        strokeDasharray={`${px(DASH_PX)} ${px(DASH_GAP_PX)}`}
+      />
       <line
         x1={from.x - along.x * tick} y1={from.y - along.y * tick}
         x2={from.x + along.x * tick} y2={from.y + along.y * tick}
-        stroke="currentColor" strokeWidth={px(STROKE_PX)}
+        stroke="currentColor" strokeWidth={px(STROKE_PX)} className="text-stone-500"
       />
       <line
         x1={to.x - along.x * tick} y1={to.y - along.y * tick}
         x2={to.x + along.x * tick} y2={to.y + along.y * tick}
-        stroke="currentColor" strokeWidth={px(STROKE_PX)}
+        stroke="currentColor" strokeWidth={px(STROKE_PX)} className="text-stone-500"
       />
       <text
         x={textAt.x + outward.x * px(TEXT_GAP_PX)}

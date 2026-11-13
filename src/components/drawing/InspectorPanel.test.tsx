@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-// The floating Properties panel: there only while something is selected, so
-// the board has the full width the rest of the time; deleting the piece from
-// the panel hands keyboard focus to the canvas.
+// The floating Properties panel: off by default, opened and closed only by
+// the `propertiesOpen` toggle (the bottom bar's own Properties button) —
+// selecting or deselecting a piece never opens or closes it on its own,
+// only changes what it shows while it's already open.
 
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -26,12 +27,14 @@ const drawing: Drawing = {
   updatedAt: '', updatedBy: { id: 'u', name: 'U' },
 };
 
-function Selector() {
-  const { dispatch } = useDrawingEditor();
+function Controls() {
+  const { dispatch, propertiesOpen, toggleProperties } = useDrawingEditor();
   return (
     <>
       <button type="button" onClick={() => dispatch({ type: 'selectPiece', pieceId: 'p1' })}>select</button>
       <button type="button" onClick={() => dispatch({ type: 'selectPiece', pieceId: null })}>deselect</button>
+      <button type="button" onClick={toggleProperties}>toggle properties</button>
+      <span data-testid="properties-open">{String(propertiesOpen)}</span>
     </>
   );
 }
@@ -43,7 +46,7 @@ function open() {
         <div data-drawing-editor>
           <div role="application" aria-label="Drawing canvas" tabIndex={0} />
           <InspectorPanel />
-          <Selector />
+          <Controls />
         </div>
       </DrawingEditorProvider>
     </QueryClientProvider>,
@@ -51,35 +54,41 @@ function open() {
 }
 
 const panel = () => screen.queryByRole('complementary', { name: 'Properties' });
+const toggle = () => screen.getByRole('button', { name: 'toggle properties' });
 
 describe('InspectorPanel', () => {
-  it('is not there while nothing is selected', () => {
-    open();
-    expect(panel()).toBeNull();
-  });
-
-  it('floats over the board while a piece is selected and goes away when it is not', async () => {
+  it('is not there by default, even with a piece selected', async () => {
     open();
     await userEvent.click(screen.getByRole('button', { name: 'select' }));
-    expect(panel()?.className).toContain('absolute');
-    expect(screen.getByLabelText('Label')).toHaveValue('A-1');
-    await userEvent.click(screen.getByRole('button', { name: 'deselect' }));
     expect(panel()).toBeNull();
   });
 
-  it('deleting the piece from the panel moves keyboard focus to the canvas', async () => {
+  it('only the toggle opens or closes it — selecting and deselecting a piece do nothing to it', async () => {
     open();
+    await userEvent.click(toggle());
+    expect(panel()?.className).toContain('absolute');
+    await userEvent.click(screen.getByRole('button', { name: 'select' }));
+    expect(panel()).not.toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'deselect' }));
+    expect(panel()).not.toBeNull();
+    await userEvent.click(toggle());
+    expect(panel()).toBeNull();
+  });
+
+  it('shows the selected piece\'s fields while open, and "No piece selected" otherwise', async () => {
+    open();
+    await userEvent.click(toggle());
+    expect(screen.getByText(/no piece selected/i)).toBeDefined();
+    await userEvent.click(screen.getByRole('button', { name: 'select' }));
+    expect(screen.getByLabelText('Label')).toHaveValue('A-1');
+  });
+
+  it('deleting the piece while the panel is open leaves the panel open, showing "No piece selected"', async () => {
+    open();
+    await userEvent.click(toggle());
     await userEvent.click(screen.getByRole('button', { name: 'select' }));
     await userEvent.click(screen.getByRole('button', { name: 'Delete A-1' }));
-    expect(panel()).toBeNull();
-    expect(document.activeElement).toBe(screen.getByRole('application', { name: 'Drawing canvas' }));
-  });
-
-  it('deselecting some other way leaves focus where it was', async () => {
-    open();
-    await userEvent.click(screen.getByRole('button', { name: 'select' }));
-    const deselect = screen.getByRole('button', { name: 'deselect' });
-    await userEvent.click(deselect);
-    expect(document.activeElement).toBe(deselect);
+    expect(panel()).not.toBeNull();
+    expect(screen.getByText(/no piece selected/i)).toBeDefined();
   });
 });

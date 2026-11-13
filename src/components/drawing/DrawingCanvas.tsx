@@ -42,15 +42,21 @@ const CLICK_SLOP_PX = 5;
 const PRIMARY_MOUSE_BUTTON = 0;
 
 export function DrawingCanvas() {
-  const { state, dispatch, tool, setTool, toggleMap, copySelection, pasteClipboard, duplicateSelection } = useDrawingEditor();
+  const {
+    state, dispatch, tool, setTool, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
+  } = useDrawingEditor();
   const [draftPoints, setDraftPoints] = useState<Point[]>([]);
   const [isPanning, setIsPanning] = useState(false);
-  // Where the current background press went down and the farthest the pointer
-  // has been from there. Measured from the real pointer position rather than by
-  // adding up movementX/Y: a hand shivering a pixel back and forth adds up to a
-  // "drag" that way (Chrome on a scaled Windows screen even reports movement in
-  // device pixels), which made a click to drop a square randomly not count.
-  const press = useRef<{ x: number; y: number; farthestPx: number } | null>(null);
+  // Where the current background press went down, the pointer's own position
+  // as of the last move (so each move's pan is the real change in that
+  // position, not the event's own movementX/Y), and the farthest the pointer
+  // has strayed from the press. Both are measured from clientX/Y rather than
+  // movementX/Y: on a scaled Windows display, Chrome reports movementX/Y in
+  // device pixels while clientX/Y stay in CSS pixels, so movementX/Y drifts
+  // from the pointer's real on-screen motion — by a little (made a click to
+  // drop a square randomly not count) or, apparently, by a lot (made
+  // panning by holding and dragging feel like it sometimes just didn't move).
+  const press = useRef<{ x: number; y: number; lastX: number; lastY: number; farthestPx: number } | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
   const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
@@ -171,7 +177,7 @@ export function DrawingCanvas() {
       return;
     }
     setIsPanning(true);
-    press.current = { x: e.clientX, y: e.clientY, farthestPx: 0 };
+    press.current = { x: e.clientX, y: e.clientY, lastX: e.clientX, lastY: e.clientY, farthestPx: 0 };
   };
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
@@ -186,15 +192,19 @@ export function DrawingCanvas() {
     }
     if (!isPanning) return;
     const svg = e.currentTarget.ownerSVGElement;
-    if (!svg) return;
-    if (press.current) {
-      const away = Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y);
-      press.current.farthestPx = Math.max(press.current.farthestPx, away);
-    }
+    if (!svg || !press.current) return;
+    const away = Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y);
+    press.current.farthestPx = Math.max(press.current.farthestPx, away);
+    // The real change in the pointer's own position since the last move —
+    // not the event's movementX/Y, which drifts from it (see `press` above).
+    const dxPx = e.clientX - press.current.lastX;
+    const dyPx = e.clientY - press.current.lastY;
+    press.current.lastX = e.clientX;
+    press.current.lastY = e.clientY;
     // pan is specified in the outer group's own (viewBox) coordinates, not
     // world mm — scale by the SVG's rendered size, but don't un-zoom or
     // y-negate it (unlike a world-space delta).
-    dispatch({ type: 'pan', delta: pixelDeltaToViewboxUnits(e.movementX, e.movementY, svg.getBoundingClientRect()) });
+    dispatch({ type: 'pan', delta: pixelDeltaToViewboxUnits(dxPx, dyPx, svg.getBoundingClientRect()) });
   };
 
   const onBackgroundPointerUp = (e: React.PointerEvent<SVGRectElement>) => {
@@ -326,11 +336,13 @@ export function DrawingCanvas() {
                 return (
                   <g key={piece.id}>
                     <PieceShape piece={piece} selected={selectedIds.includes(piece.id)} />
-                    <PieceDimensions
-                      piece={piece}
-                      displayUnit={state.present.displayUnit}
-                      fractionDenominator={state.present.fractionDenominator}
-                    />
+                    {dimensionsOn && (
+                      <PieceDimensions
+                        piece={piece}
+                        displayUnit={state.present.displayUnit}
+                        fractionDenominator={state.present.fractionDenominator}
+                      />
+                    )}
                   </g>
                 );
               })}

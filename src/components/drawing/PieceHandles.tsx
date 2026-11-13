@@ -1,23 +1,36 @@
 // Editing handles drawn over the single selected piece: a clickable strip
-// along every side (selects that edge), a draggable dot on every corner (moves
-// it), and a small "+" at the middle of every side (adds a corner there). A
-// corner can also be moved with the arrow keys and removed with Delete or a
-// double-click. Every change is checked against the piece's geometry rules
-// (valid outline, cutouts still fitting) before it is saved — a bad drag is
-// shown in red while it happens and discarded on release.
+// along every side (selects that edge and opens its "Split" menu) and a
+// draggable dot on every corner (moves it). A corner can also be moved with
+// the arrow keys and removed with Delete or a double-click. Every change is
+// checked against the piece's geometry rules (valid outline, cutouts still
+// fitting) before it is saved — a bad drag is shown in red while it happens
+// and discarded on release.
+//
+// Splitting a side used to be instant — a small "+" sitting right on the
+// side, one click to add a corner there. That meant an accidental click
+// anywhere near a side (or near a corner, whose own drag target overlaps it)
+// could silently turn a clean rectangle into a polygon. It's now a
+// deliberate second step: click the side to open a small "Split" menu next
+// to it, then click Split.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { Piece, Point } from '@/types/drawing';
 import {
-  ARROW_KEY_STEP_MM, EDGE_HIT_WIDTH_PX, FINE_SNAP_MM, HANDLE_RADIUS_VB, SHIFT_ARROW_KEY_STEP_MM,
+  ARROW_KEY_STEP_MM, EDGE_HIT_WIDTH_PX, FINE_SNAP_MM, HANDLE_RADIUS_VB, SHIFT_ARROW_KEY_STEP_MM, SPLIT_MENU_OFFSET_PX,
 } from '@/lib/drawing/constants';
+import { edgeNormal } from '@/lib/drawing/edgePush';
 import { outlineEdges, rotatePoint, snapToGrid, toWorldPoint } from '@/lib/drawing/geometry';
 import { edgeLetter } from '@/lib/drawing/labels';
 import { validatePiece } from '@/lib/drawing/validation';
 import { insertVertex, moveVertex, removeVertex } from '@/lib/drawing/vertexEdit';
 import { pixelDeltaToMm } from '@/lib/drawing/viewport';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { EdgeSplitMenu } from './EdgeSplitMenu';
+
+/** Covers the same huge area as the canvas's own background/tool-capture
+ *  rects, so a pointerdown anywhere outside the menu itself closes it. */
+const CLICK_AWAY_EXTENT_MM = 5000;
 
 const MIN_CORNERS = 3;
 
@@ -32,6 +45,19 @@ interface CornerDrag {
 export function PieceHandles({ piece }: { piece: Piece }) {
   const { state, dispatch } = useDrawingEditor();
   const [drag, setDrag] = useState<CornerDrag | null>(null);
+  // Which side's "Split" menu is open, if any. Reset whenever the piece's own
+  // outline changes (a split, a resize, moving a corner) — after a split
+  // every index past it shifts, and after some other edit the menu's own
+  // side may no longer be what the user was just looking at. Done during
+  // render (React's own "adjusting state when a prop changes" pattern), not
+  // in an effect, so it takes effect before this render paints rather than
+  // flashing the stale menu for a frame first.
+  const [splitMenuEdge, setSplitMenuEdge] = useState<number | null>(null);
+  const [outlineForMenu, setOutlineForMenu] = useState(piece.outline);
+  if (outlineForMenu !== piece.outline) {
+    setOutlineForMenu(piece.outline);
+    if (splitMenuEdge !== null) setSplitMenuEdge(null);
+  }
   const radius = HANDLE_RADIUS_VB / state.zoom;
 
   const toScreen = (local: Point) => {
@@ -54,7 +80,25 @@ export function PieceHandles({ piece }: { piece: Piece }) {
     return true;
   };
 
-  const addCorner = (edgeIndex: number) => {
+  // One side's hit-strip <line> per edge index, so closing its menu can hand
+  // keyboard focus back there — otherwise, since the Split/Close button a
+  // keyboard user just activated is what gets unmounted, focus would
+  // silently fall to <body> (the same failure DrawingCanvas's own Delete-key
+  // handler already guards against for a deleted piece). Read only inside
+  // the effect below, never during render — this repo's react-hooks/refs
+  // lint rule refuses a ref read from a function passed down as a prop,
+  // since it can't prove the child only calls it from an event handler.
+  const edgeRefs = useRef<(SVGLineElement | null)[]>([]);
+  const lastMenuEdge = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (splitMenuEdge !== null) { lastMenuEdge.current = splitMenuEdge; return; }
+    if (lastMenuEdge.current === null) return;
+    edgeRefs.current[lastMenuEdge.current]?.focus();
+    lastMenuEdge.current = null;
+  }, [splitMenuEdge]);
+
+  const splitEdge = (edgeIndex: number) => {
     const next = insertVertex({ outline: piece.outline, edges: piece.edges }, edgeIndex);
     commit(next.outline, next.edges);
   };
@@ -118,27 +162,49 @@ export function PieceHandles({ piece }: { piece: Piece }) {
 
   return (
     <g>
+      {splitMenuEdge !== null && (
+        <rect
+          data-testid="split-menu-click-away"
+          x={-CLICK_AWAY_EXTENT_MM} y={-CLICK_AWAY_EXTENT_MM}
+          width={CLICK_AWAY_EXTENT_MM * 2} height={CLICK_AWAY_EXTENT_MM * 2}
+          fill="transparent"
+          aria-hidden="true"
+          onPointerDown={() => setSplitMenuEdge(null)}
+        />
+      )}
+
       {edges.map(([a, b], i) => {
         const sa = toScreen(a);
         const sb = toScreen(b);
         const selected = state.selectedEdgeIndex === i;
-        const select = () => dispatch({ type: 'selectEdge', pieceId: piece.id, edgeIndex: i });
+        const menuOpen = splitMenuEdge === i;
+        const select = () => {
+          dispatch({ type: 'selectEdge', pieceId: piece.id, edgeIndex: i });
+          // A second click on the same side's already-selected strip closes
+          // its menu again instead of leaving it stuck open.
+          setSplitMenuEdge((open) => (open === i ? null : i));
+        };
         return (
           <g key={`edge-${i}`}>
             {selected && (
               <line x1={sa.x} y1={sa.y} x2={sb.x} y2={sb.y} className="stroke-brand" strokeWidth={4} vectorEffect="non-scaling-stroke" />
             )}
             <line
+              ref={(el) => { edgeRefs.current[i] = el; }}
               x1={sa.x} y1={sa.y} x2={sb.x} y2={sb.y}
               role="button"
               tabIndex={0}
               aria-label={`Side ${edgeLetter(i)} of ${piece.label}${selected ? ', selected' : ''}`}
+              aria-expanded={menuOpen}
               stroke="transparent"
               strokeWidth={EDGE_HIT_WIDTH_PX}
               vectorEffect="non-scaling-stroke"
               className="cursor-pointer outline-none"
               onPointerDown={(e) => { e.stopPropagation(); select(); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); }
+                else if (e.key === 'Escape' && menuOpen) { e.preventDefault(); e.stopPropagation(); setSplitMenuEdge(null); }
+              }}
             />
           </g>
         );
@@ -154,23 +220,27 @@ export function PieceHandles({ piece }: { piece: Piece }) {
         />
       )}
 
-      {edges.map(([a, b], i) => {
+      {splitMenuEdge !== null && (() => {
+        const i = splitMenuEdge;
+        const [a, b] = edges[i];
         const mid = toScreen({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+        const normal = edgeNormal(piece.outline, i) ?? { x: 0, y: 0 };
+        // The piece's own rotation turns the outward normal with it, same as
+        // any other local-to-world vector here.
+        const rotated = rotatePoint(normal, piece.rotationDeg);
+        const outward = { x: rotated.x, y: -rotated.y };
+        const offset = SPLIT_MENU_OFFSET_PX / state.zoom;
+        const at = { x: mid.x + outward.x * offset, y: mid.y + outward.y * offset };
         return (
-          <circle
-            key={`add-${i}`}
-            cx={mid.x} cy={mid.y} r={radius * 0.8}
-            role="button"
-            tabIndex={0}
-            aria-label={`Add corner on side ${edgeLetter(i)}`}
-            className="cursor-copy fill-white stroke-stone-400 outline-none"
-            strokeWidth={1}
-            vectorEffect="non-scaling-stroke"
-            onPointerDown={(e) => { e.stopPropagation(); addCorner(i); }}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); addCorner(i); } }}
+          <EdgeSplitMenu
+            at={at}
+            zoom={state.zoom}
+            letter={edgeLetter(i)}
+            onSplit={() => splitEdge(i)}
+            onClose={() => setSplitMenuEdge(null)}
           />
         );
-      })}
+      })()}
 
       {piece.outline.map((corner, i) => {
         const at = toScreen(drag?.index === i ? drag.preview : corner);

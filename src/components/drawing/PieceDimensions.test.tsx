@@ -62,4 +62,34 @@ describe('PieceDimensions', () => {
     // 4 sides x (2 extension + 1 dimension + 2 ticks)
     expect(screen.getByTestId('canvas').querySelectorAll('line')).toHaveLength(20);
   });
+
+  it('the dimension line itself is dashed, not a plain solid rule', () => {
+    show();
+    const lines = Array.from(screen.getByTestId('canvas').querySelectorAll('line'));
+    // Every side's own dimension line (the longest of its 5 lines, between
+    // the two ticks) carries a visible dash pattern.
+    const byLength = (l: SVGLineElement) => Math.hypot(
+      Number(l.getAttribute('x2')) - Number(l.getAttribute('x1')),
+      Number(l.getAttribute('y2')) - Number(l.getAttribute('y1')),
+    );
+    for (let side = 0; side < 4; side += 1) {
+      const group = lines.slice(side * 5, side * 5 + 5);
+      const dimensionLine = group.reduce((a, b) => (byLength(b) > byLength(a) ? b : a));
+      const dasharray = dimensionLine.getAttribute('stroke-dasharray');
+      expect(dasharray).toBeTruthy();
+      expect(dasharray).not.toBe('none');
+    }
+  });
+
+  it('an end tick stays a plain solid line, not dashed', () => {
+    show();
+    const lines = Array.from(screen.getByTestId('canvas').querySelectorAll('line'));
+    const byLength = (l: SVGLineElement) => Math.hypot(
+      Number(l.getAttribute('x2')) - Number(l.getAttribute('x1')),
+      Number(l.getAttribute('y2')) - Number(l.getAttribute('y1')),
+    );
+    const group = lines.slice(0, 5);
+    const shortest = group.reduce((a, b) => (byLength(b) < byLength(a) ? b : a));
+    expect(shortest.getAttribute('stroke-dasharray')).toBeNull();
+  });
 });

@@ -28,6 +28,20 @@ export interface DrawingEditorContextValue {
   /** Whether the corner map is showing (the M key and the bottom bar flip it). */
   mapOpen: boolean;
   toggleMap: () => void;
+  /** Whether every piece's auto-placed dimension lines are showing. Off by
+   *  default — a tall, narrow piece's side labels can reach far out at a
+   *  high zoom, and most of the time nobody is reading them. The bottom bar
+   *  flips it; the inspector's own numbers are unaffected either way. */
+  dimensionsOn: boolean;
+  toggleDimensions: () => void;
+  /** Whether the floating Properties panel is showing. Off by default and
+   *  independent of selection — it used to open on its own the moment a
+   *  piece was clicked, which the user found it popped up uninvited; now
+   *  only the bottom bar's own Properties button opens or closes it, same
+   *  as Dimensions and Map. Selecting a piece while it's already open just
+   *  changes what it shows. */
+  propertiesOpen: boolean;
+  toggleProperties: () => void;
   fitToArea: () => void;
   /** Copy / paste / duplicate act on the current multi-selection. */
   copySelection: () => void;
@@ -50,6 +64,10 @@ export function DrawingEditorProvider(
   const [tool, setTool] = useState<EditorTool>('select');
   const [mapOpen, setMapOpen] = useState(true);
   const toggleMap = useCallback(() => setMapOpen((open) => !open), []);
+  const [dimensionsOn, setDimensionsOn] = useState(false);
+  const toggleDimensions = useCallback(() => setDimensionsOn((on) => !on), []);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
+  const toggleProperties = useCallback(() => setPropertiesOpen((open) => !open), []);
   // Copied pieces live outside the document so copying is not an edit, and
   // survive switching area (paste lands in whichever area is active).
   const clipboard = useRef<Piece[]>([]);
@@ -116,13 +134,16 @@ export function DrawingEditorProvider(
 
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
-      state, dispatch, tool, setTool, materialLines, mapOpen, toggleMap, fitToArea, copySelection, pasteClipboard,
-      duplicateSelection,
+      state, dispatch, tool, setTool, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions,
+      propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, tool, materialLines, mapOpen, toggleMap, copySelection, pasteClipboard, duplicateSelection],
+    [
+      state, tool, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
+      toggleProperties, copySelection, pasteClipboard, duplicateSelection,
+    ],
   );
 
   return <DrawingEditorContext.Provider value={value}>{children}</DrawingEditorContext.Provider>;
