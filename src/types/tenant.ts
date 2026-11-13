@@ -32,6 +32,14 @@ export interface Tenant {
   // suspend or delete it; both fields are absent on an older backend.
   isPlatformOwner?: boolean;
   r2Bucket?: string;
+  // One browser session per user (licence enforcement). Absent on an older
+  // backend; always false for the platform owner.
+  singleSessionEnforced?: boolean;
+  // Minutes a user must wait between moving their sign-in to another device,
+  // and how many moves are allowed per 24 hours; 0 = off. Absent on an older
+  // backend (the defaults, 5 and 5, then apply).
+  takeoverCooldownMinutes?: number;
+  takeoverDailyCap?: number;
 }
 
 export interface CreateTenantResult {

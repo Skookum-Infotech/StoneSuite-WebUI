@@ -9,6 +9,7 @@ import type {
   MfaCodeSent,
   MfaStatus,
   PortalWorkspace,
+  SessionStatusResponse,
 } from '@/types/auth';
 import type { SAMLProvider } from '@/types/tenant';
 
@@ -37,6 +38,21 @@ export const authService = {
   // the user's tenant context + platform-admin flag, used to gate owner-only UI.
   login: async (data: LoginCredentials): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>('/auth/tenant-login', data);
+    return response.data;
+  },
+
+  // Confirms "end my other session and continue here" after a sign-in was
+  // answered 409 active_session. The single-use ticket is the HttpOnly cookie
+  // that answer set, so nothing is sent; the reply is a normal login response.
+  takeoverSession: async (): Promise<AuthResponse> => {
+    const response = await apiClient.post<AuthResponse>('/auth/session/takeover');
+    return response.data;
+  },
+
+  // Whether this browser's session is still the live one -- polled so a
+  // session another sign-in took over can show its countdown.
+  getSessionStatus: async (): Promise<SessionStatusResponse> => {
+    const response = await apiClient.get<SessionStatusResponse>('/auth/session');
     return response.data;
   },
 

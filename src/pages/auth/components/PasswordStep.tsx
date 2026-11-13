@@ -7,10 +7,11 @@ import { Link } from 'react-router-dom'
 import { authService } from '@/services/authService'
 import { apiErrorMessage } from '@/api/tenantClient'
 import { toMfaChallenge } from '@/lib/mfa'
+import { activeSessionPrompt } from '@/lib/singleSession'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { AuthResponse, MfaChallenge } from '@/types/auth'
+import type { ActiveSessionPrompt, AuthResponse, MfaChallenge } from '@/types/auth'
 
 const passwordSchema = z.object({
   password: z.string().min(1, 'Password is required'),
@@ -26,13 +27,16 @@ interface PasswordStepProps {
   // The password was right but the account asks for an emailed code next: no
   // session exists yet, only the challenge to answer.
   onMfaRequired: (challenge: MfaChallenge) => void
+  // The sign-in succeeded but the account is in use on another browser: ask
+  // before ending that session.
+  onActiveSession: (prompt: ActiveSessionPrompt) => void
   onBack: () => void
 }
 
 // Second step, shown once EmailStep resolves an email to "password". The
 // email itself is display-only here -- changing it means going back to
 // re-identify, since a different email could resolve to SSO instead.
-export function PasswordStep({ email, onSuccess, onMfaRequired, onBack }: PasswordStepProps) {
+export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession, onBack }: PasswordStepProps) {
   const [showPassword, setShowPassword] = useState(false)
   const {
     register,
@@ -53,6 +57,11 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onBack }: Passwo
         setError('root', { message: response.message ?? 'Login failed' })
       }
     } catch (err: unknown) {
+      const prompt = activeSessionPrompt(err)
+      if (prompt) {
+        onActiveSession(prompt)
+        return
+      }
       setError('root', { message: apiErrorMessage(err, 'An error occurred during login') })
     }
   }
