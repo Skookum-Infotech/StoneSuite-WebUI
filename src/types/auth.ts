@@ -118,3 +118,33 @@ export interface RegisterData {
   password: string;
   fullName: string;
 }
+
+// A sign-in held back because the account is signed in on another browser
+// (409 active_session). Confirming posts /auth/session/takeover -- the
+// ticket is an HttpOnly cookie the 409 set -- which ends the other session
+// and signs in here.
+export interface ActiveSessionPrompt {
+  deviceLabel: string;
+  // Unix ms the other session was last seen, or null when unknown.
+  lastSeenAt: number | null;
+}
+
+// GET /api/auth/session: whether this browser's session is still the live one.
+export interface SessionStatusResponse {
+  success: boolean;
+  status: 'active' | 'replacing' | 'ended';
+  // Unix ms the server stops honouring a replaced session (server clock).
+  endsAt?: number;
+  // The same, relative to the moment of the answer: what the countdown uses.
+  endsInMs?: number;
+  replacedBy?: { at: number; deviceLabel: string };
+}
+
+// Set once this browser learns another sign-in replaced its session; drives
+// the "signed in on another computer" countdown overlay.
+export interface ReplacedSessionInfo {
+  deviceLabel?: string;
+  // Unix ms on this browser's own clock when the server stops honouring the
+  // session (derived from endsInMs, never the server's absolute time).
+  endsAt?: number;
+}
