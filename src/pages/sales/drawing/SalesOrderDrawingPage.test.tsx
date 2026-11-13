@@ -18,6 +18,7 @@ import { DrawingConflictError, drawingService } from '@/services/drawingService'
 import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import type { SalesOrder } from '@/types/salesOrder';
 import type { Drawing } from '@/types/drawing';
+import { OPEN_ZOOM } from '@/lib/drawing/constants';
 
 function order(overrides: Partial<SalesOrder> = {}): SalesOrder {
   return {
@@ -83,13 +84,21 @@ beforeEach(() => {
 });
 
 describe('SalesOrderDrawingPage', () => {
-  it('renders the toolbar, one area tab, an empty canvas, and the empty-state inspector when no drawing exists yet', async () => {
+  it('renders the toolbar, the active area in the bottom bar and an empty canvas, with no Properties panel until something is selected, when no drawing exists yet', async () => {
     renderPage();
     await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
     expect(await screen.findByRole('button', { name: 'Add rectangle' })).toBeDefined();
-    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /^Areas, Area 1 selected/ })).toBeDefined();
     expect(screen.getByRole('application', { name: 'Drawing canvas' })).toBeDefined();
-    expect(screen.getByText(/no piece selected/i)).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
+  });
+
+  it('opens zoomed out, so there is room on the board for a whole run of counters', async () => {
+    renderPage();
+    await screen.findByRole('application', { name: 'Drawing canvas' });
+    const levels = screen.getAllByLabelText('Zoom level');
+    expect(levels.length).toBeGreaterThan(0);
+    for (const level of levels) expect(level).toHaveTextContent(`${Math.round(OPEN_ZOOM * 100)}%`);
   });
 
   it('sets the breadcrumb label on mount and clears it on unmount', async () => {
@@ -121,7 +130,7 @@ describe('SalesOrderDrawingPage', () => {
     expect(undoButton).toBeEnabled();
     await userEvent.click(undoButton);
     expect(screen.queryByRole('button', { name: /Piece A-1/ })).toBeNull();
-    expect(screen.getByText(/no piece selected/i)).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
@@ -161,7 +170,7 @@ describe('SalesOrderDrawingPage', () => {
   it('loads a real saved drawing instead of a blank one when one exists', async () => {
     vi.mocked(drawingService.getDrawing).mockResolvedValue(drawing());
     renderPage();
-    expect(await screen.findByRole('tab', { name: 'Saved Area' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: /^Areas, Saved Area selected/ })).toBeDefined();
   });
 });
 
@@ -182,14 +191,13 @@ describe('SalesOrderDrawingPage — fills the screen', () => {
     expect(editor.className).toContain('overflow-hidden');
   });
 
-  it('gives the canvas all the room the toolbar and summary leave, and lets only the side panels scroll', async () => {
+  it('gives the canvas all the room the toolbar and summary leave, with no side column taking width from it', async () => {
     renderPage();
     const canvas = await screen.findByRole('application', { name: 'Drawing canvas' });
     expect(canvas.className).toContain('h-full');
     expect(canvas.parentElement?.className).toContain('min-h-0');
     expect(canvas.parentElement?.className).toContain('flex-1');
-    const inspectorColumn = (await screen.findByText(/no piece selected/i)).closest('aside.overflow-y-auto');
-    expect(inspectorColumn).not.toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
   });
 
   it('stretches the drawing to the canvas without distorting it', async () => {
@@ -249,7 +257,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
     vi.mocked(drawingService.getDrawing).mockResolvedValue(drawing({ version: 9, areas: [{ id: 'area-9', name: 'Server Area', code: '', sortOrder: 0, pieces: [], cabinets: [], notes: [] }] }));
     await user.click(screen.getByRole('button', { name: 'Reload latest' }));
 
-    expect(await screen.findByRole('tab', { name: 'Server Area' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: /^Areas, Server Area selected/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Piece A-1/ })).toBeNull(); // local edit discarded
   });
 

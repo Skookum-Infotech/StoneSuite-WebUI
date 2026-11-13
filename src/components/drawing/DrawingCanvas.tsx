@@ -4,7 +4,7 @@
 // plan brief for the pixel/world convention: viewBox "0 0 800 600", origin
 // centered at (400,300), 1 SVG unit = 1mm before the zoom scale.
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { Point } from '@/types/drawing';
 import { bounds, isClockwise, transformOutline } from '@/lib/drawing/geometry';
@@ -35,16 +35,22 @@ const VIEWPORT_CENTER_Y = VIEWPORT_HEIGHT / 2;
  *  a zero-length edge. */
 const DUPLICATE_POINT_TOLERANCE_MM = 5;
 
-/** A background press that moves less than this many pixels is a click, not a pan. */
-const CLICK_SLOP_PX = 3;
+/** A background press whose pointer never strays more than this many screen
+ *  pixels from where it went down is a click, not a pan. */
+const CLICK_SLOP_PX = 5;
 
 const PRIMARY_MOUSE_BUTTON = 0;
 
 export function DrawingCanvas() {
-  const { state, dispatch, tool, setTool, copySelection, pasteClipboard, duplicateSelection } = useDrawingEditor();
+  const { state, dispatch, tool, setTool, toggleMap, copySelection, pasteClipboard, duplicateSelection } = useDrawingEditor();
   const [draftPoints, setDraftPoints] = useState<Point[]>([]);
   const [isPanning, setIsPanning] = useState(false);
-  const [panMovedPx, setPanMovedPx] = useState(0);
+  // Where the current background press went down and the farthest the pointer
+  // has been from there. Measured from the real pointer position rather than by
+  // adding up movementX/Y: a hand shivering a pixel back and forth adds up to a
+  // "drag" that way (Chrome on a scaled Windows screen even reports movement in
+  // device pixels), which made a click to drop a square randomly not count.
+  const press = useRef<{ x: number; y: number; farthestPx: number } | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
   const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
@@ -92,6 +98,10 @@ export function DrawingCanvas() {
       dispatch({ type: 'selectPiece', pieceId: null });
       return;
     }
+    if (e.key === 'm') {
+      toggleMap();
+      return;
+    }
     if (selectedIds.length === 0) return;
     const step = e.shiftKey ? SHIFT_ARROW_KEY_STEP_MM : ARROW_KEY_STEP_MM;
     switch (e.key) {
@@ -121,9 +131,13 @@ export function DrawingCanvas() {
     }
   };
 
+  // Zooms about the mouse pointer: the point of the drawing under it stays
+  // under it. The element is the SVG's own size (it fills it), so its rect is
+  // what the screen -> drawing conversion needs.
   const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
-    dispatch({ type: 'setZoom', zoom: state.zoom * (e.deltaY < 0 ? 1 + ZOOM_STEP : 1 - ZOOM_STEP) });
+    const anchor = screenPointToMm(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect(), state.zoom, state.pan);
+    dispatch({ type: 'zoomAt', factor: e.deltaY < 0 ? 1 + ZOOM_STEP : 1 - ZOOM_STEP, anchor });
   };
 
   const pointerMm = (e: React.PointerEvent<SVGRectElement>): Point | null => {
@@ -157,7 +171,7 @@ export function DrawingCanvas() {
       return;
     }
     setIsPanning(true);
-    setPanMovedPx(0);
+    press.current = { x: e.clientX, y: e.clientY, farthestPx: 0 };
   };
 
   const onBackgroundPointerMove = (e: React.PointerEvent<SVGRectElement>) => {
@@ -173,7 +187,10 @@ export function DrawingCanvas() {
     if (!isPanning) return;
     const svg = e.currentTarget.ownerSVGElement;
     if (!svg) return;
-    setPanMovedPx((moved) => moved + Math.abs(e.movementX) + Math.abs(e.movementY));
+    if (press.current) {
+      const away = Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y);
+      press.current.farthestPx = Math.max(press.current.farthestPx, away);
+    }
     // pan is specified in the outer group's own (viewBox) coordinates, not
     // world mm — scale by the SVG's rendered size, but don't un-zoom or
     // y-negate it (unlike a world-space delta).
@@ -204,7 +221,8 @@ export function DrawingCanvas() {
     }
     // With the Draw tool a click that never became a pan drops a square; a
     // drag still pans, so the canvas stays navigable while drawing.
-    const isClick = isPanning && panMovedPx < CLICK_SLOP_PX;
+    const isClick = isPanning && press.current !== null && press.current.farthestPx < CLICK_SLOP_PX;
+    press.current = null;
     if (tool === 'draw') {
       if (isClick && released && e.button === PRIMARY_MOUSE_BUTTON) draw.place(released);
       setIsPanning(false);

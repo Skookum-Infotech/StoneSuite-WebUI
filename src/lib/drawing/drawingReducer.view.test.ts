@@ -55,3 +55,39 @@ describe('zoomView', () => {
     expect(editorReducer(start(), { type: 'zoomView', factor }).zoom).toBe(expected);
   });
 });
+
+describe('zoomAt', () => {
+  /** Where a drawing point is drawn, relative to the canvas middle. */
+  const screenOf = (s: { pan: { x: number; y: number }; zoom: number }, p: { x: number; y: number }) => ({
+    x: s.pan.x + s.zoom * p.x,
+    y: s.pan.y - s.zoom * p.y,
+  });
+
+  it.each([
+    { name: 'at the origin', anchor: { x: 0, y: 0 }, factor: 1.25 },
+    { name: 'off to the upper right', anchor: { x: 200, y: 100 }, factor: 1.25 },
+    { name: 'off to the lower left, zooming out', anchor: { x: -350, y: -120 }, factor: 0.75 },
+  ])('keeps the anchor exactly where it was on screen, $name', ({ anchor, factor }) => {
+    const before = editorReducer(start(), { type: 'centerView', center: { x: 40, y: -60 } });
+    const after = editorReducer(before, { type: 'zoomAt', factor, anchor });
+    expect(after.zoom).toBeCloseTo(before.zoom * factor, 9);
+    expect(screenOf(after, anchor).x).toBeCloseTo(screenOf(before, anchor).x, 9);
+    expect(screenOf(after, anchor).y).toBeCloseTo(screenOf(before, anchor).y, 9);
+  });
+
+  it('is the same as zoomView when the anchor is the middle of the canvas', () => {
+    const moved = editorReducer(start(), { type: 'centerView', center: { x: 600, y: -200 } });
+    const middle = centerOf(moved);
+    const viaAt = editorReducer(moved, { type: 'zoomAt', factor: 1.25, anchor: middle });
+    const viaView = editorReducer(moved, { type: 'zoomView', factor: 1.25 });
+    expect(viaAt.pan.x).toBeCloseTo(viaView.pan.x, 9);
+    expect(viaAt.pan.y).toBeCloseTo(viaView.pan.y, 9);
+  });
+
+  it('stops at the zoom limits without drifting the pan', () => {
+    const atMax = editorReducer(start(), { type: 'zoomAt', factor: 1000, anchor: { x: 100, y: 100 } });
+    expect(atMax.zoom).toBe(ZOOM_MAX);
+    const again = editorReducer(atMax, { type: 'zoomAt', factor: 2, anchor: { x: 100, y: 100 } });
+    expect(again.pan).toEqual(atMax.pan);
+  });
+});

@@ -15,13 +15,13 @@ import { DRAWING_SCHEMA_VERSION, type Drawing } from '@/types/drawing';
 import type { SalesOrder } from '@/types/salesOrder';
 import { DrawingEditorProvider, useDrawingEditor } from '@/components/drawing/DrawingEditorContext';
 import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
-import { AreaTabs } from '@/components/drawing/AreaTabs';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { DrawModeBar } from '@/components/drawing/DrawModeBar';
 import { MiniMap } from '@/components/drawing/MiniMap';
-import { PieceInspector } from '@/components/drawing/PieceInspector';
+import { InspectorPanel } from '@/components/drawing/InspectorPanel';
+import { OPEN_ZOOM } from '@/lib/drawing/constants';
 import { ToolRail } from '@/components/drawing/ToolRail';
-import { AreaSummary } from '@/components/drawing/AreaSummary';
+import { DrawingStatusBar } from '@/components/drawing/DrawingStatusBar';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
 import { SquareFootageBanner } from '@/components/drawing/SquareFootageBanner';
 import { useDrawingAutosave } from '@/components/drawing/useDrawingAutosave';
@@ -81,7 +81,7 @@ export default function SalesOrderDrawingPage() {
   const drawing = drawingQuery.data ?? blankDrawing(id);
 
   return (
-    <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items}>
+    <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items} initialZoom={OPEN_ZOOM}>
       <DrawingEditorBody
         salesOrderId={id}
         order={orderQuery.data}
@@ -182,7 +182,6 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
     >
       <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
-      <AreaTabs />
       <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
       <div className="flex min-h-0 flex-1 gap-2">
         <ToolRail />
@@ -190,12 +189,10 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
           <DrawingCanvas />
           <DrawModeBar />
           <MiniMap />
+          <InspectorPanel />
         </div>
-        <aside aria-label="Properties" className="modal-scrollbar w-72 shrink-0 overflow-y-auto overflow-x-hidden border-l border-stone-200 pl-2">
-          <PieceInspector />
-        </aside>
       </div>
-      <AreaSummary />
+      <DrawingStatusBar />
       {conflictOpen && (
         <ConflictDialog onReloadLatest={reloadLatest} onSaveAsCopy={saveAsCopy} onClose={() => setConflictOpen(false)} />
       )}

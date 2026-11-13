@@ -1,15 +1,18 @@
-// Area tab bar: switch, add, rename, set code, reorder, and delete (with
-// confirm) — build spec Task 3's "Area: add, rename, set code, reorder,
-// delete with confirm". The delete confirm follows DeleteRefundDialog.tsx's
-// useModalDialog + createPortal pattern — this repo has no Dialog
-// primitive, every dialog hand-rolls its own overlay and focus handling.
+// The Areas sidebar that opens from the bottom bar: pick the area to draw in,
+// add more, rename, set a code, reorder, and delete (with confirm) — build
+// spec Task 3's "Area: add, rename, set code, reorder, delete with confirm".
+// The delete confirm follows DeleteRefundDialog.tsx's useModalDialog +
+// createPortal pattern — this repo has no Dialog primitive, every dialog
+// hand-rolls its own overlay and focus handling.
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-export function AreaTabs() {
+const ROW_BUTTON_CLASS = 'rounded px-1.5 py-0.5 text-xs text-stone-300 hover:bg-stone-700 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent';
+
+export function AreaSidebar({ onClose }: { onClose: () => void }) {
   const { state, dispatch } = useDrawingEditor();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -51,56 +54,84 @@ export function AreaTabs() {
   };
 
   return (
-    <div role="tablist" aria-label="Drawing areas" className="flex items-center gap-1 overflow-x-auto">
-      {areas.map((area, index) => (
-        <div key={area.id} className="flex items-center gap-0.5 rounded border border-stone-200 px-1 py-0.5">
-          {renamingId === area.id ? (
-            <input
-              autoFocus
-              aria-label={`Rename ${area.name}`}
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onBlur={() => commitRename(area.id)}
-              onKeyDown={(e) => e.key === 'Enter' && commitRename(area.id)}
-              className="w-20 rounded border border-stone-200 px-1"
-            />
-          ) : (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={area.id === state.activeAreaId}
-              onClick={() => dispatch({ type: 'setActiveArea', areaId: area.id })}
-              className="px-2 py-1 text-xs"
-            >
-              {area.name}
-            </button>
-          )}
-          <AreaCodeInput areaId={area.id} areaName={area.name} code={area.code} />
-          {renamingId !== area.id && (
-            <button type="button" aria-label={`Rename ${area.name}`} onClick={() => startRename(area.id, area.name)} className="px-1 text-2xs">
-              ✎
-            </button>
-          )}
-          <button type="button" aria-label={`Move ${area.name} left`} disabled={index === 0} onClick={() => move(area.id, -1)} className="px-1 text-2xs disabled:opacity-30">
-            ←
-          </button>
-          <button type="button" aria-label={`Move ${area.name} right`} disabled={index === areas.length - 1} onClick={() => move(area.id, 1)} className="px-1 text-2xs disabled:opacity-30">
-            →
-          </button>
+    <aside
+      aria-label="Areas"
+      onKeyDown={(e) => e.key === 'Escape' && !confirmingDeleteId && onClose()}
+      className="flex h-96 max-h-[60dvh] w-72 flex-col overflow-hidden rounded-lg bg-stone-900 text-stone-100 shadow-xl"
+    >
+      <div className="flex items-center justify-between border-b border-stone-700 px-3 py-2.5">
+        <h3 className="text-sm font-semibold">Areas</h3>
+        <div className="flex items-center gap-1.5">
           <button
+            ref={addAreaButtonRef}
             type="button"
-            aria-label={onlyOneArea ? `Delete ${area.name} (disabled — this is the only area)` : `Delete ${area.name}`}
-            disabled={onlyOneArea}
-            onClick={() => setConfirmingDeleteId(area.id)}
-            className="px-1 text-2xs text-destructive disabled:opacity-30"
+            aria-label="Add area"
+            onClick={() => dispatch({ type: 'addArea', name: `Area ${areas.length + 1}` })}
+            className="rounded border border-stone-600 px-2 py-1 text-xs font-medium hover:bg-stone-700"
           >
-            ×
+            + Area
+          </button>
+          <button type="button" aria-label="Close areas" onClick={onClose} className={ROW_BUTTON_CLASS}>
+            ✕
           </button>
         </div>
-      ))}
-      <button ref={addAreaButtonRef} type="button" aria-label="Add area" onClick={() => dispatch({ type: 'addArea', name: `Area ${areas.length}` })} className="rounded border border-stone-200 px-2 py-1 text-xs">
-        +
-      </button>
+      </div>
+
+      <ul className="modal-scrollbar min-h-0 flex-1 overflow-y-auto">
+        {areas.map((area, index) => {
+          const active = area.id === state.activeAreaId;
+          return (
+            <li
+              key={area.id}
+              className={`flex flex-col gap-1.5 border-b border-stone-800 px-3 py-2 ${active ? 'bg-brand text-stone-900' : ''}`}
+            >
+              <div className="flex items-center gap-1">
+                {renamingId === area.id ? (
+                  <input
+                    autoFocus
+                    aria-label={`Rename ${area.name}`}
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={() => commitRename(area.id)}
+                    onKeyDown={(e) => e.key === 'Enter' && commitRename(area.id)}
+                    className="min-w-0 flex-1 rounded border border-stone-300 px-1.5 py-0.5 text-sm text-stone-900"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    aria-current={active ? 'true' : undefined}
+                    onClick={() => dispatch({ type: 'setActiveArea', areaId: area.id })}
+                    className="min-w-0 flex-1 truncate text-left text-sm font-medium"
+                  >
+                    {area.name}
+                  </button>
+                )}
+                {renamingId !== area.id && (
+                  <button type="button" aria-label={`Rename ${area.name}`} onClick={() => startRename(area.id, area.name)} className={ROW_BUTTON_CLASS}>
+                    ✎
+                  </button>
+                )}
+                <button type="button" aria-label={`Move ${area.name} up`} disabled={index === 0} onClick={() => move(area.id, -1)} className={ROW_BUTTON_CLASS}>
+                  ↑
+                </button>
+                <button type="button" aria-label={`Move ${area.name} down`} disabled={index === areas.length - 1} onClick={() => move(area.id, 1)} className={ROW_BUTTON_CLASS}>
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  aria-label={onlyOneArea ? `Delete ${area.name} (disabled — this is the only area)` : `Delete ${area.name}`}
+                  disabled={onlyOneArea}
+                  onClick={() => setConfirmingDeleteId(area.id)}
+                  className={`${ROW_BUTTON_CLASS} ${active ? '' : 'text-red-400 hover:text-red-300'}`}
+                >
+                  ×
+                </button>
+              </div>
+              <AreaCodeInput areaId={area.id} areaName={area.name} code={area.code} />
+            </li>
+          );
+        })}
+      </ul>
 
       {confirmingDeleteId && (
         <DeleteAreaDialog
@@ -113,7 +144,7 @@ export function AreaTabs() {
           onClose={() => setConfirmingDeleteId(null)}
         />
       )}
-    </div>
+    </aside>
   );
 }
 
@@ -136,7 +167,7 @@ function AreaCodeInput({ areaId, areaName, code }: { areaId: string; areaName: s
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && commit()}
       placeholder="Code"
-      className="w-14 rounded border border-stone-200 px-1 text-2xs"
+      className="w-full rounded border border-stone-300 bg-white px-1.5 py-0.5 text-xs text-stone-900"
     />
   );
 }

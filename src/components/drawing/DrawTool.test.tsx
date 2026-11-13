@@ -173,6 +173,30 @@ describe('Draw tool — click to drop a square', () => {
     fireEvent.pointerUp(sheet, { pointerId: 1, button: PRIMARY, clientX: 160, clientY: 100 });
     expect(pieces()).toHaveLength(0);
   });
+
+  it('a click with a little hand wobble still drops the square', async () => {
+    await open(false);
+    const sheet = screen.getByTestId('tool-capture');
+    // The mouse shivers a pixel or two back and forth while pressed. Browsers
+    // report each shiver as movement (Chrome on a scaled Windows screen in
+    // device pixels, so a 1px shiver can read as 2), but the pointer ends up
+    // where it started: that is a click, not a pan.
+    fireEvent.pointerDown(sheet, { pointerId: 1, button: PRIMARY, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(sheet, { pointerId: 1, clientX: 102, clientY: 101, movementX: 3, movementY: 2 });
+    fireEvent.pointerMove(sheet, { pointerId: 1, clientX: 100, clientY: 100, movementX: -3, movementY: -2 });
+    fireEvent.pointerUp(sheet, { pointerId: 1, button: PRIMARY, clientX: 100, clientY: 100 });
+    expect(pieces()).toHaveLength(1);
+  });
+
+  it('a press that wanders off and comes back is still a pan, not a click', async () => {
+    await open(false);
+    const sheet = screen.getByTestId('tool-capture');
+    fireEvent.pointerDown(sheet, { pointerId: 1, button: PRIMARY, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(sheet, { pointerId: 1, clientX: 160, clientY: 100, movementX: 60, movementY: 0 });
+    fireEvent.pointerMove(sheet, { pointerId: 1, clientX: 100, clientY: 100, movementX: -60, movementY: 0 });
+    fireEvent.pointerUp(sheet, { pointerId: 1, button: PRIMARY, clientX: 100, clientY: 100 });
+    expect(pieces()).toHaveLength(0);
+  });
 });
 
 describe('Draw tool — drag a side to resize', () => {

@@ -25,6 +25,9 @@ export interface DrawingEditorContextValue {
   tool: EditorTool;
   setTool: (tool: EditorTool) => void;
   materialLines: SalesOrderLine[];
+  /** Whether the corner map is showing (the M key and the bottom bar flip it). */
+  mapOpen: boolean;
+  toggleMap: () => void;
   fitToArea: () => void;
   /** Copy / paste / duplicate act on the current multi-selection. */
   copySelection: () => void;
@@ -35,10 +38,18 @@ export interface DrawingEditorContextValue {
 const DrawingEditorContext = createContext<DrawingEditorContextValue | undefined>(undefined);
 
 export function DrawingEditorProvider(
-  { drawing, materialLines, children }: { drawing: Drawing; materialLines: SalesOrderLine[]; children: ReactNode },
+  { drawing, materialLines, initialZoom = 1, children }: {
+    drawing: Drawing;
+    materialLines: SalesOrderLine[];
+    /** The zoom the editor opens at; the page opens zoomed out (OPEN_ZOOM). */
+    initialZoom?: number;
+    children: ReactNode;
+  },
 ) {
-  const [state, dispatch] = useReducer(editorReducer, createInitialEditorState(drawing));
+  const [state, dispatch] = useReducer(editorReducer, createInitialEditorState(drawing, initialZoom));
   const [tool, setTool] = useState<EditorTool>('select');
+  const [mapOpen, setMapOpen] = useState(true);
+  const toggleMap = useCallback(() => setMapOpen((open) => !open), []);
   // Copied pieces live outside the document so copying is not an edit, and
   // survive switching area (paste lands in whichever area is active).
   const clipboard = useRef<Piece[]>([]);
@@ -105,12 +116,13 @@ export function DrawingEditorProvider(
 
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
-      state, dispatch, tool, setTool, materialLines, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+      state, dispatch, tool, setTool, materialLines, mapOpen, toggleMap, fitToArea, copySelection, pasteClipboard,
+      duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, tool, materialLines, copySelection, pasteClipboard, duplicateSelection],
+    [state, tool, materialLines, mapOpen, toggleMap, copySelection, pasteClipboard, duplicateSelection],
   );
 
   return <DrawingEditorContext.Provider value={value}>{children}</DrawingEditorContext.Provider>;

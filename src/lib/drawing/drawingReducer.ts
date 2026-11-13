@@ -52,6 +52,9 @@ export type EditorAction =
   | { type: 'centerView'; center: Point }
   /** Zooms by `factor` about whatever is in the middle of the canvas. */
   | { type: 'zoomView'; factor: number }
+  /** Zooms by `factor` about the drawing point `anchor`, which stays exactly
+   *  where it is on screen — a scroll wheel zooming at the mouse pointer. */
+  | { type: 'zoomAt'; factor: number; anchor: Point }
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'loadDrawing'; drawing: Drawing }
@@ -59,14 +62,14 @@ export type EditorAction =
 
 const QUARTER_TURN = 90;
 
-export function createInitialEditorState(drawing: Drawing): EditorState {
+export function createInitialEditorState(drawing: Drawing, zoom = 1): EditorState {
   return {
     past: [],
     present: drawing,
     future: [],
     activeAreaId: drawing.areas[0]?.id ?? '',
     ...NO_SELECTION,
-    zoom: 1,
+    zoom,
     pan: { x: 0, y: 0 },
   };
 }
@@ -234,6 +237,14 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom * action.factor));
       const center = { x: -state.pan.x / state.zoom, y: state.pan.y / state.zoom };
       return { ...state, zoom, pan: { x: -zoom * center.x, y: zoom * center.y } };
+    }
+
+    case 'zoomAt': {
+      const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, state.zoom * action.factor));
+      // A point on screen sits at pan + zoom * (x, -y); solving for the pan
+      // that leaves `anchor` where it was at the new zoom gives this.
+      const shift = state.zoom - zoom;
+      return { ...state, zoom, pan: { x: state.pan.x + shift * action.anchor.x, y: state.pan.y - shift * action.anchor.y } };
     }
 
     case 'undo': {

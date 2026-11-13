@@ -40,6 +40,11 @@ function Readout() {
   );
 }
 
+function MapSwitch() {
+  const { toggleMap } = useDrawingEditor();
+  return <button type="button" onClick={toggleMap}>switch map</button>;
+}
+
 const num = (id: string) => Number(screen.getByTestId(id).textContent);
 
 /** The point of the drawing the canvas currently has in its middle. */
@@ -66,6 +71,7 @@ function open() {
         <MiniMap />
       </div>
       <Readout />
+      <MapSwitch />
     </DrawingEditorProvider>,
   );
 }
@@ -174,11 +180,18 @@ describe('MiniMap', () => {
     expect(num('history')).toBe(0);
   });
 
-  it('closes with the ✕ and comes back with the Map button', async () => {
+  it('closes with the ✕, and the shared switch brings it back', async () => {
     open();
     await userEvent.click(screen.getByRole('button', { name: 'Close map' }));
     expect(screen.queryByRole('region', { name: 'Drawing map' })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'Show map' }));
+    await userEvent.click(screen.getByRole('button', { name: 'switch map' }));
     expect(screen.getByRole('region', { name: 'Drawing map' })).toBeTruthy();
+  });
+
+  it('sits in the bottom-right corner', () => {
+    open();
+    const corner = screen.getByRole('region', { name: 'Drawing map' }).parentElement;
+    expect(corner?.className).toContain('right-3');
+    expect(corner?.className).toContain('bottom-3');
   });
 });

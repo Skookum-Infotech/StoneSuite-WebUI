@@ -92,11 +92,16 @@ export const MAX_UNDO_STEPS = 50;
 export const ARROW_KEY_STEP_MM = MM_PER_INCH / 16;
 export const SHIFT_ARROW_KEY_STEP_MM = MM_PER_INCH;
 
-/** Zoom range and step, as a multiplier (1 = 100%) (build spec Task 3:
- *  "zoom 25–400%"). */
-export const ZOOM_MIN = 0.25;
+/** Zoom range and step, as a multiplier (1 = 100%). The build spec said
+ *  25–400%; the low end went to 10% so a whole kitchen (25 ft and more) fits
+ *  on the board at once. */
+export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.25;
+
+/** The zoom the editor opens at: about 10 ft of board across on a laptop
+ *  screen, so a default 25 5/8" square is a small part of it, not most of it. */
+export const OPEN_ZOOM = 0.4;
 
 /** The canvas SVG's viewBox size, in viewBox units. The SVG fills whatever
  *  room its container gives it and keeps these proportions (`xMidYMid meet`:

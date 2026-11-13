@@ -1,8 +1,8 @@
 // The small map in the canvas's bottom-left corner: the whole drawing in
 // miniature with a box showing what the canvas is looking at. Drag the box (or
 // click anywhere on the map) to move the view, scroll over the map to zoom,
-// arrow keys and +/- do the same from the keyboard. The ✕ hides it and a small
-// "Map" button brings it back.
+// arrow keys and +/- do the same from the keyboard. The ✕ hides it; the bottom
+// bar's Map button (or the M key) shows and hides it too.
 //
 // Kept cheap on purpose: the piece silhouettes are memoised and only the map's
 // transform and the view box change while panning, drags are applied at most
@@ -41,8 +41,7 @@ interface Drag {
 }
 
 export function MiniMap() {
-  const { state, dispatch } = useDrawingEditor();
-  const [open, setOpen] = useState(true);
+  const { state, dispatch, mapOpen, toggleMap } = useDrawingEditor();
   const [canvasSize, setCanvasSize] = useState<CanvasSize | null>(null);
   const [frozenExtent, setFrozenExtent] = useState<WorldRect | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -88,7 +87,7 @@ export function MiniMap() {
     };
     map.addEventListener('wheel', onWheel, { passive: false });
     return () => map.removeEventListener('wheel', onWheel);
-  }, [open, dispatch]);
+  }, [mapOpen, dispatch]);
 
   useEffect(() => () => {
     if (frame.current !== null) cancelAnimationFrame(frame.current);
@@ -169,8 +168,8 @@ export function MiniMap() {
   };
 
   return (
-    <div ref={rootRef} className="absolute bottom-3 left-3 z-10">
-      {open ? (
+    <div ref={rootRef} className="absolute bottom-3 right-3 z-10">
+      {mapOpen && (
         <div
           ref={mapRef}
           role="region"
@@ -210,21 +209,12 @@ export function MiniMap() {
           <button
             type="button"
             aria-label="Close map"
-            onClick={() => setOpen(false)}
+            onClick={toggleMap}
             className="absolute right-1 top-0.5 text-sm leading-none text-stone-700 hover:text-stone-950"
           >
             ✕
           </button>
         </div>
-      ) : (
-        <button
-          type="button"
-          aria-label="Show map"
-          onClick={() => setOpen(true)}
-          className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 shadow hover:bg-stone-50"
-        >
-          Map
-        </button>
       )}
     </div>
   );
