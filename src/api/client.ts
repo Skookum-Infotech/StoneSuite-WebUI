@@ -259,9 +259,18 @@ function broadcastSessionExtended(expiresAt: number): void {
   }
 }
 
+/** How long a logout that waits for the server waits before redirecting anyway. */
+const LOGOUT_AWAIT_MS = 2000;
+
+export interface ForceLogoutOptions {
+  /** Wait (up to LOGOUT_AWAIT_MS) for the server to end the session before
+   *  redirecting. The redirect otherwise cancels the request in flight. */
+  awaitServer?: boolean;
+}
+
 // Exported so a `fetch`-based caller (aiService's stream) whose 401 survives a
 // refresh ends the session exactly the way apiClient does.
-export function forceLogout(notice?: string): void {
+export function forceLogout(notice?: string, options: ForceLogoutOptions = {}): void {
   // Guard: only one logout in flight — multiple concurrent 401s must not each
   // fire a redirect. isLoggingOut resets on hard navigation (page reload).
   if (isLoggingOut) return;
@@ -281,7 +290,7 @@ export function forceLogout(notice?: string): void {
   // Clear server-side cookies (fire-and-forget). Uses apiClient so the request
   // still carries X-CSRF-Token; isLoggingOut above stops the response
   // interceptor from reacting to a 401 on this call.
-  apiClient.post(wasPortal ? '/portal/auth/logout' : '/auth/logout').catch(() => undefined);
+  const logoutRequest = apiClient.post(wasPortal ? '/portal/auth/logout' : '/auth/logout').catch(() => undefined);
 
   try {
     const ch = new BroadcastChannel('session-sync');
@@ -292,7 +301,14 @@ export function forceLogout(notice?: string): void {
   }
 
   // Hard redirect — resets all in-flight state including isLoggingOut.
-  window.location.href = '/auth/login';
+  const redirect = () => {
+    window.location.href = '/auth/login';
+  };
+  if (!options.awaitServer) {
+    redirect();
+    return;
+  }
+  void Promise.race([logoutRequest, new Promise((resolve) => setTimeout(resolve, LOGOUT_AWAIT_MS))]).then(redirect);
 }
 
 // Sign-in and refresh report a refused workspace themselves (the form shows the

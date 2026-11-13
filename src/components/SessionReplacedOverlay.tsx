@@ -37,7 +37,7 @@ export function SessionReplacedOverlay({ info }: SessionReplacedOverlayProps): R
     // site?" prompt; nothing here can be saved any more, so skip them. Capture
     // listeners on window run first, and this one stops the rest.
     window.addEventListener('beforeunload', (e) => e.stopImmediatePropagation(), { capture: true });
-    forceLogout(SESSION_REPLACED_NOTICE);
+    forceLogout(SESSION_REPLACED_NOTICE, { awaitServer: true });
   }, []);
 
   useEffect(() => {

@@ -31,7 +31,7 @@ describe('SessionReplacedOverlay', () => {
     act(() => vi.advanceTimersByTime(1000));
     expect(screen.getByRole('timer')).toHaveTextContent('0:00');
     expect(forceLogout).toHaveBeenCalledTimes(1);
-    expect(forceLogout).toHaveBeenCalledWith(SESSION_REPLACED_NOTICE);
+    expect(forceLogout).toHaveBeenCalledWith(SESSION_REPLACED_NOTICE, { awaitServer: true });
   });
 
   it('never counts past the server end of the handover', () => {

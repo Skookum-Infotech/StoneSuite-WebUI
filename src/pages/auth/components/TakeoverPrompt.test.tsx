@@ -77,4 +77,25 @@ describe('TakeoverPrompt', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in again' }))
     expect(onCancel).toHaveBeenCalled()
   })
+
+  it.each([
+    ['takeover_cooldown', 'Your account was just signed in on another device. Try again in 4 minutes.'],
+    ['takeover_limit', 'Too many sign-ins from different devices today. Contact your administrator.'],
+  ])('explains a %s refusal and offers only to go back', async (code, message) => {
+    const user = userEvent.setup()
+    vi.mocked(authService.takeoverSession).mockRejectedValue(
+      new AxiosError('limited', undefined, undefined, undefined, {
+        status: 429, data: { success: false, code, message },
+      } as never),
+    )
+    const { onCancel, onSuccess } = renderPrompt()
+
+    await user.click(screen.getByRole('button', { name: 'End the other session and continue here' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(screen.queryByRole('button', { name: 'End the other session and continue here' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Sign in again' }))
+    expect(onCancel).toHaveBeenCalled()
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
 })

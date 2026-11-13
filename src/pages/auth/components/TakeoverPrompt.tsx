@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowRight, Loader2, MonitorSmartphone } from 'lucide-re
 import { isAxiosError } from 'axios'
 import { authService } from '@/services/authService'
 import { apiErrorMessage } from '@/api/tenantClient'
-import { TAKEOVER_EXPIRED_CODE, lastActiveLabel } from '@/lib/singleSession'
+import { TAKEOVER_EXPIRED_CODE, TAKEOVER_REFUSED_CODES, lastActiveLabel } from '@/lib/singleSession'
 import { Button } from '@/components/ui/button'
 import type { ActiveSessionPrompt, AuthResponse } from '@/types/auth'
 
@@ -18,10 +18,12 @@ interface TakeoverPromptProps {
   onCancel: () => void
 }
 
-function isTakeoverExpired(err: unknown): boolean {
+/** True when confirming can no longer work: the prompt expired, or moving the
+ *  sign-in was refused by the workspace's wait/daily limit. */
+function isTakeoverFinal(err: unknown): boolean {
   if (!isAxiosError(err)) return false
-  const body = err.response?.data as { code?: unknown } | undefined
-  return body?.code === TAKEOVER_EXPIRED_CODE
+  const code = (err.response?.data as { code?: unknown } | undefined)?.code
+  return code === TAKEOVER_EXPIRED_CODE || (typeof code === 'string' && TAKEOVER_REFUSED_CODES.includes(code))
 }
 
 // Shown instead of signing in when the account is already in use on another
@@ -45,7 +47,7 @@ export function TakeoverPrompt({ prompt, onSuccess, onCancel }: TakeoverPromptPr
         setError(response.message ?? TAKEOVER_FALLBACK)
       }
     } catch (err: unknown) {
-      if (isTakeoverExpired(err)) setExpired(true)
+      if (isTakeoverFinal(err)) setExpired(true)
       setError(apiErrorMessage(err, TAKEOVER_FALLBACK))
     } finally {
       setSubmitting(false)

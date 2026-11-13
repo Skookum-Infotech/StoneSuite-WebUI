@@ -133,8 +133,10 @@ export interface ActiveSessionPrompt {
 export interface SessionStatusResponse {
   success: boolean;
   status: 'active' | 'replacing' | 'ended';
-  // Unix ms the server stops honouring a replaced session.
+  // Unix ms the server stops honouring a replaced session (server clock).
   endsAt?: number;
+  // The same, relative to the moment of the answer: what the countdown uses.
+  endsInMs?: number;
   replacedBy?: { at: number; deviceLabel: string };
 }
 
@@ -142,5 +144,7 @@ export interface SessionStatusResponse {
 // the "signed in on another computer" countdown overlay.
 export interface ReplacedSessionInfo {
   deviceLabel?: string;
+  // Unix ms on this browser's own clock when the server stops honouring the
+  // session (derived from endsInMs, never the server's absolute time).
   endsAt?: number;
 }

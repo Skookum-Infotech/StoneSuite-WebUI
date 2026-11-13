@@ -86,4 +86,45 @@ describe('apiClient — session replaced by a sign-in elsewhere', () => {
     client.reportSessionReplaced({});
     expect(useAuthStore.getState().replacedSession).toBeNull();
   });
+
+  it('refreshes and retries when a token predates sessions (switch-role)', async () => {
+    const { client, useAuthStore } = await loadFresh();
+    useAuthStore.setState({ token: 'old', isAuthenticated: true, replacedSession: null });
+    let switchCalls = 0;
+    const calls: string[] = [];
+    client.apiClient.defaults.adapter = async (config: InternalAxiosRequestConfig) => {
+      const url = config.url ?? '';
+      calls.push(url);
+      if (url.endsWith('/auth/refresh')) {
+        return { data: { success: true, token: 'new', expiresAt: Date.now() + 3_600_000 }, status: 200, statusText: '', headers: {}, config };
+      }
+      switchCalls += 1;
+      if (switchCalls === 1) {
+        throw new AxiosError('refresh needed', undefined, config, undefined, {
+          data: { success: false, code: 'session_refresh_required' }, status: 401, statusText: '', headers: {}, config,
+        } as never);
+      }
+      return { data: { success: true }, status: 200, statusText: '', headers: {}, config };
+    };
+
+    await expect(client.apiClient.post('/tenant/auth/switch-role', {})).resolves.toBeTruthy();
+    expect(calls).toEqual(['/tenant/auth/switch-role', '/auth/refresh', '/tenant/auth/switch-role']);
+    expect(useAuthStore.getState().replacedSession).toBeNull();
+  });
+
+  it('with awaitServer, waits for the logout call before leaving the page', async () => {
+    const { client, useAuthStore } = await loadFresh();
+    useAuthStore.setState({ token: 'jwt', isAuthenticated: true });
+    const pending: { release?: () => void } = {};
+    client.apiClient.defaults.adapter = (config: InternalAxiosRequestConfig) =>
+      new Promise((resolve) => {
+        pending.release = () => resolve({ data: { success: true }, status: 200, statusText: '', headers: {}, config });
+      });
+
+    client.forceLogout('bye', { awaitServer: true });
+    await vi.waitFor(() => expect(pending.release).toBeDefined());
+    expect(location.href).toBe('/dashboard');
+    pending.release?.();
+    await vi.waitFor(() => expect(location.href).toBe('/auth/login'));
+  });
 });

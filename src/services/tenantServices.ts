@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
+import type { SessionPolicyPatch } from '@/lib/sessionPolicyForm';
 import { isPortalSession } from '@/store/useAuthStore';
 import { normalizeScope, normalizeScopeList } from '@/lib/scope';
 import type { LookupItem, StateLookupItem } from '@/services/lookupService';
@@ -96,14 +97,17 @@ export const platformService = {
       .then((r) => r.data),
   rejectTenant: (tenantId: string) =>
     tenantClient.post(`/platform/tenants/${tenantId}/reject`).then((r) => r.data),
-  // Turns the one-browser-per-user rule on or off for a customer. The backend
-  // refuses to turn it on for the platform owner.
-  setSingleSession: (tenantId: string, enforced: boolean) =>
+  // Updates a customer's session settings: the one-browser-per-user rule and
+  // its device-switch wait and daily cap. Only the fields given change. The
+  // backend refuses to turn the rule on for the platform owner.
+  updateSessionPolicy: (tenantId: string, patch: SessionPolicyPatch) =>
     tenantClient
-      .put<{ success: boolean; singleSessionEnforced: boolean }>(
-        `/platform/tenants/${tenantId}/single-session`,
-        { enforced },
-      )
+      .put<{
+        success: boolean;
+        singleSessionEnforced?: boolean;
+        takeoverCooldownMinutes?: number;
+        takeoverDailyCap?: number;
+      }>(`/platform/tenants/${tenantId}/single-session`, patch)
       .then((r) => r.data),
   lifecycle: (tenantId: string, action: 'suspend' | 'restore' | 'delete') =>
     tenantClient.post(`/platform/tenants/${tenantId}/${action}`).then((r) => r.data),

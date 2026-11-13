@@ -13,7 +13,7 @@ vi.mock('@/services/tenantServices', () => ({
     retryJob: vi.fn(),
     lifecycle: vi.fn(),
     purgeTenant: vi.fn(),
-    setSingleSession: vi.fn(),
+    updateSessionPolicy: vi.fn(),
   },
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -245,7 +245,7 @@ describe('TenantDetailPage — General and Settings tabs', () => {
 
   it('shows the single-session switch on by default and turns it off after confirming', async () => {
     const user = userEvent.setup();
-    vi.mocked(platformService.setSingleSession).mockResolvedValue({ success: true, singleSessionEnforced: false });
+    vi.mocked(platformService.updateSessionPolicy).mockResolvedValue({ success: true, singleSessionEnforced: false });
     renderPage('/customer/onboarding/t-1?tab=settings');
 
     const toggle = await screen.findByRole('switch', { name: 'Enforce single session' });
@@ -253,10 +253,10 @@ describe('TenantDetailPage — General and Settings tabs', () => {
 
     await user.click(toggle);
     const dialog = screen.getByRole('dialog');
-    expect(platformService.setSingleSession).not.toHaveBeenCalled();
+    expect(platformService.updateSessionPolicy).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole('button', { name: 'Turn off single session' }));
 
-    await waitFor(() => expect(platformService.setSingleSession).toHaveBeenCalledWith('t-1', false));
+    await waitFor(() => expect(platformService.updateSessionPolicy).toHaveBeenCalledWith('t-1', { enforced: false }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
@@ -271,7 +271,7 @@ describe('TenantDetailPage — General and Settings tabs', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(platformService.setSingleSession).not.toHaveBeenCalled();
+    expect(platformService.updateSessionPolicy).not.toHaveBeenCalled();
   });
 
   it('keeps the platform owner exempt: switch off and disabled', async () => {
@@ -282,5 +282,75 @@ describe('TenantDetailPage — General and Settings tabs', () => {
     expect(toggle).not.toBeChecked();
     expect(toggle).toBeDisabled();
     expect(screen.getByText('Platform users are always exempt.')).toBeInTheDocument();
+  });
+});
+
+describe('TenantDetailPage — device switch limits', () => {
+  const settings = '/customer/onboarding/t-1?tab=settings';
+  const waitBox = () => screen.getByRole('spinbutton', { name: 'Wait between device switches' });
+  const capBox = () => screen.getByRole('spinbutton', { name: 'Device switches allowed per day' });
+  const saveButton = () => screen.getByRole('button', { name: 'Save device switch limits' });
+
+  it('shows the two limits with the defaults while the rule is on', async () => {
+    renderPage(settings);
+    await screen.findByText('Enforce single session');
+    expect(waitBox()).toHaveValue(5);
+    expect(capBox()).toHaveValue(5);
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('shows the saved values for this customer', async () => {
+    vi.mocked(platformService.listTenants).mockResolvedValue([
+      makeTenant({ takeoverCooldownMinutes: 15, takeoverDailyCap: 2 }),
+    ]);
+    renderPage(settings);
+    await screen.findByText('Enforce single session');
+    expect(waitBox()).toHaveValue(15);
+    expect(capBox()).toHaveValue(2);
+  });
+
+  it('hides the limits while the rule is off, and for the platform owner', async () => {
+    vi.mocked(platformService.listTenants).mockResolvedValue([makeTenant({ singleSessionEnforced: false })]);
+    const { unmount } = renderPage(settings);
+    await screen.findByText('Enforce single session');
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    unmount();
+
+    vi.mocked(platformService.listTenants).mockResolvedValue([makeTenant({ isPlatformOwner: true })]);
+    renderPage(settings);
+    await screen.findByText('Enforce single session');
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+  });
+
+  it('saves only what changed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(platformService.updateSessionPolicy).mockResolvedValue({ success: true });
+    renderPage(settings);
+    await screen.findByText('Enforce single session');
+
+    await user.clear(capBox());
+    await user.type(capBox(), '0');
+    expect(saveButton()).toBeEnabled();
+    await user.click(saveButton());
+
+    await waitFor(() =>
+      expect(platformService.updateSessionPolicy).toHaveBeenCalledWith('t-1', { takeoverDailyCap: 0 }),
+    );
+  });
+
+  it('refuses out-of-range values before saving', async () => {
+    const user = userEvent.setup();
+    renderPage(settings);
+    await screen.findByText('Enforce single session');
+
+    await user.clear(waitBox());
+    await user.type(waitBox(), '2000');
+    expect(screen.getByRole('alert')).toHaveTextContent('Must be 1440 or less.');
+    expect(saveButton()).toBeDisabled();
+
+    await user.clear(waitBox());
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter a number (0 turns it off).');
+    expect(saveButton()).toBeDisabled();
+    expect(platformService.updateSessionPolicy).not.toHaveBeenCalled();
   });
 });

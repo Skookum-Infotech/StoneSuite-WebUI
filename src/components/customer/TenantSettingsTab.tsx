@@ -7,6 +7,7 @@ import { ErrorNote } from '@/components/tenant/ui';
 import { SectionCard } from '@/components/customer/TenantSectionCard';
 import { TenantSettingRow } from '@/components/customer/TenantSettingRow';
 import { TenantDialog } from '@/components/customer/TenantDialog';
+import { TenantSwitchLimits } from '@/components/customer/TenantSwitchLimits';
 import type { Tenant } from '@/types/tenant';
 
 const SINGLE_SESSION_LABEL = 'Enforce single session';
@@ -22,7 +23,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
   const [pending, setPending] = useState<boolean | null>(null);
 
   const save = useMutation({
-    mutationFn: (next: boolean) => platformService.setSingleSession(tenant.id, next),
+    mutationFn: (next: boolean) => platformService.updateSessionPolicy(tenant.id, { enforced: next }),
     onSuccess: (_data, next) => {
       qc.invalidateQueries({ queryKey: ['tenants'] });
       toast.success(`Single session ${next ? 'turned on' : 'turned off'} for ${tenant.displayName}.`);
@@ -52,6 +53,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
               note: tenant.isPlatformOwner ? OWNER_EXEMPT_NOTE : undefined,
             }}
           />
+          {enforced && !tenant.isPlatformOwner && <TenantSwitchLimits key={tenant.id} tenant={tenant} />}
         </div>
       </SectionCard>
 
@@ -64,7 +66,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
         >
           <p className="text-xs text-stone-600">
             {pending
-              ? 'Each user will be limited to one browser at a time. Users already signed in on several browsers are asked to choose at their next sign-in.'
+              ? 'Each user will be limited to one browser at a time. Users signed in on several browsers now keep only the one they used most recently; the others get a 30-second warning and are signed out.'
               : 'Users will be able to stay signed in on several browsers at once, so one login could be shared.'}
           </p>
           {save.isError && <ErrorNote>{apiErrorMessage(save.error, 'Failed to update the setting.')}</ErrorNote>}

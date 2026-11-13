@@ -10,6 +10,11 @@ export const ACTIVE_SESSION_CODE = 'active_session';
 export const SESSION_REPLACED_CODE = 'session_replaced';
 export const TAKEOVER_EXPIRED_CODE = 'takeover_expired';
 
+/** Moving the sign-in to this browser was refused by the workspace's limits:
+ *  the wait between device switches, or the daily number of switches. The
+ *  server's message says which, and when to try again. */
+export const TAKEOVER_REFUSED_CODES: readonly string[] = ['takeover_cooldown', 'takeover_limit'];
+
 /** How long the replaced browser's overlay counts down before signing out. */
 export const SESSION_REPLACED_COUNTDOWN_SECONDS = 30;
 
