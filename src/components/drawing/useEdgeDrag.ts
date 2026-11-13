@@ -1,17 +1,21 @@
-// Dragging a side of a piece with the Draw tool. The pointer's movement is
-// projected onto the side's own perpendicular and snapped to 1/16", then the
-// side (and so the piece) grows or shrinks that far while the opposite side
-// stays put. The drag lives in local state and is saved as ONE edit on
-// release — dispatching per pointer move would flood the undo history.
+// Dragging a side of a piece with the Draw tool. Pulled the way it faces, the
+// side moves in/out in 1/16" steps while the opposite side stays put. Once the
+// pointer turns and wanders LEG_TURN_PX along the side, that resize locks
+// where it is and a 25 1/2" return leg grows off that end instead, from the
+// side's new position. Turning again grows a second leg off the end of the
+// first (a staircase: right, up, right — or up, then right), the earlier
+// pieces staying where they were; wobble within LEG_TURN_PX of a turn is
+// ignored. The drag lives in local state and is saved as ONE edit on release —
+// dispatching per pointer move would flood the undo history.
 
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { Piece, Point } from '@/types/drawing';
-import { DRAW_RESIZE_STEP_MM, MIN_DRAG_MM } from '@/lib/drawing/constants';
+import { DRAW_RESIZE_STEP_MM, JOIN_SNAP_PX, LEG_TURN_PX, LEG_WIDTH_MM, MIN_DRAG_MM } from '@/lib/drawing/constants';
 import { isClockwise, toLocalPoint } from '@/lib/drawing/geometry';
-import { edgeNormal, pushEdge, snapToStep } from '@/lib/drawing/edgePush';
+import { dragSideOutline, sideDragComponents, snapToStep } from '@/lib/drawing/edgePush';
 import { validatePiece } from '@/lib/drawing/validation';
-import { screenPointToMm } from '@/lib/drawing/viewport';
+import { pixelDeltaToMm, screenPointToMm } from '@/lib/drawing/viewport';
 import { useDrawingEditor } from './DrawingEditorContext';
 
 const MOUSE_BUTTON = { primary: 0, secondary: 2 };
@@ -24,12 +28,23 @@ export interface EdgeRef {
 export interface EdgePreview extends EdgeRef {
   outline: Point[];
   valid: boolean;
+  /** The one border being pulled right now (local piece coordinates) — the
+   *  side itself while resizing, the leg's far end once a leg grows. What
+   *  EdgeDragLayer highlights: a leg adds corners, so `outline` no longer
+   *  lines up index-for-index with the original. */
+  highlight: Point[];
 }
 
 interface DragState extends EdgeRef {
   pointerId: number;
   startPointer: Point;
   startOutline: Point[];
+  /** The resize as of the last move before this one, so a turn locks the
+   *  side where it was — not wherever the hand drifted on the way round. */
+  lastAcross: number;
+  /** The resize, frozen the moment the drag turned into a leg; null while
+   *  it is still a plain resize. */
+  lockedAcross: number | null;
 }
 
 /** Why `outline` cannot replace the piece's shape, or null when it can. */
@@ -62,23 +77,47 @@ export function useEdgeDrag() {
     // jsdom lacks pointer capture on SVG elements; every real browser has it.
     e.currentTarget.setPointerCapture?.(e.pointerId);
     dispatch({ type: 'selectPiece', pieceId: piece.id });
-    setDrag({ pieceId: piece.id, index, pointerId: e.pointerId, startPointer, startOutline: piece.outline });
+    setDrag({
+      pieceId: piece.id, index, pointerId: e.pointerId, startPointer, startOutline: piece.outline,
+      lastAcross: 0, lockedAcross: null,
+    });
   };
 
   const update = (e: React.PointerEvent<SVGElement>, piece: Piece) => {
     if (!drag || drag.pointerId !== e.pointerId || drag.pieceId !== piece.id) return;
+    const svg = e.currentTarget.ownerSVGElement;
     const at = pointerLocal(e, piece);
-    const normal = edgeNormal(drag.startOutline, drag.index);
-    if (!at || !normal) return;
-    const along = (at.x - drag.startPointer.x) * normal.x + (at.y - drag.startPointer.y) * normal.y;
-    const outline = pushEdge(drag.startOutline, drag.index, snapToStep(along, DRAW_RESIZE_STEP_MM));
-    setPreview({ pieceId: piece.id, index: drag.index, outline, valid: problemWith(piece, outline) === null });
+    if (!at || !svg) return;
+    const delta = { x: at.x - drag.startPointer.x, y: at.y - drag.startPointer.y };
+    const parts = sideDragComponents(drag.startOutline, drag.index, delta);
+    if (!parts) return;
+    const rect = svg.getBoundingClientRect();
+    const turnMm = Math.abs(pixelDeltaToMm(LEG_TURN_PX, 0, rect, state.zoom).x);
+    const joinMm = Math.abs(pixelDeltaToMm(JOIN_SNAP_PX, 0, rect, state.zoom).x);
+    const across = snapToStep(parts.across, DRAW_RESIZE_STEP_MM);
+    let { lockedAcross } = drag;
+    if (lockedAcross === null && Math.abs(parts.along) > turnMm) {
+      lockedAcross = drag.lastAcross;
+      setDrag({ ...drag, lockedAcross });
+    } else if (lockedAcross === null) {
+      setDrag({ ...drag, lastAcross: across });
+    }
+    const { outline, moved } = lockedAcross === null
+      ? dragSideOutline(drag.startOutline, drag.index, across, 0, LEG_WIDTH_MM, joinMm)
+      : dragSideOutline(
+        drag.startOutline, drag.index, lockedAcross, snapToStep(parts.along, DRAW_RESIZE_STEP_MM), LEG_WIDTH_MM, joinMm,
+        { delta, deadMm: turnMm, stepMm: DRAW_RESIZE_STEP_MM },
+      );
+    setPreview({ pieceId: piece.id, index: drag.index, outline, valid: problemWith(piece, outline) === null, highlight: moved });
   };
 
   const finish = (e: React.PointerEvent<SVGElement>, piece: Piece) => {
     if (!drag || drag.pointerId !== e.pointerId || drag.pieceId !== piece.id) return;
-    const grew = preview !== null && preview.outline.some(
-      (p, i) => Math.abs(p.x - piece.outline[i].x) > MIN_DRAG_MM || Math.abs(p.y - piece.outline[i].y) > MIN_DRAG_MM,
+    const grew = preview !== null && (
+      preview.outline.length !== piece.outline.length
+      || preview.outline.some(
+        (p, i) => Math.abs(p.x - piece.outline[i].x) > MIN_DRAG_MM || Math.abs(p.y - piece.outline[i].y) > MIN_DRAG_MM,
+      )
     );
     if (preview && grew) {
       const problem = problemWith(piece, preview.outline);

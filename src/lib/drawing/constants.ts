@@ -136,5 +136,21 @@ export const DEFAULT_DRAW_DEPTH_MM = 25.5 * MM_PER_INCH;
  *  1/16", and a newly drawn square lands on the same 1/16" grid. */
 export const DRAW_RESIZE_STEP_MM = MM_PER_INCH / 16;
 
+/** Dragging a side along its own length grows a return leg this wide off
+ *  that end — 25 1/2", the standard countertop depth. */
+export const LEG_WIDTH_MM = DEFAULT_DRAW_DEPTH_MM;
+
+/** How far (screen pixels) a side drag must wander along the side before it
+ *  turns from a resize into a leg — enough to ignore hand wobble. */
+export const LEG_TURN_PX = 12;
+
+/** How close (screen pixels) a side dragged back must come to the line of its
+ *  neighbour to snap onto it and join it. */
+export const JOIN_SNAP_PX = 8;
+
+/** A leg that would leave less than this (1") of the side beside it extends
+ *  the whole piece instead, rather than leave a sliver of stone. */
+export const MIN_LEG_REMAINDER_MM = MM_PER_INCH;
+
 /** Thickness given to a piece drawn on the canvas (no thickness is asked for). */
 export const DEFAULT_PIECE_THICKNESS_MM = 30;
