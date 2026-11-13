@@ -13,8 +13,11 @@ const PERCENT_ALMOST = PERCENT_COMPLETE - 1;
 const QUANTITY_DECIMALS = 2;
 
 /** Statuses a purchase order can be receiving goods in — before SENT nothing
- *  can arrive, and a cancelled order never will. */
-const RECEIVING_STATUS_CODES: ReadonlySet<string> = new Set(['SENT', 'PART', 'RCVD', 'CLSD']);
+ *  can arrive, and a cancelled order never will. PAID is included: it is
+ *  derived from the order's bills, not its goods, so a paid order still
+ *  carries its own receiving history (and can even still be short — a short
+ *  order's bill can be paid in full for less than was ordered). */
+const RECEIVING_STATUS_CODES: ReadonlySet<string> = new Set(['SENT', 'PART', 'RCVD', 'PAID', 'CLSD']);
 
 /** Statuses where a past-due expected date means goods are late. A received or
  *  closed order is not late, even if it closed short. */
