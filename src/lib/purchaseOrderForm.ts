@@ -10,6 +10,7 @@ import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { toExpectedSlabs } from '@/lib/slabEstimate';
 import { dimensionsFromLine, dimensionsPayload, isAreaUnit, normalizeUnit, type LineDimensions } from '@/lib/lineDimensions';
 import { thicknessPayload, thicknessText } from '@/lib/lineThickness';
+import { kitFromLine, kitPayload, type KitLabeled } from '@/lib/kitLines';
 import type {
   PurchaseOrder, PurchaseOrderCreatePayload, PurchaseOrderLineInput, PurchaseOrderLine,
 } from '@/types/purchaseOrder';
@@ -230,7 +231,7 @@ export const SHIP_TO_FIELDS: PurchaseOrderFormField[] = [
 // seeded "No Tax" row and no endpoint exposes it — matches Estimate/Quote/
 // Invoice/SalesOrder), so every line's tax preview follows the header's
 // Sales Tax % rather than a per-line rate.
-export interface PurchaseOrderLineItem extends Pick<LineDimensions, 'length' | 'width' | 'dimensionUnit'> {
+export interface PurchaseOrderLineItem extends KitLabeled, Pick<LineDimensions, 'length' | 'width' | 'dimensionUnit'> {
   id: string;
   lineNo: number;
   itemName: string;
@@ -365,23 +366,32 @@ export const PO_STATUS_CODES: { code: string; label: string }[] = [
   { code: 'SENT', label: 'Sent' },
   { code: 'PART', label: 'Partially Received' },
   { code: 'RCVD', label: 'Received' },
+  // Derived from the bills raised against the order, not requested: it reads
+  // Paid once every live vendor bill against it is paid
+  // (backend purchaseorder/paid_rollup.go).
+  { code: 'PAID', label: 'Paid' },
   { code: 'CLSD', label: 'Closed' },
   { code: 'CANC', label: 'Cancelled' },
 ];
 
 /** Legal next-moves per status — mirrors the backend
  *  purchaseorder/transitions.go `allowedTransitions` map (spec AD-5).
- *  Terminal statuses (CLSD, CANC) map to an empty list. The backend
- *  (ValidateTransition) stays authoritative; an illegal pick is rejected
- *  with 409, so this only keeps the UI from offering one. */
+ *  CANC is terminal. PAID is normally derived from the order's bills, not
+ *  picked; it stays here so a super admin can correct state by hand, and so a
+ *  paid order can still be closed. The backend (ValidateTransition) stays
+ *  authoritative; an illegal pick is rejected with 409, so this only keeps the
+ *  UI from offering one. */
 export const PO_ALLOWED_TRANSITIONS: Record<string, string[]> = {
   DRFT: ['PAPV', 'CANC'],
   PAPV: ['APPV', 'DRFT', 'CANC'],
   APPV: ['SENT', 'DRFT', 'CANC'],
-  SENT: ['PART', 'RCVD', 'CLSD', 'CANC'],
-  PART: ['RCVD', 'CLSD'],
-  RCVD: ['CLSD'],
-  CLSD: [],
+  SENT: ['PART', 'RCVD', 'PAID', 'CLSD', 'CANC'],
+  PART: ['RCVD', 'PAID', 'CLSD'],
+  RCVD: ['PAID', 'CLSD'],
+  // Not a dead end: more goods can still arrive against a part-received order
+  // that was paid for its first delivery.
+  PAID: ['PART', 'RCVD', 'CLSD'],
+  CLSD: ['PAID'],
   CANC: [],
 };
 
@@ -400,11 +410,18 @@ export const PO_TRANSITION_LABELS: Record<string, string> = {
   'APPV:CANC': 'Cancel',
   'SENT:PART': 'Mark Partially Received',
   'SENT:RCVD': 'Mark Received',
+  'SENT:PAID': 'Mark Paid',
   'SENT:CLSD': 'Short-Close',
   'SENT:CANC': 'Cancel',
   'PART:RCVD': 'Mark Received',
+  'PART:PAID': 'Mark Paid',
   'PART:CLSD': 'Short-Close',
+  'RCVD:PAID': 'Mark Paid',
   'RCVD:CLSD': 'Close',
+  'PAID:PART': 'Mark Partially Received',
+  'PAID:RCVD': 'Mark Received',
+  'PAID:CLSD': 'Close',
+  'CLSD:PAID': 'Mark Paid',
 };
 
 export function poTransitionLabel(from: string, to: string): string {
@@ -459,12 +476,28 @@ export function poDropdownTransitions(order: { statusCode: string; nextStatusCod
   return poNextCodes(order).filter((code) => !PO_HEADER_TRANSITION_CODES.includes(code));
 }
 
+/** Codes the Detail page's admin status dropdown hides because a header
+ *  button already offers them — just PAPV (Submit for Approval). Unlike
+ *  poDropdownTransitions' usual exactly-once split with the header buttons,
+ *  SENT stays in BOTH places on purpose: the header button is the normal
+ *  move, which only lands once the vendor email is confirmed sent, while the
+ *  dropdown is the admin-only override that lands on Sent regardless (see
+ *  purchaseOrderService.transition's `force`). */
+export const PO_DROPDOWN_HIDDEN_CODES: readonly string[] = ['PAPV'];
+
+/** Legal next-moves offered in the Detail page's admin status dropdown —
+ *  poDropdownTransitions plus SENT, the one deliberate overlap with the
+ *  header buttons (see PO_DROPDOWN_HIDDEN_CODES). */
+export function poDropdownOverrideTransitions(order: { statusCode: string; nextStatusCodes?: string[] }): string[] {
+  return poNextCodes(order).filter((code) => !PO_DROPDOWN_HIDDEN_CODES.includes(code));
+}
+
 // ── Billing (Create Bill) ─────────────────────────────────────────────────────
 
 /** Statuses a vendor bill may be raised from — anything that has received goods
  *  (backend vendorbill.IsConvertibleStatus). Partially Received is included so a
  *  first delivery can be billed before the order is complete. */
-export const PO_BILLABLE_STATUSES: ReadonlySet<string> = new Set(['PART', 'RCVD', 'CLSD']);
+export const PO_BILLABLE_STATUSES: ReadonlySet<string> = new Set(['PART', 'RCVD', 'CLSD', 'PAID']);
 
 /** One order line a new bill would cover, and how much of it. */
 export interface BillableLine {
@@ -512,6 +545,7 @@ export const PO_STATUS_COLORS: Record<string, string> = {
   SENT: '#6366f1',
   PART: '#f97316',
   RCVD: '#22c55e',
+  PAID: '#10b981',
   CLSD: '#64748b',
   CANC: '#ef4444',
 };
@@ -586,6 +620,7 @@ function toLineInput(item: PurchaseOrderLineItem, lineNo: number): PurchaseOrder
     // Thickness shares the unit of length and width, so it names that unit even
     // when the line states no size to carry it.
     dimensionUnit: size.dimensionUnit ?? (thickness !== undefined ? normalizeUnit(item.dimensionUnit) : undefined),
+    ...kitPayload(item),
   };
 }
 
@@ -664,6 +699,7 @@ function fromLine(line: PurchaseOrderLine, i: number): PurchaseOrderLineItem {
     width: dimensionsFromLine(line).width,
     dimensionUnit: dimensionsFromLine(line).dimensionUnit,
     thickness: thicknessText(line.thickness),
+    ...kitFromLine(line),
   };
 }
 

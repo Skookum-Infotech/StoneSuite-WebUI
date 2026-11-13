@@ -17,8 +17,10 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { unitLabel } from '@/lib/unitLabels';
-import { LineDimensionViewCells } from '@/components/inventory/LineDimensionViewCells';
-import { LINE_DIMENSION_COLS, PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { LineSizeViewCells } from '@/components/inventory/LineSizeCells';
+import { KitLineRows } from '@/components/inventory/KitLineRows';
+import { PDF_DIMENSION_HEAD, anyDimensions, dimensionCells } from '@/lib/lineDimensions';
+import { PDF_THICKNESS_HEAD, SALES_SIZE_COLS, anyThickness, thicknessPdfCell } from '@/lib/lineThickness';
 import {
   VB_STATUS_COLORS, VB_STATUS_CODES, VB_DELETABLE_STATUSES, VB_VOID_CODE, VB_PAYABLE_STATUSES,
   isVbTransitionBlocked, isVbConfirmedTransition, vbCanVoid, vbDropdownTransitions,
@@ -49,6 +51,8 @@ const TABS = [
 // tab show up without a manual reload — same cadence as NotificationBell's
 // unread poll.
 const DETAIL_POLL_MS = 60_000;
+/** Columns in the Items table — a kit heading and the empty row span them all. */
+const VB_ITEM_COLUMNS = 14;
 type Tab = (typeof TABS)[number]['key'];
 
 function fmtDate(iso?: string): string {
@@ -169,8 +173,9 @@ export default function VendorBillDetailPage() {
     setExportingPdf(true);
     try {
       const { exportPurchasesRecordToPdf } = await import('@/lib/purchasesPdfExport');
-      // The three size columns only appear when some line states a size.
-      const sized = anyDimensions(bill.items);
+      // The size columns only appear when some line states a size (or a thickness).
+      const thick = anyThickness(bill.items);
+      const sized = anyDimensions(bill.items) || thick;
       await exportPurchasesRecordToPdf({
         recordType: 'vendor_bill',
         title: bill.vendorBillNumber || 'Vendor Bill',
@@ -196,12 +201,13 @@ export default function VendorBillDetailPage() {
           },
         ],
         itemsTable: {
-          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
+          head: ['#', 'Item', 'SKU', ...(sized ? PDF_DIMENSION_HEAD : []), ...(thick ? [PDF_THICKNESS_HEAD] : []), 'Qty', 'Unit Price', 'Disc %', 'Tax %', 'Total'],
           rows: bill.items.map((line) => [
             String(line.lineNumber),
             line.itemName || line.description || '—',
             line.sku || '—',
             ...(sized ? dimensionCells(line) : []),
+            ...(thick ? [thicknessPdfCell(line)] : []),
             String(line.quantity),
             currency(line.unitPrice),
             `${line.discountPercent}%`,
@@ -345,7 +351,7 @@ export default function VendorBillDetailPage() {
                       { label: 'Item' },
                       { label: 'Description' },
                       { label: 'SKU' },
-                      ...LINE_DIMENSION_COLS,
+                      ...SALES_SIZE_COLS,
                       { label: 'Unit' },
                       { label: 'Qty', right: true },
                       { label: 'Unit Price', right: true },
@@ -358,15 +364,16 @@ export default function VendorBillDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {bill.items.map((line) => (
-                    <tr key={line.id} className="hover:bg-stone-50/50 divide-x divide-stone-100">
+                  {/* Lines added from a kit sit under the kit's heading, as in Sales. */}
+                  <KitLineRows lines={bill.items} colSpan={VB_ITEM_COLUMNS} renderRow={(line, kitCls) => (
+                    <tr className={cn('hover:bg-stone-50/50 divide-x divide-stone-100', kitCls)}>
                       <td className="px-3 py-2.5 text-stone-500 tabular-nums">{line.lineNumber}</td>
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
                       <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
-                      <LineDimensionViewCells length={line.length} width={line.width} slabs={line.slabs} unit={line.dimensionUnit} />
+                      <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -376,9 +383,9 @@ export default function VendorBillDetailPage() {
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.taxPercent}%</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-800 font-semibold">{currency(line.lineTotal)}</td>
                     </tr>
-                  ))}
+                  )} />
                   {bill.items.length === 0 && (
-                    <tr><td colSpan={13} className="py-8 text-center text-stone-500">No line items.</td></tr>
+                    <tr><td colSpan={VB_ITEM_COLUMNS} className="py-8 text-center text-stone-500">No line items.</td></tr>
                   )}
                 </tbody>
               </table>

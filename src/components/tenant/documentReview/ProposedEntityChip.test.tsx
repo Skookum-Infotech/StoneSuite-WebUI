@@ -34,6 +34,9 @@ function renderChip(entity: ProposedEntityView, onCreated = vi.fn()) {
   return { onCreated, spy };
 }
 
+const FIRST_PROPOSED_AT = '2026-01-01T10:00:00.000Z';
+const RE_PROPOSED_AT = '2026-01-01T10:05:00.000Z';
+
 const pending = (over = {}) => makeProposedAction({ resource: 'vendor', source: 'docextract', ...over });
 
 beforeEach(() => vi.clearAllMocks());
@@ -123,8 +126,12 @@ describe('ProposedEntityChip', () => {
   });
 
   it.each(['expired', 'cancelled'] as const)('(g) %s action: Propose again re-calls propose', async (status) => {
-    vi.mocked(documentExtractionService.proposeEntity).mockResolvedValue(pending({ id: 'pa-2' }));
-    renderChip(makeProposedEntity({ action: pending({ status }) }));
+    // Fixed timestamps: the chip keeps whichever proposal is newer, so if both used
+    // `new Date()` a millisecond tick between them made the old one win (CI flake).
+    vi.mocked(documentExtractionService.proposeEntity).mockResolvedValue(
+      pending({ id: 'pa-2', createdAt: RE_PROPOSED_AT }),
+    );
+    renderChip(makeProposedEntity({ action: pending({ status, createdAt: FIRST_PROPOSED_AT }) }));
     expect(screen.getByText(new RegExp(`earlier proposal ${status === 'expired' ? 'expired' : 'was cancelled'}`))).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Propose again/ }));
     expect(documentExtractionService.proposeEntity).toHaveBeenCalledTimes(1);

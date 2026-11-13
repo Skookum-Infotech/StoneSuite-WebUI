@@ -28,10 +28,12 @@ interface PurchaseOrderRow extends VendorBillPurchaseOrderRef {
 // nothing for person vendors and goes stale on any rename. The typed term is
 // the global `search`, ANDed with that filter.
 //
-// Every status is offered on purpose: a vendor can invoice before goods arrive,
-// and the link is only a reference (the bill copies no lines and records no
-// billed quantity — that is the PO's "Convert to Bill"). Disabled until a
-// vendor is chosen.
+// Every status is offered on purpose: a vendor can invoice before goods
+// arrive. Picking an order here (see AddVendorBillPage's changePurchaseOrder)
+// fills the items table with its lines, same values, as a starting point the
+// user can edit — but the link itself stays a plain reference: no
+// purchaseOrderItemId lineage and no billed-quantity tracking, which is the
+// PO's own "Create Bill" button's job. Disabled until a vendor is chosen.
 export function PurchaseOrderPicker({
   vendor, value, onChange, disabled,
 }: {

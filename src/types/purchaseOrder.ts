@@ -59,6 +59,10 @@ export interface PurchaseOrderLineInput {
   /** The one unit length, width and thickness are measured in: mm, cm, in, ft or m.
    *  Blank takes the item's unit, then inches. */
   dimensionUnit?: string;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  A label only — the server stores it and returns it as kitId / kitName. */
+  kitUuid?: string;
+  kitName?: string;
 }
 
 export interface PurchaseOrderCreatePayload {
@@ -131,6 +135,10 @@ export interface PurchaseOrderLine {
   width?: number | null;
   /** Thickness of one slab, in `dimensionUnit`; null when the line states none. */
   thickness?: number | null;
+  /** Set on a line added from a kit: the kit's id and the name it had then.
+   *  Consecutive lines with the same kitId sit under one kit heading. */
+  kitId?: string;
+  kitName?: string;
   /** The unit length, width and thickness were measured in. */
   dimensionUnit?: string | null;
   /** How many of this line's slabs are still On Order in Inventory — put on order

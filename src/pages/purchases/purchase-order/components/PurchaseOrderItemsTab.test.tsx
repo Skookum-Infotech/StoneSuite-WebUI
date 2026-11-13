@@ -236,13 +236,22 @@ describe('PurchaseOrderItemsTab — the Thickness column', () => {
     expect(box).toHaveValue('39.37'); // 1 m
   });
 
-  it('is disabled on a line that is not measured by area', async () => {
+  it('folds the size cells away on a line that is not measured by area, like the Sales tables', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await startAdding(user);
 
     await user.click(screen.getByRole('button', { name: 'pick each item' }));
 
-    expect(screen.getByRole('textbox', { name: 'Thickness (in)' })).toBeDisabled();
+    expect(screen.queryByRole('textbox', { name: /^Thickness/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /^Length/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Slabs' })).not.toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Quantity' })).not.toHaveAttribute('readonly');
+  });
+
+  it('sits between Width and Slabs, as in the Sales tables', () => {
+    render(<Harness />);
+    const heads = screen.getAllByRole('columnheader').map((h) => h.textContent);
+    expect(heads.slice(heads.indexOf('L'), heads.indexOf('Slabs') + 1)).toEqual(['L', 'W', 'Thick', 'Slabs']);
   });
 });
