@@ -53,3 +53,43 @@ export interface BillingContact {
   postalCode: string;
   country: string;
 }
+
+// ── Usage (real API contract) ───────────────────────────────────────────────
+// Unlike the mock shapes above, these mirror the backend's
+// GET /api/tenant/subscription/usage response (StoneSuite-Backend
+// controllers/subscription_usage.go). Limits are null until subscription
+// plans carry them; a non-null limit is what turns a meter into a progress bar.
+
+/** Size of the tenant's own R2 bucket, as last measured. */
+export interface StorageUsage {
+  usedBytes: number;
+  objectCount: number;
+  /** ISO timestamp of the measurement; null when never measured. */
+  measuredAt: string | null;
+  limitBytes: number | null;
+}
+
+/** One row of the per-feature token breakdown (largest first). */
+export interface TokenUsageBySource {
+  /** Backend source key — ask, route, report_interpret, doc_extract, import, other. */
+  source: string;
+  totalTokens: number;
+}
+
+/** LLM tokens spent on the self-hosted Ollama this billing period. */
+export interface AiTokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  limitTokens: number | null;
+  bySource: TokenUsageBySource[];
+}
+
+export interface SubscriptionUsage {
+  /** Billing period start, `yyyy-mm-dd` (UTC). */
+  periodStart: string;
+  /** Billing period end, `yyyy-mm-dd` (UTC), exclusive. */
+  periodEnd: string;
+  storage: StorageUsage;
+  aiTokens: AiTokenUsage;
+}
