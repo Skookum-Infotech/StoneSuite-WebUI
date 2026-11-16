@@ -60,7 +60,8 @@ export interface BillingContact {
 // controllers/subscription_usage.go). Limits are null until subscription
 // plans carry them; a non-null limit is what turns a meter into a progress bar.
 
-/** Size of the tenant's own R2 bucket, as last measured. */
+/** Overall size of the tenant's own R2 bucket, as last measured — a running
+ *  total, not tied to the billing period. `limitBytes` is an overall cap. */
 export interface StorageUsage {
   usedBytes: number;
   objectCount: number;
@@ -76,8 +77,13 @@ export interface TokenUsageBySource {
   totalTokens: number;
 }
 
-/** LLM tokens spent on the self-hosted Ollama this billing period. */
+/** LLM tokens spent on the self-hosted Ollama in the current monthly billing
+ *  period; the count resets at `periodEnd`. `limitTokens` is a per-period cap. */
 export interface AiTokenUsage {
+  /** Billing period start, `yyyy-mm-dd` (UTC). */
+  periodStart: string;
+  /** Billing period end, `yyyy-mm-dd` (UTC), exclusive — the reset date. */
+  periodEnd: string;
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
@@ -86,10 +92,6 @@ export interface AiTokenUsage {
 }
 
 export interface SubscriptionUsage {
-  /** Billing period start, `yyyy-mm-dd` (UTC). */
-  periodStart: string;
-  /** Billing period end, `yyyy-mm-dd` (UTC), exclusive. */
-  periodEnd: string;
   storage: StorageUsage;
   aiTokens: AiTokenUsage;
 }

@@ -15,10 +15,10 @@ import type { SubscriptionUsage } from '@/types/subscription'
 const GB = 1024 ** 3
 
 const BASE_USAGE: SubscriptionUsage = {
-  periodStart: '2026-11-01',
-  periodEnd: '2026-12-01',
   storage: { usedBytes: 3.42 * GB, objectCount: 12408, measuredAt: new Date().toISOString(), limitBytes: null },
   aiTokens: {
+    periodStart: '2026-11-01',
+    periodEnd: '2026-12-01',
     promptTokens: 842_000,
     completionTokens: 438_000,
     totalTokens: 1_280_000,
@@ -61,10 +61,11 @@ describe('UsagePanel', () => {
     expect(screen.getByText('12,408 files')).toBeInTheDocument()
     expect(screen.getByText('1.3M')).toBeInTheDocument()
     expect(screen.getByText('842K input · 438K output')).toBeInTheDocument()
-    expect(screen.getByText('01 Nov – 30 Nov 2026')).toBeInTheDocument()
+    expect(screen.getByText(/Total across your workspace/)).toBeInTheDocument()
+    expect(screen.getByText('This period: 01 Nov – 30 Nov 2026 · Resets 01 Dec 2026')).toBeInTheDocument()
     expect(screen.getAllByText('No limit on your current plan')).toHaveLength(2)
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
-    expect(screen.getByText(/^Updated /)).toBeInTheDocument()
+    expect(screen.getByText(/· Updated /)).toBeInTheDocument()
   })
 
   it('merges assistant sources into one breakdown row, largest first', async () => {
@@ -87,7 +88,8 @@ describe('UsagePanel', () => {
 
     const storageBar = await screen.findByRole('progressbar', { name: 'File storage used' })
     expect(storageBar).toHaveAttribute('aria-valuenow', '10')
-    expect(screen.getByText('of 50 GB')).toBeInTheDocument()
+    expect(screen.getByText('of 50 GB total')).toBeInTheDocument()
+    expect(screen.getByText('of 2M / month')).toBeInTheDocument()
     expect(screen.getByRole('progressbar', { name: 'AI tokens used' })).toHaveAttribute('aria-valuenow', '64')
     expect(screen.queryByText('No limit on your current plan')).not.toBeInTheDocument()
   })
@@ -96,7 +98,7 @@ describe('UsagePanel', () => {
     vi.mocked(subscriptionService.getUsage).mockResolvedValue({
       ...BASE_USAGE,
       storage: { usedBytes: 0, objectCount: 0, measuredAt: null, limitBytes: null },
-      aiTokens: { promptTokens: 0, completionTokens: 0, totalTokens: 0, limitTokens: null, bySource: [] },
+      aiTokens: { ...BASE_USAGE.aiTokens, promptTokens: 0, completionTokens: 0, totalTokens: 0, bySource: [] },
     })
     renderPanel()
 

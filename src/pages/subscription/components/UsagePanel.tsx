@@ -5,7 +5,7 @@ import { subscriptionService } from '@/services/subscriptionService'
 import { apiErrorMessage } from '@/api/tenantClient'
 import { relativeTime } from '@/lib/recentRecordRoute'
 import {
-  formatBytes, formatPeriod, formatTokenCount, groupTokenSources, usagePercent,
+  formatBytes, formatPeriod, formatResetDate, formatTokenCount, groupTokenSources, usagePercent,
 } from '@/lib/usageFormat'
 import type { SubscriptionUsage } from '@/types/subscription'
 import { UsageMeter, type UsageMeterLimit } from './UsageMeter'
@@ -25,9 +25,10 @@ function isClientError(err: unknown): boolean {
   return status !== undefined && status >= HTTP_CLIENT_ERROR_MIN && status < HTTP_SERVER_ERROR_MIN
 }
 
-function limitFor(used: number, limit: number | null, format: (n: number) => string): UsageMeterLimit | null {
+/** Storage limits are an overall cap; token limits are per monthly period. */
+function limitFor(used: number, limit: number | null, label: (limit: number) => string): UsageMeterLimit | null {
   const percent = usagePercent(used, limit)
-  return percent === null || limit === null ? null : { percent, label: format(limit) }
+  return percent === null || limit === null ? null : { percent, label: label(limit) }
 }
 
 function StorageMeter({ usage }: { usage: SubscriptionUsage }) {
@@ -41,9 +42,12 @@ function StorageMeter({ usage }: { usage: SubscriptionUsage }) {
         value: measured ? formatBytes(storage.usedBytes) : '—',
         detail: measured ? `${storage.objectCount.toLocaleString()} files` : 'Not measured yet — check back shortly',
       }}
-      limit={limitFor(storage.usedBytes, storage.limitBytes, formatBytes)}
+      limit={limitFor(storage.usedBytes, storage.limitBytes, (n) => `${formatBytes(n)} total`)}
     >
-      {storage.measuredAt && <p>Updated {relativeTime(storage.measuredAt)}</p>}
+      <p>
+        Total across your workspace
+        {storage.measuredAt && <> · Updated {relativeTime(storage.measuredAt)}</>}
+      </p>
     </UsageMeter>
   )
 }
@@ -51,6 +55,7 @@ function StorageMeter({ usage }: { usage: SubscriptionUsage }) {
 function TokenMeter({ usage }: { usage: SubscriptionUsage }) {
   const { aiTokens } = usage
   const rows = groupTokenSources(aiTokens.bySource)
+  const reset = formatResetDate(aiTokens.periodEnd)
   return (
     <UsageMeter
       heading={{
@@ -61,10 +66,14 @@ function TokenMeter({ usage }: { usage: SubscriptionUsage }) {
           ? `${formatTokenCount(aiTokens.promptTokens)} input · ${formatTokenCount(aiTokens.completionTokens)} output`
           : 'No AI usage this period',
       }}
-      limit={limitFor(aiTokens.totalTokens, aiTokens.limitTokens, formatTokenCount)}
+      limit={limitFor(aiTokens.totalTokens, aiTokens.limitTokens, (n) => `${formatTokenCount(n)} / month`)}
     >
+      <p className="font-medium text-stone-600">
+        This period: {formatPeriod(aiTokens.periodStart, aiTokens.periodEnd)}
+        {reset && <> · Resets {reset}</>}
+      </p>
       {rows.length > 0 && (
-        <dl className="flex flex-col gap-1.5" aria-label="AI tokens by feature">
+        <dl className="mt-3 flex flex-col gap-1.5" aria-label="AI tokens by feature">
           {rows.map((row) => (
             <div key={row.label} className="flex items-center justify-between gap-3">
               <dt>{row.label}</dt>
@@ -110,27 +119,26 @@ function renderBody(query: UseQueryResult<SubscriptionUsage>) {
   )
 }
 
-/** Plan-tab card showing this billing period's R2 storage and AI token usage. */
+/** Plan-tab card: overall R2 storage (a running total) and AI tokens for the
+ *  current monthly billing period (which reset each period). */
 export function UsagePanel() {
   const query = useQuery({
     queryKey: SUBSCRIPTION_USAGE_QUERY_KEY,
     queryFn: subscriptionService.getUsage,
     retry: (failures, err) => !isClientError(err) && failures < MAX_RETRIES,
   })
-  const period = query.data ? formatPeriod(query.data.periodStart, query.data.periodEnd) : ''
   return (
     <section aria-labelledby="usage-heading" className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-4">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
             <Gauge className="size-4" aria-hidden="true" />
           </div>
           <div>
-            <h2 id="usage-heading" className="text-sm font-bold text-stone-900">Usage this billing period</h2>
+            <h2 id="usage-heading" className="text-sm font-bold text-stone-900">Usage</h2>
             <p className="mt-0.5 text-xs text-stone-500">Storage and AI usage for your workspace</p>
           </div>
         </div>
-        {period && <p className="text-xs font-semibold text-stone-600 sm:pt-1">{period}</p>}
       </div>
       {renderBody(query)}
     </section>

@@ -64,6 +64,12 @@ export function formatPeriod(start: string, endExclusive: string): string {
   return `${from} – ${last.toLocaleDateString('en-GB', PERIOD_FORMAT_YEAR)}`;
 }
 
+/** The reset date for a period ending (exclusively) on `endExclusive`: "01 Dec 2026". */
+export function formatResetDate(endExclusive: string): string {
+  const e = parseUtcDate(endExclusive);
+  return e ? e.toLocaleDateString('en-GB', PERIOD_FORMAT_YEAR) : '';
+}
+
 /** Display names for the backend's token source keys. */
 export const TOKEN_SOURCE_LABELS: Record<string, string> = {
   ask: 'Assistant chat',
