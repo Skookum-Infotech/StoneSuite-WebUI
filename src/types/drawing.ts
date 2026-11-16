@@ -30,10 +30,12 @@ export interface DistanceLines {
   left: DistanceLineMode;
 }
 
-/** How a cutout's opening is drawn. `rect` uses widthMm x depthMm, `round`
- *  uses diameterMm, `polygon` uses its own `outline`. Absent on drawings
- *  saved before this field existed — see `cutoutShape` in lib/drawing/cutouts.ts. */
-export type CutoutShape = 'rect' | 'round' | 'polygon';
+/** How a cutout's opening is drawn. `rect`, `ellipse`, `arc` (flat bottom,
+ *  domed top) and `stadium` (a rectangle with fully rounded ends) all fill
+ *  widthMm x depthMm; `round` uses diameterMm, `polygon` its own `outline`.
+ *  Absent on drawings saved before this field existed — see `cutoutShape` in
+ *  lib/drawing/cutouts.ts. */
+export type CutoutShape = 'rect' | 'round' | 'polygon' | 'ellipse' | 'arc' | 'stadium';
 
 /** What role a piece plays in the layout. Label/preset only — geometry is
  *  identical for every kind. */
@@ -81,6 +83,9 @@ export interface Cutout {
    *  the Cutout dialog). The opening itself is always drawn. */
   hideName?: boolean;
   hideMeasurements?: boolean;
+  /** Which picture the opening is drawn as (lib/drawing/cutoutShapes.ts, e.g.
+   *  `sink.farmhouse`). Absent is "No Picture": the plain rectangle. */
+  shapeCode?: string;
   /** Faucet holes drilled with a sink; the radius is in mm. */
   faucetHoleCount?: number;
   faucetHoleRadiusMm?: number;

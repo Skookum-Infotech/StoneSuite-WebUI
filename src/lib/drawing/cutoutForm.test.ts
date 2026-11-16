@@ -20,7 +20,7 @@ describe('defaults', () => {
 
   it.each([
     ['sink', '30"', '18"'],
-    ['fireplace', '36"', '12"'],
+    ['fireplace', '36"', '30"'],
     ['faucet', '1 3/8"', '1 3/8"'], // round: square at its diameter
   ] as const)('%s starts at %s x %s', (type, length, height) => {
     expect(defaultSizeText(type, IN)).toEqual({ length, height });
@@ -101,7 +101,7 @@ describe('editing an existing cutout', () => {
   it('fills the form with what the cutout already has', () => {
     expect(draftFromCutout(sink, 'Sink', IN)).toEqual({
       type: 'sink', name: 'Kitchen sink', hideName: false, length: '23"', height: '14"', hideMeasurements: true,
-      edgeCode: 'EE', faucetHoleCount: '3', faucetHoleRadius: '1"', distanceLines: sink.distanceLines,
+      shapeTab: 'rectangle', shapeCode: '', edgeCode: 'EE', faucetHoleCount: '3', faucetHoleRadius: '1"', distanceLines: sink.distanceLines,
     });
   });
 

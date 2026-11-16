@@ -10,11 +10,14 @@ import { Select } from '@/components/ui/select';
 import type { Cutout, CutoutType, Piece } from '@/types/drawing';
 import type { CutoutTypeOption } from '@/services/drawingService';
 import {
-  cutoutPatch, defaultCutoutName, defaultSizeText, draftFromCutout, draftToCutout, FAUCET_HOLE_TYPE, newDraft,
-  type CutoutDraft, type DraftErrors,
+  cutoutPatch, defaultCutoutName, defaultSizeText, draftFromCutout, draftToCutout, FAUCET_HOLE_TYPE, geometryOf, newDraft,
+  shapeCodeFor, tabFor, type CutoutDraft, type DraftErrors,
 } from '@/lib/drawing/cutoutForm';
-import { CUTOUT_TYPE_LABELS, cutoutPatchProblem, validateCutouts } from '@/lib/drawing/cutouts';
+import { findShape, tabsForType, shapesForType, type ShapeTab } from '@/lib/drawing/cutoutShapes';
+import { CUTOUT_TYPE_LABELS, cutoutPatchProblem } from '@/lib/drawing/cutouts';
 import { bounds } from '@/lib/drawing/geometry';
+import { CutoutShapePicker } from './CutoutShapePicker';
+import { CutoutShapeThumb } from './CutoutShapeThumb';
 import { DistanceLinesPicker } from './DistanceLinesPicker';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { useEdgeCodes } from './useEdgeCodes';
@@ -44,7 +47,7 @@ function HideToggle({ label, checked, onChange }: { label: string; checked: bool
 export function CutoutForm({ piece, cutout, types: masterTypes, onClose }: {
   piece: Piece; cutout?: Cutout; types: CutoutTypeOption[]; onClose: () => void;
 }) {
-  const { state, dispatch } = useDrawingEditor();
+  const { state, dispatch, startPlacing } = useDrawingEditor();
   const edgeCodes = useEdgeCodes();
   const format = { unit: state.present.displayUnit, fractionDenominator: state.present.fractionDenominator };
   // A cutout from before the types became master data (a soap dispenser, an
@@ -58,21 +61,50 @@ export function CutoutForm({ piece, cutout, types: masterTypes, onClose }: {
   ));
   const [errors, setErrors] = useState<DraftErrors>({});
   const [placement, setPlacement] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
 
   const patch = (change: Partial<CutoutDraft>) => setDraft((d) => ({ ...d, ...change }));
 
-  // Switching type renames and resizes the draft to the new type's starting
-  // values — but only the parts still untouched, so typed work is never lost.
+  // Resizes the draft to the starting size of what it now is (a type, or a
+  // type's picture) — but only if the size is still the old starting size, so
+  // typed work is never lost.
+  const resized = (d: CutoutDraft, next: CutoutDraft): CutoutDraft => {
+    const before = defaultSizeText(d.type, format, d.shapeCode);
+    return d.length === before.length && d.height === before.height
+      ? { ...next, ...defaultSizeText(next.type, format, next.shapeCode) }
+      : next;
+  };
+
+  // Switching type renames the draft to the new type's name (if it still has
+  // the old one) and drops a picture the new type does not have.
   const changeType = (code: CutoutType) => setDraft((d) => {
-    const next: CutoutDraft = { ...d, type: code };
+    // A draft still on its old type's first tab (and no picture) moves to the
+    // new type's first tab — a fireplace opens on Arc, a bathtub on Ellipse;
+    // one the user steered elsewhere keeps its tab where the new type has it.
+    const onFirstTab = d.shapeCode === '' && d.shapeTab === (tabsForType(d.type)[0] ?? 'rectangle');
+    const next: CutoutDraft = {
+      ...d,
+      type: code,
+      shapeTab: onFirstTab ? tabFor(code, tabsForType(code)[0] ?? 'rectangle') : tabFor(code, d.shapeTab),
+      shapeCode: shapeCodeFor(code, d.shapeCode),
+    };
     if (d.name === defaultCutoutName(labelOf(d.type))) next.name = defaultCutoutName(labelOf(code));
-    const before = defaultSizeText(d.type, format);
-    if (d.length === before.length && d.height === before.height) Object.assign(next, defaultSizeText(code, format));
-    return next;
+    return resized(d, next);
   });
+
+  const pickShape = (shapeTab: ShapeTab, shapeCode: string) => {
+    setDraft((d) => resized(d, { ...d, shapeTab, shapeCode }));
+    setPicking(false);
+  };
+
+  // Change is for a type with a picture to choose, or more than one outline.
+  const canChange = shapesForType(draft.type).length > 0 || tabsForType(draft.type).length > 1;
+  const shape = findShape(draft.shapeCode) ?? null;
 
   const save = () => {
     const b = bounds(piece.outline);
+    // A new cutout starts in the middle of the piece; where it ends up is the
+    // user's click (below).
     const centre = cutout?.center ?? { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 };
     const result = draftToCutout(draft, cutout?.id ?? crypto.randomUUID(), centre);
     if (result.errors) {
@@ -92,12 +124,9 @@ export function CutoutForm({ piece, cutout, types: masterTypes, onClose }: {
       onClose();
       return;
     }
-    const issues = validateCutouts({ outline: piece.outline, cutouts: [...piece.cutouts, result.cutout] });
-    if (issues.length > 0) {
-      setPlacement(issues[issues.length - 1].message);
-      return;
-    }
-    dispatch({ type: 'addCutout', areaId: state.activeAreaId, pieceId: piece.id, cutout: result.cutout });
+    // The cursor turns into a target: the cutout follows it over the piece and
+    // is added where the user clicks (CutoutPlacementLayer).
+    startPlacing(piece.id, result.cutout);
     onClose();
   };
 
@@ -106,6 +135,12 @@ export function CutoutForm({ piece, cutout, types: masterTypes, onClose }: {
     dispatch({ type: 'deleteCutout', areaId: state.activeAreaId, pieceId: piece.id, cutoutId: cutout.id });
     onClose();
   };
+
+  if (picking) {
+    return (
+      <CutoutShapePicker type={draft.type} tab={draft.shapeTab} value={draft.shapeCode} onPick={pickShape} onBack={() => setPicking(false)} />
+    );
+  }
 
   return (
     <>
@@ -129,14 +164,13 @@ export function CutoutForm({ piece, cutout, types: masterTypes, onClose }: {
           <h3 className={SECTION_TITLE_CLASS}>Shape</h3>
           <div className="grid grid-cols-[8rem_1fr] gap-3">
             <div className="flex flex-col items-center gap-1.5 rounded border border-stone-200 p-2 text-xs text-stone-600">
-              <svg viewBox="0 0 60 40" className="h-16 w-full rounded bg-white" role="img" aria-label="Rectangle shape">
-                <rect x="6" y="6" width="48" height="28" className="fill-none stroke-stone-900" strokeWidth={1.5} />
-              </svg>
-              No Picture
+              <CutoutShapeThumb shape={shape} geometry={geometryOf(draft)} className="h-16 w-full rounded bg-white" />
+              <span className="text-center">{shape ? shape.name : 'No Picture'}</span>
               <button
                 type="button"
-                disabled
-                title="More shapes arrive in the next update"
+                disabled={!canChange}
+                title={canChange ? 'Choose a shape' : 'This type has no shapes yet'}
+                onClick={() => setPicking(true)}
                 className="rounded bg-brand px-3 py-0.5 text-2xs font-medium text-stone-900 disabled:opacity-50"
               >
                 Change

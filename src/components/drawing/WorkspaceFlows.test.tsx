@@ -1,12 +1,15 @@
 // The top bar's Sketch / Cutout / Material tabs, the Cutout side panel and the
 // Cutout dialog, end to end against the real reducer.
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing, Piece } from '@/types/drawing';
 import { MM_PER_INCH } from '@/lib/drawing/constants';
+import { toast } from 'sonner';
+
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock('@/services/drawingService', () => ({
   drawingService: {
@@ -23,6 +26,7 @@ vi.mock('@/services/drawingService', () => ({
   },
 }));
 
+import { CutoutPlacementLayer } from './CutoutPlacementLayer';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { DrawingToolbar } from './DrawingToolbar';
 import { WorkspacePanel } from './WorkspacePanel';
@@ -67,6 +71,23 @@ function Readout() {
   return <span data-testid="cutouts">{JSON.stringify(state.present.areas[0].pieces[0]?.cutouts ?? [])}</span>;
 }
 
+beforeEach(() => {
+  // The board is 800 x 600, so 1px is 1mm and the piece origin is at (400, 300).
+  vi.spyOn(SVGElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0, toJSON: () => undefined,
+  } as DOMRect);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.mocked(toast.error).mockClear();
+});
+
+/** Clicks the board where the piece's point (x, y) in mm is — where the target cursor drops the cutout. */
+function placeCutout(x = 1500, y = -500) {
+  fireEvent.click(screen.getByTestId('cutout-placement'), { clientX: 400 + x, clientY: 300 - y });
+}
+
 const cutouts = () => JSON.parse(screen.getByTestId('cutouts').textContent ?? '[]');
 
 function renderEditor(pieces: Piece[] = []) {
@@ -76,6 +97,7 @@ function renderEditor(pieces: Piece[] = []) {
       <DrawingEditorProvider drawing={drawingWith(pieces)} materialLines={[]}>
         <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" /></div>
         <WorkspacePanel />
+        <svg><CutoutPlacementLayer /></svg>
         <SelectPiece />
         <Readout />
       </DrawingEditorProvider>
@@ -217,7 +239,7 @@ describe('Cutout dialog', () => {
     expect(name).toHaveValue('Kitchen sink');
   });
 
-  it('Save puts the cutout on the selected piece and closes', async () => {
+  it('Save closes the dialog and turns the cursor into a target; the cutout is added where the board is clicked', async () => {
     renderEditor([makePiece(BIG_PIECE_MM.width, BIG_PIECE_MM.depth)]);
     const dialog = await openDialog();
     const length = within(dialog).getByLabelText('Length');
@@ -230,8 +252,16 @@ describe('Cutout dialog', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(cutouts()).toHaveLength(0); // not added until it is placed
+    expect(screen.getByText('Click on the piece to place the cutout.')).toBeDefined();
+
+    placeCutout(1200, -300);
     const [cutout] = cutouts();
     expect(cutouts()).toHaveLength(1);
+    // Snapped to a quarter inch (6.35mm), so within half of that of the click.
+    expect(Math.abs(cutout.center.x - 1200)).toBeLessThanOrEqual(3.2);
+    expect(Math.abs(cutout.center.y + 300)).toBeLessThanOrEqual(3.2);
+    expect(screen.queryByText('Click on the piece to place the cutout.')).toBeNull();
     expect(cutout).toMatchObject({ type: 'sink', shape: 'rect', label: 'Cutout - Sink', faucetHoleCount: 1 });
     expect(cutout.widthMm).toBeCloseTo(23 * MM_PER_INCH, 5);
     expect(cutout.depthMm).toBeCloseTo(14 * MM_PER_INCH, 5);
@@ -244,15 +274,18 @@ describe('Cutout dialog', () => {
     const top = within(dialog).getByRole('radiogroup', { name: 'Top distance line' });
     await userEvent.click(within(top).getByRole('radio', { name: 'Border' }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    placeCutout();
     expect(cutouts()[0].distanceLines).toEqual({ top: 'border', right: 'hidden', bottom: 'center', left: 'center' });
   });
 
-  it('refuses a cutout that does not fit the piece, with the reason, and stays open', async () => {
+  it('refuses a click that puts the cutout where it does not fit the piece, with the reason, and keeps waiting', async () => {
     renderEditor([makePiece(300, 300)]);
     const dialog = await openDialog();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
-    expect(within(dialog).getByRole('alert').textContent).toMatch(/inside the piece/);
+    placeCutout(150, -150);
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/inside the piece/));
     expect(cutouts()).toHaveLength(0);
+    expect(screen.getByText('Click on the piece to place the cutout.')).toBeDefined();
   });
 
   it('says what is wrong with a length that cannot be read', async () => {

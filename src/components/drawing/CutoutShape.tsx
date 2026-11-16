@@ -17,6 +17,7 @@ import { rotatePoint, snapToGrid } from '@/lib/drawing/geometry';
 import { pixelDeltaToMm } from '@/lib/drawing/viewport';
 import { CutoutDistanceLines } from './CutoutDistanceLines';
 import { CutoutLabel } from './CutoutLabel';
+import { CutoutPicture } from './CutoutPicture';
 import { useDrawingEditor } from './DrawingEditorContext';
 
 interface DragState {
@@ -107,6 +108,7 @@ export function CutoutShape(
         strokeWidth={selected && editable ? 2 : 1}
         strokeDasharray={bad ? '6 3' : undefined}
       />
+      <CutoutPicture cutout={shown} />
       <CutoutDistanceLines piece={piece} cutout={shown} />
       <CutoutLabel cutout={shown} rotationDeg={piece.rotationDeg} />
     </g>

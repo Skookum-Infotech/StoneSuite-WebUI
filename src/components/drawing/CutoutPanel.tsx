@@ -12,7 +12,7 @@ import { useDrawingEditor } from './DrawingEditorContext';
 const BUTTON_CLASS = 'flex-1 rounded bg-brand px-2 py-1.5 text-xs font-medium text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:hover:bg-brand';
 
 export function CutoutPanel() {
-  const { state, dispatch, editingCutoutId, editCutout } = useDrawingEditor();
+  const { state, dispatch, editingCutoutId, editCutout, placing, cancelPlacing } = useDrawingEditor();
   const [dialogOpen, setDialogOpen] = useState(false);
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
   // The piece a clicked cutout is on, which is selected along with it.
@@ -24,8 +24,17 @@ export function CutoutPanel() {
       <div className="flex gap-1.5 border-b border-stone-200 p-3">
         <button type="button" disabled title="Coming soon" className={BUTTON_CLASS}>Inventory</button>
         <button type="button" disabled title="Coming soon" className={BUTTON_CLASS}>Custom Item</button>
-        <button type="button" disabled={!piece} onClick={() => setDialogOpen(true)} className={BUTTON_CLASS}>Only Cutout</button>
+        <button type="button" disabled={!piece || placing !== null} onClick={() => setDialogOpen(true)} className={BUTTON_CLASS}>Only Cutout</button>
       </div>
+
+      {placing && (
+        <div role="status" className="flex items-center justify-between gap-2 border-b border-stone-200 bg-brand/20 px-3 py-2 text-xs text-stone-800">
+          <span>Click on the piece to place the cutout.</span>
+          <button type="button" onClick={cancelPlacing} className="shrink-0 rounded border border-stone-300 bg-white px-2 py-0.5 text-2xs font-medium">
+            Cancel
+          </button>
+        </div>
+      )}
 
       <div className="modal-scrollbar flex-1 overflow-y-auto p-3">
         {!piece && <p className="mt-16 text-center text-xs text-stone-500">Select a piece to add cutouts to it.</p>}

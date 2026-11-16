@@ -21,6 +21,7 @@ import { PieceHandles } from './PieceHandles';
 import { PieceDimensions } from './PieceDimensions';
 import { AnnotationLayer } from './AnnotationLayer';
 import { CanvasOverlays, type Marquee } from './CanvasOverlays';
+import { CutoutPlacementLayer } from './CutoutPlacementLayer';
 import { EdgeDragLayer } from './EdgeDragLayer';
 import { useAnnotationTool } from './useAnnotationTool';
 import { useDrawTool } from './useDrawTool';
@@ -380,6 +381,7 @@ export function DrawingCanvas() {
               />
             )}
             {tool === 'draw' && <EdgeDragLayer edgeDrag={edgeDrag} pieces={activeArea?.pieces ?? []} />}
+            <CutoutPlacementLayer />
           </g>
         </g>
       </svg>

@@ -2,9 +2,12 @@
 // unit) and how it becomes a Cutout. Kept apart from the component so the
 // parsing and the "what does a new sink start as" rules are plain functions.
 
-import type { Cutout, CutoutType, DistanceLines, Point } from '@/types/drawing';
+import type { Cutout, CutoutShape, CutoutType, DistanceLines, Point } from '@/types/drawing';
 import { MM_PER_INCH } from './constants';
 import { CUTOUT_DEFAULTS, cutoutSize } from './cutouts';
+import {
+  findShape, SHAPE_TABS, shapeSizeMm, shapesForType, tabOfGeometry, tabsForType, type ShapeTab,
+} from './cutoutShapes';
 import { formatLength, LengthParseError, parseLength, parsePositiveLength } from './units';
 
 /** The one type that comes with faucet holes. */
@@ -22,6 +25,10 @@ export interface CutoutDraft {
   length: string;
   height: string;
   hideMeasurements: boolean;
+  /** The outline tab the opening sits under (rectangle, arc, ellipse). */
+  shapeTab: ShapeTab;
+  /** The picture the cutout is drawn as; '' is No Picture. */
+  shapeCode: string;
   edgeCode: string;
   faucetHoleCount: string;
   faucetHoleRadius: string;
@@ -41,13 +48,38 @@ export const defaultDistanceLines = (): DistanceLines => ({
   top: 'hidden', right: 'hidden', bottom: 'center', left: 'center',
 });
 
-/** The starting length x height for a type, as text in the display unit. A
- *  round type (a faucet) starts square at its diameter. */
-export function defaultSizeText(type: CutoutType, format: DisplayFormat): { length: string; height: string } {
+/** The starting length x height for a type — or for its picture, when it has
+ *  one — as text in the display unit. A round type (a faucet) starts square at
+ *  its diameter. */
+export function defaultSizeText(
+  type: CutoutType, format: DisplayFormat, shapeCode = '',
+): { length: string; height: string } {
+  const shape = findShape(shapeCode);
+  const show = (mm: number) => formatLength(mm, format.unit, format.fractionDenominator);
+  if (shape) {
+    const { lengthMm, heightMm } = shapeSizeMm(shape);
+    return { length: show(lengthMm), height: show(heightMm) };
+  }
   const { widthMm, depthMm, diameterMm } = CUTOUT_DEFAULTS[type];
-  const show = (mm: number | undefined) => formatLength(mm ?? diameterMm ?? 0, format.unit, format.fractionDenominator);
-  return { length: show(widthMm), height: show(depthMm) };
+  return { length: show(widthMm ?? diameterMm ?? 0), height: show(depthMm ?? diameterMm ?? 0) };
 }
+
+/** The picture a cutout of `type` can keep: its own if that type offers it,
+ *  otherwise none. */
+export const shapeCodeFor = (type: CutoutType, shapeCode: string): string => (
+  shapesForType(type).some((s) => s.code === shapeCode) ? shapeCode : ''
+);
+
+/** `tab` if the type offers it, otherwise the type's first tab (rectangle for
+ *  a type with no tabs). */
+export const tabFor = (type: CutoutType, tab: ShapeTab): ShapeTab => {
+  const tabs = tabsForType(type);
+  return tabs.includes(tab) ? tab : tabs[0] ?? 'rectangle';
+};
+
+/** The outline the opening takes: its picture's, or its tab's. */
+export const geometryOf = (draft: Pick<CutoutDraft, 'shapeCode' | 'shapeTab'>): CutoutShape =>
+  findShape(draft.shapeCode)?.geometry ?? SHAPE_TABS[draft.shapeTab].geometry;
 
 export function newDraft(type: CutoutType, typeLabel: string, format: DisplayFormat): CutoutDraft {
   return {
@@ -56,6 +88,8 @@ export function newDraft(type: CutoutType, typeLabel: string, format: DisplayFor
     hideName: false,
     ...defaultSizeText(type, format),
     hideMeasurements: false,
+    shapeTab: tabFor(type, 'rectangle'),
+    shapeCode: '',
     edgeCode: '',
     faucetHoleCount: '',
     faucetHoleRadius: formatLength(DEFAULT_FAUCET_HOLE_RADIUS_MM, format.unit, format.fractionDenominator),
@@ -67,6 +101,7 @@ export function newDraft(type: CutoutType, typeLabel: string, format: DisplayFor
 export function draftFromCutout(cutout: Cutout, typeLabel: string, format: DisplayFormat): CutoutDraft {
   const { lengthMm, heightMm } = cutoutSize(cutout);
   const show = (mm: number) => formatLength(mm, format.unit, format.fractionDenominator);
+  const picture = findShape(cutout.shapeCode);
   return {
     type: cutout.type,
     name: cutout.label ?? defaultCutoutName(typeLabel),
@@ -74,6 +109,8 @@ export function draftFromCutout(cutout: Cutout, typeLabel: string, format: Displ
     length: show(lengthMm),
     height: show(heightMm),
     hideMeasurements: cutout.hideMeasurements ?? false,
+    shapeTab: tabFor(cutout.type, picture?.tab ?? tabOfGeometry(cutout.shape)),
+    shapeCode: cutout.shapeCode ?? '',
     edgeCode: cutout.edgeCode ?? '',
     faucetHoleCount: cutout.faucetHoleCount === undefined ? '' : String(cutout.faucetHoleCount),
     faucetHoleRadius: show(cutout.faucetHoleRadiusMm ?? DEFAULT_FAUCET_HOLE_RADIUS_MM),
@@ -95,6 +132,7 @@ export function cutoutPatch(edited: Cutout): Partial<Cutout> {
     label: edited.label,
     hideName: edited.hideName,
     hideMeasurements: edited.hideMeasurements,
+    shapeCode: edited.shapeCode,
     edgeCode: edited.edgeCode,
     faucetHoleCount: edited.faucetHoleCount,
     faucetHoleRadiusMm: edited.faucetHoleRadiusMm,
@@ -151,7 +189,7 @@ export function draftToCutout(draft: CutoutDraft, id: string, center: Point): Dr
     cutout: {
       id,
       type: draft.type,
-      shape: 'rect',
+      shape: geometryOf(draft),
       center,
       rotationDeg: 0,
       widthMm,
@@ -159,6 +197,7 @@ export function draftToCutout(draft: CutoutDraft, id: string, center: Point): Dr
       ...(name && { label: name }),
       ...(draft.hideName && { hideName: true }),
       ...(draft.hideMeasurements && { hideMeasurements: true }),
+      ...(draft.shapeCode && { shapeCode: draft.shapeCode }),
       ...(draft.edgeCode && { edgeCode: draft.edgeCode }),
       ...(faucetHoleCount !== undefined && { faucetHoleCount }),
       ...(faucetHoleRadiusMm !== undefined && { faucetHoleRadiusMm }),

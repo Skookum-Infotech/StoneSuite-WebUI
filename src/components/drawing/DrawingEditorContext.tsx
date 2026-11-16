@@ -5,7 +5,7 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode,
 } from 'react';
-import type { Drawing, Piece } from '@/types/drawing';
+import type { Cutout, Drawing, Piece } from '@/types/drawing';
 import type { SalesOrderLine } from '@/types/salesOrder';
 import { bounds, transformOutline } from '@/lib/drawing/geometry';
 import { VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_MAX, ZOOM_MIN } from '@/lib/drawing/constants';
@@ -23,6 +23,11 @@ export type EditorTool = 'select' | 'draw' | 'polygon' | 'note' | 'dimension' | 
  *  board itself, and the Cutout and Material side panels beside it. */
 export type EditorWorkspace = 'sketch' | 'cutout' | 'material';
 
+export interface PlacingCutout {
+  pieceId: string;
+  cutout: Cutout;
+}
+
 export interface DrawingEditorContextValue {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
@@ -36,6 +41,11 @@ export interface DrawingEditorContextValue {
    *  clicking a cutout on the board or in the panel sets it), or null. */
   editingCutoutId: string | null;
   editCutout: (cutoutId: string | null) => void;
+  /** A new cutout, built in the Cutout dialog, waiting for the user to click
+   *  where on `pieceId` it goes (the cursor becomes a target). Null otherwise. */
+  placing: PlacingCutout | null;
+  startPlacing: (pieceId: string, cutout: Cutout) => void;
+  cancelPlacing: () => void;
   materialLines: SalesOrderLine[];
   /** Whether the corner map is showing (the M key and the bottom bar flip it). */
   mapOpen: boolean;
@@ -76,6 +86,9 @@ export function DrawingEditorProvider(
   const [tool, setToolState] = useState<EditorTool>('select');
   const [workspace, setWorkspaceState] = useState<EditorWorkspace>('sketch');
   const [editingCutoutId, editCutout] = useState<string | null>(null);
+  const [placing, setPlacing] = useState<PlacingCutout | null>(null);
+  const startPlacing = useCallback((pieceId: string, cutout: Cutout) => setPlacing({ pieceId, cutout }), []);
+  const cancelPlacing = useCallback(() => setPlacing(null), []);
   const [mapOpen, setMapOpen] = useState(true);
   const toggleMap = useCallback(() => setMapOpen((open) => !open), []);
   const [dimensionsOn, setDimensionsOn] = useState(false);
@@ -90,12 +103,14 @@ export function DrawingEditorProvider(
     if (next !== 'select') {
       setWorkspaceState('sketch');
       editCutout(null);
+      setPlacing(null);
     }
   }, []);
   const setWorkspace = useCallback((next: EditorWorkspace) => {
     setWorkspaceState(next);
     if (next !== 'sketch') setToolState('select');
     editCutout(null);
+    setPlacing(null);
   }, []);
   // Cutouts are edited in the Cutout tab only: on leaving it, drop the cutout
   // selection so Sketch and the Properties panel go back to showing the piece.
@@ -173,14 +188,14 @@ export function DrawingEditorProvider(
 
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
-      state, dispatch, tool, setTool, workspace, setWorkspace, editingCutoutId, editCutout, materialLines, mapOpen,
-      toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+      state, dispatch, tool, setTool, workspace, setWorkspace, editingCutoutId, editCutout, placing, startPlacing,
+      cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      state, tool, setTool, workspace, setWorkspace, editingCutoutId, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
+      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
       toggleProperties, copySelection, pasteClipboard, duplicateSelection,
     ],
   );
