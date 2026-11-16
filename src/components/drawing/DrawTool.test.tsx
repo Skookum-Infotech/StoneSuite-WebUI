@@ -250,11 +250,17 @@ describe('Draw tool — drag a side to resize', () => {
     expect(screen.getByTestId('history').textContent).toBe('0');
   });
 
-  it('dragging a side past the opposite one is refused and the piece is left alone', async () => {
+  it('dragging a side past the opposite one is allowed: the box flips and is still a proper box', async () => {
     await open(true);
     dragSide(RIGHT_SIDE, -700, 0).release();
-    expect(pieces()[0].outline[1].x).toBe(600);
-    expect(toastError).toHaveBeenCalledTimes(1);
+    const [{ outline }] = pieces();
+    expect(toastError).not.toHaveBeenCalled();
+    expect(outline).toHaveLength(4);
+    // The right side landed about 100 left of the left side, which stayed put.
+    const xs = outline.map((p) => p.x).sort((a, b) => a - b);
+    expect(xs[0]).toBeLessThan(-98);
+    expect(xs[0]).toBeGreaterThan(-102);
+    expect(xs[3]).toBe(0);
   });
 
   it('Escape during a drag abandons it', async () => {
@@ -425,6 +431,23 @@ describe('Draw tool — drag a side along itself to grow a leg', () => {
     expect(outline).toHaveLength(4);
     expect(outline[0]).toEqual({ x: 0, y: 0 });
     expect(outline[1]).toEqual({ x: RUN, y: 0 });
+  });
+
+  it('a leg end carried down through the run is allowed: it cuts away what it passed over, no refusal', async () => {
+    await open(true, RUN);
+    dragSide(RIGHT_SIDE, 0, -300, PRIMARY, RUN).release();
+    expect(pieces()[0].outline).toHaveLength(6);
+    const top = pieces()[0].outline[2].y;
+    // The leg's end (side 2) dragged from its top down past the run's bottom.
+    const grab = screen.getByTestId('edge-grab-A-1-2');
+    const from = { clientX: ORIGIN_X + RUN - LEG_WIDTH_MM / 2, clientY: ORIGIN_Y - top };
+    fireEvent.pointerDown(grab, { pointerId: 1, button: PRIMARY, ...from });
+    fireEvent.pointerMove(grab, { pointerId: 1, clientX: from.clientX, clientY: from.clientY + top + 500 });
+    fireEvent.pointerUp(grab, { pointerId: 1, clientX: from.clientX, clientY: from.clientY + top + 500 });
+    expect(toastError).not.toHaveBeenCalled();
+    const [{ outline }] = pieces();
+    expect(outline).toHaveLength(4);
+    expect(Math.max(...outline.map((p) => p.x))).toBeCloseTo(RUN - LEG_WIDTH_MM, 6);
   });
 
   it('shows the leg while dragging but saves it only on release, as one undo step', async () => {

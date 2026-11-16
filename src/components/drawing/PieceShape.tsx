@@ -134,11 +134,13 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           A selected piece's own outline stays sharp and dark, like an
           unselected one, just heavier — brand green is reserved for a
           specific side (PieceHandles' highlighted edge) and for a side
-          being dragged (EdgeDragLayer), so green always means "this one
-          side", never "this whole piece is selected". */}
+          being dragged (EdgeDragLayer). The selected piece's inside takes a
+          light brand tint so it stands out from the rest. Fills are
+          see-through, so two pieces overlapping each show their own outline
+          through the other instead of one hiding the other. */}
       <polygon
         points={points}
-        className={selected ? 'fill-stone-100 stroke-stone-900' : 'fill-stone-100 stroke-stone-400'}
+        className={selected ? 'fill-brand/30 stroke-stone-900' : 'fill-stone-100/70 stroke-stone-400'}
         strokeWidth={(selected ? 2 : 1) / state.zoom}
       />
       {/* Local coordinates -> screen: position, then rotation, then the

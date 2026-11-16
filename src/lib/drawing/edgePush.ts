@@ -13,6 +13,8 @@
 import type { Point } from '@/types/drawing';
 import { MIN_LEG_REMAINDER_MM } from './constants';
 import { distance } from './geometry';
+import { applyRect, repairOutline } from './outlineRepair';
+import { isSimplePolygon } from './polygon';
 
 /** `value` rounded to the nearest multiple of `step`. */
 export function snapToStep(value: number, step: number): number {
@@ -52,6 +54,9 @@ export interface SideDrag {
   /** Index (in `outline`) of the side a leg just grew, if one did — the side
    *  a second leg can grow off, for a staircase. */
   legEnd?: number;
+  /** Two opposite corners of the leg just grown: what is added to the shape
+   *  if the leg's own outline would cross it. */
+  legRect?: [Point, Point];
 }
 
 /** Square corners only: the side running off a corner has to point straight
@@ -98,7 +103,7 @@ export function growLeg(outline: Point[], edgeIndex: number, alongMm: number, wi
   const chain = atEnd ? [tip, tipIn, baseIn] : [baseIn, tipIn, tip];
   const replaced = atEnd ? ib : ia;
   const next = outline.flatMap((p, i) => (i === replaced ? chain : [p]));
-  return { outline: next, moved: atEnd ? [tip, tipIn] : [tipIn, tip], legEnd: atEnd ? replaced : replaced + 1 };
+  return { outline: next, moved: atEnd ? [tip, tipIn] : [tipIn, tip], legEnd: atEnd ? replaced : replaced + 1, legRect: [tip, baseIn] };
 }
 
 /** A pointer movement (local mm) split into how far it went across side
@@ -211,6 +216,26 @@ function growSecondLeg(
   return second.outline === first.outline ? null : second;
 }
 
+/** `leg` as it should be drawn on top of `base`: when the leg grew across the
+ *  shape the loop crosses itself, so the leg is added to the shape instead. */
+function resolveLeg(base: Point[], leg: SideDrag): SideDrag {
+  if (!leg.legRect || isSimplePolygon(leg.outline)) return leg;
+  const merged = applyRect(base, leg.legRect[0], leg.legRect[1], 'add');
+  return merged ? { ...leg, outline: merged, legEnd: undefined } : leg;
+}
+
+/** Side `edgeIndex` carried `acrossMm` over the shape, when that leaves a
+ *  loop whose sides cross: what the side swept over is added to the shape
+ *  (carried out) or cut out of it (carried in). Null when it is not one solid
+ *  shape any more. */
+function sweepSide(outline: Point[], edgeIndex: number, acrossMm: number): Point[] | null {
+  const normal = edgeNormal(outline, edgeIndex);
+  if (!normal || acrossMm === 0) return null;
+  const from = outline[edgeIndex];
+  const to = outline[(edgeIndex + 1) % outline.length];
+  return applyRect(outline, from, add(to, normal, acrossMm), acrossMm > 0 ? 'add' : 'cut');
+}
+
 /** Side `edgeIndex` pushed `acrossMm` out first, then — from that new
  *  position — a leg grown `alongMm` off one end. So a run pulled out to 100"
  *  and then turned keeps its 100": the leg is cut out of it, leaving the side
@@ -218,16 +243,30 @@ function growSecondLeg(
  *  a second leg grows off the end of the first, the same width, the way the
  *  pointer went — up, then right cuts the same step as right, then up. A side
  *  brought back within `joinMm` of its neighbour's line (a leg's end pulled
- *  back to the run it grew from) lands on it and merges into it. */
+ *  back to the run it grew from) lands on it and merges into it. A side or
+ *  leg carried across other sides is allowed: the shape it covers (or cuts
+ *  away) is what is drawn, never a tangle of crossing lines. */
 export function dragSideOutline(
   outline: Point[], edgeIndex: number, acrossMm: number, alongMm: number, legWidthMm: number, joinMm = 0,
   stairs?: Stairs,
 ): SideDrag {
-  const pushed = pushEdge(outline, edgeIndex, snapAcrossToJoin(outline, edgeIndex, acrossMm, joinMm));
+  const across = snapAcrossToJoin(outline, edgeIndex, acrossMm, joinMm);
+  const pushed = pushEdge(outline, edgeIndex, across);
   const side = { outline: pushed, moved: [pushed[edgeIndex], pushed[(edgeIndex + 1) % pushed.length]] };
-  const leg = alongMm === 0 ? side : growLeg(pushed, edgeIndex, alongMm, legWidthMm);
-  let final: SideDrag = leg.outline === pushed ? side : leg;
+  if (alongMm !== 0 && !isSimplePolygon(joinOutline(pushed, side.moved))) {
+    // The side itself already crossed the shape: no corner left to grow a leg
+    // off, so what it swept over is all that changes.
+    const swept = sweepSide(outline, edgeIndex, across);
+    if (swept) return { outline: repairOutline(swept), moved: side.moved };
+  }
+  const first = alongMm === 0 ? side : resolveLeg(pushed, growLeg(pushed, edgeIndex, alongMm, legWidthMm));
+  let final: SideDrag = first.outline === pushed ? side : first;
   const normal = edgeNormal(outline, edgeIndex);
-  if (stairs && normal) final = growSecondLeg(final, normal, acrossMm, legWidthMm, stairs) ?? final;
-  return { outline: joinOutline(final.outline, final.moved), moved: final.moved };
+  if (stairs && normal) {
+    const second = growSecondLeg(final, normal, acrossMm, legWidthMm, stairs);
+    if (second) final = resolveLeg(final.outline, second);
+  }
+  const joined = joinOutline(final.outline, final.moved);
+  const swept = final === side && !isSimplePolygon(joined) ? sweepSide(outline, edgeIndex, across) : null;
+  return { outline: repairOutline(swept ?? joined), moved: final.moved };
 }

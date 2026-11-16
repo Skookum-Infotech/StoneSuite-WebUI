@@ -82,7 +82,32 @@ describe('PieceShape — border colour', () => {
     const polygon = document.querySelector('polygon');
     expect(polygon?.getAttribute('class')).toContain('stroke-stone-900');
     expect(polygon?.getAttribute('class')).not.toContain('stroke-brand');
-    expect(polygon?.getAttribute('class')).not.toContain('fill-brand');
+  });
+
+  it('tints the inside of a selected piece so it stands out, without turning its border green', () => {
+    const piece = drawingWithOnePiece().areas[0].pieces[0];
+    render(
+      <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+        <svg>
+          <PieceShape piece={piece} selected />
+        </svg>
+      </DrawingEditorProvider>,
+    );
+    const classes = document.querySelector('polygon')?.getAttribute('class') ?? '';
+    expect(classes).toContain('fill-brand/30');
+    expect(classes).not.toContain('fill-stone-100');
+  });
+
+  it('draws the fill of a piece see-through, so a piece overlapping it still shows its own outline', () => {
+    const piece = drawingWithOnePiece().areas[0].pieces[0];
+    render(
+      <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+        <svg>
+          <PieceShape piece={piece} selected={false} />
+        </svg>
+      </DrawingEditorProvider>,
+    );
+    expect(document.querySelector('polygon')?.getAttribute('class')).toContain('fill-stone-100/70');
   });
 
   it('is a lighter, thinner outline when not selected', () => {
