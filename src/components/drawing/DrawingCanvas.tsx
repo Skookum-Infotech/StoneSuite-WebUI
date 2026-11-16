@@ -43,7 +43,7 @@ const PRIMARY_MOUSE_BUTTON = 0;
 
 export function DrawingCanvas() {
   const {
-    state, dispatch, tool, setTool, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
+    state, dispatch, tool, setTool, workspace, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
   } = useDrawingEditor();
   const [draftPoints, setDraftPoints] = useState<Point[]>([]);
   const [isPanning, setIsPanning] = useState(false);
@@ -81,7 +81,11 @@ export function DrawingCanvas() {
       else if (e.key === 'Backspace') setDraftPoints((points) => points.slice(0, -1));
       return;
     }
+    // Outside Sketch only cutouts are edited: no copying, moving, rotating or
+    // deleting pieces from the keyboard — Delete removes the selected cutout.
+    const sketching = workspace === 'sketch';
     if (modifier) {
+      if (!sketching) return;
       const key = e.key.toLowerCase();
       if (key === 'c') copySelection();
       else if (key === 'v') pasteClipboard();
@@ -109,6 +113,7 @@ export function DrawingCanvas() {
       return;
     }
     if (selectedIds.length === 0) return;
+    if (!sketching && e.key !== 'Delete' && e.key !== 'Backspace') return;
     const step = e.shiftKey ? SHIFT_ARROW_KEY_STEP_MM : ARROW_KEY_STEP_MM;
     switch (e.key) {
       case 'ArrowRight': e.preventDefault(); move(step, 0); break;
@@ -120,6 +125,8 @@ export function DrawingCanvas() {
         const piece = singleSelected;
         if (piece && state.selectedCutoutId) {
           dispatch({ type: 'deleteCutout', areaId: state.activeAreaId, pieceId: piece.id, cutoutId: state.selectedCutoutId });
+        } else if (!sketching) {
+          return;
         } else {
           dispatch({ type: 'deletePieces', areaId: state.activeAreaId, pieceIds: selectedIds });
         }
@@ -347,7 +354,7 @@ export function DrawingCanvas() {
                 );
               })}
             </DragPreviewContext.Provider>
-            {singleSelected && tool === 'select' && <PieceHandles piece={singleSelected} />}
+            {singleSelected && tool === 'select' && workspace === 'sketch' && <PieceHandles piece={singleSelected} />}
             <CanvasOverlays marquee={marquee} draftPoints={tool === 'polygon' ? draftPoints : []} />
             <AnnotationLayer pendingFrom={annotate.pendingFrom} hoverPoint={hoverPoint} />
             {/* While a drawing tool is armed, every click belongs to that

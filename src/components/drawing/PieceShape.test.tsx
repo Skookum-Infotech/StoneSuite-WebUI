@@ -48,9 +48,15 @@ function Readout() {
   );
 }
 
+function GoToCutoutTab() {
+  const { setWorkspace } = useDrawingEditor();
+  return <button type="button" onClick={() => setWorkspace('cutout')}>cutout tab</button>;
+}
+
 function renderPiece() {
   render(
     <DrawingEditorProvider drawing={drawingWithOnePiece()} materialLines={[]}>
+      <GoToCutoutTab />
       <svg>
         <PieceShape piece={drawingWithOnePiece().areas[0].pieces[0]} selected={false} />
       </svg>
@@ -152,6 +158,23 @@ describe('PieceShape drag', () => {
     const piece = screen.getByRole('button', { name: /Piece A-1/ });
     fireEvent.pointerDown(piece, { pointerId: 1, clientX: 0, clientY: 0 });
     fireEvent.pointerMove(piece, { pointerId: 1, clientX: 5, clientY: 0 });
+    fireEvent.pointerUp(piece, { pointerId: 1 });
+    expect(screen.getByTestId('past-length').textContent).toBe('0');
+    expect(Number(screen.getByTestId('pos-x').textContent)).toBe(0);
+  });
+});
+
+describe('PieceShape in the Cutout tab', () => {
+  beforeEach(() => {
+    mockSvgRect(800, 600);
+  });
+
+  it('can be picked but not dragged: only cutouts are edited there', () => {
+    renderPiece();
+    fireEvent.click(screen.getByRole('button', { name: 'cutout tab' }));
+    const piece = screen.getByRole('button', { name: /Piece A-1/ });
+    fireEvent.pointerDown(piece, { pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(piece, { pointerId: 1, clientX: 100, clientY: 0 });
     fireEvent.pointerUp(piece, { pointerId: 1 });
     expect(screen.getByTestId('past-length').textContent).toBe('0');
     expect(Number(screen.getByTestId('pos-x').textContent)).toBe(0);

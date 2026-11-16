@@ -32,7 +32,7 @@ interface DragState {
 }
 
 function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }) {
-  const { state, dispatch, tool } = useDrawingEditor();
+  const { state, dispatch, tool, workspace } = useDrawingEditor();
   const { preview, setPreview } = useDragPreview();
   const [drag, setDrag] = useState<DragState | null>(null);
   const [previewPosition, setPreviewPosition] = useState<Point | null>(null);
@@ -61,6 +61,9 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
       return;
     }
     select(false);
+    // In the Cutout / Material tabs a piece can be picked (to add a cutout to
+    // it) but not moved — only cutouts are edited there.
+    if (workspace !== 'sketch') return;
     const inGroup = state.selectedPieceIds.length > 1 && state.selectedPieceIds.includes(piece.id);
     setDrag({
       pointerId: e.pointerId,

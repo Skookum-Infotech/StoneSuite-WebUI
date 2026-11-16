@@ -3,7 +3,7 @@
 // without prop-drilling past the 5-prop cap (CLAUDE.md).
 
 import {
-  createContext, useCallback, useContext, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode,
+  createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode,
 } from 'react';
 import type { Drawing, Piece } from '@/types/drawing';
 import type { SalesOrderLine } from '@/types/salesOrder';
@@ -19,11 +19,23 @@ const FIT_MARGIN = 0.9;
 
 export type EditorTool = 'select' | 'draw' | 'polygon' | 'note' | 'dimension' | 'line';
 
+/** The editor's three working areas, picked from the top bar: the drawing
+ *  board itself, and the Cutout and Material side panels beside it. */
+export type EditorWorkspace = 'sketch' | 'cutout' | 'material';
+
 export interface DrawingEditorContextValue {
   state: EditorState;
   dispatch: Dispatch<EditorAction>;
   tool: EditorTool;
   setTool: (tool: EditorTool) => void;
+  /** Which top-bar section is open. Sketch is the plain board; Cutout and
+   *  Material each dock a panel on the right. */
+  workspace: EditorWorkspace;
+  setWorkspace: (workspace: EditorWorkspace) => void;
+  /** The cutout open in the Cutout dialog for editing (Cutout tab only —
+   *  clicking a cutout on the board or in the panel sets it), or null. */
+  editingCutoutId: string | null;
+  editCutout: (cutoutId: string | null) => void;
   materialLines: SalesOrderLine[];
   /** Whether the corner map is showing (the M key and the bottom bar flip it). */
   mapOpen: boolean;
@@ -61,13 +73,40 @@ export function DrawingEditorProvider(
   },
 ) {
   const [state, dispatch] = useReducer(editorReducer, createInitialEditorState(drawing, initialZoom));
-  const [tool, setTool] = useState<EditorTool>('select');
+  const [tool, setToolState] = useState<EditorTool>('select');
+  const [workspace, setWorkspaceState] = useState<EditorWorkspace>('sketch');
+  const [editingCutoutId, editCutout] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(true);
   const toggleMap = useCallback(() => setMapOpen((open) => !open), []);
   const [dimensionsOn, setDimensionsOn] = useState(false);
   const toggleDimensions = useCallback(() => setDimensionsOn((on) => !on), []);
   const [propertiesOpen, setPropertiesOpen] = useState(false);
   const toggleProperties = useCallback(() => setPropertiesOpen((open) => !open), []);
+  // Cutout and Material only edit what is already drawn, so leaving Sketch
+  // disarms any drawing tool — and arming one from the rail goes back to Sketch.
+  // Either way an open cutout editor closes with the switch.
+  const setTool = useCallback((next: EditorTool) => {
+    setToolState(next);
+    if (next !== 'select') {
+      setWorkspaceState('sketch');
+      editCutout(null);
+    }
+  }, []);
+  const setWorkspace = useCallback((next: EditorWorkspace) => {
+    setWorkspaceState(next);
+    if (next !== 'sketch') setToolState('select');
+    editCutout(null);
+  }, []);
+  // Cutouts are edited in the Cutout tab only: on leaving it, drop the cutout
+  // selection so Sketch and the Properties panel go back to showing the piece.
+  const previousWorkspace = useRef(workspace);
+  useEffect(() => {
+    const leftCutoutTab = previousWorkspace.current === 'cutout' && workspace !== 'cutout';
+    previousWorkspace.current = workspace;
+    if (leftCutoutTab && state.selectedCutoutId && state.selectedPieceId) {
+      dispatch({ type: 'selectCutout', pieceId: state.selectedPieceId, cutoutId: null });
+    }
+  }, [workspace, state.selectedCutoutId, state.selectedPieceId]);
   // Copied pieces live outside the document so copying is not an edit, and
   // survive switching area (paste lands in whichever area is active).
   const clipboard = useRef<Piece[]>([]);
@@ -134,14 +173,14 @@ export function DrawingEditorProvider(
 
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
-      state, dispatch, tool, setTool, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions,
-      propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+      state, dispatch, tool, setTool, workspace, setWorkspace, editingCutoutId, editCutout, materialLines, mapOpen,
+      toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      state, tool, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
+      state, tool, setTool, workspace, setWorkspace, editingCutoutId, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
       toggleProperties, copySelection, pasteClipboard, duplicateSelection,
     ],
   );

@@ -13,7 +13,10 @@ import { polygonInside, polygonsOverlap, boundaryDistance } from './polygon';
 export const CUTOUT_TYPE_LABELS: Record<CutoutType, string> = {
   sink: 'Sink',
   cooktop: 'Cooktop',
-  faucet: 'Faucet hole',
+  faucet: 'Faucet',
+  fireplace: 'Fireplace',
+  bathtub: 'Bathtub',
+  other: 'Other',
   soap_dispenser: 'Soap dispenser',
   outlet: 'Electrical outlet',
   custom: 'Custom cutout',
@@ -34,6 +37,9 @@ export const CUTOUT_DEFAULTS: Record<CutoutType, CutoutDefaults> = {
   sink: { shape: 'rect', widthMm: 30 * MM_PER_INCH, depthMm: 18 * MM_PER_INCH },
   cooktop: { shape: 'rect', widthMm: 30 * MM_PER_INCH, depthMm: 21 * MM_PER_INCH },
   faucet: { shape: 'round', diameterMm: 1.375 * MM_PER_INCH },
+  fireplace: { shape: 'rect', widthMm: 36 * MM_PER_INCH, depthMm: 12 * MM_PER_INCH },
+  bathtub: { shape: 'rect', widthMm: 60 * MM_PER_INCH, depthMm: 32 * MM_PER_INCH },
+  other: { shape: 'rect', widthMm: 12 * MM_PER_INCH, depthMm: 12 * MM_PER_INCH },
   soap_dispenser: { shape: 'round', diameterMm: 1.25 * MM_PER_INCH },
   outlet: { shape: 'rect', widthMm: 2.75 * MM_PER_INCH, depthMm: 4.5 * MM_PER_INCH },
   custom: { shape: 'rect', widthMm: 12 * MM_PER_INCH, depthMm: 12 * MM_PER_INCH },
@@ -80,6 +86,19 @@ export function cutoutOutline(cutout: Cutout): Point[] {
     const r = rotatePoint(p, rotation);
     return { x: r.x + cutout.center.x, y: r.y + cutout.center.y };
   });
+}
+
+/** The opening's length (along its own X) and height (along its own Y), before
+ *  any rotation — what the drawing labels it with. A round opening is its
+ *  diameter both ways; a custom one its bounding box. */
+export function cutoutSize(cutout: Cutout): { lengthMm: number; heightMm: number } {
+  const shape = cutoutShape(cutout);
+  if (shape === 'round') return { lengthMm: cutout.diameterMm ?? 0, heightMm: cutout.diameterMm ?? 0 };
+  if (shape === 'polygon') {
+    const b = bounds(cutout.outline ?? []);
+    return { lengthMm: b.maxX - b.minX, heightMm: b.maxY - b.minY };
+  }
+  return { lengthMm: cutout.widthMm ?? cutout.diameterMm ?? 0, heightMm: cutout.depthMm ?? cutout.diameterMm ?? 0 };
 }
 
 /** Area of the opening in mm². */

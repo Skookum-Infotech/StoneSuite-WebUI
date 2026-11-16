@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 import { tenantClient } from '@/api/tenantClient';
-import type { Drawing, DrawingArea } from '@/types/drawing';
+import type { CutoutType, Drawing, DrawingArea } from '@/types/drawing';
 
 const HTTP_NOT_FOUND = 404;
 const HTTP_CONFLICT = 409;
@@ -36,6 +36,12 @@ export interface VersionsPage {
 
 export interface EdgeCode {
   code: string;
+  label: string;
+}
+
+/** One kind of opening (sink, cooktop…) from the tenant's cutout-type master data. */
+export interface CutoutTypeOption {
+  code: CutoutType;
   label: string;
 }
 
@@ -91,4 +97,9 @@ export const drawingService = {
     tenantClient
       .get<{ success: boolean; edgeCodes: EdgeCode[] }>('/tenant/settings/edge-codes')
       .then((r) => r.data.edgeCodes),
+
+  getCutoutTypes: (): Promise<CutoutTypeOption[]> =>
+    tenantClient
+      .get<{ success: boolean; cutoutTypes: CutoutTypeOption[] }>('/tenant/settings/cutout-types')
+      .then((r) => r.data.cutoutTypes),
 };

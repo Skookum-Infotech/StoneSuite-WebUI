@@ -12,7 +12,23 @@ export type Point = { x: number; y: number };
  *  is seeded; narrowing it later is additive, not breaking. */
 export type EdgeCode = string;
 
-export type CutoutType = 'sink' | 'cooktop' | 'faucet' | 'soap_dispenser' | 'outlet' | 'custom';
+/** `sink` … `other` are the master-data types every tenant is seeded with
+ *  (lkp_cutout_type); `soap_dispenser`, `outlet` and `custom` are older ones,
+ *  still valid on drawings saved before the list moved to master data. */
+export type CutoutType =
+  | 'sink' | 'cooktop' | 'faucet' | 'fireplace' | 'bathtub' | 'other'
+  | 'soap_dispenser' | 'outlet' | 'custom';
+
+/** How the distance from one side of a cutout to the piece's edge is shown:
+ *  measured from the cutout's centre, from its border, or not at all. */
+export type DistanceLineMode = 'center' | 'border' | 'hidden';
+
+export interface DistanceLines {
+  top: DistanceLineMode;
+  right: DistanceLineMode;
+  bottom: DistanceLineMode;
+  left: DistanceLineMode;
+}
 
 /** How a cutout's opening is drawn. `rect` uses widthMm x depthMm, `round`
  *  uses diameterMm, `polygon` uses its own `outline`. Absent on drawings
@@ -61,6 +77,14 @@ export interface Cutout {
   /** Edge treatment around the opening — a code from the tenant's edge list. */
   edgeCode?: EdgeCode;
   label?: string;
+  /** Leave the name / the size text off the drawing (the two Hide boxes in
+   *  the Cutout dialog). The opening itself is always drawn. */
+  hideName?: boolean;
+  hideMeasurements?: boolean;
+  /** Faucet holes drilled with a sink; the radius is in mm. */
+  faucetHoleCount?: number;
+  faucetHoleRadiusMm?: number;
+  distanceLines?: DistanceLines;
 }
 
 export interface Piece {

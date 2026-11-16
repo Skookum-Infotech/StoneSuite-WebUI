@@ -19,6 +19,7 @@ import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { DrawModeBar } from '@/components/drawing/DrawModeBar';
 import { MiniMap } from '@/components/drawing/MiniMap';
 import { InspectorPanel } from '@/components/drawing/InspectorPanel';
+import { WorkspacePanel } from '@/components/drawing/WorkspacePanel';
 import { OPEN_ZOOM } from '@/lib/drawing/constants';
 import { ToolRail } from '@/components/drawing/ToolRail';
 import { DrawingStatusBar } from '@/components/drawing/DrawingStatusBar';
@@ -179,20 +180,26 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
       ref={fillRef}
       data-testid="drawing-editor"
       data-drawing-editor
-      className="flex h-[calc(100dvh-var(--fill-top))] flex-col gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
+      className="flex h-[calc(100dvh-var(--fill-top))] gap-2 overflow-hidden bg-white p-2 [&:fullscreen]:h-dvh"
     >
-      <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
-      <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
-      <div className="flex min-h-0 flex-1 gap-2">
-        <ToolRail />
-        <div className="relative min-h-0 min-w-0 flex-1">
-          <DrawingCanvas />
-          <DrawModeBar />
-          <MiniMap />
-          <InspectorPanel />
+      {/* The side panel is its own full-height column, so the top bar (and its
+          undo / redo / save) shares the width left over beside it instead of
+          running across the top of it. */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+        <DrawingToolbar saveStatus={status} onSave={saveNow} orderNumber={order.salesOrderNumber} />
+        <SquareFootageBanner areas={state.present.areas} order={order} onLineUpdated={onOrderUpdated} />
+        <div className="flex min-h-0 flex-1 gap-2">
+          <ToolRail />
+          <div className="relative min-h-0 min-w-0 flex-1">
+            <DrawingCanvas />
+            <DrawModeBar />
+            <MiniMap />
+            <InspectorPanel />
+          </div>
         </div>
+        <DrawingStatusBar />
       </div>
-      <DrawingStatusBar />
+      <WorkspacePanel />
       {conflictOpen && (
         <ConflictDialog onReloadLatest={reloadLatest} onSaveAsCopy={saveAsCopy} onClose={() => setConflictOpen(false)} />
       )}
