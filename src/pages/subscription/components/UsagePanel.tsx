@@ -5,7 +5,7 @@ import { subscriptionService } from '@/services/subscriptionService'
 import { apiErrorMessage } from '@/api/tenantClient'
 import { relativeTime } from '@/lib/recentRecordRoute'
 import {
-  formatBytes, formatPeriod, formatResetDate, formatTokenCount, groupTokenSources, usagePercent,
+  formatBytes, formatPeriod, formatTokenCount, groupTokenSources, usagePercent,
 } from '@/lib/usageFormat'
 import type { SubscriptionUsage } from '@/types/subscription'
 import { UsageMeter, type UsageMeterLimit } from './UsageMeter'
@@ -55,7 +55,7 @@ function StorageMeter({ usage }: { usage: SubscriptionUsage }) {
 function TokenMeter({ usage }: { usage: SubscriptionUsage }) {
   const { aiTokens } = usage
   const rows = groupTokenSources(aiTokens.bySource)
-  const reset = formatResetDate(aiTokens.periodEnd)
+  const period = formatPeriod(aiTokens.periodStart, aiTokens.periodEnd)
   return (
     <UsageMeter
       heading={{
@@ -65,15 +65,12 @@ function TokenMeter({ usage }: { usage: SubscriptionUsage }) {
         detail: aiTokens.totalTokens > 0
           ? `${formatTokenCount(aiTokens.promptTokens)} input · ${formatTokenCount(aiTokens.completionTokens)} output`
           : 'No AI usage this period',
+        badge: period ? `Billing cycle · ${period}` : undefined,
       }}
       limit={limitFor(aiTokens.totalTokens, aiTokens.limitTokens, (n) => `${formatTokenCount(n)} / month`)}
     >
-      <p className="font-medium text-stone-600">
-        This period: {formatPeriod(aiTokens.periodStart, aiTokens.periodEnd)}
-        {reset && <> · Resets {reset}</>}
-      </p>
       {rows.length > 0 && (
-        <dl className="mt-3 flex flex-col gap-1.5" aria-label="AI tokens by feature">
+        <dl className="flex flex-col gap-1.5" aria-label="AI tokens by feature">
           {rows.map((row) => (
             <div key={row.label} className="flex items-center justify-between gap-3">
               <dt>{row.label}</dt>

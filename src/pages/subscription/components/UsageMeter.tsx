@@ -1,4 +1,5 @@
 import type { ElementType, ReactNode } from 'react'
+import { CalendarDays } from 'lucide-react'
 import { SegmentedProgressBar } from '@/components/tenant/SegmentedProgressBar'
 
 export interface UsageMeterHeading {
@@ -8,6 +9,8 @@ export interface UsageMeterHeading {
   value: string
   /** One muted line under the figure (file count, input/output split). */
   detail: string
+  /** Optional pill at the top right of the card (e.g. the billing cycle). */
+  badge?: string
 }
 
 /** Present only when the plan has a limit for this metric. */
@@ -29,9 +32,17 @@ export function UsageMeter({ heading, limit, children }: UsageMeterProps) {
   const Icon = heading.icon
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-4">
-      <div className="flex items-center gap-2">
-        <Icon className="size-4 text-stone-500" aria-hidden="true" />
-        <h3 className="text-xs font-semibold text-stone-700">{heading.title}</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Icon className="size-4 text-stone-500" aria-hidden="true" />
+          <h3 className="text-xs font-semibold text-stone-700">{heading.title}</h3>
+        </div>
+        {heading.badge && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-2.5 py-0.5 text-2xs font-semibold text-stone-600">
+            <CalendarDays className="size-3 text-stone-400" aria-hidden="true" />
+            {heading.badge}
+          </span>
+        )}
       </div>
       <div>
         <p className="text-2xl font-bold tracking-tight text-stone-900 tabular-nums">

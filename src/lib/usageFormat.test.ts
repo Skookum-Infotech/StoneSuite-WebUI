@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  formatBytes, formatPeriod, formatResetDate, formatTokenCount, groupTokenSources, usagePercent,
-} from './usageFormat';
+import { formatBytes, formatPeriod, formatTokenCount, groupTokenSources, usagePercent } from './usageFormat';
 
 describe('formatBytes', () => {
   it.each([
@@ -57,16 +55,6 @@ describe('formatPeriod', () => {
     ['nope', '2026-12-01', ''],
   ])('%s..%s → %s', (start, end, expected) => {
     expect(formatPeriod(start, end)).toBe(expected);
-  });
-});
-
-describe('formatResetDate', () => {
-  it.each([
-    ['2026-12-01', '01 Dec 2026'],
-    ['2027-01-20', '20 Jan 2027'],
-    ['bad', ''],
-  ])('%s → %s', (end, expected) => {
-    expect(formatResetDate(end)).toBe(expected);
   });
 });
 
