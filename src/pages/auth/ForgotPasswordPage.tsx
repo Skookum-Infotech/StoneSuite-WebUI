@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
           /* ── Success state ── */
           <div className="text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-brand/30 bg-brand/10">
-              <MailCheck className="size-8 text-brand-dark" />
+              <MailCheck className="size-8 text-link" />
             </div>
             <h2 className="type-display">Request Submitted</h2>
             <p className="mt-2 text-body text-ink-muted">{serverMessage}</p>

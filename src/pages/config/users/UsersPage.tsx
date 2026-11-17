@@ -250,7 +250,7 @@ export default function UsersPage() {
                           <p
                             className={cn(
                               "text-xs font-semibold truncate",
-                              active ? "text-brand-dark" : "text-stone-700",
+                              active ? "text-link" : "text-stone-700",
                             )}
                           >
                             {inv.Email}

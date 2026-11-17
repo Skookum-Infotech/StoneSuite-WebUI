@@ -208,7 +208,7 @@ export function FeedbackSubmitForm({
 
         {submitMutation.isError && (
           <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/15 bg-destructive/5 px-3.5 py-2.5">
-            <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive/70" aria-hidden="true" />
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-danger-ink/70" aria-hidden="true" />
             <p className="text-sm text-danger-ink">{apiErrorMessage(submitMutation.error, 'Failed to submit feedback.')}</p>
           </div>
         )}

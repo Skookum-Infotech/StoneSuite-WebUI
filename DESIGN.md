@@ -11,43 +11,72 @@ colors:
   stone-950: "#1c1917"
   stone-100: "#f7f7f7"
   stone-300: "#e8e8e8"
-  stone-400: "#ababab"
-  stone-500: "#787878"
+  stone-400: "#8a8580"
+  stone-500: "#6b6560"
   teal-tab: "#2c6e7f"
   destructive: "#d94f36"
+  ink-strong: "#1c1917"
+  ink: "#44403c"
+  ink-muted: "#6b6560"
+  danger-ink: "#b42318"
+  warning-ink: "#b45309"
+  success-ink: "#047857"
+  link: "#4d7c0f"
+  danger-solid: "#dc2626"
 typography:
+  page-title:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "1.46875rem"
+    fontWeight: 600
+    lineHeight: 1.36
+    letterSpacing: "-0.02em"
   display:
     fontFamily: "All Round Gothic, Geist Variable, sans-serif"
-    fontSize: "1.875rem"
+    fontSize: "1.625rem"
     fontWeight: 400
+    lineHeight: 1.23
+    letterSpacing: "-0.01em"
+  kpi:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 700
     lineHeight: 1.2
-    letterSpacing: "normal"
-  headline:
+    letterSpacing: "-0.02em"
+  dialog-title:
     fontFamily: "Geist Variable, system-ui, sans-serif"
-    fontSize: "1.25rem"
+    fontSize: "0.9375rem"
     fontWeight: 600
-    lineHeight: 1.3
-  title:
+    lineHeight: 1.47
+  card-title:
     fontFamily: "Geist Variable, system-ui, sans-serif"
-    fontSize: "1rem"
+    fontSize: "0.875rem"
     fontWeight: 600
-    lineHeight: 1.4
+    lineHeight: 1.43
   body:
     fontFamily: "Geist Variable, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
+    lineHeight: 1.43
+  field-label:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 500
+    lineHeight: 1.54
+  cell:
+    fontFamily: "Geist Variable, system-ui, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 400
     lineHeight: 1.5
-  label:
+  overline:
     fontFamily: "Geist Variable, system-ui, sans-serif"
     fontSize: "0.6875rem"
-    fontWeight: 500
-    lineHeight: 1.4
-    letterSpacing: "0.01em"
+    fontWeight: 600
+    lineHeight: 1.45
+    letterSpacing: "0.06em"
   mono:
-    fontFamily: "IBM Plex Mono, Geist Mono, ui-monospace, monospace"
-    fontSize: "0.8125rem"
+    fontFamily: "IBM Plex Mono, ui-monospace, monospace"
+    fontSize: "0.75rem"
     fontWeight: 400
-    lineHeight: 1.6
 rounded:
   sm: "6px"
   md: "8px"
@@ -64,22 +93,40 @@ spacing:
 components:
   button-primary:
     backgroundColor: "{colors.brand-lime}"
-    textColor: "{colors.stone-950}"
+    textColor: "{colors.ink-strong}"
     rounded: "{rounded.base}"
-    padding: "8px 16px"
+    height: "30px"
+    padding: "0 12px"
+    fontSize: "0.78125rem"
+    fontWeight: 600
   button-primary-hover:
     backgroundColor: "{colors.brand-lime-hover}"
-    textColor: "{colors.stone-950}"
+    textColor: "{colors.ink-strong}"
   button-secondary:
-    backgroundColor: "{colors.stone-100}"
-    textColor: "{colors.stone-950}"
+    backgroundColor: "#ffffff"
+    textColor: "{colors.ink}"
+    borderColor: "#d4d0cc"
     rounded: "{rounded.base}"
-    padding: "8px 16px"
+    height: "30px"
+    padding: "0 10px"
+    fontSize: "0.78125rem"
+    fontWeight: 500
+  button-danger:
+    backgroundColor: "{colors.danger-solid}"
+    textColor: "#ffffff"
+    rounded: "{rounded.base}"
+    height: "30px"
+    padding: "0 12px"
+    fontSize: "0.78125rem"
+    fontWeight: 600
   button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.stone-950}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.base}"
-    padding: "8px 16px"
+    height: "30px"
+    padding: "0 10px"
+    fontSize: "0.78125rem"
+    fontWeight: 500
   card:
     backgroundColor: "#ffffff"
     rounded: "{rounded.xl}"
@@ -130,9 +177,16 @@ A restrained two-tone system: warm stone neutrals carry the structure; one lime 
 - **Stone 950** (`#1c1917`): Primary text and icon color. Ink-dark brown-black, not neutral-gray-black.
 - **Stone 100** (`#f7f7f7`): Secondary surfaces — sidebar background, card backgrounds, muted states.
 - **Stone 300** (`#e8e8e8`): Borders and input outlines. Barely-there, non-intrusive.
-- **Stone 400** (`#ababab`): Dividers and placeholder text.
-- **Stone 500** (`#787878`): Muted body text, secondary labels, disabled states.
-- **Destructive** (`#d94f36`): Errors and destructive actions only. Never repurposed.
+- **Stone 400** (`#8a8580`): Icons and disabled states only — 3.6:1 on white, so never informational text.
+- **Stone 500** (`#6b6560`): Muted text, secondary labels, placeholders.
+- **Destructive** (`#d94f36`): Error fills, borders and icons only. Error *text* uses danger-ink.
+
+### Text colors (`text-ink-*` and meaning inks, all ≥4.5:1 on white)
+- **ink-strong** (`#1c1917`): Titles, key values, record numbers.
+- **ink** (`#44403c`): Body, table text, labels, typed text.
+- **ink-muted** (`#6b6560`): Secondary text, helper text, table headers, placeholders.
+- **ink-faint** (`#8a8580`): Icons and disabled only.
+- **danger-ink** (`#b42318`) error text · **warning-ink** (`#b45309`) · **success-ink** (`#047857`) · **link** (`#4d7c0f`, hover `#365314`).
 
 ### Named Rules
 **The One Lime Rule.** The lime accent appears on ≤10% of any given screen. Buttons, active nav items, focus rings — that's the full list. Do not use it for decoration, section headers, or background fills. Its scarcity is what makes it communicate "action."
@@ -141,24 +195,45 @@ A restrained two-tone system: warm stone neutrals carry the structure; one lime 
 
 ## 3. Typography
 
-**Display Font:** All Round Gothic (with Geist Variable fallback, then sans-serif)
-**Body/UI Font:** Geist Variable (with system-ui, sans-serif fallbacks)
-**Mono Font:** IBM Plex Mono (with Geist Mono, ui-monospace fallbacks)
+**UI font:** Geist Variable · **Brand font:** All Round Gothic (Book 400 only — never bold) · **Mono:** IBM Plex Mono 400 (record numbers, IDs, code).
 
-**Character:** Geist Variable handles everything in the product UI — it is clean, technically precise, and readable at dense sizes. All Round Gothic appears only at display scale: page titles, empty state callouts, and brand-facing surfaces. The combination is warm without being casual, structured without being cold.
+Every text role is one `type-*` class in `src/styles/typography.css` (sizes are rem, so they follow the root size). Pages use the role, not raw size/weight/color combinations. Approved in review, November 2026; the before/after reference lives in the "StoneSuite Type Redesign" artifact.
 
-### Hierarchy
-- **Display** (All Round Gothic, 400, 30px / 1.2): Page-level display only. Section titles in marketing-facing views, empty state headers, brand callouts. Never in data tables or form labels.
-- **Headline** (Geist Variable, 600, 20px / 1.3): Screen-level headings. Sidebar section headers, modal titles, card headers.
-- **Title** (Geist Variable, 600, 16px / 1.4): Component-level headings. Panel titles, tab labels, section headers within forms.
-- **Body** (Geist Variable, 400, 14px / 1.5): Default text for all prose, descriptions, and data cells. Max line length 65ch for prose; data tables can run wider.
-- **Label** (Geist Variable, 500, 11px / 1.4, +0.01em tracking): Form field labels, column headers, compact UI tags, status chips. Never below 11px.
-- **Mono** (IBM Plex Mono, 400, 13px / 1.6): Code, IDs, tokens, API keys. Not for UI labels.
+### Roles (laptop sizes)
+| Role | Class | Size / weight | Notes |
+|---|---|---|---|
+| Page title | `type-page-title` | 23.5px / 600, -0.02em | Title Case |
+| Page subtitle | `type-page-subtitle` | 13px / 400 muted | |
+| Sign-in title | `type-display` | 26px / 400 brand font | Title Case; sign-in, onboarding cards |
+| KPI figure | `type-kpi` | 28px / 700, tabular | Currency symbol smaller and muted |
+| Dialog / section title | `type-dialog-title` | 15px / 600 | Title Case |
+| Card title | `type-card-title` | 14px / 600 | Title Case |
+| Dialog message | `type-dialog-body` | 12.5px / 400 | |
+| Body | `type-body` | 14px / 400 | Links inherit 14px (`type-link`) |
+| Field label | `type-field-label` | 13px / 500 | |
+| Typed text | `type-input` | 13px; **16px on touch screens** | Stops iOS/iPadOS Safari zooming into fields |
+| Helper / error | `type-helper` / `type-error` | 12px / 400 | Error in danger-ink, with an icon |
+| Table header | `type-th` | 12px / 600 caps, 0.05em | |
+| Table text | `type-cell` / `type-cell-strong` | 12px / 400 · 600 | Names (vendor, customer) and amounts bold |
+| Line under a value | `type-subline` | 11px / 400 muted | e.g. the email under a vendor |
+| Record number | `type-record-id` | IBM Plex Mono 12px / 400 | Never bold |
+| Status pill | `type-pill` / `StatusPill` | 12px / 500 | Tinted from the status color |
+| Change vs last period | `type-delta` | 12px / 600 | Light green/amber pill with arrow |
+| KPI label / overline | `type-overline` | 11px / 600 caps, 0.06em | |
+| Sidebar item | `type-nav-item` | 12.5px / 600 | Casing as written |
+| Sidebar section | `type-nav-section` | 10.5px / 600 | Casing as written |
+| Notification | `type-toast-title` / `type-toast-body` | 14px / 500 green · 13px / 400 | Success keeps its green background |
+| "Workspace portal" | `type-portal` | 10px / 700 caps, 0.35em | Decorative only |
+
+### Screen sizes
+Text keeps the same size on phones, tablets and laptops; only the page title (20 → 22 → 23.5px), sign-in title (22 → 24 → 26px) and KPI figure (24 → 26 → 28px) step down on small screens. Large monitors scale everything through the root size (106.25% at 1920px, 116.7% at 2560px, 125% at 3840px), set as a percentage so the user's browser text size still applies.
 
 ### Named Rules
-**The One Family Rule.** All UI text uses Geist Variable. All Round Gothic is a display accent, not a body substitute. IBM Plex Mono is for code and data IDs. Mixing fonts in UI labels or buttons is forbidden.
+**The One Family Rule.** All UI text uses Geist Variable. All Round Gothic is a brand accent (wordmark, sign-in titles), never bold, never in tables, labels or buttons. IBM Plex Mono is for record numbers, IDs and code.
 
-**The Fixed Scale Rule.** No fluid/clamp sizing in the product UI. Users work at consistent DPI; a heading that shrinks in a narrow sidebar looks broken, not responsive. Responsive behavior is structural (collapsing panels), not typographic.
+**The Title Case Rule.** Titles (page, card, section, dialog, sign-in) use Title Case. Labels, buttons, menu items, messages, tooltips and sentences keep sentence case.
+
+**The Role Rule.** Use a `type-*` role or a scale size (`text-micro` 11 · `text-caption` 12 · `text-button` 12.5 · `text-field` 13 · `text-body` 14). No `text-2xs`, no `text-[Npx]`, no `tracking-[…]`, no `text-red-*`/`text-destructive` text — ESLint enforces this (`eslint.config.js`, "Design system guardrails").
 
 ## 4. Elevation
 
@@ -177,16 +252,14 @@ Shadows are reserved for floating elements (dropdowns, tooltips, popovers) and h
 ## 5. Components
 
 ### Buttons
-Clean, undecorated, state-rich. The primary action is lime-on-stone; everything else recedes.
+One shared component (`components/ui/button.tsx`, or `buttonVariants()` for links and native buttons) — never hand-built button classes.
 
-- **Shape:** Gently curved (10px radius)
-- **Primary:** Lime green background (`#c2f589`), stone-950 text. Padding 8px 16px. Font: Geist 14px 500.
-- **Hover:** `#99c466` background, 150ms ease transition.
-- **Focus:** 2px lime focus ring (`box-shadow: 0 0 0 2px #c2f589`).
-- **Secondary:** Stone-100 background, stone-950 text. Same shape and padding.
-- **Ghost:** Transparent background, stone-950 text. Subtle hover: stone-100 background.
-- **Destructive:** Destructive red (`#d94f36`) background, white text.
-- **Disabled:** 40% opacity on any variant. Never change shape or size.
+- **Kinds:** primary (lime `#c2f589`, ink-strong text, 600) · secondary/outline (white, `#d4d0cc` border, ink text, 500) · danger (`#dc2626`, white text, 600) · text-only/ghost (no border, ink text, 500, stone-100 hover).
+- **Sizes:** small 26px (dialogs, table rows) · default 30px (everywhere else) · large 38px / 14px text (one-action screens: billing, onboarding). All other sizes use 12.5px text.
+- **Sign-in button:** large, 44px tall, full width (`SIGN_IN_BUTTON`).
+- **Touch screens:** every button is at least 40px tall.
+- **No glow shadows,** no per-page padding or font overrides. Deliberate tones (e.g. amber Hold, red-outline Inactivate) keep their colors but use the approved size.
+- **Disabled:** 50% opacity. Never change shape or size.
 
 ### Cards / Containers
 - **Corner Style:** Rounded (14px, `rounded-xl`)
@@ -198,15 +271,17 @@ Clean, undecorated, state-rich. The primary action is lime-on-stone; everything 
 ### Inputs / Fields
 - **Style:** White fill, stone-300 border (1px), 10px radius
 - **Focus:** Lime focus ring (2px, `#c2f589`) + border brightens to stone-500
-- **Placeholder:** Stone-400 (`#ababab`)
-- **Error:** Destructive-red border + error message below in destructive red, 12px Geist
+- **Typed text:** 13px (`type-input`), 16px on touch screens
+- **Placeholder:** ink-muted (`#6b6560`)
+- **Error:** Destructive-red border + 12px error message below in danger-ink (`#b42318`) with an icon
 - **Disabled:** Stone-100 fill, stone-400 text, no interaction feedback
 
 ### Navigation (Sidebar)
 - **Background:** Stone-100 (`#f7f7f7`)
 - **Active item:** Lime-green background fill (`#ecfccb`), accent lime text (`#365314`), 8px radius
 - **Hover:** Stone-200 background tint, 150ms ease
-- **Icon + label:** 14px Geist 500, stone-950. Active: accent lime text.
+- **Items:** 12.5px Geist 600 (`type-nav-item`), ink. Active: accent lime text on lime-light.
+- **Section labels:** 10.5px 600 (`type-nav-section`), in their written casing (not capitals).
 - **Collapsed state:** Icon-only, 40px width; tooltip on hover
 
 ### Form Tab Bar
@@ -216,7 +291,8 @@ Clean, undecorated, state-rich. The primary action is lime-on-stone; everything 
 - **Used in:** Multi-section prospect/lead forms
 
 ### Status Chips / Tags
-- **Default:** Stone-100 background, stone-950 text, 6px radius, 11px Geist 500
+- **Status pill:** `StatusPill` (`components/ui/StatusPill.tsx`) — 12px Geist 500, 10% tint of the status color, text darkened from the same color, optional dot. The status color is the only inline value (as a `--pill` CSS variable).
+- **Default:** Stone-100 background, ink text, 6px radius, 12px Geist 500
 - **Active/success:** Accent lime light (`#ecfccb`) background, accent lime text (`#365314`)
 - **Warning/pending:** Amber-50 background, amber-700 text
 - **Error:** Destructive-red/10 background, destructive text
@@ -242,4 +318,5 @@ Clean, undecorated, state-rich. The primary action is lime-on-stone; everything 
 - **Don't** use display fonts (All Round Gothic) in buttons, form labels, or table cells. Geist is the UI font.
 - **Don't** use decorative motion. Transitions communicate state change, loading, or reveal — nothing else. No entrance animations for static content.
 - **Don't** mix the lime accent with the teal tab color on the same surface. They are complementary accents from different contexts.
-- **Don't** use font sizes below 11px for any visible label. 10px is captions only, never interactive labels.
+- **Don't** use font sizes below 11px. The only exceptions are the decorative "Workspace portal" label (10px) and sidebar section labels (10.5px).
+- **Don't** write inline `style={}` for fixed values. Inline styles are only for values computed at runtime (status colors, progress widths, popup positions).

@@ -82,7 +82,7 @@ export function LocationCard({
                 }}
                 disabled={isBusy}
                 aria-label={`Delete ${location.name}`}
-                className="rounded-lg p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+                className="rounded-lg p-2 text-stone-500 hover:bg-red-50 hover:text-danger-ink disabled:opacity-50 transition-colors"
               >
                 <Trash2 className="size-4" />
               </button>

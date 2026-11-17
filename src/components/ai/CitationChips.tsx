@@ -51,7 +51,7 @@ function RecordChip({ citation, n, highlighted, chipRef }: { citation: Citation;
       onClick={() => navigate(route)}
       aria-label={`Open ${label}`}
       title={citation.snippet}
-      className={cn(chipBase, 'cursor-pointer border-brand/30 bg-brand/10 text-brand-dark hover:bg-brand/20', highlighted && 'ring-2 ring-brand')}
+      className={cn(chipBase, 'cursor-pointer border-brand/30 bg-brand/10 text-link hover:bg-brand/20', highlighted && 'ring-2 ring-brand')}
     >
       <FileText className="size-3 shrink-0" aria-hidden="true" />
       <span className="shrink-0 tabular-nums">[{n}]</span>

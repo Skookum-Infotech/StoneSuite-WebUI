@@ -10,7 +10,7 @@ const TONE_CLASS: Record<Tone, string> = {
   ok: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
   progress: 'border-stone-200 bg-stone-100 text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300',
   warn: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300',
-  bad: 'border-red-200 bg-red-50 text-red-600 dark:border-red-800 dark:bg-red-950 dark:text-red-300',
+  bad: 'border-red-200 bg-red-50 text-danger-ink dark:border-red-800 dark:bg-red-950 dark:text-red-300',
 };
 
 // Envelope icons throughout: the badge sits next to other statuses (an invite's

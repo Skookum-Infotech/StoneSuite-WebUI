@@ -121,7 +121,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
                 type="button"
                 onClick={() => setConfirmingId(c.id)}
                 aria-label={`Delete conversation ${title}`}
-                className="shrink-0 rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 hover:text-destructive dark:hover:bg-white/10 cursor-pointer"
+                className="shrink-0 rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 hover:text-danger-ink dark:hover:bg-white/10 cursor-pointer"
               >
                 <Trash2 className="size-3.5" />
               </button>

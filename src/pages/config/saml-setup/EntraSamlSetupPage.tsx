@@ -82,7 +82,7 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
                           href="https://entra.microsoft.com/"
                           target="_blank"
                           rel="noreferrer"
-                          className="underline decoration-stone-300 underline-offset-2 hover:text-brand-dark"
+                          className="underline decoration-stone-300 underline-offset-2 hover:text-link"
                         >
                           Microsoft Entra ID ↗
                         </a>

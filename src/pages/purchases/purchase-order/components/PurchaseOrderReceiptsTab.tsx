@@ -6,6 +6,7 @@ import { itemReceiptService } from '@/services/itemReceiptService';
 import { IR_STATUS_COLORS } from '@/lib/itemReceiptForm';
 import { formatDateValue } from '@/lib/dateUtils';
 
+import { StatusPill } from '@/components/ui/StatusPill';
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -61,13 +62,7 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
                   </button>
                 </td>
                 <td className="px-3 py-2.5">
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-stone-600 whitespace-nowrap type-pill"
-                    style={{ backgroundColor: `${color}18` }}
-                  >
-                    <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                    {r.status}
-                  </span>
+                  <StatusPill color={color}>{r.status}</StatusPill>
                 </td>
                 <td className="px-3 py-2.5 text-stone-500 tabular-nums whitespace-nowrap">{fmtDate(r.receiptDate)}</td>
                 <td className="px-3 py-2.5 text-stone-500">{r.warehouseName || '—'}</td>

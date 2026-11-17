@@ -197,7 +197,7 @@ export default function PlatformAIPage() {
           >
             <div className="mb-4 flex items-center gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="size-4 text-destructive" aria-hidden="true" />
+                <AlertTriangle className="size-4 text-danger-ink" aria-hidden="true" />
               </div>
               <div>
                 <AlertDialog.Title className="text-sm font-bold text-stone-900 dark:text-white">

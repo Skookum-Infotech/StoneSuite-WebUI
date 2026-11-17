@@ -32,7 +32,7 @@ export function statusTone(code: string): StatusTone {
 export const STATUS_TONE_CLASSES: Record<StatusTone, { dot: string; badge: string }> = {
   success: { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   warning: { dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
-  danger: { dot: 'bg-red-500', badge: 'bg-red-50 text-red-700 border-red-200' },
+  danger: { dot: 'bg-red-500', badge: 'bg-red-50 text-danger-ink border-red-200' },
   info: { dot: 'bg-sky-400', badge: 'bg-sky-50 text-sky-700 border-sky-200' },
   muted: { dot: 'bg-stone-400', badge: 'bg-stone-100 text-stone-600 border-stone-200' },
 };

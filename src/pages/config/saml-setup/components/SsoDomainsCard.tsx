@@ -111,7 +111,7 @@ export function SsoDomainsCard({ provider }: SsoDomainsCardProps) {
                 onClick={() => remove.mutate(d.id)}
                 disabled={remove.isPending}
                 aria-label={`Remove domain ${d.domain}`}
-                className="rounded-lg p-1 text-stone-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg p-1 text-stone-400 transition hover:bg-red-50 hover:text-danger-ink disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 className="size-3.5" />
               </button>

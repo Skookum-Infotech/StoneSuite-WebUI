@@ -143,7 +143,7 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
                         type="button"
                         onClick={() => removeMutation.mutate(piece.id)}
                         disabled={removeMutation.isPending && removeMutation.variables === piece.id}
-                        className="text-stone-500 hover:text-destructive transition-colors disabled:opacity-50"
+                        className="text-stone-500 hover:text-danger-ink transition-colors disabled:opacity-50"
                         aria-label={`Remove piece ${piece.pieceName || piece.pieceNumber}`}
                       >
                         {removeMutation.isPending && removeMutation.variables === piece.id

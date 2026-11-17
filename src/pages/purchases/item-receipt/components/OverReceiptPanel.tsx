@@ -25,7 +25,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
       <>
         <div role="alert" className="mb-4 flex items-center gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle className="size-4 text-destructive" />
+            <AlertTriangle className="size-4 text-danger-ink" />
           </div>
           <div>
             <h3 id={OVER_RECEIPT_TITLE_ID} className="type-card-title">This Exceeds the Ordered Quantity</h3>
@@ -54,7 +54,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
     <>
       <div role="alert" className="mb-4 flex items-center gap-3">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
-          <ShieldAlert className="size-4 text-amber-600" />
+          <ShieldAlert className="size-4 text-warning-ink" />
         </div>
         <div>
           <h3 id={OVER_RECEIPT_TITLE_ID} className="type-card-title">This Exceeds the Ordered Quantity</h3>

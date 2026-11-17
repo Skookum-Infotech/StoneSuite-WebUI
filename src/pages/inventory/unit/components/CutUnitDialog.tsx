@@ -88,7 +88,7 @@ export function CutUnitDialog({ unit, onClose, onCut }: {
               <div className="flex items-center justify-between">
                 <span className="text-micro font-semibold text-stone-500">Offcut {i + 1}</span>
                 {pieces.length > 1 && (
-                  <button type="button" onClick={() => removePiece(p.key)} aria-label={`Remove offcut ${i + 1}`} className="text-stone-400 hover:text-destructive"><Trash2 className="size-3.5" /></button>
+                  <button type="button" onClick={() => removePiece(p.key)} aria-label={`Remove offcut ${i + 1}`} className="text-stone-400 hover:text-danger-ink"><Trash2 className="size-3.5" /></button>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">

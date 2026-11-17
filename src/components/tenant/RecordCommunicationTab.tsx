@@ -53,7 +53,7 @@ export function RecordCommunicationTab({ recordId, audience, canReply }: RecordC
 
   if (thread.isLoading) return <div className="flex justify-center py-6"><Spinner label="Loading conversation…" /></div>;
   if (thread.isError || !thread.data) {
-    return <p role="alert" className="py-6 text-center text-xs italic text-destructive/70">Failed to load the conversation.</p>;
+    return <p role="alert" className="py-6 text-center text-xs italic text-danger-ink/70">Failed to load the conversation.</p>;
   }
 
   const { enabled, messages } = thread.data;

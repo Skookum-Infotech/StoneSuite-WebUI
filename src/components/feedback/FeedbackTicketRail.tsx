@@ -32,7 +32,7 @@ function TicketRow({ ticket, selected, onSelect }: { ticket: FeedbackTicket; sel
         <span
           className={cn(
             'flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150',
-            selected ? 'bg-brand/25 text-brand-dark' : 'bg-stone-100 text-stone-500 dark:bg-white/10 dark:text-stone-400',
+            selected ? 'bg-brand/25 text-link' : 'bg-stone-100 text-stone-500 dark:bg-white/10 dark:text-stone-400',
           )}
         >
           <category.icon className="size-4" aria-hidden="true" />

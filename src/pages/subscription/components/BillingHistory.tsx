@@ -16,7 +16,7 @@ const MOCK_INVOICES: Invoice[] = [
 const STATUS_CONFIG: Record<InvoiceStatus, { label: string; dot: string; badge: string }> = {
   paid:    { label: 'Paid',    dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   pending: { label: 'Pending', dot: 'bg-amber-400',   badge: 'bg-amber-50 text-amber-700 border-amber-200'      },
-  overdue: { label: 'Overdue', dot: 'bg-red-500',     badge: 'bg-red-50 text-red-700 border-red-200'            },
+  overdue: { label: 'Overdue', dot: 'bg-red-500',     badge: 'bg-red-50 text-danger-ink border-red-200'            },
 }
 
 function StatusBadge({ status }: { status: InvoiceStatus }) {

@@ -102,7 +102,7 @@ export function PeriodStatusDialog({ period, target, onClose }: {
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
         <div className="mb-4 flex items-center gap-3">
           <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', closing ? 'bg-amber-100' : 'bg-emerald-100')}>
-            <Icon className={cn('size-4', closing ? 'text-amber-600' : 'text-success-ink')} />
+            <Icon className={cn('size-4', closing ? 'text-warning-ink' : 'text-success-ink')} />
           </div>
           <div>
             <h3 id="period-status-dialog-title" className="type-card-title">

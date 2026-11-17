@@ -41,7 +41,7 @@ export function AreaPicker({ areas, onAdd }: AreaPickerProps) {
               )}
             >
               {added ? (
-                <Check className="size-3.5 text-brand-dark" aria-hidden="true" />
+                <Check className="size-3.5 text-link" aria-hidden="true" />
               ) : (
                 <Plus className="size-3.5" aria-hidden="true" />
               )}

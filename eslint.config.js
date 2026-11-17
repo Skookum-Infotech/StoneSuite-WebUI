@@ -77,4 +77,38 @@ export default defineConfig([
       // 'import/no-duplicates': 'error',
     },
   },
+
+  // Design system guardrails (DESIGN.md §3 Typography, "Buttons"). Text and
+  // color come from the type-* roles and text tokens in styles/typography.css;
+  // these rules stop the one-off values the redesign removed from coming back.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error',
+        ...['Literal[value=/%s/]', 'TemplateElement[value.raw=/%s/]'].flatMap((sel) => [
+          {
+            selector: sel.replace('%s', '(^|\\s)(\\S+:)?text-2xs(\\s|$)'),
+            message: 'text-2xs (10px) is below the type scale. Use a type-* role or text-micro (11px).',
+          },
+          {
+            selector: sel.replace('%s', '(^|\\s)(\\S+:)?text-\\[[0-9.]+(px|rem)\\]'),
+            message: 'One-off font size. Use a type-* role or a size from the type scale (text-micro … text-kpi).',
+          },
+          {
+            selector: sel.replace('%s', '(^|\\s)(\\S+:)?tracking-\\['),
+            message: 'One-off letter spacing. Use tracking-tight/wide/wider, a type-* role, or add a token in styles/typography.css.',
+          },
+          {
+            selector: sel.replace('%s', '(^|\\s)(\\S+:)?text-(destructive|red-[567]00|amber-[56]00|brand-dark)(\\/\\d+)?(\\s|$)'),
+            message: 'Text color fails contrast or is off-palette. Use text-danger-ink, text-warning-ink, text-success-ink or text-link.',
+          },
+        ]),
+        ...['Property[value.type="Literal"]', 'Property[value.type="TemplateLiteral"][value.expressions.length=0]'].map((prop) => ({
+          selector: `JSXAttribute[name.name="style"] ObjectExpression > ${prop}`,
+          message: 'Fixed value in an inline style. Use a Tailwind class or a class in styles/*.css; inline styles are only for values computed at runtime.',
+        })),
+      ],
+    },
+  },
 ])

@@ -86,8 +86,8 @@ export function RoleWidgetPanel({
                 className={cn(
                   'rounded-full px-2.5 py-1 text-micro font-semibold transition-colors',
                   active
-                    ? 'bg-brand/20 text-brand-dark'
-                    : 'border border-stone-200 text-stone-500 hover:border-brand-dark hover:text-brand-dark',
+                    ? 'bg-brand/20 text-link'
+                    : 'border border-stone-200 text-stone-500 hover:border-brand-dark hover:text-link',
                 )}
               >
                 {preset.label}

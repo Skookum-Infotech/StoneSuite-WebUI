@@ -226,7 +226,7 @@ export function AccountFormDrawer({
             role="alert"
             className="shrink-0 flex items-start gap-2.5 border-b border-red-200 bg-red-50 px-4 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
-            <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-600" />
+            <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-danger-ink" />
             <div className="text-xs text-danger-ink">
               <p>{errorInfo.message}</p>
               {errorInfo.kind === 'versionConflict' && account && (

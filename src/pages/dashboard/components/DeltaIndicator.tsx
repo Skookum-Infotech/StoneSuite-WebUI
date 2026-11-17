@@ -8,15 +8,16 @@ export type DeltaDirection = 'up' | 'down' | 'flat';
 // accent, 'neutral' the muted grey — matching the tones the KPI strip has
 // always used, so a switch away from the ▲/▼ glyphs keeps the same palette.
 const NOTE_TONE: Record<DeltaTone, string> = {
-  up: 'text-brand-dark-hover',
-  warn: 'text-warning',
-  neutral: 'text-stone-500',
+  up: 'text-success-ink',
+  warn: 'text-warning-ink',
+  neutral: 'text-ink-muted',
 };
 
+// Approved: a light tinted pill so the change stands out (green up, amber warn).
 const CHIP_TONE: Record<DeltaTone, string> = {
-  up: 'bg-brand/15 text-brand-dark-hover',
-  warn: 'bg-warning/10 text-warning',
-  neutral: 'bg-stone-100 text-stone-500',
+  up: 'bg-emerald-50 text-success-ink',
+  warn: 'bg-amber-50 text-warning-ink',
+  neutral: 'bg-stone-100 text-ink-muted',
 };
 
 /**

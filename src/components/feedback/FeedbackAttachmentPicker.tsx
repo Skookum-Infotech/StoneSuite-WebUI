@@ -103,7 +103,7 @@ export function FeedbackAttachmentPicker({
             accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg" className="sr-only" onChange={onFileChange}
           />
           <Upload
-            className={cn('mx-auto mb-2 size-5 transition-colors', dragging ? 'text-brand-dark' : 'text-stone-400')}
+            className={cn('mx-auto mb-2 size-5 transition-colors', dragging ? 'text-link' : 'text-stone-400')}
             aria-hidden="true"
           />
           <p className="text-sm font-medium text-stone-700 dark:text-stone-200">
@@ -119,7 +119,7 @@ export function FeedbackAttachmentPicker({
         <div className="space-y-1 rounded-lg border border-destructive/15 bg-destructive/5 px-3 py-2">
           {validationErrors.map((e) => (
             <div key={e} className="flex items-start gap-1.5">
-              <AlertCircle className="mt-0.5 size-3 shrink-0 text-destructive/70" />
+              <AlertCircle className="mt-0.5 size-3 shrink-0 text-danger-ink/70" />
               <p className="type-error">{e}</p>
             </div>
           ))}

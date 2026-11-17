@@ -43,7 +43,7 @@ export function FeedbackAdminTable({ tickets, isLoading }: { tickets: FeedbackTi
                 <td className="px-3.5 py-2.5">
                   <Link
                     to={`/platform/feedback/${ticket.id}`}
-                    className="font-semibold text-stone-700 hover:text-brand-dark transition-colors dark:text-stone-200"
+                    className="font-semibold text-stone-700 hover:text-link transition-colors dark:text-stone-200"
                   >
                     {ticket.ticketNumber}
                   </Link>

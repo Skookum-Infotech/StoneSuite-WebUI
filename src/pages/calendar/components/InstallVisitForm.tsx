@@ -160,7 +160,7 @@ export function InstallVisitForm({ appointment, jobId, defaultDate, actions }: P
         <div className="flex gap-2">
           {appointment && live && canTransition && (
             <>
-              <button type="button" onClick={onCancelVisit} disabled={pending} className={`${btn} border border-destructive/40 text-destructive hover:bg-destructive/5`}>
+              <button type="button" onClick={onCancelVisit} disabled={pending} className={`${btn} border border-destructive/40 text-danger-ink hover:bg-destructive/5`}>
                 Cancel visit
               </button>
               <button type="button" onClick={markComplete} disabled={pending} className={`${btn} border border-stone-300 text-stone-700 hover:bg-stone-50`}>

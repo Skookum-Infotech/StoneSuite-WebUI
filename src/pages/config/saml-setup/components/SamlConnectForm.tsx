@@ -278,7 +278,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
           <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
             <div className="flex items-start gap-3 mb-4">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-50">
-                <AlertTriangle className="size-4 text-red-500" />
+                <AlertTriangle className="size-4 text-danger-ink" />
               </span>
               <div>
                 <h3 id="delete-saml-config-title" className="type-card-title">

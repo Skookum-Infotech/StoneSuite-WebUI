@@ -20,6 +20,7 @@ import type { JournalEntrySearchRequest } from '@/types/journalEntry';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
 import { buttonVariants } from '@/components/ui/button';
+import { StatusPill } from '@/components/ui/StatusPill';
 const EXPORT_PAGE_SIZE = 200;
 
 // Journal Entry is a dedicated relational module (the backend calls it
@@ -308,13 +309,7 @@ export function JournalEntryTable() {
                         </Link>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {je.status}
-                        </span>
+                        <StatusPill color={color}>{je.status}</StatusPill>
                       </td>
                       <td className="px-4 py-3.5 tabular-nums whitespace-nowrap type-cell">
                         {fmtDate(je.transferDate)}

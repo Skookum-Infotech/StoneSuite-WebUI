@@ -71,7 +71,7 @@ function DeleteRefundModal({ label, error, isPending, onConfirm, onClose }: {
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle className="size-4 text-destructive" aria-hidden="true" />
+            <AlertTriangle className="size-4 text-danger-ink" aria-hidden="true" />
           </div>
           <div>
             <h3 id="delete-refund-dialog-title" className="type-card-title">

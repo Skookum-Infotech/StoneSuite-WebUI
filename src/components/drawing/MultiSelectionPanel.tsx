@@ -34,7 +34,7 @@ export function MultiSelectionPanel() {
           type="button"
           aria-label="Delete selected pieces"
           onClick={() => dispatch({ type: 'deletePieces', areaId: state.activeAreaId, pieceIds: ids })}
-          className={`${button} text-destructive`}
+          className={`${button} text-danger-ink`}
         >
           Delete
         </button>

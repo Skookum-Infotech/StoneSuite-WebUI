@@ -81,7 +81,7 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
                           href="https://console.aws.amazon.com/cognito/"
                           target="_blank"
                           rel="noreferrer"
-                          className="underline decoration-stone-300 underline-offset-2 hover:text-brand-dark"
+                          className="underline decoration-stone-300 underline-offset-2 hover:text-link"
                         >
                           AWS Management Console ↗
                         </a>

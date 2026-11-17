@@ -142,7 +142,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
 
         {errorInfo && (
           <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-            <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-600" />
+            <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-danger-ink" />
             <p className="type-error">{errorInfo.message}</p>
           </div>
         )}

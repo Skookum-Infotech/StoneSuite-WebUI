@@ -91,7 +91,7 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
                 <tr key={row.id} className="bg-brand/5 divide-x divide-stone-100">
                   <InlineRow pieceNumber={row.pieceNumber} draft={draft} onChange={updateDraft} sourceOrderItems={sourceOrderItems} />
                   <td className="px-2 py-1.5">
-                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove piece">
+                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-danger-ink transition-colors" aria-label="Remove piece">
                       <Trash2 className="size-3.5" />
                     </button>
                   </td>
@@ -115,7 +115,7 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
                       <button type="button" onClick={() => startEdit(row)} className="text-stone-500 hover:text-stone-700 transition-colors" aria-label={`Edit piece ${row.pieceName || row.pieceNumber}`}>
                         <Pencil className="size-3.5" />
                       </button>
-                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove piece ${row.pieceName || row.pieceNumber}`}>
+                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-danger-ink transition-colors" aria-label={`Remove piece ${row.pieceName || row.pieceNumber}`}>
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>

@@ -157,7 +157,7 @@ export const sidebarNav: SidebarNavConfig = {
       label: "Approvals",
       path: "/approvals",
       icon: ClipboardCheck,
-      iconColor: "text-amber-600 dark:text-amber-400",
+      iconColor: "text-warning-ink dark:text-amber-400",
       // Staff only: no `customerVisible`, and the path is outside
       // CUSTOMER_ALLOWED_PATH_PREFIXES. The server filters the inbox, so there
       // is no role-editor row for it either.
@@ -197,7 +197,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Leads",
               path: "/crm/lead",
               icon: Sparkles,
-              iconColor: "text-amber-500 dark:text-amber-400",
+              iconColor: "text-warning-ink dark:text-amber-400",
               permission: { resource: "lead", action: "read" },
               workflowKey: "lead",
             },
@@ -322,7 +322,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Refunds",
               path: "/sales/refund",
               icon: RotateCcw,
-              iconColor: "text-red-500 dark:text-red-400",
+              iconColor: "text-danger-ink dark:text-red-400",
               permission: { resource: "refund", action: "read" },
               workflowKey: "refund",
             },
@@ -333,7 +333,7 @@ export const sidebarNav: SidebarNavConfig = {
           id: "purchases",
           label: "Purchases",
           icon: Truck,
-          iconColor: "text-amber-600 dark:text-amber-400",
+          iconColor: "text-warning-ink dark:text-amber-400",
           matchPaths: ["/purchases"],
           children: [
             {
@@ -352,7 +352,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Requisitions",
               path: "/purchases/requisition",
               icon: ClipboardList,
-              iconColor: "text-amber-500 dark:text-amber-400",
+              iconColor: "text-warning-ink dark:text-amber-400",
               permission: { resource: "requisition", action: "read" },
               workflowKey: "requisition",
             },
@@ -372,7 +372,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Reorder",
               path: "/purchases/reorder",
               icon: PackagePlus,
-              iconColor: "text-red-500 dark:text-red-400",
+              iconColor: "text-danger-ink dark:text-red-400",
               permission: { resource: "replenishment", action: "read" },
             },
             {
@@ -459,7 +459,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Bundles",
               path: "/inventory/bundle",
               icon: Boxes,
-              iconColor: "text-amber-600 dark:text-amber-400",
+              iconColor: "text-warning-ink dark:text-amber-400",
               permission: { resource: "inventory_bundle", action: "read" },
             },
             {
@@ -636,7 +636,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Purchases Reports",
               path: "/reports/purchases",
               icon: ShoppingCart,
-              iconColor: "text-amber-600 dark:text-amber-400",
+              iconColor: "text-warning-ink dark:text-amber-400",
               permission: { resource: "report_purchases", action: "read" },
             },
             {
@@ -742,7 +742,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Record Numbering",
               path: "/config/record-numbering",
               icon: Hash,
-              iconColor: "text-amber-500 dark:text-amber-400",
+              iconColor: "text-warning-ink dark:text-amber-400",
               permission: { resource: "workflow_config", action: "configure" },
             },
             {
@@ -804,7 +804,7 @@ export const sidebarNav: SidebarNavConfig = {
               label: "Automation",
               path: "/config/automation",
               icon: Timer,
-              iconColor: "text-amber-500 dark:text-amber-400",
+              iconColor: "text-warning-ink dark:text-amber-400",
               permission: { resource: "automation", action: "read" },
             },
           ],
@@ -889,7 +889,7 @@ export const sidebarNav: SidebarNavConfig = {
           label: "Automation",
           path: "/platform/automation",
           icon: Timer,
-          iconColor: "text-amber-500 dark:text-amber-400",
+          iconColor: "text-warning-ink dark:text-amber-400",
           platformAdminOnly: true,
         },
       ],

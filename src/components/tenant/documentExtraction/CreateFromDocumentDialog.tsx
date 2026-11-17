@@ -240,7 +240,7 @@ export function CreateFromDocumentDialog({
           {stage === 'failed' && state.failure && (
             <div className="space-y-3" role="alert">
               <div className="flex items-start gap-2 text-xs text-stone-700 dark:text-stone-300">
-                <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden="true" />
+                <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-danger-ink" aria-hidden="true" />
                 {/* The file name is in the header (and often in the message) — not repeated here. */}
                 <p>
                   <span className="font-semibold">We couldn't use this document.</span>{' '}

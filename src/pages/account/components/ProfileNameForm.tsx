@@ -137,7 +137,7 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
 
       {errors.root && (
         <div role="alert" className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
-          <AlertCircle className="size-4 shrink-0 text-destructive" />
+          <AlertCircle className="size-4 shrink-0 text-danger-ink" />
           <p className="type-error">{errors.root.message}</p>
         </div>
       )}

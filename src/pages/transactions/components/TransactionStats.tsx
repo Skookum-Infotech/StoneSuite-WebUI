@@ -58,7 +58,7 @@ export function TransactionStats({ summary }: { summary: TransactionSummary | nu
         value={n(summary?.recent)}
         sub="touched recently"
         icon={Clock}
-        accent="bg-amber-50 text-amber-600"
+        accent="bg-amber-50 text-warning-ink"
       />
     </div>
   );

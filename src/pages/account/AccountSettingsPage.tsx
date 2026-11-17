@@ -80,7 +80,7 @@ function RoleCard({
       aria-busy={isSwitching}
     >
       <div className="flex items-start gap-3">
-        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors', isActive ? 'bg-brand/20 text-brand-dark' : 'bg-stone-100 text-stone-400 group-hover:bg-stone-200')}>
+        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors', isActive ? 'bg-brand/20 text-link' : 'bg-stone-100 text-stone-400 group-hover:bg-stone-200')}>
           {isSwitching ? <Loader2 className="size-4.5 animate-spin" /> : <Shield className="size-4.5" />}
         </div>
         <div className="flex-1 min-w-0">
@@ -129,7 +129,7 @@ function accessLevel(grants: Grant[], resource: string): { label: string; desc: 
   const scope = mine[0]?.scope === 'all' ? 'all' : 'your own'
 
   if (has('delete') && has('create') && has('update'))
-    return { label: 'Full access',  desc: `Manage ${scope} records`,   style: 'bg-brand/10 text-brand-dark border-brand/30' }
+    return { label: 'Full access',  desc: `Manage ${scope} records`,   style: 'bg-brand/10 text-link border-brand/30' }
   if (has('create') && has('update'))
     return { label: 'Can edit',     desc: `Create & edit ${scope}`,    style: 'bg-blue-50 text-blue-700 border-blue-200' }
   if (has('create'))
@@ -457,7 +457,7 @@ export default function AccountSettingsPage() {
 
                     {errors.root && (
                       <div className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
-                        <AlertCircle className="size-4 shrink-0 text-destructive" />
+                        <AlertCircle className="size-4 shrink-0 text-danger-ink" />
                         <p className="type-error">{errors.root.message}</p>
                       </div>
                     )}
@@ -528,7 +528,7 @@ export default function AccountSettingsPage() {
 
                       {switchRoleMutation.isError && (
                         <div className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
-                          <AlertCircle className="size-4 shrink-0 text-destructive" />
+                          <AlertCircle className="size-4 shrink-0 text-danger-ink" />
                           <p className="type-error">
                             {apiErrorMessage(switchRoleMutation.error, 'Failed to switch role. Please try again.')}
                           </p>

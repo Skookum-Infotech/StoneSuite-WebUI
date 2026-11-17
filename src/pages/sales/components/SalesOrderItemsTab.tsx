@@ -201,7 +201,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                     <FulfillmentBadge status={row.status} />
                   </td>
                   <td className={LINE_ACTIONS_EDIT_CELL_CLS}>
-                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove">
+                    <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-danger-ink transition-colors" aria-label="Remove">
                       <Trash2 className="size-3.5" />
                     </button>
                   </td>
@@ -226,7 +226,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                       <button type="button" onClick={() => startEdit(row)} className="text-stone-500 hover:text-stone-600 transition-colors" aria-label={`Edit line ${row.itemName || row.lineNo}`}>
                         <Pencil className="size-3.5" />
                       </button>
-                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-destructive transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
+                      <button type="button" onClick={() => remove(row.id)} className="text-stone-500 hover:text-danger-ink transition-colors" aria-label={`Remove line ${row.itemName || row.lineNo}`}>
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>

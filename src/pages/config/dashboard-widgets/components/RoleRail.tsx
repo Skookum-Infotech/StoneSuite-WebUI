@@ -80,7 +80,7 @@ export function RoleRail({
               onSelect={() => onSelectRole(role.id)}
               progress={totalCount > 0 ? (count / totalCount) * 100 : 0}
               trailing={
-                <span className={cn('text-micro shrink-0', count === 0 ? 'text-red-500' : 'text-stone-500')}>
+                <span className={cn('text-micro shrink-0', count === 0 ? 'text-danger-ink' : 'text-stone-500')}>
                   {count}/{totalCount}
                 </span>
               }

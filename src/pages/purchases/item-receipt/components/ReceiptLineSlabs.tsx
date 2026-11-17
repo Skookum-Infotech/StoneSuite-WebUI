@@ -15,7 +15,7 @@ const STATUS_STYLES: Record<string, string> = {
   on_order: 'bg-violet-50 text-violet-700',
   received: 'bg-cyan-50 text-cyan-700',
   consumed: 'bg-stone-100 text-stone-600',
-  scrapped: 'bg-red-50 text-red-700',
+  scrapped: 'bg-red-50 text-danger-ink',
 };
 const DEFAULT_STATUS_STYLE = 'bg-stone-100 text-stone-600';
 

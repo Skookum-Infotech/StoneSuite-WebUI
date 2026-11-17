@@ -326,7 +326,7 @@ function PortalUserRow({
                 onClick={onRequestRevoke}
                 disabled={busy}
                 aria-label={`Revoke portal access for ${user.email}`}
-                className={cn(actionBtnCls, "text-red-600 hover:bg-red-50")}
+                className={cn(actionBtnCls, "text-danger-ink hover:bg-red-50")}
               >
                 <XCircle className="size-3.5" />
                 Revoke

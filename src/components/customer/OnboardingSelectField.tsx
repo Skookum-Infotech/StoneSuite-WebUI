@@ -82,7 +82,7 @@ export function OnboardingSelectField({
             >
               {o.flag && <Flag {...o.flag} reserveSpace />}
               <span className="flex-1 truncate">{o.label}</span>
-              {o.value === value && <Check className="size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />}
+              {o.value === value && <Check className="size-3.5 shrink-0 text-link" aria-hidden="true" />}
             </button>
           ))}
         </div>

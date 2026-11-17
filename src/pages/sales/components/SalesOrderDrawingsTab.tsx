@@ -160,7 +160,7 @@ export function SalesOrderDrawingsTab({ drawings, onUpdate }: { drawings: SODraw
                     <td className="px-3 py-2.5 text-stone-500 max-w-[160px] truncate">{d.notes || <span className="text-stone-500">—</span>}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap type-cell">{new Date(d.uploadedAt).toLocaleDateString()}</td>
                     <td className="px-2 py-2.5 opacity-0 group-hover:opacity-100">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); remove(d.id); }} className="text-stone-500 hover:text-destructive transition-colors" aria-label="Remove drawing">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); remove(d.id); }} className="text-stone-500 hover:text-danger-ink transition-colors" aria-label="Remove drawing">
                         <Trash2 className="size-3.5" />
                       </button>
                     </td>

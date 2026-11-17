@@ -169,7 +169,7 @@ export default function RolesPage(): React.JSX.Element {
                     <span
                       className={cn(
                         "text-xs font-semibold truncate",
-                        active ? "text-brand-dark" : "text-stone-700",
+                        active ? "text-link" : "text-stone-700",
                       )}
                     >
                       {role.name}
@@ -373,7 +373,7 @@ function RoleDetail({
           <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
             <div className="flex items-start gap-3 mb-4">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-50">
-                <AlertTriangle className="size-4 text-red-500" />
+                <AlertTriangle className="size-4 text-danger-ink" />
               </span>
               <div>
                 <h3 id="delete-role-title" className="type-card-title">
@@ -455,7 +455,7 @@ function RoleDetail({
                   className={cn(
                     "rounded-full px-1.5 py-0.5 tabular-nums type-pill",
                     active
-                      ? "bg-brand/15 text-brand-dark"
+                      ? "bg-brand/15 text-link"
                       : "bg-stone-100 text-stone-500",
                   )}
                 >
@@ -477,7 +477,7 @@ function RoleDetail({
           <>
             {isWildcard && (
               <div className="rounded-xl border border-stone-200 p-6 text-center">
-                <ShieldCheck className="mx-auto mb-2 size-6 text-brand-dark" />
+                <ShieldCheck className="mx-auto mb-2 size-6 text-link" />
                 <p className="type-card-title">
                   Full Access
                 </p>
@@ -561,7 +561,7 @@ function RoleDetail({
                                       >
                                         {granted ? (
                                           <span className="inline-flex size-5 items-center justify-center rounded-full bg-brand/15 mx-auto">
-                                            <Check className="size-3 text-brand-dark" />
+                                            <Check className="size-3 text-link" />
                                           </span>
                                         ) : (
                                           <span className="text-stone-200">

@@ -163,7 +163,7 @@ export default function EditCustomerPage() {
 
         {locked && (
           <div className="shrink-0 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
-            <ShieldAlert className="size-4 shrink-0 text-amber-500" aria-hidden="true" />
+            <ShieldAlert className="size-4 shrink-0 text-warning-ink" aria-hidden="true" />
             <p className="text-xs font-medium text-amber-800">
               <span className="font-semibold">Locked</span> — this record is awaiting approval and cannot be edited
               until it is approved.
@@ -172,7 +172,7 @@ export default function EditCustomerPage() {
         )}
         {editNotice && (
           <div role="status" className="shrink-0 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5">
-            <Info className="size-4 shrink-0 text-amber-500" aria-hidden="true" />
+            <Info className="size-4 shrink-0 text-warning-ink" aria-hidden="true" />
             <p className="text-xs font-medium text-amber-800">{editNotice}</p>
           </div>
         )}
@@ -194,7 +194,7 @@ export default function EditCustomerPage() {
             className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="size-3 text-red-600" />
+              <AlertCircle className="size-3 text-danger-ink" />
             </span>
             <p className="type-error">
               <span className="font-bold">Error: </span>
@@ -205,7 +205,7 @@ export default function EditCustomerPage() {
         {validationErrors.length > 0 && (
           <div className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-3">
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="size-3 text-red-600" />
+              <AlertCircle className="size-3 text-danger-ink" />
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-danger-ink mb-1.5">Please review the highlighted fields before saving:</p>

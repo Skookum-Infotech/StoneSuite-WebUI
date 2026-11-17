@@ -258,7 +258,7 @@ function AddSalesOrderForm({ source }: { source?: SalesOrder }) {
             className="shrink-0 flex items-start gap-3 border-b border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20">
-              <AlertCircle className="size-3 text-red-600 dark:text-red-400" />
+              <AlertCircle className="size-3 text-danger-ink dark:text-red-400" />
             </span>
             <p className="dark:text-red-300 type-error">
               <span className="font-bold">Error: </span>

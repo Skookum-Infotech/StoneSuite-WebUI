@@ -13,12 +13,12 @@ describe('ReadOnlyStatusPill', () => {
   it('tints the pill with the given color', () => {
     render(<ReadOnlyStatusPill label="Approved" color="#3b82f6" />);
 
-    expect(screen.getByText('Approved')).toHaveStyle({ backgroundColor: 'rgba(59, 130, 246, 0.094)' });
+    expect(screen.getByText('Approved').style.getPropertyValue('--pill')).toBe('#3b82f6');
   });
 
   it('falls back to a neutral tint for a status with no color', () => {
     render(<ReadOnlyStatusPill label="Mystery" />);
 
-    expect(screen.getByText('Mystery')).toHaveStyle({ backgroundColor: 'rgba(168, 162, 158, 0.094)' });
+    expect(screen.getByText('Mystery').style.getPropertyValue('--pill')).toBe('#8a8580');
   });
 });

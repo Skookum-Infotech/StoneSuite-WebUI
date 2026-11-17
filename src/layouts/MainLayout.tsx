@@ -249,12 +249,12 @@ export default function MainLayout(): React.JSX.Element {
             </div>
             <div className="hidden lg:flex flex-col leading-none">
               <span
-                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white font-semibold tracking-[0.26em]"
+                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white tracking-wordmark"
               >
                 Stone
               </span>
               <span
-                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white font-semibold tracking-[0.26em]"
+                className="font-brand text-sm uppercase text-white/95 transition-colors group-hover:text-white tracking-wordmark"
               >
                 Suite
               </span>
@@ -293,7 +293,7 @@ export default function MainLayout(): React.JSX.Element {
               className={cn(
                 'rounded-xl border p-2 transition-colors sm:hidden cursor-pointer',
                 isMobileSearchOpen
-                  ? 'border-brand bg-brand/10 text-brand-dark'
+                  ? 'border-brand bg-brand/10 text-link'
                   : 'border-white/10 text-stone-400 hover:bg-white/[0.06] hover:text-stone-200',
               )}
             >

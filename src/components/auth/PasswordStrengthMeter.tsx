@@ -8,7 +8,7 @@ interface PasswordStrengthMeterProps {
 const METER_LEVELS = [1, 2, 3, 4] as const
 // Indexed by strength level (0 = nothing typed).
 const BAR_COLORS = ['', 'bg-red-400', 'bg-amber-400', 'bg-blue-400', 'bg-emerald-500'] as const
-const TEXT_COLORS = ['', 'text-red-500', 'text-amber-500', 'text-blue-500', 'text-success-ink'] as const
+const TEXT_COLORS = ['', 'text-danger-ink', 'text-warning-ink', 'text-blue-500', 'text-success-ink'] as const
 
 export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) {
   const { level, label } = passwordStrength(password)

@@ -31,7 +31,7 @@ export function KitHeadingRow({ name, count, colSpan, onRemove }: {
               type="button"
               onClick={onRemove}
               aria-label={`Remove kit ${name} and its ${count} ${label}`}
-              className="ml-auto shrink-0 rounded p-0.5 text-violet-400 transition-colors hover:bg-violet-200 hover:text-destructive"
+              className="ml-auto shrink-0 rounded p-0.5 text-violet-400 transition-colors hover:bg-violet-200 hover:text-danger-ink"
             >
               <Trash2 className="size-3.5" />
             </button>

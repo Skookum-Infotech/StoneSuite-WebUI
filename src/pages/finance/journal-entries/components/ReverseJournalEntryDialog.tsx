@@ -73,7 +73,7 @@ export function ReverseJournalEntryDialog({ journalEntryId, onReversed }: {
           <div ref={panelRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
-                <Undo2 className="size-4 text-amber-600" />
+                <Undo2 className="size-4 text-warning-ink" />
               </div>
               <div>
                 <h3 id="reverse-je-dialog-title" className="type-card-title">Reverse This Journal Entry?</h3>

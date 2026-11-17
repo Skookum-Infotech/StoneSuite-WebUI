@@ -75,7 +75,7 @@ export function PaymentMethodCard({
                 disabled={methods.length === 1}
                 aria-label={`Remove ${method.brand} ending ${method.last4}`}
                 title={methods.length === 1 ? 'Add another card before removing your last one' : undefined}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-stone-400 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-red-50 hover:text-danger-ink disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-stone-400 disabled:cursor-not-allowed transition-colors cursor-pointer"
               >
                 <Trash2 className="size-3.5" />
               </button>

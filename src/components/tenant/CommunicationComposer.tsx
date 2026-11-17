@@ -136,7 +136,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
         <p className="flex items-start gap-1.5 break-words px-4 pt-3 type-helper">
           {mode.internal ? (
             <>
-              <EyeOff className={cn('mt-0.5 size-3.5 shrink-0', amber ? 'text-amber-600' : 'text-stone-400')} aria-hidden="true" />
+              <EyeOff className={cn('mt-0.5 size-3.5 shrink-0', amber ? 'text-warning-ink' : 'text-stone-400')} aria-hidden="true" />
               <span>
                 {mode.notesOnly
                   ? 'Internal note — only your team sees this.'

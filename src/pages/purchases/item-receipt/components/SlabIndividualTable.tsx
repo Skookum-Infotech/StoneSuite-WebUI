@@ -127,7 +127,7 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
                         <Copy className="size-3.5" />
                       </button>
                       <button type="button" onClick={() => actions.remove(slab.key)} aria-label={`Remove slab ${n}`}
-                        className="rounded p-1 text-stone-500 hover:bg-red-50 hover:text-red-600">
+                        className="rounded p-1 text-stone-500 hover:bg-red-50 hover:text-danger-ink">
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>

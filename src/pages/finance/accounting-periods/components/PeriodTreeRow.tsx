@@ -14,7 +14,7 @@ function StatusIcon({ status }: { status: PeriodStatus }) {
 
 function LockIcon({ status, lockedForever }: { status: PeriodStatus; lockedForever?: boolean }) {
   if (status === 'closed') {
-    return <Lock className={cn('mx-auto size-4', lockedForever ? 'text-stone-400' : 'text-amber-500')} aria-hidden="true" />;
+    return <Lock className={cn('mx-auto size-4', lockedForever ? 'text-stone-400' : 'text-warning-ink')} aria-hidden="true" />;
   }
   return <Unlock className="mx-auto size-4 text-stone-400" aria-hidden="true" />;
 }

@@ -69,7 +69,7 @@ export function TenantActions({ tenant, onPurged }: Props) {
           type="button"
           onClick={() => setDialog('purge')}
           aria-label={`Delete ${tenant.displayName} permanently`}
-          className={`${BUTTON_BASE} border-red-200 bg-white text-red-600 hover:bg-red-50`}
+          className={`${BUTTON_BASE} border-red-200 bg-white text-danger-ink hover:bg-red-50`}
         >
           <Trash2 className="size-3" aria-hidden="true" /> Delete
         </button>

@@ -8,6 +8,7 @@ import { useFloatingDropdownPosition } from '@/hooks/useFloatingDropdownPosition
 import { isCrmTransitionBlocked } from '@/lib/crmApproval';
 import type { StatusInfo } from '@/types/tenant';
 
+import type { CSSProperties } from 'react';
 type Props = {
   workflowKey: string;
   /** The record whose legal next moves are listed. */
@@ -152,7 +153,7 @@ export function StatusDropdown({
   const color = selected ? resolveStatusColor(selected.stateKey, selected.color) : '#a8a29e';
 
   const triggerCls = isPill
-    ? 'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70'
+    ? 'status-pill status-pill-dot transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70'
     : `${fieldCls} flex items-center gap-2`;
 
   const optionRows = statuses.length > 0 ? statuses.map((s) => {
@@ -180,7 +181,7 @@ export function StatusDropdown({
             : isCurrent
               ? 'bg-brand/10 font-semibold text-stone-900'
               : armed
-                ? 'bg-red-50 font-semibold text-red-700'
+                ? 'bg-red-50 font-semibold text-danger-ink'
                 : 'text-stone-700 hover:bg-stone-50'
         }`}
       >
@@ -208,11 +209,8 @@ export function StatusDropdown({
         onClick={() => { if (!disabled && !isFinal) { if (open) close(); else setOpen(true); } }}
         disabled={disabled || isFinal}
         className={triggerCls}
-        style={isPill ? { backgroundColor: `${color}18` } : undefined}
+        style={isPill ? ({ '--pill': color } as CSSProperties) : undefined}
       >
-        {isPill && selected && (
-          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-        )}
         {selected ? (
           <span className={isPill ? undefined : 'flex-1 text-left'}>{selected.statusLabel}</span>
         ) : (

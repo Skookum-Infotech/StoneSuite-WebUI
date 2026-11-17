@@ -21,6 +21,7 @@ import { EXPENSE_STATUS_COLORS } from '@/lib/expenseForm';
 import type { ExpenseSearchRequest } from '@/types/expense';
 
 import { buttonVariants } from '@/components/ui/button';
+import { StatusPill } from '@/components/ui/StatusPill';
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 1, 3, 5]);
 
@@ -356,13 +357,8 @@ export function ExpenseTable() {
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
-                          <span
-                            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 whitespace-nowrap type-pill"
-                            style={{ backgroundColor: `${APPROVAL_COLORS[exp.approvalStatus]}18`, color: APPROVAL_COLORS[exp.approvalStatus] }}
-                          >
-                            <ShieldCheck className="size-2.5" aria-hidden="true" />
-                            {approvalLabel}
-                          </span>
+                          <StatusPill color={APPROVAL_COLORS[exp.approvalStatus]} dot={false}><ShieldCheck className="size-2.5" aria-hidden="true" />
+                            {approvalLabel}</StatusPill>
                         ) : (
                           <span className="type-subline">—</span>
                         )}

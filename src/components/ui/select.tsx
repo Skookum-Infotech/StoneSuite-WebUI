@@ -192,7 +192,7 @@ export function Select({
                 >
                   {o.flag && <Flag {...o.flag} reserveSpace />}
                   <span className="flex-1 truncate">{o.label ||' '}</span>
-                  {isSelected && <Check className="size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />}
+                  {isSelected && <Check className="size-3.5 shrink-0 text-link" aria-hidden="true" />}
                 </button>
               </Fragment>
             );

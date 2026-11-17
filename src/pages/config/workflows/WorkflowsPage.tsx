@@ -220,7 +220,7 @@ function WorkflowCard({ wf }: { wf: WorkflowType }) {
           enabled ? 'border-stone-100 dark:border-stone-800' : 'border-stone-200/70 dark:border-stone-800/70',
         )}
       >
-        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stone-500 transition-colors group-hover:text-brand-dark dark:group-hover:text-brand">
+        <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-stone-500 transition-colors group-hover:text-link dark:group-hover:text-brand">
           Configure
           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </span>

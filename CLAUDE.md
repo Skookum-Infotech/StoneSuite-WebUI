@@ -125,7 +125,20 @@ Two separate, deliberately non-overlapping feedback mechanisms — don't conflat
   local state + validators in `lib/crmValidation.ts` / `lib/salesOrderForm.ts` — match the
   surrounding file's existing pattern rather than mixing the two in one form.
 - Never mutate state directly — always return new objects/arrays.
-- Styling: Tailwind `className=` only. No inline `style={}`, no CSS Modules.
+- Styling: Tailwind `className=` only. No CSS Modules. Inline `style={}` is only for values
+  computed at runtime (a status color, a progress width, a popup position) — never a fixed value.
+- Typography (DESIGN.md §3, `src/styles/typography.css`): text uses a `type-*` role
+  (`type-page-title`, `type-dialog-title`, `type-card-title`, `type-field-label`, `type-th`,
+  `type-cell`, `type-helper`, `type-error`, `type-record-id`, …) or a scale size
+  (`text-micro`/`caption`/`button`/`field`/`body`), and `text-ink-*` / semantic inks
+  (`text-danger-ink`, `text-warning-ink`, `text-success-ink`, `text-link`) for color. No
+  `text-2xs`, `text-[Npx]`, `tracking-[…]`, `text-red-*`/`text-destructive` text — ESLint's
+  "Design system guardrails" block fails the build on these.
+- Titles (page, card, section, dialog) are Title Case; labels, buttons, menu items and
+  messages stay sentence case.
+- Buttons use the shared `Button` / `buttonVariants()` (sizes `sm` 26px, default 30px, `lg`
+  38px for one-action screens only) — never hand-built button classes. Status chips use
+  `StatusPill` (`components/ui/StatusPill.tsx`).
 - Exports: named everywhere except page-level route components (default export).
 - `useEffect` with side effects must return a cleanup function.
 - Accessibility: all interactive elements need `aria-label` and keyboard navigation.

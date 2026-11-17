@@ -95,7 +95,7 @@ export function SlabGroupTable({ rows, bins, units, actions }: {
                       <Pencil className="size-3.5" />
                     </button>
                     <button type="button" onClick={() => actions.remove(group.key)} aria-label={`Remove group ${n}`}
-                      className="rounded p-1 text-stone-500 hover:bg-red-50 hover:text-red-600">
+                      className="rounded p-1 text-stone-500 hover:bg-red-50 hover:text-danger-ink">
                       <Trash2 className="size-3.5" />
                     </button>
                   </div>

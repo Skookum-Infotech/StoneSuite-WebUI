@@ -64,7 +64,7 @@ const CUSTOMER = { id: 'c-1', name: 'Fontaine Builders' };
 // Each fixture sits on a status that is neither grey (so the colour assertion
 // can tell a real lookup from the neutral fallback) nor terminal (so a super
 // admin's trigger genuinely opens). `tint` is the status colour from that
-// module's *_STATUS_COLORS map + the pill's 0x18 alpha, as jsdom serialises it.
+// module's *_STATUS_COLORS map, passed to the pill as its --pill CSS variable.
 const ESTIMATE: EstimateSummary = {
   id: 'est-1', estimateNumber: 'EST-1001', status: 'Sent', statusCode: 'SENT', approvalStatus: 'none',
   nextStatusCodes: ['RJCT', 'EXPR', 'CANC'], customer: CUSTOMER, estimateDate: '2026-09-01', grandTotal: 1200,
@@ -115,37 +115,37 @@ interface StatusGateCase {
 const CASES: StatusGateCase[] = [
   {
     table: 'EstimateTable', Table: EstimateTable, recordNumber: 'EST-1001', status: 'Sent',
-    tint: 'rgba(99, 102, 241, 0.094)',
+    tint: '#6366f1',
     serve: () => vi.mocked(estimateService.searchEstimates).mockResolvedValue(page([ESTIMATE])),
   },
   {
     table: 'QuoteTable', Table: QuoteTable, recordNumber: 'QTE-1001', status: 'Approved',
-    tint: 'rgba(59, 130, 246, 0.094)',
+    tint: '#3b82f6',
     serve: () => vi.mocked(quoteService.searchQuotes).mockResolvedValue(page([QUOTE])),
   },
   {
     table: 'SalesOrderTable', Table: SalesOrderTable, recordNumber: 'SO-1001', status: 'Open',
-    tint: 'rgba(99, 102, 241, 0.094)',
+    tint: '#6366f1',
     serve: () => vi.mocked(salesOrderService.searchOrders).mockResolvedValue(page([SALES_ORDER])),
   },
   {
     table: 'InvoiceTable', Table: InvoiceTable, recordNumber: 'INV-1001', status: 'Overdue',
-    tint: 'rgba(239, 68, 68, 0.094)',
+    tint: '#ef4444',
     serve: () => vi.mocked(invoiceService.searchInvoices).mockResolvedValue(page([INVOICE])),
   },
   {
     table: 'PaymentTable', Table: PaymentTable, recordNumber: 'PAY-1001', status: 'Approved',
-    tint: 'rgba(59, 130, 246, 0.094)',
+    tint: '#3b82f6',
     serve: () => vi.mocked(paymentService.searchPayments).mockResolvedValue(page([PAYMENT])),
   },
   {
     table: 'RefundTable', Table: RefundTable, recordNumber: 'REF-1001', status: 'Approved',
-    tint: 'rgba(59, 130, 246, 0.094)',
+    tint: '#3b82f6',
     serve: () => vi.mocked(refundService.searchRefunds).mockResolvedValue(page([REFUND])),
   },
   {
     table: 'FabricationJobTable', Table: FabricationJobTable, recordNumber: 'FJ-1001', status: 'Cutting',
-    tint: 'rgba(245, 158, 11, 0.094)',
+    tint: '#f59e0b',
     serve: () => vi.mocked(fabricationService.searchJobs).mockResolvedValue(page([FABRICATION_JOB])),
   },
 ];
@@ -189,7 +189,7 @@ describe.each(CASES)('$table status cell', (gateCase) => {
     const row = await renderRow(gateCase);
 
     expect(within(row).queryByRole('button', { name: status })).not.toBeInTheDocument();
-    expect(within(row).getByText(status)).toHaveStyle({ backgroundColor: tint });
+    expect(within(row).getByText(status).style.getPropertyValue('--pill').toLowerCase()).toBe(tint);
   });
 
   it('gives a super admin the status dropdown, which opens', async () => {

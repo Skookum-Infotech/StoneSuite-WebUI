@@ -116,7 +116,7 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
             className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
             <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-red-100">
-              <AlertCircle className="size-3 text-red-600" />
+              <AlertCircle className="size-3 text-danger-ink" />
             </span>
             <p className="type-error">
               <span className="font-bold">Error: </span>

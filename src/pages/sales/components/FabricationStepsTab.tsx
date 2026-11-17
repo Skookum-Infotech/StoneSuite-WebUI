@@ -10,6 +10,7 @@ import { STEP_LABELS, STEP_STATUS_OPTIONS, STEP_STATUS_LABELS, STEP_STATUS_COLOR
 import type { FabricationJobStep } from '@/types/fabrication';
 
 import { buttonVariants } from '@/components/ui/button';
+import { StatusPill } from '@/components/ui/StatusPill';
 // The 16-step checklist. Piece-grain steps (templating, cutting, edging,
 // etc.) are seeded once per piece, so several rows share a step code and are
 // told apart by `pieceUuid`. Each row saves independently: the PATCH carries
@@ -171,12 +172,6 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
 
 function StepStatusBadge({ status }: { status: string }) {
   return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-stone-600 whitespace-nowrap type-pill"
-      style={{ backgroundColor: `${STEP_STATUS_COLORS[status] ?? '#a8a29e'}18` }}
-    >
-      <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: STEP_STATUS_COLORS[status] ?? '#a8a29e' }} aria-hidden="true" />
-      {STEP_STATUS_LABELS[status] ?? status}
-    </span>
+    <StatusPill color={STEP_STATUS_COLORS[status] ?? '#a8a29e'}>{STEP_STATUS_LABELS[status] ?? status}</StatusPill>
   );
 }

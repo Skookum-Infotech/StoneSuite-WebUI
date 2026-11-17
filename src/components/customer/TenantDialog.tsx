@@ -42,7 +42,7 @@ export function TenantDialog({ title, subtitle, tone, onClose, children }: Props
             )}
           >
             <AlertTriangle
-              className={cn('size-4', tone === 'danger' ? 'text-danger-ink' : 'text-amber-600')}
+              className={cn('size-4', tone === 'danger' ? 'text-danger-ink' : 'text-warning-ink')}
               aria-hidden="true"
             />
           </div>

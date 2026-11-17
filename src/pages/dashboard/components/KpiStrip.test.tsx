@@ -55,7 +55,7 @@ describe('KpiStrip', () => {
     const { container } = render(<KpiStrip metrics={metrics} isLoading={false} isError={false} />);
     expect(screen.getByText('12%')).toBeInTheDocument();
     // the trend chip carries a direction arrow rather than a ▲/▼ glyph in the text
-    expect(container.querySelector('.text-warning svg')).not.toBeNull();
+    expect(container.querySelector('.text-warning-ink svg')).not.toBeNull();
   });
 
   it('formats open leads as a plain count with a "this week" delta', () => {
@@ -79,7 +79,7 @@ describe('KpiStrip', () => {
     render(<KpiStrip metrics={metrics} isLoading={false} isError={false} />);
     expect(screen.getByText('Needs Approval')).toBeInTheDocument();
     expect(screen.getByText('oldest 2 days')).toBeInTheDocument();
-    expect(screen.getByText('oldest 2 days')).toHaveClass('text-warning');
+    expect(screen.getByText('oldest 2 days')).toHaveClass('text-warning-ink');
   });
 
   // A caller who is a configured approver but has 0 pending right now (see
@@ -89,8 +89,8 @@ describe('KpiStrip', () => {
     const metrics: KpiMetric[] = [{ id: 'needs-approval', value: 0, subLabel: 'all caught up' }];
     render(<KpiStrip metrics={metrics} isLoading={false} isError={false} />);
     expect(screen.getByText('all caught up')).toBeInTheDocument();
-    expect(screen.getByText('all caught up')).not.toHaveClass('text-warning');
-    expect(screen.getByText('all caught up')).toHaveClass('text-stone-500');
+    expect(screen.getByText('all caught up')).not.toHaveClass('text-warning-ink');
+    expect(screen.getByText('all caught up')).toHaveClass('text-ink-muted');
   });
 
   it('renders fewer than 4 metrics gracefully when some are ungranted', () => {

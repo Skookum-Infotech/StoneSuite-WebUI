@@ -30,13 +30,13 @@ export function WidgetTile({
       )}
     >
       <div className="min-w-0">
-        <p className={cn('truncate text-xs font-semibold', checked ? 'text-brand-dark' : 'text-stone-700')}>
+        <p className={cn('truncate text-xs font-semibold', checked ? 'text-link' : 'text-stone-700')}>
           {widget.title}
         </p>
         <p className="truncate type-helper">{widget.description}</p>
       </div>
       {checked ? (
-        <Check className="mt-0.5 size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />
+        <Check className="mt-0.5 size-3.5 shrink-0 text-link" aria-hidden="true" />
       ) : (
         <Plus className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
       )}

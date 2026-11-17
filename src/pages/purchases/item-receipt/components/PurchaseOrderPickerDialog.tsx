@@ -10,6 +10,7 @@ import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import { RECEIVABLE_PO_STATUS_CODES } from '@/lib/itemReceiptForm';
 
 import { buttonVariants } from '@/components/ui/button';
+import { StatusPill } from '@/components/ui/StatusPill';
 const RESULT_LIMIT = 15;
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -118,13 +119,7 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
                         <p className="truncate text-xs font-semibold text-stone-800">{po.purchaseOrderNumber || '—'}</p>
                         <p className="truncate type-helper">{po.vendor?.name ?? '—'}</p>
                       </div>
-                      <span
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-stone-600 whitespace-nowrap type-pill"
-                        style={{ backgroundColor: `${color}18` }}
-                      >
-                        <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                        {po.status}
-                      </span>
+                      <StatusPill color={color} className="shrink-0">{po.status}</StatusPill>
                     </button>
                   </li>
                 );

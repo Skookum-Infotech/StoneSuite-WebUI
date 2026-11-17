@@ -30,7 +30,7 @@ interface Props {
   onPreview: (rule: AutomationRule) => void;
 }
 
-const LINK_CLASS = 'text-xs font-medium text-brand-dark underline-offset-2 hover:underline';
+const LINK_CLASS = 'text-xs font-medium text-link underline-offset-2 hover:underline';
 
 function StatusLabel({ rule, notSending }: Pick<Props, 'rule' | 'notSending'>) {
   if (!rule.enabled) return <span className="text-xs text-stone-500">Off</span>;

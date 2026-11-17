@@ -27,7 +27,7 @@ const STATUS_STYLE: Record<StepStatus, string> = {
   complete: 'bg-accent text-accent-foreground ring-accent-foreground/20',
   current: 'bg-brand text-stone-950 ring-brand-dark/30',
   pending: 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-stone-700',
-  error: 'bg-destructive/10 text-destructive ring-destructive/30',
+  error: 'bg-destructive/10 text-danger-ink ring-destructive/30',
 };
 
 function StepIcon({ status }: { status: StepStatus }): React.JSX.Element {

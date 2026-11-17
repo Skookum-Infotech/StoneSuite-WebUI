@@ -120,7 +120,7 @@ export function MoveStageButton({ workflowKey, recordId, currentStateId, gated =
                     blocked
                       ? 'cursor-not-allowed text-stone-300'
                       : armed
-                        ? 'bg-red-50 font-semibold text-red-700'
+                        ? 'bg-red-50 font-semibold text-danger-ink'
                         : 'text-stone-700 hover:bg-stone-100',
                   )}
                 >

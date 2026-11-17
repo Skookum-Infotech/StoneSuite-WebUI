@@ -109,7 +109,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
           <span
             className={cn(
               "font-medium",
-              isExpired ? "text-red-500" : "text-stone-700",
+              isExpired ? "text-danger-ink" : "text-stone-700",
             )}
           >
             {fmtDate(invite.ExpiresAt)}

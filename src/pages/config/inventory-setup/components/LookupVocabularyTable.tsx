@@ -135,7 +135,7 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
                           {!item.isSystem && (
                             <>
                               <button type="button" onClick={() => startEdit(item)} aria-label={`Edit ${item.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground transition-colors"><Pencil className="size-3.5" /></button>
-                              <button type="button" onClick={() => remove(item.id)} aria-label={`Delete ${item.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
+                              <button type="button" onClick={() => remove(item.id)} aria-label={`Delete ${item.name}`} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-1.5 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-danger-ink transition-colors"><Trash2 className="size-3.5" /></button>
                             </>
                           )}
                         </div>

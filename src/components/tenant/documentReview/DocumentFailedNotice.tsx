@@ -27,7 +27,7 @@ export function DocumentFailedNotice({ fileName, reason, docType }: DocumentFail
   return (
     <div className="flex flex-1 items-start justify-center p-6">
       <section className="w-full max-w-md rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 text-center shadow-sm">
-        <FileX2 className="mx-auto size-8 text-destructive" aria-hidden="true" />
+        <FileX2 className="mx-auto size-8 text-danger-ink" aria-hidden="true" />
         <h2 ref={ref} tabIndex={-1} className="mt-3 dark:text-stone-100 outline-none type-dialog-title">
           We Couldn&apos;t Read This Document
         </h2>

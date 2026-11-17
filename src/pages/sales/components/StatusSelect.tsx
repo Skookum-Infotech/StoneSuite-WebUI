@@ -5,6 +5,7 @@ import { fieldCls } from '@/components/crm/formUtils';
 import { resolveStatusOptions, isTerminalTarget, type StatusOption, type TransitionGuardResult } from '@/lib/statusTransitions';
 import { useFloatingDropdownPosition } from '@/hooks/useFloatingDropdownPosition';
 
+import type { CSSProperties } from 'react';
 interface Props {
   /** Current status code, e.g. "DRFT". */
   value: string;
@@ -115,7 +116,7 @@ export function StatusSelect({
   const color = isPill ? (colorFor?.(selected ?? { code: value, label: value }) ?? '#a8a29e') : undefined;
 
   const triggerCls = isPill
-    ? 'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70'
+    ? 'status-pill status-pill-dot transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70'
     : `${fieldCls} flex items-center gap-2`;
 
   const optionRows = options.map((s) => {
@@ -147,7 +148,7 @@ export function StatusSelect({
           isCurrent
             ? 'bg-brand/10 font-semibold text-stone-900'
             : armed
-              ? 'bg-red-50 font-semibold text-red-700'
+              ? 'bg-red-50 font-semibold text-danger-ink'
               : permitted
                 ? 'text-stone-700 hover:bg-stone-50'
                 : 'text-stone-400 cursor-not-allowed'
@@ -180,9 +181,8 @@ export function StatusSelect({
         onClick={() => { if (!disabled && !isTerminal) { if (open) close(); else setOpen(true); } }}
         disabled={disabled || isTerminal}
         className={triggerCls}
-        style={isPill ? { backgroundColor: `${color}18` } : undefined}
+        style={isPill ? ({ '--pill': color } as CSSProperties) : undefined}
       >
-        {isPill && <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />}
         <span className={isPill ? undefined : 'flex-1 text-left'}>{selected?.label ?? value}</span>
         {!isTerminal && <ChevronDown className={isPill ? 'size-3 shrink-0' : 'size-3 shrink-0 text-stone-400'} aria-hidden="true" />}
       </button>

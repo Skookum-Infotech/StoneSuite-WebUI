@@ -23,7 +23,7 @@ const FILTERS: { value: Direction; label: string }[] = [
 const TONE_STYLES: Record<BinEventTone, string> = {
   in: 'bg-emerald-100 text-emerald-700',
   out: 'bg-sky-100 text-sky-700',
-  loss: 'bg-red-100 text-red-700',
+  loss: 'bg-red-100 text-danger-ink',
   neutral: 'bg-stone-100 text-stone-600',
 };
 

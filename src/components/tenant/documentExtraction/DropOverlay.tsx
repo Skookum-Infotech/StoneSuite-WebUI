@@ -82,7 +82,7 @@ export function DropOverlay({ blockedReason, documentLabel, onFileDropped }: Dro
       className="pointer-events-none fixed inset-0 z-[9998] flex items-center justify-center bg-stone-950/40 p-6 backdrop-blur-[2px]"
     >
       <div className="flex max-w-sm flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-brand bg-white dark:bg-stone-900 px-10 py-12 text-center shadow-2xl motion-safe:animate-pulse">
-        <FileUp className="size-8 text-brand-dark" aria-hidden="true" />
+        <FileUp className="size-8 text-link" aria-hidden="true" />
         <p className="text-base font-bold text-stone-900 dark:text-stone-100">Drop a customer PO to create a {documentLabel}</p>
         <p className="dark:text-stone-400 type-helper">PDF or Word (.docx), up to 10 MB</p>
       </div>

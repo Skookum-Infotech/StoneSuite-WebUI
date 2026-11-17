@@ -177,7 +177,7 @@ export function OnboardingForm({
 
       {bannerMessage && (
         <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-          <AlertCircle className="size-4 mt-0.5 shrink-0 text-red-500" />
+          <AlertCircle className="size-4 mt-0.5 shrink-0 text-danger-ink" />
           <p className="text-sm text-danger-ink">{bannerMessage}</p>
         </div>
       )}
@@ -194,7 +194,7 @@ export function OnboardingForm({
               {/* Section header */}
               <div className="flex items-center gap-3 border-b border-stone-100 px-5 py-3.5">
                 <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand/10">
-                  <Icon className="size-3.5 text-brand-dark" />
+                  <Icon className="size-3.5 text-link" />
                 </div>
                 <h3 className="type-card-title">{section.title}</h3>
               </div>
@@ -221,7 +221,7 @@ export function OnboardingForm({
         <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
           <div className="flex items-center gap-3 border-b border-stone-100 px-5 py-3.5">
             <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand/10">
-              <Plus className="size-3.5 text-brand-dark" />
+              <Plus className="size-3.5 text-link" />
             </div>
             <h3 className="type-card-title">Additional Information</h3>
           </div>

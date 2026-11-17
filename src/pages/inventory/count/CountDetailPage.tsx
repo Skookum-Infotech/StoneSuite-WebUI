@@ -157,7 +157,7 @@ function ProgressStat({ label, value, highlight, warn, decimal }: { label: strin
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-3">
       <p className="type-overline">{label}</p>
-      <p className={`mt-1 text-lg font-bold tabular-nums ${warn ? 'text-amber-600' : highlight ? 'text-success-ink' : 'text-stone-900'}`}>
+      <p className={`mt-1 text-lg font-bold tabular-nums ${warn ? 'text-warning-ink' : highlight ? 'text-success-ink' : 'text-stone-900'}`}>
         {decimal ? value.toFixed(2) : value}
       </p>
     </div>

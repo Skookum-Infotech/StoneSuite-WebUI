@@ -124,7 +124,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
           {ticket.pageUrl && (
             <p className="dark:text-stone-400 type-helper">
               Reported from{' '}
-              <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[0.8125rem] text-stone-600 dark:bg-white/10 dark:text-stone-300">
+              <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-field text-stone-600 dark:bg-white/10 dark:text-stone-300">
                 {ticket.pageUrl}
               </code>
             </p>

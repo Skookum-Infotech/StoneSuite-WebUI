@@ -72,7 +72,7 @@ export default function SsoCallbackPage() {
         ) : failed ? (
           <>
             <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-red-50">
-              <AlertTriangle className="size-5 text-red-500" />
+              <AlertTriangle className="size-5 text-danger-ink" />
             </span>
             <h1 className="type-page-title">Sign-In Link Expired</h1>
             <p className="mt-1.5 type-helper">

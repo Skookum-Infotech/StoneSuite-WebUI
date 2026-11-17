@@ -328,7 +328,7 @@ export default function VendorPaymentDetailPage() {
             {payment.approvalStatus !== 'none' && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
                 <span className="text-stone-500">Approval</span>
-                <span className={cn('font-medium', payment.approvalStatus === 'approved' ? 'text-success-ink' : 'text-amber-600')}>
+                <span className={cn('font-medium', payment.approvalStatus === 'approved' ? 'text-success-ink' : 'text-warning-ink')}>
                   {payment.approvalStatus === 'approved' ? 'Approved' : 'Pending Approval'}
                 </span>
               </div>

@@ -153,7 +153,7 @@ export default function PlatformAutomationPage() {
           >
             <div className="mb-4 flex items-center gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
-                <AlertTriangle className="size-4 text-amber-600" aria-hidden="true" />
+                <AlertTriangle className="size-4 text-warning-ink" aria-hidden="true" />
               </div>
               <div>
                 <AlertDialog.Title className="text-sm font-bold text-stone-900 dark:text-white">

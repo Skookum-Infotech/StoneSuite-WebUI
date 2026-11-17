@@ -109,7 +109,7 @@ export function BinTransferLinesEditor({ lines, onChange, bins, warehouseId, loc
                       type="button"
                       onClick={() => removeLine(l.key)}
                       aria-label={`Remove line ${i + 1}, ${l.serial}`}
-                      className="rounded p-1.5 text-stone-500 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      className="rounded p-1.5 text-stone-500 transition-colors hover:bg-destructive/10 hover:text-danger-ink"
                     >
                       <Trash2 className="size-3.5" />
                     </button>

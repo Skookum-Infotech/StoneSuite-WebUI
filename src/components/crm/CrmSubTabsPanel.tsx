@@ -465,12 +465,12 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
           <div className="rounded-lg border border-destructive/15 bg-destructive/5 px-4 py-3 space-y-1">
             {validationErrors.map((e, i) => (
               <div key={i} className="flex items-start gap-2">
-                <AlertCircle className="h-3.5 w-3.5 text-destructive/70 shrink-0 mt-0.5" />
+                <AlertCircle className="h-3.5 w-3.5 text-danger-ink/70 shrink-0 mt-0.5" />
                 <p className="type-error">{e}</p>
               </div>
             ))}
             <button type="button" onClick={() => setValidationErrors([])}
-              className="text-micro text-destructive/60 hover:text-destructive mt-1">Dismiss</button>
+              className="text-micro text-danger-ink/60 hover:text-danger-ink mt-1">Dismiss</button>
           </div>
         )}
 
@@ -507,12 +507,12 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
         {/* Action error (download / delete failures) */}
         {actionError && (
           <div className="rounded-lg border border-destructive/15 bg-destructive/5 px-4 py-3 flex items-start gap-2">
-            <AlertCircle className="h-3.5 w-3.5 text-destructive/70 shrink-0 mt-0.5" />
+            <AlertCircle className="h-3.5 w-3.5 text-danger-ink/70 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="type-error">{actionError}</p>
             </div>
             <button type="button" onClick={() => setActionError(null)}
-              className="text-micro text-destructive/60 hover:text-destructive shrink-0">Dismiss</button>
+              className="text-micro text-danger-ink/60 hover:text-danger-ink shrink-0">Dismiss</button>
           </div>
         )}
 
@@ -688,7 +688,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-micro text-stone-500 hover:text-destructive hover:bg-destructive/5 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-micro text-stone-500 hover:text-danger-ink hover:bg-destructive/5 transition-colors"
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />

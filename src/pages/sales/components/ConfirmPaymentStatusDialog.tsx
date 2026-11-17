@@ -36,7 +36,7 @@ const COPY: Record<PaymentHeaderCode, ConfirmCopy> = {
     confirm: 'Void payment',
     pending: 'Voiding…',
     iconDisc: 'bg-destructive/10',
-    iconColor: 'text-destructive',
+    iconColor: 'text-danger-ink',
     confirmBtn: 'bg-destructive hover:bg-destructive/90',
   },
 };

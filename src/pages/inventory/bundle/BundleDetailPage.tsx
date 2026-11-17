@@ -131,7 +131,7 @@ export default function BundleDetailPage() {
                     {u.serial} <span className="text-stone-500">· {u.area.toFixed(2)} sq</span>
                   </button>
                   {isOpen && canUpdate && (
-                    <button type="button" onClick={() => removeMember(u.id)} aria-label={`Remove ${u.serial} from bundle`} className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-destructive">
+                    <button type="button" onClick={() => removeMember(u.id)} aria-label={`Remove ${u.serial} from bundle`} className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-danger-ink">
                       <X className="size-3.5" />
                     </button>
                   )}

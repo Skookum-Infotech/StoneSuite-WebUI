@@ -42,7 +42,7 @@ export function SubscriptionDialogShell({
           <div
             className={cn(
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-              tone === 'destructive' ? 'bg-red-50 text-red-600' : 'bg-brand/20 text-brand-dark',
+              tone === 'destructive' ? 'bg-red-50 text-danger-ink' : 'bg-brand/20 text-link',
             )}
           >
             <Icon className="size-4.5" aria-hidden="true" />

@@ -16,6 +16,7 @@ import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { CustomerLink } from '@/components/crm/CustomerLink';
 
 import { buttonVariants } from '@/components/ui/button';
+import { StatusPill } from '@/components/ui/StatusPill';
 const EXPORT_PAGE_SIZE = 200;
 
 // Credit Memos are a dedicated relational module, not a generic CRM/JSONB
@@ -283,13 +284,7 @@ export function CreditMemoTable() {
                         {cm.customer?.name ? <CustomerLink id={cm.customer.id} name={cm.customer.name} className="hover:text-accent-foreground hover:underline" /> : '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {cm.status}
-                        </span>
+                        <StatusPill color={color}>{cm.status}</StatusPill>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[160px] max-sm:hidden type-cell">
                         {cm.reason || <span className="text-stone-500">—</span>}

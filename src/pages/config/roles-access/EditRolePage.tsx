@@ -538,7 +538,7 @@ function EditRoleInner({
                                           className={cn(
                                             "mx-auto flex items-center justify-center rounded px-2 py-1 type-overline transition",
                                             allHave
-                                              ? "bg-brand/15 text-brand-dark hover:bg-brand/25"
+                                              ? "bg-brand/15 text-link hover:bg-brand/25"
                                               : "text-stone-500 hover:bg-stone-100 hover:text-stone-700",
                                           )}
                                           title={`Toggle ${ACTION_LABELS[action]} for all rows`}

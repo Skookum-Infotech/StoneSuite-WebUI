@@ -9,7 +9,7 @@ import type { TopCustomersData } from '@/types/dashboardData';
 // Mirrors KpiStrip's DELTA_TONE_CLASS (up/warn/neutral) rather than a
 // separate red/green scheme.
 const DELTA_TONE_CLASS: Record<'up' | 'warn' | 'neutral', string> = {
-  up: 'text-brand-dark-hover',
+  up: 'text-link-hover',
   warn: 'text-warning',
   neutral: 'text-stone-500',
 };

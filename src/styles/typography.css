@@ -26,6 +26,10 @@
   --text-display: 1.625rem;        /* 26   — sign-in titles (brand font) */
   --text-kpi: 1.75rem;             /* 28   — KPI figures */
 
+  /* ── Letter spacing beyond Tailwind's scale ───────────────────────────── */
+  --tracking-wordmark: 0.24em;     /* brand wordmark in the header */
+  --tracking-code: 0.4em;          /* one-time sign-in code digits */
+
   /* ── Text colors: 4 neutral inks + meaning colors, all ≥4.5:1 on white ─ */
   --color-ink-strong: #1c1917;     /* titles, key values (17.6:1) */
   --color-ink: #44403c;            /* body, table text, labels (10.3:1) */
@@ -232,5 +236,32 @@
 @media (pointer: coarse) {
   :root {
     --text-input: 1rem;            /* 16 */
+  }
+}
+
+/* ── Status pill (components/ui/StatusPill.tsx) ───────────────────────────
+   The record's status color arrives at runtime as --pill; the tint, the
+   darkened text and the dot are all derived from it here. */
+@layer components {
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    white-space: nowrap;
+    font-size: var(--text-caption);
+    line-height: 1.33;
+    font-weight: 500;
+    background-color: color-mix(in srgb, var(--pill) 10%, #ffffff);
+    color: color-mix(in srgb, var(--pill) 60%, #000000);
+  }
+  .status-pill-dot::before {
+    content: "";
+    flex-shrink: 0;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background-color: var(--pill);
   }
 }

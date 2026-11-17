@@ -27,7 +27,7 @@ const SEVERITY_LABEL: Record<StockAlertSeverity, string> = {
 };
 
 const TONE_BADGE_CLASS: Record<AlertTone, string> = {
-  critical: 'bg-red-100 text-red-700',
+  critical: 'bg-red-100 text-danger-ink',
   warning: 'bg-amber-100 text-amber-700',
 };
 

@@ -327,7 +327,7 @@ export function CompanyProfileTab({ actionsSlot }: { actionsSlot: HTMLDivElement
 
         {!canConfigure && (
           <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3.5">
-            <AlertCircle className="size-4 shrink-0 text-amber-500 mt-0.5" />
+            <AlertCircle className="size-4 shrink-0 text-warning-ink mt-0.5" />
             <div>
               <p className="text-xs font-semibold text-amber-800">View-only access</p>
               <p className="text-xs text-warning-ink mt-0.5">

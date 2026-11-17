@@ -78,7 +78,7 @@ export function WidgetAllocationMatrix({
                               className={cn(
                                 'mx-auto flex items-center justify-center rounded px-1.5 py-1 text-micro font-bold transition',
                                 allOn
-                                  ? 'bg-brand/15 text-brand-dark hover:bg-brand/25'
+                                  ? 'bg-brand/15 text-link hover:bg-brand/25'
                                   : 'text-stone-500 hover:bg-stone-100',
                               )}
                             >

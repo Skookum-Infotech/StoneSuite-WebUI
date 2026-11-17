@@ -56,7 +56,7 @@ export const ANOMALY_SEVERITY_LABELS: Record<AnomalySeverity, string> = {
 export const ANOMALY_SEVERITY_CLASSES: Record<AnomalySeverity, string> = {
   info: 'bg-sky-50 text-sky-700 ring-sky-200',
   warning: 'bg-amber-50 text-amber-700 ring-amber-200',
-  critical: 'bg-red-50 text-red-700 ring-red-200',
+  critical: 'bg-red-50 text-danger-ink ring-red-200',
 };
 
 /** Human names for the rule keys the backend ships; unknown keys fall back to

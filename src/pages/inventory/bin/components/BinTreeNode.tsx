@@ -74,7 +74,7 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
             <button type="button" onClick={() => onEdit(bin)} aria-label={`Edit ${bin.name}`} title="Edit bin" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700">
               <Pencil className="size-3.5" />
             </button>
-            <button type="button" onClick={() => onDelete(bin)} aria-label={`Delete ${bin.name}`} title="Delete bin" className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-destructive">
+            <button type="button" onClick={() => onDelete(bin)} aria-label={`Delete ${bin.name}`} title="Delete bin" className="rounded p-1 text-stone-500 hover:bg-destructive/10 hover:text-danger-ink">
               <Trash2 className="size-3.5" />
             </button>
           </div>

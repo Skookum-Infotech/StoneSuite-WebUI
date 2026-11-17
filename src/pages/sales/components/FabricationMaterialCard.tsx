@@ -10,7 +10,7 @@ import { buttonVariants } from '@/components/ui/button';
 const STATE_STYLE: Record<MaterialState, { bar: string; chip: string; label: string }> = {
   covered: { bar: 'bg-emerald-500', chip: 'bg-emerald-50 text-emerald-700', label: 'Covered' },
   short: { bar: 'bg-amber-400', chip: 'bg-amber-50 text-amber-700', label: 'Short' },
-  unstocked: { bar: 'bg-red-400', chip: 'bg-red-50 text-red-700', label: 'Not enough in stock' },
+  unstocked: { bar: 'bg-red-400', chip: 'bg-red-50 text-danger-ink', label: 'Not enough in stock' },
 };
 
 // One slab material on a job: how much the blueprint needs, how much is

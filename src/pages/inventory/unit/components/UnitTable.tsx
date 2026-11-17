@@ -21,6 +21,7 @@ import { UnitConsumptionCell } from './UnitConsumptionCell';
 
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { StatusPill } from '@/components/ui/StatusPill';
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
 
@@ -222,10 +223,7 @@ export function UnitTable() {
                       <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">{u.inventoryItemName ?? '—'}</td>
                       <td className="px-4 py-3.5 capitalize type-cell">{u.kind}</td>
                       <td className="px-4 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill" style={{ backgroundColor: `${STATUS_COLORS[u.status] ?? '#a8a29e'}18` }}>
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: STATUS_COLORS[u.status] ?? '#a8a29e' }} aria-hidden="true" />
-                          {u.status.replace('_', ' ')}
-                        </span>
+                        <StatusPill color={STATUS_COLORS[u.status] ?? '#a8a29e'}>{u.status.replace('_', ' ')}</StatusPill>
                       </td>
                       <td className="px-4 py-3.5">
                         {isAllocated(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-500" aria-label="Not allocated">—</span>}
@@ -248,7 +246,7 @@ export function UnitTable() {
                             <button type="button" disabled={Boolean(disabledReason) || u.kind !== 'slab' && u.kind !== 'remnant'} onClick={() => setCutTarget(u)} aria-label={`Cut ${u.serial}`} title={disabledReason ? `Cut — ${disabledReason}` : u.kind !== 'slab' && u.kind !== 'remnant' ? 'Cut — only available for slabs and remnants' : 'Cut'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <Scissors className="size-3.5" />
                             </button>
-                            <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={scrapDisabledReason ? `Scrap — ${scrapDisabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                            <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setScrapTarget(u)} aria-label={`Scrap ${u.serial}`} title={scrapDisabledReason ? `Scrap — ${scrapDisabledReason}` : 'Scrap'} className="inline-flex items-center justify-center rounded-lg border border-stone-200 bg-white p-2 text-stone-500 hover:bg-destructive/10 hover:border-destructive/30 hover:text-danger-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                               <AlertTriangle className="size-3.5" />
                             </button>
                           </div>

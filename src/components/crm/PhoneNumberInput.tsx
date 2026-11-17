@@ -136,7 +136,7 @@ export function PhoneNumberInput({
                 <span className="text-sm leading-none" aria-hidden="true">{d.flag}</span>
                 <span className="flex-1 truncate">{d.name}</span>
                 <span className="text-stone-500">{d.code}</span>
-                {d.iso === selected.iso && <Check className="size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />}
+                {d.iso === selected.iso && <Check className="size-3.5 shrink-0 text-link" aria-hidden="true" />}
               </button>
             ))}
           </div>

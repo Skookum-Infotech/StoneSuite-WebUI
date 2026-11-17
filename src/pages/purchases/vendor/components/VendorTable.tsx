@@ -14,6 +14,7 @@ import { exportPagedCsv } from '@/lib/csvExport';
 import type { VendorSearchRequest } from '@/types/vendor';
 
 import { buttonVariants } from '@/components/ui/button';
+import { StatusPill } from '@/components/ui/StatusPill';
 const EXPORT_PAGE_SIZE = 200;
 
 // Vendors are a dedicated relational module (mirrors salesorder), not a
@@ -269,13 +270,7 @@ export function VendorTable() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill"
-                          style={{ backgroundColor: `${statusColor}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} aria-hidden="true" />
-                          {vendor.status}
-                        </span>
+                        <StatusPill color={statusColor}>{vendor.status}</StatusPill>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap type-cell">
                         {vendor.email || '—'}

@@ -26,7 +26,7 @@ export function DeleteBinDialog({ bin, onClose, onDeleted }: { bin: Bin; onClose
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="size-4 text-destructive" /></div>
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="size-4 text-danger-ink" /></div>
             <div>
               <h3 id="delete-bin-title" className="type-card-title">Delete Bin?</h3>
               <p className="mt-0.5 type-helper">This action cannot be undone.</p>

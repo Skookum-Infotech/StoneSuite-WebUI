@@ -7,7 +7,7 @@ export function DangerZoneCard({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-xl border border-destructive/20 bg-destructive/5 shadow-sm p-4 space-y-3 mb-4 dark:border-destructive/30 dark:bg-destructive/10">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="size-4 text-destructive shrink-0" aria-hidden="true" />
+        <AlertTriangle className="size-4 text-danger-ink shrink-0" aria-hidden="true" />
         <p className="text-xs font-bold text-danger-ink">Danger Zone</p>
       </div>
       <div className="space-y-3">{children}</div>
@@ -33,7 +33,7 @@ export const DangerZoneAction = forwardRef<HTMLButtonElement, DangerZoneActionPr
       <div className="space-y-2 border-t border-destructive/10 pt-3 first:border-t-0 first:pt-0">
         <div className="space-y-0.5">
           <p className="text-xs text-stone-600 dark:text-stone-300">{description}</p>
-          <p className="text-micro text-destructive/80">This action cannot be undone.</p>
+          <p className="text-micro text-danger-ink/80">This action cannot be undone.</p>
         </div>
         <button
           ref={ref}

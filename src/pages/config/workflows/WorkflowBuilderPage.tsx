@@ -447,7 +447,7 @@ function FieldsSection({
                 aria-label={`Delete field ${f.label}`}
                 onClick={() => del.mutate(f.id)}
                 disabled={del.isPending}
-                className="justify-self-end rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 dark:hover:bg-red-950/30"
+                className="justify-self-end rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-danger-ink disabled:opacity-50 dark:hover:bg-red-950/30"
               >
                 <Trash2 className="size-3.5" />
               </button>

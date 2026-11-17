@@ -228,7 +228,7 @@ function ActivityRow({
                 type="button"
                 onClick={onDeleteClick}
                 aria-label={`Delete ${rowLabel}`}
-                className="p-1.5 rounded text-stone-500 hover:text-destructive hover:bg-destructive/5 transition-colors"
+                className="p-1.5 rounded text-stone-500 hover:text-danger-ink hover:bg-destructive/5 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

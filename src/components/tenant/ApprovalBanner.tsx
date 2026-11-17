@@ -86,7 +86,7 @@ export function ApprovalBanner({
     return (
       <div className="flex flex-col gap-2 border-b border-red-200 bg-red-50 px-5 py-2.5 sm:flex-row sm:items-center sm:justify-between 3xl:px-12 4xl:px-16">
         <div className="flex items-center gap-2 min-w-0">
-          <ShieldX className="size-4 shrink-0 text-red-500" aria-hidden="true" />
+          <ShieldX className="size-4 shrink-0 text-danger-ink" aria-hidden="true" />
           <p className="truncate type-error">
             <span className="font-semibold">Rejected</span>
             {' — '}
@@ -122,7 +122,7 @@ export function ApprovalBanner({
         {callerAlreadyApproved ? (
           <CheckCircle2 className="size-4 shrink-0 text-emerald-600" aria-hidden="true" />
         ) : (
-          <ShieldAlert className="size-4 shrink-0 text-amber-500" aria-hidden="true" />
+          <ShieldAlert className="size-4 shrink-0 text-warning-ink" aria-hidden="true" />
         )}
         <p className="text-xs font-medium text-amber-800 truncate">
           <span className="font-semibold">Pending Approval</span>

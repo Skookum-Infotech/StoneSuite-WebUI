@@ -38,7 +38,7 @@ export function BlockingSlotsDialog({
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-100">
-            <AlertTriangle className="size-4 text-amber-600" aria-hidden="true" />
+            <AlertTriangle className="size-4 text-warning-ink" aria-hidden="true" />
           </div>
           <div>
             <h3 id="blocking-slots-dialog-title" className="type-card-title">

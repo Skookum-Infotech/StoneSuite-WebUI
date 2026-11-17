@@ -25,7 +25,7 @@ function Calendar({ className, classNames, ...props }: DayPickerProps) {
         ),
         month_grid: "w-full border-collapse",
         weekdays: "flex",
-        weekday: "w-8 text-2xs font-medium text-stone-500",
+        weekday: "w-8 text-micro font-medium text-stone-500",
         week: "flex w-full mt-1",
         day: "size-8 p-0 text-center text-sm",
         day_button: cn(

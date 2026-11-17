@@ -21,6 +21,7 @@ import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
 import { buttonVariants } from '@/components/ui/button';
+import { StatusPill } from '@/components/ui/StatusPill';
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 2, 3]);
 
@@ -312,13 +313,7 @@ export function ItemReceiptTable() {
                         <VendorLink vendor={ir.vendor} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill"
-                          style={{ backgroundColor: `${color}18` }}
-                        >
-                          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
-                          {ir.status}
-                        </span>
+                        <StatusPill color={color}>{ir.status}</StatusPill>
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(ir.receiptDate)}

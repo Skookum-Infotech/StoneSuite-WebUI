@@ -156,7 +156,7 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
         </div>
         {replyError && (
           <div className="flex items-center gap-1.5">
-            <AlertCircle className="size-3 shrink-0 text-destructive/70" />
+            <AlertCircle className="size-3 shrink-0 text-danger-ink/70" />
             <p className="type-error">{replyError}</p>
           </div>
         )}

@@ -6,13 +6,13 @@ describe('DeltaIndicator', () => {
   it('renders a note in the warning tone as plain text with no arrow', () => {
     const { container } = render(<DeltaIndicator variant="note" text="oldest 2 days" tone="warn" />);
     const el = screen.getByText('oldest 2 days');
-    expect(el).toHaveClass('text-warning');
+    expect(el).toHaveClass('text-warning-ink');
     expect(container.querySelector('svg')).toBeNull();
   });
 
   it('renders a neutral note in the muted tone', () => {
     render(<DeltaIndicator variant="note" text="all caught up" tone="neutral" />);
-    expect(screen.getByText('all caught up')).toHaveClass('text-stone-500');
+    expect(screen.getByText('all caught up')).toHaveClass('text-ink-muted');
   });
 
   it('renders an upward trend as a chip with an up arrow', () => {
@@ -23,7 +23,7 @@ describe('DeltaIndicator', () => {
     const svg = container.querySelector('svg');
     expect(svg).not.toBeNull();
     expect(svg).toHaveAttribute('aria-hidden', 'true');
-    expect(chip.closest('span')).toHaveClass('text-brand-dark-hover');
+    expect(chip.closest('span')).toHaveClass('text-success-ink');
   });
 
   it('renders a downward trend as a chip with a down arrow', () => {

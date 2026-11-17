@@ -37,7 +37,7 @@ export function FeedbackSubmitAside({
 
       <section className={cn(FEEDBACK_CARD_CLS, 'p-5')}>
         <h3 className={cn(TITLE_CLS, 'flex items-center gap-2')}>
-          <Lightbulb className="size-4 text-amber-500" aria-hidden="true" />
+          <Lightbulb className="size-4 text-warning-ink" aria-hidden="true" />
           Tips for a helpful ticket
         </h3>
         <ul className="mt-3 space-y-2 text-sm text-stone-600 dark:text-stone-300">
@@ -56,7 +56,7 @@ export function FeedbackSubmitAside({
           <p className="mt-1 dark:text-stone-400 type-helper">
             The page you were on before opening Support, so we can find the problem faster.
           </p>
-          <code className="mt-3 block truncate rounded-lg bg-stone-100 px-2.5 py-1.5 font-mono text-[0.8125rem] text-stone-600 dark:bg-white/10 dark:text-stone-300">
+          <code className="mt-3 block truncate rounded-lg bg-stone-100 px-2.5 py-1.5 font-mono text-field text-stone-600 dark:bg-white/10 dark:text-stone-300">
             {pagePath}
           </code>
         </section>
