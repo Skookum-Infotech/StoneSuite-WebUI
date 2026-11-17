@@ -2,6 +2,8 @@ import { RefreshCw, Loader2 } from "lucide-react";
 import { CopyField } from "./CopyField";
 import type { SAMLConfig } from "@/types/tenant";
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface SamlDerivedFieldsProps {
   config: SAMLConfig;
   onRefresh: () => void;
@@ -18,7 +20,7 @@ export function SamlDerivedFields({ config, onRefresh, isRefreshing }: SamlDeriv
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold text-stone-700">Identity provider details</p>
-          <p className="mt-0.5 text-2xs text-stone-500">
+          <p className="mt-0.5 type-helper">
             {config.metadataFetchedAt
               ? `Last fetched ${new Date(config.metadataFetchedAt).toLocaleString()}`
               : "Not fetched yet"}
@@ -29,7 +31,7 @@ export function SamlDerivedFields({ config, onRefresh, isRefreshing }: SamlDeriv
           onClick={onRefresh}
           disabled={isRefreshing}
           aria-label="Refresh identity provider metadata"
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-2xs font-semibold text-stone-600 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'flex shrink-0')}
         >
           {isRefreshing ? (
             <Loader2 className="size-3.5 animate-spin" />

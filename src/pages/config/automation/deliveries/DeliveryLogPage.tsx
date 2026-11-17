@@ -92,10 +92,10 @@ export default function DeliveryLogPage() {
   return (
     <div className="p-6 3xl:p-10 4xl:p-14">
       <PageHeader
-        title="Automated emails"
+        title="Automated Emails"
         subtitle="Every reminder StoneSuite planned, sent or skipped on your behalf."
         action={
-          <Link to="/config/automation" className="text-xs font-medium text-brand-dark underline-offset-2 hover:underline">
+          <Link to="/config/automation" className="text-xs font-medium text-link underline-offset-2 hover:underline">
             Back to Automation
           </Link>
         }

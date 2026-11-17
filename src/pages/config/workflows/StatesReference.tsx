@@ -27,14 +27,14 @@ export function StatesReference({
   return (
     <section className="rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
-        <h2 className="text-sm font-semibold text-stone-950 dark:text-white">States &amp; transitions</h2>
+        <h2 className="dark:text-white type-card-title">States &amp; Transitions</h2>
         <span className="flex items-center gap-1 text-xs text-stone-500">
           <Lock className="size-3" /> Structure read only
         </span>
       </div>
 
       {ordered.length === 0 ? (
-        <p className="text-xs text-stone-500">No states configured.</p>
+        <p className="type-helper">No states configured.</p>
       ) : (
         <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           {ordered.map((s) => {
@@ -44,8 +44,8 @@ export function StatesReference({
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="inline-block size-1.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} aria-hidden="true" />
                   <span className="truncate text-xs font-semibold text-stone-900 dark:text-stone-100">{nameFor(s)}</span>
-                  {s.isInitial && <span className="shrink-0 text-2xs text-stone-500">start</span>}
-                  {s.isTerminal && <span className="shrink-0 text-2xs text-stone-500">end</span>}
+                  {s.isInitial && <span className="shrink-0 type-subline">start</span>}
+                  {s.isTerminal && <span className="shrink-0 type-subline">end</span>}
                 </div>
                 {outgoing.length > 0 && (
                   <ul className="mt-1.5 space-y-1 border-l border-stone-100 pl-3 dark:border-stone-800">

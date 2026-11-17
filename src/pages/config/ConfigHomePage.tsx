@@ -87,15 +87,15 @@ export default function ConfigHomePage() {
               to={s.to}
               className="group flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-5 transition-colors hover:border-brand dark:border-stone-800 dark:bg-stone-900"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/20 text-link">
                 <Icon className="size-5" />
               </div>
               <div>
-                <h2 className="flex items-center gap-1 text-sm font-bold text-stone-900 dark:text-white">
+                <h2 className="flex items-center gap-1 dark:text-white type-card-title">
                   {s.title}
                   <ArrowRight className="size-3.5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
                 </h2>
-                <p className="mt-1 text-xs text-stone-500">{s.description}</p>
+                <p className="mt-1 type-helper">{s.description}</p>
               </div>
             </Link>
           );

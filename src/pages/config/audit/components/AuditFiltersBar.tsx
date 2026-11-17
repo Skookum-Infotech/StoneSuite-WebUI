@@ -5,6 +5,7 @@ import { AUDIT_RESOURCES, AUDIT_ACTIONS, hasActiveFilters } from '@/lib/auditLog
 import type { AuditFilters } from '@/types/audit';
 import { FilterDropdown } from './FilterDropdown';
 
+import { buttonVariants } from '@/components/ui/button';
 type ActorOption = { id: string; label: string };
 
 interface Props {
@@ -15,7 +16,7 @@ interface Props {
 }
 
 const inputClass =
-  'h-8 w-full rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150';
+  'h-8 w-full rounded-lg border border-stone-200 bg-white px-3 type-input placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150';
 
 // All filters are server-side (resource/action/actor/from/to on GET
 // /api/tenant/audit) — there is no client-side narrowing here. Resource,
@@ -79,7 +80,7 @@ export function AuditFiltersBar({ filters, actorOptions, onChange, onClear }: Pr
           type="button"
           onClick={onClear}
           aria-label="Clear audit log filters"
-          className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+          className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
         >
           <X className="size-3" />
           Clear
@@ -102,7 +103,7 @@ function Field({
     <div className="flex flex-col gap-1">
       <label
         htmlFor={htmlFor}
-        className="text-2xs font-semibold uppercase tracking-wider text-stone-500"
+        className="type-field-label"
       >
         {label}
       </label>

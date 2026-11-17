@@ -1,5 +1,7 @@
 import { SlidersHorizontal } from "lucide-react";
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface SelectionStripProps {
   count: number;
   // The configure panel is already showing, so the shortcut isn't needed.
@@ -20,7 +22,7 @@ export function SelectionStrip({ count, panelOpen, onConfigure, onClear }: Selec
             type="button"
             onClick={onConfigure}
             aria-label={`Configure ${count} selected`}
-            className="flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1 text-2xs font-semibold text-stone-950 transition hover:bg-brand-hover"
+            className={cn(buttonVariants({ size: 'sm' }), 'flex')}
           >
             <SlidersHorizontal className="size-3" aria-hidden="true" />
             Configure
@@ -30,7 +32,7 @@ export function SelectionStrip({ count, panelOpen, onConfigure, onClear }: Selec
           type="button"
           onClick={onClear}
           aria-label="Clear selection in list"
-          className="text-2xs font-semibold text-stone-500 transition-colors hover:text-stone-700"
+          className="text-micro font-semibold text-stone-500 transition-colors hover:text-stone-700"
         >
           Clear
         </button>

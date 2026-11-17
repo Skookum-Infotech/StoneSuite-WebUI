@@ -51,7 +51,7 @@ export function FilterDropdown({ label, value, onChange, allLabel, options }: Pr
     <div className="flex flex-col gap-1">
       <span
         id={triggerId}
-        className="text-2xs font-semibold uppercase tracking-wider text-stone-500"
+        className="type-overline"
       >
         {label}
       </span>

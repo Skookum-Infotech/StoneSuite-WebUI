@@ -23,7 +23,7 @@ export function SetupStep({ number, isLast = false, title, children }: SetupStep
         {number}
       </span>
       <div className="min-w-0 flex-1 pt-1">
-        <p className="text-sm font-semibold text-stone-800 leading-relaxed">{title}</p>
+        <p className="leading-relaxed type-card-title">{title}</p>
         {children && <div className="mt-3 space-y-3">{children}</div>}
       </div>
     </li>
@@ -32,7 +32,7 @@ export function SetupStep({ number, isLast = false, title, children }: SetupStep
 
 export function StepChip({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[0.8em] font-semibold text-stone-700">
+    <span className="rounded bg-stone-100 px-1.5 py-0.5 type-record-id">
       {children}
     </span>
   );

@@ -13,6 +13,7 @@ import { RoleWidgetPanel } from "./components/RoleWidgetPanel";
 import { WidgetAllocationMatrix } from "./components/WidgetAllocationMatrix";
 import { RoleColumnPicker } from "./components/RoleColumnPicker";
 
+import { buttonVariants } from '@/components/ui/button';
 type ViewMode = "role" | "matrix";
 
 // Below this many editable roles, the matrix just shows every column, same
@@ -182,11 +183,11 @@ export default function DashboardWidgetsPage() {
     <div className="flex flex-1 flex-col min-h-0 bg-background">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-link">
             <LayoutGrid className="size-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900">Dashboard Widgets</h1>
+            <h1 className="type-page-title">Dashboard Widgets</h1>
             <p className="text-sm text-stone-500">
               Choose which roles can see each dashboard widget. Super admin roles always see everything.
             </p>
@@ -231,7 +232,7 @@ export default function DashboardWidgetsPage() {
               <button
                 type="button"
                 onClick={() => setStaged({})}
-                className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-stone-500 hover:bg-stone-100"
+                className={buttonVariants({ variant: 'ghost' })}
               >
                 Discard
               </button>
@@ -251,14 +252,14 @@ export default function DashboardWidgetsPage() {
 
       {undoSnapshot && (
         <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-brand/10 px-4 py-2 sm:px-6">
-          <p className="text-xs font-medium text-brand-dark">
+          <p className="text-xs font-medium text-link">
             Saved changes to {undoSnapshot.length} role{undoSnapshot.length !== 1 ? "s" : ""}.
           </p>
           <button
             type="button"
             onClick={() => undoMutation.mutate(undoSnapshot)}
             disabled={undoMutation.isPending}
-            className="flex items-center gap-1 text-xs font-semibold text-brand-dark hover:underline disabled:pointer-events-none disabled:opacity-40"
+            className="flex items-center gap-1 text-xs font-semibold text-link hover:underline disabled:pointer-events-none disabled:opacity-40"
           >
             <Undo2 className="size-3" aria-hidden="true" />
             Undo
@@ -268,14 +269,14 @@ export default function DashboardWidgetsPage() {
 
       {saveMutation.isError && (
         <div className="border-b border-stone-100 px-4 py-2 sm:px-6">
-          <p className="text-xs text-red-500">{apiErrorMessage(saveMutation.error)}</p>
+          <p className="type-error">{apiErrorMessage(saveMutation.error)}</p>
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto modal-scrollbar p-4 sm:p-6">
         {isLoading && <Spinner label="Loading widget allocation…" />}
 
-        {rolesQ.isError && <p className="text-xs text-red-500">{apiErrorMessage(rolesQ.error)}</p>}
+        {rolesQ.isError && <p className="type-error">{apiErrorMessage(rolesQ.error)}</p>}
 
         {!isLoading && roles.length === 0 && (
           <EmptyState>No roles found. Create a role before allocating widgets.</EmptyState>

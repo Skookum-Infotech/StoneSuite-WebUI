@@ -31,9 +31,9 @@ export function BulkActionTile({ icon: Icon, label, hint, count, ariaLabel, onCl
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold text-stone-800">{label}</span>
-        <span className="block text-2xs text-stone-500">{idle ? "Nothing selected needs this" : hint}</span>
+        <span className="block type-subline">{idle ? "Nothing selected needs this" : hint}</span>
       </span>
-      <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-600">
+      <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-stone-600 type-pill">
         {count}
       </span>
     </button>

@@ -1,5 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface Props {
   pageNum: number;
   hasNext: boolean;
@@ -13,7 +15,7 @@ interface Props {
 export function AuditPagination({ pageNum, hasNext, hasPrev, onNext, onPrev }: Props) {
   return (
     <div className="flex items-center justify-between px-1">
-      <p className="text-xs text-stone-500 tabular-nums">
+      <p className="tabular-nums type-helper">
         Page {pageNum}
         {hasNext ? '' : ' · last page'}
       </p>
@@ -23,7 +25,7 @@ export function AuditPagination({ pageNum, hasNext, hasPrev, onNext, onPrev }: P
           onClick={onPrev}
           disabled={!hasPrev}
           aria-label="Previous page"
-          className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
         >
           <ChevronLeft className="size-3.5" />
           Previous
@@ -33,7 +35,7 @@ export function AuditPagination({ pageNum, hasNext, hasPrev, onNext, onPrev }: P
           onClick={onNext}
           disabled={!hasNext}
           aria-label="Next page"
-          className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
         >
           Next
           <ChevronRight className="size-3.5" />

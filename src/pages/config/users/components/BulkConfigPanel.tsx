@@ -20,6 +20,7 @@ import { initials, avatarColor } from "../userHelpers";
 import { runBulkAction } from "../runBulkAction";
 import { BulkActionTile } from "./BulkActionTile";
 
+import { buttonVariants } from '@/components/ui/button';
 const PREVIEW_LIMIT = 8;
 
 interface ActionSpec {
@@ -112,19 +113,19 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
       <button
         type="button"
         onClick={onBack}
-        className="md:hidden flex items-center gap-1.5 text-xs font-semibold text-brand-dark"
+        className="md:hidden flex items-center gap-1.5 text-xs font-semibold text-link"
       >
         <ChevronLeft className="size-3.5" />
         Back to Members
       </button>
 
       <div className="flex items-start gap-3">
-        <div className="flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+        <div className="flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-link">
           <UsersRound className="size-5" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-bold text-stone-900">Configure {plural(users.length, "user", "users")}</h2>
-          <p className="text-xs text-stone-500">Changes apply to everyone selected. Nothing happens until you confirm.</p>
+          <h2 className="type-dialog-title">Configure {plural(users.length, "user", "users")}</h2>
+          <p className="type-helper">Changes apply to everyone selected. Nothing happens until you confirm.</p>
         </div>
         <button
           type="button"
@@ -134,7 +135,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
           }}
           disabled={run.isPending}
           aria-label="Clear selection"
-          className="shrink-0 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+          className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
         >
           Clear selection
         </button>
@@ -146,7 +147,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
             key={u.id}
             className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 py-1 pl-1 pr-2 text-xs font-medium text-stone-700"
           >
-            <span className={cn("flex size-5 items-center justify-center rounded-full text-[9px] font-bold", avatarColor(u.id))}>
+            <span className={cn("flex size-5 items-center justify-center rounded-full text-micro font-semibold", avatarColor(u.id))}>
               {initials(displayName(u))}
             </span>
             {displayName(u)}
@@ -165,7 +166,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
 
       {pending && confirming && spec ? (
         <section aria-label="Confirm change" className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
-          <p className="text-sm font-semibold text-stone-800">{confirmText(pending, confirming.targets.length)}</p>
+          <p className="type-card-title">{confirmText(pending, confirming.targets.length)}</p>
           <ul className="space-y-1 text-xs text-stone-700">
             {confirming.targets.slice(0, PREVIEW_LIMIT).map((u) => (
               <li key={u.id}>{displayName(u)}</li>
@@ -175,7 +176,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
             )}
           </ul>
           {confirming.skipped.length > 0 && (
-            <div className="rounded-lg border border-stone-200 bg-white p-2.5 text-2xs text-stone-500">
+            <div className="rounded-lg border border-stone-200 bg-white p-2.5 type-subline">
               <p className="mb-1 font-semibold text-stone-600">Skipped</p>
               <ul className="space-y-0.5">
                 {confirming.skipped.map(({ user, reason }) => (
@@ -192,7 +193,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
               onClick={() => run.mutate(pending)}
               disabled={run.isPending}
               aria-label="Confirm bulk action"
-              className="flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover disabled:opacity-50"
+              className={cn(buttonVariants(), 'flex')}
             >
               {run.isPending && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
               Confirm
@@ -202,7 +203,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
               onClick={() => setPending(null)}
               disabled={run.isPending}
               aria-label="Cancel bulk action"
-              className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>
@@ -213,8 +214,8 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
           {canMfa && (
             <section aria-label="Two-step verification" className="space-y-2">
               <div className="flex items-baseline justify-between gap-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Two-step verification</h3>
-                <span className="text-2xs text-stone-500">
+                <h3 className="type-overline">Two-step verification</h3>
+                <span className="type-subline">
                   {twoStepOn} of {users.length} have it on
                 </span>
               </div>
@@ -223,7 +224,7 @@ export function BulkConfigPanel({ users, onRemove, onClear, onBack }: BulkConfig
           )}
           {canStatus && (
             <section aria-label="Access" className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Access</h3>
+              <h3 className="type-overline">Access</h3>
               {renderTiles(STATUS_ACTIONS)}
             </section>
           )}

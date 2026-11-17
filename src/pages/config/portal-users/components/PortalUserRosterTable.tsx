@@ -55,7 +55,7 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-stone-100 bg-stone-50 text-left text-2xs font-semibold uppercase tracking-wide text-stone-500">
+            <tr className="border-b border-stone-100 bg-stone-50 text-left type-th">
               <th className="px-4 py-2.5">Login</th>
               <th className="px-4 py-2.5">Customer</th>
               <th className="px-4 py-2.5">Status</th>
@@ -71,7 +71,7 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
                 <tr key={u.id} className="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
                   <td className="px-4 py-2.5">
                     <p className="font-medium text-stone-800">{u.fullName || u.email}</p>
-                    {u.fullName && <p className="text-xs text-stone-500">{u.email}</p>}
+                    {u.fullName && <p className="type-helper">{u.email}</p>}
                   </td>
                   <td className="px-4 py-2.5 text-stone-600">{u.customerName}</td>
                   <td className="px-4 py-2.5"><PortalUserStatusBadge status={u.status} /></td>
@@ -87,7 +87,7 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
                           aria-label={`Disable portal login for ${u.email}`}
                           title="Disable login"
                           className={cn(
-                            "flex size-7 items-center justify-center rounded-lg text-amber-600 transition hover:bg-amber-50",
+                            "flex size-7 items-center justify-center rounded-lg text-warning-ink transition hover:bg-amber-50",
                             busy && "opacity-50 cursor-not-allowed",
                           )}
                         >
@@ -102,7 +102,7 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
                           aria-label={`Enable portal login for ${u.email}`}
                           title="Enable login"
                           className={cn(
-                            "flex size-7 items-center justify-center rounded-lg text-emerald-600 transition hover:bg-emerald-50",
+                            "flex size-7 items-center justify-center rounded-lg text-success-ink transition hover:bg-emerald-50",
                             busy && "opacity-50 cursor-not-allowed",
                           )}
                         >
@@ -114,7 +114,7 @@ export function PortalUserRosterTable({ entries }: { entries: PortalUserRosterEn
                         state={{ initialTab: "portal" }}
                         aria-label={`View portal access for ${u.customerName}`}
                         title="Manage on customer record"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-brand-dark hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-link hover:underline"
                       >
                         Manage <ExternalLink className="size-3" />
                       </Link>

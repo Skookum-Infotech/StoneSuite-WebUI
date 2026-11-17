@@ -43,12 +43,12 @@ export default function AIAssistantConfigPage() {
 
       <section className="max-w-2xl rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
         <div className="mb-4 flex items-start gap-3 border-b border-stone-100 pb-4 dark:border-stone-800">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand-dark">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-link">
             <Sparkles className="size-4.5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-stone-950 dark:text-white">What it does</h2>
-            <p className="mt-1 text-xs text-stone-500">
+            <h2 className="dark:text-white type-card-title">What It Does</h2>
+            <p className="mt-1 type-helper">
               The assistant answers questions about your leads, prospects, and customers, and about how to use
               StoneSuite, by searching your organization&apos;s records and the help docs. Turning it off hides it
               for everyone in your organization — it does not delete any conversation history or indexed data, and

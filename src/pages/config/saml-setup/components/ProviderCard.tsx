@@ -38,7 +38,7 @@ export function ProviderCard({ to, icon, label, description, status }: ProviderC
         <span
           aria-hidden="true"
           className={cn(
-            "absolute left-4 top-4 inline-flex items-center gap-1 rounded-full px-2 py-1 text-2xs font-semibold",
+            "absolute left-4 top-4 inline-flex items-center gap-1 rounded-full px-2 py-1 type-pill",
             status === "active" ? "bg-green-50 text-green-700" : "bg-stone-100 text-stone-500",
           )}
         >
@@ -57,7 +57,7 @@ export function ProviderCard({ to, icon, label, description, status }: ProviderC
       </div>
       <div>
         <p className="text-base font-bold text-stone-900">{label}</p>
-        <p className="mt-1.5 text-xs text-stone-500">{description}</p>
+        <p className="mt-1.5 type-helper">{description}</p>
       </div>
     </Link>
   );

@@ -38,7 +38,7 @@ function StatusLabel({ rule, notSending }: Pick<Props, 'rule' | 'notSending'>) {
   return (
     <span className="text-xs text-stone-500">
       {notSending ? 'On (not sending)' : 'On'}
-      {since && <span className="block text-2xs">{since}</span>}
+      {since && <span className="block text-micro">{since}</span>}
     </span>
   );
 }
@@ -73,10 +73,10 @@ export function RuleRow({ rule, canConfigure, notSending, onPreview }: Props) {
     <li className="flex flex-col gap-3 border-b border-stone-100 p-4 last:border-b-0 md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.4fr)] md:items-center md:gap-4 dark:border-stone-800">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold text-stone-900 dark:text-white">{rule.name}</h2>
+          <h2 className="dark:text-white type-card-title">{rule.name}</h2>
           <Badge size="sm">{audienceLabel(rule.audience)}</Badge>
         </div>
-        <p className="mt-1 text-xs text-stone-500">{ruleDescription(rule.ruleKey)}</p>
+        <p className="mt-1 type-helper">{ruleDescription(rule.ruleKey)}</p>
       </div>
       <div className="min-w-0 text-xs text-stone-600 dark:text-stone-300">
         <p>{cadenceText(rule.ruleKey, rule.cadence)}</p>

@@ -54,7 +54,7 @@ function PreviewBody({ preview }: { preview: AutomationPreview }) {
                   <Link
                     key={`${item.invoiceUuid}-${item.stage}`}
                     to={`${INVOICE_PATH}/${item.invoiceUuid}`}
-                    className="font-medium text-brand-dark underline-offset-2 hover:underline"
+                    className="font-medium text-link underline-offset-2 hover:underline"
                   >
                     {item.number}
                   </Link>
@@ -98,7 +98,7 @@ export function PreviewDrawer({ rule, onClose }: Props) {
             {preview.isError && <ErrorNote>{apiErrorMessage(preview.error, 'Could not load the preview.')}</ErrorNote>}
             {preview.data && <PreviewBody preview={preview.data} />}
           </div>
-          <p className="border-t border-stone-200 p-4 text-xs text-stone-500">{PREVIEW_FOOTER}</p>
+          <p className="border-t border-stone-200 p-4 type-helper">{PREVIEW_FOOTER}</p>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

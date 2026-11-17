@@ -43,7 +43,7 @@ export function WidgetAllocationMatrix({
         return (
           <div key={category} className="overflow-hidden rounded-xl border border-stone-200">
             <div className="border-b border-stone-200 bg-stone-50/70 px-4 py-2">
-              <h3 className="text-2xs font-bold uppercase tracking-widest text-stone-500">{categoryLabel}</h3>
+              <h3 className="type-overline">{categoryLabel}</h3>
             </div>
             <div className="overflow-x-auto modal-scrollbar">
               <table className="w-full table-fixed text-xs">
@@ -55,7 +55,7 @@ export function WidgetAllocationMatrix({
                 </colgroup>
                 <thead>
                   <tr className="border-b border-stone-100 bg-white">
-                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-500">
+                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left type-th">
                       Widget
                     </th>
                     {orderedRoles.map((role) => {
@@ -64,7 +64,7 @@ export function WidgetAllocationMatrix({
                         <th key={role.id} className="px-2 py-2 text-center">
                           {role.locked ? (
                             <span
-                              className="inline-flex items-center justify-center gap-1 text-2xs font-bold text-stone-500"
+                              className="inline-flex items-center justify-center gap-1 text-micro font-bold text-stone-500"
                               title={`${role.name} always has every widget`}
                             >
                               <Lock className="size-2.5" aria-hidden="true" />
@@ -76,7 +76,7 @@ export function WidgetAllocationMatrix({
                               onClick={() => onToggleCategoryForRole(role.id, categoryIds, !allOn)}
                               aria-label={`${allOn ? 'Clear' : 'Assign'} every ${categoryLabel} widget for ${role.name}`}
                               className={cn(
-                                'mx-auto flex items-center justify-center rounded px-1.5 py-1 text-2xs font-bold transition',
+                                'mx-auto flex items-center justify-center rounded px-1.5 py-1 text-micro font-bold transition',
                                 allOn
                                   ? 'bg-brand/15 text-brand-dark hover:bg-brand/25'
                                   : 'text-stone-500 hover:bg-stone-100',

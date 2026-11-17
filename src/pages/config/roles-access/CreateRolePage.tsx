@@ -18,6 +18,7 @@ import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 import { UnsavedChangesPrompt } from "@/components/UnsavedChangesPrompt";
 import type { Grant, Scope } from "@/types/tenant";
 
+import { buttonVariants } from '@/components/ui/button';
 // ---------------------------------------------------------------------------
 
 const ACTION_ORDER = [
@@ -340,18 +341,18 @@ export default function CreateRolePage() {
           <button
             type="button"
             onClick={() => navigate("/config/roles")}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-800"
+            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
           >
             <ArrowLeft className="size-3.5" />
             Back
           </button>
           <div className="h-5 w-px bg-stone-200" />
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-link">
               <ShieldCheck className="size-3.5" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-bold tracking-tight text-stone-900 truncate">
+              <h1 className="truncate type-page-title">
                 {name || "Create New Role"}
               </h1>
               <p className="text-label text-stone-500 truncate">
@@ -395,7 +396,7 @@ export default function CreateRolePage() {
                       aria-describedby={isDuplicateName ? "rname-error" : undefined}
                     />
                     {isDuplicateName && (
-                      <p id="rname-error" className="text-2xs text-red-500">
+                      <p id="rname-error" className="type-error">
                         A role named "{trimmedName}" already exists.
                       </p>
                     )}
@@ -416,7 +417,7 @@ export default function CreateRolePage() {
                       className="h-9 text-xs font-mono"
                     />
                     {!keyTouched && name && (
-                      <p className="text-2xs text-stone-500">
+                      <p className="type-helper">
                         Auto-generated — edit to override
                       </p>
                     )}
@@ -441,7 +442,7 @@ export default function CreateRolePage() {
 
                   {/* Live summary */}
                   <div className="rounded-lg bg-stone-50 p-3 border border-stone-100">
-                    <p className="text-2xs font-bold uppercase tracking-widest text-stone-500 mb-1.5">
+                    <p className="mb-1.5 type-overline">
                       Summary
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -449,7 +450,7 @@ export default function CreateRolePage() {
                         <p className="text-base font-bold text-stone-800 leading-none">
                           {resourcesGiven}
                         </p>
-                        <p className="text-2xs text-stone-500 mt-0.5">
+                        <p className="mt-0.5 type-helper">
                           Resources
                         </p>
                       </div>
@@ -457,7 +458,7 @@ export default function CreateRolePage() {
                         <p className="text-base font-bold text-stone-800 leading-none">
                           {totalGrants}
                         </p>
-                        <p className="text-2xs text-stone-500 mt-0.5">
+                        <p className="mt-0.5 type-helper">
                           Permissions
                         </p>
                       </div>
@@ -541,12 +542,12 @@ export default function CreateRolePage() {
                                 <span className="text-xs font-bold text-stone-700">
                                   {mod.label}
                                 </span>
-                                <span className="text-2xs text-stone-500">
+                                <span className="type-subline">
                                   {mod.rows.length} resource
                                   {mod.rows.length !== 1 ? "s" : ""}
                                 </span>
                                 {grantedCount > 0 && (
-                                  <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-2xs font-bold text-brand-dark">
+                                  <span className="rounded-full bg-brand/15 px-1.5 py-0.5 text-link type-pill">
                                     {grantedCount}/{mod.rows.length}
                                   </span>
                                 )}
@@ -566,7 +567,7 @@ export default function CreateRolePage() {
                               <table className="w-full text-xs">
                                 <thead>
                                   <tr className="border-y border-stone-100 bg-white">
-                                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left text-2xs font-bold uppercase tracking-widest text-stone-500 w-48">
+                                    <th className="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-left w-48 type-th">
                                       Resource
                                     </th>
                                     {cols.map((action) => {
@@ -593,7 +594,7 @@ export default function CreateRolePage() {
                                               toggleColumn(mod, action)
                                             }
                                             className={cn(
-                                              "mx-auto flex items-center justify-center rounded px-2 py-1 text-2xs font-bold uppercase tracking-widest transition",
+                                              "mx-auto flex items-center justify-center rounded px-2 py-1 type-overline transition",
                                               allHave
                                                 ? "bg-brand/15 text-brand-dark hover:bg-brand/25"
                                                 : "text-stone-500 hover:bg-stone-100 hover:text-stone-700",
@@ -605,7 +606,7 @@ export default function CreateRolePage() {
                                         </th>
                                       );
                                     })}
-                                    <th className="px-3 py-2 text-center text-2xs font-bold uppercase tracking-widest text-stone-500 w-28">
+                                    <th className="px-3 py-2 text-center w-28 type-th">
                                       Scope
                                     </th>
                                   </tr>
@@ -650,7 +651,7 @@ export default function CreateRolePage() {
                                             <p className="text-xs font-semibold text-stone-700">
                                               {row.label}
                                             </p>
-                                            <p className="text-2xs font-mono text-stone-500">
+                                            <p className="font-mono type-helper">
                                               {row.resource}
                                             </p>
                                           </button>
@@ -740,7 +741,7 @@ export default function CreateRolePage() {
               <ErrorNote>{apiErrorMessage(create.error)}</ErrorNote>
             )}
             {draftSaved && !create.error && (
-              <p className="text-label font-medium text-emerald-600">
+              <p className="text-label font-medium text-success-ink">
                 Draft saved locally.
               </p>
             )}
@@ -750,7 +751,7 @@ export default function CreateRolePage() {
               type="button"
               onClick={() => navigate("/config/roles")}
               disabled={create.isPending}
-              className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>
@@ -758,7 +759,7 @@ export default function CreateRolePage() {
               type="button"
               onClick={saveDraft}
               disabled={create.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               <Save className="size-3.5" />
               Save Draft

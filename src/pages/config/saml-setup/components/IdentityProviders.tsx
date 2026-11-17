@@ -11,6 +11,7 @@ import { isValidSamlProvider } from "@/lib/ssoConfigForm";
 import type { SAMLConfig, SAMLProvider } from "@/types/tenant";
 import { ProviderCard, type ProviderCardStatus } from "./ProviderCard";
 
+import { buttonVariants } from '@/components/ui/button';
 // The two SAML providers with a dedicated, vendor-specific setup page. Any
 // other slug goes through CustomSamlSetupPage instead.
 const FIRST_CLASS_PROVIDERS: SAMLProvider[] = ["cognito", "entra"];
@@ -58,8 +59,8 @@ export function IdentityProviders() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-base font-bold text-stone-900">Identity Providers</h2>
-        <p className="mt-0.5 text-xs text-stone-500">
+        <h2 className="type-dialog-title">Identity Providers</h2>
+        <p className="mt-0.5 type-helper">
           Connect an identity provider to enable SAML sign-in, or select an
           already-configured provider to review and edit its settings.
         </p>
@@ -118,9 +119,9 @@ export function IdentityProviders() {
                 }}
                 placeholder="e.g. okta"
                 aria-invalid={Boolean(slugError)}
-                className="h-9 w-full rounded-lg border border-stone-200 bg-white px-3 text-center text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+                className="h-9 w-full rounded-lg border border-stone-200 bg-white px-3 text-center focus:outline-none focus:ring-2 focus:ring-brand/50 type-input"
               />
-              {slugError && <p className="text-2xs text-red-500">{slugError}</p>}
+              {slugError && <p className="type-error">{slugError}</p>}
             </div>
             <div className="flex gap-2">
               <button
@@ -131,14 +132,14 @@ export function IdentityProviders() {
                   setSlugError(null);
                 }}
                 aria-label="Cancel adding a custom provider"
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 aria-label="Continue setting up this custom provider"
-                className="inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand/80"
+                className={buttonVariants()}
               >
                 Continue
                 <ArrowRight className="size-3.5" />
@@ -152,12 +153,12 @@ export function IdentityProviders() {
             aria-label="Add a custom SAML identity provider"
             className="group flex aspect-square flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-stone-300 bg-white p-8 text-center transition-colors hover:border-brand hover:bg-stone-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-50 text-stone-400 transition-colors group-hover:text-brand">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-50 text-ink-muted transition-colors group-hover:text-brand">
               <Plus className="size-8" />
             </div>
             <div>
               <p className="text-base font-bold text-stone-900">Other provider</p>
-              <p className="mt-1.5 text-xs text-stone-500">
+              <p className="mt-1.5 type-helper">
                 Connect any other SAML 2.0 identity provider (Okta, OneLogin, ADFS, ...).
               </p>
             </div>

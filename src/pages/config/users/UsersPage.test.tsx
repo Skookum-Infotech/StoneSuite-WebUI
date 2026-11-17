@@ -171,7 +171,7 @@ describe('UsersPage — picking several members', () => {
 
     expect(await screen.findByText('Only a super admin can change another super admin.')).toBeInTheDocument()
     expect(screen.queryByText('Suspend access')).not.toBeInTheDocument()
-    expect(screen.queryByText('Edit display name')).not.toBeInTheDocument()
+    expect(screen.queryByText('Edit Display Name')).not.toBeInTheDocument()
     expect(screen.queryByText('Deactivate account')).not.toBeInTheDocument()
   })
 

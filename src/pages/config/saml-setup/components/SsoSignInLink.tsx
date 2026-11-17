@@ -26,8 +26,8 @@ export function SsoSignInLink({ provider }: SsoSignInLinkProps) {
 
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-5">
-      <h3 className="text-sm font-bold text-stone-900">Sign-in link</h3>
-      <p className="mt-0.5 text-xs text-stone-500">
+      <h3 className="type-card-title">Sign-In Link</h3>
+      <p className="mt-0.5 type-helper">
         Share this link with your users to let them sign in with this
         identity provider.
       </p>

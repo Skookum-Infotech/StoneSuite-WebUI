@@ -49,13 +49,13 @@ export function TwoStepAdminToggle({ user }: { user: WorkspaceUser }) {
 
   return (
     <div className="mb-4 sm:mb-6">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+      <h3 className="mb-2 type-overline">
         Two-step verification
       </h3>
       <div className="flex items-center gap-3 rounded-lg border border-stone-200 px-3 py-2.5">
         <div className="min-w-0 flex-1">
           <p className="text-xs sm:text-sm font-medium text-stone-700">Email code at sign-in</p>
-          <p className="text-2xs text-stone-500">{description}</p>
+          <p className="type-helper">{description}</p>
         </div>
         {change.isPending && <Loader2 className="size-4 animate-spin text-stone-400" aria-hidden="true" />}
         <Switch

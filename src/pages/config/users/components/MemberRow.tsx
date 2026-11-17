@@ -42,7 +42,7 @@ export function MemberRow({ user, active, checked, onOpen, onToggle }: MemberRow
         <div className="flex items-center gap-2.5 min-w-0">
           <div
             className={cn(
-              "flex size-7 shrink-0 items-center justify-center rounded-lg text-2xs font-bold",
+              "flex size-7 shrink-0 items-center justify-center rounded-lg text-micro font-bold",
               avatarColor(user.id),
             )}
           >
@@ -58,7 +58,7 @@ export function MemberRow({ user, active, checked, onOpen, onToggle }: MemberRow
             >
               {name}
             </p>
-            <p className="text-2xs text-stone-500 truncate">
+            <p className="truncate type-helper">
               {user.roles.length === 0 ? "No roles" : user.roles.map((r) => r.name).join(", ")}
             </p>
           </div>

@@ -7,6 +7,7 @@ import { validateLogoFile, ACCEPTED_LOGO_MIME_TYPES, ACCEPTED_LOGO_EXTENSIONS } 
 import { apiErrorMessage } from '@/api/tenantClient';
 import { ModernSection } from '@/components/crm/FormPrimitives';
 
+import { buttonVariants } from '@/components/ui/button';
 const COMPANY_PROFILE_QUERY_KEY = ['company-profile'];
 
 // Its own card, independent of the surrounding form's Edit/Save/Cancel state —
@@ -71,7 +72,7 @@ export function CompanyLogoCard({ canConfigure }: { canConfigure: boolean }) {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isBusy}
                 aria-label={logoUrl ? 'Replace company logo' : 'Upload company logo'}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white py-1.5 px-3 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50 transition-colors"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 <Upload className="size-3.5" aria-hidden="true" />
                 {upload.isPending ? 'Uploading…' : logoUrl ? 'Replace' : 'Upload'}
@@ -82,7 +83,7 @@ export function CompanyLogoCard({ canConfigure }: { canConfigure: boolean }) {
                   onClick={() => remove.mutate()}
                   disabled={isBusy}
                   aria-label="Remove company logo"
-                  className="inline-flex items-center gap-1.5 rounded-lg py-1.5 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg py-1.5 px-3 text-xs font-semibold text-danger-ink hover:bg-destructive/10 disabled:opacity-50 transition-colors"
                 >
                   <Trash2 className="size-3.5" aria-hidden="true" />
                   Remove
@@ -98,16 +99,16 @@ export function CompanyLogoCard({ canConfigure }: { canConfigure: boolean }) {
               className="sr-only"
               onChange={onFileChange}
             />
-            <p className="text-2xs text-stone-500">PNG, JPG, GIF, WEBP, or SVG, up to 2MB.</p>
-            {validationError && <p className="text-2xs text-destructive">{validationError}</p>}
+            <p className="type-helper">PNG, JPG, GIF, WEBP, or SVG, up to 2MB.</p>
+            {validationError && <p className="type-error">{validationError}</p>}
             {mutationError && (
-              <p className="text-2xs text-destructive">
+              <p className="type-error">
                 {apiErrorMessage(mutationError, 'Could not update the logo.')}
               </p>
             )}
           </div>
         ) : (
-          <p className="text-xs text-stone-500">
+          <p className="type-helper">
             {logoUrl ? 'Your company logo.' : 'No logo has been uploaded yet.'}
           </p>
         )}

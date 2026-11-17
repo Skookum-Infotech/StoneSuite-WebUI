@@ -29,11 +29,11 @@ export default function CompanyProfilePage() {
       <div className="bg-background border-b border-stone-200 px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/15 text-link">
               <Building2 className="size-6" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">Company Info</h1>
+              <h1 className="dark:text-white type-page-title">Company Info</h1>
               <p className="text-sm text-stone-500 mt-0.5">
                 Your company&apos;s own name and address — not a customer&apos;s or vendor&apos;s.
               </p>

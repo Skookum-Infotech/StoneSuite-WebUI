@@ -6,6 +6,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { fieldCls } from '@/components/crm/formUtils';
 import { WRITABLE_LOOKUP_KINDS, type LookupItem, type LookupKind } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface DraftRow {
   id?: number;
   name: string;
@@ -79,9 +81,9 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
 
   return (
     <div className="space-y-3">
-      {!writable && <p className="text-xs text-stone-500">{label} is a read-only vocabulary — it can&apos;t be edited here.</p>}
-      {(saveError || removeError) && <p className="text-xs text-destructive">{apiErrorMessage(saveError ?? removeError, `Failed to save ${label.toLowerCase()}.`)}</p>}
-      {error && <p className="text-xs text-destructive">{apiErrorMessage(error, `Failed to load ${label.toLowerCase()}.`)}</p>}
+      {!writable && <p className="type-helper">{label} is a read-only vocabulary — it can&apos;t be edited here.</p>}
+      {(saveError || removeError) && <p className="type-error">{apiErrorMessage(saveError ?? removeError, `Failed to save ${label.toLowerCase()}.`)}</p>}
+      {error && <p className="type-error">{apiErrorMessage(error, `Failed to load ${label.toLowerCase()}.`)}</p>}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <table className="w-full text-left text-xs">
@@ -157,11 +159,11 @@ export function LookupVocabularyTable({ kind, label }: { kind: LookupKind; label
       </div>
 
       {writable && editingId === null && (
-        <button type="button" onClick={startNew} className="flex items-center gap-1.5 rounded-lg border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-500 hover:bg-stone-50">
+        <button type="button" onClick={startNew} className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
           <Plus className="size-3.5" /> Add {label}
         </button>
       )}
-      {hexInvalid && <p className="text-xs text-destructive">Colour must be a hex value like #A1B2C3.</p>}
+      {hexInvalid && <p className="type-error">Colour must be a hex value like #A1B2C3.</p>}
     </div>
   );
 }
@@ -208,7 +210,7 @@ function EditRow({ draft, onChange, actions, colSpanActions, kind }: {
         <input type="text" value={draft.code} onChange={(e) => onChange({ ...draft, code: e.target.value })} placeholder="Code" className={fieldCls} aria-label="Code" />
       </td>
       <td className="px-4 py-2">
-        <label className="flex items-center gap-1.5 text-xs text-stone-600">
+        <label className="flex items-center gap-1.5 type-field-label">
           <input type="checkbox" checked={draft.isActive} onChange={(e) => onChange({ ...draft, isActive: e.target.checked })} className="size-3.5 rounded border-stone-300 text-brand focus:ring-brand/30" />
           Active
         </label>

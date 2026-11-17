@@ -11,6 +11,8 @@ import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
 import { SUPER_ADMIN_ROLE_KEY, isSuperAdminUser } from "@/lib/userBulk";
 import type { WorkspaceUser } from "@/types/tenant";
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
   const qc = useQueryClient();
   const [selectedRoleId, setSelectedRoleId] = useState("");
@@ -55,12 +57,12 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
 
   return (
     <div className="mb-4 sm:mb-6">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+      <h3 className="mb-2 type-overline">
         Roles
       </h3>
 
       {user.roles.length === 0 ? (
-        <p className="mb-2 text-xs text-stone-500 italic">No roles assigned.</p>
+        <p className="mb-2 italic type-helper">No roles assigned.</p>
       ) : (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {user.roles.map((r) => (
@@ -92,7 +94,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
 
       {pendingRemove && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
-          <p className="text-xs text-red-700 font-medium">
+          <p className="type-error">
             Remove the <span className="font-semibold">{pendingRemove.name}</span> role from{" "}
             {user.fullName || user.email}? They will lose the associated permissions
             immediately.
@@ -102,7 +104,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
               type="button"
               onClick={() => removeMut.mutate(pendingRemove.id)}
               disabled={removeMut.isPending}
-              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              className={cn(buttonVariants({ variant: 'destructive' }), 'flex')}
             >
               {removeMut.isPending && <Loader2 className="size-3 animate-spin" />}
               Yes, remove
@@ -111,7 +113,7 @@ export function ManageUserRoles({ user }: { user: WorkspaceUser }) {
               type="button"
               onClick={() => setPendingRemove(null)}
               disabled={removeMut.isPending}
-              className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>

@@ -48,8 +48,8 @@ export function ApprovalChainSection({ workflowId }: { workflowId: string }) {
     <section className="rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
         <div>
-          <h2 className="text-sm font-semibold text-stone-950 dark:text-white">Approval chain</h2>
-          <p className="mt-1 text-xs text-stone-500">
+          <h2 className="dark:text-white type-card-title">Approval Chain</h2>
+          <p className="mt-1 type-helper">
             Up to {MAX_APPROVERS} active employees who must sign off before a record can leave the named status.
           </p>
         </div>
@@ -59,7 +59,7 @@ export function ApprovalChainSection({ workflowId }: { workflowId: string }) {
       {loading ? (
         <Spinner label="Loading approval chain…" />
       ) : gates.length === 0 ? (
-        <p className="text-xs text-stone-500">No approval gates configured for this workflow.</p>
+        <p className="type-helper">No approval gates configured for this workflow.</p>
       ) : (
         <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
           {gates.map((gate) => (
@@ -167,26 +167,26 @@ function ApprovalGateEditor({
                 enabled ? `Disable approval for ${gate.statusLabel}` : `Enable approval for ${gate.statusLabel}`
               }
             />
-            <span className="text-2xs font-normal text-stone-500">
+            <span className="text-micro font-normal text-stone-500">
               {update.isPending ? 'Saving…' : enabled ? 'Enabled' : 'Disabled'}
             </span>
           </label>
         ) : (
-          <span className="shrink-0 text-2xs font-normal text-stone-500">
+          <span className="shrink-0 text-micro font-normal text-stone-500">
             {gate.approverEmployeeIds.length > 0 ? 'Enabled' : 'Disabled'}
           </span>
         )}
       </p>
       {!canConfigure ? (
         gate.approverEmployeeIds.length === 0 ? (
-          <p className="text-2xs text-stone-500">No approvers configured.</p>
+          <p className="type-helper">No approvers configured.</p>
         ) : (
-          <p className="text-2xs text-stone-600 dark:text-stone-300">
+          <p className="text-micro text-stone-600 dark:text-stone-300">
             {gate.approverEmployeeIds.map((id) => byId.get(id)?.fullName || 'Unknown employee').join(', ')}
           </p>
         )
       ) : !enabled ? (
-        <p className="text-2xs text-stone-500">Approval is disabled — records can leave this status without sign-off.</p>
+        <p className="type-helper">Approval is disabled — records can leave this status without sign-off.</p>
       ) : (
         <ApproverPicker
           users={employees}

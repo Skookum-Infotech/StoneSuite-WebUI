@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const inviteSchema = z.object({
   email: z.string().email("Enter a valid email address"),
   fullName: z
@@ -99,10 +101,10 @@ export function InviteModal({
       <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-stone-900">
-              Invite team member
+            <h2 className="type-dialog-title">
+              Invite Team Member
             </h2>
-            <p className="mt-0.5 text-xs text-stone-500">
+            <p className="mt-0.5 type-helper">
               {undeliveredLink
                 ? "The invite was created, but the email could not be sent."
                 : "They'll receive an email to set up their account."}
@@ -135,7 +137,7 @@ export function InviteModal({
                 type="button"
                 onClick={copyLink}
                 aria-label="Copy invite link"
-                className="flex shrink-0 items-center gap-1.5 rounded-md bg-brand px-2.5 py-1.5 text-xs font-semibold text-stone-950"
+                className={cn(buttonVariants(), 'flex shrink-0')}
               >
                 {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                 {copied ? "Copied" : "Copy"}
@@ -151,7 +153,7 @@ export function InviteModal({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="invite-email">
-              Email address <span className="text-red-500">*</span>
+              Email address <span className="text-danger-ink">*</span>
             </Label>
             <Input
               id="invite-email"
@@ -162,7 +164,7 @@ export function InviteModal({
               className="h-10"
             />
             {errors.email && (
-              <p className="text-xs text-red-500">{errors.email.message}</p>
+              <p className="type-error">{errors.email.message}</p>
             )}
           </div>
 
@@ -232,7 +234,7 @@ export function InviteModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>

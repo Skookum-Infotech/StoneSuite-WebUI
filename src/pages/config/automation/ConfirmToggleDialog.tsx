@@ -7,6 +7,7 @@ import {
 } from '@/lib/automationCopy';
 import type { AutomationRule } from '@/types/automationRule';
 
+import { buttonVariants } from '@/components/ui/button';
 interface Props {
   /** The rule being toggled; it is being turned on when it is currently off. */
   rule: AutomationRule;
@@ -36,7 +37,7 @@ export function ConfirmToggleDialog({ rule, pending, onConfirm, onCancel, onPrev
               type="button"
               onClick={onPreview}
               aria-label="Preview who will be emailed"
-              className="mt-3 text-xs font-semibold text-brand-dark underline-offset-2 hover:underline"
+              className="mt-3 text-xs font-semibold text-link underline-offset-2 hover:underline"
             >
               Preview who will be emailed
             </button>
@@ -47,7 +48,7 @@ export function ConfirmToggleDialog({ rule, pending, onConfirm, onCancel, onPrev
                 type="button"
                 disabled={pending}
                 aria-label="Cancel"
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>

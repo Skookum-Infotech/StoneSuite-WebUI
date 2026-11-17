@@ -26,11 +26,11 @@ export function AuditTable({ entries, names, isLoading }: Props) {
           <thead className="border-b border-stone-200 bg-table-header">
             <tr>
               <th className="w-8 px-4 py-3" />
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Time</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Resource</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Action</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Actor</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Record</th>
+              <th className="px-4 py-3 type-th">Time</th>
+              <th className="px-4 py-3 type-th">Resource</th>
+              <th className="px-4 py-3 type-th">Action</th>
+              <th className="px-4 py-3 type-th">Actor</th>
+              <th className="px-4 py-3 type-th">Record</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -53,8 +53,8 @@ export function AuditTable({ entries, names, isLoading }: Props) {
                     <div className="rounded-2xl bg-stone-100 p-4">
                       <Inbox className="size-6 text-stone-400" />
                     </div>
-                    <p className="text-sm font-semibold text-stone-700">No audit entries match.</p>
-                    <p className="text-xs text-stone-500">Try adjusting the filters above.</p>
+                    <p className="type-card-title">No audit entries match.</p>
+                    <p className="type-helper">Try adjusting the filters above.</p>
                   </div>
                 </td>
               </tr>
@@ -108,12 +108,12 @@ function AuditRow({
         <td
           className={cn(
             'px-4 py-3 whitespace-nowrap',
-            rawActor ? 'font-mono text-2xs text-stone-500' : 'text-stone-700',
+            rawActor ? 'font-mono type-subline' : 'text-stone-700',
           )}
         >
           {actorLabel(entry, names)}
         </td>
-        <td className="px-4 py-3 font-mono text-2xs text-stone-500 truncate max-w-[160px]">
+        <td className="px-4 py-3 truncate max-w-[160px] type-record-id">
           {entry.resourceId || '—'}
         </td>
       </tr>

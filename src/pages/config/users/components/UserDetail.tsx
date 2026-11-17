@@ -14,6 +14,7 @@ import { ManageUserRoles } from "./ManageUserRoles";
 import { EditNameModal } from "./EditNameModal";
 import { TwoStepAdminToggle } from "./TwoStepAdminToggle";
 
+import { buttonVariants } from '@/components/ui/button';
 export function UserDetail({ user }: { user: WorkspaceUser }) {
   const qc = useQueryClient();
   const [showEditName, setShowEditName] = useState(false);
@@ -63,19 +64,19 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h2 className="text-sm sm:text-base font-bold text-stone-900 truncate">
+            <h2 className="sm:text-base truncate type-card-title">
               {user.fullName || "(no name)"}
             </h2>
             <StatusBadge status={user.status} />
             {user.mfaEnabled && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-2xs font-bold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-success-ink type-pill">
                 <ShieldCheck className="size-3" aria-hidden="true" />
                 Two-step on
               </span>
             )}
           </div>
-          <p className="text-xs text-stone-500 truncate">{user.email}</p>
-          <p className="text-2xs text-stone-500 mt-0.5">
+          <p className="truncate type-helper">{user.email}</p>
+          <p className="mt-0.5 type-helper">
             Member since {fmtDate(user.createdAt)}
           </p>
         </div>
@@ -104,7 +105,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
 
       {user.status !== "disabled" && !locked && (
         <div className="space-y-2">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+          <h3 className="mb-2 type-overline">
             Actions
           </h3>
 
@@ -112,7 +113,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
             <button
               type="button"
               onClick={() => setShowEditName(true)}
-              className="flex w-full items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+              className={cn(buttonVariants({ variant: 'outline' }), 'flex w-full gap-2')}
             >
               <Pencil className="size-4 text-stone-400" />
               Edit display name
@@ -157,7 +158,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
               onClick={() => setConfirmDeactivate(true)}
               disabled={busy}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-600 transition hover:bg-red-50",
+                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-danger-ink transition hover:bg-red-50",
                 busy && "opacity-50 cursor-not-allowed",
               )}
             >
@@ -166,7 +167,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
             </button>
           ) : (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
-              <p className="text-xs text-red-700 font-medium">
+              <p className="type-error">
                 Deactivate {user.fullName || user.email}? They will lose access
                 immediately.
               </p>
@@ -178,7 +179,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
                     deactivateMut.mutate();
                   }}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                  className={cn(buttonVariants({ variant: 'destructive' }), 'flex')}
                 >
                   {deactivateMut.isPending && (
                     <Loader2 className="size-3 animate-spin" />
@@ -188,7 +189,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
                 <button
                   type="button"
                   onClick={() => setConfirmDeactivate(false)}
-                  className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                  className={buttonVariants({ variant: 'outline' })}
                 >
                   Cancel
                 </button>
@@ -200,7 +201,7 @@ export function UserDetail({ user }: { user: WorkspaceUser }) {
 
       {user.status === "disabled" && (
         <div className="rounded-xl border border-dashed border-stone-200 p-4 text-center">
-          <p className="text-xs text-stone-500">
+          <p className="type-helper">
             This account has been deactivated.
           </p>
         </div>

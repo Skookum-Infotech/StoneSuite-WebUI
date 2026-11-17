@@ -38,7 +38,7 @@ interface Props {
 function Cell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-xs text-stone-600 md:block dark:text-stone-300">
-      <span className="text-2xs font-semibold uppercase text-stone-400 md:hidden">{label}</span>
+      <span className="md:hidden type-overline">{label}</span>
       <span className="min-w-0 break-words text-right md:text-center">{children}</span>
     </div>
   );
@@ -57,7 +57,7 @@ export function DeliveryRow({ delivery: d, ruleName, cadenceLength }: Props) {
         <Cell label="Rule">{ruleName}</Cell>
         <Cell label="Document">
           {link ? (
-            <Link to={link} className="font-medium text-brand-dark underline-offset-2 hover:underline">
+            <Link to={link} className="font-medium text-link underline-offset-2 hover:underline">
               {label}
             </Link>
           ) : (
@@ -83,12 +83,12 @@ export function DeliveryRow({ delivery: d, ruleName, cadenceLength }: Props) {
             aria-expanded={open}
             aria-label={`${open ? 'Hide' : 'Show'} error for ${label}`}
             onClick={() => setOpen((v) => !v)}
-            className="text-xs font-medium text-brand-dark underline-offset-2 hover:underline"
+            className="text-xs font-medium text-link underline-offset-2 hover:underline"
           >
             {open ? 'Hide error' : 'Show error'}
           </button>
           {open && (
-            <pre className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">
+            <pre className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-red-50 p-3 text-xs text-danger-ink dark:bg-red-950/30 dark:text-red-300">
               {d.lastError}
             </pre>
           )}

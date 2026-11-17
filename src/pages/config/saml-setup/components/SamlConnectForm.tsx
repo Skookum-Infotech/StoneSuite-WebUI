@@ -18,6 +18,7 @@ import type { SAMLConfig, SAMLProvider } from "@/types/tenant";
 import { SamlDerivedFields } from "./SamlDerivedFields";
 import { EnabledToggle } from "./EnabledToggle";
 
+import { buttonVariants } from '@/components/ui/button';
 // Partial, not exhaustive: SAMLProvider also accepts a custom slug (see its
 // definition in types/tenant.ts) that has no entry here, and falls back to
 // defaultProviderCopy below.
@@ -158,8 +159,8 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-5">
       <div className="mb-4">
-        <h3 className="text-sm font-bold text-stone-900">Connect StoneSuite</h3>
-        <p className="mt-0.5 text-xs text-stone-500">
+        <h3 className="type-card-title">Connect StoneSuite</h3>
+        <p className="mt-0.5 type-helper">
           Enter the values from your {copy.name} SAML identity provider.
         </p>
       </div>
@@ -167,7 +168,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor={`${provider}-metadata-url`}>
-            SAML 2.0 metadata document URL <span className="text-red-500">*</span>
+            SAML 2.0 metadata document URL <span className="text-danger-ink">*</span>
           </Label>
           <Input
             id={`${provider}-metadata-url`}
@@ -178,7 +179,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
             className="h-10"
           />
           {errors.metadataUrl && (
-            <p className="text-xs text-red-500">{errors.metadataUrl.message}</p>
+            <p className="type-error">{errors.metadataUrl.message}</p>
           )}
         </div>
 
@@ -211,7 +212,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
               </Select>
             )}
           />
-          <p className="text-2xs text-stone-500">
+          <p className="type-helper">
             Granted automatically to anyone signing in for the first time through this provider.
           </p>
         </div>
@@ -227,7 +228,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
               type="button"
               onClick={() => setConfirmingDelete(true)}
               aria-label="Delete SAML configuration"
-              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold text-danger-ink transition hover:bg-red-50"
             >
               <Trash2 className="size-3.5" />
               Delete
@@ -237,7 +238,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
             type="submit"
             disabled={isSubmitting}
             aria-label={isCreate ? "Save SAML configuration" : "Update SAML configuration"}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 transition hover:bg-brand/80 disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonVariants()}
           >
             {isSubmitting ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -280,10 +281,10 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
                 <AlertTriangle className="size-4 text-red-500" />
               </span>
               <div>
-                <h3 id="delete-saml-config-title" className="text-sm font-bold text-stone-900">
-                  Delete SAML configuration?
+                <h3 id="delete-saml-config-title" className="type-card-title">
+                  Delete SAML Configuration?
                 </h3>
-                <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+                <p className="mt-1 leading-relaxed type-helper">
                   The {copy.name} configuration will be permanently removed
                   {existing.enabled ? " and users will no longer be able to sign in with it" : ""}.
                   This cannot be undone.
@@ -302,7 +303,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
                 autoFocus
                 onClick={() => setConfirmingDelete(false)}
                 disabled={del.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -310,7 +311,7 @@ export function SamlConnectForm({ provider }: SamlConnectFormProps) {
                 type="button"
                 onClick={() => del.mutate()}
                 disabled={del.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                className={buttonVariants({ variant: 'destructive' })}
               >
                 <Trash2 className="size-3.5" />
                 {del.isPending ? "Deleting…" : "Delete"}

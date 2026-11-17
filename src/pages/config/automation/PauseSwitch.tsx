@@ -15,7 +15,7 @@ export function PauseSwitch({ paused, canConfigure, unavailable }: Props) {
   const disabled = !canConfigure || unavailable || killSwitch.isPending;
   return (
     <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2 dark:border-stone-800 dark:bg-stone-900">
-      <label htmlFor="automation-pause" className="text-xs font-medium text-stone-700 dark:text-stone-200">
+      <label htmlFor="automation-pause" className="dark:text-stone-200 type-field-label">
         Pause all automated emails
       </label>
       <span title={canConfigure ? undefined : NO_CONFIGURE_PERMISSION}>

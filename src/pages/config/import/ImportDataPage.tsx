@@ -13,6 +13,8 @@ import { importJobPollInterval, isImportJobFailed } from '@/lib/importJobStatus'
 import { ImportUploadStep } from './ImportUploadStep';
 import { ImportReviewStep } from './ImportReviewStep';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // No separate 'review' state: once staging finishes (job.status ===
 // 'succeeded'), the 'staging' step's own render just switches from the
 // polling spinner to ImportReviewStep — derived from live query data rather
@@ -97,7 +99,7 @@ export default function ImportDataPage() {
       ) : (
         <div className="max-w-4xl space-y-6">
           <div className="flex items-center gap-3">
-            <label htmlFor="import-workflow" className="text-xs font-semibold text-stone-600 dark:text-stone-300">
+            <label htmlFor="import-workflow" className="dark:text-stone-300 type-field-label">
               Import into
             </label>
             <Select
@@ -143,7 +145,7 @@ export default function ImportDataPage() {
                     <button
                       type="button"
                       onClick={reset}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-white/5"
+                      className={cn(buttonVariants({ variant: 'outline' }), 'dark:border-stone-700 dark:text-stone-300 dark:hover:bg-white/5')}
                     >
                       <RotateCcw className="size-3.5" /> Start a new import
                     </button>
@@ -167,14 +169,14 @@ export default function ImportDataPage() {
             {step === 'done' && summary && (
               <div className="space-y-4 text-center">
                 <CheckCircle2 className="mx-auto size-10 text-emerald-500" />
-                <p className="text-sm font-semibold text-stone-700 dark:text-stone-200">Import complete</p>
-                <p className="text-xs text-stone-500">
+                <p className="dark:text-stone-200 type-card-title">Import complete</p>
+                <p className="type-helper">
                   {summary.committed} committed · {summary.skipped} skipped · {summary.failed} failed
                 </p>
                 <button
                   type="button"
                   onClick={reset}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-dark"
+                  className={buttonVariants()}
                 >
                   Import another file
                 </button>
@@ -183,7 +185,7 @@ export default function ImportDataPage() {
           </div>
 
           {workflowsQuery.isError && (
-            <p className="text-2xs text-stone-500">
+            <p className="type-helper">
               {apiErrorMessage(
                 workflowsQuery.error,
                 'Custom-field mapping suggestions are unavailable — you can still import using core fields.',

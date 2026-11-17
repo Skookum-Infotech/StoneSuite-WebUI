@@ -20,6 +20,7 @@ import { UserDetail } from "./components/UserDetail";
 import { InviteDetail } from "./components/InviteDetail";
 import { useUserPermissions } from "@/hooks/useUserPermissions";
 
+import { buttonVariants } from '@/components/ui/button';
 type Tab = "members" | "invites";
 
 export default function UsersPage() {
@@ -110,11 +111,11 @@ export default function UsersPage() {
       {/* Page header */}
       <div className="flex items-center justify-between gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-link">
             <UsersRound className="size-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+            <h1 className="type-page-title">
               Users
             </h1>
             <p className="text-sm text-stone-500">
@@ -126,7 +127,7 @@ export default function UsersPage() {
           <button
             type="button"
             onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/80"
+            className={cn(buttonVariants(), 'flex')}
             aria-label="Invite team member"
           >
             <Plus className="size-3.5" />
@@ -153,7 +154,7 @@ export default function UsersPage() {
               className={cn(tabClass(tab === "members"), "flex-1 shrink justify-center")}
             >
               Members
-              <span className="ml-1.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-2xs text-stone-500">
+              <span className="ml-1.5 rounded-full bg-stone-100 px-1.5 py-0.5 type-subline">
                 {users.length}
               </span>
             </button>
@@ -164,7 +165,7 @@ export default function UsersPage() {
             >
               Invites
               {pendingCount > 0 && (
-                <span className="ml-1.5 rounded-full bg-brand/20 px-1.5 py-0.5 text-2xs text-brand-dark font-bold">
+                <span className="ml-1.5 rounded-full bg-brand/20 px-1.5 py-0.5 text-link type-pill">
                   {pendingCount}
                 </span>
               )}
@@ -179,17 +180,17 @@ export default function UsersPage() {
               <>
                 {usersQ.isLoading && <Spinner label="Loading members…" />}
                 {usersQ.isError && (
-                  <p className="px-2 py-2 text-xs text-red-500">
+                  <p className="px-2 py-2 type-error">
                     {apiErrorMessage(usersQ.error)}
                   </p>
                 )}
                 {!usersQ.isLoading && users.length === 0 && (
-                  <p className="px-2 py-4 text-xs text-stone-500 text-center">
+                  <p className="px-2 py-4 text-center type-helper">
                     No members yet.
                   </p>
                 )}
                 {canSelect && selectableIds.length > 0 && (
-                  <label className="flex items-center gap-2 px-2.5 py-1.5 text-2xs font-semibold text-stone-500">
+                  <label className="flex items-center gap-2 px-2.5 py-1.5 type-field-label">
                     <Checkbox
                       checked={allPicked ? true : selection.selected.size > 0 ? "indeterminate" : false}
                       onCheckedChange={() => {
@@ -222,7 +223,7 @@ export default function UsersPage() {
               <>
                 {invitesQ.isLoading && <Spinner label="Loading invites…" />}
                 {invitesQ.isError && (
-                  <p className="px-2 py-2 text-xs text-red-500">
+                  <p className="px-2 py-2 type-error">
                     {apiErrorMessage(invitesQ.error)}
                   </p>
                 )}
@@ -299,7 +300,7 @@ export default function UsersPage() {
                 if (tab === "members") setSelectedUserId(null);
                 else setSelectedInviteId(null);
               }}
-              className="md:hidden flex items-center gap-1.5 w-full px-4 py-3 text-xs font-semibold text-brand-dark border-b border-stone-100 hover:bg-stone-50 transition-colors"
+              className={cn(buttonVariants({ variant: 'ghost' }), 'md:hidden flex w-full')}
             >
               <ChevronLeft className="size-3.5" />
               Back to {tab === "members" ? "Members" : "Invites"}

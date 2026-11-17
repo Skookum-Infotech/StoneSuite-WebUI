@@ -9,6 +9,8 @@ import { buildCsvText, buildCsvFilename, downloadCsv, fmtCsvDate } from "@/lib/c
 import { PortalUserRosterTable } from "./components/PortalUserRosterTable";
 import type { PortalUserStatus } from "@/types/portalUser";
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const STATUS_FILTERS: { value: PortalUserStatus | "all"; label: string }[] = [
   { value: "all", label: "All statuses" },
   { value: "active", label: "Active" },
@@ -59,7 +61,7 @@ export default function PortalUsersPage() {
           <KeyRound className="size-5 text-accent-foreground" />
         </div>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-stone-900">Customer Portal Users</h1>
+          <h1 className="type-page-title">Customer Portal Users</h1>
           <p className="text-sm text-stone-500">
             Every external login into this workspace, across all customers.
           </p>
@@ -76,7 +78,7 @@ export default function PortalUsersPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by email, name, or customer…"
               aria-label="Search portal users"
-              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 type-input"
             />
           </div>
           <Select
@@ -94,7 +96,7 @@ export default function PortalUsersPage() {
               type="button"
               onClick={handleExportCsv}
               aria-label="Download CSV"
-              className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50"
+              className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
             >
               <Download className="size-3.5" />
               Download CSV

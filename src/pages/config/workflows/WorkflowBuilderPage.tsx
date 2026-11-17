@@ -28,6 +28,7 @@ import { useBreadcrumbStore } from '@/store/useBreadcrumbStore';
 import { cn } from '@/lib/utils';
 import type { FieldType, FieldDefinition } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 const FIELD_CAP = 15;
 
 // APPROVAL_CHAIN_WORKFLOWS mirrors the workflow keys registered in the
@@ -133,7 +134,7 @@ export default function WorkflowBuilderPage() {
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-stone-900 truncate dark:text-white">
+                <h1 className="truncate dark:text-white type-page-title">
                   {def.workflow.name}
                 </h1>
                 <span className="rounded-lg bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-500 dark:bg-stone-800">
@@ -194,7 +195,7 @@ export default function WorkflowBuilderPage() {
           )}
 
           <Section
-            title="Custom fields"
+            title="Custom Fields"
             titleExtra={
               <label className="flex items-center gap-1.5 select-none">
                 <Switch
@@ -216,7 +217,7 @@ export default function WorkflowBuilderPage() {
                     type="button"
                     onClick={() => setFieldFormOpen(true)}
                     disabled={def.fields.length >= FIELD_CAP || !def.workflow.customFieldsEnabled}
-                    className="inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-colors hover:bg-brand-hover disabled:opacity-50"
+                    className={buttonVariants()}
                   >
                     <Plus className="size-3.5" /> Add field
                   </button>
@@ -230,7 +231,7 @@ export default function WorkflowBuilderPage() {
               </div>
             )}
             {!def.workflow.customFieldsEnabled && (
-              <p className="mb-3 text-xs text-stone-500">
+              <p className="mb-3 type-helper">
                 This section is switched off — {def.workflow.name} forms won&apos;t show these fields until you turn it
                 on. Field definitions and any values already saved under them are kept either way.
               </p>
@@ -267,7 +268,7 @@ function Section({
     <section className="rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
         <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-stone-950 dark:text-white">{title}</h2>
+          <h2 className="dark:text-white type-card-title">{title}</h2>
           {titleExtra}
         </div>
         {action}
@@ -331,7 +332,7 @@ export function ApproversSection({ workflowId, approverUserIds }: { workflowId: 
     <section className="rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
         <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-stone-950 dark:text-white">Approval chain</h2>
+          <h2 className="dark:text-white type-card-title">Approval Chain</h2>
           <label className="flex shrink-0 items-center gap-1.5 select-none">
             <Switch
               checked={enabled}
@@ -353,12 +354,12 @@ export function ApproversSection({ workflowId, approverUserIds }: { workflowId: 
         </div>
         <Badge size="sm">Whole stage</Badge>
       </div>
-      <p className="mb-3 max-w-xl text-xs text-stone-500">
+      <p className="mb-3 max-w-xl type-helper">
         Up to {MAX_APPROVERS} active users required to sign off before a record can leave this stage — e.g. moving a
         Lead to Prospect or Customer.
       </p>
       {!enabled ? (
-        <p className="text-xs text-stone-500">
+        <p className="type-helper">
           Approval is disabled — records can move past this stage without sign-off.
         </p>
       ) : usersQ.isLoading ? (
@@ -407,7 +408,7 @@ function FieldsSection({
   return (
     <div>
       {atCap && !open && (
-        <p className="mb-3 text-xs text-stone-500">Field cap reached ({FIELD_CAP}). Delete one to add another.</p>
+        <p className="mb-3 type-helper">Field cap reached ({FIELD_CAP}). Delete one to add another.</p>
       )}
 
       {fields.length === 0 && !open ? (
@@ -438,7 +439,7 @@ function FieldsSection({
               <span className="truncate font-mono text-xs text-stone-500">{f.key}</span>
               <span className="text-xs text-stone-500">{f.dataType}</span>
               <span className="text-xs font-semibold">
-                {f.required ? <span className="text-amber-600 dark:text-amber-400">Yes</span> : <span className="text-stone-500 dark:text-stone-600">—</span>}
+                {f.required ? <span className="text-warning-ink dark:text-amber-400">Yes</span> : <span className="text-stone-500 dark:text-stone-600">—</span>}
               </span>
               <span className="truncate text-xs text-stone-500">{f.options.length > 0 ? f.options.join(', ') : '—'}</span>
               <button
@@ -518,7 +519,7 @@ function NewFieldRow({ workflowId, onDone, onCancel }: { workflowId: string; onD
             aria-label="Save field"
             onClick={() => create.mutate()}
             disabled={!canSave}
-            className="rounded-lg p-1.5 text-green-600 hover:bg-green-50 disabled:opacity-40 dark:hover:bg-green-950/30"
+            className="rounded-lg p-1.5 text-success-ink hover:bg-green-50 disabled:opacity-40 dark:hover:bg-green-950/30"
           >
             <Check className="size-3.5" />
           </button>

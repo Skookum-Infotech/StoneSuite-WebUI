@@ -51,18 +51,18 @@ export function RoleColumnPicker({
   return (
     <div className="rounded-xl border border-stone-200 bg-white p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-2xs font-semibold text-stone-500">
+        <p className="text-micro font-semibold text-stone-500">
           Comparing {selectedIds.length} of {roles.length} roles
         </p>
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => onChange(roles.map((r) => r.id))}
-            className="text-2xs font-semibold text-brand-dark hover:underline"
+            className="text-micro font-semibold text-link hover:underline"
           >
             Select all
           </button>
-          <button type="button" onClick={onReset} className="text-2xs font-semibold text-stone-500 hover:underline">
+          <button type="button" onClick={onReset} className="text-micro font-semibold text-stone-500 hover:underline">
             Reset
           </button>
         </div>
@@ -76,7 +76,7 @@ export function RoleColumnPicker({
             return (
               <span
                 key={id}
-                className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 py-1 pl-2.5 pr-1 text-2xs font-semibold text-stone-700"
+                className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 py-1 pl-2.5 pr-1 text-micro font-semibold text-stone-700"
               >
                 {role.name}
                 <button
@@ -104,12 +104,12 @@ export function RoleColumnPicker({
           onFocus={() => setOpen(true)}
           aria-label="Search roles to add to the comparison"
           placeholder="Add a role to compare…"
-          className="h-8 w-full max-w-xs rounded-lg border border-stone-200 bg-white px-3 text-2xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
+          className="h-8 w-full max-w-xs rounded-lg border border-stone-200 bg-white px-3 text-micro text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50"
         />
         {open && (
           <div className="absolute z-20 mt-1 w-full max-w-xs overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md">
             {results.length === 0 ? (
-              <p className="px-3 py-2 text-2xs text-stone-500">
+              <p className="px-3 py-2 type-helper">
                 {roles.length === selectedIds.length ? 'Every role is already shown.' : 'No matching roles.'}
               </p>
             ) : (
@@ -122,7 +122,7 @@ export function RoleColumnPicker({
                     setQuery('');
                     setOpen(false);
                   }}
-                  className="block w-full px-3 py-1.5 text-left text-2xs font-medium text-stone-700 transition hover:bg-stone-50"
+                  className="block w-full px-3 py-1.5 text-left text-micro font-medium text-stone-700 transition hover:bg-stone-50"
                 >
                   {role.name}
                 </button>

@@ -10,6 +10,7 @@ import type { UserInvite } from "@/types/tenant";
 import { fmtDate } from "../userHelpers";
 import { InviteStatusBadge } from "./InviteStatusBadge";
 
+import { buttonVariants } from '@/components/ui/button';
 export function InviteDetail({ invite }: { invite: UserInvite }) {
   const qc = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -82,15 +83,15 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h2 className="text-base font-bold text-stone-900 truncate">
+            <h2 className="truncate type-dialog-title">
               {invite.Email}
             </h2>
             <InviteStatusBadge invite={invite} />
           </div>
           {invite.FullName && (
-            <p className="text-xs text-stone-500">{invite.FullName}</p>
+            <p className="type-helper">{invite.FullName}</p>
           )}
-          <p className="text-2xs text-stone-500 mt-0.5">
+          <p className="mt-0.5 type-helper">
             Invited {fmtDate(invite.CreatedAt)}
           </p>
         </div>
@@ -131,7 +132,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
         </div>
       )}
       {actionSuccess && (
-        <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 border border-emerald-200">
+        <div className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-success-ink border border-emerald-200">
           {actionSuccess}
         </div>
       )}
@@ -146,14 +147,14 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
             </span>
           </div>
           <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-white p-1.5">
-            <code className="flex-1 truncate px-1.5 text-2xs text-stone-700" title={undeliveredLink}>
+            <code className="flex-1 truncate px-1.5 text-micro text-stone-700" title={undeliveredLink}>
               {undeliveredLink}
             </code>
             <button
               type="button"
               onClick={copyLink}
               aria-label="Copy invite link"
-              className="flex shrink-0 items-center gap-1.5 rounded bg-brand px-2 py-1 text-2xs font-semibold text-stone-950"
+              className={cn(buttonVariants({ size: 'sm' }), 'flex shrink-0')}
             >
               {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
               {copied ? "Copied" : "Copy"}
@@ -164,7 +165,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
 
       {(canResend || canRevoke) && (
         <div className="space-y-2">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+          <h3 className="mb-2 type-overline">
             Actions
           </h3>
 
@@ -205,7 +206,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
                 <button
                   type="button"
                   onClick={() => setConfirmResend(false)}
-                  className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50"
+                  className={buttonVariants({ variant: 'outline' })}
                 >
                   Cancel
                 </button>
@@ -219,7 +220,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
               onClick={() => setConfirmRevoke(true)}
               disabled={busy}
               className={cn(
-                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-red-600 transition hover:bg-red-50",
+                "flex w-full items-center gap-2 rounded-lg border border-red-200 px-3 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-danger-ink transition hover:bg-red-50",
                 busy && "opacity-50 cursor-not-allowed",
               )}
             >
@@ -229,7 +230,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
           )}
           {canRevoke && confirmRevoke && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
-              <p className="text-xs text-red-700 font-medium">
+              <p className="type-error">
                 Revoke invite for {invite.Email}?
               </p>
               <div className="flex gap-2">
@@ -240,7 +241,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
                     revokeMut.mutate();
                   }}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                  className={cn(buttonVariants({ variant: 'destructive' }), 'flex')}
                 >
                   {revokeMut.isPending && (
                     <Loader2 className="size-3 animate-spin" />
@@ -250,7 +251,7 @@ export function InviteDetail({ invite }: { invite: UserInvite }) {
                 <button
                   type="button"
                   onClick={() => setConfirmRevoke(false)}
-                  className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                  className={buttonVariants({ variant: 'outline' })}
                 >
                   Cancel
                 </button>

@@ -22,7 +22,7 @@ function Callout({
   children: React.ReactNode;
 }) {
   return (
-    <p className="flex items-start gap-2 text-xs text-stone-500">
+    <p className="flex items-start gap-2 type-helper">
       <Icon className="mt-0.5 size-3.5 shrink-0 text-stone-400" />
       {children}
     </p>
@@ -44,10 +44,10 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
               <FaAws className="size-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-stone-900">
+              <h1 className="type-page-title">
                 SAML Setup
               </h1>
-              <p className="text-xs text-stone-500 mt-0.5">
+              <p className="mt-0.5 type-helper">
                 Connect Amazon Cognito as a SAML identity provider for StoneSuite.
               </p>
             </div>
@@ -68,8 +68,8 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div className="space-y-4">
               <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
-                <h2 className="mb-5 text-base font-bold text-stone-900">
-                  Set up AWS Cognito SAML
+                <h2 className="mb-5 type-dialog-title">
+                  Set Up AWS Cognito SAML
                 </h2>
                 <ol>
                   <SetupStep
@@ -130,7 +130,7 @@ export default function CognitoSamlSetupPage(): React.JSX.Element {
               </section>
 
               <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
-                <h2 className="mb-5 text-base font-bold text-stone-900">
+                <h2 className="mb-5 type-dialog-title">
                   Configure AWS Cognito SAML
                 </h2>
                 <ol>

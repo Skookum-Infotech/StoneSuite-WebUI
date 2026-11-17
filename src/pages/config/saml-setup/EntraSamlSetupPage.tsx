@@ -22,7 +22,7 @@ function Callout({
   children: React.ReactNode;
 }) {
   return (
-    <p className="flex items-start gap-2 text-xs text-stone-500">
+    <p className="flex items-start gap-2 type-helper">
       <Icon className="mt-0.5 size-3.5 shrink-0 text-stone-400" />
       {children}
     </p>
@@ -44,10 +44,10 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
               <MicrosoftLogo className="size-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-stone-900">
+              <h1 className="type-page-title">
                 SAML Setup
               </h1>
-              <p className="text-xs text-stone-500 mt-0.5">
+              <p className="mt-0.5 type-helper">
                 Connect Microsoft Entra ID as a SAML identity provider for
                 StoneSuite.
               </p>
@@ -69,8 +69,8 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
           <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div className="space-y-5">
               <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
-                <h2 className="mb-5 text-base font-bold text-stone-900">
-                  Set up Microsoft Entra ID SAML
+                <h2 className="mb-5 type-dialog-title">
+                  Set Up Microsoft Entra ID SAML
                 </h2>
                 <ol>
                   <SetupStep
@@ -140,7 +140,7 @@ export default function EntraSamlSetupPage(): React.JSX.Element {
               </section>
 
               <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
-                <h2 className="mb-5 text-base font-bold text-stone-900">
+                <h2 className="mb-5 type-dialog-title">
                   Configure Microsoft Entra ID SAML
                 </h2>
                 <ol>

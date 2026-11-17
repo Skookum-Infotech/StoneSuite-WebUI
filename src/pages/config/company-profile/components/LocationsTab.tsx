@@ -13,6 +13,8 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { LocationCard } from './LocationCard';
 import { LocationFormCard } from './LocationFormCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const EMPTY_FORM_VALUES: CompanyLocationFormValues = {
   name: '',
   phone: '',
@@ -118,7 +120,7 @@ export function LocationsTab({ actionsSlot }: { actionsSlot: HTMLDivElement | nu
         setAnnouncement('Add location form opened.');
       }}
       aria-label="Add location"
-      className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+      className={cn(buttonVariants(), 'active:scale-95')}
     >
       <Plus className="size-3.5" />
       Add Location
@@ -191,7 +193,7 @@ export function LocationsTab({ actionsSlot }: { actionsSlot: HTMLDivElement | nu
           <div className="px-5 py-4 sm:px-6 sm:py-5">
             <div className="flex items-center gap-2">
               <Building2 className="size-4 text-stone-400" />
-              <h3 className="text-sm font-bold text-stone-900">Default (from Company Profile)</h3>
+              <h3 className="type-card-title">Default (from Company Profile)</h3>
             </div>
             <div className="mt-2 flex items-start gap-1.5 text-xs text-stone-500">
               <MapPin className="size-3.5 shrink-0 mt-0.5 text-stone-400" />
@@ -202,7 +204,7 @@ export function LocationsTab({ actionsSlot }: { actionsSlot: HTMLDivElement | nu
                   : 'No address on file yet — add one on the Company Profile tab.'}
               </span>
             </div>
-            <p className="mt-3 text-xs text-stone-500">
+            <p className="mt-3 type-helper">
               Add a location to give the company a specific address instead of this default.
             </p>
           </div>

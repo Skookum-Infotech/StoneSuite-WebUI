@@ -89,7 +89,7 @@ export default function AuditLogPage() {
           <ScrollText className="size-5 text-accent-foreground" />
         </div>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-stone-900">Audit Log</h1>
+          <h1 className="type-page-title">Audit Log</h1>
           <p className="text-sm text-stone-500">
             Who did what across the workspace, newest first.
           </p>
@@ -105,7 +105,7 @@ export default function AuditLogPage() {
         />
 
         {auditQ.isError && (
-          <p role="alert" className="text-xs text-red-500">
+          <p role="alert" className="type-error">
             {apiErrorMessage(auditQ.error, 'Failed to load the audit log.')}
           </p>
         )}

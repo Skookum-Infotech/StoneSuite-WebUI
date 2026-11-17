@@ -31,7 +31,7 @@ export function DocumentDefaultsSection({
 }) {
   return (
     <ModernSection title="Document Defaults" index={index}>
-      <p className="mb-4 text-xs text-stone-500">
+      <p className="mb-4 type-helper">
         Printed on a PDF when the document's own Terms &amp; Conditions or Notes are blank. Leave empty to print nothing.
       </p>
       <div className="space-y-6">
@@ -62,7 +62,7 @@ export function DocumentDefaultsSection({
                         {values.documentDefaults?.[kind]?.[key] || <span className="text-stone-500">—</span>}
                       </div>
                     )}
-                    {error && <p id={errorId} className="mt-1 text-xs text-red-600">{error}</p>}
+                    {error && <p id={errorId} className="mt-1 type-error">{error}</p>}
                   </div>
                 );
               })}

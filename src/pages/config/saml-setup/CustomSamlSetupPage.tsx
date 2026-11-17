@@ -48,10 +48,10 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
               <KeyRound className="size-5 text-stone-900" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-stone-900">
+              <h1 className="type-page-title">
                 SAML Setup
               </h1>
-              <p className="text-xs text-stone-500 mt-0.5">
+              <p className="mt-0.5 type-helper">
                 Connect {label} as a SAML identity provider for StoneSuite.
               </p>
             </div>
@@ -72,7 +72,7 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
           <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div className="space-y-5">
               <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
-                <h2 className="mb-5 text-base font-bold text-stone-900">
+                <h2 className="mb-5 type-dialog-title">
                   Set up {label} SAML
                 </h2>
                 <ol>
@@ -80,7 +80,7 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
                     number={1}
                     title={`Create a new SAML 2.0 application in ${label}, for StoneSuite`}
                   >
-                    <p className="flex items-start gap-2 text-xs text-stone-500">
+                    <p className="flex items-start gap-2 type-helper">
                       <Info className="mt-0.5 size-3.5 shrink-0 text-stone-400" />
                       StoneSuite does not support identity provider-initiated
                       flows — if {label} offers a &quot;test&quot; or
@@ -112,8 +112,8 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
               </section>
 
               <section className="rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
-                <h2 className="mb-5 text-base font-bold text-stone-900">
-                  Configure attributes
+                <h2 className="mb-5 type-dialog-title">
+                  Configure Attributes
                 </h2>
                 <ol>
                   <SetupStep
@@ -141,7 +141,7 @@ function CustomSamlSetupPageContent({ provider }: { provider: SAMLProvider }) {
                       ]}
                     />
                   </SetupStep>
-                  <p className="mt-4 text-xs text-stone-500">
+                  <p className="mt-4 type-helper">
                     Finally, copy the identity provider&apos;s SAML 2.0
                     metadata document URL and paste it into Metadata URL
                     below.

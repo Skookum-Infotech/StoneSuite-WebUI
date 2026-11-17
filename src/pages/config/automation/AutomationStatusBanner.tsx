@@ -3,6 +3,8 @@ import { useAutomationKillSwitch } from '@/hooks/useAutomationKillSwitch';
 import { BANNER_TEXT, bannerKind } from '@/lib/automationCopy';
 import type { AutomationSettings } from '@/types/automationSettings';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface Props {
   settings: AutomationSettings | undefined;
   canConfigure: boolean;
@@ -29,7 +31,7 @@ export function AutomationStatusBanner({ settings, canConfigure }: Props) {
           onClick={() => killSwitch.mutate(false)}
           disabled={killSwitch.isPending}
           aria-label="Resume automated emails"
-          className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:border-amber-800 dark:bg-stone-900 dark:text-amber-200"
+          className={cn(buttonVariants({ variant: 'outline' }), 'dark:border-amber-800 dark:bg-stone-900 dark:text-amber-200')}
         >
           Resume
         </button>

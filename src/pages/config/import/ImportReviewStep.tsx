@@ -11,6 +11,7 @@ import type { FieldDefinition } from '@/types/tenant';
 import type { ImportColumnMapping, ImportRow, ImportSummary } from '@/types/import';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 interface Props {
   jobId: string;
   workflowKey: string;
@@ -74,7 +75,7 @@ function ColumnMappingRow({
           value={coreKey}
           onChange={(e) => onChange(`${CORE_PREFIX}${e.target.value}`)}
           placeholder="field key, e.g. customer_name"
-          className="w-48 rounded-lg border border-stone-200 bg-white px-2 py-1 text-xs text-stone-700 outline-none focus:border-brand dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+          className="w-48 rounded-lg border border-stone-200 bg-white px-2 py-1 outline-none focus:border-brand dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 type-input"
         />
       )}
     </div>
@@ -157,7 +158,7 @@ export function ImportReviewStep({ jobId, workflowKey, fieldDefs, onCommitted }:
       </datalist>
 
       <div>
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">
+        <h3 className="mb-2 type-overline">
           Map columns ({rawColumns.length})
         </h3>
         <div className="space-y-1.5">
@@ -176,21 +177,21 @@ export function ImportReviewStep({ jobId, workflowKey, fieldDefs, onCommitted }:
             type="button"
             onClick={() => void applyMapping()}
             disabled={applying || mappedTargetCount === 0 || pendingRows.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+            className={buttonVariants()}
           >
             {applying ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />}
             Apply mapping to {pendingRows.length} pending row{pendingRows.length === 1 ? '' : 's'}
           </button>
-          {applyError && <span className="text-xs text-destructive">{applyError}</span>}
+          {applyError && <span className="text-xs text-danger-ink">{applyError}</span>}
         </div>
       </div>
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">
+          <h3 className="type-overline">
             Staged rows for {workflowKey}
           </h3>
-          <div className="flex items-center gap-2 text-2xs text-stone-500">
+          <div className="flex items-center gap-2 type-subline">
             <span>{pendingRows.length} pending</span>
             <span>{committedCount} committed</span>
             <span>{skippedCount} skipped</span>
@@ -221,7 +222,7 @@ export function ImportReviewStep({ jobId, workflowKey, fieldDefs, onCommitted }:
                   </td>
                   <td className="max-w-[14rem] px-3 py-2">
                     {row.errors.length > 0 ? (
-                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                      <span className="flex items-center gap-1 text-warning-ink dark:text-amber-400">
                         <AlertTriangle className="size-3 shrink-0" />
                         <span className="truncate" title={row.errors.join('; ')}>{row.errors.join('; ')}</span>
                       </span>
@@ -236,7 +237,7 @@ export function ImportReviewStep({ jobId, workflowKey, fieldDefs, onCommitted }:
                         type="button"
                         onClick={() => skipMutation.mutate(row.id)}
                         disabled={skipMutation.isPending}
-                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-2xs font-semibold text-stone-500 hover:bg-stone-100 dark:hover:bg-white/10"
+                        className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'dark:hover:bg-white/10')}
                       >
                         <Ban className="size-3" /> Skip
                       </button>
@@ -262,7 +263,7 @@ export function ImportReviewStep({ jobId, workflowKey, fieldDefs, onCommitted }:
           {commitMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
           Commit {pendingRows.length} row{pendingRows.length === 1 ? '' : 's'}
         </button>
-        {commitError && <span className="text-xs text-destructive">{commitError}</span>}
+        {commitError && <span className="text-xs text-danger-ink">{commitError}</span>}
       </div>
     </div>
   );

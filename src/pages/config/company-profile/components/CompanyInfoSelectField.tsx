@@ -61,7 +61,7 @@ export function CompanyInfoSelectField({
           ))}
         </Select>
       </div>
-      {error && <p id={errorId} className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p id={errorId} className="mt-1 type-error">{error}</p>}
     </div>
   );
 }

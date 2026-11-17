@@ -25,6 +25,7 @@ import { useUserPermissions } from "@/hooks/useUserPermissions";
 import type { Role, Scope, WorkspaceUser } from "@/types/tenant";
 import { AssignUsersModal } from "./components/AssignUsersModal";
 
+import { buttonVariants } from '@/components/ui/button';
 // ---------------------------------------------------------------------------
 
 const ACTION_ORDER = [
@@ -105,11 +106,11 @@ export default function RolesPage(): React.JSX.Element {
     <div className="flex flex-1 flex-col min-h-0 bg-background">
       {/* Page header */}
       <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-link">
           <ShieldCheck className="size-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+          <h1 className="type-page-title">
             Roles & Access
           </h1>
           <p className="text-sm text-stone-500">
@@ -129,7 +130,7 @@ export default function RolesPage(): React.JSX.Element {
             <div className="p-3 border-b border-stone-100">
               <button
                 onClick={() => navigate("/config/roles/new")}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50"
+                className={cn(buttonVariants(), 'flex w-full')}
               >
                 <Plus className="size-3.5" />
                 New Role
@@ -139,10 +140,10 @@ export default function RolesPage(): React.JSX.Element {
 
           <div className="flex-1 overflow-y-auto modal-scrollbar p-2 space-y-0.5">
             {rolesQ.isLoading && (
-              <p className="px-2 py-4 text-xs text-stone-500">Loading…</p>
+              <p className="px-2 py-4 type-helper">Loading…</p>
             )}
             {rolesQ.isError && (
-              <p className="px-2 py-2 text-xs text-red-500">
+              <p className="px-2 py-2 type-error">
                 {apiErrorMessage(rolesQ.error)}
               </p>
             )}
@@ -174,7 +175,7 @@ export default function RolesPage(): React.JSX.Element {
                       {role.name}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-2xs text-stone-500 truncate">
+                  <p className="mt-0.5 truncate type-helper">
                     {hasWildcardGrant(role)
                       ? "All permissions"
                       : role.permissions.length === 0
@@ -197,7 +198,7 @@ export default function RolesPage(): React.JSX.Element {
             <button
               type="button"
               onClick={() => setSelectedId(null)}
-              className="md:hidden flex items-center gap-1.5 w-full px-4 py-3 text-xs font-semibold text-brand-dark border-b border-stone-100 hover:bg-stone-50 transition-colors"
+              className={cn(buttonVariants({ variant: 'ghost' }), 'md:hidden flex w-full')}
             >
               <ChevronLeft className="size-3.5" />
               Back to Roles
@@ -292,7 +293,7 @@ function RoleDetail({
       <div className="flex items-start justify-between gap-3 px-3 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h2 className="text-base font-bold text-stone-900">{role.name}</h2>
+            <h2 className="type-dialog-title">{role.name}</h2>
             <Badge>{role.key}</Badge>
             {role.isSystem && (
               <Badge color="#8b5cf6">
@@ -301,7 +302,7 @@ function RoleDetail({
             )}
           </div>
           {role.description && (
-            <p className="text-xs text-stone-500 mt-0.5">{role.description}</p>
+            <p className="mt-0.5 type-helper">{role.description}</p>
           )}
           <p className="mt-1 text-label text-stone-500">
             {isWildcard
@@ -318,7 +319,7 @@ function RoleDetail({
               type="button"
               onClick={() => setShowAssignUsers(true)}
               aria-label={`Add user to role ${role.name}`}
-              className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+              className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
             >
               <UserPlus className="size-3.5" />
               Add user
@@ -331,7 +332,7 @@ function RoleDetail({
                   type="button"
                   onClick={() => navigate(`/config/roles/${role.id}/edit`)}
                   aria-label={`Edit role ${role.name}`}
-                  className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-600 transition hover:bg-stone-50"
+                  className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 >
                   <Pencil className="size-3.5" />
                   Edit
@@ -343,7 +344,7 @@ function RoleDetail({
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={deleting}
                   aria-label={`Delete role ${role.name}`}
-                  className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                  className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 >
                   <Trash2 className="size-3.5" />
                   Delete
@@ -375,10 +376,10 @@ function RoleDetail({
                 <AlertTriangle className="size-4 text-red-500" />
               </span>
               <div>
-                <h3 id="delete-role-title" className="text-sm font-bold text-stone-900">
-                  Delete role?
+                <h3 id="delete-role-title" className="type-card-title">
+                  Delete Role?
                 </h3>
-                <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+                <p className="mt-1 leading-relaxed type-helper">
                   <span className="font-semibold text-stone-700">{role.name}</span> will be
                   permanently removed. Users with this role will lose all associated permissions.
                   This cannot be undone.
@@ -391,7 +392,7 @@ function RoleDetail({
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -399,7 +400,7 @@ function RoleDetail({
                 type="button"
                 onClick={() => { onDelete(); setShowDeleteConfirm(false); }}
                 disabled={deleting}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                className={buttonVariants({ variant: 'destructive' })}
               >
                 <Trash2 className="size-3.5" />
                 {deleting ? 'Deleting…' : 'Delete role'}
@@ -452,7 +453,7 @@ function RoleDetail({
               {tab.count > 0 && (
                 <span
                   className={cn(
-                    "rounded-full px-1.5 py-0.5 text-2xs font-bold tabular-nums",
+                    "rounded-full px-1.5 py-0.5 tabular-nums type-pill",
                     active
                       ? "bg-brand/15 text-brand-dark"
                       : "bg-stone-100 text-stone-500",
@@ -477,10 +478,10 @@ function RoleDetail({
             {isWildcard && (
               <div className="rounded-xl border border-stone-200 p-6 text-center">
                 <ShieldCheck className="mx-auto mb-2 size-6 text-brand-dark" />
-                <p className="text-sm font-semibold text-stone-700">
+                <p className="type-card-title">
                   Full Access
                 </p>
-                <p className="mt-1 text-xs text-stone-500">
+                <p className="mt-1 type-helper">
                   Wildcard grant — all resources and actions are permitted.
                 </p>
               </div>
@@ -546,7 +547,7 @@ function RoleDetail({
                                     <p className="font-medium text-stone-700">
                                       {row.label}
                                     </p>
-                                    <p className="text-2xs text-stone-500">
+                                    <p className="type-helper">
                                       {row.resource}
                                     </p>
                                   </td>
@@ -572,7 +573,7 @@ function RoleDetail({
                                   })}
                                   <td className="px-4 py-3 text-center">
                                     {scopeVal ? (
-                                      <span className="inline-block rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-2xs text-stone-500">
+                                      <span className="inline-block rounded border border-stone-200 bg-stone-50 px-1.5 py-0.5 type-subline">
                                         {SCOPE_LABELS[scopeVal]}
                                       </span>
                                     ) : (
@@ -638,7 +639,7 @@ function RoleUsersList({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-xs text-stone-500">Loading users…</p>
+        <p className="type-helper">Loading users…</p>
       </div>
     );
   }
@@ -652,16 +653,16 @@ function RoleUsersList({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-stone-100 bg-stone-50">
-            <th className="py-2 pl-3 pr-2 sm:py-2.5 sm:pl-4 sm:pr-3 text-left text-2xs sm:text-xs font-semibold text-stone-500">
+            <th className="py-2 pl-3 pr-2 sm:py-2.5 sm:pl-4 sm:pr-3 text-left text-micro sm:text-xs font-semibold text-stone-500">
               User
             </th>
-            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-2xs sm:text-xs font-semibold text-stone-500 hidden sm:table-cell">
+            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-micro sm:text-xs font-semibold text-stone-500 hidden sm:table-cell">
               Email
             </th>
-            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-2xs sm:text-xs font-semibold text-stone-500">
+            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-micro sm:text-xs font-semibold text-stone-500">
               Status
             </th>
-            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-2xs sm:text-xs font-semibold text-stone-500 hidden md:table-cell">
+            <th className="px-2 py-2 sm:px-4 sm:py-2.5 text-left text-micro sm:text-xs font-semibold text-stone-500 hidden md:table-cell">
               Joined
             </th>
           </tr>
@@ -676,7 +677,7 @@ function RoleUsersList({
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
-                      "flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-full text-2xs font-bold",
+                      "flex size-6 sm:size-7 shrink-0 items-center justify-center rounded-full text-micro font-bold",
                       userAvatarColor(user.id),
                     )}
                   >
@@ -692,12 +693,12 @@ function RoleUsersList({
               </td>
               <td className="px-2 py-2 sm:px-4 sm:py-3">
                 {user.status === "active" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-2xs font-semibold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-success-ink type-pill">
                     <span className="size-1.5 rounded-full bg-emerald-500" />
                     Active
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-warning-ink type-pill">
                     <span className="size-1.5 rounded-full bg-amber-500" />
                     Suspended
                   </span>

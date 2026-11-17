@@ -27,7 +27,7 @@ export default function InventorySetupPage() {
             <Settings2 className="size-5 text-accent-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-stone-900">Inventory Setup</h1>
+            <h1 className="type-page-title">Inventory Setup</h1>
             <p className="text-sm text-stone-500">Manage the vocabularies inventory forms draw from.</p>
           </div>
         </div>

@@ -33,11 +33,11 @@ export default function ConfigWorkflowsPage() {
     <div className="flex flex-1 flex-col min-h-0">
       {/* Page header — consistent with RolesPage */}
       <div className="flex flex-wrap items-center gap-3 border-b border-stone-100 px-4 py-3 sm:px-6 sm:py-4 dark:border-stone-800">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-link">
           <Workflow className="size-6" />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
+          <h1 className="dark:text-white type-page-title">
             Configure Forms
           </h1>
           <p className="text-sm text-stone-500">
@@ -81,7 +81,7 @@ function SearchField({ value, onChange }: { value: string; onChange: (v: string)
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search forms…"
         aria-label="Search forms by name"
-        className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-8 pr-8 text-sm text-stone-800 placeholder:text-stone-500 focus:border-brand-dark/40 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+        className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-8 pr-8 placeholder:text-stone-500 focus:border-brand-dark/40 focus:outline-none focus:ring-2 focus:ring-brand/40 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 type-input"
       />
       {value && (
         <button
@@ -129,14 +129,14 @@ function ModuleSection({
             </h2>
             <span
               className={cn(
-                'rounded-full px-1.5 py-0.5 text-2xs font-bold tabular-nums',
+                'rounded-full px-1.5 py-0.5 tabular-nums type-pill',
                 group.accent.count,
               )}
             >
               {workflows.length}
             </span>
             {disabledCount > 0 && (
-              <span className="flex items-center gap-1 text-2xs font-semibold text-stone-500">
+              <span className="flex items-center gap-1 text-micro font-semibold text-stone-500">
                 <span
                   className="size-1.5 rounded-full border border-stone-400 dark:border-stone-500"
                   aria-hidden="true"
@@ -145,7 +145,7 @@ function ModuleSection({
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-xs text-stone-500">{group.description}</p>
+          <p className="mt-0.5 type-helper">{group.description}</p>
         </div>
       </div>
 

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { invalidateUserRoleQueries } from "@/lib/userRoleQueries";
 import type { Role } from "@/types/tenant";
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export function AssignUsersModal({
   role,
   onClose,
@@ -67,10 +69,10 @@ export function AssignUsersModal({
       <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-stone-900">
+            <h2 className="type-dialog-title">
               Users with {role.name}
             </h2>
-            <p className="mt-0.5 text-xs text-stone-500">
+            <p className="mt-0.5 type-helper">
               Assign or remove this role for workspace members.
             </p>
           </div>
@@ -89,7 +91,7 @@ export function AssignUsersModal({
         {!usersQ.isLoading && (
           <>
             {assignedUsers.length === 0 ? (
-              <p className="mb-3 text-xs text-stone-500 italic">
+              <p className="mb-3 italic type-helper">
                 No one has this role yet.
               </p>
             ) : (
@@ -103,7 +105,7 @@ export function AssignUsersModal({
                       <p className="truncate text-xs font-semibold text-stone-700">
                         {u.fullName || u.email}
                       </p>
-                      <p className="truncate text-2xs text-stone-500">
+                      <p className="truncate type-helper">
                         {u.email}
                       </p>
                     </div>
@@ -129,7 +131,7 @@ export function AssignUsersModal({
 
             {pendingRemove && (
               <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
-                <p className="text-xs text-red-700 font-medium">
+                <p className="type-error">
                   Remove the <span className="font-semibold">{role.name}</span> role from{" "}
                   {pendingRemove.label}? They will lose the associated permissions
                   immediately.
@@ -139,7 +141,7 @@ export function AssignUsersModal({
                     type="button"
                     onClick={() => removeMut.mutate(pendingRemove.id)}
                     disabled={removeMut.isPending}
-                    className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                    className={cn(buttonVariants({ variant: 'destructive' }), 'flex')}
                   >
                     {removeMut.isPending && <Loader2 className="size-3 animate-spin" />}
                     Yes, remove
@@ -148,7 +150,7 @@ export function AssignUsersModal({
                     type="button"
                     onClick={() => setPendingRemove(null)}
                     disabled={removeMut.isPending}
-                    className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                    className={buttonVariants({ variant: 'outline' })}
                   >
                     Cancel
                   </button>
@@ -192,7 +194,7 @@ export function AssignUsersModal({
                 </Button>
               </div>
             ) : (
-              <p className="text-xs text-stone-500 italic">
+              <p className="italic type-helper">
                 Every member already has this role.
               </p>
             )}

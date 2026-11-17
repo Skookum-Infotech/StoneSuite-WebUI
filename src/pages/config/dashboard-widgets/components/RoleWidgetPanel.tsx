@@ -34,8 +34,8 @@ export function RoleWidgetPanel({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-bold text-stone-900">{role.name}</h2>
-          <p className="text-2xs text-stone-500">
+          <h2 className="type-card-title">{role.name}</h2>
+          <p className="type-helper">
             {role.locked
               ? 'Always has every widget — this role cannot be edited.'
               : `${allocatedIds.length} of ${catalog.length} widgets allocated.`}
@@ -43,7 +43,7 @@ export function RoleWidgetPanel({
         </div>
 
         {!role.locked && otherEditableRoles.length > 0 && (
-          <label className="flex items-center gap-1.5 text-2xs text-stone-500">
+          <label className="flex items-center gap-1.5 type-field-label">
             Copy from
             <Select
               aria-label={`Copy widget allocation into ${role.name} from another role`}
@@ -51,7 +51,7 @@ export function RoleWidgetPanel({
               onChange={(e) => {
                 if (e.target.value) onCopyFrom(e.target.value);
               }}
-              className="h-8 rounded-md border border-stone-200 bg-white px-2 text-2xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/30"
+              className="h-8 rounded-md border border-stone-200 bg-white px-2 type-input focus:outline-none focus:ring-2 focus:ring-brand/30"
             >
               <option value="">Select a role…</option>
               {otherEditableRoles.map((r) => (
@@ -65,7 +65,7 @@ export function RoleWidgetPanel({
       </div>
 
       {role.locked && (
-        <div className="flex items-center gap-2 rounded-lg bg-stone-800 px-3 py-2 text-2xs font-semibold text-white">
+        <div className="flex items-center gap-2 rounded-lg bg-stone-800 px-3 py-2 text-micro font-semibold text-white">
           <Lock className="size-3" aria-hidden="true" />
           {role.name} always has every widget
         </div>
@@ -73,7 +73,7 @@ export function RoleWidgetPanel({
 
       {!role.locked && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-2xs text-stone-500">Presets</span>
+          <span className="type-subline">Presets</span>
           {WIDGET_PRESETS.map((preset) => {
             const active = preset.id === activePresetId;
             return (
@@ -84,7 +84,7 @@ export function RoleWidgetPanel({
                 aria-pressed={active}
                 aria-label={`Apply the ${preset.label} preset to ${role.name}`}
                 className={cn(
-                  'rounded-full px-2.5 py-1 text-2xs font-semibold transition-colors',
+                  'rounded-full px-2.5 py-1 text-micro font-semibold transition-colors',
                   active
                     ? 'bg-brand/20 text-brand-dark'
                     : 'border border-stone-200 text-stone-500 hover:border-brand-dark hover:text-brand-dark',
@@ -108,11 +108,11 @@ export function RoleWidgetPanel({
           return (
             <div key={category}>
               <div className="mb-1.5 flex items-center justify-between">
-                <h3 className="text-2xs font-semibold uppercase tracking-[.09em] text-stone-500">
+                <h3 className="type-overline">
                   {WIDGET_CATEGORY_LABELS[category]}
                 </h3>
                 {role.locked ? (
-                  <span className="text-2xs text-stone-500">
+                  <span className="type-subline">
                     {categoryIds.length}/{categoryIds.length} on
                   </span>
                 ) : (
@@ -120,7 +120,7 @@ export function RoleWidgetPanel({
                     type="button"
                     onClick={() => onChange(toggleIds(allocatedIds, categoryIds, !allOn))}
                     aria-label={`${allOn ? 'Clear' : 'Assign'} every ${WIDGET_CATEGORY_LABELS[category]} widget for ${role.name}`}
-                    className="text-2xs font-semibold text-brand-dark hover:underline"
+                    className="text-micro font-semibold text-link hover:underline"
                   >
                     {allOn ? 'Clear all' : `${onCount}/${categoryIds.length} on`}
                   </button>

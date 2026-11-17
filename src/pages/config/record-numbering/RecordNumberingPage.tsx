@@ -39,16 +39,16 @@ export default function RecordNumberingPage(): React.JSX.Element {
       {/* Page header */}
       <div className="bg-background border-b border-stone-200 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-link">
             <Hash className="size-5" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-stone-900">
+            <h1 className="type-page-title">
               Record Numbering
             </h1>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <p className="mt-0.5 type-helper">
               Auto-generate sequential IDs like{" "}
-              <code className="font-mono bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded-md text-2xs">
+              <code className="font-mono bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded-md text-micro">
                 LEAD-0001
               </code>{" "}
               for each workflow.
@@ -83,7 +83,7 @@ export default function RecordNumberingPage(): React.JSX.Element {
               <div style={{ minWidth: '720px' }}>
                 {/* Table header */}
                 <div
-                  className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 text-2xs font-bold uppercase tracking-widest text-stone-500 select-none"
+                  className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 select-none type-overline"
                   style={{
                     gridTemplateColumns:
                       "minmax(120px,1.2fr) 72px minmax(100px,1fr) minmax(100px,1fr) 90px 106px minmax(140px,1.4fr) 88px",
@@ -253,7 +253,7 @@ function WorkflowRow({
         <p className="text-xs font-semibold text-stone-800 truncate">
           {workflow.name}
         </p>
-        <p className="font-mono text-2xs text-stone-500 mt-0.5 truncate">
+        <p className="font-mono mt-0.5 truncate type-helper">
           {workflow.key}
         </p>
       </div>
@@ -291,7 +291,7 @@ function WorkflowRow({
           className={cellInput(Boolean(errors.prefix), !enabled)}
         />
         {errors.prefix && (
-          <p className="mt-0.5 px-1 text-2xs text-red-500">
+          <p className="mt-0.5 px-1 type-error">
             {errors.prefix.message}
           </p>
         )}
@@ -307,7 +307,7 @@ function WorkflowRow({
           className={cellInput(Boolean(errors.suffix), !enabled)}
         />
         {errors.suffix && (
-          <p className="mt-0.5 px-1 text-2xs text-red-500">
+          <p className="mt-0.5 px-1 type-error">
             {errors.suffix.message}
           </p>
         )}
@@ -327,7 +327,7 @@ function WorkflowRow({
           )}
         />
         {errors.minDigits && (
-          <p className="mt-0.5 px-1 text-2xs text-red-500">
+          <p className="mt-0.5 px-1 type-error">
             {errors.minDigits.message}
           </p>
         )}
@@ -346,7 +346,7 @@ function WorkflowRow({
           )}
         />
         {errors.nextNumber && (
-          <p className="mt-0.5 px-1 text-2xs text-red-500">
+          <p className="mt-0.5 px-1 type-error">
             {errors.nextNumber.message}
           </p>
         )}
@@ -356,23 +356,23 @@ function WorkflowRow({
       <div className="min-w-0">
         {preview ? (
           <div className="flex items-center gap-1 min-w-0">
-            <span className="font-mono text-xs font-bold text-brand-dark bg-brand/8 rounded-md px-2 py-0.5 truncate shrink-0 max-w-[100px]">
+            <span className="font-mono text-link bg-brand/8 rounded-md px-2 py-0.5 truncate shrink-0 max-w-[100px] type-pill">
               {preview}
             </span>
             <ChevronRight className="size-3 text-stone-400 shrink-0" />
-            <span className="font-mono text-2xs text-stone-500 truncate">
+            <span className="font-mono truncate type-subline">
               {previewNext}
             </span>
           </div>
         ) : (
-          <span className="text-2xs text-stone-500 italic">—</span>
+          <span className="italic type-subline">—</span>
         )}
       </div>
 
       {/* Save / feedback */}
       <div className="flex items-center justify-end gap-2 min-w-0">
         {generalError && (
-          <span className="text-2xs text-red-500 truncate" title={generalError}>
+          <span className="text-micro text-danger-ink truncate" title={generalError}>
             Error
           </span>
         )}

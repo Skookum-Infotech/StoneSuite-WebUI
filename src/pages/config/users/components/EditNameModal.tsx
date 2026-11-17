@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { WorkspaceUser } from "@/types/tenant";
 
+import { buttonVariants } from '@/components/ui/button';
 const editNameSchema = z.object({
   fullName: z.string().min(1, "Name is required").max(120),
 });
@@ -69,8 +70,8 @@ export function EditNameModal({
     >
       <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-bold text-stone-900">
-            Edit display name
+          <h2 className="type-dialog-title">
+            Edit Display Name
           </h2>
           <button
             type="button"
@@ -91,7 +92,7 @@ export function EditNameModal({
               aria-invalid={Boolean(errors.fullName)}
             />
             {errors.fullName && (
-              <p className="text-xs text-red-500">{errors.fullName.message}</p>
+              <p className="type-error">{errors.fullName.message}</p>
             )}
           </div>
           {errors.root && <ErrorNote>{errors.root.message}</ErrorNote>}
@@ -99,7 +100,7 @@ export function EditNameModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>

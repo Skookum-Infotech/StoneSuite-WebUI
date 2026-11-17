@@ -12,6 +12,8 @@ import { countryOptions, stateOptionsForCountry } from '@/lib/companyInfoLookupO
 import { CompanyInfoTextField } from './CompanyInfoTextField';
 import { CompanyInfoSelectField } from './CompanyInfoSelectField';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Line 1 gets the full row (a street address needs the room); line2/suite/
 // city then tile 3-across, and country/state/zip tile 3-across below that —
 // same tiling as Company Profile's own address groups. country/state render
@@ -83,13 +85,13 @@ export function LocationFormCard({
               className={errors.phone?.message ? fieldErrorCls : fieldCls}
             />
             {errors.phone?.message && (
-              <p id="loc-phone-error" className="mt-1 text-xs text-red-600">{errors.phone.message}</p>
+              <p id="loc-phone-error" className="mt-1 type-error">{errors.phone.message}</p>
             )}
           </div>
         </div>
 
         <div>
-          <h3 className="mb-3 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-stone-500">
+          <h3 className="mb-3 flex items-center gap-1.5 type-overline">
             <MapPin className="size-3.5" />
             Address
           </h3>
@@ -139,7 +141,7 @@ export function LocationFormCard({
           onClick={onCancel}
           disabled={isSaving}
           aria-label="Cancel"
-          className="rounded-lg px-4 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-100 disabled:opacity-50 transition-colors"
+          className={buttonVariants({ variant: 'ghost' })}
         >
           Cancel
         </button>
@@ -147,7 +149,7 @@ export function LocationFormCard({
           type="submit"
           disabled={isSaving}
           aria-label="Save location"
-          className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-stone-950 hover:bg-brand/80 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className={cn(buttonVariants(), 'gap-2 active:scale-[0.98]')}
         >
           {isSaving ? 'Saving…' : 'Save Location'}
         </button>

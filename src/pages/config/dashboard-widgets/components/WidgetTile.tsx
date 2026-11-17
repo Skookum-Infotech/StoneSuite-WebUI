@@ -33,7 +33,7 @@ export function WidgetTile({
         <p className={cn('truncate text-xs font-semibold', checked ? 'text-brand-dark' : 'text-stone-700')}>
           {widget.title}
         </p>
-        <p className="truncate text-2xs text-stone-500">{widget.description}</p>
+        <p className="truncate type-helper">{widget.description}</p>
       </div>
       {checked ? (
         <Check className="mt-0.5 size-3.5 shrink-0 text-brand-dark" aria-hidden="true" />

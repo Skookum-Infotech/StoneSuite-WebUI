@@ -4,6 +4,7 @@ import { EmptyState, ErrorNote } from '@/components/tenant/ui';
 import type { AutomationRule } from '@/types/automationRule';
 import { RuleRow } from './RuleRow';
 
+import { buttonVariants } from '@/components/ui/button';
 const SKELETON_ROWS = 4;
 
 interface Props {
@@ -39,7 +40,7 @@ export function RulesTable({ query, canConfigure, notSending, onPreview }: Props
           type="button"
           onClick={() => query.refetch()}
           aria-label="Retry loading automation rules"
-          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+          className={buttonVariants({ variant: 'outline' })}
         >
           Retry
         </button>
