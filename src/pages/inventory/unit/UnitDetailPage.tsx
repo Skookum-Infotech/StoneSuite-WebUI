@@ -182,8 +182,8 @@ export default function UnitDetailPage() {
       {cutMessage && (
         <div className="shrink-0 flex items-start gap-3 border-b border-emerald-200 bg-emerald-50 px-5 py-2.5">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-          <p className="flex-1 text-xs text-emerald-700">{cutMessage}</p>
-          <button type="button" onClick={() => setCutMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-500 hover:bg-emerald-100">
+          <p className="flex-1 text-xs text-success-ink">{cutMessage}</p>
+          <button type="button" onClick={() => setCutMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-success-ink hover:bg-emerald-100">
             <X className="size-3.5" />
           </button>
         </div>
@@ -226,13 +226,13 @@ export default function UnitDetailPage() {
                       <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{historyActionLabel(h.action)}</p>
-                        {describeHistoryEntry(h) && <p className="text-2xs text-stone-500">{describeHistoryEntry(h)}</p>}
-                        <p className="text-2xs text-stone-500">
+                        {describeHistoryEntry(h) && <p className="type-helper">{describeHistoryEntry(h)}</p>}
+                        <p className="type-helper">
                           {fmtDateTime(h.at)} · {h.byName}
                           {h.transferNumber && (
                             <>
                               {' · '}
-                              <Link to={`/inventory/bin_transfer/${h.transferId}`} className="font-mono font-semibold text-stone-600 transition-colors hover:text-accent-foreground">
+                              <Link to={`/inventory/bin_transfer/${h.transferId}`} className="transition-colors hover:text-accent-foreground type-record-id">
                                 {h.transferNumber}
                               </Link>
                             </>
@@ -258,7 +258,7 @@ export default function UnitDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {exportPdfError && <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>}
+            {exportPdfError && <p role="alert" className="type-error">{exportPdfError}</p>}
           </div>
 
           {canUpdate && (
@@ -276,11 +276,11 @@ export default function UnitDetailPage() {
                   <UserCheck className="size-4 text-stone-400 shrink-0" /> Reserve for customer
                 </button>
               )}
-              <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-destructive w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
+              <button type="button" disabled={Boolean(scrapDisabledReason)} onClick={() => setDialog('scrap')} className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 text-xs text-danger-ink w-full transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed">
                 <AlertTriangle className="size-4 shrink-0" /> Scrap
               </button>
-              {disabledReason && <p className="px-3 pt-1 text-2xs text-stone-500">{disabledReason}</p>}
-              {releaseError && <p role="alert" className="px-3 pt-1 text-2xs text-destructive">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
+              {disabledReason && <p className="px-3 pt-1 type-helper">{disabledReason}</p>}
+              {releaseError && <p role="alert" className="px-3 pt-1 type-error">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
             </div>
           )}
 

@@ -162,7 +162,7 @@ export default function BinTransferDetailPage() {
         }}
       />
       {transfer.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve the bin transfer.')}
         </p>
       )}
@@ -215,7 +215,7 @@ export default function BinTransferDetailPage() {
                 {exporting ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {exportError && <p role="alert" className="text-2xs text-destructive">{exportError}</p>}
+            {exportError && <p role="alert" className="type-error">{exportError}</p>}
           </div>
 
           {(transfer.nextStatusCodes.length > 0) && (

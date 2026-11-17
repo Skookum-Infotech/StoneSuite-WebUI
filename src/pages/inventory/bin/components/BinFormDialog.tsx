@@ -12,6 +12,8 @@ import { defaultWarehouseUuid } from '@/lib/inventoryWarehouse';
 import { BIN_TYPES } from '@/types/inventory';
 import type { Bin, BinInput, Warehouse } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Create/edit dialog for a bin. Depth is capped at 4 server-side; this only
 // offers a parent bin picker (flattened, indented) rather than enforcing the
 // cap client-side — the server's own message is the source of truth.
@@ -68,7 +70,7 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent"><MapPin className="size-4 text-accent-foreground" /></div>
-            <h3 id="bin-form-title" className="text-sm font-bold text-stone-900">{isEdit ? 'Edit Bin' : 'New Bin'}</h3>
+            <h3 id="bin-form-title" className="type-card-title">{isEdit ? 'Edit Bin' : 'New Bin'}</h3>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
         </div>
@@ -111,34 +113,34 @@ export function BinFormDialog({ bin, warehouses, allBins, defaultWarehouseId, de
               <input type="number" min={0} value={capacityArea} onChange={(e) => setCapacityArea(e.target.value)} className={fieldCls} aria-label="Capacity area" />
             </div>
           </div>
-          <p className="text-2xs text-stone-500">Capacity is advisory only — it never blocks a move.</p>
+          <p className="type-helper">Capacity is advisory only — it never blocks a move.</p>
           <div className="space-y-1.5">
             <label className={fieldLabelCls}>Notes</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`${fieldCls} h-auto resize-none`} aria-label="Notes" />
           </div>
           <fieldset className="rounded-lg border border-stone-200 bg-stone-50 p-3 space-y-3">
-            <label className="flex items-center gap-2 text-xs font-medium text-stone-700">
+            <label className="flex items-center gap-2 type-field-label">
               <input type="checkbox" checked={isWip} onChange={(e) => setIsWip(e.target.checked)} className="size-4 rounded border-stone-300" />
               Work in progress (WIP) bin
             </label>
-            <p className="text-xs text-stone-500">Use for material waiting at a saw or in a shared fabrication work area.</p>
+            <p className="type-helper">Use for material waiting at a saw or in a shared fabrication work area.</p>
             {isWip && <div className="space-y-1.5">
               <label htmlFor="bin-machine" className={fieldLabelCls}>Machine name (optional)</label>
               <input id="bin-machine" value={machineLabel} onChange={(e) => setMachineLabel(e.target.value)} placeholder="e.g. Saw 1" className={fieldCls} />
-              <p className="text-xs text-stone-500">Leave blank for a shared WIP area.</p>
+              <p className="type-helper">Leave blank for a shared WIP area.</p>
             </div>}
           </fieldset>
           <div className="flex items-center gap-2">
             <input type="checkbox" id="bin-active" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30" />
-            <label htmlFor="bin-active" className="text-xs font-medium text-stone-700">Active</label>
+            <label htmlFor="bin-active" className="type-field-label">Active</label>
           </div>
         </div>
 
-        {error && <p className="mt-3 text-xs text-destructive">{apiErrorMessage(error, 'Failed to save bin.')}</p>}
+        {error && <p className="mt-3 type-error">{apiErrorMessage(error, 'Failed to save bin.')}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={isPending} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">Cancel</button>
-          <button type="button" onClick={() => save()} disabled={isPending || !warehouseId || !code.trim() || !name.trim()} className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 active:scale-95 transition-all">
+          <button type="button" onClick={onClose} disabled={isPending} className={buttonVariants({ variant: 'outline' })}>Cancel</button>
+          <button type="button" onClick={() => save()} disabled={isPending || !warehouseId || !code.trim() || !name.trim()} className={cn(buttonVariants(), 'active:scale-95')}>
             {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Bin'}
           </button>
         </div>

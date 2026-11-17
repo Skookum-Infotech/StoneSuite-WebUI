@@ -207,7 +207,7 @@ export function ItemFormBody({ data, set }: {
                 />
                 <label htmlFor="item-track-stock" className={checkboxLabelCls}>Track stock</label>
               </div>
-              <p id="item-track-stock-hint" className="pl-6 text-2xs text-stone-500">
+              <p id="item-track-stock-hint" className="pl-6 type-helper">
                 {slabTracked
                   ? 'Slab items are always tracked: a sales order for one is checked against the slabs in stock.'
                   : 'Sales orders for this item are checked against stock and hold it. Turn off for a service, delivery or labour charge.'}

@@ -19,6 +19,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { useQuery } from '@tanstack/react-query';
 import { inventoryBinService } from '@/services/inventoryBinService';
 
+import { buttonVariants } from '@/components/ui/button';
 export default function AddCountPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -78,7 +79,7 @@ export default function AddCountPage() {
           title="New Count"
           subtitle="Fields marked * are required. Lines are built when you freeze — from what the system actually holds."
           actions={(
-            <button type="submit" disabled={isPending} className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+            <button type="submit" disabled={isPending} className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Creating…' : 'Create Count'}
             </button>
@@ -93,7 +94,7 @@ export default function AddCountPage() {
             className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100"><AlertCircle className="size-3 text-red-600" /></span>
-            <p className="text-xs text-red-700"><span className="font-bold">Error: </span>{fieldError || apiErrorMessage(saveError, 'Failed to create count.')}</p>
+            <p className="type-error"><span className="font-bold">Error: </span>{fieldError || apiErrorMessage(saveError, 'Failed to create count.')}</p>
           </div>
         )}
 

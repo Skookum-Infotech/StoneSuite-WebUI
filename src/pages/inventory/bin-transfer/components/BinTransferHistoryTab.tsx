@@ -58,7 +58,7 @@ export function BinTransferHistoryTab({ transferId }: { transferId: string }) {
           </span>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-stone-800">{describe(e)}</p>
-            <p className="text-2xs text-stone-500">{fmtDateTime(e.at)} · {e.byName}</p>
+            <p className="type-helper">{fmtDateTime(e.at)} · {e.byName}</p>
           </div>
         </li>
       ))}

@@ -42,7 +42,7 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
           disabled={!hasChildren}
           aria-expanded={hasChildren ? expanded : undefined}
           aria-label={hasChildren ? (expanded ? `Collapse ${bin.name}` : `Expand ${bin.name}`) : undefined}
-          className="flex size-5 shrink-0 items-center justify-center text-stone-400 disabled:opacity-0"
+          className="flex size-5 shrink-0 items-center justify-center text-ink-muted disabled:opacity-0"
         >
           {hasChildren && (expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />)}
         </button>
@@ -57,15 +57,15 @@ export function BinTreeNode({ bin, depth, collapsed, onToggleGroup, canEdit, onE
           >
             {bin.name}
           </button>
-          <span className="ml-1.5 font-mono text-2xs text-stone-500">{bin.code}</span>
+          <span className="ml-1.5 font-mono type-subline">{bin.code}</span>
         </span>
-        <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-500 capitalize">{bin.type}</span>
+        <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-stone-500 capitalize type-pill">{bin.type}</span>
         {bin.unitCount > 0 && (
-          <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-2xs font-semibold', bin.overCapacity ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-500')}>
+          <span className={cn('shrink-0 rounded px-1.5 py-0.5 type-pill', bin.overCapacity ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-500')}>
             {bin.unitCount}{bin.overCapacity ? ' · over capacity' : ''}
           </span>
         )}
-        {!bin.isActive && <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-2xs font-semibold text-stone-500">Inactive</span>}
+        {!bin.isActive && <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-stone-500 type-pill">Inactive</span>}
         {canEdit && (
           <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button type="button" onClick={() => onAddChild(bin)} aria-label={`Add child bin under ${bin.name}`} title="Add child bin" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700">

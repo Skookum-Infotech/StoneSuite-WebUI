@@ -8,6 +8,7 @@ import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { emptyAdjustmentLine, type AdjustmentDraftLine } from '@/lib/inventoryAdjustmentLines';
 
+import { buttonVariants } from '@/components/ui/button';
 // A line is bulk (qtyDelta) or serialized (inventoryUnitId) — driven by the
 // picked item's own tracking mode (spec §7). For a serialized line only the
 // SIGN is sent; the magnitude is the slab's own area, computed server-side.
@@ -32,7 +33,7 @@ export function AdjustmentLinesEditor({ lines, onChange, warehouseId }: {
         return (
           <div key={line.key} className="rounded-lg border border-stone-200 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-2xs font-semibold text-stone-500">Line {i + 1}</span>
+              <span className="text-micro font-semibold text-stone-500">Line {i + 1}</span>
               <button type="button" onClick={() => remove(line.key)} aria-label={`Remove line ${i + 1}`} className="text-stone-400 hover:text-destructive"><Trash2 className="size-3.5" /></button>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -43,7 +44,7 @@ export function AdjustmentLinesEditor({ lines, onChange, warehouseId }: {
                 <>
                   <UnitPicker itemId={line.item!.id} warehouseId={warehouseId} value={line.unit} onChange={(unit) => update(line.key, { unit })} />
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => update(line.key, { sign: -1 })} className={cn('flex-1 rounded-lg border px-3 py-2 text-xs font-semibold', line.sign === -1 ? 'border-destructive bg-destructive/10 text-destructive' : 'border-stone-200 text-stone-500')}>
+                    <button type="button" onClick={() => update(line.key, { sign: -1 })} className={cn('flex-1 rounded-lg border px-3 py-2 text-xs font-semibold', line.sign === -1 ? 'border-destructive bg-destructive/10 text-danger-ink' : 'border-stone-200 text-stone-500')}>
                       − Write Off
                     </button>
                     <button type="button" onClick={() => update(line.key, { sign: 1 })} className={cn('flex-1 rounded-lg border px-3 py-2 text-xs font-semibold', line.sign === 1 ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-stone-200 text-stone-500')}>
@@ -75,7 +76,7 @@ export function AdjustmentLinesEditor({ lines, onChange, warehouseId }: {
           </div>
         );
       })}
-      <button type="button" onClick={() => onChange([...lines, emptyAdjustmentLine()])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-300 px-3 py-2 text-xs font-medium text-stone-500 hover:bg-stone-50">
+      <button type="button" onClick={() => onChange([...lines, emptyAdjustmentLine()])} className={cn(buttonVariants({ variant: 'outline' }), 'flex w-full')}>
         <Plus className="size-3.5" /> Add line
       </button>
     </div>

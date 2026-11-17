@@ -21,12 +21,12 @@ export function UnitUsageHero({ unit }: { unit: InventoryUnit }) {
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {usageTiles(unit).map((tile) => (
             <div key={tile.label} className="rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
-              <dt className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">
+              <dt className="flex items-center gap-1.5 type-overline">
                 {tile.tone && <span className={cn('size-2 shrink-0 rounded-full', BAR_TONE_CLASS[tile.tone])} aria-hidden="true" />}
                 {tile.label}
               </dt>
               <dd className="mt-1 text-lg font-bold tabular-nums text-stone-950">{tile.value}</dd>
-              {tile.note && <dd className="text-2xs text-stone-500">{tile.note}</dd>}
+              {tile.note && <dd className="type-subline">{tile.note}</dd>}
             </div>
           ))}
         </dl>

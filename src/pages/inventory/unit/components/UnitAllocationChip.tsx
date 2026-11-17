@@ -28,7 +28,7 @@ export function UnitAllocationChip({ icon: Icon, label, to, tone, ariaLabel }: {
   ariaLabel: string;
 }) {
   const classes = cn(
-    'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-0.5 text-2xs font-semibold whitespace-nowrap',
+    'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-0.5 type-pill whitespace-nowrap',
     TONE_CLASSES[tone],
   );
   const content = (

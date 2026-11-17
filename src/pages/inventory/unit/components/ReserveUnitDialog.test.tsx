@@ -35,7 +35,7 @@ describe('ReserveUnitDialog', () => {
   it('names the slab and cannot reserve until a customer is chosen', () => {
     renderDialog();
 
-    expect(screen.getByRole('dialog', { name: 'Reserve for customer' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Reserve for Customer' })).toBeInTheDocument();
     expect(screen.getByText(/PO-00012-001/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reserve' })).toBeDisabled();
   });

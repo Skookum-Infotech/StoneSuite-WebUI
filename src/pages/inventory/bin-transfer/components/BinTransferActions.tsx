@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { BT_STATUS_CODES, btActions, type BtAction } from '@/lib/binTransferStatus';
 import type { BinTransfer } from '@/types/binTransfer';
 
+import { buttonVariants } from '@/components/ui/button';
 const COMPLETE_TO = 'COMP';
 const CANCEL_TO = 'CANC';
 
@@ -80,15 +81,15 @@ function ConfirmDialog({ action, slabCount, pending, error, onConfirm, onClose }
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
         <div className="mb-3 flex items-center gap-3">
           <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', destructive ? 'bg-destructive/10' : 'bg-accent')}>
-            <AlertTriangle className={cn('size-4', destructive ? 'text-destructive' : 'text-accent-foreground')} />
+            <AlertTriangle className={cn('size-4', destructive ? 'text-danger-ink' : 'text-accent-foreground')} />
           </div>
-          <h3 id={titleId} className="text-sm font-bold text-stone-900">{copy.title}</h3>
+          <h3 id={titleId} className="type-card-title">{copy.title}</h3>
         </div>
         <p className="mb-4 text-xs text-stone-600">{copy.body}</p>
 
         {destructive && (
           <div className="mb-4 space-y-1.5">
-            <label htmlFor={`${titleId}-reason`} className="block text-xs font-semibold text-stone-900">Reason (optional)</label>
+            <label htmlFor={`${titleId}-reason`} className="block type-field-label">Reason (optional)</label>
             <textarea
               id={`${titleId}-reason`}
               value={note}
@@ -101,7 +102,7 @@ function ConfirmDialog({ action, slabCount, pending, error, onConfirm, onClose }
         )}
 
         {Boolean(error) && (
-          <p role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+          <p role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 type-error">
             {apiErrorMessage(error, 'That did not work.')}
           </p>
         )}
@@ -111,7 +112,7 @@ function ConfirmDialog({ action, slabCount, pending, error, onConfirm, onClose }
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             {destructive ? 'Keep it' : 'Back'}
           </button>
@@ -119,10 +120,7 @@ function ConfirmDialog({ action, slabCount, pending, error, onConfirm, onClose }
             type="button"
             onClick={() => onConfirm(note.trim())}
             disabled={pending}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-50',
-              destructive ? 'bg-destructive text-white hover:bg-destructive/90' : 'bg-brand text-stone-950 hover:bg-brand-hover',
-            )}
+            className={cn(buttonVariants({ variant: destructive ? 'destructive' : 'default' }), 'active:scale-95')}
           >
             {pending && <Loader2 className="size-3 animate-spin" />}
             {copy.button}
@@ -184,7 +182,7 @@ export function BinTransferActions({ transfer, can }: {
             'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs transition-colors disabled:opacity-50',
             action.kind === 'primary' && 'font-semibold text-emerald-700 hover:bg-emerald-600/5',
             action.kind === 'secondary' && 'text-stone-600 hover:bg-stone-50',
-            action.kind === 'danger' && 'text-destructive hover:bg-destructive/5',
+            action.kind === 'danger' && 'text-danger-ink hover:bg-destructive/5',
           )}
         >
           <ActionIcon action={action} busy={run.isPending && pending?.to === action.to} />

@@ -6,6 +6,7 @@ import { inventoryUnitService } from '@/services/inventoryUnitService';
 import { Badge, ErrorNote, Spinner } from '@/components/tenant/ui';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RESERVED } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 const PAGE_SIZE = 25;
 
 const STATUS_COLORS: Record<string, string> = {
@@ -41,8 +42,8 @@ export function BinContentsTab({ binId }: { binId: string }) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-xl border border-stone-200 bg-white py-12">
         <div className="rounded-2xl bg-stone-100 p-3"><Layers className="size-5 text-stone-400" aria-hidden="true" /></div>
-        <p className="text-sm font-semibold text-stone-700">This bin is empty.</p>
-        <p className="text-xs text-stone-500">Slabs appear here once they are moved in.</p>
+        <p className="type-card-title">This bin is empty.</p>
+        <p className="type-helper">Slabs appear here once they are moved in.</p>
       </div>
     );
   }
@@ -53,10 +54,10 @@ export function BinContentsTab({ binId }: { binId: string }) {
         <table className="w-full min-w-[520px] text-left text-xs">
           <thead className="border-b border-stone-200 bg-table-header">
             <tr>
-              <th className="px-4 py-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">Slab</th>
-              <th className="px-4 py-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">Item</th>
-              <th className="px-4 py-2.5 text-right text-2xs font-semibold uppercase tracking-wider text-stone-500">Area</th>
-              <th className="px-4 py-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+              <th className="px-4 py-2.5 type-th">Slab</th>
+              <th className="px-4 py-2.5 type-th">Item</th>
+              <th className="px-4 py-2.5 text-right type-th">Area</th>
+              <th className="px-4 py-2.5 type-th">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -66,7 +67,7 @@ export function BinContentsTab({ binId }: { binId: string }) {
                   <button
                     type="button"
                     onClick={() => navigate(`/inventory/unit/${u.id}`)}
-                    className="font-mono text-xs font-semibold text-stone-900 transition-colors hover:text-accent-foreground"
+                    className="transition-colors hover:text-accent-foreground type-record-id"
                   >
                     {u.serial}
                   </button>
@@ -89,7 +90,7 @@ export function BinContentsTab({ binId }: { binId: string }) {
             type="button"
             onClick={() => q.fetchNextPage()}
             disabled={q.isFetchingNextPage}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             {q.isFetchingNextPage && <Loader2 className="size-3.5 animate-spin" />}
             Show more slabs

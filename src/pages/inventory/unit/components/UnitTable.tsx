@@ -19,6 +19,8 @@ import { ReserveUnitDialog } from './ReserveUnitDialog';
 import { UnitAllocationChips } from './UnitAllocationChips';
 import { UnitConsumptionCell } from './UnitConsumptionCell';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
 
@@ -134,7 +136,7 @@ export function UnitTable() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
+          <input type="text" placeholder="Search serial, barcode, lot, SKU…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
         </div>
         <Select value={status} onChange={(e) => { setStatus(e.target.value); setCursor(''); setPrevCursors([]); }} aria-label="Filter by status" className="h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-600">
           {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -145,26 +147,26 @@ export function UnitTable() {
           <option value="remnant">Remnant</option>
         </Select>
         {hasFilters && (
-          <button onClick={clearFilters} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors">
+          <button onClick={clearFilters} className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
             <X className="size-3" /> Clear
           </button>
         )}
         {records.length > 0 && (
-          <button type="button" onClick={handleDownloadCsv} disabled={isExporting} aria-label="Download units as CSV" className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors">
+          <button type="button" onClick={handleDownloadCsv} disabled={isExporting} aria-label="Download units as CSV" className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}>
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {isExporting ? 'Exporting…' : 'Download CSV'}
           </button>
         )}
       </div>
 
-      {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load units.')}</p>}
-      {exportError && <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>}
-      {releaseError && <p role="alert" className="text-xs text-red-500">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
+      {isError && <p className="type-error">{apiErrorMessage(error, 'Failed to load units.')}</p>}
+      {exportError && <p className="type-error">Failed to export CSV: {exportError}</p>}
+      {releaseError && <p role="alert" className="type-error">{apiErrorMessage(releaseError, 'Failed to release the reservation.')}</p>}
       {reserveMessage && (
         <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-          <p className="flex-1 text-xs text-emerald-700">{reserveMessage}</p>
-          <button type="button" onClick={() => setReserveMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-500 hover:bg-emerald-100">
+          <p className="flex-1 text-xs text-success-ink">{reserveMessage}</p>
+          <button type="button" onClick={() => setReserveMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-success-ink hover:bg-emerald-100">
             <X className="size-3.5" />
           </button>
         </div>
@@ -172,8 +174,8 @@ export function UnitTable() {
       {cutMessage && (
         <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-          <p className="flex-1 text-xs text-emerald-700">{cutMessage}</p>
-          <button type="button" onClick={() => setCutMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-emerald-500 hover:bg-emerald-100">
+          <p className="flex-1 text-xs text-success-ink">{cutMessage}</p>
+          <button type="button" onClick={() => setCutMessage(null)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-success-ink hover:bg-emerald-100">
             <X className="size-3.5" />
           </button>
         </div>
@@ -184,15 +186,15 @@ export function UnitTable() {
           <table className="w-full min-w-[1180px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Serial</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Item</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kind</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Allocated To</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Area</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Consumption</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
-                {canUpdate && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>}
+                <th className="px-4 py-3 type-th">Serial</th>
+                <th className="px-4 py-3 type-th">Item</th>
+                <th className="px-4 py-3 type-th">Kind</th>
+                <th className="px-4 py-3 type-th">Status</th>
+                <th className="px-4 py-3 type-th">Allocated To</th>
+                <th className="px-4 py-3 text-right type-th">Area</th>
+                <th className="px-4 py-3 type-th">Consumption</th>
+                <th className="px-4 py-3 type-th">Location</th>
+                {canUpdate && <th className="px-4 py-3 text-right type-th">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -215,12 +217,12 @@ export function UnitTable() {
                   return (
                     <tr key={u.id} className="group hover:bg-accent/10 transition-colors duration-150">
                       <td className="px-4 py-3.5">
-                        <Link to={`/inventory/unit/${u.id}`} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">{u.serial}</Link>
+                        <Link to={`/inventory/unit/${u.id}`} className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id">{u.serial}</Link>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">{u.inventoryItemName ?? '—'}</td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 capitalize">{u.kind}</td>
+                      <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">{u.inventoryItemName ?? '—'}</td>
+                      <td className="px-4 py-3.5 capitalize type-cell">{u.kind}</td>
                       <td className="px-4 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap" style={{ backgroundColor: `${STATUS_COLORS[u.status] ?? '#a8a29e'}18` }}>
+                        <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill" style={{ backgroundColor: `${STATUS_COLORS[u.status] ?? '#a8a29e'}18` }}>
                           <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: STATUS_COLORS[u.status] ?? '#a8a29e' }} aria-hidden="true" />
                           {u.status.replace('_', ' ')}
                         </span>
@@ -228,18 +230,18 @@ export function UnitTable() {
                       <td className="px-4 py-3.5">
                         {isAllocated(u) ? <UnitAllocationChips unit={u} /> : <span className="text-stone-500" aria-label="Not allocated">—</span>}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right whitespace-nowrap">{formatUnitArea(u.area, u.areaUnitCode)}</td>
+                      <td className="px-4 py-3.5 tabular-nums text-right whitespace-nowrap type-cell">{formatUnitArea(u.area, u.areaUnitCode)}</td>
                       <td className="px-4 py-3.5"><UnitConsumptionCell unit={u} /></td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[160px]">{u.binPath || u.warehouseName || '—'}</td>
+                      <td className="px-4 py-3.5 truncate max-w-[160px] type-cell">{u.binPath || u.warehouseName || '—'}</td>
                       {canUpdate && (
                         <td className="px-4 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
                             {heldForCustomer ? (
-                              <button type="button" disabled={isReleasing} onClick={() => releaseReservation(u)} aria-label={`Release reservation on ${u.serial}`} title="Give this slab back to available stock" className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-2xs font-semibold text-stone-600 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                              <button type="button" disabled={isReleasing} onClick={() => releaseReservation(u)} aria-label={`Release reservation on ${u.serial}`} title="Give this slab back to available stock" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                                 <UserX className="size-3.5" /> Release
                               </button>
                             ) : (
-                              <button type="button" disabled={u.status !== UNIT_STATUS_AVAILABLE} onClick={() => setReserveTarget(u)} aria-label={`Reserve ${u.serial} for a customer`} title={u.status === UNIT_STATUS_AVAILABLE ? 'Reserve for a customer' : `Reserve — ${disabledReason ?? `unit is ${u.status.replace('_', ' ')}`}`} className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-2xs font-semibold text-stone-600 hover:bg-accent hover:border-accent hover:text-accent-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                              <button type="button" disabled={u.status !== UNIT_STATUS_AVAILABLE} onClick={() => setReserveTarget(u)} aria-label={`Reserve ${u.serial} for a customer`} title={u.status === UNIT_STATUS_AVAILABLE ? 'Reserve for a customer' : `Reserve — ${disabledReason ?? `unit is ${u.status.replace('_', ' ')}`}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                                 <UserCheck className="size-3.5" /> Reserve
                               </button>
                             )}
@@ -260,7 +262,7 @@ export function UnitTable() {
                   <td colSpan={8 + (canUpdate ? 1 : 0)} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-2xl bg-stone-100 p-4"><Layers className="size-6 text-stone-400" /></div>
-                      <p className="text-sm font-semibold text-stone-700">{hasFilters ? 'No units match the current search.' : 'No slabs in stock yet — receive a purchase order to add some.'}</p>
+                      <p className="type-card-title">{hasFilters ? 'No units match the current search.' : 'No slabs in stock yet — receive a purchase order to add some.'}</p>
                     </div>
                   </td>
                 </tr>
@@ -270,10 +272,10 @@ export function UnitTable() {
         </div>
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">{hasMore ? '' : 'Last page'}</p>
+            <p className="tabular-nums type-helper">{hasMore ? '' : 'Last page'}</p>
             <div className="flex items-center gap-1.5">
-              <button onClick={goPrev} disabled={!hasPrev} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page"><ChevronLeft className="size-3.5" />Previous</button>
-              <button onClick={goNext} disabled={!hasMore} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">Next<ChevronRight className="size-3.5" /></button>
+              <button onClick={goPrev} disabled={!hasPrev} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Previous page"><ChevronLeft className="size-3.5" />Previous</button>
+              <button onClick={goNext} disabled={!hasMore} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Next page">Next<ChevronRight className="size-3.5" /></button>
             </div>
           </div>
         )}

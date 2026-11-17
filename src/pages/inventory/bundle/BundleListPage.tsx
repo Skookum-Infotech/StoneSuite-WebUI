@@ -10,6 +10,8 @@ import { Spinner, ErrorNote, Badge } from '@/components/tenant/ui';
 import { BUNDLE_OPEN, BUNDLE_SEALED } from '@/types/inventory';
 import { NewBundleDialog } from './components/NewBundleDialog';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const STATUS_COLORS: Record<string, string> = { open: '#22c55e', sealed: '#3b82f6', broken: '#a8a29e' };
 
 export default function BundleListPage() {
@@ -32,12 +34,12 @@ export default function BundleListPage() {
               <Boxes className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Bundles</h1>
+              <h1 className="type-page-title">Bundles</h1>
               <p className="text-sm text-stone-500">Pallets of slabs banded together — open, sealed, broken.</p>
             </div>
           </div>
           {canCreate && (
-            <button onClick={() => setShowNew(true)} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95">
+            <button onClick={() => setShowNew(true)} className={cn(buttonVariants(), 'active:scale-95')}>
               <Plus className="size-3.5" /> New Bundle
             </button>
           )}
@@ -62,12 +64,12 @@ export default function BundleListPage() {
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-stone-200 bg-table-header">
                   <tr>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Code</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Item</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Members</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Total Area</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
+                    <th className="px-4 py-3 type-th">Code</th>
+                    <th className="px-4 py-3 type-th">Item</th>
+                    <th className="px-4 py-3 type-th">Status</th>
+                    <th className="px-4 py-3 text-right type-th">Members</th>
+                    <th className="px-4 py-3 text-right type-th">Total Area</th>
+                    <th className="px-4 py-3 type-th">Location</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
@@ -75,7 +77,7 @@ export default function BundleListPage() {
                     <tr><td colSpan={6} className="py-12 text-center text-stone-500">No bundles yet.</td></tr>
                   ) : bundles.map((b) => (
                     <tr key={b.id} className="relative hover:bg-accent/10 transition-colors">
-                      <td className="px-4 py-3.5 font-mono font-semibold text-stone-900"><Link to={`/inventory/bundle/${b.id}`} className="after:absolute after:inset-0">{b.code}</Link></td>
+                      <td className="px-4 py-3.5 type-record-id"><Link to={`/inventory/bundle/${b.id}`} className="after:absolute after:inset-0">{b.code}</Link></td>
                       <td className="px-4 py-3.5 text-stone-700 truncate max-w-[180px]">{b.inventoryItemName || <span className="text-stone-500">Unadopted</span>}</td>
                       <td className="px-4 py-3.5"><Badge color={STATUS_COLORS[b.status] ?? '#a8a29e'}>{b.status}</Badge></td>
                       <td className="px-4 py-3.5 tabular-nums text-right text-stone-700">{b.memberCount}</td>

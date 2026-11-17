@@ -16,11 +16,11 @@ export default function WarehouseListPage() {
     <div className="flex flex-1 flex-col min-h-0 bg-stone-50/60">
       <div className="bg-background border-b border-stone-200 px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/15 text-brand-dark">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/15 text-link">
             <LocationIcon className="size-6" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">Locations</h1>
+            <h1 className="dark:text-white type-page-title">Locations</h1>
             <p className="text-sm text-stone-500 mt-0.5">The places your stock is held.</p>
           </div>
         </div>
@@ -47,9 +47,9 @@ export default function WarehouseListPage() {
                   <div className="px-5 py-4 sm:px-6 sm:py-5">
                     <div className="flex items-center gap-2">
                       <Building2 className="size-4 text-stone-400" />
-                      <h3 className="text-sm font-bold text-stone-900">No locations yet</h3>
+                      <h3 className="type-card-title">No Locations Yet</h3>
                     </div>
-                    <p className="mt-2 text-xs text-stone-500">
+                    <p className="mt-2 type-helper">
                       Locations are set up in Company Info. Once one is added it appears here and in every location dropdown.
                     </p>
                   </div>

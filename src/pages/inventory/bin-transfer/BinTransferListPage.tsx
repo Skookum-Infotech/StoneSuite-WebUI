@@ -3,6 +3,8 @@ import { ArrowLeftRight, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { BinTransferTable } from './components/BinTransferTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function BinTransferListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
@@ -18,7 +20,7 @@ export default function BinTransferListPage() {
               <ArrowLeftRight className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Bin Transfers</h1>
+              <h1 className="type-page-title">Bin Transfers</h1>
               <p className="text-sm text-stone-500">Move slabs between bins, with approval and a full trail of who moved what.</p>
             </div>
           </div>
@@ -26,7 +28,7 @@ export default function BinTransferListPage() {
             <button
               type="button"
               onClick={startNew}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Bin Transfer

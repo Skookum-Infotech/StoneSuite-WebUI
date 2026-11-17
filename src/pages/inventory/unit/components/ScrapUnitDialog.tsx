@@ -9,6 +9,8 @@ import { useInventoryLookups } from '@/hooks/useInventoryLookups';
 import { ReasonSelect } from '@/components/inventory/ReasonSelect';
 import type { InventoryUnit } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export function ScrapUnitDialog({ unit, onClose, onScrapped }: {
   unit: InventoryUnit;
   onClose: () => void;
@@ -39,8 +41,8 @@ export function ScrapUnitDialog({ unit, onClose, onScrapped }: {
               <AlertTriangle className="size-4 text-destructive" />
             </div>
             <div>
-              <h3 id="scrap-unit-title" className="text-sm font-bold text-stone-900">Scrap Unit</h3>
-              <p className="text-xs text-stone-500 mt-0.5">{unit.serial} · {unit.area.toFixed(2)} sq</p>
+              <h3 id="scrap-unit-title" className="type-card-title">Scrap Unit</h3>
+              <p className="mt-0.5 type-helper">{unit.serial} · {unit.area.toFixed(2)} sq</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
@@ -48,20 +50,20 @@ export function ScrapUnitDialog({ unit, onClose, onScrapped }: {
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-stone-900">Reason <span className="text-destructive">*</span></label>
+            <label className="block type-field-label">Reason <span className="text-danger-ink">*</span></label>
             <ReasonSelect reasons={lookups?.reasons ?? []} value={reasonId} onChange={setReasonId} />
           </div>
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-stone-900">Note</label>
-            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" className="w-full h-10 px-3.5 text-xs border border-stone-300 rounded-[10px]" aria-label="Scrap note" />
+            <label className="block type-field-label">Note</label>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" className="w-full h-10 px-3.5 border border-stone-300 rounded-[10px] type-input" aria-label="Scrap note" />
           </div>
         </div>
 
-        {error && <p className="mt-3 text-xs text-destructive">{apiErrorMessage(error, 'Failed to scrap unit.')}</p>}
+        {error && <p className="mt-3 type-error">{apiErrorMessage(error, 'Failed to scrap unit.')}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={isPending} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">Cancel</button>
-          <button type="button" onClick={() => scrap()} disabled={isPending || !reasonId} className="rounded-lg bg-destructive px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 active:scale-95 transition-all">
+          <button type="button" onClick={onClose} disabled={isPending} className={buttonVariants({ variant: 'outline' })}>Cancel</button>
+          <button type="button" onClick={() => scrap()} disabled={isPending || !reasonId} className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}>
             {isPending ? 'Scrapping…' : 'Scrap Unit'}
           </button>
         </div>

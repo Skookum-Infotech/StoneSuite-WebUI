@@ -9,7 +9,7 @@ export function UnitConsumptionCell({ unit }: { unit: InventoryUnit }) {
   return (
     <div className="min-w-[170px]" title={sentence}>
       <UnitConsumptionBar segments={unitSegments(unit)} label={sentence} />
-      <p className="mt-1 truncate text-2xs text-stone-500">{consumptionLine(unit)}</p>
+      <p className="mt-1 truncate type-helper">{consumptionLine(unit)}</p>
     </div>
   );
 }

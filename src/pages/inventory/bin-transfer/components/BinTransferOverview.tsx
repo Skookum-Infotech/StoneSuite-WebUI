@@ -54,7 +54,7 @@ export function BinTransferOverview({ transfer }: { transfer: BinTransfer }) {
         </div>
       )}
 
-      <ModernSection title="Transfer details" index={0}>
+      <ModernSection title="Transfer Details" index={0}>
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <ReadonlyField label="Location" value={transfer.warehouseName} />
           <ReadonlyField label="Date" value={fmtDate(transfer.date)} />

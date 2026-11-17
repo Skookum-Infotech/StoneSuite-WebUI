@@ -12,6 +12,8 @@ import { BinTreeNode } from './components/BinTreeNode';
 import { BinFormDialog } from './components/BinFormDialog';
 import { DeleteBinDialog } from './components/DeleteBinDialog';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 function flattenAll(bins: Bin[], out: Bin[] = []): Bin[] {
   for (const b of bins) {
     out.push(b);
@@ -69,12 +71,12 @@ export default function BinListPage() {
               <MapPin className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Bin Management</h1>
+              <h1 className="type-page-title">Bin Management</h1>
               <p className="text-sm text-stone-500">Yards, racks, A-frames, aisles, shelves — flat locations, up to 4 levels deep.</p>
             </div>
           </div>
           {canCreate && (
-            <button onClick={() => setFormTarget({ warehouseId: warehouseFilter })} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95">
+            <button onClick={() => setFormTarget({ warehouseId: warehouseFilter })} className={cn(buttonVariants(), 'active:scale-95')}>
               <Plus className="size-3.5" /> New Bin
             </button>
           )}
@@ -115,8 +117,8 @@ export default function BinListPage() {
           ) : tree.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <div className="rounded-2xl bg-stone-100 p-4"><MapPin className="size-6 text-stone-400" /></div>
-              <p className="text-sm font-semibold text-stone-700">No bins yet.</p>
-              <p className="text-xs text-stone-500">Create your first bin to start organizing the yard.</p>
+              <p className="type-card-title">No bins yet.</p>
+              <p className="type-helper">Create your first bin to start organizing the yard.</p>
             </div>
           ) : (
             tree.map((b) => (

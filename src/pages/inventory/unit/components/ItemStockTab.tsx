@@ -9,12 +9,13 @@ import { formatStockQty, isLowStock } from '@/lib/stockFormat';
 import { unitLabel } from '@/lib/unitLabels';
 import type { InventoryItem, ReorderPointInput } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 const REORDER_STEP = 'any';
 const NEGATIVE_REORDER_MESSAGE = "A reorder point can't be negative.";
 const HEADERS = ['Location', 'On hand', 'Allocated', 'Available', 'Reorder point'] as const;
 
 const inputCls =
-  'w-24 rounded border border-stone-200 bg-white px-2 py-1 text-right text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 transition-all';
+  'w-24 rounded border border-stone-200 bg-white px-2 py-1 text-right type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 transition-all';
 
 // Where a counted (non-slab) item's stock sits, location by location, with the
 // reorder point for each. A location at or below its reorder point is flagged
@@ -62,7 +63,7 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
     return (
       <div className="rounded-xl border border-stone-200 bg-white p-6 text-sm text-stone-600">
         <p className="font-semibold text-stone-800">No stock yet</p>
-        <p className="mt-1 text-xs text-stone-500">
+        <p className="mt-1 type-helper">
           This item hasn&apos;t been received into any location yet. Stock appears here once an item receipt for it is posted.
         </p>
       </div>
@@ -93,10 +94,10 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
                 const errorId = `reorder-error-${r.warehouseId}`;
                 return (
                   <tr key={r.warehouseId} className="hover:bg-accent/10 transition-colors duration-150">
-                    <td className="px-4 py-3.5 text-xs font-medium text-stone-800">
+                    <td className="px-4 py-3.5 type-cell">
                       {r.warehouseName}
                       {isLowStock(r.onHand, r.reorderPoint) && (
-                        <span className="ml-2 rounded-md bg-amber-50 px-2 py-0.5 text-2xs font-semibold text-amber-700">Low stock</span>
+                        <span className="ml-2 rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">Low stock</span>
                       )}
                     </td>
                     <td className="px-4 py-3.5 text-right tabular-nums text-stone-700">{formatStockQty(r.onHand)}</td>
@@ -119,7 +120,7 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
                             onClick={() => submit(r.warehouseId, shown)}
                             disabled={draft === undefined || save.isPending}
                             aria-label={`Save reorder point at ${r.warehouseName}`}
-                            className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                            className={buttonVariants({ variant: 'outline', size: 'sm' })}
                           >
                             {save.isPending && save.variables?.warehouseId === r.warehouseId && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
                             Save
@@ -128,7 +129,7 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
                       ) : (
                         <span className="tabular-nums text-stone-700">{formatStockQty(r.reorderPoint)}</span>
                       )}
-                      {error && <p id={errorId} role="alert" className="mt-1 text-2xs text-destructive">{error}</p>}
+                      {error && <p id={errorId} role="alert" className="mt-1 type-error">{error}</p>}
                     </td>
                   </tr>
                 );
@@ -140,7 +141,7 @@ export function ItemStockTab({ item }: { item: InventoryItem }) {
 
       {save.isError && <ErrorNote>{apiErrorMessage(save.error, 'Failed to save the reorder point.')}</ErrorNote>}
 
-      <p className="text-xs text-stone-500">
+      <p className="type-helper">
         Allocated is what open sales orders still hold; available is what is free to promise. A reorder point of 0 means none is set.
       </p>
     </div>

@@ -8,6 +8,7 @@ import { btIsEditable } from '@/lib/binTransferStatus';
 import type { BinTransferInput } from '@/types/binTransfer';
 import { BinTransferEditor } from './components/BinTransferEditor';
 
+import { buttonVariants } from '@/components/ui/button';
 const LIST_PATH = '/inventory/bin_transfer';
 
 // Only a draft can be edited: approval freezes the document so the moves that
@@ -55,7 +56,7 @@ export default function EditBinTransferPage() {
         <button
           type="button"
           onClick={() => navigate(`${LIST_PATH}/${id}`)}
-          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+          className={buttonVariants({ variant: 'outline' })}
         >
           Back to {bt.number}
         </button>

@@ -11,6 +11,7 @@ import { BT_STATUS_CODES, BT_STATUS_COLORS } from '@/lib/binTransferStatus';
 import { cn } from '@/lib/utils';
 import type { BinTransferRecord, BinTransferSearchRequest } from '@/types/binTransfer';
 
+import { buttonVariants } from '@/components/ui/button';
 const PAGE_SIZE = 25;
 const EXPORT_PAGE_SIZE = 200;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -115,12 +116,12 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
             onChange={(e) => setTerm(e.target.value)}
             placeholder="Search number, slab serial, location…"
             aria-label="Search bin transfers"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
           />
         </div>
 
         {filtered && (
-          <button type="button" onClick={clear} className="flex h-8 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-500 transition-colors hover:bg-stone-50">
+          <button type="button" onClick={clear} className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
             <X className="size-3" /> Clear
           </button>
         )}
@@ -130,7 +131,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
             onClick={handleDownloadCsv}
             disabled={exporting}
             aria-label="Download bin transfers as CSV"
-            className="ml-auto flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+            className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
           >
             {exporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {exporting ? 'Exporting…' : 'Download CSV'}
@@ -138,8 +139,8 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
         )}
       </div>
 
-      {isError && <p role="alert" className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load bin transfers.')}</p>}
-      {exportError && <p role="alert" className="text-xs text-red-500">Failed to export CSV: {exportError}</p>}
+      {isError && <p role="alert" className="type-error">{apiErrorMessage(error, 'Failed to load bin transfers.')}</p>}
+      {exportError && <p role="alert" className="type-error">Failed to export CSV: {exportError}</p>}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
@@ -147,7 +148,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 {['Number', 'Location', 'Slabs', 'Destination', 'Status', 'Requested by', 'Date'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">{h}</th>
+                  <th key={h} className="px-4 py-3 type-th">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -171,7 +172,7 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); navigate(`/inventory/bin_transfer/${t.id}`); }}
-                        className="font-mono font-semibold text-stone-900 transition-colors hover:text-accent-foreground"
+                        className="transition-colors hover:text-accent-foreground type-record-id"
                       >
                         {t.number || '—'}
                       </button>
@@ -192,16 +193,16 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
                   <td colSpan={COLUMN_COUNT} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-2xl bg-stone-100 p-4"><ArrowLeftRight className="size-6 text-stone-400" aria-hidden="true" /></div>
-                      <p className="text-sm font-semibold text-stone-700">
+                      <p className="type-card-title">
                         {filtered ? 'No bin transfers match the current filters.' : 'No bin transfers yet.'}
                       </p>
                       {!filtered && emptyAction && (
                         <>
-                          <p className="max-w-xs text-xs text-stone-500">Move slabs between bins with a trail of who asked, who approved and when.</p>
+                          <p className="max-w-xs type-helper">Move slabs between bins with a trail of who asked, who approved and when.</p>
                           <button
                             type="button"
                             onClick={emptyAction}
-                            className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+                            className={cn(buttonVariants(), 'active:scale-95')}
                           >
                             New Bin Transfer
                           </button>
@@ -216,12 +217,12 @@ export function BinTransferTable({ emptyAction }: { emptyAction?: () => void }) 
         </div>
         {records.length > 0 && (
           <div className="flex items-center justify-between border-t border-stone-100 bg-stone-50/40 px-4 py-3">
-            <p className="text-xs text-stone-500">{hasMore ? '' : 'Last page'}</p>
+            <p className="type-helper">{hasMore ? '' : 'Last page'}</p>
             <div className="flex items-center gap-1.5">
-              <button onClick={goPrev} disabled={!hasPrev} aria-label="Previous page" className="flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">
+              <button onClick={goPrev} disabled={!hasPrev} aria-label="Previous page" className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
                 <ChevronLeft className="size-3.5" />Previous
               </button>
-              <button onClick={goNext} disabled={!hasMore} aria-label="Next page" className="flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">
+              <button onClick={goNext} disabled={!hasMore} aria-label="Next page" className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
                 Next<ChevronRight className="size-3.5" />
               </button>
             </div>

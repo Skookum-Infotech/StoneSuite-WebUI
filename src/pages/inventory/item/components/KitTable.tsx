@@ -8,6 +8,7 @@ import { inventoryService } from '@/services/inventoryService';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import type { KitSearchRequest } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
 const SKELETON_ROWS = 5;
@@ -82,14 +83,14 @@ export function KitTable() {
             aria-label="Search kit/packages"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
         {term && (
           <button
             type="button"
             onClick={() => setTerm('')}
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <X className="size-3" />
             Clear
@@ -97,18 +98,18 @@ export function KitTable() {
         )}
       </div>
 
-      {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load kit/packages. Please try again.')}</p>}
+      {isError && <p className="type-error">{apiErrorMessage(error, 'Failed to load kit/packages. Please try again.')}</p>}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full min-w-[640px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kit/Package</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Items</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Description</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                {canEdit && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>}
+                <th className="px-4 py-3 type-th">Kit/Package</th>
+                <th className="px-4 py-3 text-right type-th">Items</th>
+                <th className="px-4 py-3 type-th">Description</th>
+                <th className="px-4 py-3 type-th">Status</th>
+                {canEdit && <th className="px-4 py-3 text-right type-th">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -139,10 +140,10 @@ export function KitTable() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">{kit.itemCount}</td>
-                    <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[280px]">{kit.description || '—'}</td>
+                    <td className="px-4 py-3.5 tabular-nums text-right type-cell">{kit.itemCount}</td>
+                    <td className="px-4 py-3.5 truncate max-w-[280px] type-cell">{kit.description || '—'}</td>
                     <td className="px-4 py-3.5">
-                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold whitespace-nowrap', kit.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
+                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', kit.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', kit.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />
                         {kit.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -167,10 +168,10 @@ export function KitTable() {
                       <div className="rounded-2xl bg-violet-50 p-4">
                         {debounced ? <Search className="size-6 text-stone-400" /> : <Boxes className="size-6 text-violet-400" />}
                       </div>
-                      <p className="text-sm font-semibold text-stone-700">
+                      <p className="type-card-title">
                         {debounced ? 'No kit/packages match the current search.' : 'No kit/packages added yet.'}
                       </p>
-                      <p className="text-xs text-stone-500">
+                      <p className="type-helper">
                         {debounced
                           ? 'Try a different name.'
                           : 'A kit/package is a named group of items sold together, like “Kitchen”. Add your first with New Kit/Package.'}
@@ -185,13 +186,13 @@ export function KitTable() {
 
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">Page {pageNum}{hasMore ? '' : ' · last page'}</p>
+            <p className="tabular-nums type-helper">Page {pageNum}{hasMore ? '' : ' · last page'}</p>
             <div className="flex items-center gap-1.5">
-              <button onClick={goPrev} disabled={!hasPrev} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+              <button onClick={goPrev} disabled={!hasPrev} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Previous page">
                 <ChevronLeft className="size-3.5" />
                 Previous
               </button>
-              <button onClick={goNext} disabled={!hasMore} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+              <button onClick={goNext} disabled={!hasMore} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Next page">
                 Next
                 <ChevronRight className="size-3.5" />
               </button>

@@ -10,6 +10,7 @@ import { binEventCounterpart, binEventLabel, binEventTone, type BinEventTone } f
 import { cn } from '@/lib/utils';
 import type { BinHistoryEntry } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 const PAGE_SIZE = 30;
 
 type Direction = '' | 'in' | 'out';
@@ -106,13 +107,13 @@ export function BinHistoryTab({ binId }: { binId: string }) {
                     <button
                       type="button"
                       onClick={() => navigate(`/inventory/unit/${e.unitId}`)}
-                      className="font-mono font-semibold text-stone-900 transition-colors hover:text-accent-foreground"
+                      className="transition-colors hover:text-accent-foreground type-record-id"
                     >
                       {e.unitSerial}
                     </button>
                     {counterpart && <span className="text-stone-500"> {counterpart}</span>}
                   </p>
-                  <p className="text-2xs text-stone-500">
+                  <p className="type-helper">
                     {e.inventoryItemName && <>{e.inventoryItemName} · </>}
                     {fmtDateTime(e.at)} · {e.byName}
                     {e.transferNumber && (
@@ -121,14 +122,14 @@ export function BinHistoryTab({ binId }: { binId: string }) {
                         <button
                           type="button"
                           onClick={() => navigate(`/inventory/bin_transfer/${e.transferId}`)}
-                          className="font-mono font-semibold text-stone-600 transition-colors hover:text-accent-foreground"
+                          className="transition-colors hover:text-accent-foreground type-record-id"
                         >
                           {e.transferNumber}
                         </button>
                       </>
                     )}
                   </p>
-                  {e.note && <p className="mt-0.5 text-2xs text-stone-500">{e.note}</p>}
+                  {e.note && <p className="mt-0.5 type-helper">{e.note}</p>}
                 </div>
               </li>
             );
@@ -142,7 +143,7 @@ export function BinHistoryTab({ binId }: { binId: string }) {
             type="button"
             onClick={() => q.fetchNextPage()}
             disabled={q.isFetchingNextPage}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             {q.isFetchingNextPage && <Loader2 className="size-3.5 animate-spin" />}
             Show earlier activity

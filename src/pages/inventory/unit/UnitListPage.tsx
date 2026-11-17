@@ -26,7 +26,7 @@ export default function UnitListPage() {
             <Layers className="size-5 text-accent-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-stone-900">Inventory</h1>
+            <h1 className="type-page-title">Inventory</h1>
             <p className="text-sm text-stone-500">
               Every slab and remnant on hand — move, cut and scrap — and the stock of everything else you count. Slabs are added by receiving a purchase order.
             </p>

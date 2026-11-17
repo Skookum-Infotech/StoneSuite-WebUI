@@ -17,6 +17,8 @@ import { docStatusLabel, DOC_STATUS_COLORS } from '@/lib/inventoryDocumentStatus
 import { CountLinesGrid } from './components/CountLinesGrid';
 import { AddUnexpectedDialog } from './components/AddUnexpectedDialog';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function CountDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -84,7 +86,7 @@ export default function CountDetailPage() {
         statusBadge={<Badge color={DOC_STATUS_COLORS[c.statusCode] ?? '#a8a29e'}>{docStatusLabel(c.statusCode)}</Badge>}
       />
 
-      {actionError && <p className="px-5 py-2 text-xs text-destructive border-b border-red-100 bg-red-50">{actionError}</p>}
+      {actionError && <p className="px-5 py-2 border-b border-red-100 bg-red-50 type-error">{actionError}</p>}
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         <div className="flex-1 space-y-3 min-w-0">
@@ -110,7 +112,7 @@ export default function CountDetailPage() {
           <ModernSection title={`Lines (${c.lines.length})`} index={2}>
             <div className="space-y-3">
               {isCounting && (
-                <button type="button" onClick={() => setShowUnexpected(true)} className="flex items-center gap-1.5 rounded-lg border border-dashed border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-500 hover:bg-stone-50">
+                <button type="button" onClick={() => setShowUnexpected(true)} className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
                   <PackagePlus className="size-3.5" /> Add Unexpected Unit
                 </button>
               )}
@@ -122,7 +124,7 @@ export default function CountDetailPage() {
         <SalesDetailSidebar label="Count Actions">
           {canTransition && isDraft && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 mb-4">
-              <button type="button" disabled={freezing} onClick={() => freeze()} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50">
+              <button type="button" disabled={freezing} onClick={() => freeze()} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
                 <Snowflake className="size-4 text-stone-400" /> {freezing ? 'Freezing…' : 'Freeze & Start Counting'}
               </button>
             </div>
@@ -131,7 +133,7 @@ export default function CountDetailPage() {
           {canTransition && !isDraft && (
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 mb-4">
               {isCounting && remaining > 0 && (
-                <p className="mb-2 text-2xs text-stone-500">{remaining} line(s) have not been counted yet.</p>
+                <p className="mb-2 type-helper">{remaining} line(s) have not been counted yet.</p>
               )}
               <DocumentStatusBar
                 statusCode={c.statusCode}
@@ -154,8 +156,8 @@ export default function CountDetailPage() {
 function ProgressStat({ label, value, highlight, warn, decimal }: { label: string; value: number; highlight?: boolean; warn?: boolean; decimal?: boolean }) {
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-3">
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
-      <p className={`mt-1 text-lg font-bold tabular-nums ${warn ? 'text-amber-600' : highlight ? 'text-emerald-600' : 'text-stone-900'}`}>
+      <p className="type-overline">{label}</p>
+      <p className={`mt-1 text-lg font-bold tabular-nums ${warn ? 'text-amber-600' : highlight ? 'text-success-ink' : 'text-stone-900'}`}>
         {decimal ? value.toFixed(2) : value}
       </p>
     </div>

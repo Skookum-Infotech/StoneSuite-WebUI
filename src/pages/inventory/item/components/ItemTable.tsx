@@ -16,6 +16,7 @@ import { EMPTY_FILTER_STATE, hasActiveFilters, toFilterClauses, type InventoryIt
 import { ItemFilterDrawer } from './ItemFilterDrawer';
 import type { InventoryItemSearchRequest } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 const EXPORT_PAGE_SIZE = 200;
 
 type SortField = 'sku' | 'name';
@@ -154,7 +155,7 @@ export function ItemTable() {
             placeholder="Search SKU or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -172,13 +173,13 @@ export function ItemTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
+          <span className="pr-0.5 type-overline">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
               onClick={() => handleSort(field)}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20' : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
               )}
             >
@@ -189,7 +190,7 @@ export function ItemTable() {
         </div>
 
         {hasFilters && (
-          <button onClick={clearFilters} className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors">
+          <button onClick={clearFilters} className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
             <X className="size-3" />
             Clear
           </button>
@@ -201,7 +202,7 @@ export function ItemTable() {
             onClick={handleDownloadCsv}
             disabled={isExporting}
             aria-label={hasFilters ? 'Download filtered items as CSV' : 'Download all items as CSV'}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
           >
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
@@ -209,21 +210,21 @@ export function ItemTable() {
         )}
       </div>
 
-      {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load items. Please try again.')}</p>}
-      {exportError && <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>}
+      {isError && <p className="type-error">{apiErrorMessage(error, 'Failed to load items. Please try again.')}</p>}
+      {exportError && <p className="type-error">Failed to export CSV: {exportError}</p>}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
           <table className="w-full min-w-[820px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">SKU</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tracking</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Purchasing Price</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Selling Price</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                {canEdit && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>}
+                <th className="px-4 py-3 type-th">SKU</th>
+                <th className="px-4 py-3 type-th">Name</th>
+                <th className="px-4 py-3 type-th">Tracking</th>
+                <th className="px-4 py-3 text-right type-th">Purchasing Price</th>
+                <th className="px-4 py-3 text-right type-th">Selling Price</th>
+                <th className="px-4 py-3 type-th">Status</th>
+                {canEdit && <th className="px-4 py-3 text-right type-th">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
@@ -239,18 +240,18 @@ export function ItemTable() {
                 records.map((it) => (
                   <tr key={it.id} className="group hover:bg-accent/10 transition-colors duration-150">
                     <td className="px-4 py-3.5">
-                      <Link to={`/inventory/item/${it.id}`} className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors">
+                      <Link to={`/inventory/item/${it.id}`} className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id">
                         {it.sku}
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[220px]">{it.name}</td>
-                    <td className="px-4 py-3.5 text-xs text-stone-500">
+                    <td className="px-4 py-3.5 truncate max-w-[220px] type-cell">{it.name}</td>
+                    <td className="px-4 py-3.5 type-cell">
                       {it.tracking === TRACKING_SERIALIZED ? 'Serialized' : 'Quantity'}
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${itemPrice(it, 'purchasing').toFixed(2)}</td>
-                    <td className="px-4 py-3.5 text-xs text-stone-700 tabular-nums text-right">${itemPrice(it, 'selling').toFixed(2)}</td>
+                    <td className="px-4 py-3.5 tabular-nums text-right type-cell">${itemPrice(it, 'purchasing').toFixed(2)}</td>
+                    <td className="px-4 py-3.5 tabular-nums text-right type-cell">${itemPrice(it, 'selling').toFixed(2)}</td>
                     <td className="px-4 py-3.5">
-                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold whitespace-nowrap', it.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
+                      <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 whitespace-nowrap type-pill', it.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-500')}>
                         <span className={cn('size-1.5 shrink-0 rounded-full', it.isActive ? 'bg-emerald-500' : 'bg-stone-400')} aria-hidden="true" />
                         {it.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -276,10 +277,10 @@ export function ItemTable() {
                       <div className="rounded-2xl bg-stone-100 p-4">
                         {hasFilters ? <Search className="size-6 text-stone-400" /> : <Package className="size-6 text-stone-400" />}
                       </div>
-                      <p className="text-sm font-semibold text-stone-700">
+                      <p className="type-card-title">
                         {hasFilters ? 'No items match the current search.' : 'No inventory items added yet.'}
                       </p>
-                      <p className="text-xs text-stone-500">{hasFilters ? 'Try adjusting your search or filters.' : 'Add your first item to get started.'}</p>
+                      <p className="type-helper">{hasFilters ? 'Try adjusting your search or filters.' : 'Add your first item to get started.'}</p>
                     </div>
                   </td>
                 </tr>
@@ -290,13 +291,13 @@ export function ItemTable() {
 
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">Page {pageNum}{hasMore ? '' : ' · last page'}</p>
+            <p className="tabular-nums type-helper">Page {pageNum}{hasMore ? '' : ' · last page'}</p>
             <div className="flex items-center gap-1.5">
-              <button onClick={goPrev} disabled={!hasPrev} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+              <button onClick={goPrev} disabled={!hasPrev} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Previous page">
                 <ChevronLeft className="size-3.5" />
                 Previous
               </button>
-              <button onClick={goNext} disabled={!hasMore} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+              <button onClick={goNext} disabled={!hasMore} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Next page">
                 Next
                 <ChevronRight className="size-3.5" />
               </button>

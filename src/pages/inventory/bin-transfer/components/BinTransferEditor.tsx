@@ -21,6 +21,7 @@ import {
 import type { BinTransferInput, BinTransferRecord } from '@/types/binTransfer';
 import { BinTransferLinesEditor } from './BinTransferLinesEditor';
 
+import { buttonVariants } from '@/components/ui/button';
 const TODAY = () => new Date().toISOString().split('T')[0];
 
 // One form for New and Edit. The page owns the save call and where to go next;
@@ -99,7 +100,7 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
             <button
               type="submit"
               disabled={status.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-all hover:bg-brand-hover disabled:opacity-50"
+              className={buttonVariants()}
             >
               {status.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {status.isPending ? 'Saving…' : copy.submitLabel}
@@ -117,7 +118,7 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
             <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {fieldError || apiErrorMessage(status.error, 'Failed to save the bin transfer.')}
             </p>
@@ -137,7 +138,7 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
                     className={lines.length > 0 ? 'cursor-not-allowed bg-stone-50' : undefined}
                   />
                   {lines.length > 0 && (
-                    <p className="mt-1 text-2xs text-stone-500">Remove every slab to change the location.</p>
+                    <p className="mt-1 type-helper">Remove every slab to change the location.</p>
                   )}
                 </ModernFieldShell>
                 <ModernFieldShell label="Date" required>
@@ -158,10 +159,10 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
               </div>
             </ModernSection>
 
-            <ModernSection title="Slabs to move" index={1}>
+            <ModernSection title="Slabs to Move" index={1}>
               <div className="space-y-3">
                 {summary.count > 0 && (
-                  <p className="text-xs text-stone-500" aria-live="polite">
+                  <p className="type-helper" aria-live="polite">
                     <span className="font-semibold text-stone-800">{summary.count} slab{summary.count === 1 ? '' : 's'}</span>
                     {' · '}{summary.totalArea.toFixed(2)} {summary.areaUnitCode}
                     {summary.destinations > 0 && ` · ${summary.destinations} destination bin${summary.destinations === 1 ? '' : 's'}`}
@@ -178,7 +179,7 @@ export function BinTransferEditor({ initial, copy, onSubmit, status, onCancel }:
             </ModernSection>
 
             {customDefs.length > 0 && (
-              <ModernSection title="Custom fields" index={2}>
+              <ModernSection title="Custom Fields" index={2}>
                 <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                   {customDefs.map((def) => (
                     <DynamicFieldInput

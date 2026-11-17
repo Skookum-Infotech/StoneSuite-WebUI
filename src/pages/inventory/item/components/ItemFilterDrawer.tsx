@@ -11,6 +11,7 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { TRACKING_OPTIONS } from '@/lib/inventoryItemForm';
 import { EMPTY_FILTER_STATE, type InventoryItemFilterState } from '@/lib/inventoryItemFilters';
 
+import { buttonVariants } from '@/components/ui/button';
 // Filter drawer for the Inventory Item list — mirrors ItemReceiptFilterDrawer's
 // "mount only while open" pattern. Covers every filterable field the item
 // resolver whitelists (inventory/resolver.go), including the thickness_mm and
@@ -120,10 +121,10 @@ export function ItemFilterDrawer({ onClose, value, onApply }: {
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-stone-200 px-4 py-3 shrink-0">
-          <button type="button" onClick={() => setDraft(EMPTY_FILTER_STATE)} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors">
+          <button type="button" onClick={() => setDraft(EMPTY_FILTER_STATE)} className={buttonVariants({ variant: 'outline' })}>
             Clear all
           </button>
-          <button type="button" onClick={() => { onApply(draft); onClose(); }} className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover transition-colors shadow-sm">
+          <button type="button" onClick={() => { onApply(draft); onClose(); }} className={buttonVariants()}>
             Apply Filters
           </button>
         </div>

@@ -17,6 +17,8 @@ import { inventoryBinService } from '@/services/inventoryBinService';
 import { BUNDLE_OPEN, BUNDLE_SEALED } from '@/types/inventory';
 import { AddBundleMemberPanel } from './components/AddBundleMemberPanel';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const STATUS_COLORS: Record<string, string> = { open: '#22c55e', sealed: '#3b82f6', broken: '#a8a29e' };
 
 export default function BundleDetailPage() {
@@ -122,7 +124,7 @@ export default function BundleDetailPage() {
 
           <ModernSection title={`Members (${members.length})`} index={1}>
             <div className="space-y-2">
-              {members.length === 0 && <p className="text-xs text-stone-500">No members yet.</p>}
+              {members.length === 0 && <p className="type-helper">No members yet.</p>}
               {members.map((u) => (
                 <div key={u.id} className="flex items-center justify-between rounded-lg border border-stone-200 px-3 py-2">
                   <button type="button" onClick={() => navigate(`/inventory/unit/${u.id}`)} className="text-xs font-medium text-stone-800 hover:text-accent-foreground">
@@ -135,7 +137,7 @@ export default function BundleDetailPage() {
                   )}
                 </div>
               ))}
-              {removeError && <p className="text-2xs text-destructive">{apiErrorMessage(removeError, 'Failed to remove member.')}</p>}
+              {removeError && <p className="type-error">{apiErrorMessage(removeError, 'Failed to remove member.')}</p>}
               {isOpen && canUpdate && <AddBundleMemberPanel bundle={bundle} onAdded={invalidate} />}
             </div>
           </ModernSection>
@@ -148,31 +150,31 @@ export default function BundleDetailPage() {
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-2 mb-4">
               <p className="text-xs font-semibold text-stone-500 mb-1">Lifecycle</p>
               {isOpen && (
-                <button type="button" disabled={sealing || members.length === 0} onClick={() => seal()} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                <button type="button" disabled={sealing || members.length === 0} onClick={() => seal()} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
                   <Lock className="size-4 text-stone-400" /> {sealing ? 'Sealing…' : 'Seal'}
                 </button>
               )}
               {isSealed && (
                 <>
-                  <button type="button" disabled={breaking} onClick={() => breakBundle()} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-40">
+                  <button type="button" disabled={breaking} onClick={() => breakBundle()} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
                     <Unlock className="size-4 text-stone-400" /> {breaking ? 'Breaking…' : 'Break'}
                   </button>
-                  <button type="button" onClick={() => setShowMoveBin((v) => !v)} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
+                  <button type="button" onClick={() => setShowMoveBin((v) => !v)} className={cn(buttonVariants({ variant: 'ghost' }), 'flex w-full gap-2.5')}>
                     <ArrowLeftRight className="size-4 text-stone-400" /> Move (whole pallet)
                   </button>
                   {showMoveBin && (
                     <div className="space-y-2 rounded-lg border border-stone-200 p-2.5">
                       <BinPicker bins={bins} value={moveBinId} onChange={setMoveBinId} label="Bin" allowEmpty emptyLabel="— Unbin —" />
-                      <button type="button" disabled={moving} onClick={() => moveBin()} className="w-full rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50">
+                      <button type="button" disabled={moving} onClick={() => moveBin()} className={cn(buttonVariants(), 'w-full')}>
                         {moving ? 'Moving…' : 'Confirm Move'}
                       </button>
-                      {moveError && <p className="text-2xs text-destructive">{apiErrorMessage(moveError, 'Failed to move bundle.')}</p>}
+                      {moveError && <p className="type-error">{apiErrorMessage(moveError, 'Failed to move bundle.')}</p>}
                     </div>
                   )}
                 </>
               )}
-              {sealError && <p className="text-2xs text-destructive">{apiErrorMessage(sealError, 'Failed to seal bundle.')}</p>}
-              {breakError && <p className="text-2xs text-destructive">{apiErrorMessage(breakError, 'Failed to break bundle.')}</p>}
+              {sealError && <p className="type-error">{apiErrorMessage(sealError, 'Failed to seal bundle.')}</p>}
+              {breakError && <p className="type-error">{apiErrorMessage(breakError, 'Failed to break bundle.')}</p>}
             </div>
           )}
         </SalesDetailSidebar>

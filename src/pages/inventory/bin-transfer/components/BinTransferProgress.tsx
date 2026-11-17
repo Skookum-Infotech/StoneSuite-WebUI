@@ -28,7 +28,7 @@ export function BinTransferProgress({ statusCode }: { statusCode: string }) {
             aria-current={step.state === 'current' ? 'step' : undefined}
             className={cn('flex items-center gap-2', i < steps.length - 1 && 'flex-1')}
           >
-            <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-2xs font-semibold ring-1', DOT[step.state])}>
+            <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-micro font-semibold ring-1', DOT[step.state])}>
               {step.state === 'done' ? <Check className="size-3.5" aria-hidden="true" /> : i + 1}
             </span>
             <span className={cn('whitespace-nowrap text-xs', LABEL[step.state], cancelled && 'text-stone-500')}>

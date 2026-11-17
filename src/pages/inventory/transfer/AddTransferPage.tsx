@@ -23,6 +23,7 @@ import { UnsavedChangesPrompt } from '@/components/UnsavedChangesPrompt';
 import { TransferLinesEditor } from './components/TransferLinesEditor';
 import { emptyTransferLine, type TransferDraftLine } from '@/lib/inventoryTransferLines';
 
+import { buttonVariants } from '@/components/ui/button';
 function toLineInput(line: TransferDraftLine): TransferLineInput | null {
   if (!line.item) return null;
   const serialized = line.item.tracking === TRACKING_SERIALIZED;
@@ -111,7 +112,7 @@ export default function AddTransferPage() {
           title="New Transfer"
           subtitle="Fields marked * are required."
           actions={(
-            <button type="submit" disabled={isPending} className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+            <button type="submit" disabled={isPending} className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Draft'}
             </button>
@@ -126,7 +127,7 @@ export default function AddTransferPage() {
             className="shrink-0 flex items-start gap-3 border-b border-red-200 bg-red-50 px-5 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100"><AlertCircle className="size-3 text-red-600" /></span>
-            <p className="text-xs text-red-700"><span className="font-bold">Error: </span>{fieldError || apiErrorMessage(saveError, 'Failed to save transfer.')}</p>
+            <p className="type-error"><span className="font-bold">Error: </span>{fieldError || apiErrorMessage(saveError, 'Failed to save transfer.')}</p>
           </div>
         )}
 

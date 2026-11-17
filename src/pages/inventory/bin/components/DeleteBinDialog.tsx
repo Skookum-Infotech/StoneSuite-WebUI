@@ -6,6 +6,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import type { Bin } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export function DeleteBinDialog({ bin, onClose, onDeleted }: { bin: Bin; onClose: () => void; onDeleted: () => void }) {
   const contentRef = useModalDialog(onClose);
   const queryClient = useQueryClient();
@@ -26,17 +28,17 @@ export function DeleteBinDialog({ bin, onClose, onDeleted }: { bin: Bin; onClose
           <div className="flex items-center gap-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10"><AlertTriangle className="size-4 text-destructive" /></div>
             <div>
-              <h3 id="delete-bin-title" className="text-sm font-bold text-stone-900">Delete bin?</h3>
-              <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+              <h3 id="delete-bin-title" className="type-card-title">Delete Bin?</h3>
+              <p className="mt-0.5 type-helper">This action cannot be undone.</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
         </div>
         <p className="text-xs text-stone-600 mb-4"><span className="font-semibold">{bin.path || bin.name}</span> will be permanently deleted.</p>
-        {error && <p className="mb-3 text-xs text-destructive">{apiErrorMessage(error, 'Failed to delete bin.')}</p>}
+        {error && <p className="mb-3 type-error">{apiErrorMessage(error, 'Failed to delete bin.')}</p>}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={isPending} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">Cancel</button>
-          <button type="button" onClick={() => del()} disabled={isPending} className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 active:scale-95 transition-all">
+          <button type="button" onClick={onClose} disabled={isPending} className={buttonVariants({ variant: 'outline' })}>Cancel</button>
+          <button type="button" onClick={() => del()} disabled={isPending} className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}>
             {isPending ? 'Deleting…' : 'Delete Bin'}
           </button>
         </div>

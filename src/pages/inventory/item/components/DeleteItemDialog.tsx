@@ -6,6 +6,8 @@ import { inventoryService } from '@/services/inventoryService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Mirrors DeletePurchaseOrderDialog's focus management and confirm UX.
 export function DeleteItemDialog({ itemId, label, onDeleted }: {
   itemId: string;
@@ -66,8 +68,8 @@ export function DeleteItemDialog({ itemId, label, onDeleted }: {
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="delete-item-dialog-title" className="text-sm font-bold text-stone-900">Delete item?</h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <h3 id="delete-item-dialog-title" className="type-card-title">Delete Item?</h3>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -76,7 +78,7 @@ export function DeleteItemDialog({ itemId, label, onDeleted }: {
             </p>
 
             {del.error && (
-              <p className="mb-3 text-xs text-destructive">{apiErrorMessage(del.error, 'Failed to delete item.')}</p>
+              <p className="mb-3 type-error">{apiErrorMessage(del.error, 'Failed to delete item.')}</p>
             )}
 
             <div className="flex justify-end gap-2">
@@ -84,7 +86,7 @@ export function DeleteItemDialog({ itemId, label, onDeleted }: {
                 type="button"
                 onClick={close}
                 disabled={del.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -92,7 +94,7 @@ export function DeleteItemDialog({ itemId, label, onDeleted }: {
                 type="button"
                 onClick={() => del.mutate()}
                 disabled={del.isPending}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {del.isPending ? 'Deleting…' : 'Delete item'}
               </button>

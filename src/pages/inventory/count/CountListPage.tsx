@@ -10,6 +10,8 @@ import { docStatusLabel, DOC_STATUS_COLORS } from '@/lib/inventoryDocumentStatus
 import type { CountSearchRequest } from '@/services/inventoryCountService';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const PAGE_SIZE = 25;
 
 function fmtDate(iso?: string): string {
@@ -61,12 +63,12 @@ export default function CountListPage() {
               <ClipboardCheck className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Inventory Counts</h1>
+              <h1 className="type-page-title">Inventory Counts</h1>
               <p className="text-sm text-stone-500">Cycle counts and physical stock-takes.</p>
             </div>
           </div>
           {canCreate && (
-            <button onClick={() => navigate('/inventory/count/new')} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95">
+            <button onClick={() => navigate('/inventory/count/new')} className={cn(buttonVariants(), 'active:scale-95')}>
               <Plus className="size-3.5" /> New Count
             </button>
           )}
@@ -74,21 +76,21 @@ export default function CountListPage() {
 
         <div className="mt-5 relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
-          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all" />
+          <input type="text" placeholder="Search…" value={term} onChange={(e) => setTerm(e.target.value)} className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all type-input" />
         </div>
 
-        {isError && <p className="mt-3 text-xs text-red-500">{apiErrorMessage(error, 'Failed to load counts.')}</p>}
+        {isError && <p className="mt-3 type-error">{apiErrorMessage(error, 'Failed to load counts.')}</p>}
 
         <div className="mt-4 flex-1 overflow-y-auto modal-scrollbar">
           <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-stone-200 bg-table-header">
                 <tr>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Number</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Date</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Progress</th>
+                  <th className="px-4 py-3 type-th">Number</th>
+                  <th className="px-4 py-3 type-th">Location</th>
+                  <th className="px-4 py-3 type-th">Status</th>
+                  <th className="px-4 py-3 type-th">Date</th>
+                  <th className="px-4 py-3 text-right type-th">Progress</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -96,7 +98,7 @@ export default function CountListPage() {
                   <tr><td colSpan={5} className="px-4 py-6 text-center text-stone-500">Loading…</td></tr>
                 ) : records.length > 0 ? records.map((c) => (
                   <tr key={c.id} className="relative hover:bg-accent/10 transition-colors">
-                    <td className="px-4 py-3.5 font-mono font-semibold text-stone-900"><Link to={`/inventory/count/${c.id}`} className="after:absolute after:inset-0">{c.number || '—'}</Link></td>
+                    <td className="px-4 py-3.5 type-record-id"><Link to={`/inventory/count/${c.id}`} className="after:absolute after:inset-0">{c.number || '—'}</Link></td>
                     <td className="px-4 py-3.5 text-stone-700">{c.warehouseName || '—'}</td>
                     <td className="px-4 py-3.5"><Badge color={DOC_STATUS_COLORS[c.statusCode] ?? '#a8a29e'}>{docStatusLabel(c.statusCode)}</Badge></td>
                     <td className="px-4 py-3.5 text-stone-500 tabular-nums">{fmtDate(c.date)}</td>
@@ -110,8 +112,8 @@ export default function CountListPage() {
           </div>
           {records.length > 0 && (
             <div className="flex items-center justify-end gap-1.5 py-3">
-              <button onClick={goPrev} disabled={!hasPrev} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Previous page"><ChevronLeft className="size-3.5" />Previous</button>
-              <button onClick={goNext} disabled={!hasMore} className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Next page">Next<ChevronRight className="size-3.5" /></button>
+              <button onClick={goPrev} disabled={!hasPrev} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Previous page"><ChevronLeft className="size-3.5" />Previous</button>
+              <button onClick={goNext} disabled={!hasMore} className={cn(buttonVariants({ variant: 'outline' }), 'flex')} aria-label="Next page">Next<ChevronRight className="size-3.5" /></button>
             </div>
           )}
         </div>

@@ -68,7 +68,7 @@ export default function AdjustmentDetailPage() {
         statusBadge={<Badge color={DOC_STATUS_COLORS[a.statusCode] ?? '#a8a29e'}>{docStatusLabel(a.statusCode)}</Badge>}
       />
 
-      {actionError && <p className="px-5 py-2 text-xs text-destructive border-b border-red-100 bg-red-50">{actionError}</p>}
+      {actionError && <p className="px-5 py-2 border-b border-red-100 bg-red-50 type-error">{actionError}</p>}
 
       <div className="flex flex-col lg:flex-row gap-6 px-4 py-4 sm:px-5 sm:py-5 3xl:px-12 3xl:py-8 3xl:gap-10 4xl:px-16 4xl:py-10 4xl:gap-14">
         <div className="flex-1 space-y-3 min-w-0">
@@ -99,7 +99,7 @@ export default function AdjustmentDetailPage() {
                       <td className="px-3 py-2.5 text-stone-800">{line.inventoryItemName || '—'}</td>
                       <td className="px-3 py-2.5 text-stone-500">{line.unitSerial || '—'}</td>
                       <td className="px-3 py-2.5 text-stone-500">{line.reasonName || '—'}</td>
-                      <td className={`px-3 py-2.5 text-right tabular-nums font-semibold ${line.qtyDelta < 0 ? 'text-destructive' : 'text-emerald-600'}`}>{line.qtyDelta > 0 ? '+' : ''}{line.qtyDelta}</td>
+                      <td className={`px-3 py-2.5 text-right tabular-nums font-semibold ${line.qtyDelta < 0 ? 'text-danger-ink' : 'text-success-ink'}`}>{line.qtyDelta > 0 ? '+' : ''}{line.qtyDelta}</td>
                     </tr>
                   ))}
                 </tbody>

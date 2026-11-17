@@ -25,17 +25,17 @@ export function RemnantsFinder() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-end gap-3">
         <div className="w-full sm:w-72">
-          <label className="mb-1.5 block text-xs font-semibold text-stone-900">Item</label>
+          <label className="mb-1.5 block type-field-label">Item</label>
           <ItemPicker value={item} onChange={setItem} />
         </div>
         <div className="w-32">
-          <label className="mb-1.5 block text-xs font-semibold text-stone-900">Min area</label>
-          <input type="number" min={0} value={minArea} onChange={(e) => setMinArea(e.target.value)} placeholder="Any" className="w-full h-10 px-3 text-xs border border-stone-300 rounded-[10px]" aria-label="Minimum area" />
+          <label className="mb-1.5 block type-field-label">Min area</label>
+          <input type="number" min={0} value={minArea} onChange={(e) => setMinArea(e.target.value)} placeholder="Any" className="w-full h-10 px-3 border border-stone-300 rounded-[10px] type-input" aria-label="Minimum area" />
         </div>
       </div>
 
-      {!item && <p className="text-xs text-stone-500">Pick an item to see its usable remnants, largest first.</p>}
-      {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load remnants.')}</p>}
+      {!item && <p className="type-helper">Pick an item to see its usable remnants, largest first.</p>}
+      {isError && <p className="type-error">{apiErrorMessage(error, 'Failed to load remnants.')}</p>}
 
       {item && (
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
@@ -43,10 +43,10 @@ export function RemnantsFinder() {
             <table className="w-full min-w-[600px] text-left text-xs">
               <thead className="border-b border-stone-200 bg-table-header">
                 <tr>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Serial</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Area</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Grade</th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Location</th>
+                  <th className="px-4 py-3 type-th">Serial</th>
+                  <th className="px-4 py-3 text-right type-th">Area</th>
+                  <th className="px-4 py-3 type-th">Grade</th>
+                  <th className="px-4 py-3 type-th">Location</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
@@ -56,7 +56,7 @@ export function RemnantsFinder() {
                   remnants.map((r) => (
                     <tr key={r.id} className="hover:bg-accent/10 transition-colors">
                       <td className="px-4 py-3">
-                        <button type="button" onClick={() => navigate(`/inventory/unit/${r.id}`)} className="font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground">{r.serial}</button>
+                        <button type="button" onClick={() => navigate(`/inventory/unit/${r.id}`)} className="hover:text-accent-foreground type-record-id">{r.serial}</button>
                       </td>
                       <td className="px-4 py-3 tabular-nums text-right text-stone-700">{r.area.toFixed(2)}</td>
                       <td className="px-4 py-3 text-stone-500">{r.grade || '—'}</td>
@@ -67,7 +67,7 @@ export function RemnantsFinder() {
                   <tr><td colSpan={4} className="py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <Layers className="size-6 text-stone-400" />
-                      <p className="text-xs text-stone-500">No usable remnants for this item.</p>
+                      <p className="type-helper">No usable remnants for this item.</p>
                     </div>
                   </td></tr>
                 )}

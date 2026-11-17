@@ -32,10 +32,10 @@ export function UnitOffcutsList({ parentId }: { parentId: string }) {
       <table className="w-full min-w-[420px] text-left text-xs" aria-label="Pieces cut from this unit">
         <thead className="border-b border-stone-200 bg-table-header">
           <tr>
-            <th className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-stone-500">Offcut</th>
-            <th className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-stone-500">Size (mm)</th>
-            <th className="px-3 py-2 text-right text-2xs font-semibold uppercase tracking-wider text-stone-500">Area</th>
-            <th className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+            <th className="px-3 py-2 type-th">Offcut</th>
+            <th className="px-3 py-2 type-th">Size (mm)</th>
+            <th className="px-3 py-2 text-right type-th">Area</th>
+            <th className="px-3 py-2 type-th">Status</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-stone-100">
@@ -46,7 +46,7 @@ export function UnitOffcutsList({ parentId }: { parentId: string }) {
                   type="button"
                   onClick={() => navigate(`/inventory/unit/${o.id}`)}
                   aria-label={`Open offcut ${o.serial}`}
-                  className="font-mono font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                  className="hover:text-accent-foreground transition-colors type-record-id"
                 >
                   {o.serial}
                 </button>

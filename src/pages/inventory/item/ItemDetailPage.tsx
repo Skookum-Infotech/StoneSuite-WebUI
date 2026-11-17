@@ -204,7 +204,7 @@ export default function ItemDetailPage() {
                       <HistoryIcon className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-stone-800">{h.action}</p>
-                        <p className="text-2xs text-stone-500">{fmtDateTime(h.at)} · {h.byName}</p>
+                        <p className="type-helper">{fmtDateTime(h.at)} · {h.byName}</p>
                       </div>
                     </li>
                   ))}
@@ -244,7 +244,7 @@ export default function ItemDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {exportPdfError && <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>}
+            {exportPdfError && <p role="alert" className="type-error">{exportPdfError}</p>}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">

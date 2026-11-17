@@ -26,7 +26,7 @@ export function UnitLifecycle({ unit }: { unit: InventoryUnit }) {
                 step.current ? 'bg-emerald-500 ring-emerald-500' : 'bg-stone-300 ring-stone-300',
               )}
             />
-            <p className="text-sm font-semibold text-stone-900">
+            <p className="type-card-title">
               {step.title}
               {link && (
                 <>
@@ -43,7 +43,7 @@ export function UnitLifecycle({ unit }: { unit: InventoryUnit }) {
               )}
             </p>
             {step.detail && <p className="text-xs text-stone-600">{step.detail}</p>}
-            {step.at && <p className="text-2xs text-stone-500">{fmtDateTime(step.at)}</p>}
+            {step.at && <p className="type-helper">{fmtDateTime(step.at)}</p>}
           </li>
         );
       })}

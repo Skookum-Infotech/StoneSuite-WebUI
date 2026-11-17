@@ -60,7 +60,7 @@ describe('Inventory → Locations page', () => {
   it('explains that locations come from Company Info when the tenant has none', () => {
     renderPage({ warehouses: [] });
 
-    expect(screen.getByText('No locations yet')).toBeInTheDocument();
+    expect(screen.getByText('No Locations Yet')).toBeInTheDocument();
     expect(screen.getByText(/set up in Company Info/)).toBeInTheDocument();
   });
 

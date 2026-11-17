@@ -8,6 +8,7 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { CustomerPicker, type CustomerRef } from '@/pages/sales/components/CustomerPicker';
 import type { InventoryUnit } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 // Holds one available slab for a customer, picked from a searchable list of the
 // customers who can be used on records. The slab goes to Reserved and nothing
 // else may take it until the reservation is released.
@@ -42,8 +43,8 @@ export function ReserveUnitDialog({ unit, onClose, onReserved }: {
               <UserCheck className="size-4 text-amber-700" />
             </div>
             <div>
-              <h3 id="reserve-unit-title" className="text-sm font-bold text-stone-900">Reserve for customer</h3>
-              <p className="text-xs text-stone-500 mt-0.5">{unit.serial} · {unit.area.toFixed(2)} {unit.areaUnitCode ?? ''}</p>
+              <h3 id="reserve-unit-title" className="type-card-title">Reserve for Customer</h3>
+              <p className="mt-0.5 type-helper">{unit.serial} · {unit.area.toFixed(2)} {unit.areaUnitCode ?? ''}</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-400 hover:bg-stone-100"><X className="size-4" /></button>
@@ -51,20 +52,20 @@ export function ReserveUnitDialog({ unit, onClose, onReserved }: {
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-stone-900">Customer <span className="text-destructive">*</span></label>
+            <label className="block type-field-label">Customer <span className="text-danger-ink">*</span></label>
             <CustomerPicker value={customer} onChange={setCustomer} label="customer to reserve for" />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="reserve-note" className="block text-xs font-semibold text-stone-900">Note</label>
-            <input id="reserve-note" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" className="w-full h-10 px-3.5 text-xs border border-stone-300 rounded-[10px]" />
+            <label htmlFor="reserve-note" className="block type-field-label">Note</label>
+            <input id="reserve-note" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" className="w-full h-10 px-3.5 border border-stone-300 rounded-[10px] type-input" />
           </div>
-          <p className="text-2xs text-stone-500">The slab stays in stock but no job, transfer or cut can use it until the reservation is released.</p>
+          <p className="type-helper">The slab stays in stock but no job, transfer or cut can use it until the reservation is released.</p>
         </div>
 
-        {error && <p role="alert" className="mt-3 text-xs text-destructive">{apiErrorMessage(error, 'Failed to reserve unit.')}</p>}
+        {error && <p role="alert" className="mt-3 type-error">{apiErrorMessage(error, 'Failed to reserve unit.')}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={isPending} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">Cancel</button>
+          <button type="button" onClick={onClose} disabled={isPending} className={buttonVariants({ variant: 'outline' })}>Cancel</button>
           <button type="button" onClick={() => customer && reserve(customer)} disabled={isPending || !customer} className="rounded-lg bg-stone-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-stone-800 disabled:opacity-50 active:scale-95 transition-all">
             {isPending ? 'Reserving…' : 'Reserve'}
           </button>

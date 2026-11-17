@@ -9,6 +9,8 @@ import { unitLabel } from '@/lib/unitLabels';
 import { TRACKING_QUANTITY, type InventoryItemSearchRequest } from '@/types/inventory';
 import { ItemStockTab } from './ItemStockTab';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
 const COLUMN_COUNT = 7;
@@ -88,11 +90,11 @@ export function StockOnHandTable() {
           onChange={(e) => setTerm(e.target.value)}
           placeholder="Search by name or SKU"
           aria-label="Search stock"
-          className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5"
+          className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 type-input"
         />
       </div>
 
-      {isError && <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load stock. Please try again.')}</p>}
+      {isError && <p className="type-error">{apiErrorMessage(error, 'Failed to load stock. Please try again.')}</p>}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto modal-scrollbar">
@@ -133,16 +135,16 @@ export function StockOnHandTable() {
                           {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-stone-900">{it.sku}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap type-record-id">{it.sku}</td>
                       <td className="max-w-[240px] truncate px-4 py-3.5 text-stone-700">{it.name}</td>
                       <td className="px-4 py-3.5 text-right tabular-nums text-stone-800">
-                        {total ? <>{formatStockQty(total.onHand)}{unit && <span className="ml-1 text-stone-400">{unit}</span>}</> : totalsLoading ? '…' : '—'}
+                        {total ? <>{formatStockQty(total.onHand)}{unit && <span className="ml-1 text-ink-muted">{unit}</span>}</> : totalsLoading ? '…' : '—'}
                       </td>
                       <td className="px-4 py-3.5 text-right tabular-nums text-stone-500">{total ? formatStockQty(total.allocated) : '—'}</td>
                       <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-stone-800">{total ? formatStockQty(total.available) : '—'}</td>
                       <td className="px-4 py-3.5">
                         {total?.belowReorder && (
-                          <span className="rounded-md bg-amber-50 px-2 py-0.5 text-2xs font-semibold text-amber-700">Low stock</span>
+                          <span className="rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">Low stock</span>
                         )}
                       </td>
                     </tr>
@@ -159,8 +161,8 @@ export function StockOnHandTable() {
                   <td colSpan={COLUMN_COUNT} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="rounded-2xl bg-stone-100 p-4"><Package className="size-6 text-stone-400" /></div>
-                      <p className="text-sm font-semibold text-stone-700">{debounced ? 'No items match that search.' : 'No counted items yet.'}</p>
-                      <p className="text-xs text-stone-500">
+                      <p className="type-card-title">{debounced ? 'No items match that search.' : 'No counted items yet.'}</p>
+                      <p className="type-helper">
                         {debounced ? 'Try a different name or SKU.' : 'Items you count by quantity — adhesive, sinks, blades — appear here once received.'}
                       </p>
                     </div>
@@ -173,14 +175,14 @@ export function StockOnHandTable() {
 
         {records.length > 0 && (
           <div className="flex items-center justify-between border-t border-stone-100 bg-stone-50/40 px-4 py-3">
-            <p className="text-xs tabular-nums text-stone-500">Page {prevCursors.length + 1}{data?.hasMore ? '' : ' · last page'}</p>
+            <p className="tabular-nums type-helper">Page {prevCursors.length + 1}{data?.hasMore ? '' : ' · last page'}</p>
             <div className="flex items-center gap-1.5">
               <button onClick={goPrev} disabled={prevCursors.length === 0} aria-label="Previous page"
-                className="flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
                 <ChevronLeft className="size-3.5" /> Previous
               </button>
               <button onClick={goNext} disabled={!data?.hasMore} aria-label="Next page"
-                className="flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}>
                 Next <ChevronRight className="size-3.5" />
               </button>
             </div>

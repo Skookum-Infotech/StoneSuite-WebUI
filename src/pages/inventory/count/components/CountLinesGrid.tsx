@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { countedQtyDisplay, foundDisplay, lineNeedsReason } from '@/lib/inventoryCountLines';
 import type { Count, CountEntry, CountLine } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 interface DirtyEntry {
   countedQty?: string;
   found?: boolean;
@@ -88,12 +89,12 @@ export function CountLinesGrid({ count, editable }: { count: Count; editable: bo
             type="button"
             disabled={dirtyCount === 0 || isPending}
             onClick={() => submit()}
-            className="flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors"
+            className={cn(buttonVariants(), 'flex')}
           >
             {isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
             {isPending ? 'Saving…' : `Save Progress${dirtyCount > 0 ? ` (${dirtyCount})` : ''}`}
           </button>
-          {error && <p className="text-2xs text-destructive">{apiErrorMessage(error, 'Failed to save counts.')}</p>}
+          {error && <p className="type-error">{apiErrorMessage(error, 'Failed to save counts.')}</p>}
         </div>
       )}
     </div>
@@ -116,7 +117,7 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
     <tr className={cn(hasVariance && 'bg-amber-50/40')}>
       <td className="px-3 py-2.5">
         <span className="block font-medium text-stone-800">{line.inventoryItemName || '—'}</span>
-        {line.unitSerial && <span className="block font-mono text-2xs text-stone-500">{line.unitSerial}</span>}
+        {line.unitSerial && <span className="block font-mono type-subline">{line.unitSerial}</span>}
       </td>
       <td className="px-3 py-2.5 text-stone-500">{line.binPath || '—'}</td>
       <td className="px-3 py-2.5 text-right tabular-nums text-stone-700">{line.systemQty}</td>
@@ -124,8 +125,8 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
         {serialized ? (
           editable ? (
             <div className="flex justify-end gap-1">
-              <button type="button" onClick={() => onChange({ found: true })} className={cn('rounded-md px-2 py-1 text-2xs font-semibold', (dirty?.found ?? undefined) === true ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-500')}>Found</button>
-              <button type="button" onClick={() => onChange({ found: false })} className={cn('rounded-md px-2 py-1 text-2xs font-semibold', (dirty?.found ?? undefined) === false ? 'bg-destructive/10 text-destructive' : 'bg-stone-100 text-stone-500')}>Missing</button>
+              <button type="button" onClick={() => onChange({ found: true })} className={cn('rounded-md px-2 py-1 text-micro font-semibold', (dirty?.found ?? undefined) === true ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-500')}>Found</button>
+              <button type="button" onClick={() => onChange({ found: false })} className={cn('rounded-md px-2 py-1 text-micro font-semibold', (dirty?.found ?? undefined) === false ? 'bg-destructive/10 text-danger-ink' : 'bg-stone-100 text-stone-500')}>Missing</button>
             </div>
           ) : (
             <span className="text-stone-500">{foundDisplay(line.countedQty)}</span>
@@ -137,7 +138,7 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
             onChange={(e) => onChange({ countedQty: e.target.value })}
             placeholder="—"
             aria-label={`Counted quantity for ${line.inventoryItemName}`}
-            className="w-24 h-8 rounded-md border border-stone-300 px-2 text-right text-xs"
+            className="w-24 h-8 rounded-md border border-stone-300 px-2 text-right type-input"
           />
         ) : (
           <span className="tabular-nums text-stone-700">
@@ -160,7 +161,7 @@ function CountLineRow({ line, editable, dirty, onChange, reasons }: {
           ) : line.reasonName ? (
             <span className="text-stone-500">{line.reasonName}</span>
           ) : (
-            <span className="font-semibold text-amber-700">Missing — recount needed</span>
+            <span className="font-semibold text-warning-ink">Missing — recount needed</span>
           )
         ) : (
           <span className="text-stone-500">—</span>

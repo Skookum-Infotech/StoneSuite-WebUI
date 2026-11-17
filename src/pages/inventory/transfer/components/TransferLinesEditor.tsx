@@ -5,6 +5,8 @@ import { fieldCls } from '@/components/crm/formUtils';
 import { TRACKING_SERIALIZED } from '@/types/inventory';
 import { emptyTransferLine, type TransferDraftLine } from '@/lib/inventoryTransferLines';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // A serialized line sends inventoryUnitId only — qty is ignored server-side
 // (the slab moves whole or not at all, spec §8).
 export function TransferLinesEditor({ lines, onChange, fromWarehouseId }: {
@@ -26,7 +28,7 @@ export function TransferLinesEditor({ lines, onChange, fromWarehouseId }: {
         return (
           <div key={line.key} className="rounded-lg border border-stone-200 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-2xs font-semibold text-stone-500">Line {i + 1}</span>
+              <span className="text-micro font-semibold text-stone-500">Line {i + 1}</span>
               <button type="button" onClick={() => remove(line.key)} aria-label={`Remove line ${i + 1}`} className="text-stone-400 hover:text-destructive"><Trash2 className="size-3.5" /></button>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -61,7 +63,7 @@ export function TransferLinesEditor({ lines, onChange, fromWarehouseId }: {
           </div>
         );
       })}
-      <button type="button" onClick={() => onChange([...lines, emptyTransferLine()])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-300 px-3 py-2 text-xs font-medium text-stone-500 hover:bg-stone-50">
+      <button type="button" onClick={() => onChange([...lines, emptyTransferLine()])} className={cn(buttonVariants({ variant: 'outline' }), 'flex w-full')}>
         <Plus className="size-3.5" /> Add line
       </button>
     </div>

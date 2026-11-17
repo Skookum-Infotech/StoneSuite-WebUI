@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { UNIT_STATUS_AVAILABLE, UNIT_STATUS_RECEIVED, UNIT_STATUS_RESERVED } from '@/types/inventory';
 import type { InventoryUnit } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 const SEARCH_DEBOUNCE_MS = 300;
 const PICKER_LIMIT = 30;
 
@@ -72,8 +73,8 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
               <Layers className="size-4 text-accent-foreground" aria-hidden="true" />
             </div>
             <div>
-              <h3 id="slab-picker-title" className="text-sm font-bold text-stone-900">Add slabs</h3>
-              <p className="mt-0.5 text-xs text-stone-500">Slabs in this location that can be moved.</p>
+              <h3 id="slab-picker-title" className="type-card-title">Add Slabs</h3>
+              <p className="mt-0.5 type-helper">Slabs in this location that can be moved.</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-500 hover:bg-stone-100">
@@ -90,16 +91,16 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
               onChange={(e) => setTerm(e.target.value)}
               placeholder="Search serial, item or lot…"
               aria-label="Search slabs"
-              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30"
+              className="h-9 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 placeholder:text-stone-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
             />
             {isFetching && <Loader2 className="absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-stone-400" aria-hidden="true" />}
           </div>
         </div>
 
         <div className="min-h-[12rem] flex-1 overflow-y-auto modal-scrollbar px-2 py-2">
-          {isError && <p role="alert" className="px-3 py-4 text-xs text-destructive">{apiErrorMessage(error, 'Failed to load slabs.')}</p>}
+          {isError && <p role="alert" className="px-3 py-4 type-error">{apiErrorMessage(error, 'Failed to load slabs.')}</p>}
           {!isError && results.length === 0 && !isFetching && (
-            <p className="px-3 py-10 text-center text-xs text-stone-500">
+            <p className="px-3 py-10 text-center type-helper">
               {debounced ? 'No movable slabs match that search.' : 'No movable slabs in this location.'}
             </p>
           )}
@@ -125,22 +126,22 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
                     />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-semibold text-stone-900">{unit.serial}</span>
+                        <span className="type-record-id">{unit.serial}</span>
                         {unit.status === UNIT_STATUS_RECEIVED && (
-                          <span className="rounded bg-cyan-100 px-1.5 py-0.5 text-2xs font-semibold text-cyan-700">Received</span>
+                          <span className="rounded bg-cyan-100 px-1.5 py-0.5 text-cyan-700 type-pill">Received</span>
                         )}
                         {unit.status === UNIT_STATUS_RESERVED && (
-                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-2xs font-semibold text-amber-700">Reserved</span>
+                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-warning-ink type-pill">Reserved</span>
                         )}
-                        {added && <span className="text-2xs font-semibold text-stone-500">Already added</span>}
+                        {added && <span className="text-micro font-semibold text-stone-500">Already added</span>}
                       </span>
-                      <span className="block truncate text-2xs text-stone-500">{unit.inventoryItemName ?? '—'}</span>
+                      <span className="block truncate type-subline">{unit.inventoryItemName ?? '—'}</span>
                     </span>
                     <span className="shrink-0 text-right">
                       <span className="block text-xs tabular-nums text-stone-700">
                         {unit.area.toFixed(2)} {unit.areaUnitCode ?? ''}
                       </span>
-                      <span className="block text-2xs text-stone-500">{unit.binPath || 'No bin'}</span>
+                      <span className="block type-subline">{unit.binPath || 'No bin'}</span>
                     </span>
                   </label>
                 </li>
@@ -150,18 +151,18 @@ export function SlabPickerDialog({ warehouseId, addedIds, onAdd, onClose }: {
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-stone-100 px-5 py-3">
-          <p className="text-xs text-stone-500" aria-live="polite">
+          <p className="type-helper" aria-live="polite">
             {picked.size === 0 ? 'Tick the slabs to move.' : `${picked.size} selected`}
           </p>
           <div className="flex gap-2">
-            <button type="button" onClick={onClose} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">
+            <button type="button" onClick={onClose} className={buttonVariants({ variant: 'outline' })}>
               Cancel
             </button>
             <button
               type="button"
               disabled={picked.size === 0}
               onClick={() => onAdd([...picked.values()])}
-              className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition-all hover:bg-brand-hover active:scale-95 disabled:opacity-50"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               {picked.size > 0 ? `Add ${picked.size} slab${picked.size === 1 ? '' : 's'}` : 'Add slabs'}
             </button>
