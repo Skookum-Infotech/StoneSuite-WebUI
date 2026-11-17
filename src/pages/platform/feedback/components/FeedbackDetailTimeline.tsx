@@ -19,7 +19,7 @@ import type { FeedbackComment, FeedbackTicketDetail } from '@/types/feedback';
 
 function StatusChangeEntry({ comment }: { comment: FeedbackComment }) {
   return (
-    <div className="flex items-center gap-2 py-1 text-2xs text-stone-500 dark:text-stone-400">
+    <div className="flex items-center gap-2 py-1 dark:text-stone-400 type-subline">
       <ShieldCheck className="size-3 shrink-0 text-stone-400" />
       <span>
         {comment.authorName || 'An admin'} moved this to{' '}
@@ -42,16 +42,16 @@ function CommentEntry({ comment }: { comment: FeedbackComment }) {
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-2xs font-semibold text-stone-700 dark:text-stone-200">
+        <span className="text-micro font-semibold text-stone-700 dark:text-stone-200">
           {comment.authorName || (comment.authorKind === 'platform_admin' ? 'Platform Admin' : 'Reporter')}
         </span>
         <div className="flex items-center gap-1.5">
           {comment.isInternal && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-2xs font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-warning-ink dark:bg-amber-500/20 dark:text-amber-400 type-pill">
               <EyeOff className="size-2.5" />Internal
             </span>
           )}
-          <span className="text-2xs text-stone-500">{formatFeedbackTime(comment.createdAt)}</span>
+          <span className="type-subline">{formatFeedbackTime(comment.createdAt)}</span>
         </div>
       </div>
       <p className="mt-1 whitespace-pre-wrap text-xs text-stone-700 dark:text-stone-200">{comment.body}</p>
@@ -96,7 +96,7 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
         <p className="whitespace-pre-wrap text-sm text-stone-700 dark:text-stone-200">{ticket.description}</p>
         {(ticket.area || ticket.pageUrl || ticket.userAgent) && (
-          <div className="mt-3 space-y-0.5 border-t border-stone-100 pt-3 text-2xs text-stone-500 dark:border-white/10">
+          <div className="mt-3 space-y-0.5 border-t border-stone-100 pt-3 dark:border-white/10 type-subline">
             {ticket.area && <p>Area: <span className="text-stone-500 dark:text-stone-300">{feedbackAreaLabel(ticket.area)}</span></p>}
             {ticket.pageUrl && <p>Page: <span className="text-stone-500 dark:text-stone-300">{ticket.pageUrl}</span></p>}
             {ticket.userAgent && <p className="truncate">Browser: <span className="text-stone-500 dark:text-stone-300">{ticket.userAgent}</span></p>}
@@ -109,7 +109,7 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
                 <button
                   type="button"
                   onClick={() => void handleDownload(att.id)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-dark hover:underline"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-link hover:underline"
                 >
                   <Paperclip className="size-3.5" />
                   {att.fileName}
@@ -125,7 +125,7 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
       <div className="space-y-2.5">
         <p className="text-xs font-semibold text-stone-500">Timeline</p>
         {comments.length === 0 ? (
-          <p className="text-xs italic text-stone-500">No replies yet.</p>
+          <p className="italic type-helper">No replies yet.</p>
         ) : (
           comments.map((c) =>
             c.eventType === 'status_change' ? <StatusChangeEntry key={c.id} comment={c} /> : <CommentEntry key={c.id} comment={c} />,
@@ -145,7 +145,7 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
           className={textareaCls}
         />
         <div className="flex items-center justify-between gap-3">
-          <label htmlFor="fb-internal-toggle" className="flex items-center gap-2 text-2xs font-medium text-stone-600 dark:text-stone-300">
+          <label htmlFor="fb-internal-toggle" className="flex items-center gap-2 dark:text-stone-300 type-field-label">
             <Switch id="fb-internal-toggle" checked={isInternal} onCheckedChange={setIsInternal} />
             Internal note (admins only)
           </label>
@@ -157,11 +157,11 @@ export function FeedbackDetailTimeline({ detail }: { detail: FeedbackTicketDetai
         {replyError && (
           <div className="flex items-center gap-1.5">
             <AlertCircle className="size-3 shrink-0 text-destructive/70" />
-            <p className="text-2xs text-destructive">{replyError}</p>
+            <p className="type-error">{replyError}</p>
           </div>
         )}
         {replyMutation.isError && (
-          <p className="text-2xs text-destructive">{apiErrorMessage(replyMutation.error, 'Failed to send.')}</p>
+          <p className="type-error">{apiErrorMessage(replyMutation.error, 'Failed to send.')}</p>
         )}
       </form>
     </div>

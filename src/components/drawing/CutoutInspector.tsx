@@ -89,7 +89,7 @@ export function CutoutInspector({ piece, cutout }: { piece: Piece; cutout: Cutou
         type="button"
         aria-label={`Delete ${name}`}
         onClick={() => dispatch({ type: 'deleteCutout', areaId: state.activeAreaId, pieceId: piece.id, cutoutId: cutout.id })}
-        className="self-start rounded border border-stone-200 px-2 py-1 text-destructive"
+        className="self-start rounded border border-stone-200 px-2 py-1 text-danger-ink"
       >
         Delete cutout
       </button>

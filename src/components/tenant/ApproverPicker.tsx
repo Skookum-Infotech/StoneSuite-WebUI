@@ -100,7 +100,7 @@ export function ApproverPicker({
       )}
 
       {atLimit ? (
-        <p className="text-xs text-stone-500">
+        <p className="type-helper">
           Maximum of {MAX_APPROVERS} approvers selected. Remove one to add another.
         </p>
       ) : (
@@ -117,12 +117,12 @@ export function ApproverPicker({
             disabled={disabled}
             aria-label="Search active users to add as an approver"
             placeholder="Search active users…"
-            className="h-9 w-full rounded-lg border border-stone-200 bg-white px-3 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900"
+            className="h-9 w-full rounded-lg border border-stone-200 bg-white px-3 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-900 type-input"
           />
           {open && (
             <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md dark:border-stone-700 dark:bg-stone-900">
               {results.length === 0 ? (
-                <p className="px-3.5 py-2.5 text-xs text-stone-500">
+                <p className="px-3.5 py-2.5 type-helper">
                   {users.length === 0 ? 'No active users available.' : 'No matching users.'}
                 </p>
               ) : (
@@ -148,7 +148,7 @@ export function ApproverPicker({
       )}
 
       {selected.length === 0 && !atLimit && (
-        <p className="text-2xs text-stone-500">No approver selected — records won't require sign-off.</p>
+        <p className="type-helper">No approver selected — records won't require sign-off.</p>
       )}
     </div>
   );

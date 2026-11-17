@@ -129,7 +129,7 @@ describe('InstallAppointmentDialog', () => {
     await user.click(await screen.findByRole('button', { name: 'Cancel visit' }));
 
     const cancelDialog = await screen.findByRole('dialog', { name: /Cancel visit FJ-1042/ });
-    const confirm = cancelDialog.querySelector('button.bg-destructive') as HTMLButtonElement;
+    const confirm = cancelDialog.querySelector('button.bg-danger-solid') as HTMLButtonElement;
     expect(confirm).toBeDisabled();
     await user.type(screen.getByLabelText('Reason (required)'), '   ');
     expect(confirm).toBeDisabled();

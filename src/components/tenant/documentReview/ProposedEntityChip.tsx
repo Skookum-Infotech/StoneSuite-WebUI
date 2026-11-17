@@ -144,7 +144,7 @@ export function ProposedEntityChip({ extractionId, entity, onCreated, className 
       </p>
     );
   } else if (action?.status === 'failed') {
-    body = <p className="text-destructive">{`“${entity.name}” ${S.failed}`}</p>;
+    body = <p className="text-danger-ink">{`“${entity.name}” ${S.failed}`}</p>;
   } else if (action?.status === 'pending') {
     body = (
       <ProposedActionCard
@@ -178,7 +178,7 @@ export function ProposedEntityChip({ extractionId, entity, onCreated, className 
               aria-invalid={touched && !emailOk}
               aria-describedby={touched && !emailOk ? `${uid}-email-err` : undefined}
             />
-            {touched && !emailOk && <p id={`${uid}-email-err`} className="text-destructive">{S.emailInvalid}</p>}
+            {touched && !emailOk && <p id={`${uid}-email-err`} className="text-danger-ink">{S.emailInvalid}</p>}
           </div>
         )}
         {needsSku && (
@@ -192,7 +192,7 @@ export function ProposedEntityChip({ extractionId, entity, onCreated, className 
               aria-invalid={touched && !skuOk}
               aria-describedby={touched && !skuOk ? `${uid}-sku-err` : undefined}
             />
-            {touched && !skuOk && <p id={`${uid}-sku-err`} className="text-destructive">{S.skuInvalid}</p>}
+            {touched && !skuOk && <p id={`${uid}-sku-err`} className="text-danger-ink">{S.skuInvalid}</p>}
           </div>
         )}
         <Button
@@ -233,7 +233,7 @@ export function ProposedEntityChip({ extractionId, entity, onCreated, className 
         </dl>
       )}
       <div role="status" aria-live="polite">{body}</div>
-      <div role="alert" className="text-destructive">{error}</div>
+      <div role="alert" className="text-danger-ink">{error}</div>
     </li>
   );
 }

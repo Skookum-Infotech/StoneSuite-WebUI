@@ -52,7 +52,7 @@ export function PieceInspector() {
   if (state.selectedPieceIds.length > 1) return <MultiSelectionPanel />;
 
   if (!area || !piece) {
-    return <p ref={noSelectionRef} tabIndex={-1} className="text-xs text-stone-500 outline-none">No piece selected.</p>;
+    return <p ref={noSelectionRef} tabIndex={-1} className="outline-none type-helper">No piece selected.</p>;
   }
 
   const cutout = piece.cutouts.find((c) => c.id === state.selectedCutoutId);
@@ -193,7 +193,7 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
       <label className="col-span-2 flex flex-col gap-0.5">
         Label
         <input aria-label="Label" aria-describedby={labelError ? labelErrorId : undefined} value={label} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} className="rounded border border-stone-200 px-1.5 py-1" />
-        {labelError && <span id={labelErrorId} role="alert" className="text-2xs text-destructive">{labelError}</span>}
+        {labelError && <span id={labelErrorId} role="alert" className="text-micro text-danger-ink">{labelError}</span>}
       </label>
 
       <label className="flex flex-col gap-0.5">
@@ -207,7 +207,7 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
           onBlur={() => isRect && commitLengthOrWidth('length', length, setLengthError)}
           className="rounded border border-stone-200 px-1.5 py-1"
         />
-        {lengthError && <span id={lengthErrorId} role="alert" className="text-2xs text-destructive">{lengthError}</span>}
+        {lengthError && <span id={lengthErrorId} role="alert" className="text-micro text-danger-ink">{lengthError}</span>}
       </label>
 
       <label className="flex flex-col gap-0.5">
@@ -221,13 +221,13 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
           onBlur={() => isRect && commitLengthOrWidth('width', width, setWidthError)}
           className="rounded border border-stone-200 px-1.5 py-1"
         />
-        {widthError && <span id={widthErrorId} role="alert" className="text-2xs text-destructive">{widthError}</span>}
+        {widthError && <span id={widthErrorId} role="alert" className="text-micro text-danger-ink">{widthError}</span>}
       </label>
 
       <label className="flex flex-col gap-0.5">
         Thickness
         <input aria-label="Thickness" aria-describedby={thicknessError ? thicknessErrorId : undefined} value={thickness} onChange={(e) => setThickness(e.target.value)} onBlur={commitThickness} className="rounded border border-stone-200 px-1.5 py-1" />
-        {thicknessError && <span id={thicknessErrorId} role="alert" className="text-2xs text-destructive">{thicknessError}</span>}
+        {thicknessError && <span id={thicknessErrorId} role="alert" className="text-micro text-danger-ink">{thicknessError}</span>}
       </label>
 
       <PieceTransformFields piece={piece} />
@@ -235,7 +235,7 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
       <label className="flex flex-col gap-0.5">
         Corner radius
         <input aria-label="Corner radius" aria-describedby={cornerRadiusError ? cornerRadiusErrorId : undefined} value={cornerRadius} onChange={(e) => setCornerRadius(e.target.value)} onBlur={commitCornerRadius} className="rounded border border-stone-200 px-1.5 py-1" />
-        {cornerRadiusError && <span id={cornerRadiusErrorId} role="alert" className="text-2xs text-destructive">{cornerRadiusError}</span>}
+        {cornerRadiusError && <span id={cornerRadiusErrorId} role="alert" className="text-micro text-danger-ink">{cornerRadiusError}</span>}
       </label>
 
       <label className="col-span-2 flex flex-col gap-0.5">
@@ -279,7 +279,7 @@ function PieceFields({ piece, onDeleteClick }: { piece: Piece; onDeleteClick: ()
             onDeleteClick();
             dispatch({ type: 'deletePiece', areaId: state.activeAreaId, pieceId: piece.id });
           }}
-          className="rounded border border-stone-200 px-2 py-1 text-destructive"
+          className="rounded border border-stone-200 px-2 py-1 text-danger-ink"
         >
           Delete
         </button>

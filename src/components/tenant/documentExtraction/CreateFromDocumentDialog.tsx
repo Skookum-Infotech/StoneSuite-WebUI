@@ -15,6 +15,8 @@ import type { DocumentExtractionDocType } from '@/types/documentExtraction';
 import { DuplicateWarnings } from './DuplicateWarnings';
 import { ExtractionStepper } from './ExtractionStepper';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const BYTES_PER_KB = 1024;
 const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
 const TYPICAL_READ_SECONDS = 30;
@@ -22,10 +24,8 @@ const TYPICAL_READ_SECONDS = 30;
 /** Stages where closing the dialog abandons work in progress. */
 const RUNNING_STAGES: ReadonlySet<ExtractionStage> = new Set(['validating', 'uploading', 'interrupted', 'reading']);
 
-const PRIMARY_BTN =
-  'rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 transition-all hover:bg-brand-hover active:scale-95';
-const SECONDARY_BTN =
-  'rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10';
+const PRIMARY_BTN = cn(buttonVariants(), 'active:scale-95');
+const SECONDARY_BTN = buttonVariants({ variant: 'outline' });
 
 function formatSize(bytes: number): string {
   return bytes >= BYTES_PER_MB
@@ -130,7 +130,7 @@ export function CreateFromDocumentDialog({
               <h2 id="create-from-document-title" className="type-dialog-title">
                 Create {routes.label} from document
               </h2>
-              <p className="truncate text-xs text-stone-500 dark:text-stone-400" title={current.name}>
+              <p className="truncate dark:text-stone-400 type-helper" title={current.name}>
                 {current.name} · {formatSize(current.size)}
               </p>
             </div>
@@ -202,7 +202,7 @@ export function CreateFromDocumentDialog({
                 <Loader2 className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
                 <span>Reading your document… <span className="tabular-nums">{state.elapsedSec}s</span></span>
               </div>
-              <p className="text-xs text-stone-500 dark:text-stone-400">Most documents take under {TYPICAL_READ_SECONDS} s.</p>
+              <p className="dark:text-stone-400 type-helper">Most documents take under {TYPICAL_READ_SECONDS} s.</p>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={cancel} aria-label="Cancel reading" className={SECONDARY_BTN}>
                   Cancel

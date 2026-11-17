@@ -13,8 +13,8 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
           <PackageCheck className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-stone-900">{model.title}</p>
-          <p className="truncate text-xs text-stone-500">{model.subtitle}</p>
+          <p className="truncate type-card-title">{model.title}</p>
+          <p className="truncate type-helper">{model.subtitle}</p>
         </div>
       </div>
 
@@ -23,7 +23,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs font-medium text-stone-500">Received</p>
             {model.overdue && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-2xs font-semibold text-amber-700">
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-warning-ink type-pill">
                 <AlertTriangle className="size-3" aria-hidden="true" />
                 {model.overdue}
               </span>
@@ -32,7 +32,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
           <p className="mt-2 text-3xl font-semibold tabular-nums text-stone-900">{model.percent}%</p>
           <div className="mt-1 space-y-0.5">
             {model.caption.map((text) => (
-              <p key={text} className="text-2xs text-stone-500">{text}</p>
+              <p key={text} className="type-helper">{text}</p>
             ))}
           </div>
         </div>
@@ -54,7 +54,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
 
       {model.breakdown.length > 0 && (
         <div className="mt-2.5 rounded-xl border border-stone-200">
-          <p className="border-b border-stone-100 px-3.5 py-2 text-2xs font-semibold uppercase tracking-wide text-stone-500">
+          <p className="border-b border-stone-100 px-3.5 py-2 type-overline">
             Lines
           </p>
           <ul className="max-h-48 divide-y divide-stone-100 overflow-y-auto modal-scrollbar">
@@ -62,7 +62,7 @@ export function ReceivingProgressCard({ model }: { model: ReceivingCardModel }) 
               <li key={row.id} className="flex items-center justify-between gap-3 px-3.5 py-2">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium text-stone-800">{row.name}</p>
-                  <p className="text-2xs tabular-nums text-stone-500">{row.detail}</p>
+                  <p className="tabular-nums type-helper">{row.detail}</p>
                 </div>
                 <SegmentedProgressBar percent={row.percent} ariaLabel={`${row.name} received`} />
               </li>

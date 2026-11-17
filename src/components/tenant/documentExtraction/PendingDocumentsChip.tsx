@@ -48,7 +48,7 @@ export function PendingDocumentsChip({ docType, enabled = true }: PendingDocumen
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-2">
-        <p className="px-2 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+        <p className="px-2 pb-1 pt-0.5 text-micro font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
           Ready to review
         </p>
         <ul className="max-h-[60vh] overflow-y-auto modal-scrollbar">
@@ -95,7 +95,7 @@ function PendingRow({ extraction: e, onOpen, fromDocumentPath }: {
         onBlur={() => { if (!discard.isPending) setArmed(false); }}
         aria-label={armed ? `Confirm discard ${e.fileName}` : `Discard ${e.fileName}`}
         className={armed
-          ? 'shrink-0 rounded-md bg-red-600 px-2 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60'
+          ? 'shrink-0 rounded-md bg-red-600 px-2 py-1 text-micro font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60'
           : 'shrink-0 rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-red-600 dark:hover:bg-white/10'}
       >
         {armed ? 'Discard' : <Trash2 className="size-3.5" aria-hidden="true" />}

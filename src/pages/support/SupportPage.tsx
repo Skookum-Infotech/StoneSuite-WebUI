@@ -49,11 +49,11 @@ export default function SupportPage() {
     <div className="flex flex-1 flex-col min-h-0 bg-background">
       <div className={cn('border-b border-stone-100 py-3 dark:border-white/10 sm:py-4', GUTTER_CLS)}>
         <div className="flex items-center gap-3.5">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand/20 text-link">
             <LifeBuoy className="size-6" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">Support</h1>
+            <h1 className="dark:text-white type-page-title">Support</h1>
             <p className="text-sm text-stone-500">
               Report a bug, request a feature, or follow up on a ticket you have filed.
             </p>

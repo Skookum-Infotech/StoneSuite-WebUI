@@ -7,7 +7,9 @@ import { CitationChips, type CitationChipsHandle, type NumberedCitation } from '
 import type { ChatTurn } from './useAssistantConversation';
 import type { Citation } from '@/types/ai';
 
-const noteClass = 'text-2xs italic text-stone-500 dark:text-stone-500';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+const noteClass = 'text-micro italic text-stone-500 dark:text-stone-500';
 /** After this many seconds still waiting on the first token, swap "Thinking…"
  *  for a cold-start explanation — Ollama can take up to ~60s to load. */
 const WARMUP_THRESHOLD_SECONDS = 8;
@@ -20,7 +22,7 @@ function RetryButton({ onRetry, disabled, countdownSeconds }: { onRetry: () => v
       type="button"
       onClick={onRetry}
       disabled={disabled}
-      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-2xs font-semibold text-stone-600 hover:bg-stone-100 disabled:opacity-40 dark:text-stone-300 dark:hover:bg-white/10 cursor-pointer disabled:cursor-not-allowed"
+      className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'dark:text-stone-300 dark:hover:bg-white/10')}
     >
       <RotateCcw className="size-3" aria-hidden="true" />
       {countdownSeconds && countdownSeconds > 0 ? `Retry in ${countdownSeconds}s` : 'Retry'}
@@ -40,7 +42,7 @@ function CopyButton({ text }: { text: string }) {
         });
       }}
       aria-label={copied ? 'Copied answer to clipboard' : 'Copy answer'}
-      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-2xs font-semibold text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-white/10 cursor-pointer"
+      className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'dark:text-stone-400 dark:hover:bg-white/10')}
     >
       {copied ? <Check className="size-3" aria-hidden="true" /> : <Copy className="size-3" aria-hidden="true" />}
       {copied ? 'Copied' : 'Copy'}
@@ -133,7 +135,7 @@ export const AssistantTurn = memo(function AssistantTurn({
 
       {turn.error && (
         <div className="flex max-w-[85%] flex-col items-start gap-1">
-          <p role="alert" className="rounded-2xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <p role="alert" className="rounded-2xl bg-destructive/10 px-3 py-2 type-error">
             {turn.error}
           </p>
           <RetryButton onRetry={() => onRetry(turn.id)} disabled={retryDisabled} countdownSeconds={turn.countdownKind === 'rate_limited' ? countdownSeconds : undefined} />

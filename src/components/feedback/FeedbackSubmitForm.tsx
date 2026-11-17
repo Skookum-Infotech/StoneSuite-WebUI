@@ -137,7 +137,7 @@ export function FeedbackSubmitForm({
     <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
       <section className={cn(FEEDBACK_CARD_CLS, 'space-y-5 p-5 sm:p-6')}>
         <div>
-          <h2 className="text-base font-semibold text-stone-900 dark:text-stone-100">What would you like to tell us?</h2>
+          <h2 className="dark:text-stone-100 type-dialog-title">What Would You Like to Tell Us?</h2>
           <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
             Report a bug, request a feature, or share how we can do better.
           </p>
@@ -146,7 +146,7 @@ export function FeedbackSubmitForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="feedback-category" className={fieldLabelCls}>
-              <span className="text-red-500">*</span> Category
+              <span className="text-danger-ink">*</span> Category
             </label>
             <Select
               id="feedback-category"
@@ -177,7 +177,7 @@ export function FeedbackSubmitForm({
 
         <div>
           <label htmlFor="feedback-description" className={fieldLabelCls}>
-            <span className="text-red-500">*</span> Your Feedback / Description
+            <span className="text-danger-ink">*</span> Your Feedback / Description
           </label>
           <textarea
             id="feedback-description"
@@ -193,7 +193,7 @@ export function FeedbackSubmitForm({
           />
           <div className="mt-1 flex items-center justify-between">
             {descriptionError ? (
-              <p id="feedback-description-error" className="text-xs text-destructive">{descriptionError}</p>
+              <p id="feedback-description-error" className="type-error">{descriptionError}</p>
             ) : <span />}
             <span className="text-xs text-stone-500">{description.length}/{MAX_DESCRIPTION_LENGTH}</span>
           </div>
@@ -209,13 +209,13 @@ export function FeedbackSubmitForm({
         {submitMutation.isError && (
           <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/15 bg-destructive/5 px-3.5 py-2.5">
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive/70" aria-hidden="true" />
-            <p className="text-sm text-destructive">{apiErrorMessage(submitMutation.error, 'Failed to submit feedback.')}</p>
+            <p className="text-sm text-danger-ink">{apiErrorMessage(submitMutation.error, 'Failed to submit feedback.')}</p>
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4 dark:border-white/10">
-          <p className="text-xs text-stone-500 dark:text-stone-400">
-            Fields marked <span className="text-red-500">*</span> are required.
+          <p className="dark:text-stone-400 type-helper">
+            Fields marked <span className="text-danger-ink">*</span> are required.
           </p>
           <Button type="submit" size="lg" disabled={submitMutation.isPending} className="gap-2">
             <Send className="size-4" aria-hidden="true" />

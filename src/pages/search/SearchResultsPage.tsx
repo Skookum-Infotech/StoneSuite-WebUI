@@ -78,7 +78,7 @@ export default function SearchResultsPage() {
             placeholder="Search records, documents, people…"
             aria-label="Search"
             autoFocus
-            className="h-11 w-full rounded-lg border border-stone-300 bg-white pl-9 pr-4 text-sm text-stone-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
+            className="h-11 w-full rounded-lg border border-stone-300 bg-white pl-9 pr-4 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 type-input"
           />
         </div>
       </form>
@@ -112,7 +112,7 @@ export default function SearchResultsPage() {
                       )}
                     >
                       <span>{entityLabel(t)}</span>
-                      <span className="text-2xs tabular-nums text-stone-500">
+                      <span className="tabular-nums type-subline">
                         {g.results.length}
                         {g.hasMore ? '+' : ''}
                       </span>
@@ -147,7 +147,7 @@ export default function SearchResultsPage() {
                           <time
                             dateTime={hit.updatedAt}
                             title={new Date(hit.updatedAt).toLocaleString()}
-                            className="shrink-0 font-mono text-2xs text-stone-500"
+                            className="shrink-0 font-mono text-micro text-stone-500"
                           >
                             {relativeTime(hit.updatedAt)}
                           </time>
@@ -156,7 +156,7 @@ export default function SearchResultsPage() {
                     ))}
                   </ul>
                   {activeGroup.hasMore && (
-                    <p className="mt-2 text-xs text-stone-500">
+                    <p className="mt-2 type-helper">
                       Showing the first {activeGroup.results.length} {entityLabel(activeType).toLowerCase()}. Add
                       another word to narrow the results.
                     </p>

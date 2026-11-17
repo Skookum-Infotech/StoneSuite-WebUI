@@ -11,6 +11,8 @@ import {
 } from '@/lib/singleSession';
 import type { ReplacedSessionInfo } from '@/types/auth';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const RADIUS = 26;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
@@ -79,8 +81,8 @@ export function SessionReplacedOverlay({ info }: SessionReplacedOverlayProps): R
           <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
             <MonitorSmartphone className="size-4 text-destructive" aria-hidden="true" />
           </div>
-          <h3 id="session-replaced-title" className="text-sm font-bold text-stone-900">
-            Signed in on another computer
+          <h3 id="session-replaced-title" className="type-card-title">
+            Signed In on Another Computer
           </h3>
         </div>
 
@@ -106,7 +108,7 @@ export function SessionReplacedOverlay({ info }: SessionReplacedOverlayProps): R
             />
           </svg>
           <span
-            className="font-mono text-3xl font-bold tabular-nums text-destructive"
+            className="tabular-nums type-record-id"
             role="timer"
             aria-live="polite"
             aria-label={`Signing out in ${secondsLeft} seconds`}
@@ -121,7 +123,7 @@ export function SessionReplacedOverlay({ info }: SessionReplacedOverlayProps): R
             type="button"
             onClick={signOut}
             aria-label="Log out now"
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <LogOut className="size-3.5" aria-hidden="true" />
             Log out now

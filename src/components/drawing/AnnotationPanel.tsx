@@ -34,8 +34,8 @@ export function AnnotationPanel({ bare }: { bare?: boolean } = {}) {
         Add dimension
       </button>
       </div>
-      {tool === 'note' && <p className="text-2xs text-stone-500">Click the canvas where the note goes.</p>}
-      {tool === 'dimension' && <p className="text-2xs text-stone-500">Click two points. Corners snap.</p>}
+      {tool === 'note' && <p className="type-helper">Click the canvas where the note goes.</p>}
+      {tool === 'dimension' && <p className="type-helper">Click two points. Corners snap.</p>}
       {area.notes.map((note) => (
         <NoteRow
           key={note.id}
@@ -82,10 +82,10 @@ function NoteRow({ note, onChange, onDelete }: { note: Note; onChange: (text: st
         onChange={(e) => setText(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
-        className="rounded border border-stone-200 px-1.5 py-1 text-xs"
+        className="rounded border border-stone-200 px-1.5 py-1 type-input"
       />
-      {error && <span id={errorId} role="alert" className="text-2xs text-destructive">{error}</span>}
-      <button type="button" aria-label={`Delete note ${note.text}`} onClick={onDelete} className="self-end text-2xs text-destructive">
+      {error && <span id={errorId} role="alert" className="text-micro text-danger-ink">{error}</span>}
+      <button type="button" aria-label={`Delete note ${note.text}`} onClick={onDelete} className="self-end text-micro text-danger-ink">
         Delete
       </button>
     </div>
@@ -116,11 +116,11 @@ function DimensionRow(
           type="button"
           aria-label={`Flip ${name} to the other side`}
           onClick={() => onChange({ ...dim, from: dim.to, to: dim.from })}
-          className="text-2xs underline-offset-2 hover:underline"
+          className="text-micro underline-offset-2 hover:underline"
         >
           Flip side
         </button>
-        <button type="button" aria-label={`Delete ${name}`} onClick={onDelete} className="text-2xs text-destructive">
+        <button type="button" aria-label={`Delete ${name}`} onClick={onDelete} className="text-micro text-danger-ink">
           Delete
         </button>
       </div>

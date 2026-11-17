@@ -120,7 +120,7 @@ export default function TenantDetailPage() {
                   {tenantInitials(tenant.displayName)}
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-2xl font-bold tracking-tight text-stone-900">{tenant.displayName}</h1>
+                  <h1 className="type-page-title">{tenant.displayName}</h1>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <TenantStatusBadges tenant={tenant} />
                     <span className="font-mono text-label text-stone-500">{tenant.slug}</span>

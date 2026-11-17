@@ -7,6 +7,7 @@ import {
   docStatusLabel, docTransitionLabel, APPROVAL_TARGET_STATUS,
 } from '@/lib/inventoryDocumentStatus';
 
+import { buttonVariants } from '@/components/ui/button';
 // Renders one confirm-gated button per legal transition target, sourced
 // purely from the server's `nextStatuses` on the record's own GET (spec:
 // "render buttons from that rather than hardcoding the machine" — every
@@ -105,11 +106,11 @@ function TransitionConfirmDialog({ fromCode, toCode, onCancel, onConfirm }: {
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
         <div className="mb-4 flex items-center gap-3">
           <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', isCancel ? 'bg-destructive/10' : 'bg-accent')}>
-            <AlertTriangle className={cn('size-4', isCancel ? 'text-destructive' : 'text-accent-foreground')} />
+            <AlertTriangle className={cn('size-4', isCancel ? 'text-danger-ink' : 'text-accent-foreground')} />
           </div>
           <div>
-            <h3 id="doc-transition-confirm-title" className="text-sm font-bold text-stone-900">{label}?</h3>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <h3 id="doc-transition-confirm-title" className="type-card-title">{label}?</h3>
+            <p className="mt-0.5 type-helper">
               {docStatusLabel(fromCode)} → {docStatusLabel(toCode)}
             </p>
           </div>
@@ -125,19 +126,14 @@ function TransitionConfirmDialog({ fromCode, toCode, onCancel, onConfirm }: {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={cn(
-              'rounded-lg px-3.5 py-1.5 text-xs font-semibold shadow-sm active:scale-95 transition-all',
-              isCancel
-                ? 'bg-destructive text-white hover:bg-destructive/90'
-                : 'bg-brand text-stone-950 hover:bg-brand-hover',
-            )}
+            className={cn(buttonVariants({ variant: isCancel ? 'destructive' : 'default' }), 'active:scale-95')}
           >
             {label}
           </button>

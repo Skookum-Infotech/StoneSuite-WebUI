@@ -20,6 +20,7 @@ import type { AnomalyFilter, AnomalyStatus } from "@/types/anomaly";
 import { AnomalyRow } from "./components/AnomalyRow";
 import { AnomalyScanSwitch } from "./components/AnomalyScanSwitch";
 
+import { buttonVariants } from '@/components/ui/button';
 const QUERY_KEY = "anomalies";
 
 interface ReviewVars {
@@ -94,7 +95,7 @@ export default function AnomaliesPage() {
           <ShieldAlert className="size-5 text-accent-foreground" />
         </div>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-stone-900">
+          <h1 className="type-page-title">
             Anomalies
           </h1>
           <p className="text-sm text-stone-500">
@@ -175,12 +176,12 @@ export default function AnomaliesPage() {
         </div>
 
         {listQ.isError && (
-          <p role="alert" className="text-xs text-red-500">
+          <p role="alert" className="type-error">
             {apiErrorMessage(listQ.error, "Failed to load anomalies.")}
           </p>
         )}
 
-        {listQ.isLoading && <p className="text-xs text-stone-500">Loading…</p>}
+        {listQ.isLoading && <p className="type-helper">Loading…</p>}
 
         {!listQ.isLoading && !listQ.isError && items.length === 0 && (
           <p className="rounded-xl border border-dashed border-stone-200 px-4 py-10 text-center text-sm text-stone-500">
@@ -210,7 +211,7 @@ export default function AnomaliesPage() {
 
         {(prevCursors.length > 0 || nextCursor) && (
           <div className="flex items-center justify-between px-1">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {prevCursors.length + 1}
               {nextCursor ? "" : " · last page"}
             </p>
@@ -220,7 +221,7 @@ export default function AnomaliesPage() {
                 onClick={goPrev}
                 disabled={prevCursors.length === 0}
                 aria-label="Previous page"
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
               >
                 <ChevronLeft className="size-3.5" />
                 Previous
@@ -230,7 +231,7 @@ export default function AnomaliesPage() {
                 onClick={goNext}
                 disabled={!nextCursor}
                 aria-label="Next page"
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
               >
                 Next
                 <ChevronRight className="size-3.5" />

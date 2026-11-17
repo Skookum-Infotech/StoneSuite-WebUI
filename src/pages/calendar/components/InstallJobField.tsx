@@ -55,7 +55,7 @@ export function InstallJobField({ chosen, onPick, onClear }: Props) {
         aria-label="Fabrication job"
         className={fieldCls}
       />
-      {isFetching && <p className="mt-1 text-xs text-stone-500">Searching…</p>}
+      {isFetching && <p className="mt-1 type-helper">Searching…</p>}
       {records.length > 0 && (
         <ul className="mt-1 max-h-40 divide-y divide-stone-100 overflow-y-auto rounded-lg border border-stone-200">
           {records.map((job) => (
@@ -72,7 +72,7 @@ export function InstallJobField({ chosen, onPick, onClear }: Props) {
         </ul>
       )}
       {!isFetching && debounced.length >= MIN_TERM && records.length === 0 && (
-        <p className="mt-1 text-xs text-stone-500">No jobs match.</p>
+        <p className="mt-1 type-helper">No jobs match.</p>
       )}
     </div>
   );

@@ -31,7 +31,7 @@ export function CustomReportPreview({ definition, query, runnable }: CustomRepor
   }
   if (query.error) {
     return (
-      <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger-ink">
         {apiErrorMessage(query.error, RUN_ERROR_FALLBACK)}
       </p>
     );
@@ -68,7 +68,7 @@ export function CustomReportPreview({ definition, query, runnable }: CustomRepor
         <CustomReportTable result={result} />
       )}
       {result.truncated && (
-        <p className="text-xs text-stone-500">
+        <p className="type-helper">
           Showing the first {CUSTOM_PREVIEW_ROW_LIMIT} rows. Add a filter or a top N to narrow the report; the totals row still covers every
           matching row.
         </p>

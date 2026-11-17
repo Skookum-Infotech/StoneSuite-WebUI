@@ -47,7 +47,7 @@ export function AccountLinesPanel({ title, accountId, params, onClose }: Account
       >
         <header className="flex items-start justify-between gap-3 border-b border-stone-200 px-4 py-3">
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold text-stone-900">{title}</h2>
+            <h2 className="truncate type-card-title">{title}</h2>
             <p className="text-label text-stone-500">Journal lines behind this figure</p>
           </div>
           <button
@@ -63,7 +63,7 @@ export function AccountLinesPanel({ title, accountId, params, onClose }: Account
         <div className="flex-1 overflow-y-auto p-4">
           {q.isLoading && <p className="text-sm text-stone-500">{LOADING_TEXT}</p>}
           {q.isError && (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className="text-sm text-danger-ink">
               {apiErrorMessage(q.error, "Could not load the journal lines.")}
             </p>
           )}

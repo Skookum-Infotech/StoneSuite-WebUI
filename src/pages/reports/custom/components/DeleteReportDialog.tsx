@@ -2,6 +2,7 @@ import { createPortal } from "react-dom";
 import { Trash2 } from "lucide-react";
 import { useModalDialog } from "@/hooks/useModalDialog";
 
+import { buttonVariants } from '@/components/ui/button';
 interface DeleteReportDialogProps {
   name: string;
   pending: boolean;
@@ -25,8 +26,8 @@ export function DeleteReportDialog({ name, pending, onConfirm, onCancel }: Delet
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/10">
             <Trash2 className="size-4 text-warning" aria-hidden="true" />
           </div>
-          <h3 id="delete-report-title" className="text-sm font-bold text-stone-900">
-            Delete this report?
+          <h3 id="delete-report-title" className="type-card-title">
+            Delete This Report?
           </h3>
         </div>
         <p id="delete-report-desc" className="mb-5 text-xs text-stone-600">
@@ -37,7 +38,7 @@ export function DeleteReportDialog({ name, pending, onConfirm, onCancel }: Delet
             type="button"
             aria-label="Cancel"
             onClick={onCancel}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -46,7 +47,7 @@ export function DeleteReportDialog({ name, pending, onConfirm, onCancel }: Delet
             aria-label="Delete"
             disabled={pending}
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            className={buttonVariants({ variant: 'destructive' })}
           >
             Delete
           </button>

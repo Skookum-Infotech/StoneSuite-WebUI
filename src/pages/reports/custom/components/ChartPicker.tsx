@@ -42,7 +42,7 @@ export function ChartPicker({ definition, dispatch }: ChartPickerProps) {
           </button>
         ))}
       </div>
-      {!canChart && <p className="text-xs text-stone-500">Group the report to chart it.</p>}
+      {!canChart && <p className="type-helper">Group the report to chart it.</p>}
     </div>
   );
 }

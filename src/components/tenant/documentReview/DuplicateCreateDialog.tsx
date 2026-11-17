@@ -6,6 +6,8 @@ import { documentRoutes } from '@/lib/documentExtractionRoutes';
 import type { DuplicateConflict } from '@/lib/salesOrderDuplicate';
 import type { DocumentExtractionDocType } from '@/types/documentExtraction';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface DuplicateCreateDialogProps {
   docType: DocumentExtractionDocType;
   conflict: DuplicateConflict;
@@ -36,14 +38,14 @@ export function DuplicateCreateDialog({ docType, conflict, onOpenExisting, onCre
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/10 dark:bg-amber-500/10">
             <TriangleAlert className="size-4 text-warning dark:text-amber-400" aria-hidden="true" />
           </div>
-          <h3 id="duplicate-so-title" className="text-sm font-bold text-stone-900 dark:text-stone-100">This {manualNoun} may already exist</h3>
+          <h3 id="duplicate-so-title" className="dark:text-stone-100 type-card-title">This {manualNoun} may already exist</h3>
         </div>
         <p id="duplicate-so-desc" className="mb-5 text-xs text-stone-600 dark:text-stone-300">{conflict.message}</p>
         <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10"
+            className={cn(buttonVariants({ variant: 'outline' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
           >
             Cancel
           </button>
@@ -52,7 +54,7 @@ export function DuplicateCreateDialog({ docType, conflict, onOpenExisting, onCre
               type="button"
               onClick={() => onOpenExisting(conflict.existingUuid as string)}
               aria-label={conflict.existingNumber ? `Open existing ${conflict.existingNumber}` : undefined}
-              className="rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10"
+              className={cn(buttonVariants({ variant: 'outline' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
             >
               Open existing
             </button>
@@ -60,7 +62,7 @@ export function DuplicateCreateDialog({ docType, conflict, onOpenExisting, onCre
           <button
             type="button"
             onClick={onCreateAnyway}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 transition-all hover:bg-brand-hover active:scale-95"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {anywayLabel}
           </button>

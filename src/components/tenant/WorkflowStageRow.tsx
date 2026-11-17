@@ -95,14 +95,14 @@ export function WorkflowStageRow({ stage, isLast, hereStatusCode, lineColor, ope
           </span>
           {stage.state === 'here' && (
             <span
-              className="rounded-full border px-1.5 text-[9.5px] font-semibold"
+              className="rounded-full border px-1.5 text-micro font-semibold"
               style={{ backgroundColor: pal.tint, color: pal.ink, borderColor: pal.ring }}
             >
               this record
             </span>
           )}
         </span>
-        <span className={cn('block truncate text-2xs', stage.state === 'void' ? 'text-red-700' : stage.state === 'upcoming' ? 'text-stone-400' : 'text-stone-500')}>
+        <span className={cn('block truncate text-micro', stage.state === 'void' ? 'text-danger-ink' : stage.state === 'upcoming' ? 'text-stone-400' : 'text-stone-500')}>
           {statusCode && stage.state !== 'void' ? withStatusColour(stage, single?.number, statusCode) : stage.subtitle}
         </span>
       </span>

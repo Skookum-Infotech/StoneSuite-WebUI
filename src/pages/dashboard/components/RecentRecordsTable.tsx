@@ -17,7 +17,7 @@ const MODULE_META: Record<string, { bg: string; text: string }> = {
   customer: { bg: 'bg-workflow-customer-bg', text: 'text-workflow-customer-text' },
   quote: { bg: 'bg-sky-100', text: 'text-sky-700' },
   estimate: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
-  sales_order: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  sales_order: { bg: 'bg-emerald-100', text: 'text-success-ink' },
   invoice: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
   payment: { bg: 'bg-green-100', text: 'text-green-700' },
   credit_memo: { bg: 'bg-rose-100', text: 'text-rose-700' },

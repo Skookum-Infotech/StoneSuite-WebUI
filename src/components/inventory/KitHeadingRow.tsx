@@ -21,11 +21,11 @@ export function KitHeadingRow({ name, count, colSpan, onRemove }: {
       <td colSpan={colSpan} className="border-l-4 border-l-violet-600 px-3 py-2">
         <div className="flex items-center gap-2">
           <Boxes className="size-3.5 shrink-0 text-violet-700" aria-hidden="true" />
-          <span className="shrink-0 rounded bg-violet-700 px-1.5 py-px text-2xs font-bold uppercase tracking-wide text-white">
+          <span className="shrink-0 rounded bg-violet-700 px-1.5 py-px text-white type-overline">
             Kit
           </span>
           <span className="min-w-0 truncate text-xs font-semibold text-violet-950">{name}</span>
-          <span className="shrink-0 text-2xs text-violet-700">{count} {label}</span>
+          <span className="shrink-0 text-micro text-violet-700">{count} {label}</span>
           {onRemove && (
             <button
               type="button"

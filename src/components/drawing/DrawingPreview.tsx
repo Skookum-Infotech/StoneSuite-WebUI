@@ -26,7 +26,7 @@ function AreaPreview({ area }: { area: DrawingArea }) {
     return (
       <div>
         <h4 className="text-xs font-semibold text-stone-700">{area.name}</h4>
-        <p className="text-2xs text-stone-500">No pieces in this area yet.</p>
+        <p className="type-helper">No pieces in this area yet.</p>
       </div>
     );
   }

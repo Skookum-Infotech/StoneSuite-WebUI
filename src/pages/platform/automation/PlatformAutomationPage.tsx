@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { getPlatformAutomation, setPlatformAutomationEnabled } from '@/services/platformAutomationService';
 import type { PlatformAutomationSettings } from '@/types/ai';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const QUERY_KEY = ['platform-automation'];
 const SWITCH_LABEL = 'Automation scheduler (all organizations)';
 
@@ -60,12 +62,12 @@ export default function PlatformAutomationPage() {
 
       <section className="max-w-2xl rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
         <div className="mb-4 flex items-start gap-3 border-b border-stone-100 pb-4 dark:border-stone-800">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand-dark">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-link">
             <Timer className="size-4.5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-stone-950 dark:text-white">What this controls</h2>
-            <p className="mt-1 text-xs text-stone-500">
+            <h2 className="dark:text-white type-card-title">What This Controls</h2>
+            <p className="mt-1 type-helper">
               {settings?.message ??
                 'Controls the 15-minute scheduler for all organizations, including scheduled vendor-payment dispatch.'}{' '}
               While off, nothing runs and the servers are not woken up, so it adds no cost. It is off by default.
@@ -174,7 +176,7 @@ export default function PlatformAutomationPage() {
                 type="button"
                 onClick={() => toggle.mutate(true)}
                 disabled={toggle.isPending}
-                className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants(), 'active:scale-95')}
               >
                 {toggle.isPending ? 'Turning on…' : 'Turn on for everyone'}
               </button>

@@ -49,10 +49,10 @@ export function CommunicationMessageCard({ message, audience, isLast }: Communic
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3 pb-2 pt-1.5">
-          <p className="min-w-0 truncate text-sm font-semibold text-stone-950">{name}</p>
+          <p className="min-w-0 truncate type-card-title">{name}</p>
           <div className="flex shrink-0 items-center gap-2">
             {internal && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-semibold text-amber-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-warning-ink type-pill">
                 <EyeOff className="size-2.5" aria-hidden="true" />
                 Internal note
               </span>
@@ -74,7 +74,7 @@ export function CommunicationMessageCard({ message, audience, isLast }: Communic
           )}
         >
           {fromStaff && message.to && (
-            <p className="mb-3 break-words text-xs text-stone-500">
+            <p className="mb-3 break-words type-helper">
               To {message.to}
               {message.cc ? ` · cc ${message.cc}` : ''}
             </p>

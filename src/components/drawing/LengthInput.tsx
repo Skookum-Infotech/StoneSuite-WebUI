@@ -56,7 +56,7 @@ export function LengthInput({ label, valueMm, onCommit }: {
         onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
         className="rounded border border-stone-200 px-1.5 py-1"
       />
-      {error && <span id={errorId} role="alert" className="text-2xs text-destructive">{error}</span>}
+      {error && <span id={errorId} role="alert" className="text-micro text-danger-ink">{error}</span>}
     </label>
   );
 }

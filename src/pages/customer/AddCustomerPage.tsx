@@ -7,6 +7,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { OnboardingForm } from '@/components/customer/OnboardingForm';
 import type { CreateTenantResult } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function AddCustomerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -35,7 +37,7 @@ export default function AddCustomerPage() {
       <div className="flex-1 bg-stone-50 p-6">
         <div className="mx-auto w-full max-w-xl rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
           <CheckCircle2 className="mx-auto mb-3 size-10 text-green-500" />
-          <h1 className="text-lg font-bold text-stone-900">Customer onboarded</h1>
+          <h1 className="type-page-title">Customer Onboarded</h1>
           <p className="mt-1 text-sm text-stone-500">
             Workspace <span className="font-semibold">{result.slug}</span> is provisioning. We emailed the
             super admin a link to set their password — share it directly if needed:
@@ -48,7 +50,7 @@ export default function AddCustomerPage() {
               type="button"
               onClick={copyLink}
               aria-label="Copy password-setup link"
-              className="flex items-center gap-1 rounded-md bg-brand px-2.5 py-1.5 text-xs font-semibold text-stone-950"
+              className={cn(buttonVariants(), 'flex')}
             >
               <Copy className="size-3.5" /> {copied ? 'Copied' : 'Copy'}
             </button>
@@ -57,14 +59,14 @@ export default function AddCustomerPage() {
             <button
               type="button"
               onClick={() => navigate('/customer/onboarding')}
-              className="rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-stone-950"
+              className={buttonVariants()}
             >
               Back to customers
             </button>
             <button
               type="button"
               onClick={() => setResult(null)}
-              className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Onboard another
             </button>
@@ -83,7 +85,7 @@ export default function AddCustomerPage() {
       >
         <ArrowLeft className="size-3.5" /> Customer Onboarding
       </button>
-      <h1 className="mb-4 text-base font-bold text-stone-900">Onboard a Customer</h1>
+      <h1 className="mb-4 type-page-title">Onboard a Customer</h1>
       <OnboardingForm
         submitting={onboard.isPending}
         errorMessage={onboard.error ? apiErrorMessage(onboard.error, 'Onboarding failed.') : null}

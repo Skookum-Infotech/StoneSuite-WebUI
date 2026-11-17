@@ -31,7 +31,6 @@
 
 @layer components {
   /* ── Dark hero panel ──────────────────────────────────────────────────── */
-  .auth-hero { background: var(--gradient-header); }
   .auth-hero-dots {
     background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px);
     background-size: 24px 24px;

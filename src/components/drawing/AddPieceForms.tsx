@@ -10,6 +10,7 @@ import { validateOutline } from '@/lib/drawing/validation';
 import type { Piece, PieceKind } from '@/types/drawing';
 import { useDrawingEditor } from './DrawingEditorContext';
 
+import { buttonVariants } from '@/components/ui/button';
 function parseFieldOrError(value: string): { mm: number; error: null } | { mm: null; error: string } {
   try {
     // A piece dimension must be a real, positive length — parseLength alone
@@ -29,7 +30,7 @@ function LengthField({ label, value, onChange, error }: {
 }) {
   const errorId = useId();
   return (
-    <label className="flex flex-col gap-0.5 text-xs">
+    <label className="flex flex-col gap-0.5 type-field-label">
       {label}
       <input
         aria-label={label}
@@ -38,7 +39,7 @@ function LengthField({ label, value, onChange, error }: {
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded border border-stone-200 px-1.5 py-1"
       />
-      {error && <span id={errorId} role="alert" className="text-2xs text-destructive">{error}</span>}
+      {error && <span id={errorId} role="alert" className="text-micro text-danger-ink">{error}</span>}
     </label>
   );
 }
@@ -93,7 +94,7 @@ export function AddRectangleForm({ kind, onDone }: { kind?: PieceKind; onDone: (
       <LengthField label="Length" value={values.length} onChange={(v) => setValues((s) => ({ ...s, length: v }))} error={errors.length ?? null} />
       <LengthField label="Width" value={values.width} onChange={(v) => setValues((s) => ({ ...s, width: v }))} error={errors.width ?? null} />
       <LengthField label="Thickness" value={values.thickness} onChange={(v) => setValues((s) => ({ ...s, thickness: v }))} error={errors.thickness ?? null} />
-      <button type="button" onClick={submit} className="rounded bg-brand px-2 py-1 text-xs font-semibold">
+      <button type="button" onClick={submit} className={buttonVariants({ size: 'sm' })}>
         Add piece
       </button>
     </div>
@@ -155,7 +156,7 @@ export function AddNotchedForm({ shape, onDone }: { shape: 'L' | 'U'; onDone: ()
       <LengthField label="Notch length" value={values.notchLength} onChange={(v) => setValues((s) => ({ ...s, notchLength: v }))} error={errors.notchLength ?? null} />
       <LengthField label={notchDepthLabel} value={values.notchDepth} onChange={(v) => setValues((s) => ({ ...s, notchDepth: v }))} error={errors.notchDepth ?? null} />
       <LengthField label="Thickness" value={values.thickness} onChange={(v) => setValues((s) => ({ ...s, thickness: v }))} error={errors.thickness ?? null} />
-      <button type="button" onClick={submit} className="rounded bg-brand px-2 py-1 text-xs font-semibold">
+      <button type="button" onClick={submit} className={buttonVariants({ size: 'sm' })}>
         Add piece
       </button>
     </div>

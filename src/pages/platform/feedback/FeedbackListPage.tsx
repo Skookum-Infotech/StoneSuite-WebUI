@@ -12,6 +12,8 @@ import { FeedbackAdminTable } from './components/FeedbackAdminTable';
 import { FeedbackPagination } from './components/FeedbackPagination';
 import type { FeedbackAdminFilters } from '@/types/feedback';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const EMPTY_FILTERS: FeedbackAdminFilters = { status: '', category: '', priority: '', tenantId: '', search: '' };
 const EXPORT_PAGE_SIZE = 100;
 
@@ -109,7 +111,7 @@ export default function FeedbackListPage() {
             <MessageSquareText className="size-5 text-accent-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">Support Tickets</h1>
+            <h1 className="dark:text-stone-100 type-page-title">Support Tickets</h1>
             <p className="text-sm text-stone-500 dark:text-stone-400">
               Feedback, bugs, and feature requests reported across every tenant.
             </p>
@@ -122,7 +124,7 @@ export default function FeedbackListPage() {
             onClick={() => void handleDownloadCsv()}
             disabled={isExporting}
             aria-label="Download tickets matching the current filters as CSV"
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex shrink-0 dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]')}
           >
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {isExporting ? 'Exporting…' : 'Download CSV'}
@@ -136,11 +138,11 @@ export default function FeedbackListPage() {
         <FeedbackFiltersBar filters={filters} tenants={tenantsQ.data ?? []} onChange={updateFilters} onClear={clearFilters} />
 
         {ticketsQ.isError && (
-          <p role="alert" className="text-xs text-destructive">
+          <p role="alert" className="type-error">
             {apiErrorMessage(ticketsQ.error, 'Failed to load feedback tickets.')}
           </p>
         )}
-        {exportError && <p className="text-xs text-destructive">Failed to export CSV: {exportError}</p>}
+        {exportError && <p className="type-error">Failed to export CSV: {exportError}</p>}
 
         <FeedbackAdminTable tickets={tickets} isLoading={ticketsQ.isLoading} />
 

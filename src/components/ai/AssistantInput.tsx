@@ -52,8 +52,7 @@ export const AssistantInput = forwardRef(function AssistantInput(
         e.preventDefault();
         submit();
       }}
-      className="border-t border-stone-200 p-3 dark:border-white/10"
-      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+      className="border-t border-stone-200 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-white/10"
     >
       <div className="flex items-end gap-2">
         {/* Stays enabled while an answer streams (only sending is blocked),
@@ -104,7 +103,7 @@ export const AssistantInput = forwardRef(function AssistantInput(
       {bytes >= COUNTER_THRESHOLD_BYTES && (
         <p
           id="assistant-question-length"
-          className={cn('mt-1 text-right text-2xs', tooLong ? 'text-destructive' : 'text-stone-500')}
+          className={cn('mt-1 text-right text-micro', tooLong ? 'text-danger-ink' : 'text-stone-500')}
         >
           {tooLong ? 'Too long — please shorten your question. ' : ''}
           {bytes} / {MAX_QUESTION_BYTES}

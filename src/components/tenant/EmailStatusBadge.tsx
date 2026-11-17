@@ -70,14 +70,14 @@ export function EmailStatusBadge({ source, showMessage = false }: EmailStatusBad
         data-email-status={status}
         title={tooltipLines.join('\n')}
         className={cn(
-          'inline-flex items-center gap-0.5 rounded-full border px-1.5 py-px text-2xs font-semibold leading-4 whitespace-nowrap',
+          'inline-flex items-center gap-0.5 rounded-full border px-1.5 py-px leading-4 whitespace-nowrap type-pill',
           TONE_CLASS[tone],
         )}
       >
         <Icon className="size-2.5 shrink-0" aria-hidden="true" />
         {EMAIL_STATUS_LABEL[status]}
       </span>
-      {showMessage && explanation && <span className="text-2xs text-stone-500 dark:text-stone-400">{explanation}</span>}
+      {showMessage && explanation && <span className="dark:text-stone-400 type-subline">{explanation}</span>}
     </span>
   );
 }

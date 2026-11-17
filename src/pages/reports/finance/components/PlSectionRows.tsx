@@ -15,7 +15,7 @@ export function PlSectionRows({ section, onAccountClick, children }: PlSectionRo
   return (
     <>
       <tr className="border-t border-stone-200">
-        <th scope="rowgroup" colSpan={2} className="bg-stone-50/60 px-3 py-2 text-left text-label font-semibold uppercase tracking-wide text-stone-600">
+        <th scope="rowgroup" colSpan={2} className="bg-stone-50/60 px-3 py-2 text-left type-th">
           {section.name}
         </th>
       </tr>

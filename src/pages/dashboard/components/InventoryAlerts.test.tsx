@@ -64,12 +64,12 @@ describe('InventoryAlerts', () => {
 
   it('colors the on-hand value critical (red) for a short alert', () => {
     render(<InventoryAlerts data={makeData({ alerts: [makeAlert({ severity: 'short', onHand: 4 })] })} isLoading={false} isError={false} />);
-    expect(screen.getByText('4 on hand')).toHaveClass('text-red-600');
+    expect(screen.getByText('4 on hand')).toHaveClass('text-danger-ink');
   });
 
   it('colors the on-hand value critical (red) for an out alert', () => {
     render(<InventoryAlerts data={makeData({ alerts: [makeAlert({ severity: 'out', onHand: 0 })] })} isLoading={false} isError={false} />);
-    expect(screen.getByText('0 on hand')).toHaveClass('text-red-600');
+    expect(screen.getByText('0 on hand')).toHaveClass('text-danger-ink');
   });
 
   it('colors the on-hand value warning (amber) for a low alert', () => {

@@ -9,6 +9,7 @@ import { inventoryLookupService } from '@/services/inventoryLookupService';
 import { WRITABLE_LOOKUP_KINDS, type LookupItem, type LookupKind } from '@/types/inventory';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 // Generic vocabulary <Select> shared by every inventory form (item, unit,
 // bin, bundle, adjustment/transfer/count lines). `units` and `tax-rates`
 // render read-only server-side vocabularies — no inline add is offered for
@@ -56,7 +57,7 @@ export function LookupSelect({
     return (
       <div className="space-y-1.5 rounded-lg border border-stone-200 bg-stone-50/60 p-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-2xs font-semibold text-stone-500">New {label}</span>
+          <span className="text-micro font-semibold text-stone-500">New {label}</span>
           <button
             type="button"
             onClick={() => setAdding(false)}
@@ -82,12 +83,12 @@ export function LookupSelect({
           aria-label={`New ${label} code`}
           className={fieldCls}
         />
-        {error && <p className="text-2xs text-red-600">{apiErrorMessage(error, `Failed to add ${label}.`)}</p>}
+        {error && <p className="type-error">{apiErrorMessage(error, `Failed to add ${label}.`)}</p>}
         <button
           type="button"
           disabled={!newName.trim() || !newCode.trim() || isPending}
           onClick={() => create()}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors"
+          className={cn(buttonVariants(), 'flex w-full')}
         >
           {isPending ? <Loader2 className="size-3 animate-spin" /> : <Plus className="size-3" />}
           Add {label}

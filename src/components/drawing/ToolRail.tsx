@@ -93,7 +93,7 @@ export function ToolRail() {
           className="modal-scrollbar absolute left-full top-0 z-10 max-h-full w-60 overflow-y-auto overflow-x-hidden rounded-r border border-l-0 border-stone-200 bg-white p-2 shadow-lg"
         >
           <div className="mb-1.5 flex items-center justify-between">
-            <h3 className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{active.label}</h3>
+            <h3 className="type-overline">{active.label}</h3>
             <button type="button" aria-label={`Close ${active.label}`} onClick={() => setOpen(null)} className="text-stone-400 hover:text-stone-600">
               ✕
             </button>

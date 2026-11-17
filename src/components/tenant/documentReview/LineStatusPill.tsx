@@ -21,7 +21,7 @@ const TONE: Record<LinePillKind, string> = {
  *  meaning; colour only reinforces it. */
 export function LineStatusPill({ kind, label }: LineStatusPillProps): React.JSX.Element {
   return (
-    <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold', TONE[kind])}>
+    <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 type-pill', TONE[kind])}>
       {label}
     </span>
   );

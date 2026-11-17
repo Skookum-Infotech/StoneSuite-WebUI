@@ -10,6 +10,8 @@ import { DxfMessage } from './DxfMessage';
 import { DxfNotShownNote } from './DxfNotShownNote';
 import { DxfViewer } from './DxfViewer';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const TOO_LARGE_MESSAGE = 'This drawing is too large to preview. Download it to open it in your CAD software.';
 
 export function DxfDrawingBody({ orderId, attachment, label }: { orderId: string; attachment: Attachment; label: string }) {
@@ -41,7 +43,7 @@ export function DxfDrawingBody({ orderId, attachment, label }: { orderId: string
           type="button"
           aria-label="Try again"
           onClick={() => void refetch()}
-          className="mt-2 rounded border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-700 hover:bg-stone-50"
+          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-2')}
         >
           Try again
         </button>

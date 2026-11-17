@@ -26,12 +26,12 @@ export function MaterialSummary({ bare }: { bare?: boolean } = {}) {
             <div className="font-medium">{line ? `${line.sku} — ${line.itemName}` : 'No material line'}</div>
             <div>{u.pieceCount} {u.pieceCount === 1 ? 'piece' : 'pieces'} · {sqFt(u.billableAreaMm2)} sq ft</div>
             {u.verticalAreaMm2 > 0 && (
-              <div className="text-2xs text-stone-500">
+              <div className="type-subline">
                 includes {sqFt(u.verticalAreaMm2)} sq ft of backsplash / waterfall
               </div>
             )}
-            {ordered !== undefined && <div className="text-2xs text-stone-500">Ordered {ordered.toFixed(1)} sq ft</div>}
-            {!line && <div className="text-2xs text-amber-700">Choose a material line for these pieces.</div>}
+            {ordered !== undefined && <div className="type-subline">Ordered {ordered.toFixed(1)} sq ft</div>}
+            {!line && <div className="text-micro text-warning-ink">Choose a material line for these pieces.</div>}
           </div>
         );
       })}

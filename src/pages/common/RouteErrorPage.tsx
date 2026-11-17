@@ -1,6 +1,7 @@
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 const NOT_FOUND_STATUS = 404;
 const LOGO_SRC = '/logo-dark.png';
 
@@ -35,7 +36,7 @@ export default function RouteErrorPage({
         {!embedded && (
           <img src={LOGO_SRC} alt="Stone Suite logo" className="mx-auto mb-5 h-16 w-auto object-contain" />
         )}
-        <h1 className="text-lg font-bold text-stone-900">
+        <h1 className="type-page-title">
           {isNotFound ? "We couldn't find that page" : 'Something went wrong on this page'}
         </h1>
         <p className="mt-2 text-sm text-stone-600">
@@ -52,7 +53,7 @@ export default function RouteErrorPage({
               type="button"
               aria-label="Reload this page"
               onClick={() => window.location.reload()}
-              className="cursor-pointer rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-900 hover:bg-stone-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Reload
             </button>
@@ -60,7 +61,7 @@ export default function RouteErrorPage({
           <Link
             to="/dashboard"
             aria-label="Go to dashboard"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 hover:bg-brand/80"
+            className={buttonVariants()}
           >
             Go to dashboard
           </Link>

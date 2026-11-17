@@ -136,7 +136,7 @@ describe('AddSalesOrderPage review mode', () => {
       failureMessage: 'PO-4471.pdf looks like a scanned image with no readable text.',
     }));
     renderPage();
-    expect(await screen.findByRole('heading', { name: "We couldn't read this document" })).toHaveFocus();
+    expect(await screen.findByRole('heading', { name: "We Couldn't Read This Document" })).toHaveFocus();
     expect(screen.getByText('PO-4471.pdf looks like a scanned image with no readable text.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Enter the order manually' })).toHaveAttribute('href', '/sales/sales_order/new');
     expect(screen.queryByText(/no longer available/)).not.toBeInTheDocument();

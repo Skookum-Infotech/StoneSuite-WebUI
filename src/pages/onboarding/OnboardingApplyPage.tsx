@@ -87,7 +87,7 @@ export default function OnboardingApplyPage() {
 
       {/* ── Left panel: branding + steps ── */}
       <aside
-        className="auth-hero hidden lg:flex lg:w-[380px] xl:w-[420px] shrink-0 flex-col justify-between p-10 sticky top-0 h-screen"
+        className="bg-header hidden lg:flex lg:w-[380px] xl:w-[420px] shrink-0 flex-col justify-between p-10 sticky top-0 h-screen"
       >
         {/* Logo */}
         <div className="flex items-center gap-3">
@@ -142,7 +142,7 @@ export default function OnboardingApplyPage() {
       <main className="flex-1 overflow-y-auto bg-stone-50">
         {/* Mobile header */}
         <div
-          className="auth-hero lg:hidden flex items-center gap-3 px-6 py-4"
+          className="bg-header lg:hidden flex items-center gap-3 px-6 py-4"
         >
           <img src="/logo-only.png" alt="Stone Suite" className="h-7 w-7 object-contain" />
           <span className="text-sm font-semibold text-white/90 tracking-wide">Stone Suite</span>

@@ -40,7 +40,7 @@ export function LineThicknessInputCell({ value, unit, enabled, onChange }: {
           className={inputCls}
         />
         {enabled && (
-          <span className="pointer-events-none absolute inset-y-0 right-1.5 flex items-center text-2xs text-stone-500" aria-hidden="true">
+          <span className="pointer-events-none absolute inset-y-0 right-1.5 flex items-center type-subline" aria-hidden="true">
             {shownUnit}
           </span>
         )}

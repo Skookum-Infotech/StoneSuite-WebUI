@@ -36,7 +36,7 @@ export function ReportCountBarChart({ data, label, primaryName, secondaryName }:
   if (rows.length === 0) return null;
   return (
     <section aria-label={label} className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="mb-2 text-sm font-semibold text-stone-900">{label}</h2>
+      <h2 className="mb-2 type-card-title">{label}</h2>
       <div role="img" aria-label={`${label}: ${rows.map((d) => `${d.label} ${d.primary}`).join(", ")}`}>
         <ResponsiveContainer width="100%" height={Math.max(CHART_HEIGHT, rows.length * MIN_ROW_HEIGHT)}>
           <BarChart data={rows} layout="vertical" margin={{ left: 4, right: 16 }}>

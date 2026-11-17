@@ -30,7 +30,7 @@ export function PickerNotFound({ entity, term, existing, createHref }: {
     const article = /^[aeiou]/i.test(entity) ? 'An' : 'A';
     return (
       <div role="status" className="border-t border-stone-100 px-3 py-2">
-        <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+        <p className="flex items-start gap-1.5 text-xs font-medium text-warning-ink">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           <span className="min-w-0 break-words">
             {article} {entity} named “{existing.name}” already exists{existing.statusLabel ? ` (${existing.statusLabel})` : ''}.
@@ -41,7 +41,7 @@ export function PickerNotFound({ entity, term, existing, createHref }: {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Open “${existing.name}” — opens in a new tab`}
-          className="mt-1 flex items-center gap-1.5 pl-5 text-2xs font-semibold text-stone-700 transition-colors hover:text-stone-900"
+          className="mt-1 flex items-center gap-1.5 pl-5 text-micro font-semibold text-stone-700 transition-colors hover:text-stone-900"
         >
           Open it
         </a>
@@ -51,7 +51,7 @@ export function PickerNotFound({ entity, term, existing, createHref }: {
 
   return (
     <div role="status" className="border-t border-stone-100 px-3 py-2">
-      <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+      <p className="flex items-start gap-1.5 text-xs font-medium text-warning-ink">
         <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
         <span className="min-w-0 break-words">“{term}” isn't an existing {entity}.</span>
       </p>
@@ -67,7 +67,7 @@ export function PickerNotFound({ entity, term, existing, createHref }: {
           <span className="truncate">Create “{term}” as a new {entity}</span>
         </a>
       ) : (
-        <p className="mt-0.5 pl-5 text-2xs text-stone-500">
+        <p className="mt-0.5 pl-5 type-helper">
           Ask someone with {entity} access to add it first.
         </p>
       )}

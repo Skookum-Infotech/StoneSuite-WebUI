@@ -16,6 +16,7 @@ import {
 } from '@/lib/onboardingStatusFilter';
 import type { Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
@@ -43,11 +44,11 @@ export default function OnboardingPage() {
       <div className="p-6 flex-1 flex flex-col min-h-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-link">
               <UserPlus className="size-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-stone-900">Customer Onboarding</h1>
+              <h1 className="type-page-title">Customer Onboarding</h1>
               <p className="text-sm text-stone-500">
                 Invite customers to self-onboard, or onboard them directly. Review applications before activation.
               </p>
@@ -64,7 +65,7 @@ export default function OnboardingPage() {
             </button>
             <button
               onClick={() => navigate('/customer/onboarding/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand/50"
+              className={buttonVariants()}
             >
               <Plus className="size-3.5" />
               Onboard Customer
@@ -153,7 +154,7 @@ function ApprovalCard({ tenant }: { tenant: Tenant }) {
             type="button"
             onClick={() => reject.mutate()}
             disabled={reject.isPending || approve.isPending}
-            className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-label font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             <X className="size-3" /> Reject
           </button>

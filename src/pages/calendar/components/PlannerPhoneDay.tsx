@@ -36,7 +36,7 @@ export function PlannerPhoneDay({ day, cards, selected, onSelect }: {
       <span
         aria-hidden="true"
         className={cn(
-          'flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-medium',
+          'flex h-6 min-w-6 items-center justify-center rounded-full px-1 type-pill',
           day.isToday ? 'bg-brand font-semibold text-stone-900' : day.inMonth ? 'text-stone-900' : 'text-stone-500',
         )}
       >

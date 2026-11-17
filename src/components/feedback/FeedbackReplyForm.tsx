@@ -75,12 +75,12 @@ export function FeedbackReplyForm({ ticketId }: { ticketId: string }) {
       </div>
       <div className="mt-1 min-w-0 text-xs">
         {replyError ? (
-          <p className="flex items-center gap-1.5 text-destructive">
+          <p className="flex items-center gap-1.5 text-danger-ink">
             <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
             {replyError}
           </p>
         ) : replyMutation.isError ? (
-          <p role="alert" className="text-destructive">
+          <p role="alert" className="text-danger-ink">
             {apiErrorMessage(replyMutation.error, 'Failed to send reply.')}
           </p>
         ) : (

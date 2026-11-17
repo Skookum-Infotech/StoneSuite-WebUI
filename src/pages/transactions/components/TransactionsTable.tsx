@@ -46,7 +46,7 @@ export function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
                     to={href}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`View ${row.typeLabel} ${rowHeadline(row)}`}
-                    className="rounded font-mono text-2xs font-semibold text-stone-700 hover:text-stone-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="rounded hover:text-stone-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring type-record-id"
                   >
                     {rowHeadline(row)}
                   </Link>

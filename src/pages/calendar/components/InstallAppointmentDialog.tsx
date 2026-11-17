@@ -9,6 +9,8 @@ import { toISODate } from '@/lib/dateUtils';
 import { InstallCancelDialog } from './InstallCancelDialog';
 import { InstallVisitForm } from './InstallVisitForm';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface Props {
   mode: 'create' | 'edit';
   /** The visit to edit (edit mode). */
@@ -37,7 +39,7 @@ export function InstallAppointmentDialog({ mode, appointmentId, jobId, onClose, 
       return (
         <div className="flex flex-col gap-3">
           <ErrorNote>{apiErrorMessage(detail.error, 'This visit could not be loaded.')}</ErrorNote>
-          <button type="button" onClick={onClose} className="self-start rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">
+          <button type="button" onClick={onClose} className={cn(buttonVariants({ variant: 'outline' }), 'self-start')}>
             Close
           </button>
         </div>

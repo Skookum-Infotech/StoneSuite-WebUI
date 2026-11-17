@@ -15,7 +15,7 @@ export function StatusBadge({ row }: { row: Pick<TransactionRow, 'status' | 'sta
   if (!row.status) return <span className="text-stone-500">—</span>;
   const cfg = STATUS_TONE_CLASSES[statusTone(row.statusCode)];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-2xs font-bold', cfg.badge)}>
+    <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 type-pill', cfg.badge)}>
       <span className={cn('h-1.5 w-1.5 rounded-full', cfg.dot)} />
       {row.status}
     </span>
@@ -27,7 +27,7 @@ export function RoleBadge({ role }: { role: TransactionRow['role'] }) {
   return (
     <span
       className={cn(
-        'inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-2xs font-bold',
+        'inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 type-pill',
         role === 'created' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700',
       )}
     >
@@ -41,7 +41,7 @@ export function TypeBadge({ row }: { row: Pick<TransactionRow, 'domain' | 'typeL
   return (
     <span
       className={cn(
-        'inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-2xs font-bold',
+        'inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 type-pill',
         DOMAIN_BADGE[row.domain] ?? FALLBACK_DOMAIN_BADGE,
       )}
     >

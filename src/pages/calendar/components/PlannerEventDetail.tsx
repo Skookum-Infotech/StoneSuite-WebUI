@@ -31,12 +31,12 @@ export function PlannerEventDetail({ card }: { card: PlannerCard }) {
       <div className="flex flex-col gap-0.5">
         <p className="break-words text-stone-700">{card.customer}</p>
         {card.stage && <p className="break-words font-medium text-stone-600">{card.stage}</p>}
-        {card.meta && <p className="break-words text-xs text-stone-500">{card.meta}</p>}
+        {card.meta && <p className="break-words type-helper">{card.meta}</p>}
       </div>
 
-      {card.notes && <p className="break-words text-xs italic text-stone-500">{card.notes}</p>}
+      {card.notes && <p className="break-words italic type-helper">{card.notes}</p>}
       {card.doneLabel && (
-        <p className="flex items-center gap-1 text-xs font-medium text-emerald-700">
+        <p className="flex items-center gap-1 text-xs font-medium text-success-ink">
           <Check className="size-3.5 shrink-0" aria-hidden="true" />
           <span>{card.doneLabel}</span>
         </p>

@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import type { FeedbackAdminPatch, FeedbackPriority, FeedbackStatus, FeedbackTicket } from '@/types/feedback';
 import { FeedbackAssigneePicker } from './FeedbackAssigneePicker';
 
+import { buttonVariants } from '@/components/ui/button';
 interface Props {
   ticket: FeedbackTicket;
   assigneeCandidates: AssigneeCandidate[];
@@ -97,7 +98,7 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
         </div>
 
         {patchMutation.isError && (
-          <p className="text-2xs text-destructive">{apiErrorMessage(patchMutation.error, 'Failed to update ticket.')}</p>
+          <p className="type-error">{apiErrorMessage(patchMutation.error, 'Failed to update ticket.')}</p>
         )}
 
         <div className="border-t border-stone-100 pt-3 dark:border-white/10">
@@ -111,13 +112,13 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
             {exportingPdf ? <Loader2 className="size-4 shrink-0 animate-spin text-stone-400" /> : <FileDown className="size-4 shrink-0 text-stone-400" />}
             {exportingPdf ? 'Exporting…' : 'Export PDF'}
           </button>
-          {exportPdfError && <p className="px-3 text-2xs text-destructive">{exportPdfError}</p>}
+          {exportPdfError && <p className="px-3 type-error">{exportPdfError}</p>}
         </div>
       </div>
 
       <div className="space-y-2 rounded-xl border border-stone-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
         <label htmlFor="fb-internal-notes" className={fieldLabelCls}>Internal Notes</label>
-        <p className="text-2xs text-stone-500">Visible to platform admins only — never shown to the reporter.</p>
+        <p className="type-helper">Visible to platform admins only — never shown to the reporter.</p>
         <textarea
           id="fb-internal-notes"
           value={notes}
@@ -132,7 +133,7 @@ export function FeedbackDetailSidebar({ ticket, assigneeCandidates, onExportPdf,
             type="button"
             onClick={handleSaveNotes}
             disabled={patchMutation.isPending}
-            className="rounded-lg bg-brand px-3 py-1.5 text-2xs font-semibold text-stone-950 transition-colors hover:bg-brand-dark disabled:opacity-60"
+            className={buttonVariants({ size: 'sm' })}
           >
             {patchMutation.isPending ? 'Saving…' : 'Save notes'}
           </button>

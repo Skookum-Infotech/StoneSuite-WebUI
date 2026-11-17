@@ -50,7 +50,7 @@ export function ProfitLossStatement({ report, onAccountClick }: ProfitLossStatem
           ))}
           <tr className="border-t-2 border-stone-300 bg-stone-100">
             <th scope="row" className="px-3 py-2.5 text-left text-base font-bold text-stone-900">{NET_PROFIT_LABEL}</th>
-            <td className={cn("px-3 py-2.5 text-right text-base font-bold tabular-nums", report.netProfit < 0 ? "text-red-700" : "text-stone-900")}>
+            <td className={cn("px-3 py-2.5 text-right text-base font-bold tabular-nums", report.netProfit < 0 ? 'text-danger-ink' : "text-stone-900")}>
               {formatMoney(report.netProfit)}
             </td>
           </tr>

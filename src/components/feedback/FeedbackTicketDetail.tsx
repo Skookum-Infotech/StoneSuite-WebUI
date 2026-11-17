@@ -15,6 +15,8 @@ import {
 } from '@/lib/feedback';
 import type { FeedbackAttachment } from '@/types/feedback';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const CHIP_CLS =
   'inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2 py-1 font-medium text-stone-600 dark:bg-white/10 dark:text-stone-300';
 
@@ -96,7 +98,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
           <h2 className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{ticket.ticketNumber}</h2>
           <FeedbackStatusPill status={ticket.status} />
           {rated && (
-            <span aria-label={`Rated ${ticket.rating} out of 5`} className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <span aria-label={`Rated ${ticket.rating} out of 5`} className="inline-flex items-center gap-1 text-xs font-medium text-warning-ink dark:text-amber-400">
               <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
               {ticket.rating}
             </span>
@@ -115,12 +117,12 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
 
       <div className="modal-scrollbar min-h-0 flex-1 space-y-7 overflow-y-auto px-5 py-5">
         <section aria-label="Your report" className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Your report</h3>
+          <h3 className="type-overline">Your report</h3>
           <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-stone-800 dark:text-stone-100">
             {ticket.description}
           </p>
           {ticket.pageUrl && (
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="dark:text-stone-400 type-helper">
               Reported from{' '}
               <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[0.8125rem] text-stone-600 dark:bg-white/10 dark:text-stone-300">
                 {ticket.pageUrl}
@@ -135,7 +137,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
                     type="button"
                     onClick={() => void handleDownload(attachment)}
                     aria-label={`Download ${attachment.fileName}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-stone-200 dark:hover:bg-white/[0.08]"
+                    className={cn(buttonVariants({ variant: 'outline' }), 'gap-2 dark:border-white/10 dark:bg-white/[0.04] dark:text-stone-200 dark:hover:bg-white/[0.08]')}
                   >
                     <Paperclip className="size-3.5 text-stone-400" aria-hidden="true" />
                     {attachment.fileName}
@@ -147,7 +149,7 @@ export function FeedbackTicketDetail({ ticketId, onBack }: { ticketId: string; o
             </ul>
           )}
           {downloadError && (
-            <p role="alert" className="text-xs text-destructive">{downloadError}</p>
+            <p role="alert" className="type-error">{downloadError}</p>
           )}
         </section>
 

@@ -23,12 +23,12 @@ export function InstallCrewPicker({ value, onChange, options }: Props) {
     onChange(id !== null && !roleOf(id) ? [...base, { employeeId: id, role: 'lead' }] : base);
   }
 
-  if (options.length === 0) return <p className="text-xs text-stone-500">No crew members available.</p>;
+  if (options.length === 0) return <p className="type-helper">No crew members available.</p>;
 
   return (
     <fieldset className="min-w-0">
       <legend className="mb-1 text-xs font-medium text-stone-600">Crew</legend>
-      <label className="mb-1 flex items-center gap-2 text-xs text-stone-600">
+      <label className="mb-1 flex items-center gap-2 type-field-label">
         <input
           type="radio"
           name="install-crew-lead"
@@ -50,7 +50,7 @@ export function InstallCrewPicker({ value, onChange, options }: Props) {
               <span className="truncate text-stone-800">{o.name}</span>
               {!o.hasLogin && <span className="shrink-0 text-xs text-stone-500">(no login)</span>}
             </label>
-            <label className="flex shrink-0 items-center gap-1.5 text-xs text-stone-600">
+            <label className="flex shrink-0 items-center gap-1.5 type-field-label">
               <input
                 type="radio"
                 name="install-crew-lead"

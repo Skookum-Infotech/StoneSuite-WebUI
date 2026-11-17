@@ -13,7 +13,7 @@ const ERROR_FALLBACK = "Could not build the report.";
 export function ReportQueryState({ isLoading, error }: ReportQueryStateProps) {
   if (error) {
     return (
-      <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger-ink">
         {apiErrorMessage(error, ERROR_FALLBACK)}
       </p>
     );

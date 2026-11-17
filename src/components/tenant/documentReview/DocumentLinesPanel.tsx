@@ -15,6 +15,8 @@ import type { InventoryItem } from '@/types/inventory';
 import type { ProposedEntityView } from '@/types/documentExtraction';
 import type { ProposedActionResultRef } from '@/types/proposedAction';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface DocumentLinesPanelProps {
   review: DocumentReviewView;
 }
@@ -138,7 +140,7 @@ function LineReviewRow({ meta, line, needsReview, reviewed, review }: LineReview
           aria-pressed={reviewed}
           aria-label={`Reviewed, ${label}`}
           onClick={() => review.toggleReviewed(key)}
-          className="rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2 py-0.5 text-2xs font-medium text-stone-600 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10 aria-pressed:border-accent-foreground/30 aria-pressed:bg-accent aria-pressed:text-accent-foreground"
+          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
         >
           {reviewed ? 'Reviewed' : 'Mark reviewed'}
         </button>
@@ -160,7 +162,7 @@ export function DocumentLinesPanel({ review }: DocumentLinesPanelProps): React.J
   });
   return (
     <section aria-label="Lines read from the document" className="space-y-2">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Document lines</h3>
+      <h3 className="dark:text-stone-400 type-overline">Document lines</h3>
       <ProposedEntityChips
         extractionId={review.extractionId}
         entities={unplacedItemEntities(review, handoff.lines.map((l) => l.docIndex))}

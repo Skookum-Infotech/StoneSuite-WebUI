@@ -5,7 +5,7 @@ const ROLE_LABELS: Record<CrewMember['role'], string> = { lead: 'Lead', member: 
 
 /** The visit's crew as plain text, for viewers who cannot change it. */
 export function InstallCrewReadOnly({ crew }: { crew: CrewMember[] }) {
-  if (crew.length === 0) return <p className="text-xs text-stone-500">{NO_CREW_COPY}</p>;
+  if (crew.length === 0) return <p className="type-helper">{NO_CREW_COPY}</p>;
   return (
     <div>
       <span className="mb-1 block text-xs font-medium text-stone-600">Crew</span>

@@ -55,7 +55,7 @@ export function WorkflowStagePanel({ stage, hereStatusCode, open }: WorkflowStag
           </ul>
         </>
       )}
-      {stage.hidden && <p className="mt-1.5 text-2xs text-stone-400">Some records are not shown.</p>}
+      {stage.hidden && <p className="mt-1.5 type-helper">Some records are not shown.</p>}
     </div>
   );
 }

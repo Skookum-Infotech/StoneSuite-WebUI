@@ -34,12 +34,12 @@ export function TransactionsPagination({
       className="flex flex-col gap-3 border-t border-stone-100 bg-stone-50/40 px-3 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 lg:justify-start">
-        <p className="text-xs text-stone-500" aria-live="polite">
+        <p className="type-helper" aria-live="polite">
           Showing{' '}
           <span className="font-semibold text-stone-700">{from.toLocaleString()}–{to.toLocaleString()}</span>
           {' '}of <span className="font-semibold text-stone-700">{total.toLocaleString()}</span>
         </p>
-        <label className="flex items-center gap-2 text-xs text-stone-500">
+        <label className="flex items-center gap-2 type-field-label">
           <span>Rows per page</span>
           <Select
             value={pageSize}
@@ -93,7 +93,7 @@ export function TransactionsPagination({
                 </button>
               </li>
             ) : (
-              <li key={item} aria-hidden="true" className="flex h-8 w-6 items-center justify-center text-stone-400">…</li>
+              <li key={item} aria-hidden="true" className="flex h-8 w-6 items-center justify-center text-ink-muted">…</li>
             ),
           )}
         </ol>

@@ -43,7 +43,7 @@ export function NeedsReviewNavigator({ pending, onJump }: NeedsReviewNavigatorPr
         onClick={() => step(1)}
         disabled={pending.length === 0}
         aria-label={`Needs review, ${pending.length} remaining. Jump to next`}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-warning dark:border-amber-500/50 bg-warning/10 dark:bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-warning dark:text-amber-400 transition-colors hover:bg-warning/20 dark:hover:bg-amber-500/20 disabled:border-stone-200 dark:disabled:border-stone-700 disabled:bg-stone-50 dark:disabled:bg-white/[0.03] disabled:text-stone-400"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-warning dark:border-amber-500/50 bg-warning/10 dark:bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-warning-ink dark:text-amber-400 transition-colors hover:bg-warning/20 dark:hover:bg-amber-500/20 disabled:border-stone-200 dark:disabled:border-stone-700 disabled:bg-stone-50 dark:disabled:bg-white/[0.03] disabled:text-stone-400"
       >
         <Flag className="size-3" aria-hidden="true" />
         Needs review ({pending.length})

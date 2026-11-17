@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, ArrowRight, Pencil, X } from 'lucide-react';
 import { workflowService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge, ErrorNote, Spinner, EmptyState } from '@/components/tenant/ui';
@@ -11,6 +11,7 @@ import { DynamicFieldInput } from '@/components/tenant/DynamicFieldInput';
 import { activeCustomFields, coerceCustomFields } from '@/lib/customFields';
 import type { WorkflowDefinition, WorkflowRecord, WorkflowState } from '@/types/tenant';
 
+import { cn } from '@/lib/utils';
 export function RecordsPanel({ def }: { def: WorkflowDefinition }) {
   const qc = useQueryClient();
   const wfId = def.workflow.id;
@@ -28,8 +29,8 @@ export function RecordsPanel({ def }: { def: WorkflowDefinition }) {
     <section className="rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-bold">Records</h2>
-          <p className="text-xs text-stone-500">
+          <h2 className="type-card-title">Records</h2>
+          <p className="type-helper">
             Scope: <Badge>{recordsQ.data?.scope ?? '—'}</Badge>
           </p>
         </div>
@@ -132,7 +133,7 @@ function RecordRow({
           type="button"
           aria-label="Edit fields"
           onClick={() => setEditing((v) => !v)}
-          className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1 text-label font-semibold text-stone-500 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800"
+          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'flex dark:border-stone-700 dark:hover:bg-stone-800')}
         >
           <Pencil className="size-3" /> {editing ? 'Close' : 'Edit fields'}
         </button>
@@ -163,7 +164,7 @@ function RecordRow({
                 type="button"
                 onClick={() => transition.mutate(t.toStateId)}
                 disabled={transition.isPending}
-                className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1 text-label font-semibold text-stone-700 transition-colors hover:border-primary hover:bg-primary/10 disabled:opacity-50 dark:border-stone-700 dark:text-stone-200"
+                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'flex dark:border-stone-700 dark:text-stone-200')}
               >
                 {t.name} <ArrowRight className="size-3" /> {to?.name}
               </button>

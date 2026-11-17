@@ -113,7 +113,7 @@ export function DocumentPane({ file, fileName, pages, focus }: DocumentPaneProps
             )}
             {pages.map((p) => (
               <section key={p.page} aria-label={`Page ${p.page}`}>
-                <h3 className="mb-1 font-sans text-2xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Page {p.page}</h3>
+                <h3 className="mb-1 font-sans dark:text-stone-400 type-overline">Page {p.page}</h3>
                 {p.rows.map((row, i) => {
                   const isFocus = focus?.page === p.page && focus.row === i + 1;
                   return (

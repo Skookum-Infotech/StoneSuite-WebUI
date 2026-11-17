@@ -7,6 +7,8 @@ import { AssistantTurn } from './AssistantTurn';
 import { ConversationList } from './ConversationList';
 import type { AssistantConversation } from './useAssistantConversation';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 /** The CRM types the assistant can search; a caller with read on none of
  *  them gets help-docs-only answers (the backend enforces this — here it
  *  only changes the hint text and which suggested questions are offered). */
@@ -197,8 +199,7 @@ export function AssistantPanel({
           trapFocus(e);
         }
       }}
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden overscroll-contain border-stone-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1c1c1c] sm:inset-auto sm:top-[4.5rem] sm:right-6 sm:h-[32rem] sm:max-h-[calc(100dvh-5.5rem)] sm:w-96 sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl sm:border"
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden overscroll-contain border-stone-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1c1c1c] sm:inset-auto sm:top-[4.5rem] sm:right-6 sm:h-[32rem] sm:max-h-[calc(100dvh-5.5rem)] sm:w-96 sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl sm:border pt-[env(safe-area-inset-top)]"
     >
       {/* `display: contents` keeps this wrapper invisible to the flex layout
           (its children stay direct flex items of the dialog) while giving
@@ -217,7 +218,7 @@ export function AssistantPanel({
             ) : (
               <Sparkles className="size-4 shrink-0 text-brand" aria-hidden="true" />
             )}
-            <h2 className="truncate text-sm font-bold text-stone-700 dark:text-stone-200">
+            <h2 className="truncate dark:text-stone-200 type-card-title">
               {view === 'history' ? 'Recent conversations' : 'StoneSuite Assistant'}
             </h2>
           </div>
@@ -244,7 +245,7 @@ export function AssistantPanel({
           ref={confirmDialogRef}
           role="alertdialog"
           aria-label="Confirm stopping the current answer"
-          className="flex items-center justify-between gap-2 border-b border-stone-200 bg-amber-50 px-4 py-2 text-2xs text-stone-700 dark:border-white/10 dark:bg-amber-500/10 dark:text-stone-200"
+          className="flex items-center justify-between gap-2 border-b border-stone-200 bg-amber-50 px-4 py-2 text-micro text-stone-700 dark:border-white/10 dark:bg-amber-500/10 dark:text-stone-200"
         >
           <span>This will stop the current answer. Continue?</span>
           <span className="flex shrink-0 gap-1">
@@ -299,11 +300,11 @@ export function AssistantPanel({
               )}
               {!isLoading && loadError && (
                 <div className="flex flex-col items-start gap-1">
-                  <p role="alert" className="text-xs text-destructive">{loadError}</p>
+                  <p role="alert" className="type-error">{loadError}</p>
                   <button
                     type="button"
                     onClick={conversation.retryLoad}
-                    className="rounded-lg px-2 py-1 text-2xs font-semibold text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-white/10 cursor-pointer"
+                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'dark:text-stone-300 dark:hover:bg-white/10')}
                   >
                     Retry
                   </button>
@@ -311,7 +312,7 @@ export function AssistantPanel({
               )}
               {!isLoading && !loadError && turns.length === 0 && (
                 <div className="space-y-3">
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
+                  <p className="dark:text-stone-400 type-helper">
                     {canSearchRecords
                       ? 'Ask about a record, workflow, or how to do something in StoneSuite.'
                       : 'Ask how to do something in StoneSuite — I can answer questions about using the app.'}
@@ -322,7 +323,7 @@ export function AssistantPanel({
                         key={q}
                         type="button"
                         onClick={() => askSuggested(q)}
-                        className="rounded-xl border border-stone-200 px-2.5 py-1.5 text-left text-2xs font-medium text-stone-600 hover:bg-stone-100 dark:border-white/10 dark:text-stone-300 dark:hover:bg-white/[0.06] cursor-pointer"
+                        className="rounded-xl border border-stone-200 px-2.5 py-1.5 text-left text-micro font-medium text-stone-600 hover:bg-stone-100 dark:border-white/10 dark:text-stone-300 dark:hover:bg-white/[0.06] cursor-pointer"
                       >
                         {q}
                       </button>
@@ -340,7 +341,7 @@ export function AssistantPanel({
                 type="button"
                 onClick={scrollToBottom}
                 aria-label="Jump to latest message"
-                className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-2xs font-semibold text-stone-600 shadow-md hover:bg-stone-50 dark:border-white/10 dark:bg-stone-800 dark:text-stone-200 cursor-pointer"
+                className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-micro font-semibold text-stone-600 shadow-md hover:bg-stone-50 dark:border-white/10 dark:bg-stone-800 dark:text-stone-200 cursor-pointer"
               >
                 <ArrowDown className="size-3" aria-hidden="true" />
                 Jump to latest

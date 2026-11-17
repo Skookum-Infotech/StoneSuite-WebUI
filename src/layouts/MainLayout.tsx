@@ -228,7 +228,7 @@ export default function MainLayout(): React.JSX.Element {
       )}
 
       {/* ── Unified header ── */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07]" style={{ background: 'var(--gradient-header)' }}>
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-white/[0.07] bg-header">
 
         {/* Left: both brand logos in one zone */}
         <div className="flex h-full w-auto shrink-0 items-center">
@@ -328,7 +328,7 @@ export default function MainLayout(): React.JSX.Element {
                     <h5 className="text-xs font-bold text-stone-200">
                       {user?.fullName || 'Guest User'}
                     </h5>
-                    <p className="truncate text-2xs text-stone-400 mt-0.5">
+                    <p className="truncate mt-0.5 type-helper">
                       {user?.email || 'guest@stonesuite.com'}
                     </p>
                   </div>
@@ -354,7 +354,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   {isCustomer ? (
                     <div className="py-1">
-                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
+                      <div className="px-3 py-2 type-overline">
                         Workspaces
                       </div>
                       {workspaces.length > 0 ? (
@@ -383,19 +383,19 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 text-2xs text-stone-400">
+                        <div className="px-3 py-2 type-subline">
                           No workspaces
                         </div>
                       )}
                       {switchWorkspaceMutation.isError && (
-                        <p className="px-3 pt-1 text-2xs text-destructive">
+                        <p className="px-3 pt-1 type-error">
                           {apiErrorMessage(switchWorkspaceMutation.error, 'Failed to switch workspace. Try again.')}
                         </p>
                       )}
                     </div>
                   ) : (
                     <div className="py-1">
-                      <div className="px-3 py-2 text-2xs font-bold text-stone-400 uppercase tracking-wide">
+                      <div className="px-3 py-2 type-overline">
                         Roles
                       </div>
                       {roles.length > 0 ? (
@@ -424,12 +424,12 @@ export default function MainLayout(): React.JSX.Element {
                           })}
                         </div>
                       ) : (
-                        <div className="px-3 py-2 text-2xs text-stone-400">
+                        <div className="px-3 py-2 type-subline">
                           No roles assigned
                         </div>
                       )}
                       {switchRoleMutation.isError && (
-                        <p className="px-3 pt-1 text-2xs text-destructive">
+                        <p className="px-3 pt-1 type-error">
                           Failed to switch role. Try again.
                         </p>
                       )}
@@ -438,7 +438,7 @@ export default function MainLayout(): React.JSX.Element {
                   <div className="h-px bg-white/[0.08] my-1" />
                   <button
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors text-left cursor-pointer"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-danger-ink hover:bg-destructive/10 transition-colors text-left cursor-pointer"
                   >
                     <LogOut className="size-4" />
                     <span>Sign Out</span>
@@ -453,10 +453,10 @@ export default function MainLayout(): React.JSX.Element {
       {/* Mobile search expansion — fixed below header */}
       <div
         className={cn(
-          'fixed inset-x-0 top-16 z-20 overflow-hidden border-b border-white/[0.07] backdrop-blur-md transition-all duration-200 ease-in-out sm:hidden',
+          'fixed inset-x-0 top-16 z-20 overflow-hidden border-b border-white/[0.07] bg-header backdrop-blur-md transition-all duration-200 ease-in-out sm:hidden',
           isMobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
         )}
-        style={{ background: 'linear-gradient(135deg, #001219 0%, #005f73 40%, #0a2540 75%, #050e1a 100%)' }}
+
       >
         <div className="px-4 py-3">
           <GlobalSearch
@@ -473,7 +473,7 @@ export default function MainLayout(): React.JSX.Element {
       />
 
       {/* ── Page Content ── */}
-      <div className="flex flex-col min-h-screen pt-16" style={{ paddingLeft: 'var(--sidebar-offset)' }}>
+      <div className="flex flex-col min-h-screen pt-16 pl-(--sidebar-offset)">
         <main className="flex-1 w-full flex flex-col min-h-0 bg-background">
 
           {/* Breadcrumb bar — contextual, scrolls with page */}

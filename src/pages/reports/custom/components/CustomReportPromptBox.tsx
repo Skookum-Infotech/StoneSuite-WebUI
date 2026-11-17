@@ -43,7 +43,7 @@ export function CustomReportPromptBox({ onInterpreted }: CustomReportPromptBoxPr
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
+      <h2 className="flex items-center gap-2 type-card-title">
         <Sparkles className="size-4 text-violet-500" aria-hidden="true" />
         {PROMPT_LABEL}
       </h2>
@@ -81,17 +81,17 @@ export function CustomReportPromptBox({ onInterpreted }: CustomReportPromptBoxPr
         ))}
       </div>
       {tooLong && (
-        <p id={TOO_LONG_ID} role="alert" className="mt-2 text-xs text-red-700">
+        <p id={TOO_LONG_ID} role="alert" className="mt-2 type-error">
           {TOO_LONG_TEXT}
         </p>
       )}
       {interpret.isPending && (
-        <p role="status" className="mt-2 text-xs text-stone-500">
+        <p role="status" className="mt-2 type-helper">
           {WAITING_TEXT}
         </p>
       )}
       {interpret.isError && (
-        <p role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <p role="alert" className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 type-error">
           {apiErrorMessage(interpret.error, ERROR_FALLBACK)}{" "}
           <Link to={MANUAL_PATH} aria-label="Start a report by hand" className="font-medium underline">
             Start a report by hand

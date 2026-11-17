@@ -73,12 +73,12 @@ export function FeedbackAssigneePicker({ candidates, selectedId, selectedName, o
           disabled={disabled}
           aria-label="Search admins to assign this ticket to"
           placeholder="Assign to…"
-          className="h-8 w-full rounded-lg border border-stone-200 bg-white px-2.5 text-2xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 dark:border-white/10 dark:bg-transparent dark:text-stone-200"
+          className="h-8 w-full rounded-lg border border-stone-200 bg-white px-2.5 text-micro text-stone-700 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 dark:border-white/10 dark:bg-transparent dark:text-stone-200"
         />
         {open && (
           <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-md dark:border-white/10 dark:bg-stone-900">
             {results.length === 0 ? (
-              <p className="px-3.5 py-2.5 text-2xs text-stone-500">
+              <p className="px-3.5 py-2.5 type-helper">
                 {candidates.length === 0 ? 'No prior assignees available.' : 'No matching admins.'}
               </p>
             ) : (
@@ -91,7 +91,7 @@ export function FeedbackAssigneePicker({ candidates, selectedId, selectedName, o
                     setQuery('');
                     setOpen(false);
                   }}
-                  className="block w-full px-3.5 py-2 text-left text-2xs font-medium text-stone-700 transition hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-white/[0.06]"
+                  className="block w-full px-3.5 py-2 text-left text-micro font-medium text-stone-700 transition hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-white/[0.06]"
                 >
                   {c.name}
                 </button>

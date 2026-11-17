@@ -35,13 +35,13 @@ export default function CustomReportsPage() {
           <SlidersHorizontal className="size-5 text-accent-foreground" aria-hidden="true" />
         </div>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-stone-900">Custom Reports</h1>
+          <h1 className="type-page-title">Custom Reports</h1>
           <p className="text-sm text-stone-500">Build and save your own reports.</p>
         </div>
       </div>
       <CustomReportPromptBox onInterpreted={openInterpreted} />
       {list.error && (
-        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger-ink">
           {apiErrorMessage(list.error, LOAD_ERROR_FALLBACK)}
         </p>
       )}

@@ -5,6 +5,8 @@ import { ReviewFieldFrame } from './ReviewFieldFrame';
 import { documentRoutes } from '@/lib/documentExtractionRoutes';
 import type { DocumentReviewView, ReviewFieldConfig } from '@/hooks/documentReviewView';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface ReviewFieldsPanelProps {
   review: DocumentReviewView;
   /** Which header rows to show and what they are called. */
@@ -31,7 +33,7 @@ function PartyChoices({ review, noun, searchSelector }: PartyChoicesProps): Reac
             type="button"
             onClick={() => review.pickParty({ id: c.uuid, name: c.name })}
             aria-label={`Use ${noun} ${c.name}`}
-            className="rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10"
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
           >
             Use {c.name}
           </button>
@@ -40,7 +42,7 @@ function PartyChoices({ review, noun, searchSelector }: PartyChoicesProps): Reac
           type="button"
           onClick={() => document.querySelector<HTMLElement>(searchSelector)?.focus()}
           aria-label={`Search ${noun}s in the form below`}
-          className="rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10"
+          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
         >
           Search {noun}s
         </button>
@@ -88,7 +90,7 @@ export function ReviewFieldsPanel({ review, fields }: ReviewFieldsPanelProps): R
               aria-pressed={reviewed}
               aria-label={`Reviewed, ${label}`}
               onClick={() => review.toggleReviewed(key)}
-              className="rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2 py-0.5 text-2xs font-medium text-stone-600 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10 aria-pressed:border-accent-foreground/30 aria-pressed:bg-accent aria-pressed:text-accent-foreground"
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
             >
               {reviewed ? 'Reviewed' : 'Mark reviewed'}
             </button>

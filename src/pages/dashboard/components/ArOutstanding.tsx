@@ -55,7 +55,7 @@ export function ArOutstanding({
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline">Overdue</div>
-          <div className="mt-1 text-sm font-bold text-warning tabular-nums sm:text-base lg:text-lg">{currency(data.overdueTotal)}</div>
+          <div className="mt-1 text-sm font-bold text-warning-ink tabular-nums sm:text-base lg:text-lg">{currency(data.overdueTotal)}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
           <div className="truncate type-overline"># Overdue</div>

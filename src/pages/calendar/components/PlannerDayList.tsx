@@ -17,7 +17,7 @@ export function PlannerDayList({ day, cards, quiet }: {
 
   return (
     <section aria-label={name} className="flex flex-col gap-2">
-      <h3 className="flex items-baseline gap-2 text-sm font-semibold text-stone-900">
+      <h3 className="flex items-baseline gap-2 type-card-title">
         {name}
         {cards.length > 0 && (
           <span className="text-xs font-normal text-stone-500">{countLabel(cards[0].kind, cards.length)}</span>
@@ -32,7 +32,7 @@ export function PlannerDayList({ day, cards, quiet }: {
           ))}
         </ul>
       ) : (
-        !quiet && <p className="text-xs text-stone-500">Nothing scheduled on {name}.</p>
+        !quiet && <p className="type-helper">Nothing scheduled on {name}.</p>
       )}
     </section>
   );

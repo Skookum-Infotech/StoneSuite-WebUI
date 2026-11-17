@@ -48,7 +48,7 @@ export function ReportPageShell({ title, description, backTo, exportTable, child
             <ArrowLeft className="size-3.5" aria-hidden="true" />
             Reports
           </Link>
-          <h1 className="mt-1 text-xl font-bold tracking-tight text-stone-900">{title}</h1>
+          <h1 className="mt-1 type-page-title">{title}</h1>
           <p className="text-sm text-stone-500">{description}</p>
         </div>
         <div className="flex gap-2">

@@ -23,6 +23,8 @@ import { PlannerPhoneCalendar } from './components/PlannerPhoneCalendar';
 import { PlannerTimeGrid } from './components/PlannerTimeGrid';
 import { PlannerViewSwitch } from './components/PlannerViewSwitch';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // The view, the date, the crew filter and the open visit live in the URL, so a
 // view can be bookmarked or sent to a colleague and the back button behaves.
 const PARAM_VIEW = 'view';
@@ -128,7 +130,7 @@ export default function InstallSchedulePage() {
               <CalendarCheck className="size-5 text-accent-foreground" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Install Schedule</h1>
+              <h1 className="type-page-title">Install Schedule</h1>
               <p className="flex min-h-5 flex-wrap items-center gap-x-3 text-sm text-stone-500" aria-live="polite">
                 {settled && (
                   <span>
@@ -167,7 +169,7 @@ export default function InstallSchedulePage() {
               <button
                 type="button"
                 onClick={() => update({ [PARAM_APPOINTMENT]: NEW_VISIT }, false)}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-stone-900 hover:bg-brand-hover md:w-auto"
+                className={cn(buttonVariants(), 'w-full md:w-auto')}
               >
                 <Plus className="size-4" aria-hidden="true" />
                 New visit
@@ -183,7 +185,7 @@ export default function InstallSchedulePage() {
               <button
                 type="button"
                 onClick={() => void refetch()}
-                className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Try again
               </button>
@@ -193,12 +195,12 @@ export default function InstallSchedulePage() {
           ) : (
             <>
               {truncated && (
-                <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-warning-ink">
                   Only the first part of this window is shown. Switch to Week or Day to see everything.
                 </p>
               )}
               {renderCalendar()}
-              {settled && cards.length === 0 && <p className="text-xs text-stone-500">No visits booked in this view.</p>}
+              {settled && cards.length === 0 && <p className="type-helper">No visits booked in this view.</p>}
             </>
           )}
         </section>

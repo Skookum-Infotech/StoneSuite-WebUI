@@ -34,7 +34,7 @@ const TONE_BADGE_CLASS: Record<AlertTone, string> = {
 // The on-hand figure itself carries the same tone as the badge -- not just
 // the pill -- so the number that actually matters draws the eye first.
 const TONE_VALUE_CLASS: Record<AlertTone, string> = {
-  critical: 'text-red-600',
+  critical: 'text-danger-ink',
   warning: 'text-warning',
 };
 
@@ -68,7 +68,7 @@ export function InventoryAlerts({
   return (
     <WidgetCard title="Inventory alerts" subtitle="stock needing attention">
       {data.alerts.length === 0 ? (
-        <p className="text-xs text-stone-500">Nothing needs attention right now.</p>
+        <p className="type-helper">Nothing needs attention right now.</p>
       ) : (
         <>
           <div className="flex flex-col divide-y divide-stone-100">
@@ -85,13 +85,13 @@ export function InventoryAlerts({
                     >
                       {a.itemName}
                     </button>
-                    <div className="text-2xs text-stone-500">{formatAlertDetail(a)}</div>
+                    <div className="type-subline">{formatAlertDetail(a)}</div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2.5">
-                    <span className={cn('text-2xs font-bold tabular-nums', TONE_VALUE_CLASS[tone])}>
+                    <span className={cn('text-micro font-bold tabular-nums', TONE_VALUE_CLASS[tone])}>
                       {formatStockQty(a.onHand)} on hand
                     </span>
-                    <span className={cn('rounded-full px-2 py-0.5 text-2xs font-bold', TONE_BADGE_CLASS[tone])}>
+                    <span className={cn('rounded-full px-2 py-0.5 type-pill', TONE_BADGE_CLASS[tone])}>
                       {SEVERITY_LABEL[a.severity]}
                     </span>
                   </div>

@@ -13,6 +13,9 @@ import type { Workflow } from "@/types/tenant";
 
 // ---------------------------------------------------------------------------
 
+/** Shared column layout of the header row and every workflow row. */
+const COLUMNS = "grid-cols-[minmax(120px,1.2fr)_72px_minmax(100px,1fr)_minmax(100px,1fr)_90px_106px_minmax(140px,1.4fr)_88px]";
+
 const numberingSchema = z.object({
   enabled: z.boolean(),
   prefix: z.string().max(20, "Max 20 chars"),
@@ -80,14 +83,10 @@ export default function RecordNumberingPage(): React.JSX.Element {
         {workflows.length > 0 && (
           <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto modal-scrollbar">
-              <div style={{ minWidth: '720px' }}>
+              <div className="min-w-[720px]">
                 {/* Table header */}
                 <div
-                  className="grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 select-none type-overline"
-                  style={{
-                    gridTemplateColumns:
-                      "minmax(120px,1.2fr) 72px minmax(100px,1fr) minmax(100px,1fr) 90px 106px minmax(140px,1.4fr) 88px",
-                  }}
+                  className={cn("grid items-center px-5 py-3 bg-stone-50 border-b border-stone-200 gap-3 select-none type-overline", COLUMNS)}
                 >
                   <span>Workflow</span>
                   <span className="text-center">Active</span>
@@ -227,7 +226,6 @@ function WorkflowRow({
     return (
       <div
         className={cn(rowBase, "flex items-center justify-start")}
-        style={{ gridTemplateColumns: "unset", display: "flex" }}
       >
         <div className="flex items-center gap-2.5 text-xs text-stone-500 py-1">
           <Loader2 className="size-3.5 animate-spin" />
@@ -242,11 +240,7 @@ function WorkflowRow({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={rowBase}
-      style={{
-        gridTemplateColumns:
-          "minmax(120px,1.2fr) 72px minmax(100px,1fr) minmax(100px,1fr) 90px 106px minmax(140px,1.4fr) 88px",
-      }}
+      className={cn(rowBase, COLUMNS)}
     >
       {/* Workflow name + key */}
       <div className="min-w-0">

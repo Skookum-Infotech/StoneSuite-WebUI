@@ -28,6 +28,7 @@ import { PlannerPhoneCalendar } from './components/PlannerPhoneCalendar';
 import { PlannerTimeGrid } from './components/PlannerTimeGrid';
 import { PlannerViewSwitch } from './components/PlannerViewSwitch';
 
+import { buttonVariants } from '@/components/ui/button';
 // The tab, the columns and the date live in the URL, so a view can be
 // bookmarked or sent to a colleague and the back button behaves.
 const PARAM_ACTIVITY = 'activity';
@@ -160,7 +161,7 @@ export default function ActivityPlannerPage() {
               <CalendarRange className="size-5 text-accent-foreground" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Activity Planner</h1>
+              <h1 className="type-page-title">Activity Planner</h1>
               <p className="flex min-h-5 flex-wrap items-center gap-x-3 text-sm text-stone-500" aria-live="polite">
                 {settled && (
                   <>
@@ -168,7 +169,7 @@ export default function ActivityPlannerPage() {
                       <span className="font-semibold text-stone-900">{cards.length}</span>{' '}
                       {cardNoun(kind, cards.length)} in this view
                     </span>
-                    {overdue > 0 && <span className="font-semibold text-destructive">{overdue} overdue</span>}
+                    {overdue > 0 && <span className="font-semibold text-danger-ink">{overdue} overdue</span>}
                   </>
                 )}
                 {isFetching && !loading && <span>Updating…</span>}
@@ -213,7 +214,7 @@ export default function ActivityPlannerPage() {
                 <button
                   type="button"
                   onClick={() => void refetch()}
-                  className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+                  className={buttonVariants({ variant: 'outline' })}
                 >
                   Try again
                 </button>
@@ -223,15 +224,15 @@ export default function ActivityPlannerPage() {
             ) : (
               <>
                 {truncated && (
-                  <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                  <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-warning-ink">
                     Only the first part of this window is shown. Switch to Week or Day to see everything.
                   </p>
                 )}
                 {renderCalendar()}
                 {settled && cards.length === 0 && (
-                  <p className="text-xs text-stone-500">Nothing scheduled for {activity.label} in this view.</p>
+                  <p className="type-helper">Nothing scheduled for {activity.label} in this view.</p>
                 )}
-                {activity.source === 'invoice' && <p className="text-xs text-stone-500">{INVOICE_NOTE}</p>}
+                {activity.source === 'invoice' && <p className="type-helper">{INVOICE_NOTE}</p>}
               </>
             )}
           </section>

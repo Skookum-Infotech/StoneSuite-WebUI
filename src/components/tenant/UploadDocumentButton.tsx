@@ -4,6 +4,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from 'sonner';
 import { DOCUMENT_ACCEPT_ATTRIBUTE, validateDocumentFile } from '@/lib/documentUploadValidation';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface UploadDocumentButtonProps {
   /** What is being uploaded, e.g. "Sales Order" — the button reads "Upload Sales Order". */
   documentLabel: string;
@@ -48,7 +50,7 @@ export function UploadDocumentButton({
         title={showReason ? disabledReason : undefined}
         aria-describedby={showReason ? reasonId : undefined}
         aria-label={`Upload ${documentLabel} file`}
-        className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
       >
         <Upload className="size-3.5" aria-hidden="true" />
         {`Upload ${documentLabel}`}

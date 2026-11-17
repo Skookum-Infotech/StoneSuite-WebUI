@@ -9,6 +9,7 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { isStaleError } from '@/services/installScheduleService';
 import type { Appointment } from '@/types/installSchedule';
 
+import { buttonVariants } from '@/components/ui/button';
 interface Props {
   appointment: Appointment;
   /** Called on Back and after a successful cancel. */
@@ -53,11 +54,11 @@ export function InstallCancelDialog({ appointment, onClose, onCancelled }: Props
         tabIndex={-1}
         className="mx-4 w-full max-w-md rounded-xl bg-white p-5 shadow-2xl outline-none"
       >
-        <h3 id={titleId} className="text-sm font-bold text-stone-900">
+        <h3 id={titleId} className="type-card-title">
           Cancel visit {appointment.jobNumber}?
         </h3>
-        <p className="mt-0.5 text-xs text-stone-500">The crew is told. The visit stays on the calendar, struck through.</p>
-        <label htmlFor={reasonId} className="mt-3 block text-xs font-medium text-stone-600">
+        <p className="mt-0.5 type-helper">The crew is told. The visit stays on the calendar, struck through.</p>
+        <label htmlFor={reasonId} className="mt-3 block type-field-label">
           Reason (required)
         </label>
         <textarea
@@ -78,7 +79,7 @@ export function InstallCancelDialog({ appointment, onClose, onCancelled }: Props
             type="button"
             onClick={onClose}
             disabled={cancel.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Back
           </button>
@@ -86,7 +87,7 @@ export function InstallCancelDialog({ appointment, onClose, onCancelled }: Props
             type="button"
             onClick={submit}
             disabled={trimmed === '' || cancel.isPending}
-            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className={buttonVariants({ variant: 'destructive' })}
           >
             {cancel.isPending ? 'Cancelling…' : 'Cancel visit'}
           </button>

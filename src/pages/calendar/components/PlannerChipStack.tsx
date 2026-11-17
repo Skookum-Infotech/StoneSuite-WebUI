@@ -42,7 +42,7 @@ export function PlannerChipStack({ cards, columnLabel, max, wide = false }: {
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" aria-label={`${columnLabel}, ${all}`} className="w-80 max-w-[calc(100vw-2rem)] p-2">
-            <p className="px-1.5 pb-2 text-sm font-semibold text-stone-900">
+            <p className="px-1.5 pb-2 type-card-title">
               {columnLabel}
               <span className="font-normal text-stone-500"> · {all}</span>
             </p>

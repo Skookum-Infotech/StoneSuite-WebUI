@@ -70,7 +70,7 @@ export function PlannerMonthGrid({ columns, buckets, label, onSelectDay }: {
             <div
               key={day.key}
               role="columnheader"
-              className="border-r border-stone-200 px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-stone-500 last:border-r-0"
+              className="border-r border-stone-200 px-2 py-2 text-center last:border-r-0 type-overline"
             >
               {day.label}
             </div>

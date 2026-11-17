@@ -49,7 +49,7 @@ function TicketRow({ ticket, selected, onSelect }: { ticket: FeedbackTicket; sel
           <span className="mt-1.5 flex items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
             <span>{formatFeedbackTime(ticket.createdAt)}</span>
             {rated && (
-              <span aria-label={`Rated ${ticket.rating} out of 5`} className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+              <span aria-label={`Rated ${ticket.rating} out of 5`} className="inline-flex items-center gap-1 font-medium text-warning-ink dark:text-amber-400">
                 <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden="true" />
                 {ticket.rating}
               </span>

@@ -30,8 +30,8 @@ export function CustomizePanel({
       >
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-stone-900">Customize dashboard</h2>
-            <p className="mt-0.5 text-xs text-stone-500">
+            <h2 className="type-dialog-title">Customize Dashboard</h2>
+            <p className="mt-0.5 type-helper">
               Show or hide the widgets your admin has made available to you.
             </p>
           </div>
@@ -46,7 +46,7 @@ export function CustomizePanel({
         </div>
 
         {widgets.length === 0 ? (
-          <p className="text-xs text-stone-500">Your admin hasn&apos;t allocated any widgets to you yet.</p>
+          <p className="type-helper">Your admin hasn&apos;t allocated any widgets to you yet.</p>
         ) : (
           <div className="max-h-[60vh] space-y-1 overflow-y-auto modal-scrollbar">
             {widgets.map((w) => {
@@ -59,7 +59,7 @@ export function CustomizePanel({
                 >
                   <span className="min-w-0">
                     <span className="block text-xs font-semibold text-stone-900">{w.title}</span>
-                    <span className="block text-2xs text-stone-500">{w.description}</span>
+                    <span className="block type-subline">{w.description}</span>
                   </span>
                   <Switch
                     id={`widget-toggle-${w.id}`}

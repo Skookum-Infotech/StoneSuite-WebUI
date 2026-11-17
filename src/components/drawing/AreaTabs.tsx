@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { useDrawingEditor } from './DrawingEditorContext';
 
+import { buttonVariants } from '@/components/ui/button';
 export function AreaTabs() {
   const { state, dispatch } = useDrawingEditor();
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -77,14 +78,14 @@ export function AreaTabs() {
           )}
           <AreaCodeInput areaId={area.id} areaName={area.name} code={area.code} />
           {renamingId !== area.id && (
-            <button type="button" aria-label={`Rename ${area.name}`} onClick={() => startRename(area.id, area.name)} className="px-1 text-2xs">
+            <button type="button" aria-label={`Rename ${area.name}`} onClick={() => startRename(area.id, area.name)} className="px-1 text-micro">
               ✎
             </button>
           )}
-          <button type="button" aria-label={`Move ${area.name} left`} disabled={index === 0} onClick={() => move(area.id, -1)} className="px-1 text-2xs disabled:opacity-30">
+          <button type="button" aria-label={`Move ${area.name} left`} disabled={index === 0} onClick={() => move(area.id, -1)} className="px-1 text-micro disabled:opacity-30">
             ←
           </button>
-          <button type="button" aria-label={`Move ${area.name} right`} disabled={index === areas.length - 1} onClick={() => move(area.id, 1)} className="px-1 text-2xs disabled:opacity-30">
+          <button type="button" aria-label={`Move ${area.name} right`} disabled={index === areas.length - 1} onClick={() => move(area.id, 1)} className="px-1 text-micro disabled:opacity-30">
             →
           </button>
           <button
@@ -92,13 +93,13 @@ export function AreaTabs() {
             aria-label={onlyOneArea ? `Delete ${area.name} (disabled — this is the only area)` : `Delete ${area.name}`}
             disabled={onlyOneArea}
             onClick={() => setConfirmingDeleteId(area.id)}
-            className="px-1 text-2xs text-destructive disabled:opacity-30"
+            className="px-1 text-micro text-danger-ink disabled:opacity-30"
           >
             ×
           </button>
         </div>
       ))}
-      <button ref={addAreaButtonRef} type="button" aria-label="Add area" onClick={() => dispatch({ type: 'addArea', name: `Area ${areas.length}` })} className="rounded border border-stone-200 px-2 py-1 text-xs">
+      <button ref={addAreaButtonRef} type="button" aria-label="Add area" onClick={() => dispatch({ type: 'addArea', name: `Area ${areas.length}` })} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
         +
       </button>
 
@@ -136,7 +137,7 @@ function AreaCodeInput({ areaId, areaName, code }: { areaId: string; areaName: s
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && commit()}
       placeholder="Code"
-      className="w-14 rounded border border-stone-200 px-1 text-2xs"
+      className="w-14 rounded border border-stone-200 px-1 text-micro"
     />
   );
 }
@@ -155,15 +156,15 @@ function DeleteAreaDialog({ areaName, onConfirm, onClose }: {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-        <h3 id="delete-area-dialog-title" className="text-sm font-bold text-stone-900">
+        <h3 id="delete-area-dialog-title" className="type-card-title">
           Delete {areaName}?
         </h3>
-        <p className="mt-1 text-xs text-stone-500">Every piece in this area will be removed. This cannot be undone from here.</p>
+        <p className="mt-1 type-helper">Every piece in this area will be removed. This cannot be undone from here.</p>
         <div className="mt-4 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600">
+          <button type="button" onClick={onClose} className={buttonVariants({ variant: 'outline' })}>
             Cancel
           </button>
-          <button type="button" onClick={onConfirm} className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white">
+          <button type="button" onClick={onConfirm} className={buttonVariants({ variant: 'destructive' })}>
             Delete area
           </button>
         </div>

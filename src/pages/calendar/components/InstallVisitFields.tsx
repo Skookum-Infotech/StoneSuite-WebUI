@@ -32,7 +32,7 @@ export function InstallVisitFields({ form, onChange, crewOptions, readOnlyCrew, 
         <legend className={labelCls}>Visit type</legend>
         <div className="flex flex-wrap gap-4">
           {VISIT_TYPES.map((t: VisitType) => (
-            <label key={t} className="flex items-center gap-1.5 text-xs text-stone-800">
+            <label key={t} className="flex items-center gap-1.5 type-field-label">
               <input
                 type="radio"
                 name={`${idPrefix}-type`}
@@ -79,7 +79,7 @@ export function InstallVisitFields({ form, onChange, crewOptions, readOnlyCrew, 
         )}
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-stone-800">
+      <label className="flex items-center gap-2 type-field-label">
         <input type="checkbox" checked={form.allDay} onChange={(e) => set({ allDay: e.target.checked })} />
         All day
       </label>

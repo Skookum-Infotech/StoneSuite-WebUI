@@ -50,7 +50,7 @@ export function PlannerNavigator({ span, onStep, onPick }: {
       >
         Today
       </button>
-      <h2 className="whitespace-nowrap text-sm font-semibold text-stone-900" aria-live="polite">
+      <h2 className="whitespace-nowrap type-card-title" aria-live="polite">
         {span.label}
       </h2>
       <div className="min-w-32 flex-1 sm:w-36 sm:flex-none [&>button]:h-9 sm:[&>button]:h-8">

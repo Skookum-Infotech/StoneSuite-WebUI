@@ -133,7 +133,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
             : 'border-stone-200 bg-white focus-within:ring-brand/30',
         )}
       >
-        <p className="flex items-start gap-1.5 break-words px-4 pt-3 text-xs text-stone-500">
+        <p className="flex items-start gap-1.5 break-words px-4 pt-3 type-helper">
           {mode.internal ? (
             <>
               <EyeOff className={cn('mt-0.5 size-3.5 shrink-0', amber ? 'text-amber-600' : 'text-stone-400')} aria-hidden="true" />
@@ -188,7 +188,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
                 </li>
               ))}
             </ul>
-            <p className="mt-1.5 text-2xs text-stone-500">
+            <p className="mt-1.5 type-helper">
               {formatFileSize(attachedBytes)} of {REPLY_MAX_TOTAL_MB} MB
             </p>
           </div>
@@ -226,7 +226,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
               className="hidden"
             />
             {!mode.notesOnly && (
-              <label htmlFor="comm-internal-only" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-stone-600">
+              <label htmlFor="comm-internal-only" className="flex cursor-pointer items-center gap-2 type-field-label">
                 <Switch
                   id="comm-internal-only"
                   checked={mode.internal}
@@ -240,7 +240,7 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-2xs text-stone-500 sm:inline">Ctrl + Enter to send</span>
+            <span className="hidden sm:inline type-subline">Ctrl + Enter to send</span>
             <button
               type="submit"
               disabled={!canSend}
@@ -263,21 +263,21 @@ export function CommunicationComposer({ recordId, audience, thread, onSent }: Co
         </div>
       </form>
 
-      {mode.lockReason !== '' && <p className="px-1 text-xs text-stone-500">{mode.lockReason}</p>}
+      {mode.lockReason !== '' && <p className="px-1 type-helper">{mode.lockReason}</p>}
       {fileErrors.length > 0 && (
-        <ul role="alert" className="list-none space-y-0.5 px-1 text-xs text-destructive">
+        <ul role="alert" className="list-none space-y-0.5 px-1 text-xs text-danger-ink">
           {fileErrors.map((error) => (
             <li key={error}>{error}</li>
           ))}
         </ul>
       )}
       {send.isError && (
-        <p role="alert" className="px-1 text-xs text-destructive">
+        <p role="alert" className="px-1 type-error">
           {apiErrorMessage(send.error, send.variables?.internalOnly ? 'Failed to save the note.' : 'Failed to send the reply.')}
         </p>
       )}
       {deliveryError && (
-        <p role="alert" className="px-1 text-xs text-destructive">
+        <p role="alert" className="px-1 type-error">
           {deliveryError}
         </p>
       )}

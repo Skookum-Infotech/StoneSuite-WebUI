@@ -143,15 +143,15 @@ export default function WorkflowPlaceholderPage(): React.JSX.Element {
       <div className="p-6 flex-1 flex flex-col min-h-0">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-brand-dark">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/20 text-link">
             <Icon className="size-6" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-stone-900">
+              <h1 className="type-page-title">
                 {meta.title}
               </h1>
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-warning-ink type-pill">
                 Coming Soon
               </span>
             </div>
@@ -165,7 +165,7 @@ export default function WorkflowPlaceholderPage(): React.JSX.Element {
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-stone-100">
               <Icon className="size-9 text-stone-400" />
             </div>
-            <h2 className="text-base font-semibold text-stone-700">
+            <h2 className="type-dialog-title">
               Under Development
             </h2>
             <p className="mt-1.5 text-sm text-stone-500 leading-relaxed">

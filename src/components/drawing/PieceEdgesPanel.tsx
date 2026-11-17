@@ -39,7 +39,7 @@ export function PieceEdgesPanel({ piece }: { piece: Piece }) {
               aria-label={`Select side ${edgeLetter(edge.index)}`}
               aria-pressed={selected}
               onClick={() => dispatch({ type: 'selectEdge', pieceId: piece.id, edgeIndex: edge.index })}
-              className="mb-0.5 text-2xs text-stone-500 underline-offset-2 hover:underline"
+              className="mb-0.5 text-micro text-stone-500 underline-offset-2 hover:underline"
             >
               Side {edgeLetter(edge.index)} · {Math.round(edge.startAngleDeg * 10) / 10}° corner
             </button>

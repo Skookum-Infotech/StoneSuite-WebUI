@@ -9,6 +9,8 @@ import { recordEmailKey } from '@/lib/recordEmail';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { DocumentSendResult } from '@/services/documentService';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface SendToCustomerDialogProps {
   recordId: string;
   open: boolean;
@@ -147,10 +149,10 @@ export function SendToCustomerDialog({
             <Send className="size-4 text-stone-700" />
           </div>
           <div>
-            <h3 id="send-to-recipient-dialog-title" className="text-sm font-bold text-stone-900">
+            <h3 id="send-to-recipient-dialog-title" className="type-card-title">
               {copy.title}
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">{resend ? 'An email with this order will be sent again.' : 'An email with this order will be sent.'}</p>
+            <p className="mt-0.5 type-helper">{resend ? 'An email with this order will be sent again.' : 'An email with this order will be sent.'}</p>
           </div>
         </div>
 
@@ -168,12 +170,12 @@ export function SendToCustomerDialog({
         </p>
 
         {send.error && (
-          <p className="mb-3 text-xs text-destructive">
+          <p className="mb-3 type-error">
             {apiErrorMessage(send.error, 'Failed to send document.')}
           </p>
         )}
         {deliveryError && (
-          <p role="alert" className="mb-3 text-xs text-destructive">
+          <p role="alert" className="mb-3 type-error">
             {deliveryError}
           </p>
         )}
@@ -185,7 +187,7 @@ export function SendToCustomerDialog({
             onClick={() => onOpenChange(false)}
             disabled={send.isPending}
             aria-label={`Cancel ${resend ? 'resending' : 'sending'} to ${copy.verb}`}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -195,7 +197,7 @@ export function SendToCustomerDialog({
             onClick={() => send.mutate()}
             disabled={send.isPending}
             aria-label={`Confirm ${resend ? 'resend' : 'send'} to ${copy.verb}`}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {send.isPending ? (resend ? 'Resending…' : 'Sending…') : copy.confirm}
           </button>

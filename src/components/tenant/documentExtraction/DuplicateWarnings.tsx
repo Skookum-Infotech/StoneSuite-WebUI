@@ -3,6 +3,8 @@ import { TriangleAlert } from 'lucide-react';
 import { duplicateStatusText } from '@/lib/documentDuplicateStatus';
 import type { ExtractionDuplicate } from '@/types/documentExtraction';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface DuplicateWarningsProps {
   duplicates: ExtractionDuplicate[];
   onOpenExisting: (recordUuid: string) => void;
@@ -19,7 +21,7 @@ export function DuplicateWarnings({ duplicates, onOpenExisting, onCreateAnyway }
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/10 dark:bg-amber-500/10">
           <TriangleAlert className="size-4 text-warning dark:text-amber-400" aria-hidden="true" />
         </div>
-        <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">This document may already be in StoneSuite</h3>
+        <h3 className="dark:text-stone-100 type-card-title">This Document May Already Be in StoneSuite</h3>
       </div>
       <ul className="space-y-2">
         {duplicates.map((d, i) => {
@@ -37,7 +39,7 @@ export function DuplicateWarnings({ duplicates, onOpenExisting, onCreateAnyway }
                   type="button"
                   onClick={() => onOpenExisting(uuid)}
                   aria-label={d.number ? `Open existing ${d.number}` : undefined}
-                  className="mt-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10"
+                  className={cn(buttonVariants({ variant: 'outline' }), 'mt-2 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
                 >
                   Open existing
                 </button>
@@ -50,7 +52,7 @@ export function DuplicateWarnings({ duplicates, onOpenExisting, onCreateAnyway }
         <button
           type="button"
           onClick={onCreateAnyway}
-          className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 transition-all hover:bg-brand-hover active:scale-95"
+          className={cn(buttonVariants(), 'active:scale-95')}
         >
           Create anyway
         </button>

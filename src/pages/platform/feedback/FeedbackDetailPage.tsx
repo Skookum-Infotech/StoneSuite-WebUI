@@ -123,12 +123,12 @@ export default function FeedbackDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{ticket.ticketNumber}</h1>
-            <span className={cn('rounded-full px-2 py-0.5 text-2xs font-semibold', FEEDBACK_STATUS_COLORS[ticket.status as FeedbackStatus])}>
+            <h1 className="dark:text-stone-100 type-page-title">{ticket.ticketNumber}</h1>
+            <span className={cn('rounded-full px-2 py-0.5 type-pill', FEEDBACK_STATUS_COLORS[ticket.status as FeedbackStatus])}>
               {feedbackStatusLabel(ticket.status)}
             </span>
             {typeof ticket.rating === 'number' && ticket.rating > 0 && (
-              <span className="inline-flex items-center gap-0.5 text-xs text-amber-500">
+              <span className="inline-flex items-center gap-0.5 text-xs text-warning-ink">
                 <Star className="size-3 fill-amber-400" />{ticket.rating}
               </span>
             )}

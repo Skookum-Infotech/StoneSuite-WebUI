@@ -9,6 +9,8 @@ import { automationSettingsService } from '@/services/automationSettingsService'
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ANOMALY_SCAN_RULE_KEY, findAnomalyScanRule, scanSummary } from '@/lib/anomaly';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const RULES_QUERY_KEY = 'automation-rules';
 const SETTINGS_QUERY_KEY = 'automation-settings';
 /** Same wording the API returns (409) when scanning is turned on while platform automation is off. */
@@ -75,7 +77,7 @@ export function AnomalyScanSwitch() {
     <div className="ml-auto flex shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-3 py-2">
       <div className="text-right">
         <p className="text-xs font-medium text-stone-700">Anomaly scanning</p>
-        <p className="whitespace-nowrap text-2xs text-stone-500">
+        <p className="whitespace-nowrap type-helper">
           {rule.enabled ? 'On — checked every 15 minutes' : 'Off — nothing is checked or sent'}
         </p>
       </div>
@@ -92,7 +94,7 @@ export function AnomalyScanSwitch() {
           disabled={!rule.enabled || scan.isPending}
           aria-label="Run scan now"
           title={rule.enabled ? 'Check for anomalies right now' : 'Turn scanning on to run a scan'}
-          className="flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
         >
           {scan.isPending ? (
             <Loader2 className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />

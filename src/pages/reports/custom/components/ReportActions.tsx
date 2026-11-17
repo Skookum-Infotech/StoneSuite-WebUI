@@ -37,7 +37,7 @@ export function ReportActions({ state, handlers }: ReportActionsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {canEdit && (
-        <label className="inline-flex items-center gap-2 text-xs font-medium text-stone-700">
+        <label className="inline-flex items-center gap-2 type-field-label">
           <Switch
             aria-label="Share with workspace"
             checked={state.shared}

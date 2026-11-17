@@ -12,6 +12,7 @@ import { VersionDrawer } from './VersionDrawer';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { useFullscreen } from './useFullscreen';
 
+import { buttonVariants } from '@/components/ui/button';
 const SAVE_BUTTON_LABEL: Record<AutosaveStatus, string> = {
   idle: 'Saved',
   dirty: 'Save',
@@ -49,7 +50,7 @@ export function DrawingToolbar(
     toast.success(`Exported ${file.fileName}`);
   };
   const canSave = saveStatus === 'dirty' || saveStatus === 'error';
-  const statusTone = saveStatus === 'error' ? 'text-destructive' : saveStatus === 'dirty' ? 'text-amber-700' : 'text-stone-500';
+  const statusTone = saveStatus === 'error' ? 'text-danger-ink' : saveStatus === 'dirty' ? 'text-amber-700' : 'text-stone-500';
 
   return (
     <div className="flex items-center gap-2">
@@ -58,11 +59,11 @@ export function DrawingToolbar(
         aria-label="Save drawing"
         disabled={!canSave}
         onClick={onSave}
-        className="rounded bg-brand px-3 py-1 text-xs font-medium text-white disabled:bg-stone-200 disabled:text-stone-500"
+        className={buttonVariants({ size: 'sm' })}
       >
         {SAVE_BUTTON_LABEL[saveStatus]}
       </button>
-      <span role="status" className={`min-w-44 text-2xs ${statusTone}`}>{SAVE_STATUS_TEXT[saveStatus]}</span>
+      <span role="status" className={`min-w-44 text-micro ${statusTone}`}>{SAVE_STATUS_TEXT[saveStatus]}</span>
 
       <span className="mx-2 h-5 w-px bg-stone-200" aria-hidden="true" />
 
@@ -78,7 +79,7 @@ export function DrawingToolbar(
       <button type="button" aria-label="Zoom out" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom - ZOOM_STEP })} className={BUTTON_CLASS}>
         −
       </button>
-      <span className="w-10 text-center text-2xs text-stone-500" aria-label="Zoom level">{Math.round(state.zoom * 100)}%</span>
+      <span className="w-10 text-center type-subline" aria-label="Zoom level">{Math.round(state.zoom * 100)}%</span>
       <button type="button" aria-label="Zoom in" onClick={() => dispatch({ type: 'setZoom', zoom: state.zoom + ZOOM_STEP })} className={BUTTON_CLASS}>
         +
       </button>

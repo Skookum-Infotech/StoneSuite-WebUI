@@ -19,10 +19,10 @@ export function FeedbackSubmitSuccess({
 }) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-6 py-16 text-center motion-safe:animate-in motion-safe:fade-in duration-200">
-      <span className="flex size-14 items-center justify-center rounded-full bg-brand/25 text-brand-dark">
+      <span className="flex size-14 items-center justify-center rounded-full bg-brand/25 text-link">
         <CheckCircle2 className="size-7" aria-hidden="true" />
       </span>
-      <h2 className="mt-4 text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100">
+      <h2 className="mt-4 dark:text-stone-100 type-dialog-title">
         Ticket {ticket.ticketNumber} submitted
       </h2>
       <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">

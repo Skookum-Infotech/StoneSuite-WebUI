@@ -10,11 +10,11 @@ function ReportCard({ report }: { report: ReportCardInfo }) {
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-sm font-semibold text-stone-900">{report.title}</h2>
+        <h2 className="type-card-title">{report.title}</h2>
         {report.path ? (
           <ArrowRight className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
         ) : (
-          <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-label font-medium text-stone-500">
+          <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-stone-500 type-pill">
             {COMING_SOON}
           </span>
         )}
@@ -65,7 +65,7 @@ export default function ReportsHubPage({ slug }: { slug: string }) {
           <BarChart3 className="size-5 text-accent-foreground" aria-hidden="true" />
         </div>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-stone-900">{info.label} Reports</h1>
+          <h1 className="type-page-title">{info.label} Reports</h1>
           <p className="text-sm text-stone-500">{info.description}</p>
         </div>
       </div>

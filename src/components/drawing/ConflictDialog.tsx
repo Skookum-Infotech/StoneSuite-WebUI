@@ -9,6 +9,7 @@
 import { createPortal } from 'react-dom';
 import { useModalDialog } from '@/hooks/useModalDialog';
 
+import { buttonVariants } from '@/components/ui/button';
 export function ConflictDialog({ onReloadLatest, onSaveAsCopy, onClose }: {
   onReloadLatest: () => void; onSaveAsCopy: () => void; onClose: () => void;
 }) {
@@ -23,10 +24,10 @@ export function ConflictDialog({ onReloadLatest, onSaveAsCopy, onClose }: {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-        <h3 id="drawing-conflict-dialog-title" className="text-sm font-bold text-stone-900">
-          This drawing changed elsewhere
+        <h3 id="drawing-conflict-dialog-title" className="type-card-title">
+          This Drawing Changed Elsewhere
         </h3>
-        <p className="mt-1 text-xs text-stone-500">
+        <p className="mt-1 type-helper">
           Someone else saved changes to this drawing since it loaded here. Reload to see their
           version, or save your own changes as the new current version anyway.
         </p>
@@ -34,14 +35,14 @@ export function ConflictDialog({ onReloadLatest, onSaveAsCopy, onClose }: {
           <button
             type="button"
             onClick={onReloadLatest}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Reload latest
           </button>
           <button
             type="button"
             onClick={onSaveAsCopy}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold"
+            className={buttonVariants()}
           >
             Save as copy
           </button>

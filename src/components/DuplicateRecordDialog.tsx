@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { duplicateDialogCopy, type DuplicateDialogEntity, type DuplicateMatchStatus } from '@/lib/duplicateRecordCheck';
 
+import { buttonVariants } from '@/components/ui/button';
 interface DuplicateRecordDialogProps {
   entity: DuplicateDialogEntity;
   match: { name: string; statusLabel: string; status: DuplicateMatchStatus };
@@ -39,7 +40,7 @@ export function DuplicateRecordDialog({
           <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-warning/10">
             <TriangleAlert className="size-4 text-warning" aria-hidden="true" />
           </div>
-          <h3 id="duplicate-record-title" className="text-sm font-bold text-stone-900">
+          <h3 id="duplicate-record-title" className="type-card-title">
             {copy.title}
           </h3>
         </div>
@@ -55,7 +56,7 @@ export function DuplicateRecordDialog({
                 type="button"
                 onClick={onCancel}
                 aria-label="Cancel"
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -64,10 +65,7 @@ export function DuplicateRecordDialog({
                 onClick={() => onActivate?.()}
                 disabled={isActivating}
                 aria-label="Activate and use the existing record"
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900',
-                  'transition-all active:scale-95 hover:bg-brand-hover disabled:opacity-50',
-                )}
+                className={cn(buttonVariants(), 'active:scale-95')}
               >
                 {isActivating && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
                 {isActivating ? 'Activating…' : 'Activate & Use'}
@@ -78,7 +76,7 @@ export function DuplicateRecordDialog({
               type="button"
               onClick={onCancel}
               aria-label="OK"
-              className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 transition-all hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               OK
             </button>

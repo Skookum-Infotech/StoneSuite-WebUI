@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import type { ProvenanceInfo } from '@/lib/salesOrderDocumentHandoff';
 import type { FieldConfidence, FieldSource } from '@/types/documentExtraction';
 
+import { buttonVariants } from '@/components/ui/button';
 interface FieldProvenanceProps {
   label: string;
   provenance: ProvenanceInfo | undefined;
@@ -35,7 +36,7 @@ export function FieldProvenance({ label, provenance, needsReview, onShowInDocume
   const canShow = provenance?.page !== undefined || provenance?.snippet !== undefined;
   return (
     <span className="inline-flex items-center gap-1">
-      <span className={cn('inline-flex items-center gap-1 text-2xs font-semibold', needsReview ? 'text-warning dark:text-amber-400' : 'text-stone-500 dark:text-stone-400')}>
+      <span className={cn('inline-flex items-center gap-1 text-micro font-semibold', needsReview ? 'text-warning dark:text-amber-400' : 'text-stone-500 dark:text-stone-400')}>
         <span aria-hidden="true">{marker.glyph}</span>
         {marker.text}
       </span>
@@ -62,7 +63,7 @@ export function FieldProvenance({ label, provenance, needsReview, onShowInDocume
               <button
                 type="button"
                 onClick={() => onShowInDocument(provenance.page, provenance.row)}
-                className="rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10"
+                className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
               >
                 Show in document
               </button>

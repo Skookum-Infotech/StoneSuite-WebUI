@@ -24,6 +24,7 @@ import { PurchasesStatus } from './components/PurchasesStatus';
 import { ArOutstanding } from './components/ArOutstanding';
 import { AccountingSnapshot } from './components/AccountingSnapshot';
 
+import { buttonVariants } from '@/components/ui/button';
 // Widgets go full-width on phones, pair up from `md` (tablet / small laptop),
 // and thirds get their own row of three only once there's `xl` room for it.
 const SIZE_CLASS: Record<WidgetSize, string> = {
@@ -276,7 +277,7 @@ export default function DashboardPage() {
                 void catalogQ.refetch();
                 void allocationQ.refetch();
               }}
-              className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-800"
+              className={cn(buttonVariants({ variant: 'outline' }), 'dark:border-stone-700 dark:hover:bg-stone-800')}
             >
               Retry
             </button>

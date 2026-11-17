@@ -24,7 +24,7 @@ export function ReportTrendChart({ data, label }: ReportTrendChartProps) {
   if (data.length === 0) return null;
   return (
     <section aria-label={label} className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="mb-2 text-sm font-semibold text-stone-900">{label}</h2>
+      <h2 className="mb-2 type-card-title">{label}</h2>
       <div role="img" aria-label={`${label}: ${data.length} periods from ${data[0].label} to ${data[data.length - 1].label}`}>
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
           <ComposedChart data={data} margin={{ left: 4, right: 16 }}>

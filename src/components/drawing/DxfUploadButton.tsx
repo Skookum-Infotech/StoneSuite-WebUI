@@ -1,6 +1,8 @@
 import { useRef, type ChangeEvent } from 'react';
 import { Loader2, Upload } from 'lucide-react';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export function DxfUploadButton({ onFiles, busy }: { onFiles: (files: File[]) => void; busy: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -26,7 +28,7 @@ export function DxfUploadButton({ onFiles, busy }: { onFiles: (files: File[]) =>
         aria-label="Upload DXF"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+        className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
       >
         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
         {busy ? 'Uploading…' : 'Upload DXF'}

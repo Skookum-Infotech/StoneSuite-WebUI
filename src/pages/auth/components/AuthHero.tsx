@@ -35,7 +35,7 @@ export function AuthHero({ copy, features, showSocial = false }: {
   showSocial?: boolean
 }) {
   return (
-    <aside className="auth-hero relative hidden h-screen w-1/2 flex-col overflow-hidden md:flex">
+    <aside className="bg-header relative hidden h-screen w-1/2 flex-col overflow-hidden md:flex">
       <div className="auth-glow-pulse-slow absolute -left-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-[#005f73]/25 blur-[120px]" />
       <div className="auth-glow-pulse-slower absolute -bottom-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-brand/10 blur-[120px]" />
       <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_40s_linear_infinite] rounded-full bg-gradient-to-r from-transparent via-[#005f73]/10 to-transparent blur-3xl" />

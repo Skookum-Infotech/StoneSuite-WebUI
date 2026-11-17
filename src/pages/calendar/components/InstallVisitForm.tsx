@@ -17,6 +17,7 @@ import { InstallConflictNotice } from './InstallConflictNotice';
 import { InstallJobField } from './InstallJobField';
 import { InstallVisitFields } from './InstallVisitFields';
 
+import { buttonVariants } from '@/components/ui/button';
 interface Props {
   /** The visit being edited; absent when booking a new one. */
   appointment?: Appointment;
@@ -130,7 +131,7 @@ export function InstallVisitForm({ appointment, jobId, defaultDate, actions }: P
                 onClear={() => { setJobLabel(''); change({ ...form, jobId: '' }); }}
               />
             )}
-            {promised && <p className="mt-1 text-xs text-stone-500">Promised install date: {formatDisplayDate(promised)}</p>}
+            {promised && <p className="mt-1 type-helper">Promised install date: {formatDisplayDate(promised)}</p>}
           </div>
           <InstallVisitFields form={form} onChange={change} crewOptions={crew.data ?? []}
             readOnlyCrew={appointment && !canWrite ? appointment.crew : undefined} idPrefix={idPrefix} />
@@ -169,11 +170,11 @@ export function InstallVisitForm({ appointment, jobId, defaultDate, actions }: P
           )}
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={onClose} className={`${btn} border border-stone-200 text-stone-600 hover:bg-stone-50`}>
+          <button type="button" onClick={onClose} className={buttonVariants({ variant: 'outline' })}>
             Close
           </button>
           {canWrite && live && (
-            <button type="submit" disabled={pending || stale} className={`${btn} bg-brand text-stone-900 hover:bg-brand-hover`}>
+            <button type="submit" disabled={pending || stale} className={buttonVariants()}>
               {pending ? 'Saving…' : editing ? 'Save changes' : 'Book visit'}
             </button>
           )}

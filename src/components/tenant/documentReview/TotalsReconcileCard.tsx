@@ -52,14 +52,14 @@ export function TotalsReconcileCard({ docTotal, formTotal, lines, formAmounts, t
         </p>
       )}
       {rec && !rec.ok && (
-        <p className="mt-2 inline-flex items-center gap-1 font-semibold text-warning dark:text-amber-400">
+        <p className="mt-2 inline-flex items-center gap-1 font-semibold text-warning-ink dark:text-amber-400">
           <TriangleAlert className="size-3.5" aria-hidden="true" />
           Off by {usd(rec.diff)}{rec.suspectLine ? ` — check line ${rec.suspectLine}` : ''}
         </p>
       )}
       {!rec && <p className="mt-2 text-stone-500 dark:text-stone-400">The document total couldn't be read, so it can't be checked.</p>}
       {taxOff && (
-        <p className="mt-1 flex items-center gap-1 font-semibold text-warning dark:text-amber-400">
+        <p className="mt-1 flex items-center gap-1 font-semibold text-warning-ink dark:text-amber-400">
           <TriangleAlert className="size-3.5" aria-hidden="true" />
           Tax differs by {usd(tax.doc - tax.form)} — set the lines' Tax % to match
         </p>

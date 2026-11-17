@@ -192,11 +192,11 @@ export function ProposedActionCard({
           {current.status === 'expired' && <p className="text-muted-foreground">{S.expiredNote}</p>}
           {unavailable && <p className="text-muted-foreground">{S.unavailable}</p>}
           {current.status === 'failed' && (
-            <p className="text-destructive">{current.errorMessage || S.failedNote}</p>
+            <p className="text-danger-ink">{current.errorMessage || S.failedNote}</p>
           )}
         </div>
 
-        <div role="alert" aria-live="assertive" className="text-sm text-destructive">
+        <div role="alert" aria-live="assertive" className="text-sm text-danger-ink">
           {error}
         </div>
       </CardContent>

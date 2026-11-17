@@ -17,9 +17,9 @@ export function PanelSection(
   }
   return (
     <details open={defaultOpen} aria-label={label ?? title} className="group flex flex-col gap-1.5">
-      <summary className="flex cursor-pointer list-none items-center justify-between text-2xs font-semibold uppercase tracking-wide text-stone-500 [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between type-overline [&::-webkit-details-marker]:hidden">
         {title}
-        <span aria-hidden="true" className="text-stone-400 transition-transform group-open:rotate-90">›</span>
+        <span aria-hidden="true" className="text-ink-muted transition-transform group-open:rotate-90">›</span>
       </summary>
       <div className="mt-1.5 flex flex-col gap-1.5">{children}</div>
     </details>

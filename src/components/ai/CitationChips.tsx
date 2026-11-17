@@ -5,7 +5,7 @@ import type { Citation } from '@/types/ai';
 import { cn } from '@/lib/utils';
 import { citationRoute } from './assistantText';
 
-const chipBase = 'inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-2xs font-semibold transition-colors';
+const chipBase = 'inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-micro font-semibold transition-colors';
 /** How long a chip stays visually highlighted after a [n] marker jumps to it. */
 const HIGHLIGHT_MS = 1500;
 
@@ -82,7 +82,7 @@ function HelpChip({ citation, n, highlighted, chipRef }: { citation: Citation; n
         <span className="truncate">{citation.source_id ?? citation.snippet}</span>
       </button>
       {open && (
-        <span className="rounded-lg bg-stone-50 px-2.5 py-1.5 text-2xs text-stone-600 dark:bg-white/[0.04] dark:text-stone-300">
+        <span className="rounded-lg bg-stone-50 px-2.5 py-1.5 text-micro text-stone-600 dark:bg-white/[0.04] dark:text-stone-300">
           {citation.snippet}
         </span>
       )}

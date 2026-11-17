@@ -52,6 +52,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* The app header gradient (--gradient-header) as a background class. */
+@utility bg-header {
+  background: var(--gradient-header);
+}
+
 /* Number boxes inside a line-item row: the browser's stepper arrows sit on top of
    the value, so they are hidden. The value is still typed (and stepped by the
    arrow keys); only the clutter goes. */
@@ -203,6 +208,7 @@
      Change this one var to retheme the header across all breakpoints.
      ─────────────────────────────────────────────────────────────────── */
   --gradient-header: linear-gradient(135deg, #001219 0%, #005f73 15%, #0a2540 50%, #050e1a 100%);
+  /* Use it through the `bg-header` class (defined below), never a hand-written copy. */
 
   /* ── Sidebar tokens ─────────────────────────────────────────────────────
      Sidebar background is stone-100 (#f7f7f7), slightly behind the main canvas.

@@ -6,6 +6,7 @@ import { FEEDBACK_CATEGORY_OPTIONS, FEEDBACK_PRIORITY_LABELS, FEEDBACK_STATUS_LA
 import type { FeedbackAdminFilters } from '@/types/feedback';
 import type { Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 interface Props {
   filters: FeedbackAdminFilters;
   tenants: Tenant[];
@@ -96,7 +97,7 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
           type="button"
           onClick={onClear}
           aria-label="Clear feedback filters"
-          className="flex h-8 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-500 transition-colors hover:bg-stone-50 dark:border-white/10 dark:bg-transparent dark:hover:bg-white/[0.06]"
+          className={cn(buttonVariants({ variant: 'outline' }), 'flex dark:border-white/10 dark:bg-transparent dark:hover:bg-white/[0.06]')}
         >
           <X className="size-3" />
           Clear
@@ -109,7 +110,7 @@ export function FeedbackFiltersBar({ filters, tenants, onChange, onClear }: Prop
 function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={htmlFor} className="text-2xs font-semibold uppercase tracking-wider text-stone-500">
+      <label htmlFor={htmlFor} className="type-field-label">
         {label}
       </label>
       {children}

@@ -6,8 +6,8 @@ import { AgeBadge } from './AgeBadge';
 
 // One semantic table. Below `md` each row is restyled into a stacked card (the
 // cell's data-label supplies its caption), so a phone gets no horizontal scroll.
-const CELL = 'block px-4 py-1 before:mr-2 before:text-2xs before:font-semibold before:uppercase before:text-stone-400 before:content-[attr(data-label)] md:table-cell md:px-4 md:py-3 md:before:content-none';
-const HEAD = 'px-4 py-2 text-left text-2xs font-semibold uppercase tracking-wide text-stone-500';
+const CELL = 'block px-4 py-1 before:mr-2 before:text-micro before:font-semibold before:uppercase before:text-stone-400 before:content-[attr(data-label)] md:table-cell md:px-4 md:py-3 md:before:content-none';
+const HEAD = 'px-4 py-2 text-left type-overline';
 
 export function ApprovalInboxTable({ items, caption }: { items: ApprovalInboxItem[]; caption: string }) {
   const now = new Date();

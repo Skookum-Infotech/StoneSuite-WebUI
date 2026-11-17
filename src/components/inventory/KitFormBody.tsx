@@ -62,7 +62,7 @@ export function KitFormBody({ data, onChange }: {
       </ModernSection>
 
       <ModernSection title="Items in this kit/package" index={1}>
-        <p className="mb-3 text-xs text-stone-500">
+        <p className="mb-3 type-helper">
           Picking this kit/package on a document line adds each of these items, with the quantity shown. An inactive
           item is skipped.
         </p>
@@ -70,7 +70,7 @@ export function KitFormBody({ data, onChange }: {
         <div className="max-w-md">
           <ItemPicker value={null} onChange={handlePick} />
         </div>
-        {notice && <p role="status" className="mt-1.5 text-xs font-medium text-amber-700">{notice}</p>}
+        {notice && <p role="status" className="mt-1.5 text-xs font-medium text-warning-ink">{notice}</p>}
 
         {data.members.length === 0 ? (
           <div className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-stone-200 px-4 py-6 text-sm text-stone-500">
@@ -84,7 +84,7 @@ export function KitFormBody({ data, onChange }: {
                 <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-stone-800">{m.name}</span>
-                  <span className="block truncate font-mono text-2xs text-stone-500">
+                  <span className="block truncate font-mono type-subline">
                     {m.sku}{!m.isActive && ' · Inactive'}
                   </span>
                 </span>

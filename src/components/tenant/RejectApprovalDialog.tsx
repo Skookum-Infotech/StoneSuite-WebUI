@@ -6,6 +6,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { textareaCls } from '@/components/crm/formUtils';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // An approver's Reject for a Sales/Purchases record awaiting approval, always
 // capturing a reason -- the generic sibling of CRM's RejectRecordDialog, for
 // the relational modules whose services expose `reject(id, reason)`. A veto,
@@ -35,7 +37,7 @@ export function RejectApprovalDialog<T>({ noun, run, onRejected, warning }: {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Reject this ${noun}`}
-        className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+        className={cn(buttonVariants({ variant: 'outline' }), 'flex shrink-0')}
       >
         <XCircle className="size-3.5" />
         Reject
@@ -99,16 +101,16 @@ function RejectDialogContent<T>({ noun, run, warning, onClose, onRejected }: {
             <AlertTriangle className="size-4 text-destructive" />
           </div>
           <div>
-            <h3 id={titleId} className="text-sm font-bold text-stone-900">
+            <h3 id={titleId} className="type-card-title">
               Reject this {noun}?
             </h3>
-            <p className="mt-0.5 text-xs text-stone-500">A reason is required.</p>
+            <p className="mt-0.5 type-helper">A reason is required.</p>
           </div>
         </div>
 
         {warning && <p className="mb-3 text-xs text-stone-600">{warning}</p>}
 
-        <label htmlFor={reasonId} className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+        <label htmlFor={reasonId} className="type-field-label">
           Reason
         </label>
         <textarea
@@ -124,7 +126,7 @@ function RejectDialogContent<T>({ noun, run, warning, onClose, onRejected }: {
         />
 
         {reject.error && (
-          <p id={errorId} role="alert" className="mb-3 text-xs text-destructive">
+          <p id={errorId} role="alert" className="mb-3 type-error">
             {apiErrorMessage(reject.error, `Failed to reject ${noun}.`)}
           </p>
         )}
@@ -134,7 +136,7 @@ function RejectDialogContent<T>({ noun, run, warning, onClose, onRejected }: {
             type="button"
             onClick={closeIfIdle}
             disabled={reject.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -142,7 +144,7 @@ function RejectDialogContent<T>({ noun, run, warning, onClose, onRejected }: {
             type="button"
             onClick={() => reject.mutate()}
             disabled={reject.isPending || reason.trim() === ''}
-            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-destructive/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
           >
             {reject.isPending ? <Loader2 className="mr-1 inline size-3 animate-spin" /> : null}
             {reject.isPending ? 'Rejecting…' : `Reject ${noun}`}

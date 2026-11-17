@@ -40,8 +40,8 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
         </button>
       </div>
 
-      {sends.isError && <p className="text-2xs text-stone-500">Couldn’t load email history.</p>}
-      {sends.isSuccess && rows.length === 0 && <p className="text-2xs text-stone-500">Not emailed yet.</p>}
+      {sends.isError && <p className="type-helper">Couldn’t load email history.</p>}
+      {sends.isSuccess && rows.length === 0 && <p className="type-helper">Not emailed yet.</p>}
 
       {visible.length > 0 && (
         <ul className="space-y-2">
@@ -53,11 +53,11 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
                   <p className="min-w-0 text-xs text-stone-700 break-words">{s.sentTo}</p>
                   <EmailStatusBadge source={s} />
                 </div>
-                <p className="text-2xs text-stone-500 break-words" title={new Date(s.sentAt).toLocaleString()}>
+                <p className="break-words type-helper" title={new Date(s.sentAt).toLocaleString()}>
                   {s.cc ? `cc ${s.cc} · ` : ''}
                   {relativeTime(s.sentAt)}
                 </p>
-                {explanation && <p className="text-2xs text-stone-500">{explanation}</p>}
+                {explanation && <p className="type-helper">{explanation}</p>}
               </li>
             );
           })}
@@ -65,7 +65,7 @@ export function DocumentSendHistory({ recordId }: { recordId: string }) {
       )}
 
       {hidden > 0 && (
-        <button type="button" onClick={() => setShowAll(true)} className="text-2xs font-semibold text-stone-500 hover:text-stone-800">
+        <button type="button" onClick={() => setShowAll(true)} className="text-micro font-semibold text-stone-500 hover:text-stone-800">
           Show {hidden} more
         </button>
       )}

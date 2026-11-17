@@ -27,7 +27,7 @@ export function PlannerPhoneCalendar({ view, columns, buckets, selected, onSelec
           {/* Each day button already says its weekday, so the header row is for sighted users. */}
           <div
             aria-hidden="true"
-            className="grid grid-cols-7 pb-1 text-center text-xs font-semibold uppercase tracking-wide text-stone-500"
+            className="grid grid-cols-7 pb-1 text-center type-overline"
           >
             {weeks[0].map((weekday) => (
               <span key={weekday.key}>{weekday.label}</span>

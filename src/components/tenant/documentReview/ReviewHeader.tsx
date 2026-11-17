@@ -3,6 +3,8 @@ import { useEffect, useRef } from 'react';
 import { CheckCheck, FileText } from 'lucide-react';
 import type { HandoffBadges } from '@/lib/salesOrderDocumentHandoff';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface ReviewHeaderProps {
   fileName: string;
   badges: HandoffBadges;
@@ -38,13 +40,13 @@ export function ReviewHeader({ fileName, badges, progress, onConfirmAll, childre
         <h2
           ref={ref}
           tabIndex={-1}
-          className="truncate rounded text-sm font-bold text-stone-900 dark:text-stone-100 outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
+          className="truncate rounded dark:text-stone-100 outline-none focus-visible:ring-2 focus-visible:ring-stone-400 type-card-title"
         >
           <span className="sr-only">Reviewing </span>
           {fileName}
         </h2>
         {badgeLabels(badges).map((label) => (
-          <span key={label} className="rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 text-2xs font-semibold text-stone-700 dark:text-stone-300">
+          <span key={label} className="rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 text-stone-700 dark:text-stone-300 type-pill">
             {label}
           </span>
         ))}
@@ -64,7 +66,7 @@ export function ReviewHeader({ fileName, badges, progress, onConfirmAll, childre
           type="button"
           onClick={onConfirmAll}
           aria-label="Confirm all high-confidence fields as reviewed"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2.5 py-1 text-xs font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-white/10"
+          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-white/10')}
         >
           <CheckCheck className="size-3.5" aria-hidden="true" />
           Confirm all high-confidence

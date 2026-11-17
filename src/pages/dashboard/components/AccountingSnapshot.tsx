@@ -62,7 +62,7 @@ export function AccountingSnapshot({
           <span className="text-xs font-semibold text-stone-950">{data.period.name}</span>
           <span
             className={cn(
-              'rounded-full px-2 py-0.5 text-2xs font-bold',
+              'rounded-full px-2 py-0.5 type-pill',
               data.period.status === 'open' ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600',
             )}
           >
@@ -81,7 +81,7 @@ export function AccountingSnapshot({
       )}
 
       {visible.length === 0 ? (
-        <p className="mt-4 text-xs text-stone-500">No journal entries posted yet.</p>
+        <p className="mt-4 type-helper">No journal entries posted yet.</p>
       ) : (
         <>
           <div className="mt-3 flex flex-col divide-y divide-stone-100">
@@ -96,11 +96,11 @@ export function AccountingSnapshot({
                   >
                     {e.description}
                   </button>
-                  <div className="font-mono text-2xs text-stone-500">{e.entryNumber}</div>
+                  <div className="font-mono type-subline">{e.entryNumber}</div>
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-xs font-bold text-stone-950 tabular-nums">{currency(e.amount)}</div>
-                  <time dateTime={datePart(e.date)} title={formatDateValue(datePart(e.date), undefined, ENTRY_DATE_FORMAT)} className="text-2xs text-stone-500">
+                  <time dateTime={datePart(e.date)} title={formatDateValue(datePart(e.date), undefined, ENTRY_DATE_FORMAT)} className="text-micro text-stone-500">
                     {relativeDay(datePart(e.date))}
                   </time>
                 </div>

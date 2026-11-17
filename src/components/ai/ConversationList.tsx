@@ -5,6 +5,7 @@ import { relativeTime } from '@/lib/recentRecordRoute';
 import type { AiConversation } from '@/types/ai';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 interface ConversationListProps {
   activeId?: string;
   onOpen: (id: string) => void;
@@ -57,11 +58,11 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
   if (loadFailed) {
     return (
       <div className="px-4 py-3">
-        <p role="alert" className="text-xs text-destructive">Couldn't load your conversations.</p>
+        <p role="alert" className="type-error">Couldn't load your conversations.</p>
         <button
           type="button"
           onClick={() => setLoadAttempt((n) => n + 1)}
-          className="mt-1.5 rounded-lg px-2 py-1 text-2xs font-semibold text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-white/10 cursor-pointer"
+          className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'mt-1.5 dark:text-stone-300 dark:hover:bg-white/10')}
         >
           Retry
         </button>
@@ -76,13 +77,13 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
     );
   }
   if (items.length === 0) {
-    return <p className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">No past conversations yet.</p>;
+    return <p className="px-4 py-3 dark:text-stone-400 type-helper">No past conversations yet.</p>;
   }
 
   return (
     <>
       {deleteError && (
-        <p role="alert" className="px-4 pb-1 text-xs text-destructive">{deleteError}</p>
+        <p role="alert" className="px-4 pb-1 type-error">{deleteError}</p>
       )}
       <ul aria-label="Recent conversations" className="divide-y divide-stone-100 dark:divide-white/5">
       {items.map((c) => {
@@ -101,7 +102,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
               <MessageSquare className="size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-semibold text-stone-700 dark:text-stone-200">{title}</span>
-                <span className="block text-2xs text-stone-500">{relativeTime(c.updatedAt)}</span>
+                <span className="block type-subline">{relativeTime(c.updatedAt)}</span>
               </span>
             </button>
             {confirmingId === c.id ? (
@@ -111,7 +112,7 @@ export function ConversationList({ activeId, onOpen, onDeleted }: ConversationLi
                 onBlur={() => setConfirmingId(null)}
                 autoFocus
                 aria-label={`Confirm delete ${title}`}
-                className="shrink-0 rounded-lg bg-destructive/10 px-2 py-1 text-2xs font-semibold text-destructive hover:bg-destructive/20 cursor-pointer"
+                className="shrink-0 rounded-lg bg-destructive/10 px-2 py-1 text-micro font-semibold text-danger-ink hover:bg-destructive/20 cursor-pointer"
               >
                 Delete?
               </button>

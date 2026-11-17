@@ -32,7 +32,7 @@ export function ColumnPicker({ fields, columns, onToggle }: ColumnPickerProps) {
         {chosen.length === 0 && <li className="text-xs text-stone-500">Pick at least one column to see the report.</li>}
       </ul>
       {full ? (
-        <p className="text-xs text-stone-500">A report can show at most {CUSTOM_MAX_COLUMNS} columns.</p>
+        <p className="type-helper">A report can show at most {CUSTOM_MAX_COLUMNS} columns.</p>
       ) : (
         <FieldSelect fields={remaining} value="" onChange={(key) => key && onToggle(key)} label={ADD_LABEL} emptyLabel={`${ADD_LABEL}…`} />
       )}

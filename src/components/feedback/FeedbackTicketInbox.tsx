@@ -45,10 +45,10 @@ function InboxSkeleton() {
 function EmptyInbox({ onCreateTicket }: { onCreateTicket: () => void }) {
   return (
     <div className="flex min-h-[22rem] flex-col items-center justify-center px-6 py-14 text-center">
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-400 dark:bg-white/10">
+      <span className="flex size-14 items-center justify-center rounded-2xl bg-stone-100 text-ink-muted dark:bg-white/10">
         <Inbox className="size-7" aria-hidden="true" />
       </span>
-      <h2 className="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">No tickets yet</h2>
+      <h2 className="mt-4 dark:text-stone-100 type-dialog-title">No Tickets Yet</h2>
       <p className="mt-1 max-w-sm text-sm text-stone-500 dark:text-stone-400">
         Found a bug or have an idea? File a ticket and follow the conversation with our team right here.
       </p>

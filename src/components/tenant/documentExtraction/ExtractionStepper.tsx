@@ -77,7 +77,7 @@ export function ExtractionStepper({ stage, failedAt }: ExtractionStepperProps): 
                 />
               </div>
               <span className="text-xs font-semibold text-stone-900 dark:text-stone-100">{STEP_LABEL[key]}</span>
-              <span className="text-[11px] text-stone-500 dark:text-stone-400">{STATUS_TEXT[status]}</span>
+              <span className="text-micro text-stone-500 dark:text-stone-400">{STATUS_TEXT[status]}</span>
             </li>
           );
         })}

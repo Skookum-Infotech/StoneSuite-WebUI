@@ -109,7 +109,7 @@ export function FeedbackAttachmentPicker({
           <p className="text-sm font-medium text-stone-700 dark:text-stone-200">
             {dragging ? 'Release to attach' : 'Drop a screenshot or file, or click to browse'}
           </p>
-          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+          <p className="mt-1 dark:text-stone-400 type-helper">
             PDF, DOCX, XLSX, PNG, JPG · Max {MAX_FEEDBACK_ATTACHMENTS} files, 25 MB each
           </p>
         </div>
@@ -120,7 +120,7 @@ export function FeedbackAttachmentPicker({
           {validationErrors.map((e) => (
             <div key={e} className="flex items-start gap-1.5">
               <AlertCircle className="mt-0.5 size-3 shrink-0 text-destructive/70" />
-              <p className="text-2xs text-destructive">{e}</p>
+              <p className="type-error">{e}</p>
             </div>
           ))}
         </div>

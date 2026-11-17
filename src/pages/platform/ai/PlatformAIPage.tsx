@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { getPlatformAISettings, setPlatformAIEnabled } from '@/services/aiService';
 import type { OllamaState, PlatformAISettings } from '@/types/ai';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const OLLAMA_STATE_LABEL: Record<OllamaState, string> = {
   started: 'Running',
   stopped: 'Stopped',
@@ -112,12 +114,12 @@ export default function PlatformAIPage() {
 
       <section className="max-w-2xl rounded-[10px] border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
         <div className="mb-4 flex items-start gap-3 border-b border-stone-100 pb-4 dark:border-stone-800">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand-dark">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-link">
             <Sparkles className="size-4.5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-stone-950 dark:text-white">What this controls</h2>
-            <p className="mt-1 text-xs text-stone-500">
+            <h2 className="dark:text-white type-card-title">What This Controls</h2>
+            <p className="mt-1 type-helper">
               Turning this off stops the self-hosted AI server and hides the assistant for every organization,
               regardless of that organization&apos;s own setting. Turning it back on restarts the server and
               restores access for every organization that has it enabled.
@@ -176,7 +178,7 @@ export default function PlatformAIPage() {
             </dl>
 
             {settings?.leaseHolders && settings.leaseHolders.length > 0 && (
-              <p className="mt-3 text-2xs text-stone-500">Also in use by: {settings.leaseHolders.join(', ')}</p>
+              <p className="mt-3 type-helper">Also in use by: {settings.leaseHolders.join(', ')}</p>
             )}
           </>
         )}
@@ -218,7 +220,7 @@ export default function PlatformAIPage() {
                 type="button"
                 onClick={confirmDisable}
                 disabled={toggle.isPending}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {toggle.isPending ? 'Turning off…' : 'Turn off for everyone'}
               </button>

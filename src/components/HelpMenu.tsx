@@ -126,7 +126,7 @@ export function HelpMenu() {
             </span>
             <span>
               <span className="block text-xs font-bold text-stone-200">StoneSuite Assistant</span>
-              <span className="mt-0.5 block text-2xs text-stone-400">
+              <span className="mt-0.5 block type-subline">
                 Ask about a record, workflow, or how to do something
               </span>
             </span>
@@ -151,12 +151,12 @@ export function HelpMenu() {
               <span className="flex items-center gap-1.5 text-xs font-bold text-stone-200">
                 Support
                 {unreadCount > 0 && (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-micro font-semibold text-white">
                     {unreadCount}
                   </span>
                 )}
               </span>
-              <span className="mt-0.5 block text-2xs text-stone-400">
+              <span className="mt-0.5 block type-subline">
                 Report a bug, request a feature, or track your tickets
               </span>
             </span>

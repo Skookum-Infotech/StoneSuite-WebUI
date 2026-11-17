@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { ROLE_FILTER_OPTIONS, groupTypesByDomain } from '@/lib/myTransactions';
 import type { TransactionRoleFilter, TransactionType } from '@/types/myTransactions';
 
+import { buttonVariants } from '@/components/ui/button';
 const ALL_TYPES_LABEL = 'All record types';
 
 function TypeMenu({
@@ -48,7 +49,7 @@ function TypeMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Filter by record type"
-        className="flex h-9 w-full items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-stone-200 bg-white px-3.5 text-xs font-semibold text-stone-600 transition-colors hover:bg-stone-50 cursor-pointer lg:w-auto lg:justify-start"
+        className={cn(buttonVariants({ variant: 'outline' }), 'flex w-full justify-between gap-2 lg:w-auto lg:justify-start')}
       >
         {current}
         <ChevronDown className="size-3.5 text-stone-400" />
@@ -62,7 +63,7 @@ function TypeMenu({
           <TypeOption label={ALL_TYPES_LABEL} selected={value === ''} onPick={() => pick('')} />
           {groups.map((g) => (
             <div key={g.domain} role="group" aria-label={g.label}>
-              <p className="px-3.5 pb-1 pt-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">{g.label}</p>
+              <p className="px-3.5 pb-1 pt-2.5 type-overline">{g.label}</p>
               {g.types.map((t) => (
                 <TypeOption key={t.type} label={t.label} selected={value === t.type} onPick={() => pick(t.type)} />
               ))}
@@ -114,7 +115,7 @@ export function TransactionFilters({
           placeholder="Search by reference, name, or customer/vendor…"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 text-xs text-stone-900 transition placeholder:text-stone-500 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40"
+          className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 transition placeholder:text-stone-500 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40 type-input"
         />
       </div>
 

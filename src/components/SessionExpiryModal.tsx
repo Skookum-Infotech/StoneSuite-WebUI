@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Clock, LogOut, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 interface SessionExpiryModalProps {
   secondsRemaining: number;
   onStay: () => Promise<void>;
@@ -50,15 +51,15 @@ export function SessionExpiryModal({
             <Clock
               className={cn(
                 'size-4 transition-colors duration-700',
-                isUrgent ? 'text-destructive' : 'text-warning',
+                isUrgent ? 'text-danger-ink' : 'text-warning',
               )}
             />
           </div>
           <div>
-            <h3 id="session-expiry-title" className="text-sm font-bold text-stone-900">
-              Your session is expiring
+            <h3 id="session-expiry-title" className="type-card-title">
+              Your Session Is Expiring
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">You'll be signed out automatically.</p>
+            <p className="mt-0.5 type-helper">You'll be signed out automatically.</p>
           </div>
         </div>
 
@@ -91,8 +92,8 @@ export function SessionExpiryModal({
           </div>
           <span
             className={cn(
-              'font-mono text-3xl font-bold tabular-nums transition-colors duration-700',
-              isUrgent ? 'text-destructive' : 'text-warning',
+              'tabular-nums transition-colors duration-700 type-record-id',
+              isUrgent ? 'text-danger-ink' : 'text-warning',
             )}
           >
             {formatTime(secondsRemaining)}
@@ -106,7 +107,7 @@ export function SessionExpiryModal({
             onClick={onLogout}
             disabled={isExtending}
             aria-label="Log out now"
-            className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <LogOut className="size-3.5" aria-hidden="true" />
             Log out

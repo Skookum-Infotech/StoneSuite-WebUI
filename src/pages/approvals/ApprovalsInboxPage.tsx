@@ -95,7 +95,7 @@ export default function ApprovalsInboxPage() {
           <ShieldCheck className="size-5 text-accent-foreground" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold tracking-tight text-stone-900">Approvals</h1>
+          <h1 className="type-page-title">Approvals</h1>
           <p className="text-sm text-stone-500">Records waiting for your sign-off, oldest first.</p>
         </div>
         {isSuperAdmin && <ApprovalScopeToggle scope={scope} onChange={(s) => updateParams({ scope: s })} />}
@@ -121,7 +121,7 @@ export default function ApprovalsInboxPage() {
         )}
 
         {inboxQ.isError && (
-          <div role="alert" className="flex items-center gap-3 text-sm text-red-600">
+          <div role="alert" className="flex items-center gap-3 text-sm text-danger-ink">
             <span>{apiErrorMessage(inboxQ.error, 'Failed to load approvals.')}</span>
             <button type="button" onClick={() => void inboxQ.refetch()} className={NAV_BTN}>
               Retry
@@ -143,7 +143,7 @@ export default function ApprovalsInboxPage() {
 
         {(prevCursors.length > 0 || nextCursor) && (
           <div className="flex items-center justify-between px-1">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {prevCursors.length + 1}
               {nextCursor ? '' : ' · last page'}
             </p>

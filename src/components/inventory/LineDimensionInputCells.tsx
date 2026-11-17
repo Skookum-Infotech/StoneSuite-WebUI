@@ -10,7 +10,7 @@ const inputCls =
 
 // The unit sits inside the box, right-aligned after the number, so which unit a
 // line is in is read where the number is typed — it differs per item.
-const unitCls = 'pointer-events-none absolute inset-y-0 right-1.5 flex items-center text-2xs text-stone-500';
+const unitCls = 'pointer-events-none absolute inset-y-0 right-1.5 flex items-center text-micro text-stone-500';
 
 const EDITABLE_BOX = 'input:not([disabled]):not([readonly])';
 

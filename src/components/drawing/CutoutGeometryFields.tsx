@@ -71,9 +71,9 @@ function CustomOutlineField({ cutout, onCommit }: { cutout: Cutout; onCommit: (o
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={commit}
-        className="rounded border border-stone-200 px-1.5 py-1 font-mono text-2xs"
+        className="rounded border border-stone-200 px-1.5 py-1 font-mono text-micro"
       />
-      {error && <span role="alert" className="text-2xs text-destructive">{error}</span>}
+      {error && <span role="alert" className="text-micro text-danger-ink">{error}</span>}
     </label>
   );
 }
@@ -112,7 +112,7 @@ export function CutoutGeometryFields({ piece, cutout }: { piece: Piece; cutout: 
         >
           {(Object.keys(SHAPE_LABELS) as CutoutShape[]).map((s) => <option key={s} value={s}>{SHAPE_LABELS[s]}</option>)}
         </Select>
-        {shapeError && <span role="alert" className="text-2xs text-destructive">{shapeError}</span>}
+        {shapeError && <span role="alert" className="text-micro text-danger-ink">{shapeError}</span>}
       </label>
 
       {shape === 'rect' && (
@@ -135,7 +135,7 @@ export function CutoutGeometryFields({ piece, cutout }: { piece: Piece; cutout: 
         valueMm={fromTop}
         onCommit={(mm) => apply({ center: centerFromOffsets(piece, fromLeft, mm) })}
       />
-      <p className="text-2xs text-stone-500">Opening area: {openingArea}</p>
+      <p className="type-helper">Opening area: {openingArea}</p>
     </div>
   );
 }

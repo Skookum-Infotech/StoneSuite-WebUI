@@ -79,7 +79,7 @@ export function CommunicationAttachmentList({ recordId, attachments, missingCoun
         </ul>
       )}
       {missingCount > 0 && (
-        <p className="text-xs italic text-stone-500">
+        <p className="italic type-helper">
           {missingCount === 1
             ? 'This email had 1 attachment that was not kept.'
             : `This email had ${missingCount} attachments that were not kept.`}

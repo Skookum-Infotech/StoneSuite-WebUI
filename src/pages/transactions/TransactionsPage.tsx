@@ -15,6 +15,7 @@ import { TransactionStats } from './components/TransactionStats';
 import { TransactionsPagination } from './components/TransactionsPagination';
 import { TransactionsTable } from './components/TransactionsTable';
 
+import { buttonVariants } from '@/components/ui/button';
 const SEARCH_DEBOUNCE_MS = 300;
 // Fresher than the app-wide default: the list should reflect the record the
 // user just created or edited, not a copy from two minutes ago.
@@ -98,12 +99,12 @@ export default function TransactionsPage() {
         {/* ── Page header ── */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-link">
               <CreditCard className="size-4.5" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold tracking-tight text-stone-900">My Transactions</h1>
-              <p className="mt-0.5 text-xs text-stone-500">Records you created or last updated</p>
+              <h1 className="truncate type-page-title">My Transactions</h1>
+              <p className="mt-0.5 type-helper">Records you created or last updated</p>
             </div>
           </div>
           <button
@@ -111,7 +112,7 @@ export default function TransactionsPage() {
             onClick={refresh}
             disabled={isRefreshing}
             aria-label="Refresh"
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-60 cursor-pointer sm:px-3.5"
+            className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
           >
             <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
             <span className="hidden sm:inline">Refresh</span>
@@ -140,7 +141,7 @@ export default function TransactionsPage() {
               <button
                 type="button"
                 onClick={refresh}
-                className="rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50 cursor-pointer"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Try again
               </button>
@@ -154,11 +155,11 @@ export default function TransactionsPage() {
                 {isFiltered ? (
                   <>
                     <p className="text-xs font-semibold text-stone-500">No matching records</p>
-                    <p className="text-xs text-stone-500">Try adjusting your search or filters</p>
+                    <p className="type-helper">Try adjusting your search or filters</p>
                     <button
                       type="button"
                       onClick={clearFilters}
-                      className="mt-2 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50 cursor-pointer"
+                      className={cn(buttonVariants({ variant: 'outline' }), 'mt-2')}
                     >
                       Clear filters
                     </button>
@@ -166,7 +167,7 @@ export default function TransactionsPage() {
                 ) : (
                   <>
                     <p className="text-xs font-semibold text-stone-500">No activity yet</p>
-                    <p className="text-xs text-stone-500">Records you create or update will appear here</p>
+                    <p className="type-helper">Records you create or update will appear here</p>
                   </>
                 )}
               </div>

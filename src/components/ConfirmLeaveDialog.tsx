@@ -4,6 +4,7 @@ import { LogOut, TriangleAlert, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModalDialog } from '@/hooks/useModalDialog';
 
+import { buttonVariants } from '@/components/ui/button';
 export type ConfirmLeaveVariant = 'unsaved-changes' | 'exit-app' | 'create-vendor' | 'discard-document';
 
 // Copy lives here rather than in props so both call sites stay consistent and the
@@ -95,7 +96,7 @@ export function ConfirmLeaveDialog({
           <div className={cn('flex size-9 flex-shrink-0 items-center justify-center rounded-full', destructive ? 'bg-warning/10' : 'bg-brand/10')}>
             <Icon className={cn('size-4', destructive ? 'text-warning' : 'text-brand')} aria-hidden="true" />
           </div>
-          <h3 id="confirm-leave-title" className="text-sm font-bold text-stone-900">
+          <h3 id="confirm-leave-title" className="type-card-title">
             {copy.title}
           </h3>
         </div>
@@ -109,7 +110,7 @@ export function ConfirmLeaveDialog({
             type="button"
             onClick={onCancel}
             aria-label={copy.cancelLabel}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             {copy.cancelLabel}
           </button>
@@ -117,12 +118,7 @@ export function ConfirmLeaveDialog({
             type="button"
             onClick={onConfirm}
             aria-label={copy.confirmLabel}
-            className={cn(
-              'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-95',
-              destructive
-                ? 'bg-destructive text-white hover:bg-destructive/90'
-                : 'bg-brand text-stone-900 hover:bg-brand-hover',
-            )}
+            className={cn(buttonVariants({ variant: destructive ? 'destructive' : 'default' }), 'active:scale-95')}
           >
             {copy.confirmLabel}
           </button>

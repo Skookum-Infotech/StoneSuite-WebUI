@@ -33,13 +33,13 @@ export const AssistantMarkdown = memo(function AssistantMarkdown({ text, canOpen
               type="button"
               onClick={() => onOpenCitation(n)}
               aria-label={`Open source ${n}`}
-              className="mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded bg-brand/15 px-1 align-super text-[10px] font-bold text-brand-dark hover:bg-brand/25 cursor-pointer"
+              className="mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded bg-brand/15 px-1 align-super text-micro font-semibold text-link hover:bg-brand/25 cursor-pointer"
             >
               {n}
             </button>
           );
         }
-        return <sup className="mx-0.5 text-[10px] font-semibold text-stone-500">[{n}]</sup>;
+        return <sup className="mx-0.5 text-micro font-semibold text-stone-500">[{n}]</sup>;
       }
       if (href?.startsWith('/')) {
         return (

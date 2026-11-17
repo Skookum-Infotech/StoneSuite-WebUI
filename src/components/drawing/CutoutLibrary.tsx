@@ -30,7 +30,7 @@ export function CutoutLibrary({ bare }: { bare?: boolean } = {}) {
 
   return (
     <PanelSection title="Cutouts" bare={bare}>
-      {!piece && <p className="text-2xs text-stone-500">Select a piece to add a cutout to it.</p>}
+      {!piece && <p className="type-helper">Select a piece to add a cutout to it.</p>}
       <div className="grid grid-cols-2 gap-1.5">
       {CUTOUT_TYPES.map((type) => (
         <button

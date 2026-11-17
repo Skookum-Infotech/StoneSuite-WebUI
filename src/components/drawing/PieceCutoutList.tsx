@@ -32,7 +32,7 @@ export function PieceCutoutList({ piece }: { piece: Piece }) {
               <span>{name}</span>
               <span className="text-stone-500">{sqIn} sq in</span>
             </button>
-            {problem && <span role="alert" className="text-2xs text-destructive">{problem.message}</span>}
+            {problem && <span role="alert" className="text-micro text-danger-ink">{problem.message}</span>}
           </div>
         );
       })}

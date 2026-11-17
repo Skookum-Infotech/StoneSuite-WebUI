@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { CheckCircle2, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 /** Full-width banner shown between a detail page's record header and its tab
  *  bar whenever the record is awaiting approval — surfaces the assigned
  *  approver(s) and the Approve action without needing to scroll to the
@@ -85,7 +87,7 @@ export function ApprovalBanner({
       <div className="flex flex-col gap-2 border-b border-red-200 bg-red-50 px-5 py-2.5 sm:flex-row sm:items-center sm:justify-between 3xl:px-12 4xl:px-16">
         <div className="flex items-center gap-2 min-w-0">
           <ShieldX className="size-4 shrink-0 text-red-500" aria-hidden="true" />
-          <p className="text-xs font-medium text-red-800 truncate">
+          <p className="truncate type-error">
             <span className="font-semibold">Rejected</span>
             {' — '}
             {rejection?.reason ? `${who}: "${rejection.reason}"` : `Rejected by ${who}.`}
@@ -138,7 +140,7 @@ export function ApprovalBanner({
               onClick={onApprove}
               disabled={approving}
               aria-label={isOverride ? 'Approve this record as Super Admin' : 'Approve this record'}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand/90 disabled:opacity-50"
+              className={cn(buttonVariants(), 'flex')}
             >
               <ShieldCheck className="size-3.5" />
               {approving ? 'Approving…' : isOverride ? 'Approve as Super Admin' : 'Approve'}

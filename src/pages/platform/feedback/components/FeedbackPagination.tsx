@@ -1,5 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface Props {
   pageNum: number;
   hasNext: boolean;
@@ -13,7 +15,7 @@ interface Props {
 export function FeedbackPagination({ pageNum, hasNext, hasPrev, onNext, onPrev }: Props) {
   return (
     <div className="flex items-center justify-between px-1">
-      <p className="text-xs tabular-nums text-stone-500">
+      <p className="tabular-nums type-helper">
         Page {pageNum}
         {hasNext ? '' : ' · last page'}
       </p>
@@ -23,7 +25,7 @@ export function FeedbackPagination({ pageNum, hasNext, hasPrev, onNext, onPrev }
           onClick={onPrev}
           disabled={!hasPrev}
           aria-label="Previous page"
-          className="flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]"
+          className={cn(buttonVariants({ variant: 'outline' }), 'flex dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]')}
         >
           <ChevronLeft className="size-3.5" />
           Previous
@@ -33,7 +35,7 @@ export function FeedbackPagination({ pageNum, hasNext, hasPrev, onNext, onPrev }
           onClick={onNext}
           disabled={!hasNext}
           aria-label="Next page"
-          className="flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]"
+          className={cn(buttonVariants({ variant: 'outline' }), 'flex dark:border-white/10 dark:bg-transparent dark:text-stone-300 dark:hover:bg-white/[0.06]')}
         >
           Next
           <ChevronRight className="size-3.5" />

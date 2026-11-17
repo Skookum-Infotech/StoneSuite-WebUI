@@ -59,7 +59,7 @@ export function PlannerEventCard({ card }: { card: PlannerCard }) {
         </p>
       )}
       {card.doneLabel && (
-        <p className="mt-1 flex items-center gap-1 font-medium text-emerald-700">
+        <p className="mt-1 flex items-center gap-1 font-medium text-success-ink">
           <Check className="size-3 shrink-0" aria-hidden="true" />
           <span className="truncate">{card.doneLabel}</span>
         </p>

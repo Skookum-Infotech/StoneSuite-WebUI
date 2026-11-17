@@ -46,7 +46,7 @@ function DayHeading({ column, interactive = false }: { column: PlannerColumn; in
     <>
       <span
         className={cn(
-          'block text-xs font-semibold uppercase tracking-wide',
+          'block type-overline',
           column.isToday ? 'text-stone-900' : 'text-stone-500',
         )}
       >

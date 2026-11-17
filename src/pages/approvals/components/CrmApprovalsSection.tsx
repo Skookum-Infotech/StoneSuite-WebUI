@@ -29,8 +29,8 @@ export function CrmApprovalsSection() {
 
   return (
     <section aria-labelledby="crm-approvals-heading" className="mt-8">
-      <h2 id="crm-approvals-heading" className="text-sm font-semibold text-stone-900">
-        Lead, prospect and customer approvals
+      <h2 id="crm-approvals-heading" className="type-card-title">
+        Lead, Prospect and Customer Approvals
       </h2>
       <ul className="mt-2 divide-y divide-stone-200 rounded-xl border border-stone-200 bg-white">
         {rows.map(({ workflow, record }) => {

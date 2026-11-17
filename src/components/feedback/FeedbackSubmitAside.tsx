@@ -27,7 +27,7 @@ export function FeedbackSubmitAside({
     <aside aria-label="Ticket guidance" className="space-y-4">
       <section className={cn(FEEDBACK_CARD_CLS, 'p-5')}>
         <h3 className={TITLE_CLS}>How is your experience so far?</h3>
-        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+        <p className="mt-1 dark:text-stone-400 type-helper">
           Optional. It helps us see how the product feels day to day.
         </p>
         <div className="mt-3 flex justify-center rounded-xl bg-stone-50 py-4 dark:bg-white/[0.04]">
@@ -53,7 +53,7 @@ export function FeedbackSubmitAside({
       {pagePath && (
         <section className={cn(FEEDBACK_CARD_CLS, 'p-5')}>
           <h3 className={TITLE_CLS}>Page we&apos;ll attach</h3>
-          <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+          <p className="mt-1 dark:text-stone-400 type-helper">
             The page you were on before opening Support, so we can find the problem faster.
           </p>
           <code className="mt-3 block truncate rounded-lg bg-stone-100 px-2.5 py-1.5 font-mono text-[0.8125rem] text-stone-600 dark:bg-white/10 dark:text-stone-300">

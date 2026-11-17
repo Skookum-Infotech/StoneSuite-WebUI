@@ -37,7 +37,7 @@ export function FilterList({ filters, fields, dispatch }: FilterListProps) {
           Add filter
         </button>
       ) : (
-        <p className="text-xs text-stone-500">A report can have at most {CUSTOM_MAX_FILTERS} filters.</p>
+        <p className="type-helper">A report can have at most {CUSTOM_MAX_FILTERS} filters.</p>
       )}
     </div>
   );

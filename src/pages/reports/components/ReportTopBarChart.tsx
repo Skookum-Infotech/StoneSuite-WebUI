@@ -44,7 +44,7 @@ export function ReportTopBarChart({ data, label, names = SALES_NAMES, valueForma
   if (top.length === 0) return null;
   return (
     <section aria-label={label} className="rounded-xl border border-stone-200 bg-white p-4">
-      <h2 className="mb-2 text-sm font-semibold text-stone-900">{label}</h2>
+      <h2 className="mb-2 type-card-title">{label}</h2>
       <div role="img" aria-label={`${label}: ${top.map((d) => d.label).join(", ")}`}>
         <ResponsiveContainer width="100%" height={Math.max(CHART_HEIGHT, top.length * MIN_ROW_HEIGHT)}>
           <BarChart data={top} layout="vertical" margin={{ left: 4, right: 16 }}>
