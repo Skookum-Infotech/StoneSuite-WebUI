@@ -37,7 +37,7 @@ export default function CreatedOrderDetailPage() {
         subtitle={address || undefined}
         statusBadge={
           order ? (
-            <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-label font-semibold text-stone-600">
+            <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-stone-600 type-pill">
               {orderStatusLabel(order.status)}
             </span>
           ) : undefined

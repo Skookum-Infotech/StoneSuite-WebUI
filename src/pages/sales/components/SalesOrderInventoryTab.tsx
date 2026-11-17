@@ -22,16 +22,16 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
 
   if (!orderId) {
     return (
-      <p className="py-8 text-center text-xs text-stone-500">
+      <p className="py-8 text-center type-helper">
         Inventory data will be available after saving the order.
       </p>
     );
   }
   if (isLoading) return <div className="py-8 flex justify-center"><Spinner label="Loading inventory…" /></div>;
-  if (error) return <p className="py-8 text-center text-xs text-destructive/70">Failed to load inventory.</p>;
+  if (error) return <p className="py-8 text-center type-error">Failed to load inventory.</p>;
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-xs text-stone-500">
+      <p className="py-8 text-center type-helper">
         This order has no catalog-linked lines — inventory is only tracked for items picked from the catalog.
       </p>
     );
@@ -43,14 +43,14 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr>
             {HEADERS.map((h) => (
-              <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+              <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-stone-100">
           {items.map((row) => (
             <tr key={row.itemId} className="hover:bg-stone-50/50">
-              <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{row.sku}</td>
+              <td className="px-3 py-2.5 type-record-id">{row.sku}</td>
               {row.tracked === false ? (
                 <>
                   <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
@@ -60,12 +60,12 @@ export function SalesOrderInventoryTab({ orderId }: { orderId?: string }) {
                 <>
                   <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.onHand.toLocaleString()}</td>
                   <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.salesOrderQuantity.toLocaleString()}</td>
-                  <td className="px-3 py-2.5 tabular-nums text-right text-amber-700 font-medium">
+                  <td className="px-3 py-2.5 tabular-nums text-right text-warning-ink font-medium">
                     {(row.reservedForOrder ?? 0).toLocaleString()}
                   </td>
                   <td className="px-3 py-2.5 tabular-nums text-right text-stone-700">{row.allocated.toLocaleString()}</td>
                   <td className="px-3 py-2.5 tabular-nums text-right">
-                    <span className={cn('font-medium', row.available < 0 ? 'text-red-600' : 'text-emerald-700')}>
+                    <span className={cn('font-medium', row.available < 0 ? 'text-danger-ink' : 'text-success-ink')}>
                       {row.available.toLocaleString()}
                     </span>
                   </td>

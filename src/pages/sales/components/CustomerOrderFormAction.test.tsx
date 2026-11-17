@@ -115,7 +115,7 @@ describe('CustomerOrderFormAction', () => {
     await user.click(await screen.findByRole('button', { name: 'View customer order form' }));
 
     const dialog = within(screen.getByRole('dialog', { name: 'Customer Order Form' }));
-    expect(dialog.getByRole('heading', { name: 'Project details' })).toBeInTheDocument();
+    expect(dialog.getByRole('heading', { name: 'Project Details' })).toBeInTheDocument();
     expect(dialog.getByText('Sandbrock Ranch')).toBeInTheDocument();
     expect(dialog.getByText('Gate code 1234.')).toBeInTheDocument();
     expect(dialog.getByRole('heading', { name: 'Areas (1)' })).toBeInTheDocument();

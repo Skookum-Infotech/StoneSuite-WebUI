@@ -24,10 +24,10 @@ export function FormSection({ step, title, description, children }: FormSectionP
           {step}
         </span>
         <div>
-          <h2 id={`created-order-step-${step}`} className="text-base font-semibold text-stone-900">
+          <h2 id={`created-order-step-${step}`} className="type-dialog-title">
             {title}
           </h2>
-          <p className="mt-0.5 text-xs text-stone-500">{description}</p>
+          <p className="mt-0.5 type-helper">{description}</p>
         </div>
       </header>
       <div className="px-5 py-5 sm:px-6">{children}</div>

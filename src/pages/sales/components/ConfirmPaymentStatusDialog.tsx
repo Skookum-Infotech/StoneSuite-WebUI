@@ -3,6 +3,7 @@ import { Ban, Landmark, type LucideIcon } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import type { PaymentHeaderCode } from '@/lib/paymentForm';
 
+import { buttonVariants } from '@/components/ui/button';
 interface ConfirmCopy {
   icon: LucideIcon;
   title: (paymentNumber: string) => string;
@@ -68,10 +69,10 @@ export function ConfirmPaymentStatusDialog({ target, paymentNumber, pending, onC
             <Icon className={`size-4 ${copy.iconColor}`} aria-hidden="true" />
           </div>
           <div>
-            <h3 id="payment-status-confirm-title" className="text-sm font-bold text-stone-900">
+            <h3 id="payment-status-confirm-title" className="type-card-title">
               {copy.title(paymentNumber || 'this payment')}
             </h3>
-            <p className="mt-0.5 text-xs text-stone-500">This action cannot be undone.</p>
+            <p className="mt-0.5 type-helper">This action cannot be undone.</p>
           </div>
         </div>
 
@@ -83,7 +84,7 @@ export function ConfirmPaymentStatusDialog({ target, paymentNumber, pending, onC
             onClick={onCancel}
             disabled={pending}
             aria-label="Cancel"
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>

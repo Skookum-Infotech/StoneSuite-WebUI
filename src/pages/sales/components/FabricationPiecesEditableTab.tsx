@@ -8,6 +8,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { EMPTY_PIECE_ROW, toPieceInput, pieceToRow, type FJPieceRow } from '@/lib/fabricationForm';
 import type { FabricationJobPiece } from '@/types/fabrication';
 
+import { buttonVariants } from '@/components/ui/button';
 const inlineCls =
   'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
@@ -102,7 +103,7 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {COLS.map((c) => (
-                <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w, c.right && 'text-right')}>
+                <th key={c.label} className={cn('px-2.5 py-2.5 whitespace-nowrap type-th', c.w, c.right && 'text-right')}>
                   {c.label}
                 </th>
               ))}
@@ -169,8 +170,8 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
 
       {pieces.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-500">No pieces on this job yet.</p>
-          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Piece</strong> to add one.</p>
+          <p className="type-helper">No pieces on this job yet.</p>
+          <p className="type-helper">Click <strong className="text-stone-500">+ Add Piece</strong> to add one.</p>
         </div>
       )}
 
@@ -189,19 +190,19 @@ export function FabricationPiecesEditableTab({ jobId, pieces, sourceOrderItems }
             }
           }}
           disabled={savePending || (activeDraft && !draft.pieceName)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-colors"
+          className={buttonVariants()}
         >
           {savePending ? <Loader2 className="size-3 animate-spin" /> : <Plus className="size-3" />}
           {activeDraft ? (savePending ? 'Saving…' : 'Save Piece') : 'Add Piece'}
         </button>
         {activeDraft && !savePending && (
           <button type="button" onClick={cancelDraft}
-            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors">
+            className={buttonVariants({ variant: 'outline' })}>
             <X className="size-3" /> Cancel
           </button>
         )}
         {activeError && (
-          <p className="text-2xs text-destructive w-full">{apiErrorMessage(activeError, 'Failed to save piece.')}</p>
+          <p className="w-full type-error">{apiErrorMessage(activeError, 'Failed to save piece.')}</p>
         )}
       </div>
     </div>

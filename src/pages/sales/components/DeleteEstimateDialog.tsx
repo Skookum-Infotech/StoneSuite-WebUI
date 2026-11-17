@@ -6,6 +6,8 @@ import { estimateService } from '@/services/estimateService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Mirrors DeleteInvoiceDialog's look, but calls estimateService.deleteEstimate
 // directly (no reason field — the estimate DELETE endpoint doesn't accept one).
 export function DeleteEstimateDialog({ estimateId, label, onDeleted }: {
@@ -46,10 +48,10 @@ export function DeleteEstimateDialog({ estimateId, label, onDeleted }: {
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="delete-estimate-dialog-title" className="text-sm font-bold text-stone-900">
-                  Delete estimate?
+                <h3 id="delete-estimate-dialog-title" className="type-card-title">
+                  Delete Estimate?
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -58,7 +60,7 @@ export function DeleteEstimateDialog({ estimateId, label, onDeleted }: {
             </p>
 
             {del.error && (
-              <p className="mb-3 text-xs text-destructive">
+              <p className="mb-3 type-error">
                 {apiErrorMessage(del.error, 'Failed to delete estimate.')}
               </p>
             )}
@@ -68,7 +70,7 @@ export function DeleteEstimateDialog({ estimateId, label, onDeleted }: {
                 type="button"
                 onClick={() => setOpen(false)}
                 disabled={del.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -76,7 +78,7 @@ export function DeleteEstimateDialog({ estimateId, label, onDeleted }: {
                 type="button"
                 onClick={() => del.mutate()}
                 disabled={del.isPending}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {del.isPending ? 'Deleting…' : 'Delete estimate'}
               </button>

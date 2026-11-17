@@ -11,6 +11,7 @@ import { sourceRequestBody, SOURCE_KIND_LABELS, type RefundSourceKind } from '@/
 import { RefundSourcePicker, type RefundSourceRef } from './RefundSourcePicker';
 import type { Refund } from '@/types/refund';
 
+import { buttonVariants } from '@/components/ui/button';
 const SOURCE_KINDS: RefundSourceKind[] = ['payment', 'credit_memo'];
 
 function currency(n: number): string {
@@ -79,10 +80,10 @@ export function ApplyRefundDialog({ refund, onClose, onApplied }: {
             <DollarSign className="size-4 text-emerald-600" aria-hidden="true" />
           </div>
           <div>
-            <h3 id="apply-refund-dialog-title" className="text-sm font-bold text-stone-900">
-              Draw from a source
+            <h3 id="apply-refund-dialog-title" className="type-card-title">
+              Draw from a Source
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <p className="mt-0.5 type-helper">
               Unapplied balance: {currency(refund.unappliedAmount)}
             </p>
           </div>
@@ -144,7 +145,7 @@ export function ApplyRefundDialog({ refund, onClose, onApplied }: {
             draw exceeded (AD-6), which is the whole point of the message —
             it must reach a screen-reader user who just pressed Apply. */}
         {apply.error && (
-          <p role="alert" className="mt-3 text-xs text-destructive">
+          <p role="alert" className="mt-3 type-error">
             {apiErrorMessage(apply.error, 'Failed to apply refund.')}
           </p>
         )}
@@ -154,7 +155,7 @@ export function ApplyRefundDialog({ refund, onClose, onApplied }: {
             type="button"
             onClick={onClose}
             disabled={apply.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -162,7 +163,7 @@ export function ApplyRefundDialog({ refund, onClose, onApplied }: {
             type="button"
             onClick={() => apply.mutate()}
             disabled={apply.isPending || !source || !validAmount}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {apply.isPending ? 'Applying…' : 'Apply'}
           </button>

@@ -13,6 +13,7 @@ import { ApplyRefundDialog } from './ApplyRefundDialog';
 import type { Refund } from '@/types/refund';
 import { formatDateValue } from '@/lib/dateUtils';
 
+import { buttonVariants } from '@/components/ui/button';
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -57,13 +58,13 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
               keyboard, so a tooltip would strand the one thing the user needs
               to know — that approving is the unblocking step. */}
           {blockedReason && (
-            <p className="text-2xs text-stone-500">{blockedReason}</p>
+            <p className="type-helper">{blockedReason}</p>
           )}
           <button
             type="button"
             onClick={() => setApplyOpen(true)}
             disabled={blockedReason !== null}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className={buttonVariants()}
           >
             <DollarSign className="size-3.5" aria-hidden="true" />
             Draw from a source
@@ -76,7 +77,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {['Source', 'Document #', 'Amount', 'Applied Date', ''].map((h) => (
-                <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
               ))}
             </tr>
           </thead>
@@ -107,7 +108,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
                         onClick={() => unapply.mutate({ kind: source.kind, id: source.id })}
                         disabled={unapply.isPending || rowActionBlocked}
                         aria-label={`Unapply refund from ${SOURCE_KIND_LABELS[source.kind].toLowerCase()} ${source.number}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-500 hover:bg-stone-50 disabled:opacity-40 transition-colors"
+                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
                       >
                         <Unlink className="size-3" aria-hidden="true" />
                         Unapply
@@ -129,7 +130,7 @@ export function RefundApplicationsTab({ refund }: { refund: Refund }) {
       </div>
 
       {unapply.error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="type-error">
           {apiErrorMessage(unapply.error, 'Failed to unapply refund.')}
         </p>
       )}

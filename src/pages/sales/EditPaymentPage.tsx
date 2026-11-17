@@ -22,6 +22,7 @@ import { PaymentStatusControl } from './components/PaymentStatusControl';
 import { EDIT_FIELDS, fromPayment, toUpdatePayload, PAYMENT_STATUS_CODES } from '@/lib/paymentForm';
 import { statusToastLabel } from '@/lib/statusToast';
 
+import { buttonVariants } from '@/components/ui/button';
 export default function EditPaymentPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -137,7 +138,7 @@ export default function EditPaymentPage() {
           subtitle={customerName}
           actions={(
             <button type="submit" disabled={save.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {save.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -154,7 +155,7 @@ export default function EditPaymentPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save payment.')}
             </p>

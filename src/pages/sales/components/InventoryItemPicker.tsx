@@ -209,15 +209,15 @@ export function InventoryItemPicker({
         >
           <div role="status">
             {results.length === 0 && shownKits.length === 0 && (searching || !settled) && (
-              <p className="px-3 py-2 text-2xs text-stone-500">Searching inventory…</p>
+              <p className="px-3 py-2 type-helper">Searching inventory…</p>
             )}
             {nothingFound && (
               <div className="px-3 py-2">
-                <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+                <p className="flex items-start gap-1.5 text-xs font-medium text-warning-ink">
                   <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                   <span className="min-w-0 break-words">“{debounced}” isn't in inventory.</span>
                 </p>
-                <p className="mt-0.5 pl-5 text-2xs text-stone-500">
+                <p className="mt-0.5 pl-5 type-helper">
                   {onAddToInventory
                     ? `Line items can only use inventory items${kitsEnabled ? ' or kits' : ''}. ${addHint}`
                     : 'Line items can only use inventory items. Ask someone with inventory access to add it.'}
@@ -241,7 +241,7 @@ export function InventoryItemPicker({
                 <Package className="mt-0.5 size-3 shrink-0 text-stone-400" aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-medium text-stone-800">{item.name}</span>
-                  <span className="block truncate font-mono text-2xs text-stone-500">
+                  <span className="block truncate font-mono type-subline">
                     {item.sku} · ${itemPrice(item, priceKind).toFixed(2)}
                   </span>
                 </span>
@@ -267,9 +267,9 @@ export function InventoryItemPicker({
                         "Kitchen KIT 4 items", not "KitchenKIT4 items". */}
                     <span className="flex items-center gap-1.5 text-xs font-medium text-stone-800">
                       <span className="truncate">{kit.name}</span>{' '}
-                      <span className="shrink-0 rounded bg-violet-700 px-1 py-px text-2xs font-bold text-white">KIT</span>
+                      <span className="shrink-0 rounded bg-violet-700 px-1 py-px text-white type-pill">KIT</span>
                     </span>{' '}
-                    <span className="block truncate text-2xs text-stone-500">
+                    <span className="block truncate type-subline">
                       {kit.itemCount} {kit.itemCount === 1 ? 'item' : 'items'}
                     </span>
                   </span>

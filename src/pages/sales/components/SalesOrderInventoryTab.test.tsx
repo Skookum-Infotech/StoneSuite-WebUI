@@ -46,14 +46,14 @@ describe('SalesOrderInventoryTab', () => {
 
     const free = within((await screen.findByText('GRAN-001')).closest('tr') as HTMLElement).getAllByRole('cell')[5];
     expect(free).toHaveTextContent('0');
-    expect(free.firstElementChild).not.toHaveClass('text-red-600');
+    expect(free.firstElementChild).not.toHaveClass('text-danger-ink');
   });
 
   it('flags a negative free figure — more held than exists', async () => {
     renderTab('so-1', [row({ available: -5 })]);
 
     const free = within((await screen.findByText('GRAN-001')).closest('tr') as HTMLElement).getAllByRole('cell')[5];
-    expect(free.firstElementChild).toHaveClass('text-red-600');
+    expect(free.firstElementChild).toHaveClass('text-danger-ink');
   });
 
   it('says so for an item whose stock is not tracked', async () => {

@@ -6,6 +6,7 @@ import {
 import { formatStockQty } from '@/lib/stockShortage';
 import type { FabricationMaterial } from '@/types/fabrication';
 
+import { buttonVariants } from '@/components/ui/button';
 const STATE_STYLE: Record<MaterialState, { bar: string; chip: string; label: string }> = {
   covered: { bar: 'bg-emerald-500', chip: 'bg-emerald-50 text-emerald-700', label: 'Covered' },
   short: { bar: 'bg-amber-400', chip: 'bg-amber-50 text-amber-700', label: 'Short' },
@@ -34,9 +35,9 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h4 className="truncate text-sm font-semibold text-stone-900">{material.name}</h4>
-          <p className="font-mono text-2xs text-stone-500">{material.sku}</p>
+          <p className="font-mono type-helper">{material.sku}</p>
         </div>
-        <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-semibold', style.chip)}>
+        <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-1 type-pill', style.chip)}>
           {state === 'covered' ? <CheckCircle2 className="size-3" aria-hidden="true" />
             : state === 'short' ? <AlertTriangle className="size-3" aria-hidden="true" />
             : <PackageX className="size-3" aria-hidden="true" />}
@@ -46,24 +47,24 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
 
       <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
-          <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Ordered</dt>
+          <dt className="type-overline">Ordered</dt>
           <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.ordered)}</dd>
-          <dd className="text-2xs text-stone-500">On the sales order</dd>
+          <dd className="type-subline">On the sales order</dd>
         </div>
         <div>
-          <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Needed</dt>
+          <dt className="type-overline">Needed</dt>
           <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.needed)}</dd>
-          <dd className="text-2xs text-stone-500">{basisLabel(material)}</dd>
+          <dd className="type-subline">{basisLabel(material)}</dd>
         </div>
         <div>
-          <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Allocated</dt>
+          <dt className="type-overline">Allocated</dt>
           <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.allocated)}</dd>
-          {material.consumed > 0 && <dd className="text-2xs text-stone-500">{qty(material.consumed)} already cut</dd>}
+          {material.consumed > 0 && <dd className="type-subline">{qty(material.consumed)} already cut</dd>}
         </div>
         <div>
-          <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">In stock</dt>
+          <dt className="type-overline">In stock</dt>
           <dd className="text-sm font-bold tabular-nums text-stone-900">{qty(material.inStock)}</dd>
-          <dd className="text-2xs text-stone-500">Unallocated</dd>
+          <dd className="type-subline">Unallocated</dd>
         </div>
       </dl>
 
@@ -76,13 +77,13 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
       </div>
 
       {state === 'unstocked' && (
-        <p role="status" className="mt-2 text-xs text-red-700">
+        <p role="status" className="mt-2 type-error">
           Only {qty(material.inStock)} is in stock, {qty(missing)} short of what is still needed. Receive more stock
           before this job can be cut.
         </p>
       )}
       {state !== 'covered' && material.basis === 'order' && (
-        <p className="mt-2 text-2xs text-stone-500">
+        <p className="mt-2 type-helper">
           No pieces have been drawn yet, so this is the ordered quantity. Once the blueprint is entered, the need
           follows the pieces.
         </p>
@@ -95,7 +96,7 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
               type="button"
               onClick={onAllocate}
               aria-label={`Allocate slabs of ${material.name}`}
-              className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover active:scale-95 transition-all"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               Allocate slabs
             </button>
@@ -105,7 +106,7 @@ export function FabricationMaterialCard({ material, onAllocate, onRestock }: {
               type="button"
               onClick={onRestock}
               aria-label={`Create a requisition for ${material.name}`}
-              className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Create requisition
             </button>

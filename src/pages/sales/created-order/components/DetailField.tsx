@@ -10,7 +10,7 @@ interface DetailFieldProps {
 export function DetailField({ label, children }: DetailFieldProps) {
   return (
     <div className="min-w-0">
-      <dt className="text-label font-semibold uppercase tracking-wide text-stone-500">{label}</dt>
+      <dt className="type-overline">{label}</dt>
       <dd className="mt-0.5 break-words text-sm text-stone-900">{children}</dd>
     </div>
   );

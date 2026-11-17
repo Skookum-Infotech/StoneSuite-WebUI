@@ -79,7 +79,7 @@ describe('CreatedOrderDetailPage', () => {
 
     renderPage();
 
-    expect(await screen.findByRole('heading', { name: 'Project details' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Project Details' })).toBeInTheDocument();
     expect(createdOrderService.get).toHaveBeenCalledWith('o1');
     expect(screen.getByText('Sandbrock Ranch')).toBeInTheDocument();
     expect(screen.getByText('Gate code 1234.')).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe('CreatedOrderDetailPage', () => {
     vi.mocked(createdOrderService.get).mockResolvedValue(order());
 
     renderPage();
-    await screen.findByRole('heading', { name: 'Project details' });
+    await screen.findByRole('heading', { name: 'Project Details' });
 
     expect(Object.values(useBreadcrumbStore.getState().labels)).toContain('741 Bridle Path');
   });
@@ -121,7 +121,7 @@ describe('CreatedOrderDetailPage', () => {
 
     expect(await screen.findByText(/now being processed/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Edit order' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Project details' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Project Details' })).toBeInTheDocument();
   });
 
   it('shows when the customer last changed the order', async () => {

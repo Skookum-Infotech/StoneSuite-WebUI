@@ -8,6 +8,7 @@ import {
 } from '@/lib/stockShortage';
 import type { StockShortage } from '@/types/salesOrder';
 
+import { buttonVariants } from '@/components/ui/button';
 // The stock warning on a Sales Order. Short stock never stops an order: it is
 // saved holding the full quantity, and this banner stays on the order for as
 // long as inventory cannot cover it (the server works it out on every read), so
@@ -66,7 +67,7 @@ export function StockShortageBanner({ orderNumber, shortages }: { orderNumber: s
             onClick={() => order(uncovered)}
             disabled={isPending}
             aria-label="Order shortage items on a new purchase order"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-all hover:bg-brand-hover active:scale-95 disabled:opacity-60"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {isPending
               ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />

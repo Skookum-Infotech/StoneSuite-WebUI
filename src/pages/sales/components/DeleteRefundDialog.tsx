@@ -7,6 +7,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Mirrors DeletePaymentDialog. The 409 "has live applications" server message
 // (backend AD-9: delete blocked while applications exist — unapply or void
 // first) surfaces as-is via apiErrorMessage — no special-cased client copy.
@@ -72,10 +74,10 @@ function DeleteRefundModal({ label, error, isPending, onConfirm, onClose }: {
             <AlertTriangle className="size-4 text-destructive" aria-hidden="true" />
           </div>
           <div>
-            <h3 id="delete-refund-dialog-title" className="text-sm font-bold text-stone-900">
-              Delete refund?
+            <h3 id="delete-refund-dialog-title" className="type-card-title">
+              Delete Refund?
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+            <p className="mt-0.5 type-helper">This action cannot be undone.</p>
           </div>
         </div>
 
@@ -87,7 +89,7 @@ function DeleteRefundModal({ label, error, isPending, onConfirm, onClose }: {
             live applications remain (AD-9) — an actionable next step, not a
             transient failure, so it must be announced. */}
         {error && (
-          <p role="alert" className="mb-3 text-xs text-destructive">
+          <p role="alert" className="mb-3 type-error">
             {apiErrorMessage(error, 'Failed to delete refund.')}
           </p>
         )}
@@ -97,7 +99,7 @@ function DeleteRefundModal({ label, error, isPending, onConfirm, onClose }: {
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -105,7 +107,7 @@ function DeleteRefundModal({ label, error, isPending, onConfirm, onClose }: {
             type="button"
             onClick={onConfirm}
             disabled={isPending}
-            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
           >
             {isPending ? 'Deleting…' : 'Delete refund'}
           </button>

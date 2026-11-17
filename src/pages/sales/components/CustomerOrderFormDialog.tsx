@@ -7,6 +7,7 @@ import { CreatedOrderDetails } from '@/pages/sales/created-order/components/Crea
 import type { CreatedOrder } from '@/types/createdOrder';
 import { CustomerOrderFormEditor } from './CustomerOrderFormEditor';
 
+import { buttonVariants } from '@/components/ui/button';
 interface CustomerOrderFormDialogProps {
   orderId: string;
   form: CreatedOrder;
@@ -53,7 +54,7 @@ export function CustomerOrderFormDialog({ orderId, form, isDraft, onClose }: Cus
               <h2 id="customer-order-form-title" className="truncate type-dialog-title">
                 Customer Order Form
               </h2>
-              <p className="truncate text-xs text-stone-500">
+              <p className="truncate type-helper">
                 {editing
                   ? 'Editing — changes are saved to the customer’s order.'
                   : 'Read-only. This is the form as the customer sees it in their portal.'}
@@ -65,7 +66,7 @@ export function CustomerOrderFormDialog({ orderId, form, isDraft, onClose }: Cus
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 <Pencil className="size-3.5" aria-hidden="true" />
                 Edit
@@ -92,7 +93,7 @@ export function CustomerOrderFormDialog({ orderId, form, isDraft, onClose }: Cus
           />
         ) : (
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5">
-            <p role="status" className="text-xs text-stone-500">
+            <p role="status" className="type-helper">
               {form.editable
                 ? 'The customer can still change this order from their portal.'
                 : 'This order is locked for the customer: the sales order has moved on from Draft.'}

@@ -22,6 +22,7 @@ import { RefundStatusControl } from './components/RefundStatusControl';
 import { EDIT_FIELDS, fromRefund, toUpdatePayload, REFUND_STATUS_CODES } from '@/lib/refundForm';
 import { statusToastLabel } from '@/lib/statusToast';
 
+import { buttonVariants } from '@/components/ui/button';
 export default function EditRefundPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -141,7 +142,7 @@ export default function EditRefundPage() {
           subtitle={customerName}
           actions={(
             <button type="submit" disabled={save.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {save.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -158,7 +159,7 @@ export default function EditRefundPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" aria-hidden="true" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save refund.')}
             </p>

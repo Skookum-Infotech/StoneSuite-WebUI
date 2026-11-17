@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { excessBreakdown, type AppliedInvoiceLine } from '@/lib/paymentExcess';
 
+import { buttonVariants } from '@/components/ui/button';
 export interface ExcessPaymentPrompt {
   customerName: string;
   /** The invoices the payment is compared with: every "Apply to Invoices" row
@@ -48,8 +49,8 @@ export function ExcessPaymentDialog({ prompt, onConfirm, onReject }: {
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/10">
             <TriangleAlert className="size-4 text-warning" aria-hidden="true" />
           </div>
-          <h3 id="excess-payment-title" className="text-sm font-bold text-stone-900">
-            Payment exceeds invoice balance
+          <h3 id="excess-payment-title" className="type-card-title">
+            Payment Exceeds Invoice Balance
           </h3>
         </div>
 
@@ -60,7 +61,7 @@ export function ExcessPaymentDialog({ prompt, onConfirm, onReject }: {
           <div className="max-h-44 overflow-y-auto rounded-lg border border-stone-200 modal-scrollbar">
             <table className="w-full tabular-nums">
               <caption className="sr-only">Amount applied to each invoice</caption>
-              <thead className="bg-stone-50 text-2xs uppercase tracking-wide text-stone-500">
+              <thead className="bg-stone-50 type-th">
                 <tr>
                   <th scope="col" className="px-3 py-1.5 text-left font-semibold">Invoice</th>
                   <th scope="col" className="px-3 py-1.5 text-right font-semibold">Balance due</th>
@@ -117,7 +118,7 @@ export function ExcessPaymentDialog({ prompt, onConfirm, onReject }: {
               Yes saves the payment, applies the amounts shown to each invoice, and opens a draft Credit Memo for {prompt.customerName} with the extra amount. Review and save that memo separately. No lets you enter a correct amount instead.
             </p>
           ) : (
-            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 font-medium text-red-700">
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 font-medium text-danger-ink">
               You do not have permission to create Credit Memos, or the Credit Memo form is disabled. Choose No and enter an amount up to the invoice balance.
             </p>
           )}
@@ -128,7 +129,7 @@ export function ExcessPaymentDialog({ prompt, onConfirm, onReject }: {
             type="button"
             onClick={onReject}
             aria-label="No, enter a correct amount"
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             No, enter correct amount
           </button>
@@ -137,10 +138,7 @@ export function ExcessPaymentDialog({ prompt, onConfirm, onReject }: {
             onClick={onConfirm}
             disabled={!prompt.canCreateCreditMemo}
             aria-label="Yes, save the payment and continue to a credit memo"
-            className={cn(
-              'rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-all',
-              'hover:bg-brand-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand',
-            )}
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             Yes, save and continue
           </button>

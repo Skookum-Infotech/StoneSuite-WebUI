@@ -30,6 +30,7 @@ import type { CreditMemoApplication } from '@/types/creditMemo';
 import { formatDateValue } from '@/lib/dateUtils';
 import { CustomerLink } from '@/components/crm/CustomerLink';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
@@ -195,7 +196,7 @@ export default function CreditMemoDetailPage() {
         reject={{ noun: 'credit memo', run: (reason) => creditMemoService.reject(id, reason), onRejected: handleRejected }}
       />
       {creditMemo.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve credit memo.')}
         </p>
       )}
@@ -279,7 +280,7 @@ export default function CreditMemoDetailPage() {
                       { label: 'Tax %', right: true },
                       { label: 'Total', right: true },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -290,7 +291,7 @@ export default function CreditMemoDetailPage() {
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-500">{line.discountPercent}%</td>
@@ -315,7 +316,7 @@ export default function CreditMemoDetailPage() {
                     onClick={() => setApplyOpen(true)}
                     disabled={creditMemo.unappliedAmount <= 0}
                     title={creditMemo.unappliedAmount <= 0 ? 'No unapplied balance remaining.' : undefined}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className={buttonVariants()}
                   >
                     <DollarSign className="size-3.5" />
                     Apply Credit
@@ -328,7 +329,7 @@ export default function CreditMemoDetailPage() {
                   <thead className="bg-stone-50 border-b border-stone-200">
                     <tr className="divide-x divide-stone-200">
                       {['Invoice', 'Amount', 'Date', ''].map((h) => (
-                        <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -349,7 +350,7 @@ export default function CreditMemoDetailPage() {
                               onClick={() => unapply.mutate(app.invoiceId)}
                               disabled={unapply.isPending}
                               aria-label={`Unapply credit memo from invoice ${app.invoiceNumber}`}
-                              className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-500 hover:bg-stone-50 disabled:opacity-40 transition-colors"
+                              className={buttonVariants({ variant: 'outline', size: 'sm' })}
                             >
                               <Unlink className="size-3" />
                               Unapply
@@ -365,7 +366,7 @@ export default function CreditMemoDetailPage() {
                 </table>
               </div>
               {unapply.error && (
-                <p className="text-xs text-destructive">{apiErrorMessage(unapply.error, 'Failed to unapply credit memo.')}</p>
+                <p className="type-error">{apiErrorMessage(unapply.error, 'Failed to unapply credit memo.')}</p>
               )}
             </div>
           )}
@@ -431,7 +432,7 @@ export default function CreditMemoDetailPage() {
                 </button>
               </div>
               {exportPdfError && (
-                <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+                <p role="alert" className="type-error">{exportPdfError}</p>
               )}
             </div>
           )}
@@ -508,7 +509,7 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
   ].filter(Boolean);
 
   if (lines.length === 0 && !addr.stateId && !addr.countryId) {
-    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
+    return <p className="italic type-helper">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">

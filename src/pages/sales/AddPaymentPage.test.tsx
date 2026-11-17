@@ -207,7 +207,7 @@ describe('AddPaymentPage from invoice', () => {
     await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
-    const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
+    const dialog = await screen.findByRole('dialog', { name: 'Payment Exceeds Invoice Balance' });
     expect(dialog).toHaveTextContent('CA$150.00');
     expect(dialog).toHaveTextContent('CA$125.50');
     expect(dialog).toHaveTextContent('CA$24.50');
@@ -255,7 +255,7 @@ describe('AddPaymentPage from invoice', () => {
     await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
-    const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
+    const dialog = await screen.findByRole('dialog', { name: 'Payment Exceeds Invoice Balance' });
     expect(dialog).toHaveTextContent('CA$74.50');
     await userEvent.click(screen.getByRole('button', {
       name: 'Yes, save the payment and continue to a credit memo',
@@ -442,7 +442,7 @@ describe('AddPaymentPage from invoice', () => {
     await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
-    const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
+    const dialog = await screen.findByRole('dialog', { name: 'Payment Exceeds Invoice Balance' });
     expect(dialog).toHaveTextContent('CA$150.00');
     expect(dialog).toHaveTextContent('CA$24.50');
     expect(paymentService.createPayment).not.toHaveBeenCalled();
@@ -494,7 +494,7 @@ describe('AddPaymentPage from invoice', () => {
     await pickOption(screen.getByLabelText('Payment Method'), '3');
     await userEvent.click(screen.getAllByRole('button', { name: 'Save Payment' })[0]);
 
-    const dialog = await screen.findByRole('dialog', { name: 'Payment exceeds invoice balance' });
+    const dialog = await screen.findByRole('dialog', { name: 'Payment Exceeds Invoice Balance' });
     expect(dialog).toHaveTextContent('CA$74.50');
     await userEvent.click(screen.getByRole('button', {
       name: 'Yes, save the payment and continue to a credit memo',

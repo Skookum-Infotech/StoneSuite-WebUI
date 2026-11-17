@@ -20,7 +20,7 @@ export function OrderFormSections({ draft }: OrderFormSectionsProps) {
     <>
       <FormSection
         step={1}
-        title="Project details"
+        title="Project Details"
         description="Who the order is for and where and when the work happens."
       >
         <OrderDetailsSection form={form} errors={shownErrors.header} onChange={setHeader} />
@@ -34,7 +34,7 @@ export function OrderFormSections({ draft }: OrderFormSectionsProps) {
         <div className="space-y-5">
           <AreaPicker areas={form.areas} onAdd={addArea} />
           {shownErrors.noAreas && (
-            <p role="alert" className="text-xs font-medium text-red-600">
+            <p role="alert" className="type-error">
               {shownErrors.noAreas}
             </p>
           )}

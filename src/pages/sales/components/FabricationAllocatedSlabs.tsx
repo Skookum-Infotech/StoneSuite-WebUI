@@ -8,6 +8,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { Spinner } from '@/components/tenant/ui';
 import { fabricationService } from '@/services/fabricationService';
 
+import { buttonVariants } from '@/components/ui/button';
 // The slabs held for a job, each with its allocation status. `slab.status` here is
 // the job-allocation status (reserved/consumed/released), not the slab's own
 // physical status — see the FabricationSlab type's doc comment. A reserved slab
@@ -40,7 +41,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
   const conflict = isAxiosError(release.error) && release.error.response?.status === 409;
 
   if (isLoading) return <div className="flex justify-center py-6"><Spinner label="Loading slabs…" /></div>;
-  if (error) return <p className="py-6 text-center text-xs text-destructive/70">Failed to load slabs.</p>;
+  if (error) return <p className="py-6 text-center type-error">Failed to load slabs.</p>;
 
   return (
     <div>
@@ -49,7 +50,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
           <thead className="border-b border-stone-200 bg-stone-50">
             <tr>
               {['Serial', 'Form', 'Area', 'Allocation', 'Grade', 'Finish', ''].map((h, i) => (
-                <th key={h || `col-${i}`} className="whitespace-nowrap px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500">
+                <th key={h || `col-${i}`} className="whitespace-nowrap px-3 py-2.5 type-th">
                   {h || <span className="sr-only">Actions</span>}
                 </th>
               ))}
@@ -58,7 +59,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
           <tbody className="divide-y divide-stone-100">
             {slabs.map((slab) => (
               <tr key={slab.id} className="hover:bg-stone-50/50">
-                <td className="px-3 py-2.5 font-mono text-2xs text-stone-700">{slab.serial}</td>
+                <td className="px-3 py-2.5 type-record-id">{slab.serial}</td>
                 <td className="px-3 py-2.5 capitalize text-stone-500">{slab.form}</td>
                 <td className="px-3 py-2.5 tabular-nums text-stone-600">{slab.area}</td>
                 <td className="px-3 py-2.5"><AllocationBadge status={slab.status} /></td>
@@ -71,7 +72,7 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
                       onClick={() => workflowVersion === 2 ? actionRelease.run({ slabId: slab.id }) : legacyRelease.mutate(slab.id)}
                       disabled={release.isPending || conflict}
                       aria-label={`Release slab ${slab.serial}`}
-                      className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
+                      className={buttonVariants({ variant: 'outline', size: 'sm' })}
                     >
                       <Unlink className="size-3" aria-hidden="true" /> Release
                     </button>
@@ -85,9 +86,9 @@ export function FabricationAllocatedSlabs({ jobId, canRelease, workflowVersion, 
           </tbody>
         </table>
       </div>
-      {conflict && workflowVersion === 2 && <button type="button" className="min-h-11 text-sm underline" onClick={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['fabrication-job', jobId] }), queryClient.invalidateQueries({ queryKey: ['fabrication-job-slabs', jobId] })]); actionRelease.resetForLatest(); }}>Refresh job and review again</button>}
+      {conflict && workflowVersion === 2 && <button type="button" className="min-h-11 text-body type-link" onClick={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['fabrication-job', jobId] }), queryClient.invalidateQueries({ queryKey: ['fabrication-job-slabs', jobId] })]); actionRelease.resetForLatest(); }}>Refresh job and review again</button>}
       {release.isError && (
-        <p role="alert" className="mt-1.5 text-2xs text-destructive">{apiErrorMessage(release.error, 'Failed to release the slab.')}</p>
+        <p role="alert" className="mt-1.5 type-error">{apiErrorMessage(release.error, 'Failed to release the slab.')}</p>
       )}
     </div>
   );
@@ -98,5 +99,5 @@ function AllocationBadge({ status }: { status: string }) {
     status === 'consumed' ? 'bg-amber-100 text-amber-700' :
     status === 'reserved' ? 'bg-sky-100 text-sky-700' :
     'bg-stone-100 text-stone-600';
-  return <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-2xs font-semibold capitalize', color)}>{status}</span>;
+  return <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill', color)}>{status}</span>;
 }

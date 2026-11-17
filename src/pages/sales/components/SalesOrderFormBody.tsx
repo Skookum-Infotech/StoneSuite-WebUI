@@ -84,7 +84,7 @@ export function SalesOrderFormBody({
             >
               {tab.label}
               {tab.key === 'drawings' && drawings.length > 0 && (
-                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-2xs font-bold text-stone-500 tabular-nums">
+                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-stone-500 tabular-nums type-pill">
                   {drawings.length}
                 </span>
               )}

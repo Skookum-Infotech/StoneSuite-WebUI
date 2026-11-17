@@ -6,6 +6,8 @@ import { salesOrderService } from '@/services/salesOrderService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Mirrors DeleteRecordDialog's look, but calls salesOrderService.deleteOrder
 // directly (no reason field — the sales_order DELETE endpoint doesn't accept
 // one, unlike the CRM record delete endpoint).
@@ -47,10 +49,10 @@ export function DeleteSalesOrderDialog({ orderId, label, onDeleted }: {
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="delete-so-dialog-title" className="text-sm font-bold text-stone-900">
-                  Delete sales order?
+                <h3 id="delete-so-dialog-title" className="type-card-title">
+                  Delete Sales Order?
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -59,7 +61,7 @@ export function DeleteSalesOrderDialog({ orderId, label, onDeleted }: {
             </p>
 
             {del.error && (
-              <p className="mb-3 text-xs text-destructive">
+              <p className="mb-3 type-error">
                 {apiErrorMessage(del.error, 'Failed to delete sales order.')}
               </p>
             )}
@@ -69,7 +71,7 @@ export function DeleteSalesOrderDialog({ orderId, label, onDeleted }: {
                 type="button"
                 onClick={() => setOpen(false)}
                 disabled={del.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -77,7 +79,7 @@ export function DeleteSalesOrderDialog({ orderId, label, onDeleted }: {
                 type="button"
                 onClick={() => del.mutate()}
                 disabled={del.isPending}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {del.isPending ? 'Deleting…' : 'Delete sales order'}
               </button>

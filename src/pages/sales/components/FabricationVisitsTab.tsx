@@ -10,6 +10,8 @@ import { PLANNER_CLOCK } from '@/lib/plannerPlacement';
 import { formatWallClock } from '@/lib/salesOrderSchedule';
 import type { Appointment } from '@/types/installSchedule';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const VISIT_LABELS: Record<Appointment['visitType'], string> = { template: 'Template', install: 'Install', service: 'Service' };
 const STATUS_LABELS: Record<Appointment['status'], string> = { scheduled: 'Scheduled', completed: 'Completed', cancelled: 'Cancelled' };
 const EMPTY_COPY = 'No visits booked for this job.';
@@ -40,7 +42,7 @@ export function FabricationVisitsTab({ jobId }: { jobId: string }) {
       return (
         <div className="flex flex-col gap-2">
           <ErrorNote>{apiErrorMessage(visits.error, 'Visits could not be loaded.')}</ErrorNote>
-          <button type="button" onClick={() => void visits.refetch()} className="self-start rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">
+          <button type="button" onClick={() => void visits.refetch()} className={cn(buttonVariants({ variant: 'outline' }), 'self-start')}>
             Try again
           </button>
         </div>
@@ -56,7 +58,7 @@ export function FabricationVisitsTab({ jobId }: { jobId: string }) {
               <p className={a.status === 'cancelled' ? 'text-sm font-medium text-stone-500 line-through' : 'text-sm font-medium text-stone-900'}>
                 {VISIT_LABELS[a.visitType]} · {whenOf(a)}
               </p>
-              <p className="text-xs text-stone-500">
+              <p className="type-helper">
                 {STATUS_LABELS[a.status]}
                 {a.jobCancelled && (
                   <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-800">{JOB_CANCELLED_LABEL}</span>
@@ -68,7 +70,7 @@ export function FabricationVisitsTab({ jobId }: { jobId: string }) {
               type="button"
               onClick={() => setDialog({ mode: 'edit', id: a.id })}
               aria-label={`Open ${VISIT_LABELS[a.visitType].toLowerCase()} visit, ${whenOf(a)}`}
-              className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Open
             </button>
@@ -81,9 +83,9 @@ export function FabricationVisitsTab({ jobId }: { jobId: string }) {
   return (
     <section className="space-y-3" aria-label="Visits">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-stone-900">Visits</h2>
+        <h2 className="type-card-title">Visits</h2>
         {canCreate && (
-          <button type="button" onClick={() => setDialog({ mode: 'create' })} className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90">
+          <button type="button" onClick={() => setDialog({ mode: 'create' })} className={buttonVariants()}>
             Book visit
           </button>
         )}

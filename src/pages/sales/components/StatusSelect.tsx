@@ -156,7 +156,7 @@ export function StatusSelect({
         <span className="flex-1 text-left">{armed ? `Confirm: ${label}` : label}</span>
         {armed && <Check className="size-3.5 shrink-0" aria-hidden="true" />}
         {!armed && reason && (
-          <span className="flex shrink-0 items-center gap-1 text-2xs text-stone-500">
+          <span className="flex shrink-0 items-center gap-1 type-subline">
             {needsApprove && <ShieldCheck className="size-3 shrink-0" aria-hidden="true" />}
             {reason}
           </span>

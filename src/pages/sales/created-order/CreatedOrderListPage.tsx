@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ClipboardPlus, Loader2, Plus } from 'lucide-react';
 import { ErrorNote, Spinner } from '@/components/tenant/ui';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { areaCountLabel, cityZipLabel, orderStatusLabel } from '@/lib/createdOrderDisplay';
 import { createdOrderEditPath, createdOrderPath, NEW_CREATED_ORDER_PATH } from '@/lib/createdOrderRoutes';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
@@ -10,6 +10,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { createdOrderService } from '@/services/createdOrderService';
 import type { CreatedOrder } from '@/types/createdOrder';
 
+import { cn } from '@/lib/utils';
 const HEADERS = ['Install address', 'Builder', 'Dates', 'Areas', 'Status', 'Submitted'] as const;
 
 const CELL_CLS = 'px-4 py-3 align-top text-xs text-stone-700';
@@ -27,7 +28,7 @@ function EmptyOrders({ onCreate }: { onCreate: () => void }) {
       <span className="flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
         <ClipboardPlus className="size-7" aria-hidden="true" />
       </span>
-      <h2 className="mt-4 text-base font-semibold text-stone-900">No orders yet</h2>
+      <h2 className="mt-4 type-dialog-title">No Orders Yet</h2>
       <p className="mt-1 max-w-sm text-sm text-stone-500">
         Fill in the countertop order form and your fabricator receives it straight away. Your orders
         will be listed here.
@@ -81,7 +82,7 @@ function OrderRow({ order }: { order: CreatedOrder }) {
       </td>
       <td className={CELL_CLS}>{areaCountLabel(order.areas.length)}</td>
       <td className={CELL_CLS}>
-        <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-label font-semibold text-stone-600">
+        <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-stone-600 type-pill">
           {orderStatusLabel(order.status)}
         </span>
       </td>
@@ -116,14 +117,14 @@ export default function CreatedOrderListPage() {
               <ClipboardPlus className="size-5 text-accent-foreground" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Created Orders</h1>
+              <h1 className="type-page-title">Created Orders</h1>
               <p className="text-sm text-stone-500">Countertop orders you have submitted.</p>
             </div>
           </div>
           <button
             type="button"
             onClick={goToNew}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             <Plus className="size-3.5" aria-hidden="true" />
             Create Order
@@ -155,7 +156,7 @@ export default function CreatedOrderListPage() {
                         <th
                           key={header}
                           scope="col"
-                          className="px-4 py-2.5 text-label font-semibold uppercase tracking-wide text-stone-500"
+                          className="px-4 py-2.5 type-th"
                         >
                           {header}
                         </th>

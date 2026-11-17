@@ -3,6 +3,7 @@ import { formatDisplayDate } from '@/lib/dateUtils';
 import type { CreatedOrderFormState } from '@/lib/createdOrderForm';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 export interface SummaryStatus {
   /** Required items still missing or invalid — what the status line counts. */
   errorCount: number;
@@ -31,7 +32,7 @@ function SubmitButton({ isSubmitting, labels }: { isSubmitting: boolean; labels:
     <button
       type="submit"
       disabled={isSubmitting}
-      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-stone-950 shadow-sm outline-none transition-all hover:bg-brand-hover focus-visible:ring-2 focus-visible:ring-brand/50 active:scale-95 disabled:opacity-60"
+      className={cn(buttonVariants(), 'gap-2 active:scale-95')}
     >
       {isSubmitting ? (
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -49,7 +50,7 @@ function CancelButton({ onCancel, disabled }: { onCancel: () => void; disabled: 
       type="button"
       disabled={disabled}
       onClick={onCancel}
-      className="inline-flex h-10 items-center justify-center rounded-lg border border-stone-200 bg-white px-4 text-sm font-medium text-stone-600 outline-none transition-colors hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-brand/40 disabled:opacity-50"
+      className={buttonVariants({ variant: 'outline' })}
     >
       Cancel
     </button>
@@ -109,7 +110,7 @@ export function OrderSummaryPanel({ form, status, layout, labels, onCancel }: Or
       aria-label="Order summary"
       className="sticky top-20 space-y-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
     >
-      <h2 className="text-sm font-semibold text-stone-900">Order summary</h2>
+      <h2 className="type-card-title">Order Summary</h2>
 
       <dl className="space-y-1.5">
         <SummaryRow label="Builder" value={form.builder.trim()} />
@@ -126,7 +127,7 @@ export function OrderSummaryPanel({ form, status, layout, labels, onCancel }: Or
           Areas <span className="font-normal text-stone-500">({form.areas.length})</span>
         </p>
         {form.areas.length === 0 ? (
-          <p className="mt-1 text-xs text-stone-500">None added yet.</p>
+          <p className="mt-1 type-helper">None added yet.</p>
         ) : (
           <ul className="mt-1.5 space-y-1">
             {form.areas.map((area) => (

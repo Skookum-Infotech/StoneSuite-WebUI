@@ -131,7 +131,7 @@ export function InvoicePicker({
       {open && enabled && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {filtered.length === 0 && !isFetching && (
-            <p className="px-3 py-2 text-xs text-stone-500">
+            <p className="px-3 py-2 type-helper">
               {debounced ? 'No matching invoices with a balance due.' : 'No open invoices for this customer.'}
             </p>
           )}

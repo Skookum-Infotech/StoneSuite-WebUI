@@ -31,7 +31,7 @@ export function Field({ label, required, error, selfLabelled, children }: FieldP
     <>
       {label}
       {required && (
-        <span className="ml-0.5 text-destructive" aria-hidden="true">
+        <span className="ml-0.5 text-danger-ink" aria-hidden="true">
           *
         </span>
       )}
@@ -53,7 +53,7 @@ export function Field({ label, required, error, selfLabelled, children }: FieldP
         'aria-describedby': error ? errorId : undefined,
       })}
       {error && (
-        <p id={errorId} role="alert" className="text-xs font-medium text-red-600">
+        <p id={errorId} role="alert" className="type-error">
           {error}
         </p>
       )}

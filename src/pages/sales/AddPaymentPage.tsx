@@ -41,6 +41,8 @@ import { INVOICE_PAYABLE_STATUSES } from '@/lib/invoiceForm';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { useWorkflows } from '@/hooks/useWorkflows';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const PAYMENT_AMOUNT_TOLERANCE = 0.005;
 
 function currency(value: number, currencyCode: string): string {
@@ -447,7 +449,7 @@ export default function AddPaymentPage() {
           subtitle={sourceInvoice ? `For invoice ${sourceInvoice.invoiceNumber}` : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending || sourceInvoiceUnavailable}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Payment'}
             </button>
@@ -464,7 +466,7 @@ export default function AddPaymentPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save payment.')}
             </p>
@@ -477,11 +479,11 @@ export default function AddPaymentPage() {
             Loading source invoice…
           </div>
         ) : fromInvoiceId && sourceInvoiceError ? (
-          <div role="alert" className="flex flex-1 items-center justify-center bg-stone-50 px-6 text-center text-sm text-red-700">
+          <div role="alert" className="flex flex-1 items-center justify-center bg-stone-50 px-6 text-center text-sm text-danger-ink">
             {apiErrorMessage(sourceInvoiceError, 'Failed to load the source invoice.')}
           </div>
         ) : fromInvoiceId && !sourceInvoicePayable ? (
-          <div role="alert" className="flex flex-1 items-center justify-center bg-stone-50 px-6 text-center text-sm text-red-700">
+          <div role="alert" className="flex flex-1 items-center justify-center bg-stone-50 px-6 text-center text-sm text-danger-ink">
             The source invoice is no longer eligible for payment. Return to the invoice and start a new payment.
           </div>
         ) : (
@@ -583,19 +585,19 @@ export default function AddPaymentPage() {
                         type="button"
                         onClick={addApplication}
                         disabled={!pendingInvoice || !(parseFloat(pendingAmount) > 0)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                        className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
                       >
                         <Plus className="size-3.5" />
                         Add
                       </button>
                     </div>
                     {applicationAmountError && (
-                      <p role="alert" className="text-xs font-medium text-destructive">
+                      <p role="alert" className="type-error">
                         {applicationAmountError}
                       </p>
                     )}
                     {!customer && (
-                      <p className="text-2xs text-stone-500">Select a customer above to apply this payment to their invoices.</p>
+                      <p className="type-helper">Select a customer above to apply this payment to their invoices.</p>
                     )}
                   </div>
                 </ModernSection>

@@ -23,7 +23,7 @@ export function FabricationPiecesTable({ pieces }: { pieces: FabricationJobPiece
               { label: 'Seams', right: true },
               { label: 'Status' },
             ].map((h) => (
-              <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+              <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
             ))}
           </tr>
         </thead>

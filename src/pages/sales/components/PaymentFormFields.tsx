@@ -112,7 +112,7 @@ export function PaymentField({ field, value, set, lookups, error }: {
           max={field.type === 'number' ? field.max : undefined}
         />
         {error && (
-          <p id={errorId} role="alert" className="text-xs font-medium text-destructive">
+          <p id={errorId} role="alert" className="type-error">
             {error}
           </p>
         )}

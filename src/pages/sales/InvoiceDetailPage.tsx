@@ -37,6 +37,7 @@ import { formatDateValue } from '@/lib/dateUtils';
 import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 import { CustomerLink } from '@/components/crm/CustomerLink';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
@@ -180,7 +181,7 @@ export default function InvoiceDetailPage() {
                 type="button"
                 onClick={handleSendClick}
                 aria-label="Send invoice to customer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 <Send className="size-3.5" />
                 Send to Customer
@@ -191,7 +192,7 @@ export default function InvoiceDetailPage() {
                 type="button"
                 onClick={() => navigate(`/sales/payment/new?fromInvoice=${encodeURIComponent(id)}`)}
                 aria-label={`Record payment for invoice ${invoice.invoiceNumber}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 <DollarSign className="size-3.5" />
                 Record payment
@@ -204,12 +205,12 @@ export default function InvoiceDetailPage() {
       {sendErrors.length > 0 && (
         <div role="alert" className="space-y-0.5 border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16">
           {sendErrors.map((e) => (
-            <p key={e} className="text-2xs text-destructive">{e}</p>
+            <p key={e} className="type-error">{e}</p>
           ))}
         </div>
       )}
       {sendSuccess && (
-        <p role="status" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-emerald-600 3xl:px-12 4xl:px-16">{sendSuccess}</p>
+        <p role="status" className="border-b border-stone-200 bg-white px-5 py-2 text-micro text-success-ink 3xl:px-12 4xl:px-16">{sendSuccess}</p>
       )}
 
       <RecordApprovalBanner
@@ -220,7 +221,7 @@ export default function InvoiceDetailPage() {
         resubmitVia="submit"
       />
       {invoice.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve invoice.')}
         </p>
       )}
@@ -317,7 +318,7 @@ export default function InvoiceDetailPage() {
                       { label: 'Tax %', right: true },
                       { label: 'Total', right: true },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -328,7 +329,7 @@ export default function InvoiceDetailPage() {
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
@@ -404,7 +405,7 @@ export default function InvoiceDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -488,7 +489,7 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
   ].filter(Boolean);
 
   if (lines.length === 0 && !addr.stateId && !addr.countryId) {
-    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
+    return <p className="italic type-helper">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">

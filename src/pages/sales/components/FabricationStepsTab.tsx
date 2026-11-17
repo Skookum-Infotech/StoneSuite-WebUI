@@ -9,6 +9,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { STEP_LABELS, STEP_STATUS_OPTIONS, STEP_STATUS_LABELS, STEP_STATUS_COLORS } from '@/lib/fabricationForm';
 import type { FabricationJobStep } from '@/types/fabrication';
 
+import { buttonVariants } from '@/components/ui/button';
 // The 16-step checklist. Piece-grain steps (templating, cutting, edging,
 // etc.) are seeded once per piece, so several rows share a step code and are
 // told apart by `pieceUuid`. Each row saves independently: the PATCH carries
@@ -82,7 +83,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {['Step', 'Status', 'Notes', 'Started', 'Completed', canEdit ? '' : undefined].filter(Boolean).map((h) => (
-                <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
               ))}
             </tr>
           </thead>
@@ -101,7 +102,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                 <tr key={`${rowKey(step)}-${i}`} className="hover:bg-stone-50/50 align-top">
                   <td className="px-3 py-2.5">
                     <p className="font-medium text-stone-800">{stepLabel}</p>
-                    {dup && <p className="text-2xs text-stone-500">piece {seenCounts[step.code]} of {totalByCode[step.code]}</p>}
+                    {dup && <p className="type-helper">piece {seenCounts[step.code]} of {totalByCode[step.code]}</p>}
                   </td>
                   <td className="px-3 py-2.5">
                     {canEdit ? (
@@ -132,7 +133,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                     ) : (
                       <span className="text-stone-500">{step.notes || '—'}</span>
                     )}
-                    {rowErrors[rowKey(step)] && <p className="mt-1 text-2xs text-destructive">{rowErrors[rowKey(step)]}</p>}
+                    {rowErrors[rowKey(step)] && <p className="mt-1 type-error">{rowErrors[rowKey(step)]}</p>}
                   </td>
                   <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap">
                     {step.startedAt ? new Date(step.startedAt).toLocaleDateString() : '—'}
@@ -147,7 +148,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
                         onClick={() => save(step)}
                         disabled={!dirty || isSaving(step)}
                         aria-label={`Save ${rowLabel}`}
-                        className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1 text-2xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-40 transition-colors"
+                        className={buttonVariants({ size: 'sm' })}
                       >
                         {isSaving(step)
                           ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
@@ -171,7 +172,7 @@ export function FabricationStepsTab({ jobId, steps, canEdit }: {
 function StepStatusBadge({ status }: { status: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-semibold text-stone-600 whitespace-nowrap"
+      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-stone-600 whitespace-nowrap type-pill"
       style={{ backgroundColor: `${STEP_STATUS_COLORS[status] ?? '#a8a29e'}18` }}
     >
       <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: STEP_STATUS_COLORS[status] ?? '#a8a29e' }} aria-hidden="true" />

@@ -5,6 +5,8 @@ import { useMutation } from '@tanstack/react-query';
 import { creditMemoService } from '@/services/creditMemoService';
 import { apiErrorMessage } from '@/api/tenantClient';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Void is a terminal, one-way transition (DRFT/APPV -> VOID) — unlike
 // Invoice/Payment's plain status-dropdown, Credit Memo's spec calls it out
 // as a standalone View-page action, so it gets its own confirm dialog,
@@ -30,7 +32,7 @@ export function VoidCreditMemoDialog({ creditMemoId, label, onVoided }: {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Void ${label}`}
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left"
+        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-caption text-danger-ink w-full transition-colors text-left"
       >
         <Ban className="size-4 shrink-0" />
         Void credit memo
@@ -50,10 +52,10 @@ export function VoidCreditMemoDialog({ creditMemoId, label, onVoided }: {
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="void-credit-memo-dialog-title" className="text-sm font-bold text-stone-900">
-                  Void credit memo?
+                <h3 id="void-credit-memo-dialog-title" className="type-card-title">
+                  Void Credit Memo?
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -62,7 +64,7 @@ export function VoidCreditMemoDialog({ creditMemoId, label, onVoided }: {
             </p>
 
             {voidIt.error && (
-              <p className="mb-3 text-xs text-destructive">
+              <p className="mb-3 type-error">
                 {apiErrorMessage(voidIt.error, 'Failed to void credit memo.')}
               </p>
             )}
@@ -72,7 +74,7 @@ export function VoidCreditMemoDialog({ creditMemoId, label, onVoided }: {
                 type="button"
                 onClick={() => setOpen(false)}
                 disabled={voidIt.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -80,7 +82,7 @@ export function VoidCreditMemoDialog({ creditMemoId, label, onVoided }: {
                 type="button"
                 onClick={() => voidIt.mutate()}
                 disabled={voidIt.isPending}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {voidIt.isPending ? 'Voiding…' : 'Void credit memo'}
               </button>

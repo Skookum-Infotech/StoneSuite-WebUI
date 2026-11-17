@@ -5,6 +5,7 @@ import { salesOrderService } from '@/services/salesOrderService';
 import { isPortalSession } from '@/store/useAuthStore';
 import { CustomerOrderFormDialog } from './CustomerOrderFormDialog';
 
+import { buttonVariants } from '@/components/ui/button';
 interface CustomerOrderFormActionProps {
   orderId: string;
   /** Whether the Sales Order is still a Draft. */
@@ -33,7 +34,7 @@ export function CustomerOrderFormAction({ orderId, isDraft }: CustomerOrderFormA
         type="button"
         onClick={() => setOpen(true)}
         aria-label="View customer order form"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+        className={buttonVariants({ variant: 'outline' })}
       >
         <ClipboardList className="size-3.5" aria-hidden="true" />
         Customer Order Form

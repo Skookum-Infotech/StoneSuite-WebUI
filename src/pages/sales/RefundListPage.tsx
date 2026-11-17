@@ -3,6 +3,8 @@ import { Undo2, Plus } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { RefundTable } from './components/RefundTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function RefundListPage() {
   const navigate = useNavigate();
   // A customer-portal session reads this same page (see CLAUDE.md's
@@ -19,14 +21,14 @@ export default function RefundListPage() {
               <Undo2 className="size-5 text-accent-foreground" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Refunds</h1>
+              <h1 className="type-page-title">Refunds</h1>
               <p className="text-sm text-stone-500">Money returned to customers.</p>
             </div>
           </div>
           {!isCustomer && (
             <button
               onClick={() => navigate('/sales/refund/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" aria-hidden="true" />
               New Refund

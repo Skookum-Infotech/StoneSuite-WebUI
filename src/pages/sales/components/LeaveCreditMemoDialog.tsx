@@ -2,6 +2,8 @@ import { createPortal } from 'react-dom';
 import { TriangleAlert } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Shown when someone cancels the credit memo that was prefilled from a payment.
 // The payment was saved before this form opened, so leaving does not undo it:
 // its excess simply stays unapplied, with no credit memo drawn from it.
@@ -30,8 +32,8 @@ export function LeaveCreditMemoDialog({ paymentNumber, amount, onStay, onLeave }
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/10">
             <TriangleAlert className="size-4 text-warning" aria-hidden="true" />
           </div>
-          <h3 id="leave-credit-memo-title" className="text-sm font-bold text-stone-900">
-            Leave without creating the credit memo?
+          <h3 id="leave-credit-memo-title" className="type-card-title">
+            Leave Without Creating the Credit Memo?
           </h3>
         </div>
 
@@ -49,7 +51,7 @@ export function LeaveCreditMemoDialog({ paymentNumber, amount, onStay, onLeave }
             type="button"
             onClick={onStay}
             aria-label="Stay and review the credit memo"
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-all hover:bg-brand-hover active:scale-95"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             Stay and review
           </button>
@@ -57,7 +59,7 @@ export function LeaveCreditMemoDialog({ paymentNumber, amount, onStay, onLeave }
             type="button"
             onClick={onLeave}
             aria-label="Leave without creating a credit memo"
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Leave without creating
           </button>

@@ -219,7 +219,7 @@ export function CustomerPicker({
       {open && enabled && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {results.length === 0 && !isFetching && !showInactiveNotice && (
-            <p className="px-3 py-2 text-xs text-stone-500">
+            <p className="px-3 py-2 type-helper">
               {debounced ? 'No matching customers.' : 'No active customers available.'}
             </p>
           )}
@@ -236,12 +236,12 @@ export function CustomerPicker({
           ))}
           {notFound && (
             <div role="status" className="px-3 py-2">
-              <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+              <p className="flex items-start gap-1.5 text-xs font-medium text-warning-ink">
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 break-words">“{debounced}” isn't an existing customer.</span>
               </p>
               {!onCreateNew && (
-                <p className="mt-0.5 pl-5 text-2xs text-stone-500">
+                <p className="mt-0.5 pl-5 type-helper">
                   Ask someone with customer access to add them first.
                 </p>
               )}
@@ -249,7 +249,7 @@ export function CustomerPicker({
           )}
           {showInactiveNotice && (
             <div role="status" className="px-3 py-2">
-              <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+              <p className="flex items-start gap-1.5 text-xs font-medium text-warning-ink">
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 break-words">A customer named “{debounced}” already exists but isn't Active.</span>
               </p>
@@ -259,12 +259,12 @@ export function CustomerPicker({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Open “${debounced}” to reactivate — opens in a new tab`}
-                  className="mt-1 flex items-center gap-1.5 pl-5 text-2xs font-semibold text-stone-700 hover:text-stone-900 transition-colors"
+                  className="mt-1 flex items-center gap-1.5 pl-5 text-micro font-semibold text-stone-700 hover:text-stone-900 transition-colors"
                 >
                   Open it to reactivate
                 </a>
               ) : (
-                <p className="mt-0.5 pl-5 text-2xs text-stone-500">
+                <p className="mt-0.5 pl-5 type-helper">
                   Ask someone with customer access to reactivate them.
                 </p>
               )}

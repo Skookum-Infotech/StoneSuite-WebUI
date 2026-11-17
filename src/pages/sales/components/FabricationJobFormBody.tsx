@@ -180,13 +180,13 @@ export function FabricationJobFormBody({
           {activeTab === 'materials' && (
             isEdit && job
               ? <FabricationMaterialsTab jobId={jobId!} pieces={job.pieces ?? []} canAllocate={canAllocateSlabs} />
-              : <p className="py-8 text-center text-xs text-stone-500">Material allocation will be available after saving the job.</p>
+              : <p className="py-8 text-center type-helper">Material allocation will be available after saving the job.</p>
           )}
 
           {activeTab === 'checklist' && (
             isEdit && job
               ? <FabricationStepsTab jobId={jobId!} steps={job.steps ?? []} canEdit={canEditSteps} />
-              : <p className="py-8 text-center text-xs text-stone-500">The checklist is seeded once the job is saved.</p>
+              : <p className="py-8 text-center type-helper">The checklist is seeded once the job is saved.</p>
           )}
 
           <div className={activeTab === 'files' ? '' : 'hidden'}>

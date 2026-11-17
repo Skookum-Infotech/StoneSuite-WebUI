@@ -3,6 +3,8 @@ import { Receipt, Plus } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { InvoiceTable } from './components/InvoiceTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function InvoiceListPage() {
   const navigate = useNavigate();
   // A customer-portal session reads this same page (see CLAUDE.md's
@@ -19,14 +21,14 @@ export default function InvoiceListPage() {
               <Receipt className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Invoices</h1>
+              <h1 className="type-page-title">Invoices</h1>
               <p className="text-sm text-stone-500">Billed amounts owed by customers.</p>
             </div>
           </div>
           {!isCustomer && (
             <button
               onClick={() => navigate('/sales/invoice/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Invoice

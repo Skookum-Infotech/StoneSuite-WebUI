@@ -26,8 +26,8 @@ export function CreatedOrderDetails({ order }: CreatedOrderDetailsProps) {
         aria-labelledby="order-project-details"
         className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6"
       >
-        <h2 id="order-project-details" className="text-base font-semibold text-stone-900">
-          Project details
+        <h2 id="order-project-details" className="type-dialog-title">
+          Project Details
         </h2>
         <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
           <DetailField label="Builder">{order.builder}</DetailField>
@@ -43,7 +43,7 @@ export function CreatedOrderDetails({ order }: CreatedOrderDetailsProps) {
         </dl>
         {order.specialInstructions.trim() && (
           <div className="mt-5 border-t border-stone-100 pt-4">
-            <p className="text-label font-semibold uppercase tracking-wide text-stone-500">
+            <p className="type-overline">
               Special instructions
             </p>
             <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-stone-800">
@@ -54,7 +54,7 @@ export function CreatedOrderDetails({ order }: CreatedOrderDetailsProps) {
       </section>
 
       <section aria-labelledby="order-areas" className="space-y-3">
-        <h2 id="order-areas" className="text-base font-semibold text-stone-900">
+        <h2 id="order-areas" className="type-dialog-title">
           Areas ({order.areas.length})
         </h2>
         {order.areas.map((area) => (

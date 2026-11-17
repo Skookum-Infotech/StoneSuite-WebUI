@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EMPTY_PIECE_ROW, type FJPieceRow } from '@/lib/fabricationForm';
 
+import { buttonVariants } from '@/components/ui/button';
 const inlineCls =
   'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
@@ -78,7 +79,7 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {COLS.map((c) => (
-                <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w, c.right && 'text-right')}>
+                <th key={c.label} className={cn('px-2.5 py-2.5 whitespace-nowrap type-th', c.w, c.right && 'text-right')}>
                   {c.label}
                 </th>
               ))}
@@ -134,8 +135,8 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
 
       {pieces.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-500">No pieces added yet.</p>
-          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Piece</strong> to add one.</p>
+          <p className="type-helper">No pieces added yet.</p>
+          <p className="type-helper">Click <strong className="text-stone-500">+ Add Piece</strong> to add one.</p>
         </div>
       )}
 
@@ -147,14 +148,14 @@ export function FabricationPiecesEditor({ pieces, onUpdate, sourceOrderItems = [
             else if (editId) commitEdit();
             else { setIsAdding(true); setEditId(null); setDraft(EMPTY_PIECE_ROW); }
           }}
-          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-colors"
+          className={buttonVariants()}
         >
           <Plus className="size-3" />
           {isAdding || editId ? 'Save Piece' : 'Add Piece'}
         </button>
         {activeDraft && (
           <button type="button" onClick={() => { setIsAdding(false); setEditId(null); setDraft(EMPTY_PIECE_ROW); }}
-            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors">
+            className={buttonVariants({ variant: 'outline' })}>
             <X className="size-3" /> Cancel
           </button>
         )}

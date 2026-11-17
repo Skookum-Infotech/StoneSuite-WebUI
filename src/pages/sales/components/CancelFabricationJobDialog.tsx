@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { DISPOSITION_OPTIONS, DISPOSITION_LABELS } from '@/lib/fabricationForm';
 import type { FabricationJob, FabricationSlab, SlabDisposition } from '@/types/fabrication';
 
+import { buttonVariants } from '@/components/ui/button';
 function isConflict(err: unknown): boolean {
   return err instanceof AxiosError && err.response?.status === 409;
 }
@@ -183,7 +184,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
         onClick={() => setOpen(true)}
         disabled={disabled}
         aria-label="Cancel fabrication job"
-        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-xs text-destructive w-full transition-colors text-left disabled:opacity-50"
+        className="flex items-center gap-2.5 hover:bg-destructive/5 rounded-lg px-3 py-2 cursor-pointer text-caption text-danger-ink w-full transition-colors text-left disabled:opacity-50"
       >
         <Ban className="size-4 shrink-0" />
         Cancel job
@@ -203,10 +204,10 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="cancel-fj-dialog-title" className="text-sm font-bold text-stone-900">
+                <h3 id="cancel-fj-dialog-title" className="type-card-title">
                   {step === 'confirm' ? 'Cancel this fabrication job?' : 'Declare the fate of cut material'}
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
+                <p className="mt-0.5 type-helper">
                   {step === 'confirm'
                     ? 'Any reserved slabs will be released. This cannot be undone.'
                     : 'Every already-cut slab needs a disposition before the job can be cancelled.'}
@@ -217,17 +218,17 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
             {step === 'confirm' && (
               <>
                 {cancelMutation.isError && !isConflict(cancelMutation.error) && (
-                  <p className="mb-3 text-xs text-destructive">
+                  <p className="mb-3 type-error">
                     {apiErrorMessage(cancelMutation.error, 'Failed to cancel fabrication job.')}
                   </p>
                 )}
                 <div className="flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={close} disabled={cancelMutation.isPending}
-                    className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">
+                    className={buttonVariants({ variant: 'outline' })}>
                     Back
                   </button>
                   <button type="button" onClick={() => cancelMutation.mutate()} disabled={cancelMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all">
+                    className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}>
                     {cancelMutation.isPending && <Loader2 className="size-3 animate-spin" />}
                     {cancelMutation.isPending ? 'Cancelling…' : 'Cancel job'}
                   </button>
@@ -238,11 +239,11 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
             {step === 'disposition' && (
               <>
                 {isFetching && pending.length === 0 && (
-                  <p className="py-4 text-center text-xs text-stone-500">Loading slabs…</p>
+                  <p className="py-4 text-center type-helper">Loading slabs…</p>
                 )}
 
                 {!isFetching && pending.length === 0 && (
-                  <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2.5 text-xs text-emerald-700">
+                  <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2.5 text-xs text-success-ink">
                     <CheckCircle2 className="size-4 shrink-0" />
                     Every cut slab is accounted for. Ready to finish cancelling.
                   </div>
@@ -255,7 +256,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                       <div key={slab.id} className="rounded-lg border border-stone-200 p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs font-semibold text-stone-800">{slab.serial}</span>
-                          <span className="text-2xs text-stone-500 tabular-nums">{slab.area} sq. area</span>
+                          <span className="tabular-nums type-subline">{slab.area} sq. area</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <Select
@@ -286,7 +287,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                             onClick={() => submitRow(slab)}
                             disabled={!draft.disposition || dispositionMutation.isPending}
                             aria-label={`Record disposition for slab ${slab.serial}`}
-                            className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1.5 text-2xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-colors"
+                            className={buttonVariants({ size: 'sm' })}
                           >
                             {dispositionMutation.isPending && dispositionMutation.variables?.slabId === slab.id
                               ? <Loader2 className="size-3 animate-spin" /> : null}
@@ -322,11 +323,11 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                               allowEmpty={false}
                               showWarehouse
                             />
-                            <p className="text-2xs text-stone-500">The bin must be in the same location as the slab.</p>
+                            <p className="type-helper">The bin must be in the same location as the slab.</p>
                           </div>
                         )}
                         {rowErrors[slab.id] && (
-                          <p className="text-2xs text-destructive">{rowErrors[slab.id]}</p>
+                          <p className="type-error">{rowErrors[slab.id]}</p>
                         )}
                       </div>
                     );
@@ -334,21 +335,21 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                 </div>
 
                 {cancelMutation.isError && (
-                  <p className="mt-3 text-xs text-destructive">
+                  <p className="mt-3 type-error">
                     {apiErrorMessage(cancelMutation.error, 'Failed to cancel fabrication job.')}
                   </p>
                 )}
 
                 <div className="mt-4 flex flex-wrap justify-end gap-2">
                   <button type="button" onClick={close} disabled={cancelMutation.isPending}
-                    className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50">
+                    className={buttonVariants({ variant: 'outline' })}>
                     Close
                   </button>
                   <button
                     type="button"
                     onClick={() => cancelMutation.mutate()}
                     disabled={pending.length > 0 || cancelMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                    className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
                   >
                     {cancelMutation.isPending && <Loader2 className="size-3 animate-spin" />}
                     {cancelMutation.isPending ? 'Cancelling…' : 'Finish cancelling'}

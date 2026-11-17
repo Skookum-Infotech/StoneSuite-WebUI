@@ -52,7 +52,7 @@ export function AreaPicker({ areas, onAdd }: AreaPickerProps) {
         })}
       </div>
       {limitReached && (
-        <p className="mt-2 text-xs text-stone-500">
+        <p className="mt-2 type-helper">
           An order can have up to {MAX_AREAS} areas. Remove one to add another.
         </p>
       )}

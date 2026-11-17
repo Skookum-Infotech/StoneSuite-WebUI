@@ -46,7 +46,7 @@ export function FabricationQuickActionsCard({ jobId, canEdit, exporting, error, 
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-2xs text-destructive">{error}</p>
+        <p role="alert" className="type-error">{error}</p>
       )}
     </div>
   );

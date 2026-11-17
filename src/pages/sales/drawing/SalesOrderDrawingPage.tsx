@@ -62,10 +62,10 @@ export default function SalesOrderDrawingPage() {
   }, [id, orderQuery.data, setLabel, clearLabel]);
 
   if (orderQuery.isLoading || drawingQuery.isLoading) {
-    return <p className="p-4 text-xs text-stone-500">Loading…</p>;
+    return <p className="p-4 type-helper">Loading…</p>;
   }
   if (!orderQuery.data) {
-    return <p className="p-4 text-xs text-destructive">Failed to load the sales order.</p>;
+    return <p className="p-4 type-error">Failed to load the sales order.</p>;
   }
   // drawingQuery.data is `null` on a real, successful "no drawing saved
   // yet" (404) — that's the only case that falls back to a blank drawing.
@@ -73,7 +73,7 @@ export default function SalesOrderDrawingPage() {
   // editor the user could then build on and lose (found in the final
   // review).
   if (drawingQuery.isError) {
-    return <p className="p-4 text-xs text-destructive">Failed to load the drawing.</p>;
+    return <p className="p-4 type-error">Failed to load the drawing.</p>;
   }
 
   const drawing = drawingQuery.data ?? blankDrawing(id);

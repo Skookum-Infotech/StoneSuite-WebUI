@@ -173,7 +173,7 @@ export default function RefundDetailPage() {
         reject={{ noun: 'refund', run: (reason) => refundService.reject(id, reason), onRejected: handleRejected }}
       />
       {refund.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve refund.')}
         </p>
       )}
@@ -269,7 +269,7 @@ export default function RefundDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 

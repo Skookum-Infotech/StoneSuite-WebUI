@@ -25,7 +25,7 @@ export function InvoiceSummaryCard({ subtotal, discountAmt, taxTotal, total, amo
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden sticky top-4">
       <div className="px-4 py-2.5 bg-stone-50 border-b border-stone-200">
-        <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Summary</p>
+        <p className="type-overline">Summary</p>
       </div>
       <div className="divide-y divide-stone-100">
         {rows.map(({ label, value, muted }) => (
@@ -50,7 +50,7 @@ export function InvoiceSummaryCard({ subtotal, discountAmt, taxTotal, total, amo
         {amountPaid > 0 && (
           <div className="flex items-center justify-between px-4 py-2.5">
             <span className="text-xs text-stone-500">Amount Paid</span>
-            <span className="tabular-nums text-xs font-semibold text-emerald-600">{fmt(amountPaid)}</span>
+            <span className="tabular-nums text-xs font-semibold text-success-ink">{fmt(amountPaid)}</span>
           </div>
         )}
         <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50 border-t border-stone-200">

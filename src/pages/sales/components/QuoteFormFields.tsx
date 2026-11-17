@@ -40,7 +40,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
         />
         <label htmlFor={field.key} className={`${checkboxLabelCls} cursor-pointer select-none`}>
           {field.label}
-          {field.required && <span className="ml-0.5 text-destructive">*</span>}
+          {field.required && <span className="ml-0.5 text-danger-ink">*</span>}
         </label>
       </div>
     );
@@ -136,7 +136,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
             placeholder={field.placeholder}
             aria-label={field.label}
           />
-          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+          {field.hint && <p className="type-helper">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -158,7 +158,7 @@ export function QuoteField({ field, value, set, lookups, dependsOnValue, disable
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+        {field.hint && <p className="type-helper">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

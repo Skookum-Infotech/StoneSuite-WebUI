@@ -11,6 +11,7 @@ import type {
   ScheduleActivityStatus,
 } from '@/types/salesOrder';
 
+import { buttonVariants } from '@/components/ui/button';
 const NOTES_MAX_LENGTH = 2000;
 const NOTES_ROWS = 2;
 const CREATED_CODE = 'created';
@@ -101,7 +102,7 @@ export function SalesOrderScheduleRowEditor({ activity, saving, error, onSave, o
           >
             {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Select>
-          {statusLocked && <p className="text-2xs text-stone-500">Recorded automatically when the order is created.</p>}
+          {statusLocked && <p className="type-helper">Recorded automatically when the order is created.</p>}
         </div>
 
         <div className="space-y-1">
@@ -137,7 +138,7 @@ export function SalesOrderScheduleRowEditor({ activity, saving, error, onSave, o
                 aria-label={label('Completed time')}
               />
             </div>
-            {!completed && <p className="text-2xs text-stone-500">Leave blank to use the current time.</p>}
+            {!completed && <p className="type-helper">Leave blank to use the current time.</p>}
           </div>
         )}
 
@@ -156,14 +157,14 @@ export function SalesOrderScheduleRowEditor({ activity, saving, error, onSave, o
         </div>
       </div>
 
-      {shownError && <p role="alert" className="text-2xs text-destructive">{shownError}</p>}
+      {shownError && <p role="alert" className="type-error">{shownError}</p>}
 
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-all hover:bg-brand-hover disabled:opacity-50"
+          className={buttonVariants()}
           aria-label={label('Save changes')}
         >
           {saving && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
@@ -173,7 +174,7 @@ export function SalesOrderScheduleRowEditor({ activity, saving, error, onSave, o
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+          className={buttonVariants({ variant: 'outline' })}
           aria-label={label('Cancel editing')}
         >
           Cancel

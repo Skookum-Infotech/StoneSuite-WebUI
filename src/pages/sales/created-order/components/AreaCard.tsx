@@ -81,7 +81,7 @@ export function AreaCard({ area, errors, copyFromName, actions, isNew }: AreaCar
           />
           <span className="truncate text-sm font-semibold text-stone-900">{area.name || 'Unnamed area'}</span>
           {hasErrors ? (
-            <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600">
+            <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 type-pill text-danger-ink">
               Needs attention
             </span>
           ) : (

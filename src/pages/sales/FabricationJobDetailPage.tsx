@@ -131,7 +131,7 @@ export default function FabricationJobDetailPage() {
             approving={approve.isPending}
           />
           {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+            <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
               {apiErrorMessage(approve.error, 'Failed to approve fabrication job.')}
             </p>
           )}

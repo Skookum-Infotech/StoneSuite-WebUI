@@ -64,7 +64,7 @@ describe('CreatedOrderListPage', () => {
     vi.mocked(createdOrderService.list).mockResolvedValue(page([]));
     renderPage();
 
-    expect(await screen.findByText('No orders yet')).toBeInTheDocument();
+    expect(await screen.findByText('No Orders Yet')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create your first order/ })).toBeInTheDocument();
   });
 
@@ -131,7 +131,7 @@ describe('CreatedOrderListPage', () => {
   it('keeps the Create Order button available while the list is empty', async () => {
     vi.mocked(createdOrderService.list).mockResolvedValue(page([]));
     renderPage();
-    await screen.findByText('No orders yet');
+    await screen.findByText('No Orders Yet');
 
     expect(screen.getByRole('button', { name: 'Create Order' })).toBeInTheDocument();
   });

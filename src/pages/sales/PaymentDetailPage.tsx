@@ -38,6 +38,7 @@ import type { PaymentApplication } from '@/types/payment';
 import { formatDateValue } from '@/lib/dateUtils';
 import { CustomerLink } from '@/components/crm/CustomerLink';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'applications', label: 'Applications' },
@@ -220,7 +221,7 @@ export default function PaymentDetailPage() {
                 onClick={() => setConfirmCode(PAYMENT_DEPOSITED_CODE)}
                 disabled={transition.isPending}
                 aria-label={`Mark payment ${payment.paymentNumber} as deposited`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 <Landmark className="size-3.5" aria-hidden="true" />
                 Mark Deposited
@@ -232,7 +233,7 @@ export default function PaymentDetailPage() {
                 onClick={() => setConfirmCode(PAYMENT_VOID_CODE)}
                 disabled={transition.isPending}
                 aria-label={`Void payment ${payment.paymentNumber}`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-white px-3 py-1.5 text-xs font-semibold text-destructive shadow-sm transition-colors hover:bg-destructive/5 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 <Ban className="size-3.5" aria-hidden="true" />
                 Void
@@ -243,7 +244,7 @@ export default function PaymentDetailPage() {
       />
 
       {transition.isError && (
-        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(transition.error, 'Failed to change the payment status.')}
         </p>
       )}
@@ -255,7 +256,7 @@ export default function PaymentDetailPage() {
         reject={{ noun: 'payment', run: (reason) => paymentService.reject(id, reason), onRejected: handleRejected }}
       />
       {payment.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve payment.')}
         </p>
       )}
@@ -321,7 +322,7 @@ export default function PaymentDetailPage() {
                     onClick={() => setApplyOpen(true)}
                     disabled={applyBlocked || availableToApply <= 0}
                     title={applyBlocked ? 'A voided payment cannot be applied.' : availableToApply <= 0 ? 'No unapplied balance remaining.' : undefined}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className={buttonVariants()}
                   >
                     <DollarSign className="size-3.5" />
                     Apply to invoice
@@ -334,7 +335,7 @@ export default function PaymentDetailPage() {
                   <thead className="bg-stone-50 border-b border-stone-200">
                     <tr className="divide-x divide-stone-200">
                       {['Invoice #', 'Amount', 'Applied Date', ''].map((h) => (
-                        <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -355,7 +356,7 @@ export default function PaymentDetailPage() {
                               onClick={() => unapply.mutate(app.invoiceId)}
                               disabled={unapply.isPending || applyBlocked}
                               aria-label={`Unapply payment from invoice ${app.invoiceNumber}`}
-                              className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-500 hover:bg-stone-50 disabled:opacity-40 transition-colors"
+                              className={buttonVariants({ variant: 'outline', size: 'sm' })}
                             >
                               <Unlink className="size-3" />
                               Unapply
@@ -371,7 +372,7 @@ export default function PaymentDetailPage() {
                 </table>
               </div>
               {unapply.error && (
-                <p className="text-xs text-destructive">{apiErrorMessage(unapply.error, 'Failed to unapply payment.')}</p>
+                <p className="type-error">{apiErrorMessage(unapply.error, 'Failed to unapply payment.')}</p>
               )}
             </div>
           )}
@@ -433,7 +434,7 @@ export default function PaymentDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -537,10 +538,10 @@ function ApplyDialog({ paymentId, customer, unappliedAmount, excludeIds, onClose
             <DollarSign className="size-4 text-emerald-600" />
           </div>
           <div>
-            <h3 id="apply-payment-dialog-title" className="text-sm font-bold text-stone-900">
-              Apply to invoice
+            <h3 id="apply-payment-dialog-title" className="type-card-title">
+              Apply to Invoice
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <p className="mt-0.5 type-helper">
               Unapplied balance: {currency(unappliedAmount)}
             </p>
           </div>
@@ -570,7 +571,7 @@ function ApplyDialog({ paymentId, customer, unappliedAmount, excludeIds, onClose
         </div>
 
         {apply.error && (
-          <p className="mt-3 text-xs text-destructive">
+          <p className="mt-3 type-error">
             {apiErrorMessage(apply.error, 'Failed to apply payment.')}
           </p>
         )}
@@ -580,7 +581,7 @@ function ApplyDialog({ paymentId, customer, unappliedAmount, excludeIds, onClose
             type="button"
             onClick={onClose}
             disabled={apply.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -588,7 +589,7 @@ function ApplyDialog({ paymentId, customer, unappliedAmount, excludeIds, onClose
             type="button"
             onClick={() => apply.mutate()}
             disabled={apply.isPending || !invoice || !validAmount}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {apply.isPending ? 'Applying…' : 'Apply'}
           </button>

@@ -46,6 +46,7 @@ import { formatDateValue } from '@/lib/dateUtils';
 import { isPortalSession } from '@/store/useAuthStore';
 import { CustomerLink } from '@/components/crm/CustomerLink';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
@@ -251,7 +252,7 @@ export default function SalesOrderDetailPage() {
                 onClick={() => navigate(`/sales/invoice/${existingInvoice.id}`)}
                 aria-label={`View invoice ${existingInvoice.number}`}
                 title={`Open ${existingInvoice.number}, the invoice created from this order`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 <Receipt className="size-3.5" />
                 View Invoice
@@ -263,7 +264,7 @@ export default function SalesOrderDetailPage() {
                 onClick={() => convert.mutate()}
                 aria-label="Create invoice from this sales order"
                 disabled={convert.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
                 Create Invoice
@@ -274,7 +275,7 @@ export default function SalesOrderDetailPage() {
                 type="button"
                 onClick={() => fabricate.mutate()}
                 disabled={fabricate.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 {fabricate.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Wrench className="size-3.5" />}
                 Create Fabrication Job
@@ -285,12 +286,12 @@ export default function SalesOrderDetailPage() {
       />
 
       {convert.isError && (
-        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(convert.error, 'Failed to convert sales order.')}
         </p>
       )}
       {fabricate.isError && (
-        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(fabricate.error, 'Failed to create fabrication job.')}
         </p>
       )}
@@ -305,7 +306,7 @@ export default function SalesOrderDetailPage() {
         resubmitVia="submit"
       />
       {order.gated && approve.isError && (
-        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 pb-2 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve sales order.')}
         </p>
       )}
@@ -390,7 +391,7 @@ export default function SalesOrderDetailPage() {
                       { label: 'Total', right: true },
                       { label: 'Fulfillment' },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -401,7 +402,7 @@ export default function SalesOrderDetailPage() {
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
@@ -499,17 +500,17 @@ export default function SalesOrderDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
             {sendErrors.length > 0 && (
               <div role="alert" className="space-y-0.5">
                 {sendErrors.map((e) => (
-                  <p key={e} className="text-2xs text-destructive">{e}</p>
+                  <p key={e} className="type-error">{e}</p>
                 ))}
               </div>
             )}
             {sendSuccess && (
-              <p role="status" className="text-2xs text-emerald-600">{sendSuccess}</p>
+              <p role="status" className="text-micro text-success-ink">{sendSuccess}</p>
             )}
           </div>
 
@@ -590,7 +591,7 @@ function AddressBlock({ addr }: { addr: { customerName?: string; attention?: str
   ].filter(Boolean);
 
   if (lines.length === 0 && !addr.stateId && !addr.countryId) {
-    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
+    return <p className="italic type-helper">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">

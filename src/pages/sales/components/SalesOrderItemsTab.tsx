@@ -21,6 +21,7 @@ import {
   type SOLineItem,
 } from '@/lib/salesOrderForm';
 
+import { buttonVariants } from '@/components/ui/button';
 const inlineCls =
   'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all no-spinner';
 
@@ -176,7 +177,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {ITEM_COLS.map((c) => (
-                <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w, c.right && 'text-right')}>
+                <th key={c.label} className={cn('px-2.5 py-2.5 whitespace-nowrap type-th', c.w, c.right && 'text-right')}>
                   {c.label}
                 </th>
               ))}
@@ -210,7 +211,7 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
                   <td className="px-2.5 py-2.5 text-stone-500 tabular-nums">{row.lineNo}</td>
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{row.itemName || <span className="text-stone-500">—</span>}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 max-w-[140px] truncate">{row.itemDescription}</td>
-                  <td className="px-2.5 py-2.5 text-stone-500 font-mono text-2xs">{row.itemSku}</td>
+                  <td className="px-2.5 py-2.5 type-record-id">{row.itemSku}</td>
                   <LineSizeViewCells size={row} unit={row.dimensionUnit} units={row.units} />
                   <td className="px-2.5 py-2.5 tabular-nums text-right text-stone-600">{row.quantity}</td>
                   <td className="px-2.5 py-2.5 text-stone-500">{row.units}</td>
@@ -247,8 +248,8 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
 
       {items.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-500">No line items yet.</p>
-          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Line</strong> to add an item.</p>
+          <p className="type-helper">No line items yet.</p>
+          <p className="type-helper">Click <strong className="text-stone-500">+ Add Line</strong> to add an item.</p>
         </div>
       )}
 
@@ -261,28 +262,28 @@ export function SalesOrderItemsTab({ items, onUpdate }: { items: SOLineItem[]; o
             else if (editId) commitEdit();
             else { setIsAdding(true); setEditId(null); setDraft(EMPTY_LINE_ITEM); }
           }}
-          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-colors"
+          className={buttonVariants()}
         >
           <Plus className="size-3" />
           {isAdding || editId ? 'Save Line' : 'Add Line'}
         </button>
         {activeDraft && (
           <button type="button" onClick={() => { setIsAdding(false); setEditId(null); setDraft(EMPTY_LINE_ITEM); }}
-            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors">
+            className={buttonVariants({ variant: 'outline' })}>
             <X className="size-3" /> Cancel
           </button>
         )}
         <button type="button" onClick={copyPrev} disabled={items.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
+          className={buttonVariants({ variant: 'outline' })}>
           <Copy className="size-3" /> Copy Previous
         </button>
         <button type="button" onClick={() => { if (items.length) remove(items[items.length - 1].id); }}
           disabled={items.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
+          className={buttonVariants({ variant: 'outline' })}>
           <Trash2 className="size-3" /> Remove Last
         </button>
-        {isAddingKit && <p role="status" className="text-xs text-stone-500">Adding kit…</p>}
-        {lineError && <p role="alert" className="text-xs font-medium text-destructive">{lineError}</p>}
+        {isAddingKit && <p role="status" className="type-helper">Adding kit…</p>}
+        {lineError && <p role="alert" className="type-error">{lineError}</p>}
       </div>
     </div>
   );

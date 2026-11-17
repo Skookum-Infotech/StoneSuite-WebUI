@@ -18,7 +18,7 @@ export function EstimateSummaryCard({ subtotal, discountAmt, taxTotal, total }: 
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden sticky top-4">
       <div className="px-4 py-2.5 bg-stone-50 border-b border-stone-200">
-        <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Summary</p>
+        <p className="type-overline">Summary</p>
       </div>
       <div className="divide-y divide-stone-100">
         {rows.map(({ label, value, muted }) => (

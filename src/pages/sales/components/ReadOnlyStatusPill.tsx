@@ -8,7 +8,7 @@ export function ReadOnlyStatusPill({ label, color }: { label: string; color?: st
   const tint = color ?? FALLBACK_STATUS_COLOR;
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
+      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill"
       style={{ backgroundColor: `${tint}18` }}
     >
       <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: tint }} aria-hidden="true" />

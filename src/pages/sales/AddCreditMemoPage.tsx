@@ -31,6 +31,7 @@ import {
 } from '@/lib/creditMemoHandoff';
 import type { CreditMemoPaymentRef } from '@/types/creditMemo';
 
+import { buttonVariants } from '@/components/ui/button';
 const CREDIT_MEMO_LIST_PATH = '/sales/credit_memo';
 
 /** Unsaved form state carried across a "Create Customer" round trip. */
@@ -217,7 +218,7 @@ export default function AddCreditMemoPage() {
             : 'Fields marked * are required.'}
           actions={(
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Credit Memo'}
             </button>
@@ -234,7 +235,7 @@ export default function AddCreditMemoPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save credit memo.')}
             </p>

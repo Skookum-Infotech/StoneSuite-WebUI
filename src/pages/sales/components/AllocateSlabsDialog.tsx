@@ -15,6 +15,7 @@ import { formatStockQty } from '@/lib/stockShortage';
 import { UNIT_STATUS_AVAILABLE } from '@/types/inventory';
 import type { FabricationJobPiece, FabricationMaterial } from '@/types/fabrication';
 
+import { buttonVariants } from '@/components/ui/button';
 const CANDIDATE_LIMIT = 100;
 const SEARCH_DEBOUNCE_MS = 300;
 const EPSILON = 0.0005;
@@ -113,8 +114,8 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
     >
       <div className="mx-4 flex max-h-[90vh] w-full max-w-3xl flex-col rounded-xl bg-white p-6 shadow-2xl">
         <div className="mb-4">
-          <h3 id="allocate-slabs-title" className="text-sm font-bold text-stone-900">Allocate {material.name}</h3>
-          <p className="mt-0.5 text-xs text-stone-500">
+          <h3 id="allocate-slabs-title" className="type-card-title">Allocate {material.name}</h3>
+          <p className="mt-0.5 type-helper">
             {material.shortfall > 0
               ? `${formatStockQty(material.shortfall, material.unitCode)} still to allocate. `
               : 'This material is covered; more can still be allocated. '}
@@ -151,7 +152,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
             type="button"
             onClick={suggest}
             disabled={slabs.length === 0 || material.shortfall <= 0}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             <Sparkles className="size-3.5" aria-hidden="true" /> Suggest best fit
           </button>
@@ -161,9 +162,9 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
           {isLoading ? (
             <div className="flex justify-center py-8"><Spinner label="Loading slabs…" /></div>
           ) : error ? (
-            <p role="alert" className="py-8 text-center text-xs text-destructive">{apiErrorMessage(error, 'Failed to load slabs.')}</p>
+            <p role="alert" className="py-8 text-center type-error">{apiErrorMessage(error, 'Failed to load slabs.')}</p>
           ) : slabs.length === 0 ? (
-            <p className="py-8 text-center text-xs text-stone-500">
+            <p className="py-8 text-center type-helper">
               {debounced ? 'No slabs match that search.' : `No unallocated ${material.name} is in stock.`}
             </p>
           ) : (
@@ -172,7 +173,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
                 <tr>
                   <th className="w-8 px-3 py-2"><span className="sr-only">Select</span></th>
                   {['Serial', 'Kind', 'Size (mm)', 'Area', 'Location', 'Lot'].map((h) => (
-                    <th key={h} className="px-3 py-2 text-2xs font-semibold uppercase tracking-wide text-stone-500">{h}</th>
+                    <th key={h} className="px-3 py-2 type-th">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -201,10 +202,10 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
           )}
         </div>
         {data?.hasMore && (
-          <p className="mt-1.5 text-2xs text-stone-500">Showing the largest {CANDIDATE_LIMIT} — search to narrow the list.</p>
+          <p className="mt-1.5 type-helper">Showing the largest {CANDIDATE_LIMIT} — search to narrow the list.</p>
         )}
 
-        {failureMessage && <p role="alert" className="mt-3 text-xs text-destructive">{failureMessage}</p>}
+        {failureMessage && <p role="alert" className="mt-3 type-error">{failureMessage}</p>}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-stone-600" aria-live="polite">
@@ -212,8 +213,8 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
             {selected.size > 0 && ` (${selected.size} ${selected.size === 1 ? 'slab' : 'slabs'})`}
             {material.shortfall > EPSILON && (
               stillShort > EPSILON
-                ? <span className="text-amber-700"> · {formatStockQty(stillShort, material.unitCode)} still short</span>
-                : <span className="text-emerald-700"> · covers what is needed</span>
+                ? <span className="text-warning-ink"> · {formatStockQty(stillShort, material.unitCode)} still short</span>
+                : <span className="text-success-ink"> · covers what is needed</span>
             )}
           </p>
           <div className="flex gap-2">
@@ -221,7 +222,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
               type="button"
               onClick={onClose}
               disabled={allocate.isPending}
-              className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>
@@ -229,7 +230,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
               type="button"
               onClick={() => allocate.mutate([...selected])}
               disabled={selected.size === 0 || allocate.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 active:scale-95 transition-all"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               {allocate.isPending && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
               {allocate.isPending ? 'Allocating…' : allocateLabel}

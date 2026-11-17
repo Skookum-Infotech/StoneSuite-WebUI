@@ -28,6 +28,7 @@ import {
   PRIMARY_INFO_FIELDS, refundDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/refundForm';
 
+import { buttonVariants } from '@/components/ui/button';
 /** Unsaved form state carried across a "Create Customer" round trip. */
 interface RefundDraft {
   activeTab: PageTab;
@@ -161,7 +162,7 @@ export default function AddRefundPage() {
           subtitle="Fields marked * are required."
           actions={(
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Refund'}
             </button>
@@ -178,7 +179,7 @@ export default function AddRefundPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" aria-hidden="true" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save refund.')}
             </p>
@@ -234,7 +235,7 @@ export default function AddRefundPage() {
                   <div className="space-y-3">
                     <div className="flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
                       <Info className="mt-0.5 size-3.5 shrink-0 text-stone-400" aria-hidden="true" />
-                      <p className="text-2xs text-stone-500">
+                      <p className="type-helper">
                         Recorded for reporting only — linking a document here does not draw any
                         money from it. Approve this refund first, then draw from a source on the
                         refund's Applications tab.
@@ -267,7 +268,7 @@ export default function AddRefundPage() {
                     </div>
 
                     {!customer && (
-                      <p className="text-2xs text-stone-500">
+                      <p className="type-helper">
                         Select a customer above to link this refund to one of their documents.
                       </p>
                     )}

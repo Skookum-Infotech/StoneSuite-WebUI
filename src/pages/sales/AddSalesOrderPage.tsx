@@ -41,6 +41,7 @@ import { fromOrderForCopy } from '@/lib/salesOrderCopy';
 import { copySubtitle } from '@/lib/recordCopy';
 import type { SalesOrder } from '@/types/salesOrder';
 
+import { buttonVariants } from '@/components/ui/button';
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface SalesOrderDraft {
   activeTab: PageTab;
@@ -242,7 +243,7 @@ function AddSalesOrderForm({ source }: { source?: SalesOrder }) {
           subtitle={source ? copySubtitle(source.salesOrderNumber) : 'Fields marked * are required.'}
           actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 motion-safe:animate-spin" aria-hidden="true" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Order'}
             </button>
@@ -259,7 +260,7 @@ function AddSalesOrderForm({ source }: { source?: SalesOrder }) {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20">
               <AlertCircle className="size-3 text-red-600 dark:text-red-400" />
             </span>
-            <p className="text-xs text-red-700 dark:text-red-300">
+            <p className="dark:text-red-300 type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save sales order.')}
             </p>

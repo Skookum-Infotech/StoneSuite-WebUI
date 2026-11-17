@@ -10,6 +10,8 @@ import { OrderFormSections } from '@/pages/sales/created-order/components/OrderF
 import { salesOrderService } from '@/services/salesOrderService';
 import type { CreatedOrder, CreatedOrderInput } from '@/types/createdOrder';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 interface CustomerOrderFormEditorProps {
   orderId: string;
   form: CreatedOrder;
@@ -82,7 +84,7 @@ export function CustomerOrderFormEditor({ orderId, form, isDraft, onCancel, onSa
       </div>
 
       <div className="flex shrink-0 items-center justify-between gap-3 border-t border-stone-200 bg-white px-5 py-3">
-        <p role="status" className="text-xs text-stone-500">
+        <p role="status" className="type-helper">
           {draft.errorCount === 0
             ? 'Everything required is filled in.'
             : `${draft.errorCount} required ${draft.errorCount === 1 ? 'item' : 'items'} still to fill in.`}
@@ -92,14 +94,14 @@ export function CustomerOrderFormEditor({ orderId, form, isDraft, onCancel, onSa
             type="button"
             onClick={onCancel}
             disabled={save.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={save.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95 disabled:opacity-60"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {save.isPending && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
             {save.isPending ? 'Saving…' : 'Save changes'}

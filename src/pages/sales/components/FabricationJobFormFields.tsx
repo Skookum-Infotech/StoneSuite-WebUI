@@ -66,7 +66,7 @@ export function FJField({ field, value, set, lookups }: {
               <option key={row.id} value={row.id}>{row.name}</option>
             ))}
           </Select>
-          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+          {field.hint && <p className="type-helper">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -94,7 +94,7 @@ export function FJField({ field, value, set, lookups }: {
             placeholder={field.placeholder}
             aria-label={field.label}
           />
-          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+          {field.hint && <p className="type-helper">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -112,7 +112,7 @@ export function FJField({ field, value, set, lookups }: {
           placeholder={field.placeholder}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+        {field.hint && <p className="type-helper">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

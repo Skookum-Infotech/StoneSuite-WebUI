@@ -252,7 +252,7 @@ describe('AddCreditMemoPage payment handoff', () => {
   // The payment is already saved by the time this page opens, so walking away
   // leaves its excess unapplied with no credit memo — say so before leaving.
   describe('cancelling', () => {
-    const leaveDialog = () => screen.queryByRole('dialog', { name: 'Leave without creating the credit memo?' });
+    const leaveDialog = () => screen.queryByRole('dialog', { name: 'Leave Without Creating the Credit Memo?' });
 
     async function openAndCancel() {
       render(<Providers />);

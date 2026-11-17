@@ -19,6 +19,7 @@ import {
 import type { SalesOrderScheduleActivityPatch } from '@/types/salesOrder';
 import { SalesOrderScheduleRowEditor } from './SalesOrderScheduleRowEditor';
 
+import { buttonVariants } from '@/components/ui/button';
 const HEADERS = ['Activity', 'Status', 'Scheduled', 'Completed on', 'Notes'];
 const ACTION_COLUMN_LABEL = 'Edit';
 
@@ -68,14 +69,14 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
 
   if (isLoading) return <div className="py-8 flex justify-center"><Spinner label="Loading schedule…" /></div>;
   if (error) {
-    return <p role="alert" className="py-8 text-center text-xs text-destructive/70">{apiErrorMessage(error, 'Failed to load the schedule.')}</p>;
+    return <p role="alert" className="py-8 text-center type-error">{apiErrorMessage(error, 'Failed to load the schedule.')}</p>;
   }
 
   if (activities.length === 0) {
     return (
       <div className="space-y-3 rounded-lg border border-dashed border-stone-300 bg-white py-10 text-center">
-        <p className="text-sm font-semibold text-stone-700">No schedule yet</p>
-        <p className="mx-auto max-w-md text-xs text-stone-500">
+        <p className="type-card-title">No schedule yet</p>
+        <p className="mx-auto max-w-md type-helper">
           The production schedule is planned from the order&apos;s Scheduled Installation Date. Set one on the order
           and the activities appear here.
         </p>
@@ -83,7 +84,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
           <button
             type="button"
             onClick={() => navigate(`/sales/sales_order/${orderId}/edit`)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             <Pencil className="size-3.5" aria-hidden="true" />
             Set installation date
@@ -113,7 +114,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
           </span>
         )}
         {progress.overdue > 0 && (
-          <span className="font-semibold text-destructive">{progress.overdue} overdue</span>
+          <span className="font-semibold text-danger-ink">{progress.overdue} overdue</span>
         )}
       </div>
 
@@ -122,7 +123,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
               {HEADERS.map((h) => (
-                <th key={h} scope="col" className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                <th key={h} scope="col" className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
               ))}
               {canEdit && (
                 <th scope="col" className="w-10 px-3 py-2.5"><span className="sr-only">{ACTION_COLUMN_LABEL}</span></th>
@@ -160,7 +161,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
                   <td className="px-3 py-2.5">
                     <Badge color={SCHEDULE_STATUS_COLORS[status]} size="sm">{SCHEDULE_STATUS_LABELS[status]}</Badge>
                   </td>
-                  <td className={cn('px-3 py-2.5 tabular-nums whitespace-nowrap', status === 'overdue' ? 'text-destructive' : 'text-stone-600')}>
+                  <td className={cn('px-3 py-2.5 tabular-nums whitespace-nowrap', status === 'overdue' ? 'text-danger-ink' : 'text-stone-600')}>
                     {formatWallClock(a.scheduledAt) || '—'}
                   </td>
                   <td className="px-3 py-2.5 tabular-nums whitespace-nowrap text-stone-600">
@@ -188,7 +189,7 @@ export function SalesOrderSchedulingTab({ orderId, installDate, canEdit }: {
         </table>
       </div>
 
-      <p className="text-2xs text-stone-500">
+      <p className="type-helper">
         Dates were planned from the installation date. Changing that date re-plans every pending activity; ones that are in progress or completed stay where they are.
       </p>
     </div>

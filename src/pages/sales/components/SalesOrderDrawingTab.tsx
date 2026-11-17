@@ -16,6 +16,7 @@ import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { useDxfUpload } from '@/hooks/useDxfUpload';
 import { dxfTabLabels, isDxfFileName } from '@/lib/drawing/dxfFiles';
 
+import { buttonVariants } from '@/components/ui/button';
 const DRAWN_TAB = 'drawn';
 
 export function SalesOrderDrawingTab({ orderId, canEdit }: { orderId: string; canEdit: boolean }) {
@@ -42,7 +43,7 @@ export function SalesOrderDrawingTab({ orderId, canEdit }: { orderId: string; ca
   const labels = useMemo(() => dxfTabLabels(files), [files]);
   const drawing = drawingQuery.data;
 
-  if (drawingQuery.isLoading || filesQuery.isLoading) return <p className="text-xs text-stone-500">Loading…</p>;
+  if (drawingQuery.isLoading || filesQuery.isLoading) return <p className="type-helper">Loading…</p>;
 
   const tabKeys = [...files.map((file) => file.id), ...(drawing ? [DRAWN_TAB] : [])];
 
@@ -51,8 +52,8 @@ export function SalesOrderDrawingTab({ orderId, canEdit }: { orderId: string; ca
     return (
       <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-stone-200 py-10 text-center">
         {failed
-          ? <p className="text-xs text-destructive">Failed to load the drawing.</p>
-          : <p className="text-xs text-stone-500">No drawing yet</p>}
+          ? <p className="type-error">Failed to load the drawing.</p>
+          : <p className="type-helper">No drawing yet</p>}
         {canEdit && (
           <div className="flex items-center gap-2">
             <DxfUploadButton onFiles={upload} busy={isUploading} />
@@ -60,7 +61,7 @@ export function SalesOrderDrawingTab({ orderId, canEdit }: { orderId: string; ca
               type="button"
               aria-label="Draw"
               onClick={() => navigate(`/sales/sales_order/${orderId}/drawing`)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900"
+              className={buttonVariants()}
             >
               <PencilRuler className="size-3.5" /> Draw
             </button>
@@ -109,7 +110,7 @@ export function SalesOrderDrawingTab({ orderId, canEdit }: { orderId: string; ca
         </div>
         {canEdit && <DxfUploadButton onFiles={upload} busy={isUploading} />}
       </div>
-      {filesQuery.isError && <p className="text-xs text-destructive">Failed to load the uploaded files.</p>}
+      {filesQuery.isError && <p className="type-error">Failed to load the uploaded files.</p>}
       {activeFile
         ? <DxfFilePanel key={activeFile.id} orderId={orderId} attachment={activeFile} label={labels[activeFile.id]} canEdit={canEdit} />
         : drawing && <DrawingPreview drawing={drawing} />}

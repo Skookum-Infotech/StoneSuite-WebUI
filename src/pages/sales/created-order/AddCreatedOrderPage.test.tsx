@@ -110,7 +110,7 @@ describe('AddCreatedOrderPage', () => {
   it('opens with the two steps and no areas', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Project details' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Project Details' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Areas' })).toBeInTheDocument();
     expect(screen.queryByRole('article')).not.toBeInTheDocument();
   });

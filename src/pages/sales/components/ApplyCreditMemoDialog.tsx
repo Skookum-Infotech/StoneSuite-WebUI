@@ -8,6 +8,8 @@ import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { InvoicePicker, type InvoiceRef } from './InvoicePicker';
 import { formatMoney } from '@/lib/formatMoney';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Applies part of a credit memo's unapplied balance to an invoice — mirrors
 // Payment's ApplyDialog (kept as its own file rather than inlined at the
 // bottom of the Detail page, unlike PaymentDetailPage's original).
@@ -47,10 +49,10 @@ export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount,
             <DollarSign className="size-4 text-emerald-600" />
           </div>
           <div>
-            <h3 id="apply-credit-memo-dialog-title" className="text-sm font-bold text-stone-900">
-              Apply to invoice
+            <h3 id="apply-credit-memo-dialog-title" className="type-card-title">
+              Apply to Invoice
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <p className="mt-0.5 type-helper">
               Unapplied balance: {currency(unappliedAmount)}
             </p>
           </div>
@@ -80,7 +82,7 @@ export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount,
         </div>
 
         {apply.error && (
-          <p className="mt-3 text-xs text-destructive">
+          <p className="mt-3 type-error">
             {apiErrorMessage(apply.error, 'Failed to apply credit memo.')}
           </p>
         )}
@@ -90,7 +92,7 @@ export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount,
             type="button"
             onClick={onClose}
             disabled={apply.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -98,7 +100,7 @@ export function ApplyCreditMemoDialog({ creditMemoId, customer, unappliedAmount,
             type="button"
             onClick={() => apply.mutate()}
             disabled={apply.isPending || !invoice || !validAmount}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {apply.isPending ? 'Applying…' : 'Apply'}
           </button>
