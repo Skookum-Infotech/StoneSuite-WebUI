@@ -1,3 +1,5 @@
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CreditCard } from 'lucide-react'
@@ -44,7 +46,7 @@ export function AddPaymentMethodDialog({
             className={errors.cardNumber ? dialogFieldErrorCls : dialogFieldCls}
             {...register('cardNumber')}
           />
-          {errors.cardNumber && <p className="text-xs text-red-600 mt-1">{errors.cardNumber.message}</p>}
+          {errors.cardNumber && <p className="mt-1 type-error">{errors.cardNumber.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -59,7 +61,7 @@ export function AddPaymentMethodDialog({
               className={errors.expiry ? dialogFieldErrorCls : dialogFieldCls}
               {...register('expiry')}
             />
-            {errors.expiry && <p className="text-xs text-red-600 mt-1">{errors.expiry.message}</p>}
+            {errors.expiry && <p className="mt-1 type-error">{errors.expiry.message}</p>}
           </div>
           <div>
             <label htmlFor="add-card-cvc" className={dialogLabelCls}>CVC</label>
@@ -73,7 +75,7 @@ export function AddPaymentMethodDialog({
               className={errors.cvc ? dialogFieldErrorCls : dialogFieldCls}
               {...register('cvc')}
             />
-            {errors.cvc && <p className="text-xs text-red-600 mt-1">{errors.cvc.message}</p>}
+            {errors.cvc && <p className="mt-1 type-error">{errors.cvc.message}</p>}
           </div>
         </div>
 
@@ -87,7 +89,7 @@ export function AddPaymentMethodDialog({
             className={errors.cardholderName ? dialogFieldErrorCls : dialogFieldCls}
             {...register('cardholderName')}
           />
-          {errors.cardholderName && <p className="text-xs text-red-600 mt-1">{errors.cardholderName.message}</p>}
+          {errors.cardholderName && <p className="mt-1 type-error">{errors.cardholderName.message}</p>}
         </div>
 
         <div className="flex justify-end gap-2 pt-1.5">
@@ -95,7 +97,7 @@ export function AddPaymentMethodDialog({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors cursor-pointer"
+            className={buttonVariants({ variant: 'outline' })}
             aria-label="Cancel adding payment method"
           >
             Cancel
@@ -103,8 +105,7 @@ export function AddPaymentMethodDialog({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-brand px-4 py-2.5 text-xs font-bold text-stone-950 hover:bg-brand-hover active:scale-[0.99] disabled:opacity-70 transition-all cursor-pointer"
-            style={{ boxShadow: '0 4px 14px rgba(194,245,137,0.35)' }}
+            className={cn(buttonVariants({ size: 'lg' }), 'active:scale-[0.99]')}
             aria-label="Add card"
           >
             {isSubmitting ? 'Adding…' : 'Add Card'}

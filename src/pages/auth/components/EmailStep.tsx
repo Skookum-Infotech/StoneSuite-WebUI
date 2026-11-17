@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { IdentifyResult } from '@/types/auth'
 
+import { SIGN_IN_BUTTON } from './authStyles'
+import { cn } from '@/lib/utils'
 const emailSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
 })
@@ -53,7 +55,7 @@ export function EmailStep({ defaultEmail, onIdentified }: EmailStepProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
+        <Label htmlFor="email">
           Email
         </Label>
         <div className="relative">
@@ -67,15 +69,14 @@ export function EmailStep({ defaultEmail, onIdentified }: EmailStepProps) {
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? 'email-error' : undefined}
             {...register('email')}
-            className="h-12 rounded-xl border-stone-200 bg-white pl-11 text-sm text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
-            style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
+            className="auth-field h-12 rounded-xl border-stone-200 bg-white pl-11 transition-colors duration-150"
           />
         </div>
-        {errors.email && <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>}
+        {errors.email && <p id="email-error" className="type-error">{errors.email.message}</p>}
       </div>
 
       {errors.root && (
-        <div className="text-sm font-medium text-destructive bg-destructive/5 p-2 rounded-md border border-destructive/15">
+        <div className="rounded-md border border-destructive/15 bg-destructive/5 p-2 type-error">
           {errors.root.message}
         </div>
       )}
@@ -84,13 +85,13 @@ export function EmailStep({ defaultEmail, onIdentified }: EmailStepProps) {
         type="submit"
         disabled={isSubmitting}
         aria-label="Sign in"
-        className="mt-1 h-12 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
-        style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
+        size="lg"
+        className={cn('mt-1', SIGN_IN_BUTTON)}
       >
         {isSubmitting ? (
-          <><Loader2 className="mr-2 size-4 animate-spin" />Checking...</>
+          <><Loader2 className="size-4 animate-spin" />Checking...</>
         ) : (
-          <>Sign In<ArrowRight className="ml-2 size-4" /></>
+          <>Sign In<ArrowRight className="size-4" /></>
         )}
       </Button>
     </form>

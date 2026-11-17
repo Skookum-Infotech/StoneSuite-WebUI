@@ -1,3 +1,5 @@
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Trash2 } from 'lucide-react'
 import { SubscriptionDialogShell } from './SubscriptionDialogShell'
 import type { PaymentMethod } from '@/types/subscription'
@@ -25,7 +27,7 @@ export function RemovePaymentMethodDialog({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition-colors cursor-pointer"
+          className={buttonVariants({ variant: 'outline' })}
           aria-label="Cancel remove card"
         >
           Cancel
@@ -33,7 +35,7 @@ export function RemovePaymentMethodDialog({
         <button
           type="button"
           onClick={onConfirm}
-          className="rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-red-700 active:scale-[0.99] transition-all cursor-pointer"
+          className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-[0.99]')}
           aria-label="Confirm remove card"
         >
           Remove Card

@@ -1,4 +1,6 @@
 import { Select } from '@/components/ui/select';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Mail } from 'lucide-react'
@@ -45,7 +47,7 @@ export function ContactSalesDialog({
             className={errors.name ? dialogFieldErrorCls : dialogFieldCls}
             {...register('name')}
           />
-          {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name.message}</p>}
+          {errors.name && <p className="mt-1 type-error">{errors.name.message}</p>}
         </div>
 
         <div>
@@ -58,7 +60,7 @@ export function ContactSalesDialog({
             className={errors.workEmail ? dialogFieldErrorCls : dialogFieldCls}
             {...register('workEmail')}
           />
-          {errors.workEmail && <p className="text-xs text-red-600 mt-1">{errors.workEmail.message}</p>}
+          {errors.workEmail && <p className="mt-1 type-error">{errors.workEmail.message}</p>}
         </div>
 
         <div>
@@ -83,7 +85,7 @@ export function ContactSalesDialog({
               </Select>
             )}
           />
-          {errors.companySize && <p className="text-xs text-red-600 mt-1">{errors.companySize.message}</p>}
+          {errors.companySize && <p className="mt-1 type-error">{errors.companySize.message}</p>}
         </div>
 
         <div>
@@ -103,7 +105,7 @@ export function ContactSalesDialog({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors cursor-pointer"
+            className={buttonVariants({ variant: 'outline' })}
             aria-label="Cancel contact sales"
           >
             Cancel
@@ -111,8 +113,7 @@ export function ContactSalesDialog({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-brand px-4 py-2.5 text-xs font-bold text-stone-950 hover:bg-brand-hover active:scale-[0.99] disabled:opacity-70 transition-all cursor-pointer"
-            style={{ boxShadow: '0 4px 14px rgba(194,245,137,0.35)' }}
+            className={cn(buttonVariants({ size: 'lg' }), 'active:scale-[0.99]')}
             aria-label="Send message to sales"
           >
             {isSubmitting ? 'Sending…' : 'Send'}

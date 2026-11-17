@@ -1,0 +1,106 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIGN-IN SCREENS — decoration for the shared AuthHero (dark panel) and
+   AuthPanel (light side with the form card), used by Login, Forgot Password
+   and Reset Password. Previously inline style={} attributes and a <style>
+   block repeated in three pages; now defined once here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes auth-float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(0, -20px) rotate(3deg); }
+}
+@keyframes auth-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes auth-comet {
+  0% { opacity: 0; transform: translate(0, 0); }
+  5% { opacity: 0.75; }
+  100% { opacity: 0; transform: translate(-520px, 520px); }
+}
+@keyframes auth-card-spot {
+  0%, 33%, 100% { border-color: rgb(255 255 255 / 0.08); box-shadow: none; }
+  8%, 25% {
+    border-color: rgb(163 230 53 / 0.28);
+    box-shadow: 0 0 22px rgb(163 230 53 / 0.09), inset 0 0 0 1px rgb(163 230 53 / 0.12);
+  }
+}
+@keyframes auth-pulse {
+  50% { opacity: 0.5; }
+}
+
+@layer components {
+  /* ── Dark hero panel ──────────────────────────────────────────────────── */
+  .auth-hero { background: var(--gradient-header); }
+  .auth-hero-dots {
+    background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .auth-glow-pulse-slow { animation-duration: 4s; }
+  .auth-glow-pulse-slower { animation-duration: 5s; animation-delay: 1s; }
+  .auth-float { animation: auth-float 7s ease-in-out 2s infinite; }
+  .auth-spin { animation: auth-spin 28s linear infinite; }
+
+  .auth-comet {
+    position: absolute;
+    pointer-events: none;
+    animation: auth-comet var(--comet-duration) ease-in var(--comet-delay) infinite;
+  }
+  .auth-comet::before {
+    content: "";
+    display: block;
+    width: var(--comet-length);
+    height: 1px;
+    background: linear-gradient(to right, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0));
+    transform: rotate(-45deg);
+    transform-origin: right center;
+  }
+  .auth-comet-1 { top: 4%; right: 8%; --comet-duration: 2.4s; --comet-delay: 0s; --comet-length: 65px; }
+  .auth-comet-2 { top: 10%; right: 35%; --comet-duration: 1.9s; --comet-delay: 2.1s; --comet-length: 45px; }
+  .auth-comet-3 { top: 2%; right: 18%; --comet-duration: 2.2s; --comet-delay: 4.5s; --comet-length: 72px; }
+  .auth-comet-4 { top: 16%; right: 5%; --comet-duration: 2.6s; --comet-delay: 1.3s; --comet-length: 52px; }
+  .auth-comet-5 { top: 7%; right: 52%; --comet-duration: 2s; --comet-delay: 6s; --comet-length: 58px; }
+  .auth-comet-6 { top: 1%; right: 42%; --comet-duration: 1.8s; --comet-delay: 3.2s; --comet-length: 40px; }
+  .auth-comet-7 { top: 20%; right: 22%; --comet-duration: 2.3s; --comet-delay: 5.4s; --comet-length: 48px; }
+
+  .auth-beacon { animation: auth-pulse 2.4s ease-in-out infinite; }
+  .auth-beacon-1 { background: rgb(163 230 53 / 0.8); }
+  .auth-beacon-2 { background: rgb(163 230 53 / 0.45); animation-delay: 0.8s; }
+  .auth-beacon-3 { background: rgb(163 230 53 / 0.18); animation-delay: 1.6s; }
+  .auth-hairline { background: rgb(255 255 255 / 0.07); }
+
+  .auth-spot-1 { animation: auth-card-spot 12s ease-in-out 0s infinite; }
+  .auth-spot-2 { animation: auth-card-spot 12s ease-in-out 4s infinite; }
+  .auth-spot-3 { animation: auth-card-spot 12s ease-in-out 8s infinite; }
+
+  /* ── Light form side ──────────────────────────────────────────────────── */
+  .auth-panel { background: linear-gradient(150deg, #f9fafa 0%, #f2f7f8 45%, #e8f3f5 100%); }
+  .auth-panel-grid {
+    background-image:
+      linear-gradient(rgb(0 95 115 / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(0 95 115 / 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .auth-glow-teal { background: rgb(0 95 115 / 0.07); }
+  .auth-glow-lime { background: rgb(163 230 53 / 0.07); }
+  .auth-rule-in { background: linear-gradient(to right, transparent, rgb(0 95 115 / 0.2)); }
+  .auth-rule-out { background: linear-gradient(to left, transparent, rgb(0 95 115 / 0.2)); }
+  .auth-card {
+    border: 1px solid rgb(0 95 115 / 0.1);
+    box-shadow:
+      0 32px 72px -12px rgb(0 95 115 / 0.14),
+      0 8px 24px -4px rgb(0 0 0 / 0.05),
+      0 0 0 1px rgb(255 255 255 / 0.85) inset;
+  }
+  .auth-card-shimmer { background: linear-gradient(to right, transparent, rgb(0 95 115 / 0.25), transparent); }
+  .auth-card-dot-1 { background: rgb(0 95 115 / 0.18); }
+  .auth-card-dot-2 { background: rgb(0 95 115 / 0.1); }
+  /* Focus glow on the sign-in fields (was an inline --tw-ring-color). */
+  .auth-field { --tw-ring-color: rgb(0 95 115 / 0.15); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-float, .auth-spin, .auth-comet, .auth-beacon,
+  .auth-spot-1, .auth-spot-2, .auth-spot-3 { animation: none; }
+  .auth-comet { display: none; }
+}

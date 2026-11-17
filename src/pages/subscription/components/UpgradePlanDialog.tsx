@@ -1,3 +1,5 @@
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { ArrowRight, Check, Sparkles } from 'lucide-react'
 import { newFeatures } from '@/lib/subscriptionForm'
 import { SubscriptionDialogShell } from './SubscriptionDialogShell'
@@ -42,17 +44,17 @@ export function UpgradePlanDialog({
           </span>
         </div>
 
-        <p className="text-xs text-stone-500">
+        <p className="type-helper">
           Effective immediately · renews {fmtDate(renewalDate)}
         </p>
 
         {added.length > 0 && (
           <div>
-            <p className="text-2xs font-bold uppercase tracking-wider text-stone-500 mb-2">What&apos;s new</p>
+            <p className="mb-2 type-overline">What&apos;s new</p>
             <ul className="space-y-1.5">
               {added.map((feature) => (
                 <li key={feature} className="flex items-start gap-2">
-                  <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand-dark">
+                  <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-link">
                     <Check className="size-2.5" strokeWidth={3} aria-hidden="true" />
                   </div>
                   <span className="text-xs text-stone-600">{feature}</span>
@@ -67,7 +69,7 @@ export function UpgradePlanDialog({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition-colors cursor-pointer"
+          className={buttonVariants({ variant: 'outline' })}
           aria-label="Cancel upgrade"
         >
           Cancel
@@ -75,8 +77,7 @@ export function UpgradePlanDialog({
         <button
           type="button"
           onClick={() => onConfirm(targetTier.id)}
-          className="rounded-xl bg-brand px-4 py-2.5 text-xs font-bold text-stone-950 hover:bg-brand-hover active:scale-[0.99] transition-all cursor-pointer"
-          style={{ boxShadow: '0 4px 14px rgba(194,245,137,0.35)' }}
+          className={cn(buttonVariants({ size: 'lg' }), 'active:scale-[0.99]')}
           aria-label={`Confirm upgrade to ${targetTier.name}`}
         >
           Confirm Upgrade

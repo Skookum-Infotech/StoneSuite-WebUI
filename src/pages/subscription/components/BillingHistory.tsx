@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/components/ui/button';
 import { useState, useMemo } from 'react'
 import { Search, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,7 +22,7 @@ const STATUS_CONFIG: Record<InvoiceStatus, { label: string; dot: string; badge: 
 function StatusBadge({ status }: { status: InvoiceStatus }) {
   const cfg = STATUS_CONFIG[status]
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-2xs font-bold', cfg.badge)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 type-pill', cfg.badge)}>
       <span className={cn('h-1.5 w-1.5 rounded-full', cfg.dot)} />
       {cfg.label}
     </span>
@@ -52,12 +53,12 @@ export function BillingHistory() {
             placeholder="Search by invoice number…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50 transition"
+            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/50 transition type-input"
             aria-label="Search invoices"
           />
         </div>
         <button
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 shadow-sm hover:bg-stone-50 transition-colors cursor-pointer"
+          className={buttonVariants({ variant: 'outline' })}
           aria-label="Download billing history"
         >
           <Download className="size-3.5" />
@@ -85,7 +86,7 @@ export function BillingHistory() {
                       <Search className="size-5 text-stone-400" />
                     </div>
                     <p className="text-xs font-semibold text-stone-500">No invoices found</p>
-                    <p className="text-xs text-stone-500">Try a different search term</p>
+                    <p className="type-helper">Try a different search term</p>
                   </div>
                 </td>
               </tr>
@@ -100,7 +101,7 @@ export function BillingHistory() {
                 >
                   <td className="px-4 py-3.5 text-stone-600 whitespace-nowrap">{fmtDate(inv.date)}</td>
                   <td className="px-4 py-3.5">
-                    <span className="font-mono text-2xs font-semibold text-stone-600">{inv.id}</span>
+                    <span className="type-record-id">{inv.id}</span>
                   </td>
                   <td className="px-4 py-3.5 text-right font-bold text-stone-900 tabular-nums">{fmt.format(inv.amount)}</td>
                   <td className="px-4 py-3.5">

@@ -66,7 +66,7 @@ describe('ResetPasswordPage password validation', () => {
     renderPage()
     await fillAndSubmit(user, STRONG, STRONG)
 
-    expect(await screen.findByText('Password updated')).toBeInTheDocument()
+    expect(await screen.findByText('Password Updated')).toBeInTheDocument()
     expect(authService.resetPassword).toHaveBeenCalledWith(TOKEN, STRONG)
   })
 

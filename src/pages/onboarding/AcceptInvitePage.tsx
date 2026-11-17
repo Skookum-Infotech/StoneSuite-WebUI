@@ -14,10 +14,11 @@ import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordRequirements } from '@/components/auth/PasswordRequirements';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+import { cn } from '@/lib/utils';
 // One token namespace, one accept path per kind: a staff workspace invite
 // (user_invites, /api/onboarding/user-invite/*) and a customer-portal invite
 // (portal_invites, /api/portal/auth/invite/*, see CLAUDE.md's merged-login
@@ -152,7 +153,7 @@ export default function AcceptInvitePage() {
       <Card>
         <div className="text-center">
           <AlertTriangle className="mx-auto mb-3 size-8 text-red-400" />
-          <h1 className="text-base font-bold text-stone-900">Invalid link</h1>
+          <h1 className="type-display">Invalid Link</h1>
           <p className="mt-1 text-sm text-stone-500">
             This invitation link is missing or malformed.
           </p>
@@ -177,13 +178,13 @@ export default function AcceptInvitePage() {
         <Card>
           <div className="text-center">
             <CheckCircle2 className="mx-auto mb-3 size-8 text-emerald-500" />
-            <h1 className="text-base font-bold text-stone-900">Already accepted</h1>
+            <h1 className="type-display">Already Accepted</h1>
             <p className="mt-1 text-sm text-stone-500">
               {message ?? 'This invitation has already been accepted. Please sign in.'}
             </p>
             <Link
               to="/auth/login"
-              className="mt-5 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950"
+              className={cn(buttonVariants(), 'mt-5 inline-block')}
             >
               Sign in
             </Link>
@@ -197,7 +198,7 @@ export default function AcceptInvitePage() {
         <Card>
           <div className="text-center">
             <Clock className="mx-auto mb-3 size-8 text-amber-400" />
-            <h1 className="text-base font-bold text-stone-900">Invitation expired</h1>
+            <h1 className="type-display">Invitation Expired</h1>
             <p className="mt-1 text-sm text-stone-500">
               {message ?? 'This invitation has expired. Ask whoever invited you to send a new one.'}
             </p>
@@ -211,7 +212,7 @@ export default function AcceptInvitePage() {
         <Card>
           <div className="text-center">
             <AlertTriangle className="mx-auto mb-3 size-8 text-red-400" />
-            <h1 className="text-base font-bold text-stone-900">Invitation revoked</h1>
+            <h1 className="type-display">Invitation Revoked</h1>
             <p className="mt-1 text-sm text-stone-500">
               {message ?? 'This invitation has been revoked. Contact whoever invited you.'}
             </p>
@@ -233,14 +234,14 @@ export default function AcceptInvitePage() {
       <Card>
         <div className="text-center">
           <CheckCircle2 className="mx-auto mb-3 size-10 text-emerald-500" />
-          <h1 className="text-lg font-bold text-stone-900">You're all set!</h1>
+          <h1 className="type-display">You're All Set!</h1>
           <p className="mt-1 text-sm text-stone-500">
             Account activated for <span className="font-semibold">{acceptedEmail}</span>.
             You can now sign in.
           </p>
           <Link
             to="/auth/login"
-            className="mt-5 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950"
+            className={cn(buttonVariants(), 'mt-5 inline-block')}
           >
             Go to sign in
           </Link>
@@ -255,13 +256,13 @@ export default function AcceptInvitePage() {
   return (
     <Card>
       <div className="mb-6 text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-brand-dark mb-1">
+        <p className="text-link mb-1 type-overline">
           {invite!.workspaceName}
         </p>
-        <h1 className="text-lg font-bold text-stone-900">
+        <h1 className="type-display">
           {kind === 'portal' ? 'Set your password' : 'Join your workspace'}
         </h1>
-        <p className="mt-1 text-xs text-stone-500">
+        <p className="mt-1 type-helper">
           {kind === 'portal' ? 'Setting up portal access for' : 'Setting up account for'}{' '}
           <span className="font-semibold">{invite!.email}</span>
         </p>
@@ -282,7 +283,7 @@ export default function AcceptInvitePage() {
               className="h-11"
             />
             {errors.fullName && (
-              <p id="name-error" className="text-xs text-red-500">{errors.fullName.message}</p>
+              <p id="name-error" className="type-error">{errors.fullName.message}</p>
             )}
           </div>
         )}
@@ -299,7 +300,7 @@ export default function AcceptInvitePage() {
             className="h-11"
           />
           {errors.password && (
-            <p id="pw-error" className="text-xs text-red-500">{errors.password.message}</p>
+            <p id="pw-error" className="type-error">{errors.password.message}</p>
           )}
           <PasswordStrengthMeter password={passwordValue} />
         </div>
@@ -319,13 +320,13 @@ export default function AcceptInvitePage() {
             className="h-11"
           />
           {errors.confirm && (
-            <p id="confirm-error" className="text-xs text-red-500">{errors.confirm.message}</p>
+            <p id="confirm-error" className="type-error">{errors.confirm.message}</p>
           )}
         </div>
 
         {errors.root && <ErrorNote>{errors.root.message}</ErrorNote>}
 
-        <Button type="submit" disabled={isSubmitting} className="h-11 w-full gap-2">
+        <Button type="submit" size="lg" disabled={isSubmitting} className="h-11 w-full gap-2">
           {isSubmitting && <Loader2 className="size-4 animate-spin" />}
           {isSubmitting ? 'Activating…' : 'Activate account'}
         </Button>

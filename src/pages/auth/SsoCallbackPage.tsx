@@ -1,3 +1,5 @@
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
@@ -60,7 +62,7 @@ export default function SsoCallbackPage() {
       <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
         {takeover ? (
           <div className="text-left">
-            <h1 className="mb-4 text-center text-sm font-bold text-stone-900">Already signed in</h1>
+            <h1 className="mb-4 text-center type-page-title">Already Signed In</h1>
             <TakeoverPrompt
               prompt={takeover}
               onSuccess={finishSignIn}
@@ -72,15 +74,15 @@ export default function SsoCallbackPage() {
             <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-red-50">
               <AlertTriangle className="size-5 text-red-500" />
             </span>
-            <h1 className="text-sm font-bold text-stone-900">Sign-in link expired</h1>
-            <p className="mt-1.5 text-xs text-stone-500">
+            <h1 className="type-page-title">Sign-In Link Expired</h1>
+            <p className="mt-1.5 type-helper">
               {code
                 ? apiErrorMessage(exchange.error, 'That sign-in link has expired. Please try again.')
                 : 'This sign-in link is missing its code. Please try again.'}
             </p>
             <Link
               to="/auth/login"
-              className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-stone-950 transition hover:bg-brand/80"
+              className={cn(buttonVariants(), 'mt-4')}
             >
               Back to sign in
             </Link>
@@ -88,8 +90,8 @@ export default function SsoCallbackPage() {
         ) : (
           <>
             <Loader2 className="mx-auto mb-3 size-6 animate-spin text-stone-400" aria-hidden="true" />
-            <h1 className="text-sm font-bold text-stone-900">Signing you in…</h1>
-            <p className="mt-1.5 text-xs text-stone-500">Just a moment.</p>
+            <h1 className="type-page-title">Signing You In…</h1>
+            <p className="mt-1.5 type-helper">Just a moment.</p>
           </>
         )}
       </div>

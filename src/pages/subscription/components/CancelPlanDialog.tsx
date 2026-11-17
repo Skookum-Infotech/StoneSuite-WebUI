@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/components/ui/button';
 import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -30,14 +31,14 @@ export function CancelPlanDialog({
       onClose={onClose}
     >
       <fieldset className="space-y-1.5">
-        <legend className="text-2xs font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+        <legend className="type-overline mb-1.5">
           Why are you cancelling? (optional)
         </legend>
         {cancelReasonOptions.map((opt) => (
           <label
             key={opt.value}
             className={cn(
-              'flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs cursor-pointer transition-colors',
+              'flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 cursor-pointer transition-colors type-field-label',
               reason === opt.value ? 'border-brand bg-brand/5 text-stone-900 font-semibold' : 'border-stone-200 text-stone-600 hover:bg-stone-50',
             )}
           >
@@ -55,7 +56,7 @@ export function CancelPlanDialog({
       </fieldset>
 
       {reason === 'too_expensive' && (
-        <p className="mt-3 text-xs text-stone-500 rounded-xl bg-stone-50 border border-stone-200 px-3.5 py-2.5">
+        <p className="mt-3 rounded-xl bg-stone-50 border border-stone-200 px-3.5 py-2.5 type-helper">
           Consider downgrading instead? You can switch to a lower-cost plan from the Plan tab.
         </p>
       )}
@@ -64,7 +65,7 @@ export function CancelPlanDialog({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition-colors cursor-pointer"
+          className={buttonVariants({ variant: 'outline' })}
           aria-label="Keep current plan"
         >
           Keep Plan
@@ -72,7 +73,7 @@ export function CancelPlanDialog({
         <button
           type="button"
           onClick={() => onConfirm(reason)}
-          className="rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-red-700 active:scale-[0.99] transition-all cursor-pointer"
+          className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-[0.99]')}
           aria-label="Confirm plan cancellation"
         >
           Confirm Cancellation

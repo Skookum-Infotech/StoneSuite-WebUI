@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { ActiveSessionPrompt, AuthResponse, MfaChallenge } from '@/types/auth'
 
+import { SIGN_IN_BUTTON } from './authStyles'
+import { cn } from '@/lib/utils'
 const passwordSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
@@ -70,19 +72,19 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession,
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <div className="flex items-center gap-2.5 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
         <Mail className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-700">{email}</span>
+        <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">{email}</span>
         <button
           type="button"
           onClick={onBack}
           aria-label="Use a different email"
-          className="shrink-0 text-xs font-semibold text-stone-500 underline underline-offset-2 transition-colors hover:text-stone-700"
+          className="shrink-0 text-caption font-semibold text-ink-muted underline underline-offset-2 transition-colors hover:text-ink-strong"
         >
           Change
         </button>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
+        <Label htmlFor="password">
           Password
         </Label>
         <div className="relative">
@@ -96,8 +98,7 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession,
             aria-invalid={Boolean(errors.password)}
             aria-describedby={errors.password ? 'password-error' : undefined}
             {...register('password')}
-            className="h-12 rounded-xl border-stone-200 bg-white pl-11 pr-11 text-sm text-stone-950 placeholder:text-stone-500 transition-colors duration-150"
-            style={{ '--tw-ring-color': 'rgba(0,95,115,0.15)' } as React.CSSProperties}
+            className="auth-field h-12 rounded-xl border-stone-200 bg-white pl-11 pr-11 transition-colors duration-150"
           />
           <button
             type="button"
@@ -112,17 +113,16 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession,
         <div className="flex justify-end">
           <Link
             to="/auth/forgot-password"
-            className="text-xs font-medium transition-colors duration-150 hover:opacity-100"
-            style={{ color: 'rgba(0,95,115,0.55)' }}
+            className="text-caption font-medium text-link transition-colors duration-150 hover:text-link-hover"
           >
             Forgot password?
           </Link>
         </div>
-        {errors.password && <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>}
+        {errors.password && <p id="password-error" className="type-error">{errors.password.message}</p>}
       </div>
 
       {errors.root && (
-        <div className="text-sm font-medium text-destructive bg-destructive/5 p-2 rounded-md border border-destructive/15">
+        <div className="rounded-md border border-destructive/15 bg-destructive/5 p-2 type-error">
           {errors.root.message}
         </div>
       )}
@@ -131,13 +131,13 @@ export function PasswordStep({ email, onSuccess, onMfaRequired, onActiveSession,
         type="submit"
         disabled={isSubmitting}
         aria-label="Sign in"
-        className="mt-1 h-12 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:opacity-70 disabled:cursor-not-allowed"
-        style={{ boxShadow: '0 4px 16px rgba(163,230,53,0.28)' }}
+        size="lg"
+        className={cn('mt-1', SIGN_IN_BUTTON)}
       >
         {isSubmitting ? (
-          <><Loader2 className="mr-2 size-4 animate-spin" />Signing in...</>
+          <><Loader2 className="size-4 animate-spin" />Signing in...</>
         ) : (
-          <>Sign In<ArrowRight className="ml-2 size-4" /></>
+          <>Sign In<ArrowRight className="size-4" /></>
         )}
       </Button>
     </form>

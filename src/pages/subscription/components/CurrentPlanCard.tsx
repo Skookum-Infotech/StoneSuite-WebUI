@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CurrentPlan, SubscriptionStatus } from '@/types/subscription'
@@ -26,18 +27,18 @@ export function CurrentPlanCard({ plan, onUpgrade, onCancel }: CurrentPlanCardPr
     <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
       <div className="flex flex-col gap-3 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-link">
             <Sparkles className="size-5" />
           </div>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-base font-bold text-stone-900">{plan.tier.name} Plan</h2>
-              <span className={cn('inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-0.5 text-2xs font-bold', cfg.text)}>
+              <h2 className="type-dialog-title">{plan.tier.name} Plan</h2>
+              <span className={cn('inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-0.5 type-pill', cfg.text)}>
                 <span className={cn('h-1.5 w-1.5 rounded-full', cfg.dot)} />
                 {cfg.label}
               </span>
             </div>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="mt-1 type-helper">
               {isEnterprise ? 'Custom pricing' : `$${plan.tier.pricePerMonth}/mo`}
               <span className="mx-1.5 text-stone-500">•</span>
               Renews {fmtDate(plan.renewalDate)}
@@ -54,8 +55,7 @@ export function CurrentPlanCard({ plan, onUpgrade, onCancel }: CurrentPlanCardPr
           </button>
           <button
             onClick={onUpgrade}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-xs font-bold text-stone-950 hover:bg-brand-hover active:scale-[0.99] transition-all cursor-pointer"
-            style={{ boxShadow: '0 4px 14px rgba(194,245,137,0.35)' }}
+            className={cn(buttonVariants({ size: 'lg' }), 'active:scale-[0.99]')}
             aria-label="Upgrade plan"
           >
             Upgrade Plan

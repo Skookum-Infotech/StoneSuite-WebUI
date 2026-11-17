@@ -16,12 +16,12 @@ export function BillingDetailsCard({
     <div className="h-full flex flex-col rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
       <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-link">
             <Building2 className="size-4.5" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-bold text-stone-900">Billing Details</h2>
-            <p className="text-xs text-stone-500 mt-0.5">Where invoices and receipts are addressed</p>
+            <h2 className="type-card-title">Billing Details</h2>
+            <p className="mt-0.5 type-helper">Where invoices and receipts are addressed</p>
           </div>
         </div>
         <button

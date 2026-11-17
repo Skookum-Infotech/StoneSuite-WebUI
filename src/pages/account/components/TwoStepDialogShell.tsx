@@ -32,12 +32,12 @@ export function TwoStepDialogShell({ title, description, busy, onClose, children
     >
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand-dark">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/20 text-link">
             <ShieldCheck className="size-4" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <h3 id={titleId} className="text-sm font-bold text-stone-900">{title}</h3>
-            <p className="mt-0.5 text-xs text-stone-500">{description}</p>
+            <h3 id={titleId} className="type-card-title">{title}</h3>
+            <p className="mt-0.5 type-helper">{description}</p>
           </div>
         </div>
         {children}

@@ -86,7 +86,7 @@ describe('SsoCallbackPage', () => {
 
     renderAt('/auth/sso/callback?code=stale-code')
 
-    expect(await screen.findByText('Sign-in link expired')).toBeInTheDocument()
+    expect(await screen.findByText('Sign-In Link Expired')).toBeInTheDocument()
     expect(screen.getByText('Invalid or expired sign-in code.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Back to sign in' })).toBeInTheDocument()
     expect(useAuthStore.getState().isAuthenticated).toBe(false)
@@ -95,7 +95,7 @@ describe('SsoCallbackPage', () => {
   it('shows an error immediately when no code is present, without calling exchange', async () => {
     renderAt('/auth/sso/callback')
 
-    expect(await screen.findByText('Sign-in link expired')).toBeInTheDocument()
+    expect(await screen.findByText('Sign-In Link Expired')).toBeInTheDocument()
     expect(samlAuthService.exchange).not.toHaveBeenCalled()
   })
 
@@ -114,7 +114,7 @@ describe('SsoCallbackPage', () => {
     renderAt('/auth/sso/callback?code=abc')
 
     expect(await screen.findByText(/Chrome on Windows/)).toBeInTheDocument()
-    expect(screen.queryByText('Sign-in link expired')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sign-In Link Expired')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'End the other session and continue here' }))
 
     expect(await screen.findByText('Dashboard')).toBeInTheDocument()

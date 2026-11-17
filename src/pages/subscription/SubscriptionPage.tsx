@@ -183,12 +183,12 @@ export default function SubscriptionPage() {
 
         {/* ── Page header ── */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-link">
             <CreditCard className="size-4.5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-stone-900">Subscription</h1>
-            <p className="text-xs text-stone-500 mt-0.5">Manage your plan, billing history, and payment method</p>
+            <h1 className="type-page-title">Subscription</h1>
+            <p className="mt-0.5 type-helper">Manage your plan, billing history, and payment method</p>
           </div>
         </div>
 

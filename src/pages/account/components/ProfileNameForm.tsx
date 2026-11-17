@@ -94,7 +94,7 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
           <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
           <div>
             <p className="text-sm font-semibold text-emerald-800">Name updated</p>
-            <p className="text-xs text-emerald-600 mt-0.5">Your new name is showing across the app.</p>
+            <p className="text-xs text-success-ink mt-0.5">Your new name is showing across the app.</p>
           </div>
         </div>
       )}
@@ -112,7 +112,7 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
             {...register('firstName')}
             className={editing ? INPUT_EDITING_CLASS : INPUT_LOCKED_CLASS}
           />
-          {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
+          {errors.firstName && <p className="type-error">{errors.firstName.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lastName" className="text-xs font-semibold text-stone-500">
@@ -126,19 +126,19 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
             {...register('lastName')}
             className={editing ? INPUT_EDITING_CLASS : INPUT_LOCKED_CLASS}
           />
-          {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
+          {errors.lastName && <p className="type-error">{errors.lastName.message}</p>}
         </div>
       </div>
 
       <ReadOnlyField label="Email Address" value={email} icon={Mail} />
-      <p className="-mt-2 text-xs text-stone-500">
+      <p className="-mt-2 type-helper">
         Your email is your sign-in address, so it can&apos;t be changed here.
       </p>
 
       {errors.root && (
         <div role="alert" className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
           <AlertCircle className="size-4 shrink-0 text-destructive" />
-          <p className="text-xs text-destructive">{errors.root.message}</p>
+          <p className="type-error">{errors.root.message}</p>
         </div>
       )}
 
@@ -151,16 +151,15 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
               onClick={cancelEditing}
               disabled={isSubmitting}
               aria-label="Cancel editing"
-              className="h-10 rounded-xl px-5 text-sm font-semibold"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={!isDirty || isSubmitting}
-              className="h-10 rounded-xl bg-brand px-6 text-sm font-semibold text-stone-950 shadow-[0_4px_14px_rgba(194,245,137,0.35)] hover:bg-brand-hover active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="active:scale-[0.99]"
             >
-              {isSubmitting ? <><Loader2 className="mr-2 size-4 animate-spin" />Saving…</> : 'Save Changes'}
+              {isSubmitting ? <><Loader2 className="size-4 animate-spin" />Saving…</> : 'Save Changes'}
             </Button>
           </>
         ) : (
@@ -169,7 +168,7 @@ export function ProfileNameForm({ fullName, email }: { fullName: string; email: 
             variant="outline"
             onClick={startEditing}
             aria-label="Edit name"
-            className="h-10 gap-2 rounded-xl px-5 text-sm font-semibold"
+            className="gap-2"
           >
             <Pencil className="size-3.5" />
             Edit

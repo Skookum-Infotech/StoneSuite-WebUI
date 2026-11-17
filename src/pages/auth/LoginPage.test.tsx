@@ -96,7 +96,7 @@ describe('LoginPage — two-step verification', () => {
     await reachCodeStep(user);
 
     expect(screen.getByText('code step for j•••@acme.com')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Check Your Email' })).toBeInTheDocument();
     expect(screen.queryByText('password step')).not.toBeInTheDocument();
   });
 
@@ -108,6 +108,6 @@ describe('LoginPage — two-step verification', () => {
 
     expect(screen.getByText('password step')).toBeInTheDocument();
     expect(screen.queryByText(/code step for/)).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Welcome Back' })).toBeInTheDocument();
   });
 });

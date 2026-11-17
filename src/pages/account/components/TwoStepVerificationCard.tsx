@@ -68,12 +68,12 @@ export function TwoStepVerificationCard() {
     <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
       <div className="border-b border-stone-100 bg-stone-50/60 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-link">
             <ShieldCheck className="size-4.5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-stone-900">Two-Step Verification</h2>
-            <p className="mt-0.5 text-xs text-stone-500">Add an emailed code to your sign-in</p>
+            <h2 className="type-card-title">Two-Step Verification</h2>
+            <p className="mt-0.5 type-helper">Add an emailed code to your sign-in</p>
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@ export function TwoStepVerificationCard() {
           </div>
         ) : status.isError ? (
           <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
-            <p className="flex items-center gap-2 text-xs text-destructive">
+            <p className="flex items-center gap-2 type-error">
               <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
               We couldn&apos;t load your two-step verification setting.
             </p>
@@ -95,7 +95,6 @@ export function TwoStepVerificationCard() {
               variant="outline"
               onClick={() => status.refetch()}
               aria-label="Try loading two-step verification again"
-              className="h-8 rounded-lg px-3 text-xs"
             >
               Try again
             </Button>
@@ -110,7 +109,7 @@ export function TwoStepVerificationCard() {
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p id="two-step-label" className="text-xs font-bold text-stone-900">Email code at sign-in</p>
-                <p id="two-step-hint" className="mt-1 text-xs text-stone-500">
+                <p id="two-step-hint" className="mt-1 type-helper">
                   {status.data.enabled
                     ? `After your password, we email a ${MFA_CODE_LENGTH}-digit code to ${status.data.maskedEmail}.`
                     : `Turn it on and signing in will also need a ${MFA_CODE_LENGTH}-digit code we email to ${status.data.maskedEmail}.`}
@@ -132,7 +131,7 @@ export function TwoStepVerificationCard() {
             </div>
 
             {startError && (
-              <p role="alert" className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-destructive">
+              <p role="alert" className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 type-error">
                 <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
                 {startError}
               </p>

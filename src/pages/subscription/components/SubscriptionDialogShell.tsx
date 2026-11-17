@@ -48,8 +48,8 @@ export function SubscriptionDialogShell({
             <Icon className="size-4.5" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <h3 id={titleId} className="text-sm font-bold text-stone-900">{title}</h3>
-            {description && <p className="text-xs text-stone-500 mt-0.5">{description}</p>}
+            <h3 id={titleId} className="type-card-title">{title}</h3>
+            {description && <p className="mt-0.5 type-helper">{description}</p>}
           </div>
         </div>
         {children}

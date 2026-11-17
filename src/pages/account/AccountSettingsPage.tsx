@@ -147,12 +147,12 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
   if (isSuperAdmin) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-brand/30 bg-brand/5 px-4 py-3.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand/20 text-link">
           <Zap className="size-4" />
         </div>
         <div>
           <p className="text-sm font-bold text-stone-900">Full Access — Super Admin</p>
-          <p className="text-xs text-stone-500 mt-0.5">Unrestricted access to all features and settings.</p>
+          <p className="mt-0.5 type-helper">Unrestricted access to all features and settings.</p>
         </div>
       </div>
     )
@@ -163,7 +163,7 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
   ).filter(r => r.level !== null)
 
   if (rows.length === 0) {
-    return <p className="text-xs text-stone-500 py-2">No permissions found for this role.</p>
+    return <p className="py-2 type-helper">No permissions found for this role.</p>
   }
 
   return (
@@ -176,7 +176,7 @@ function AccessSummary({ grants }: { grants: Grant[] }) {
           <span className="flex-1 text-xs font-medium text-stone-700">{row.label}</span>
           <span className="text-xs text-stone-500">{row.level!.desc}</span>
           <span className={cn(
-            'shrink-0 rounded-full border px-2.5 py-0.5 text-2xs font-bold',
+            'shrink-0 rounded-full border px-2.5 py-0.5 type-pill',
             row.level!.style,
           )}>
             {row.level!.label}
@@ -277,8 +277,8 @@ export default function AccountSettingsPage() {
         {/* ── Page header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-stone-900">Account Settings</h1>
-            <p className="text-xs text-stone-500 mt-0.5">Manage your profile, password, and session role</p>
+            <h1 className="type-page-title">Account Settings</h1>
+            <p className="mt-0.5 type-helper">Manage your profile, password, and session role</p>
           </div>
         </div>
 
@@ -296,10 +296,10 @@ export default function AccountSettingsPage() {
                 />
                 <div className="flex-1 sm:flex-none sm:text-center min-w-0">
                   <p className="text-xs font-bold text-stone-900 leading-tight truncate">{user?.fullName ?? '—'}</p>
-                  <p className="text-xs text-stone-500 mt-0.5 truncate sm:max-w-[168px]">{user?.email ?? '—'}</p>
+                  <p className="mt-0.5 truncate sm:max-w-[168px] type-helper">{user?.email ?? '—'}</p>
                 </div>
                 {roles.length > 0 && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-2xs font-bold text-brand-dark">
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-1 text-link type-pill">
                     <Shield className="size-3" />
                     {roles.find(r => r.id === selectedRoleId)?.name ?? roles[0]?.name}
                   </span>
@@ -322,7 +322,7 @@ export default function AccountSettingsPage() {
                     <Icon className={cn('size-3.5 sm:size-4 shrink-0', activeTab === id ? 'text-brand' : 'text-stone-400 group-hover:text-stone-600')} />
                     <span className="text-xs font-semibold whitespace-nowrap">{label}</span>
                     {badge && (
-                      <span className={cn('flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full text-2xs font-bold', activeTab === id ? 'bg-brand/20 text-brand' : 'bg-stone-200 text-stone-500')}>
+                      <span className={cn('flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full text-micro font-bold', activeTab === id ? 'bg-brand/20 text-brand' : 'bg-stone-200 text-stone-500')}>
                         {badge}
                       </span>
                     )}
@@ -340,12 +340,12 @@ export default function AccountSettingsPage() {
               <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
                 <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-link">
                       <UserCircle className="size-4.5" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-stone-900">Profile Information</h2>
-                      <p className="text-xs text-stone-500 mt-0.5">Update the name shown across your workspace</p>
+                      <h2 className="type-card-title">Profile Information</h2>
+                      <p className="mt-0.5 type-helper">Update the name shown across your workspace</p>
                     </div>
                   </div>
                 </div>
@@ -376,12 +376,12 @@ export default function AccountSettingsPage() {
               <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
                 <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-link">
                       <KeyRound className="size-4.5" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-stone-900">Update Password</h2>
-                      <p className="text-xs text-stone-500 mt-0.5">Use upper and lowercase letters, a number and a special character</p>
+                      <h2 className="type-card-title">Update Password</h2>
+                      <p className="mt-0.5 type-helper">Use upper and lowercase letters, a number and a special character</p>
                     </div>
                   </div>
                 </div>
@@ -391,7 +391,7 @@ export default function AccountSettingsPage() {
                       <CheckCircle2 className="size-5 shrink-0 text-emerald-600" />
                       <div>
                         <p className="text-sm font-semibold text-emerald-800">Password updated</p>
-                        <p className="text-xs text-emerald-600 mt-0.5">Your new password is active immediately.</p>
+                        <p className="text-xs text-success-ink mt-0.5">Your new password is active immediately.</p>
                       </div>
                     </div>
                   )}
@@ -412,7 +412,7 @@ export default function AccountSettingsPage() {
                         {...register('currentPassword')}
                         className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
                       />
-                      {errors.currentPassword && <p className="text-xs text-destructive">{errors.currentPassword.message}</p>}
+                      {errors.currentPassword && <p className="type-error">{errors.currentPassword.message}</p>}
                     </div>
 
                     {/* New + Confirm — side by side on sm+ */}
@@ -431,7 +431,7 @@ export default function AccountSettingsPage() {
                           {...register('newPassword')}
                           className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
                         />
-                        {errors.newPassword && <p className="text-xs text-destructive">{errors.newPassword.message}</p>}
+                        {errors.newPassword && <p className="type-error">{errors.newPassword.message}</p>}
                         <PasswordStrengthMeter password={newPasswordValue} />
                       </div>
 
@@ -449,7 +449,7 @@ export default function AccountSettingsPage() {
                           {...register('confirmPassword')}
                           className="h-11 rounded-xl border-stone-200 bg-white text-stone-950 placeholder:text-stone-500"
                         />
-                        {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
+                        {errors.confirmPassword && <p className="type-error">{errors.confirmPassword.message}</p>}
                       </div>
                     </div>
 
@@ -458,7 +458,7 @@ export default function AccountSettingsPage() {
                     {errors.root && (
                       <div className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
                         <AlertCircle className="size-4 shrink-0 text-destructive" />
-                        <p className="text-xs text-destructive">{errors.root.message}</p>
+                        <p className="type-error">{errors.root.message}</p>
                       </div>
                     )}
 
@@ -466,11 +466,10 @@ export default function AccountSettingsPage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="h-10 rounded-xl bg-brand px-6 text-sm font-semibold text-stone-950 hover:bg-brand-hover active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
-                        style={{ boxShadow: '0 4px 14px rgba(194,245,137,0.35)' }}
+                        className="active:scale-[0.99]"
                       >
                         {isSubmitting
-                          ? <><Loader2 className="mr-2 size-4 animate-spin" />Updating…</>
+                          ? <><Loader2 className="size-4 animate-spin" />Updating…</>
                           : 'Update Password'}
                       </Button>
                     </div>
@@ -488,16 +487,16 @@ export default function AccountSettingsPage() {
                 <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-link">
                         <Shield className="size-4.5" />
                       </div>
                       <div>
-                        <h2 className="text-sm font-bold text-stone-900">Roles & Access</h2>
-                        <p className="text-xs text-stone-500 mt-0.5">Your assigned roles — select one to make it active for this session</p>
+                        <h2 className="type-card-title">Roles & Access</h2>
+                        <p className="mt-0.5 type-helper">Your assigned roles — select one to make it active for this session</p>
                       </div>
                     </div>
                     {roles.length > 0 && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-600">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-stone-600 type-pill">
                         {roles.length} {roles.length === 1 ? 'role' : 'roles'}
                       </span>
                     )}
@@ -510,7 +509,7 @@ export default function AccountSettingsPage() {
                         <Shield className="size-6 text-stone-400" />
                       </div>
                       <p className="text-xs font-semibold text-stone-500">No roles assigned</p>
-                      <p className="text-xs text-stone-500 mt-1">Contact your workspace administrator to get access.</p>
+                      <p className="mt-1 type-helper">Contact your workspace administrator to get access.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -530,7 +529,7 @@ export default function AccountSettingsPage() {
                       {switchRoleMutation.isError && (
                         <div className="flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3.5">
                           <AlertCircle className="size-4 shrink-0 text-destructive" />
-                          <p className="text-xs text-destructive">
+                          <p className="type-error">
                             {apiErrorMessage(switchRoleMutation.error, 'Failed to switch role. Please try again.')}
                           </p>
                         </div>
@@ -555,7 +554,7 @@ export default function AccountSettingsPage() {
                       <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100 bg-stone-50/60">
                           <p className="text-xs font-bold text-stone-700">Permission Summary</p>
-                          <p className="text-2xs text-stone-500">What your active role can do</p>
+                          <p className="type-helper">What your active role can do</p>
                         </div>
                         <div className="px-4 py-4">
                           {permissionsLoading ? (

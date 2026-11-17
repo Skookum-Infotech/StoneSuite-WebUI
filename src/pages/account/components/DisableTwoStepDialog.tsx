@@ -68,12 +68,12 @@ export function DisableTwoStepDialog({ onClose, onDisabled }: DisableTwoStepDial
             {...register('currentPassword')}
           />
           {errors.currentPassword && (
-            <p id="mfa-disable-password-error" className="text-xs text-destructive">{errors.currentPassword.message}</p>
+            <p id="mfa-disable-password-error" className="type-error">{errors.currentPassword.message}</p>
           )}
         </div>
 
         {errors.root && (
-          <p role="alert" className="rounded-md border border-destructive/15 bg-destructive/5 p-2 text-xs font-medium text-destructive">
+          <p role="alert" className="rounded-md border border-destructive/15 bg-destructive/5 p-2 type-error">
             {errors.root.message}
           </p>
         )}
@@ -85,7 +85,6 @@ export function DisableTwoStepDialog({ onClose, onDisabled }: DisableTwoStepDial
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="Keep two-step verification on"
-            className="h-9 rounded-lg px-3 text-xs"
           >
             Cancel
           </Button>
@@ -93,9 +92,9 @@ export function DisableTwoStepDialog({ onClose, onDisabled }: DisableTwoStepDial
             type="submit"
             disabled={isSubmitting}
             aria-label="Confirm password and turn off two-step verification"
-            className="h-9 rounded-lg bg-destructive px-3 text-xs font-semibold text-white hover:bg-destructive/90"
+            variant="destructive"
           >
-            {isSubmitting && <Loader2 className="mr-1.5 size-3 animate-spin" aria-hidden="true" />}
+            {isSubmitting && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
             Turn off
           </Button>
         </div>

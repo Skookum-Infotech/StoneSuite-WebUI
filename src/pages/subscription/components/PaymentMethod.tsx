@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/components/ui/button';
 import { useState } from 'react'
 import { CreditCard, Star, Trash2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -30,12 +31,12 @@ export function PaymentMethodCard({
     <div className="rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
       <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-stone-100 bg-stone-50/60">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-brand-dark">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/20 text-link">
             <CreditCard className="size-4.5" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-stone-900">Payment Methods</h2>
-            <p className="text-xs text-stone-500 mt-0.5">Used for your subscription billing</p>
+            <h2 className="type-card-title">Payment Methods</h2>
+            <p className="mt-0.5 type-helper">Used for your subscription billing</p>
           </div>
         </div>
       </div>
@@ -43,19 +44,19 @@ export function PaymentMethodCard({
       <div className="px-5 sm:px-6 py-4 sm:py-5 space-y-2.5">
         {methods.map((method) => (
           <div key={method.id} className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3.5">
-            <div className={cn('flex h-9 w-14 shrink-0 items-center justify-center rounded-md text-2xs font-black italic tracking-tight text-white', BRAND_STYLE[method.brand])}>
+            <div className={cn('flex h-9 w-14 shrink-0 items-center justify-center rounded-md text-micro font-black italic tracking-tight text-white', BRAND_STYLE[method.brand])}>
               {method.brand.toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-semibold text-stone-800 tabular-nums">•••• •••• •••• {method.last4}</p>
+                <p className="tabular-nums type-card-title">•••• •••• •••• {method.last4}</p>
                 {method.isDefault && (
-                  <span className="inline-flex items-center rounded-full bg-brand/20 px-2 py-0.5 text-2xs font-bold text-brand-dark">
+                  <span className="inline-flex items-center rounded-full bg-brand/20 px-2 py-0.5 text-link type-pill">
                     Default
                   </span>
                 )}
               </div>
-              <p className="text-xs text-stone-500 mt-0.5">Expires {method.expiry}</p>
+              <p className="mt-0.5 type-helper">Expires {method.expiry}</p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {!method.isDefault && (
@@ -85,7 +86,7 @@ export function PaymentMethodCard({
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-stone-300 bg-white px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 hover:border-stone-400 transition-colors cursor-pointer"
+          className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
           aria-label="Add payment method"
         >
           <Plus className="size-3.5" />

@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import type { ActiveSessionPrompt, AuthResponse, MfaChallenge } from '@/types/auth'
 
+import { SIGN_IN_BUTTON } from './authStyles'
+import { cn } from '@/lib/utils'
 const SECONDS_PER_MINUTE = 60
 const VERIFY_FALLBACK = "We couldn't check that code. Please try again."
 const RESEND_FALLBACK = "We couldn't send a new code. Please try again."
@@ -113,14 +115,15 @@ export function CodeStep({ challenge, onSuccess, onBack, onActiveSession }: Code
   if (deadMessage) {
     return (
       <div className="space-y-5">
-        <div role="alert" className="rounded-md border border-destructive/15 bg-destructive/5 p-2 text-sm font-medium text-destructive">
+        <div role="alert" className="rounded-md border border-destructive/15 bg-destructive/5 p-2 type-error">
           {deadMessage}
         </div>
         <Button
           type="button"
           onClick={onBack}
           aria-label="Sign in again"
-          className="h-12 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 hover:bg-brand-hover"
+          size="lg"
+        className={cn(SIGN_IN_BUTTON)}
         >
           Sign in again
         </Button>
@@ -134,21 +137,21 @@ export function CodeStep({ challenge, onSuccess, onBack, onActiveSession }: Code
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <div className="flex items-center gap-2.5 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
         <Mail className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-700">
+        <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">
           Code sent to {challenge.maskedEmail}
         </span>
         <button
           type="button"
           onClick={onBack}
           aria-label="Back to password"
-          className="shrink-0 text-xs font-semibold text-stone-500 underline underline-offset-2 transition-colors hover:text-stone-700"
+          className="shrink-0 text-caption font-semibold text-ink-muted underline underline-offset-2 transition-colors hover:text-ink-strong"
         >
           Back
         </button>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="mfa-code" className="text-2xs font-bold uppercase tracking-[0.2em] text-stone-500">
+        <Label htmlFor="mfa-code">
           Sign-in code
         </Label>
         <Controller
@@ -172,10 +175,10 @@ export function CodeStep({ challenge, onSuccess, onBack, onActiveSession }: Code
           )}
         />
         {errors.code ? (
-          <p id="mfa-code-error" className="text-xs text-destructive">{errors.code.message}</p>
+          <p id="mfa-code-error" className="type-error">{errors.code.message}</p>
         ) : (
           expiresInMinutes > 0 && (
-            <p id="mfa-code-hint" className="text-xs text-stone-500">
+            <p id="mfa-code-hint" className="type-helper">
               The code works for {expiresInMinutes} {expiresInMinutes === 1 ? 'minute' : 'minutes'}.
             </p>
           )
@@ -183,13 +186,13 @@ export function CodeStep({ challenge, onSuccess, onBack, onActiveSession }: Code
       </div>
 
       {notice && (
-        <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-sm font-medium text-emerald-700">
+        <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-caption font-medium text-success-ink">
           {notice}
         </p>
       )}
 
       {errors.root && (
-        <div role="alert" className="rounded-md border border-destructive/15 bg-destructive/5 p-2 text-sm font-medium text-destructive">
+        <div role="alert" className="rounded-md border border-destructive/15 bg-destructive/5 p-2 type-error">
           {errors.root.message}
         </div>
       )}
@@ -198,16 +201,17 @@ export function CodeStep({ challenge, onSuccess, onBack, onActiveSession }: Code
         type="submit"
         disabled={isSubmitting}
         aria-label="Verify code"
-        className="mt-1 h-12 w-full rounded-xl bg-brand text-sm font-semibold text-stone-950 shadow-[0_4px_16px_rgba(163,230,53,0.28)] transition-all duration-200 hover:bg-brand-hover active:scale-[0.99] focus-visible:ring-stone-400/30 disabled:cursor-not-allowed disabled:opacity-70"
+        size="lg"
+        className={cn('mt-1', SIGN_IN_BUTTON)}
       >
         {isSubmitting ? (
-          <><Loader2 className="mr-2 size-4 animate-spin" />Verifying...</>
+          <><Loader2 className="size-4 animate-spin" />Verifying...</>
         ) : (
-          <>Verify and sign in<ArrowRight className="ml-2 size-4" /></>
+          <>Verify and sign in<ArrowRight className="size-4" /></>
         )}
       </Button>
 
-      <div className="flex items-center justify-center gap-1.5 text-xs text-stone-500">
+      <div className="flex items-center justify-center gap-1.5 type-helper">
         <span>Didn&apos;t get it?</span>
         <ResendCodeButton secondsLeft={secondsLeft} pending={resending} onResend={handleResend} />
       </div>

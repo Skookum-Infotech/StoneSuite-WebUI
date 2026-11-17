@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PlanTier } from '@/types/subscription'
 
+import { buttonVariants } from '@/components/ui/button'
 export type PlanAction = 'current' | 'upgrade' | 'downgrade' | 'contact'
 
 const ACTION_LABEL: Record<PlanAction, string> = {
@@ -31,16 +32,16 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
       )}
     >
       {isCurrent ? (
-        <span className="absolute -top-3 left-6 rounded-full bg-brand px-3 py-1 text-2xs font-bold text-stone-950">
+        <span className="absolute -top-3 left-6 rounded-full bg-brand px-3 py-1 text-stone-950 type-pill">
           Current Plan
         </span>
       ) : tier.highlighted ? (
-        <span className="absolute -top-3 left-6 rounded-full bg-[#001219] px-3 py-1 text-2xs font-bold text-brand">
+        <span className="absolute -top-3 left-6 rounded-full bg-[#001219] px-3 py-1 text-brand type-pill">
           Most Popular
         </span>
       ) : null}
 
-      <h3 className="text-sm font-bold text-stone-900">{tier.name}</h3>
+      <h3 className="type-card-title">{tier.name}</h3>
       <div className="mt-2 flex items-baseline gap-1">
         {price === null ? (
           <span className="text-2xl font-bold text-stone-900">Custom</span>
@@ -55,7 +56,7 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
       <ul className="mt-4 flex-1 space-y-2">
         {tier.features.map((feature) => (
           <li key={feature} className="flex items-start gap-2">
-            <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand-dark">
+            <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-link">
               <Check className="size-2.5" strokeWidth={3} />
             </div>
             <span className="text-xs text-stone-600">{feature}</span>
@@ -67,12 +68,10 @@ export function PlanCard({ tier, billingCycle, action, onSelect }: PlanCardProps
         onClick={() => onSelect(tier.id)}
         disabled={isCurrent}
         className={cn(
-          'mt-5 w-full rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer disabled:cursor-not-allowed',
-          isCurrent
-            ? 'bg-stone-100 text-stone-500'
-            : 'bg-brand text-stone-950 hover:bg-brand-hover active:scale-[0.99]',
+          buttonVariants({ size: 'lg' }),
+          'mt-5 w-full disabled:opacity-100',
+          isCurrent ? 'bg-stone-100 text-ink-muted' : 'active:scale-[0.99]',
         )}
-        style={!isCurrent ? { boxShadow: '0 4px 14px rgba(194,245,137,0.35)' } : undefined}
         aria-label={`${ACTION_LABEL[action]} — ${tier.name}`}
       >
         {ACTION_LABEL[action]}

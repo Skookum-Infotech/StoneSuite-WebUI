@@ -8,6 +8,8 @@ import { LinkProblemCard } from '@/components/auth/LinkProblemCard';
 import { OnboardingForm } from '@/components/customer/OnboardingForm';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const STEPS = [
   { icon: Building2,  label: 'Company details & legal info' },
   { icon: Warehouse,  label: 'Primary location' },
@@ -64,14 +66,14 @@ export default function OnboardingApplyPage() {
         <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-green-100">
           <CheckCircle2 className="size-7 text-green-600" />
         </div>
-        <h1 className="text-lg font-bold text-stone-900">Application submitted!</h1>
+        <h1 className="type-display">Application Submitted!</h1>
         <p className="mt-2 text-sm text-stone-500 leading-relaxed">
           Thanks! Your onboarding details were sent for review. You'll receive an email to set your
           password once your workspace is approved.
         </p>
         <Link
           to="/auth/login"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-stone-950 hover:bg-brand/80 transition-colors"
+          className={cn(buttonVariants(), 'mt-6 gap-2')}
         >
           Go to sign in <ArrowRight className="size-4" />
         </Link>
@@ -85,8 +87,7 @@ export default function OnboardingApplyPage() {
 
       {/* ── Left panel: branding + steps ── */}
       <aside
-        className="hidden lg:flex lg:w-[380px] xl:w-[420px] shrink-0 flex-col justify-between p-10 sticky top-0 h-screen"
-        style={{ background: 'linear-gradient(155deg, #001219 0%, #005f73 45%, #0a2540 75%, #050e1a 100%)' }}
+        className="auth-hero hidden lg:flex lg:w-[380px] xl:w-[420px] shrink-0 flex-col justify-between p-10 sticky top-0 h-screen"
       >
         {/* Logo */}
         <div className="flex items-center gap-3">
@@ -99,10 +100,10 @@ export default function OnboardingApplyPage() {
         {/* Headline */}
         <div className="space-y-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-teal-400 mb-2">
+            <p className="text-teal-400 mb-2 type-overline">
               Customer Onboarding
             </p>
-            <h1 className="text-2xl font-bold leading-snug text-white">
+            <h1 className="text-white type-page-title">
               Welcome to<br />
               <span className="text-teal-300">{invite?.tenantName ?? 'your workspace'}</span>
             </h1>
@@ -114,7 +115,7 @@ export default function OnboardingApplyPage() {
 
           {/* Steps checklist */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/30">
+            <p className="text-white/30 type-overline">
               What you'll fill in
             </p>
             {STEPS.map(({ icon: Icon, label }) => (
@@ -141,8 +142,7 @@ export default function OnboardingApplyPage() {
       <main className="flex-1 overflow-y-auto bg-stone-50">
         {/* Mobile header */}
         <div
-          className="lg:hidden flex items-center gap-3 px-6 py-4"
-          style={{ background: 'linear-gradient(135deg, #001219, #005f73)' }}
+          className="auth-hero lg:hidden flex items-center gap-3 px-6 py-4"
         >
           <img src="/logo-only.png" alt="Stone Suite" className="h-7 w-7 object-contain" />
           <span className="text-sm font-semibold text-white/90 tracking-wide">Stone Suite</span>
@@ -155,7 +155,7 @@ export default function OnboardingApplyPage() {
               {invite?.tenantName ? `Welcome to ${invite.tenantName}` : 'Company Onboarding'}
             </h2>
             <p className="mt-1 text-sm text-stone-500">
-              Fill in your company details below. All fields marked <span className="text-red-500">*</span> are required.
+              Fill in your company details below. All fields marked <span className="text-danger-ink">*</span> are required.
             </p>
           </div>
 

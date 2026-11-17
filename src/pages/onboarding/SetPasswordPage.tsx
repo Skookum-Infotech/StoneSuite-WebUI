@@ -12,10 +12,11 @@ import { LinkProblemCard } from '@/components/auth/LinkProblemCard';
 import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordRequirements } from '@/components/auth/PasswordRequirements';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner, ErrorNote } from '@/components/tenant/ui';
 
+import { cn } from '@/lib/utils';
 const schema = z
   .object({
     password: strongPasswordSchema,
@@ -83,9 +84,9 @@ export default function SetPasswordPage() {
     return card(
       <div className="text-center">
         <CheckCircle2 className="mx-auto mb-3 size-10 text-green-500" />
-        <h1 className="text-lg font-bold text-stone-900 dark:text-white">You're all set</h1>
+        <h1 className="type-display">You're All Set</h1>
         <p className="mt-1 text-sm text-stone-500">Your password has been set. You can now sign in.</p>
-        <Link to="/auth/login" className="mt-5 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950">
+        <Link to="/auth/login" className={cn(buttonVariants(), 'mt-5 inline-block')}>
           Go to sign in
         </Link>
       </div>,
@@ -95,8 +96,8 @@ export default function SetPasswordPage() {
   return card(
     <>
       <div className="mb-6 text-center">
-        <h1 className="text-lg font-bold text-stone-900 dark:text-white">Set your password</h1>
-        <p className="mt-1 text-xs text-stone-500">for {tokenQ.data?.email}</p>
+        <h1 className="type-display">Set Your Password</h1>
+        <p className="mt-1 type-helper">for {tokenQ.data?.email}</p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">
@@ -110,7 +111,7 @@ export default function SetPasswordPage() {
             {...register('password')}
             className="h-11"
           />
-          {errors.password && <p id="pw-error" className="text-xs text-red-500">{errors.password.message}</p>}
+          {errors.password && <p id="pw-error" className="type-error">{errors.password.message}</p>}
           <PasswordStrengthMeter password={passwordValue} />
         </div>
         <PasswordRequirements password={passwordValue} />
@@ -126,10 +127,10 @@ export default function SetPasswordPage() {
             {...register('confirm')}
             className="h-11"
           />
-          {errors.confirm && <p id="confirm-error" className="text-xs text-red-500">{errors.confirm.message}</p>}
+          {errors.confirm && <p id="confirm-error" className="type-error">{errors.confirm.message}</p>}
         </div>
         {errors.root && <ErrorNote>{errors.root.message}</ErrorNote>}
-        <Button type="submit" disabled={isSubmitting} className="h-11 w-full gap-2">
+        <Button type="submit" size="lg" disabled={isSubmitting} className="h-11 w-full gap-2">
           {isSubmitting && <Loader2 className="size-4 animate-spin" />}
           {isSubmitting ? 'Saving…' : 'Set password'}
         </Button>
