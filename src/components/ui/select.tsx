@@ -174,7 +174,7 @@ export function Select({
             return (
               <Fragment key={`${o.group ?? ''}\u0000${o.value}`}>
                 {header && (
-                  <p className="px-2.5 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-stone-400">{header}</p>
+                  <p className="px-2.5 pb-1 pt-2 type-overline">{header}</p>
                 )}
                 <button
                   type="button"

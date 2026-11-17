@@ -1,0 +1,236 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STONESUITE TYPOGRAPHY — the approved type system (see DESIGN.md §3)
+   Imported once from index.css. Every text role in the app maps to one
+   `type-*` utility below; pages use those instead of raw size/weight/color
+   combinations, so a role changes in one place.
+
+   Tokens live in a plain `@theme` (not `@theme inline`): Tailwind then emits
+   them as :root variables that utilities read through var(), which is what
+   lets the media queries at the bottom resize a role per screen.
+   All sizes are rem, so they follow the root size (scaled up on large
+   monitors in index.css) and the user's own browser text-size setting.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Type scale (px at a 16px root) ────────────────────────────────────── */
+  --text-portal: 0.625rem;         /* 10   — "Workspace portal" label */
+  --text-nav-section: 0.65625rem;  /* 10.5 — sidebar section label */
+  --text-micro: 0.6875rem;         /* 11   — KPI label, line under a value */
+  --text-caption: 0.75rem;         /* 12   — table text, helper, error, pill */
+  --text-button: 0.78125rem;       /* 12.5 — buttons, sidebar items, dialog message */
+  --text-field: 0.8125rem;         /* 13   — field labels, page subtitle */
+  --text-input: 0.8125rem;         /* 13   — typed text; 16px on touch screens */
+  --text-body: 0.875rem;           /* 14   — body copy, links, card titles */
+  --text-dialog-title: 0.9375rem;  /* 15   — dialog and section titles */
+  --text-page-title: 1.46875rem;   /* 23.5 — page titles */
+  --text-display: 1.625rem;        /* 26   — sign-in titles (brand font) */
+  --text-kpi: 1.75rem;             /* 28   — KPI figures */
+
+  /* ── Text colors: 4 neutral inks + meaning colors, all ≥4.5:1 on white ─ */
+  --color-ink-strong: #1c1917;     /* titles, key values (17.6:1) */
+  --color-ink: #44403c;            /* body, table text, labels (10.3:1) */
+  --color-ink-muted: #6b6560;      /* secondary text, headers (5.7:1) */
+  --color-ink-faint: #8a8580;      /* icons and disabled only — never text */
+  --color-danger-ink: #b42318;     /* error text (6.6:1) */
+  --color-warning-ink: #b45309;    /* warning text (5.0:1) */
+  --color-success-ink: #047857;    /* success text (5.5:1) */
+  --color-link: #4d7c0f;           /* links (5.0:1) */
+  --color-link-hover: #365314;
+  --color-danger-solid: #dc2626;   /* danger button fill (white text 4.8:1) */
+  --color-danger-solid-hover: #b91c1c;
+  --color-portal: #7b8e90;         /* decorative "Workspace portal" label */
+  --color-toast-success: #008a2e;  /* success notification title and icon */
+}
+
+/* ── Text roles ───────────────────────────────────────────────────────────── */
+@utility type-page-title {
+  font-size: var(--text-page-title);
+  line-height: 1.36;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-strong);
+  text-wrap: balance;
+}
+@utility type-page-subtitle {
+  font-size: var(--text-field);
+  line-height: 1.54;
+  color: var(--color-ink-muted);
+  text-wrap: pretty;
+}
+@utility type-display {
+  font-family: var(--font-brand);
+  font-size: var(--text-display);
+  line-height: 1.23;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-strong);
+  text-wrap: balance;
+}
+@utility type-kpi {
+  font-size: var(--text-kpi);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+@utility type-dialog-title {
+  font-size: var(--text-dialog-title);
+  line-height: 1.47;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-strong);
+}
+@utility type-card-title {
+  font-size: var(--text-body);
+  line-height: 1.43;
+  font-weight: 600;
+  color: var(--color-ink-strong);
+}
+@utility type-dialog-body {
+  font-size: var(--text-button);
+  line-height: 1.55;
+  color: var(--color-ink);
+}
+@utility type-body {
+  font-size: var(--text-body);
+  line-height: 1.43;
+  color: var(--color-ink);
+}
+@utility type-field-label {
+  font-size: var(--text-field);
+  line-height: 1.54;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+@utility type-input {
+  font-size: var(--text-input);
+  color: var(--color-ink-strong);
+}
+@utility type-helper {
+  font-size: var(--text-caption);
+  line-height: 1.33;
+  color: var(--color-ink-muted);
+}
+@utility type-error {
+  font-size: var(--text-caption);
+  line-height: 1.33;
+  color: var(--color-danger-ink);
+}
+@utility type-th {
+  font-size: var(--text-caption);
+  line-height: 1.33;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+@utility type-cell {
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+@utility type-cell-strong {
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--color-ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+@utility type-subline {
+  font-size: var(--text-micro);
+  line-height: 1.45;
+  color: var(--color-ink-muted);
+}
+@utility type-record-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 400;
+  color: var(--color-ink-strong);
+}
+@utility type-pill {
+  font-size: var(--text-caption);
+  line-height: 1.33;
+  font-weight: 500;
+}
+@utility type-delta {
+  font-size: var(--text-caption);
+  line-height: 1.33;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@utility type-overline {
+  font-size: var(--text-micro);
+  line-height: 1.45;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+@utility type-nav-section {
+  font-size: var(--text-nav-section);
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  color: var(--color-ink-muted);
+}
+@utility type-nav-item {
+  font-size: var(--text-button);
+  line-height: 1.6;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+@utility type-link {
+  font-weight: 500;
+  color: var(--color-link);
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--color-link) 40%, transparent);
+  &:hover {
+    color: var(--color-link-hover);
+  }
+}
+@utility type-toast-title {
+  font-size: var(--text-body);
+  line-height: 1.43;
+  font-weight: 500;
+  color: var(--color-toast-success);
+}
+@utility type-toast-body {
+  font-size: var(--text-field);
+  line-height: 1.54;
+  color: var(--color-ink);
+}
+@utility type-portal {
+  font-size: var(--text-portal);
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--color-portal);
+}
+
+/* ── Per-screen adjustments ───────────────────────────────────────────────
+   Text keeps the same size on phones, tablets and laptops. Only the big
+   headings shrink on small screens, and typed text grows to 16px on touch
+   screens: iOS/iPadOS Safari zooms the whole page into any field whose text
+   is under 16px, and this is the only fix that does not also block zoom. */
+@media (max-width: 1023px) {
+  :root {
+    --text-page-title: 1.375rem;   /* 22 */
+    --text-kpi: 1.625rem;          /* 26 */
+    --text-display: 1.5rem;        /* 24 */
+  }
+}
+@media (max-width: 639px) {
+  :root {
+    --text-page-title: 1.25rem;    /* 20 */
+    --text-kpi: 1.5rem;            /* 24 */
+    --text-display: 1.375rem;      /* 22 */
+  }
+}
+@media (pointer: coarse) {
+  :root {
+    --text-input: 1rem;            /* 16 */
+  }
+}

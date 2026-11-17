@@ -5,6 +5,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./styles/typography.css"; /* type scale, text colors, type-* roles */
 
 @theme {
   --breakpoint-3xl: 128rem;  /* 2048px — must use rem so Tailwind sorts after 2xl (96rem) */
@@ -40,7 +41,9 @@
 
 @font-face {
   font-family: "All Round Gothic";
-  src: url("/fonts/allroundgothic-book.otf") format("opentype");
+  src:
+    url("/fonts/allroundgothic-book.woff2") format("woff2"),
+    url("/fonts/allroundgothic-book.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -113,21 +116,24 @@
   -moz-osx-font-smoothing: grayscale;
   color-scheme: light dark;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-
   /* Scale the entire UI up on large desktop monitors (not laptops).
-     rem-based Tailwind text sizes (text-xs, text-sm, etc.) scale automatically.
+     rem-based Tailwind text sizes (text-xs, text-sm, type-*) scale automatically.
      px-based values (icon size-*, most spacing) are unaffected — intentional.
-     1920px = standard desktop 1080p monitor
-     2560px = 1440p / ultrawide */
+     Percentages, not px, so a user's own browser text-size setting still applies.
+     1920px = 1080p desktop (17px) · 2560px = 1440p / ultrawide (18.67px) ·
+     3840px = 4K at 100% OS scaling (20px) */
+  font-size: 100%;
+
   @media (min-width: 1920px) {
-    font-size: 17px;
+    font-size: 106.25%;
   }
 
   @media (min-width: 2560px) {
-    font-size: 18.67px;
+    font-size: 116.667%;
+  }
+
+  @media (min-width: 3840px) {
+    font-size: 125%;
   }
 
   /* ── shadcn base tokens (overridden below by brand tokens) ── */
@@ -286,7 +292,7 @@
 
   /* Font families — change font here, nowhere else */
   --font-sans: "Geist Variable", system-ui, sans-serif;    /* all UI text */
-  --font-mono: "IBM Plex Mono", "Geist Mono", ui-monospace, monospace; /* code, IDs */
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace; /* record numbers, IDs, code */
   --font-brand: "All Round Gothic", "Geist Variable", sans-serif;  /* display/brand moments only */
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);

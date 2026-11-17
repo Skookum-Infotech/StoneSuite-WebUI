@@ -14,8 +14,8 @@ export function PageHeader({
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
       <div>
-        <h1 className="text-xl font-bold text-stone-900 dark:text-white">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-stone-500">{subtitle}</p>}
+        <h1 className="type-page-title">{title}</h1>
+        {subtitle && <p className="mt-1 type-page-subtitle">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -39,10 +39,10 @@ export function Badge({
     <span
       style={style}
       className={cn(
-        'inline-flex items-center rounded-full border font-semibold whitespace-nowrap',
+        'inline-flex items-center rounded-full border whitespace-nowrap',
         size === 'sm'
-          ? 'gap-1 px-1.5 py-px text-[10px]'
-          : 'gap-1.5 px-2.5 py-0.5 text-label',
+          ? 'gap-1 px-1.5 py-px text-micro font-medium'
+          : 'gap-1.5 px-2.5 py-0.5 type-pill',
         !color && 'border-stone-200 bg-stone-100 text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300',
         className,
       )}
@@ -81,7 +81,7 @@ export function ErrorNote({
     <div
       id={id}
       role={role}
-      className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600 dark:bg-red-950/30">
+      className="rounded-lg bg-red-50 px-3 py-2 type-error dark:bg-red-950/30">
       {children}
     </div>
   );
