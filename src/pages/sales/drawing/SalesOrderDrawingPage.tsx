@@ -17,6 +17,7 @@ import { DrawingEditorProvider, useDrawingEditor } from '@/components/drawing/Dr
 import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { BorderModeBar } from '@/components/drawing/BorderModeBar';
+import { CornerModeBar } from '@/components/drawing/CornerModeBar';
 import { DrawModeBar } from '@/components/drawing/DrawModeBar';
 import { MiniMap } from '@/components/drawing/MiniMap';
 import { InspectorPanel } from '@/components/drawing/InspectorPanel';
@@ -196,6 +197,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
             <DrawingCanvas />
             <DrawModeBar />
             <BorderModeBar />
+            <CornerModeBar />
             <TextControls />
             <MiniMap />
             <InspectorPanel />

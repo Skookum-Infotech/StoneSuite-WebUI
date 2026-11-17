@@ -9,6 +9,7 @@ import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
 
 const HINTS: Partial<Record<EditorTool, string>> = {
   border: 'Click on any border',
+  corner: 'Click on any corner',
 };
 
 /** Gap between the pointer and the label, in pixels. */

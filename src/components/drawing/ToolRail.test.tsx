@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The rail down the left of the board: the pointer, Draw, Text and Border (with
-// its flyout), plus Corner and Edges, which are not built yet.
+// its flyout), Corner (likewise), plus Edges, which is not built yet.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
@@ -20,9 +20,14 @@ function Readout() {
   return <span data-testid="tool">{tool}</span>;
 }
 
-function BorderReadout() {
-  const { border } = useDrawingEditor();
-  return <span data-testid="border-style">{border.style}</span>;
+function StyleReadout() {
+  const { border, corner } = useDrawingEditor();
+  return (
+    <>
+      <span data-testid="border-style">{border.style}</span>
+      <span data-testid="corner-style">{corner.style}</span>
+    </>
+  );
 }
 
 function open() {
@@ -30,7 +35,7 @@ function open() {
     <DrawingEditorProvider drawing={drawing} materialLines={[]}>
       <ToolRail />
       <Readout />
-      <BorderReadout />
+      <StyleReadout />
     </DrawingEditorProvider>,
   );
   return userEvent.setup();
@@ -68,10 +73,29 @@ describe('ToolRail', () => {
     expect(screen.getByRole('button', { name: 'Draw' }).getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('Corner and Edges are shown but switched off until they are built', () => {
+  it('Edges is shown but switched off until it is built; Corner is live', () => {
     open();
-    expect((screen.getByRole('button', { name: 'Corner' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Corner' }) as HTMLButtonElement).disabled).toBe(false);
     expect((screen.getByRole('button', { name: 'Edges' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('Corner opens a flyout of the six changes, and picking one arms the tool with it', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Corner' }));
+    const menu = screen.getByRole('menu', { name: 'Corners (C)' });
+    expect(within(menu).getAllByRole('menuitem').map((i) => i.getAttribute('aria-label'))).toEqual([
+      'Clip', 'Radius', 'Radius In', 'Bump Out', 'Bump In', 'Notch',
+    ]);
+    await user.click(within(menu).getByRole('menuitem', { name: 'Notch' }));
+    expect(tool()).toBe('corner');
+    expect(screen.getByTestId('corner-style').textContent).toBe('notch');
+    expect(screen.getByRole('button', { name: 'Corner' }).getAttribute('aria-pressed')).toBe('true');
+    // Armed, the button puts the tool away; Border and Corner never light together.
+    await user.click(screen.getByRole('button', { name: 'Corner' }));
+    expect(tool()).toBe('select');
+    await user.click(screen.getByRole('button', { name: 'Border' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Bump Out' }));
+    expect(screen.getByRole('button', { name: 'Corner' }).getAttribute('aria-pressed')).toBe('false');
   });
 
   it('Border opens a flyout of the six reshapes, and picking one arms the tool with it', async () => {

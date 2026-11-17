@@ -13,7 +13,7 @@ import { distance, outlineEdges } from './geometry';
 
 export type EdgeSettings = Partial<Omit<PieceEdge, 'index'>>;
 
-const SETTING_KEYS = ['code', 'overhangMm', 'splashHeightMm', 'waterfallHeightMm', 'arcHeightMm', 'borderId', 'borderStyle'] as const;
+const SETTING_KEYS = ['code', 'overhangMm', 'splashHeightMm', 'waterfallHeightMm', 'arcHeightMm', 'borderId', 'borderStyle', 'cornerId', 'cornerStyle'] as const;
 const HEIGHT_FIELDS: { key: 'overhangMm' | 'splashHeightMm' | 'waterfallHeightMm'; label: string }[] = [
   { key: 'overhangMm', label: 'Overhang' },
   { key: 'splashHeightMm', label: 'Backsplash height' },

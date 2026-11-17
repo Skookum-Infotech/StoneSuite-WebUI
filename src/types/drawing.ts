@@ -44,6 +44,9 @@ export type PieceKind = 'countertop' | 'island' | 'peninsula';
 /** The Border tool's reshapes (lib/drawing/borders.ts). */
 export type BorderStyle = 'fullRadiusOut' | 'fullRadiusIn' | 'bumpOut' | 'bumpIn' | 'arcBumpOut' | 'arcBumpIn';
 
+/** The Corner tool's changes (lib/drawing/corners.ts). */
+export type CornerStyle = 'clip' | 'radius' | 'radiusIn' | 'bumpOut' | 'bumpIn' | 'notch';
+
 export interface PieceEdge {
   index: number;
   /** Edge profile — a code from the tenant's edge list (lkp_edge_code). */
@@ -64,6 +67,11 @@ export interface PieceEdge {
    *  standard again before another can go on. `borderStyle` says which. */
   borderId?: string;
   borderStyle?: BorderStyle;
+  /** Same idea for the Corner tool: set on every side a corner change made, one
+   *  id per change. Such a side takes no second corner change or border until the
+   *  corner is made standard again. */
+  cornerId?: string;
+  cornerStyle?: CornerStyle;
 }
 
 export interface Seam {

@@ -13,12 +13,13 @@ import {
   createInitialEditorState, editorReducer, type EditorAction, type EditorState,
 } from '@/lib/drawing/drawingReducer';
 import { useBorderToolState, type BorderToolState } from './useBorderToolState';
+import { useCornerToolState, type CornerToolState } from './useCornerToolState';
 
 /** Leaves this much of the viewport empty around the fitted content, so
  *  "Fit" doesn't crop a piece flush against the edge. */
 const FIT_MARGIN = 0.9;
 
-export type EditorTool = 'select' | 'draw' | 'polygon' | 'note' | 'text' | 'dimension' | 'line' | 'border';
+export type EditorTool = 'select' | 'draw' | 'polygon' | 'note' | 'text' | 'dimension' | 'line' | 'border' | 'corner';
 
 /** The editor's three working areas, picked from the top bar: the drawing
  *  board itself, and the Cutout and Material side panels beside it. */
@@ -51,6 +52,8 @@ export interface DrawingEditorContextValue {
   selectNote: (noteId: string | null) => void;
   /** The Border tool's armed reshape, typed numbers and clicked side. */
   border: BorderToolState;
+  /** The Corner tool's armed change, typed numbers and clicked corner. */
+  corner: CornerToolState;
   startPlacing: (pieceId: string, cutout: Cutout) => void;
   cancelPlacing: () => void;
   materialLines: SalesOrderLine[];
@@ -93,6 +96,8 @@ export function DrawingEditorProvider(
   const [tool, setToolState] = useState<EditorTool>('select');
   const border = useBorderToolState(tool === 'border');
   const { setTarget: setBorderTarget } = border;
+  const corner = useCornerToolState(tool === 'corner');
+  const { setTarget: setCornerTarget } = corner;
   const [workspace, setWorkspaceState] = useState<EditorWorkspace>('sketch');
   const [editingCutoutId, editCutout] = useState<string | null>(null);
   const [placing, setPlacing] = useState<PlacingCutout | null>(null);
@@ -118,13 +123,14 @@ export function DrawingEditorProvider(
   const setTool = useCallback((next: EditorTool) => {
     setToolState(next);
     setBorderTarget(null);
+    setCornerTarget(null);
     if (next !== 'select') {
       selectNote(null);
       setWorkspaceState('sketch');
       editCutout(null);
       setPlacing(null);
     }
-  }, [selectNote, setBorderTarget]);
+  }, [selectNote, setBorderTarget, setCornerTarget]);
   const setWorkspace = useCallback((next: EditorWorkspace) => {
     setWorkspaceState(next);
     if (next !== 'sketch') setToolState('select');
@@ -210,13 +216,13 @@ export function DrawingEditorProvider(
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
       state, dispatch, tool, setTool, workspace, setWorkspace, editingCutoutId, editCutout, placing, startPlacing,
-      selectedNoteId, selectNote, border, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+      selectedNoteId, selectNote, border, corner, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, selectedNoteId, border, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
+      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, selectedNoteId, border, corner, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
       toggleProperties, copySelection, pasteClipboard, duplicateSelection,
     ],
   );

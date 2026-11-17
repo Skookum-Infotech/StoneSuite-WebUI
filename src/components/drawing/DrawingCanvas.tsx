@@ -24,6 +24,7 @@ import { TextNoteLayer } from './TextNoteLayer';
 import { CanvasOverlays, type Marquee } from './CanvasOverlays';
 import { CutoutPlacementLayer } from './CutoutPlacementLayer';
 import { BorderPickLayer } from './BorderPickLayer';
+import { CornerPickLayer } from './CornerPickLayer';
 import { EdgeDragLayer } from './EdgeDragLayer';
 import { ToolCursorHint } from './ToolCursorHint';
 import { useAnnotationTool } from './useAnnotationTool';
@@ -47,7 +48,7 @@ const PRIMARY_MOUSE_BUTTON = 0;
 
 export function DrawingCanvas() {
   const {
-    state, dispatch, tool, setTool, workspace, selectNote, border, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
+    state, dispatch, tool, setTool, workspace, selectNote, border, corner, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
   } = useDrawingEditor();
   const [draftPoints, setDraftPoints] = useState<Point[]>([]);
   const [isPanning, setIsPanning] = useState(false);
@@ -119,6 +120,10 @@ export function DrawingCanvas() {
     }
     if (e.key === 'b') {
       setTool(tool === 'border' ? 'select' : 'border');
+      return;
+    }
+    if (e.key === 'c') {
+      setTool(tool === 'corner' ? 'select' : 'corner');
       return;
     }
     if (selectedIds.length === 0) return;
@@ -254,9 +259,9 @@ export function DrawingCanvas() {
       setIsPanning(false);
       return;
     }
-    // Clicking empty board lets go of the side the Border tool was holding.
-    if (tool === 'border') {
-      if (isClick) border.setTarget(null);
+    // Clicking empty board lets go of the side or corner a Border / Corner tool was holding.
+    if (tool === 'border' || tool === 'corner') {
+      if (isClick) (tool === 'border' ? border : corner).setTarget(null);
       setIsPanning(false);
       return;
     }
@@ -327,7 +332,7 @@ export function DrawingCanvas() {
         double-click to finish the shape once at least three points are
         placed; Backspace removes the last point and Escape cancels. The B
         key arms the border tool: click a side, type the numbers and apply;
-        Escape closes it. With the
+        the C key does the same for a corner; Escape closes either. With the
         line, dimension or note tool active, click the canvas to place each
         point — a line and a dimension take two, either by dragging from one
         to the other or by clicking each in turn — and Escape cancels.
@@ -400,6 +405,7 @@ export function DrawingCanvas() {
             )}
             {tool === 'draw' && <EdgeDragLayer edgeDrag={edgeDrag} pieces={activeArea?.pieces ?? []} />}
             {tool === 'border' && <BorderPickLayer />}
+            {tool === 'corner' && <CornerPickLayer />}
             <CutoutPlacementLayer />
           </g>
         </g>

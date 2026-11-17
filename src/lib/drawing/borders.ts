@@ -108,6 +108,10 @@ export function applyBorder(
     return fail(`Side ${edgeLetter(edgeIndex)} already has a border. Make it standard before applying another.`);
   }
 
+  if (edges.find((e) => e.index === edgeIndex)?.cornerId) {
+    return fail(`Side ${edgeLetter(edgeIndex)} belongs to a corner change. Make that corner standard before applying a border.`);
+  }
+
   const { kind, direction } = borderStyleDef(style);
   const { heightMm, gap1Mm, gap2Mm } = params;
   const letter = edgeLetter(edgeIndex);

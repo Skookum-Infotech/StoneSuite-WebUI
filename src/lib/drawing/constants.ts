@@ -172,6 +172,9 @@ export const DEFAULT_PIECE_THICKNESS_MM = 30;
 export const DEFAULT_BORDER_GAP_MM = 4 * MM_PER_INCH;
 export const DEFAULT_BORDER_HEIGHT_MM = 3 * MM_PER_INCH;
 
+/** Corner tool default (each size and a bump's height) — 4", in mm. */
+export const DEFAULT_CORNER_SIZE_MM = 4 * MM_PER_INCH;
+
 /** Straight pieces an arc side is cut into when something needs a polyline
  *  (DXF export, overlap checks, the mini-map) rather than a true SVG arc. */
 export const ARC_SEGMENTS = 32;
