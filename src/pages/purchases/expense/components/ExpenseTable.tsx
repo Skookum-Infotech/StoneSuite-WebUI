@@ -331,7 +331,7 @@ export function ExpenseTable() {
                         <Link
                           to={`/purchases/expense/${exp.id}`}
                           aria-label={`Open expense ${exp.expenseNumber}`}
-                          className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="inline-flex items-center gap-1.5 hover:text-accent-foreground transition-colors type-record-id"
                         >
                           {exp.expenseNumber || '—'}
                         </Link>

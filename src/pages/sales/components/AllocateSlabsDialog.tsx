@@ -189,7 +189,7 @@ export function AllocateSlabsDialog({ jobId, material, pieces, onClose }: {
                         className="size-4 rounded border-stone-300 text-brand focus:ring-brand/30"
                       />
                     </td>
-                    <td className="px-3 py-2 font-mono font-semibold text-stone-900">{s.serial}</td>
+                    <td className="px-3 py-2 type-record-id">{s.serial}</td>
                     <td className="px-3 py-2 capitalize text-stone-500">{s.kind}</td>
                     <td className="px-3 py-2 tabular-nums text-stone-600">{s.lengthMm} × {s.widthMm} × {s.thicknessMm}</td>
                     <td className="whitespace-nowrap px-3 py-2 tabular-nums text-stone-700">{formatStockQty(s.area, material.unitCode)}</td>

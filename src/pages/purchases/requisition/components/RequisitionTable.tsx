@@ -346,7 +346,7 @@ export function RequisitionTable() {
                         <Link
                           to={`/purchases/requisition/${reqn.id}`}
                           aria-label={`Open requisition ${reqn.requisitionNumber}`}
-                          className="inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-xs font-semibold text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
                         >
                           {reqn.requisitionNumber || '—'}
                         </Link>

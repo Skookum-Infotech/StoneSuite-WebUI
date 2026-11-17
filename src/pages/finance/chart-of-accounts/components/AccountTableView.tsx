@@ -342,7 +342,7 @@ export function AccountTableView() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); navigate(`/finance/chart-of-accounts/${a.id}`); }}
-                        className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
+                        className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
                       >
                         {a.code}
                       </button>

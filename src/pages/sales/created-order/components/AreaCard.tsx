@@ -94,7 +94,7 @@ export function AreaCard({ area, errors, copyFromName, actions, isNew }: AreaCar
           type="button"
           aria-label={`Remove ${area.name || 'area'}`}
           onClick={() => actions.onRemove(area.key)}
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-stone-400 outline-none transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-300"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-muted outline-none transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-300"
         >
           <Trash2 className="size-4" aria-hidden="true" />
         </button>

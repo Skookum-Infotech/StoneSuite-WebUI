@@ -254,7 +254,7 @@ export function VendorTable() {
                       <td className="px-4 py-3.5">
                         <Link
                           to={`/purchases/vendor/${vendor.id}`}
-                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
                         >
                           {vendor.vendorNumber || '—'}
                         </Link>

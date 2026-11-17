@@ -341,7 +341,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                       <td className="px-4 max-sm:px-2 py-3.5">
                         <Link
                           to={`/purchases/vendor_bill/${bill.id}`}
-                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
                         >
                           {bill.vendorBillNumber || '—'}
                         </Link>

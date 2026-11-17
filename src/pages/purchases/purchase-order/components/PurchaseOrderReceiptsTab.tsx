@@ -55,7 +55,7 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
                   <button
                     type="button"
                     onClick={() => navigate(`/purchases/item_receipt/${r.id}`)}
-                    className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
+                    className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
                   >
                     {r.itemReceiptNumber || '—'}
                   </button>

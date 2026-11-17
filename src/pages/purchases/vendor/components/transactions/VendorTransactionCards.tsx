@@ -20,7 +20,7 @@ export function VendorTransactionCards({ rows }: { rows: VendorTransactionRow[] 
               className="block h-full rounded-xl border border-stone-200 bg-white p-3.5 transition-colors hover:bg-stone-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 truncate font-mono text-xs font-semibold text-stone-800">{row.number || '—'}</p>
+                <p className="min-w-0 truncate type-record-id">{row.number || '—'}</p>
                 <TypeBadge row={row} />
               </div>
 

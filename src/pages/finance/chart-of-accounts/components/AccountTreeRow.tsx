@@ -145,7 +145,7 @@ export function AccountTreeRow({
                 disabled={toggle.isPending}
                 aria-label={`${VISIBILITY_ACTION_LABELS[action]} ${account.code} ${account.name}`}
                 title={VISIBILITY_ACTION_LABELS[action]}
-                className="rounded p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50"
+                className="rounded p-1 text-ink-muted transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50"
               >
                 {pendingAction === action ? <Loader2 className="size-3.5 animate-spin" /> : <Icon className="size-3.5" />}
               </button>

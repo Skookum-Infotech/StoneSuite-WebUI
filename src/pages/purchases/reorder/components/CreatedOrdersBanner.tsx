@@ -36,7 +36,7 @@ export function CreatedOrdersBanner({ batches, onDismiss }: {
             type="button"
             onClick={() => onDismiss(batch.key)}
             aria-label="Dismiss"
-            className="rounded p-0.5 text-green-700 hover:bg-green-100"
+            className="rounded p-0.5 text-success-ink hover:bg-green-100"
           >
             <X className="size-3.5" aria-hidden="true" />
           </button>

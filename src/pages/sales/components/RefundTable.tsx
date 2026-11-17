@@ -283,7 +283,7 @@ export function RefundTable() {
                       <td className="px-4 max-sm:px-2 py-3.5">
                         <Link
                           to={`/sales/refund/${r.id}`}
-                          className="font-mono text-xs font-semibold whitespace-nowrap text-stone-900 hover:text-accent-foreground transition-colors"
+                          className="whitespace-nowrap hover:text-accent-foreground transition-colors type-record-id"
                         >
                           {r.refundNumber || '—'}
                         </Link>

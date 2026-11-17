@@ -255,7 +255,7 @@ export function CancelFabricationJobDialog({ job, disabled, onCancelled }: {
                     return (
                       <div key={slab.id} className="rounded-lg border border-stone-200 p-3 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs font-semibold text-stone-800">{slab.serial}</span>
+                          <span className="type-record-id">{slab.serial}</span>
                           <span className="tabular-nums type-subline">{slab.area} sq. area</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
