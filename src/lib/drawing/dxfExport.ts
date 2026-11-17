@@ -4,6 +4,7 @@
 // save/export flow and its tests can call this the same way.
 
 import type { DrawingArea, Piece, PieceEdge, Point } from '@/types/drawing';
+import { outlinePolyline } from './arcs';
 import { cutoutOutline } from './cutouts';
 import { outlineEdges, transformOutline } from './geometry';
 import { DXF_LAYER, MM_PER_INCH } from './constants';
@@ -41,7 +42,9 @@ export function buildAreaDxf(area: DrawingArea, meta: DxfExportMeta): string {
     // or rotation, so without this every piece would export stacked at the
     // origin instead of where it sits in the drawing.
     const worldMm = transformOutline(piece.outline, piece.position, piece.rotationDeg);
-    const outlineIn = worldMm.map(mmPointToInches);
+    // A curved side is written as the short straight pieces that approximate
+    // it; the dimensions below still measure the straight line across it.
+    const outlineIn = toWorldInches(outlinePolyline(piece.outline, piece.edges), piece);
     writer.addOutline(outlineIn);
     writer.addLabel(piece.label, centroid(outlineIn));
 

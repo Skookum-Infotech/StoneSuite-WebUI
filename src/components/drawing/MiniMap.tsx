@@ -11,6 +11,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ZOOM_STEP } from '@/lib/drawing/constants';
+import { outlinePolyline } from '@/lib/drawing/arcs';
 import { transformOutline } from '@/lib/drawing/geometry';
 import {
   boxToWorld, fitExtent, mapExtent, padRect, piecesBounds, rectCenter, rectContains, viewportRect,
@@ -56,7 +57,7 @@ export function MiniMap() {
   );
   const shapes = useMemo<MapShape[]>(() => pieces.map((p) => ({
     id: p.id,
-    points: transformOutline(p.outline, p.position, p.rotationDeg).map((pt) => `${pt.x},${-pt.y}`).join(' '),
+    points: transformOutline(outlinePolyline(p.outline, p.edges), p.position, p.rotationDeg).map((pt) => `${pt.x},${-pt.y}`).join(' '),
   })), [pieces]);
   const drawingBounds = useMemo(() => piecesBounds(pieces), [pieces]);
 

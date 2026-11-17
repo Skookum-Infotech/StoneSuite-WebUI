@@ -14,6 +14,7 @@
 
 import { memo, useId, useMemo, useState } from 'react';
 import type { Piece, Point } from '@/types/drawing';
+import { hasArcs, outlinePath } from '@/lib/drawing/arcs';
 import { snapToGrid, transformOutline } from '@/lib/drawing/geometry';
 import { GRID_SIZE_MM, MIN_DRAG_MM, SNAP_TOLERANCE_MM } from '@/lib/drawing/constants';
 import { validateCutouts } from '@/lib/drawing/cutouts';
@@ -50,6 +51,9 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
     ?? (followDelta ? { x: piece.position.x + followDelta.x, y: piece.position.y + followDelta.y } : piece.position);
   const worldOutline = transformOutline(piece.outline, displayPosition, piece.rotationDeg);
   const points = worldOutline.map((p) => `${p.x},${-p.y}`).join(' ');
+  // A piece with a curved side is drawn as a path (true arcs); a plain one stays a polygon.
+  const curved = hasArcs(piece.edges);
+  const shapeClass = selected ? 'fill-brand/30 stroke-stone-900' : 'fill-white/70 stroke-stone-900';
   const invalidCutoutIds = useMemo(
     () => new Set(validateCutouts(piece).flatMap((issue) => (issue.otherId ? [issue.cutoutId, issue.otherId] : [issue.cutoutId]))),
     [piece],
@@ -145,11 +149,15 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           the rest. Fills are slightly see-through, so two pieces overlapping
           each show their own outline through the other instead of one hiding
           the other. */}
-      <polygon
-        points={points}
-        className={selected ? 'fill-brand/30 stroke-stone-900' : 'fill-white/70 stroke-stone-900'}
-        strokeWidth={PIECE_STROKE_PX / state.zoom}
-      />
+      {curved ? (
+        <path
+          d={outlinePath(worldOutline.map((p) => ({ x: p.x, y: -p.y })), piece.edges)}
+          className={shapeClass}
+          strokeWidth={PIECE_STROKE_PX / state.zoom}
+        />
+      ) : (
+        <polygon points={points} className={shapeClass} strokeWidth={PIECE_STROKE_PX / state.zoom} />
+      )}
       {/* Local coordinates -> screen: position, then rotation, then the
           y-flip every world point gets on its way to SVG. */}
       <g transform={`translate(${displayPosition.x},${-displayPosition.y}) rotate(${piece.rotationDeg}) scale(1,-1)`}>
@@ -160,7 +168,13 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           <>
             <defs>
               <clipPath id={seamClipId}>
-                <polygon points={piece.outline.map((p) => `${p.x},${p.y}`).join(' ')} />
+                {curved ? (
+                  // Drawn in screen orientation, then mirrored back into this
+                  // group's y-up space, so the arcs keep their bow.
+                  <path d={outlinePath(piece.outline.map((p) => ({ x: p.x, y: -p.y })), piece.edges)} transform="scale(1,-1)" />
+                ) : (
+                  <polygon points={piece.outline.map((p) => `${p.x},${p.y}`).join(' ')} />
+                )}
               </clipPath>
             </defs>
             <g clipPath={`url(#${seamClipId})`}>

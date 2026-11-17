@@ -16,6 +16,7 @@ import type { SalesOrder } from '@/types/salesOrder';
 import { DrawingEditorProvider, useDrawingEditor } from '@/components/drawing/DrawingEditorContext';
 import { DrawingToolbar } from '@/components/drawing/DrawingToolbar';
 import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
+import { BorderModeBar } from '@/components/drawing/BorderModeBar';
 import { DrawModeBar } from '@/components/drawing/DrawModeBar';
 import { MiniMap } from '@/components/drawing/MiniMap';
 import { InspectorPanel } from '@/components/drawing/InspectorPanel';
@@ -194,6 +195,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
           <div className="relative min-h-0 min-w-0 flex-1">
             <DrawingCanvas />
             <DrawModeBar />
+            <BorderModeBar />
             <TextControls />
             <MiniMap />
             <InspectorPanel />

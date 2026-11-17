@@ -166,3 +166,12 @@ export const MIN_LEG_REMAINDER_MM = MM_PER_INCH;
 
 /** Thickness given to a piece drawn on the canvas (no thickness is asked for). */
 export const DEFAULT_PIECE_THICKNESS_MM = 30;
+
+/** Border tool defaults (a bump's gaps and height, an arc's height) — 4" and
+ *  3", in mm; shown in whatever unit the drawing displays. */
+export const DEFAULT_BORDER_GAP_MM = 4 * MM_PER_INCH;
+export const DEFAULT_BORDER_HEIGHT_MM = 3 * MM_PER_INCH;
+
+/** Straight pieces an arc side is cut into when something needs a polyline
+ *  (DXF export, overlap checks, the mini-map) rather than a true SVG arc. */
+export const ARC_SEGMENTS = 32;

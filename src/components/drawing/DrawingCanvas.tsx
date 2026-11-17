@@ -23,7 +23,9 @@ import { AnnotationLayer } from './AnnotationLayer';
 import { TextNoteLayer } from './TextNoteLayer';
 import { CanvasOverlays, type Marquee } from './CanvasOverlays';
 import { CutoutPlacementLayer } from './CutoutPlacementLayer';
+import { BorderPickLayer } from './BorderPickLayer';
 import { EdgeDragLayer } from './EdgeDragLayer';
+import { ToolCursorHint } from './ToolCursorHint';
 import { useAnnotationTool } from './useAnnotationTool';
 import { useDrawTool } from './useDrawTool';
 import { useEdgeDrag } from './useEdgeDrag';
@@ -45,7 +47,7 @@ const PRIMARY_MOUSE_BUTTON = 0;
 
 export function DrawingCanvas() {
   const {
-    state, dispatch, tool, setTool, workspace, selectNote, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
+    state, dispatch, tool, setTool, workspace, selectNote, border, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
   } = useDrawingEditor();
   const [draftPoints, setDraftPoints] = useState<Point[]>([]);
   const [isPanning, setIsPanning] = useState(false);
@@ -113,6 +115,10 @@ export function DrawingCanvas() {
     }
     if (e.key === 'm') {
       toggleMap();
+      return;
+    }
+    if (e.key === 'b') {
+      setTool(tool === 'border' ? 'select' : 'border');
       return;
     }
     if (selectedIds.length === 0) return;
@@ -248,6 +254,12 @@ export function DrawingCanvas() {
       setIsPanning(false);
       return;
     }
+    // Clicking empty board lets go of the side the Border tool was holding.
+    if (tool === 'border') {
+      if (isClick) border.setTarget(null);
+      setIsPanning(false);
+      return;
+    }
     // A press on empty canvas that never became a pan is a click: deselect.
     if (isClick && selectedIds.length > 0) dispatch({ type: 'selectPiece', pieceId: null });
     if (isClick) selectNote(null);
@@ -298,7 +310,7 @@ export function DrawingCanvas() {
       tabIndex={0}
       onKeyDown={onKeyDown}
       onWheel={onWheel}
-      className="h-full w-full outline-none"
+      className="relative h-full w-full outline-none"
     >
       {/* role="application" hands off all keystrokes to this widget, which
           makes its shortcuts undiscoverable to assistive tech otherwise. */}
@@ -313,7 +325,9 @@ export function DrawingCanvas() {
         any side to grow or shrink the piece in sixteenths of an inch; set
         exact lengths in the inspector. With the polygon tool active, click to place points, then press Enter or
         double-click to finish the shape once at least three points are
-        placed; Backspace removes the last point and Escape cancels. With the
+        placed; Backspace removes the last point and Escape cancels. The B
+        key arms the border tool: click a side, type the numbers and apply;
+        Escape closes it. With the
         line, dimension or note tool active, click the canvas to place each
         point — a line and a dimension take two, either by dragging from one
         to the other or by clicking each in turn — and Escape cancels.
@@ -385,10 +399,12 @@ export function DrawingCanvas() {
               />
             )}
             {tool === 'draw' && <EdgeDragLayer edgeDrag={edgeDrag} pieces={activeArea?.pieces ?? []} />}
+            {tool === 'border' && <BorderPickLayer />}
             <CutoutPlacementLayer />
           </g>
         </g>
       </svg>
+      <ToolCursorHint />
     </div>
   );
 }

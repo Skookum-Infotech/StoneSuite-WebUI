@@ -41,6 +41,9 @@ export type CutoutShape = 'rect' | 'round' | 'polygon' | 'ellipse' | 'arc' | 'st
  *  identical for every kind. */
 export type PieceKind = 'countertop' | 'island' | 'peninsula';
 
+/** The Border tool's reshapes (lib/drawing/borders.ts). */
+export type BorderStyle = 'fullRadiusOut' | 'fullRadiusIn' | 'bumpOut' | 'bumpIn' | 'arcBumpOut' | 'arcBumpIn';
+
 export interface PieceEdge {
   index: number;
   /** Edge profile — a code from the tenant's edge list (lkp_edge_code). */
@@ -51,6 +54,16 @@ export interface PieceEdge {
   splashHeightMm?: number;
   /** Waterfall panel dropping from this side. */
   waterfallHeightMm?: number;
+  /** Bows this side into a circular arc: the gap between the chord (corner to
+   *  corner) and the arc's crown, in mm. Positive bulges to the left of corner
+   *  i -> i+1 — away from the stone on the usual clockwise outline — negative
+   *  to the right. Absent is a straight side. See lib/drawing/arcs.ts. */
+  arcHeightMm?: number;
+  /** Set on every side a Border reshape made (one id per reshape, shared by all
+   *  its sides): a side with it already carries a border and must be made
+   *  standard again before another can go on. `borderStyle` says which. */
+  borderId?: string;
+  borderStyle?: BorderStyle;
 }
 
 export interface Seam {

@@ -8,11 +8,12 @@
 
 import type { Piece, PieceEdge } from '@/types/drawing';
 import { MAX_DIMENSION_MM } from './constants';
+import { arcLength } from './arcs';
 import { distance, outlineEdges } from './geometry';
 
 export type EdgeSettings = Partial<Omit<PieceEdge, 'index'>>;
 
-const SETTING_KEYS = ['code', 'overhangMm', 'splashHeightMm', 'waterfallHeightMm'] as const;
+const SETTING_KEYS = ['code', 'overhangMm', 'splashHeightMm', 'waterfallHeightMm', 'arcHeightMm', 'borderId', 'borderStyle'] as const;
 const HEIGHT_FIELDS: { key: 'overhangMm' | 'splashHeightMm' | 'waterfallHeightMm'; label: string }[] = [
   { key: 'overhangMm', label: 'Overhang' },
   { key: 'splashHeightMm', label: 'Backsplash height' },
@@ -66,7 +67,8 @@ export function edgeTotals(piece: Pick<Piece, 'outline' | 'edges'>): EdgeTotals 
   for (const edge of piece.edges) {
     const side = sides[edge.index];
     if (!side) continue; // stale entry for a side that no longer exists
-    const length = distance(side[0], side[1]);
+    // Polished and clad along the curve itself, not the straight line across it.
+    const length = arcLength(distance(side[0], side[1]), edge.arcHeightMm ?? 0);
     if (edge.code) {
       totals.finishedByCode[edge.code] = (totals.finishedByCode[edge.code] ?? 0) + length;
       totals.finishedLengthMm += length;
