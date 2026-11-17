@@ -182,8 +182,9 @@ export function applyCorner(
   // side carries the arc.
   const tag = { cornerId, cornerStyle: style };
   const shared = edgeOf(before)?.code === edgeOf(after)?.code ? edgeOf(before)?.code : undefined;
+  const sharedType = edgeOf(before)?.edgeTypeId === edgeOf(after)?.edgeTypeId ? edgeOf(before)?.edgeTypeId : undefined;
   const made: PieceEdge[] = points.slice(1).map(() => ({
-    index: 0, ...(shared === undefined ? {} : { code: shared }), ...tag,
+    index: 0, ...(shared === undefined ? {} : { code: shared }), ...(sharedType === undefined ? {} : { edgeTypeId: sharedType }), ...tag,
   }));
   if (bow !== 0) made[0] = { ...made[0], arcHeightMm: bow };
 

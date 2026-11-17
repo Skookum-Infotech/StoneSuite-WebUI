@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // The rail down the left of the board: the pointer, Draw, Text and Border (with
-// its flyout), Corner (likewise), plus Edges, which is not built yet.
+// its flyout), Corner (likewise) and Edges, which arms straight away (its type is
+// picked in the bottom bar).
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
@@ -73,10 +74,27 @@ describe('ToolRail', () => {
     expect(screen.getByRole('button', { name: 'Draw' }).getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('Edges is shown but switched off until it is built; Corner is live', () => {
-    open();
-    expect((screen.getByRole('button', { name: 'Corner' }) as HTMLButtonElement).disabled).toBe(false);
-    expect((screen.getByRole('button', { name: 'Edges' }) as HTMLButtonElement).disabled).toBe(true);
+  it('Edges arms with one click, lights while armed, and puts itself away on a second', async () => {
+    const user = open();
+    const edges = screen.getByRole('button', { name: 'Edges' });
+    expect((edges as HTMLButtonElement).disabled).toBe(false);
+    // No flyout: its list lives in the bottom bar.
+    expect(edges.getAttribute('aria-haspopup')).toBeNull();
+    await user.click(edges);
+    expect(tool()).toBe('edge');
+    expect(edges.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Select' }).getAttribute('aria-pressed')).toBe('false');
+    await user.click(edges);
+    expect(tool()).toBe('select');
+  });
+
+  it('switching from Edges to Border or Corner lights only the new tool', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Edges' }));
+    await user.click(screen.getByRole('button', { name: 'Corner' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Clip' }));
+    expect(tool()).toBe('corner');
+    expect(screen.getByRole('button', { name: 'Edges' }).getAttribute('aria-pressed')).toBe('false');
   });
 
   it('Corner opens a flyout of the six changes, and picking one arms the tool with it', async () => {

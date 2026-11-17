@@ -19,6 +19,8 @@ import { DrawingCanvas } from '@/components/drawing/DrawingCanvas';
 import { BorderModeBar } from '@/components/drawing/BorderModeBar';
 import { CornerModeBar } from '@/components/drawing/CornerModeBar';
 import { DrawModeBar } from '@/components/drawing/DrawModeBar';
+import { EdgeModeBar } from '@/components/drawing/EdgeModeBar';
+import { EdgeTypesProvider } from '@/components/drawing/EdgeTypesContext';
 import { MiniMap } from '@/components/drawing/MiniMap';
 import { InspectorPanel } from '@/components/drawing/InspectorPanel';
 import { WorkspacePanel } from '@/components/drawing/WorkspacePanel';
@@ -86,11 +88,13 @@ export default function SalesOrderDrawingPage() {
 
   return (
     <DrawingEditorProvider drawing={drawing} materialLines={orderQuery.data.items} initialZoom={OPEN_ZOOM}>
-      <DrawingEditorBody
-        salesOrderId={id}
-        order={orderQuery.data}
-        onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
-      />
+      <EdgeTypesProvider>
+        <DrawingEditorBody
+          salesOrderId={id}
+          order={orderQuery.data}
+          onOrderUpdated={(updated) => queryClient.setQueryData(['sales-order', id], updated)}
+        />
+      </EdgeTypesProvider>
     </DrawingEditorProvider>
   );
 }
@@ -198,6 +202,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
             <DrawModeBar />
             <BorderModeBar />
             <CornerModeBar />
+            <EdgeModeBar />
             <TextControls />
             <MiniMap />
             <InspectorPanel />

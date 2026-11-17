@@ -47,6 +47,30 @@ export type BorderStyle = 'fullRadiusOut' | 'fullRadiusIn' | 'bumpOut' | 'bumpIn
 /** The Corner tool's changes (lib/drawing/corners.ts). */
 export type CornerStyle = 'clip' | 'radius' | 'radiusIn' | 'bumpOut' | 'bumpIn' | 'notch';
 
+/** The profile an edge type will show in 3D (lib/drawing/edgeTypes.ts lists them
+ *  with their names). `none` is a plain square edge. Not drawn on the sketch. */
+export type EdgeFinish = 'none' | 'raw' | 'ogee' | 'beveled' | 'eased' | 'waterfall' | 'halfBullnose' | 'bullnose';
+
+/** How an edge type is priced. Only a rate per linear length so far. */
+export type EdgePricingType = 'linear';
+
+/** One kind of edge the Edges tool paints onto a side (Ease, Appliance ...): the
+ *  shop's own list, kept on the server (GET /tenant/settings/edge-types). */
+export interface EdgeType {
+  id: string;
+  name: string;
+  pricingType: EdgePricingType;
+  /** The rate, per linear unit of the type's pricing. */
+  price: number;
+  /** A short tag (e.g. "A"); may be empty. */
+  alias: string;
+  /** The colour the side is drawn in, as #rrggbb. */
+  color: string;
+  finish: EdgeFinish;
+  /** One of the four every shop starts with. They can be edited, not duplicated. */
+  isSystem: boolean;
+}
+
 export interface PieceEdge {
   index: number;
   /** Edge profile — a code from the tenant's edge list (lkp_edge_code). */
@@ -72,6 +96,9 @@ export interface PieceEdge {
    *  corner is made standard again. */
   cornerId?: string;
   cornerStyle?: CornerStyle;
+  /** The edge type the Edges tool painted onto this side (EdgeType.id). Absent is
+   *  a side nobody has painted. */
+  edgeTypeId?: string;
 }
 
 export interface Seam {

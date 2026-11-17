@@ -23,6 +23,8 @@ import { pixelDeltaToMm } from '@/lib/drawing/viewport';
 import { CutoutShape } from './CutoutShape';
 import { useDragPreview } from './DragPreviewContext';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { PieceEdgeColors } from './PieceEdgeColors';
+import { useEdgeTypeList } from './EdgeTypesContext';
 import { PieceLabel } from './PieceLabel';
 
 /** On-screen outline weight, shared by selected and unselected pieces. */
@@ -39,6 +41,7 @@ interface DragState {
 function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }) {
   const { state, dispatch, tool, workspace } = useDrawingEditor();
   const { preview, setPreview } = useDragPreview();
+  const edgeTypes = useEdgeTypeList();
   const [drag, setDrag] = useState<DragState | null>(null);
   const [previewPosition, setPreviewPosition] = useState<Point | null>(null);
   // useId() contains colons; they are legal in a url(#...) fragment but
@@ -158,6 +161,8 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
       ) : (
         <polygon points={points} className={shapeClass} strokeWidth={PIECE_STROKE_PX / state.zoom} />
       )}
+      {/* The sides the Edges tool has painted, over the outline. */}
+      <PieceEdgeColors piece={piece} worldOutline={worldOutline} types={edgeTypes} zoom={state.zoom} />
       {/* Local coordinates -> screen: position, then rotation, then the
           y-flip every world point gets on its way to SVG. */}
       <g transform={`translate(${displayPosition.x},${-displayPosition.y}) rotate(${piece.rotationDeg}) scale(1,-1)`}>

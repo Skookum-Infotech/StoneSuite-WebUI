@@ -1,7 +1,8 @@
-// The strip at the bottom centre of the canvas while a Border or Corner tool is
-// armed ("Applying Full Radius Out"): its title, a Close button, the row of
-// styles to switch between, and — once something has been clicked — whatever
-// the tool needs below (the measurements, or a note that it is already done).
+// The strip at the bottom centre of the canvas while a Border, Corner or Edges
+// tool is armed ("Applying Full Radius Out"): its title, a Close button, the row
+// of styles to switch between (left out by a tool that has its own control), and
+// — once something has been clicked — whatever the tool needs below (the
+// measurements, or a note that it is already done).
 // Mounted only while the tool is armed, which is also when Escape closes it.
 
 import { useEffect, type ReactNode } from 'react';
@@ -18,7 +19,7 @@ export function ToolModeBar({ name, title, choices, onClose, children }: {
   /** The bar's accessible name, e.g. "Border tool". */
   name: string;
   title: string;
-  choices: { items: ModeChoice[]; activeId: string; onPick: (id: string) => void };
+  choices?: { items: ModeChoice[]; activeId: string; onPick: (id: string) => void };
   onClose: () => void;
   children?: ReactNode;
 }) {
@@ -48,21 +49,23 @@ export function ToolModeBar({ name, title, choices, onClose, children }: {
           Close (Esc)
         </button>
       </div>
-      <div className="flex gap-1 rounded-md border border-stone-700 p-0.5">
-        {choices.items.map(({ id, label, icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-label={label}
-            aria-pressed={choices.activeId === id}
-            title={label}
-            onClick={() => choices.onPick(id)}
-            className={STYLE_BUTTON_CLASS}
-          >
-            {icon}
-          </button>
-        ))}
-      </div>
+      {choices && (
+        <div className="flex gap-1 rounded-md border border-stone-700 p-0.5">
+          {choices.items.map(({ id, label, icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-label={label}
+              aria-pressed={choices.activeId === id}
+              title={label}
+              onClick={() => choices.onPick(id)}
+              className={STYLE_BUTTON_CLASS}
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
+      )}
       {children}
     </div>
   );

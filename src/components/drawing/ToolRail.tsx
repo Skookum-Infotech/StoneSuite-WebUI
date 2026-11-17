@@ -1,8 +1,9 @@
 // The tool rail down the left of the board: a slim dark pill holding the
 // tools you draw with — Select (the pointer), Draw (drops and resizes
-// pieces), Text, Border (reshapes a side into a curve or a bump) and Corner
-// (clips, rounds, bumps or notches a corner); the last two open a flyout that
-// picks which. Edges sits below them, still to come. Cutouts and materials live
+// pieces), Text, Border (reshapes a side into a curve or a bump), Corner
+// (clips, rounds, bumps or notches a corner) and Edges (paints a side in one of
+// the shop's edge types); Border and Corner open a flyout that picks which, Edges
+// picks its type in the bottom bar. Cutouts and materials live
 // under their own tabs in the top bar, so nothing else belongs here. The armed
 // tool lights up lime, the same accent as the bottom bar; a tool's name appears
 // beside it on hover or keyboard focus. Pressing an armed tool again hands back
@@ -16,7 +17,7 @@ import { useDrawingEditor, type EditorTool } from './DrawingEditorContext';
 import { BorderStyleIcon } from './BorderStyleIcon';
 import { CornerStyleIcon } from './CornerStyleIcon';
 import { RailFlyoutButton, type RailFlyoutTool } from './RailFlyoutButton';
-import { RAIL_BUTTON_CLASS, RAIL_FLYOUT_MARK_CLASS, RAIL_NAME_CLASS } from './railStyles';
+import { RAIL_BUTTON_CLASS, RAIL_NAME_CLASS } from './railStyles';
 
 interface ToolDef {
   tool: EditorTool;
@@ -30,8 +31,32 @@ const TOOLS: ToolDef[] = [
   { tool: 'text', label: 'Text', Icon: Type },
 ];
 
+/** After Border and Corner, so the rail reads Select, Draw, Text, Border, Corner, Edges. */
+const EDGES_TOOL: ToolDef = { tool: 'edge', label: 'Edges', Icon: TriangleRight };
+
 const BORDER_TOOL: RailFlyoutTool = { label: 'Border', hint: 'Border (B)', title: 'Borders (B)', Icon: SquareDashed };
 const CORNER_TOOL: RailFlyoutTool = { label: 'Corner', hint: 'Corner (C)', title: 'Corners (C)', Icon: SquareRoundCorner };
+
+/** A plain rail button: arms its tool, or hands back to Select if it is already armed. */
+function PlainToolButton({ def }: { def: ToolDef }) {
+  const { tool, setTool } = useDrawingEditor();
+  const { tool: id, label, Icon } = def;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label={label}
+        aria-pressed={tool === id}
+        onClick={() => setTool(id === 'select' || tool === id ? 'select' : id)}
+        className={RAIL_BUTTON_CLASS}
+      >
+        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+      </button>
+      {/* Beside the button, over the canvas — the rail is too narrow to hold names. */}
+      <span aria-hidden="true" className={RAIL_NAME_CLASS}>{label}</span>
+    </div>
+  );
+}
 
 export function ToolRail() {
   const { tool, setTool, border, corner } = useDrawingEditor();
@@ -39,21 +64,7 @@ export function ToolRail() {
   return (
     <nav aria-label="Drawing tools" className="flex shrink-0 flex-col items-center px-2 py-2">
       <div className="flex flex-col items-center gap-1 rounded-2xl bg-stone-900 p-1.5 shadow-lg">
-        {TOOLS.map(({ tool: id, label, Icon }) => (
-          <div key={id} className="relative">
-            <button
-              type="button"
-              aria-label={label}
-              aria-pressed={tool === id}
-              onClick={() => setTool(id === 'select' || tool === id ? 'select' : id)}
-              className={RAIL_BUTTON_CLASS}
-            >
-              <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
-            </button>
-            {/* Beside the button, over the canvas — the rail is too narrow to hold names. */}
-            <span aria-hidden="true" className={RAIL_NAME_CLASS}>{label}</span>
-          </div>
-        ))}
+        {TOOLS.map((def) => <PlainToolButton key={def.tool} def={def} />)}
 
         <RailFlyoutButton
           tool={BORDER_TOOL}
@@ -81,13 +92,7 @@ export function ToolRail() {
           onDisarm={() => setTool('select')}
         />
 
-        {/* Still to come: shown so the rail's final shape is clear, but switched off. */}
-        <div className="relative">
-          <button type="button" aria-label="Edges" disabled title="Coming soon" className={RAIL_BUTTON_CLASS}>
-            <TriangleRight className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
-            <span aria-hidden="true" className={RAIL_FLYOUT_MARK_CLASS} />
-          </button>
-        </div>
+        <PlainToolButton def={EDGES_TOOL} />
       </div>
     </nav>
   );

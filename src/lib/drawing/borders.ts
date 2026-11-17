@@ -148,7 +148,9 @@ export function applyBorder(
   const newCorners = kind === 'bump' ? [start, lift(start), lift(end), end] : [start, end];
   // The side's new pieces, in order: straight gaps and the middle carry what
   // the side had (profile, splash, ...); the legs of a bump only its profile.
-  const legs: PieceEdge = inherited.code === undefined ? { index: 0 } : { index: 0, code: inherited.code };
+  const legs: PieceEdge = { index: 0 };
+  if (inherited.code !== undefined) legs.code = inherited.code;
+  if (inherited.edgeTypeId !== undefined) legs.edgeTypeId = inherited.edgeTypeId;
   const pieces: PieceEdge[] = kind === 'bump'
     ? [inherited, legs, inherited, legs, inherited]
     : [inherited, { ...inherited, arcHeightMm: outward * heightMm }, inherited];
