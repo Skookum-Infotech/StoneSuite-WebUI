@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  allocationOf, allocationSentence, customerPath, customerReservationOf, fabricationJobPath, isAllocated, salesOrderPath,
+  allocationOf, allocationSentence, customerPath, customerReservationOf, fabricationJobPath, isAllocated, orderHoldOf, salesOrderPath,
 } from './unitAllocation';
 import { makeAllocatedUnit, makeCutUnit, makeUnit } from '@/pages/inventory/unit/components/unitFixtures';
 
@@ -80,5 +80,31 @@ describe('customerReservationOf', () => {
     expect(isAllocated(makeUnit())).toBe(false);
     expect(allocationSentence(reserved())).toBe('Reserved for customer Acme Kitchens.');
     expect(customerPath('cust-1')).toBe('/crm/customer/cust-1');
+  });
+});
+
+describe('orderHoldOf', () => {
+  const held = makeUnit({ status: 'reserved', reservedSalesOrderId: 'so-9', reservedSalesOrderNumber: 'SORD-000009' });
+
+  it('names the order a reserved slab is held for from its drawing', () => {
+    expect(orderHoldOf(held)).toEqual({ salesOrderId: 'so-9', salesOrderNumber: 'SORD-000009' });
+  });
+
+  it('is null for a free slab, a customer hold, or a slab whose hold was released', () => {
+    expect(orderHoldOf(makeUnit())).toBeNull();
+    expect(orderHoldOf(makeUnit({ status: 'reserved', reservedCustomerId: 'c-1', reservedCustomerName: 'Acme' }))).toBeNull();
+    // A stale order id on a slab that is no longer reserved means nothing.
+    expect(orderHoldOf(makeUnit({ status: 'available', reservedSalesOrderId: 'so-9' }))).toBeNull();
+  });
+
+  it('counts as allocated and explains itself in a sentence', () => {
+    expect(isAllocated(held)).toBe(true);
+    expect(allocationSentence(held)).toBe('Held for sales order SORD-000009 from its drawing.');
+  });
+
+  it('is replaced by the job allocation once a fabrication job takes the slab', () => {
+    const handedOver = makeAllocatedUnit();
+    expect(orderHoldOf(handedOver)).toBeNull();
+    expect(allocationOf(handedOver)).not.toBeNull();
   });
 });

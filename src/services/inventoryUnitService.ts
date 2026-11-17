@@ -61,6 +61,23 @@ export const inventoryUnitService = {
       .post<{ success: boolean; result: CutResult }>(`${BASE}/${uuid}/cut`, payload)
       .then((r) => r.data.result),
 
+  // The picture of one slab. The URL is a short-lived presigned R2 link ('' when
+  // the slab has no photo); the body of an upload is the raw image bytes, not JSON.
+  getPhotoUrl: (uuid: string): Promise<string> =>
+    tenantClient
+      .get<{ success: boolean; photoUrl: string }>(`${BASE}/${uuid}/photo`)
+      .then((r) => r.data.photoUrl ?? ''),
+
+  uploadPhoto: (uuid: string, file: File): Promise<string> =>
+    tenantClient
+      .put<{ success: boolean; photoUrl: string }>(`${BASE}/${uuid}/photo`, file, {
+        headers: { 'Content-Type': file.type },
+      })
+      .then((r) => r.data.photoUrl ?? ''),
+
+  deletePhoto: (uuid: string): Promise<void> =>
+    tenantClient.delete(`${BASE}/${uuid}/photo`).then(() => undefined),
+
   getHistory: (uuid: string): Promise<UnitHistoryEntry[]> =>
     tenantClient
       .get<{ success: boolean; records: UnitHistoryEntry[] }>(`${BASE}/${uuid}/history`)

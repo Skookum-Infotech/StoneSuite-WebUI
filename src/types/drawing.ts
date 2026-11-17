@@ -155,6 +155,20 @@ export interface Piece {
   edges: PieceEdge[];
   seams: Seam[];
   cutouts: Cutout[];
+  /** Where the Material tab laid this piece on a slab; absent until it is placed.
+   *  A piece sits on one slab at a time. */
+  slab?: SlabPlacement;
+}
+
+/** A piece's spot on one inventory slab. The piece's outline is flipped to
+ *  y-down, rotated clockwise by `rotationDeg` about its own origin, then moved so
+ *  the top-left of its bounding box sits at (x, y) millimetres from the slab's
+ *  top-left corner. `slabId` is the inventory unit's uuid. */
+export interface SlabPlacement {
+  slabId: string;
+  x: number;
+  y: number;
+  rotationDeg: number;
 }
 
 export interface Note {

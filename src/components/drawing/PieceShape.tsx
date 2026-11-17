@@ -23,7 +23,10 @@ import { pixelDeltaToMm } from '@/lib/drawing/viewport';
 import { CutoutShape } from './CutoutShape';
 import { useDragPreview } from './DragPreviewContext';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { useMaterialPicker } from './MaterialPickerContext';
 import { PieceEdgeColors } from './PieceEdgeColors';
+import { PieceSlabTexture } from './PieceSlabTexture';
+import { usePieceSlabTexture } from './usePieceSlabTexture';
 import { useEdgeTypeList } from './EdgeTypesContext';
 import { PieceLabel } from './PieceLabel';
 
@@ -41,6 +44,9 @@ interface DragState {
 function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }) {
   const { state, dispatch, tool, workspace } = useDrawingEditor();
   const { preview, setPreview } = useDragPreview();
+  const { pickingSlab, pickPiece } = useMaterialPicker();
+  // The slab's photo, when this piece fits on a slab that has one.
+  const slabTexture = usePieceSlabTexture(piece);
   const edgeTypes = useEdgeTypeList();
   const [drag, setDrag] = useState<DragState | null>(null);
   const [previewPosition, setPreviewPosition] = useState<Point | null>(null);
@@ -56,7 +62,11 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
   const points = worldOutline.map((p) => `${p.x},${-p.y}`).join(' ');
   // A piece with a curved side is drawn as a path (true arcs); a plain one stays a polygon.
   const curved = hasArcs(piece.edges);
-  const shapeClass = selected ? 'fill-brand/30 stroke-stone-900' : 'fill-white/70 stroke-stone-900';
+  // Over a slab photo the fill must not wash the stone out: transparent, with only the
+  // selection tint left.
+  const shapeClass = slabTexture
+    ? (selected ? 'fill-brand/20 stroke-stone-900' : 'fill-transparent stroke-stone-900')
+    : (selected ? 'fill-brand/30 stroke-stone-900' : 'fill-white/70 stroke-stone-900');
   const invalidCutoutIds = useMemo(
     () => new Set(validateCutouts(piece).flatMap((issue) => (issue.otherId ? [issue.cutoutId, issue.otherId] : [issue.cutoutId]))),
     [piece],
@@ -66,6 +76,12 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
 
   const onPointerDown = (e: React.PointerEvent<SVGGElement>) => {
     if (tool !== 'select') return;
+    // Select Pieces on the Material tab is armed: this click lays the piece on the slab.
+    if (pickingSlab) {
+      select(false);
+      pickPiece(piece.id);
+      return;
+    }
     if (e.shiftKey) {
       select(true);
       return;
@@ -139,7 +155,7 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      className="cursor-move outline-none"
+      className={pickingSlab ? 'cursor-crosshair outline-none' : 'cursor-move outline-none'}
     >
       {/* Strokes and text are divided by the zoom so they keep the same size
           on screen at any scale — a 200" piece zoomed out to fit would
@@ -152,6 +168,9 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           the rest. Fills are slightly see-through, so two pieces overlapping
           each show their own outline through the other instead of one hiding
           the other. */}
+      {slabTexture && piece.slab && (
+        <PieceSlabTexture piece={piece} placement={piece.slab} position={displayPosition} texture={slabTexture} />
+      )}
       {curved ? (
         <path
           d={outlinePath(worldOutline.map((p) => ({ x: p.x, y: -p.y })), piece.edges)}
