@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { Piece, Point } from '@/types/drawing';
 import {
-  ARROW_KEY_STEP_MM, EDGE_HIT_WIDTH_PX, FINE_SNAP_MM, HANDLE_RADIUS_VB, SHIFT_ARROW_KEY_STEP_MM, SPLIT_MENU_OFFSET_PX,
+  ARROW_KEY_STEP_MM, CANVAS_EXTENT_MM, EDGE_HIT_WIDTH_PX, FINE_SNAP_MM, HANDLE_RADIUS_VB, SHIFT_ARROW_KEY_STEP_MM, SPLIT_MENU_OFFSET_PX,
 } from '@/lib/drawing/constants';
 import { edgeNormal } from '@/lib/drawing/edgePush';
 import { outlineEdges, rotatePoint, snapToGrid, toWorldPoint } from '@/lib/drawing/geometry';
@@ -27,10 +27,6 @@ import { insertVertex, moveVertex, removeVertex } from '@/lib/drawing/vertexEdit
 import { pixelDeltaToMm } from '@/lib/drawing/viewport';
 import { useDrawingEditor } from './DrawingEditorContext';
 import { EdgeSplitMenu } from './EdgeSplitMenu';
-
-/** Covers the same huge area as the canvas's own background/tool-capture
- *  rects, so a pointerdown anywhere outside the menu itself closes it. */
-const CLICK_AWAY_EXTENT_MM = 5000;
 
 const MIN_CORNERS = 3;
 
@@ -165,8 +161,8 @@ export function PieceHandles({ piece }: { piece: Piece }) {
       {splitMenuEdge !== null && (
         <rect
           data-testid="split-menu-click-away"
-          x={-CLICK_AWAY_EXTENT_MM} y={-CLICK_AWAY_EXTENT_MM}
-          width={CLICK_AWAY_EXTENT_MM * 2} height={CLICK_AWAY_EXTENT_MM * 2}
+          x={-CANVAS_EXTENT_MM} y={-CANVAS_EXTENT_MM}
+          width={CANVAS_EXTENT_MM * 2} height={CANVAS_EXTENT_MM * 2}
           fill="transparent"
           aria-hidden="true"
           onPointerDown={() => setSplitMenuEdge(null)}

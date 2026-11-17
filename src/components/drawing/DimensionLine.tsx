@@ -1,9 +1,10 @@
-// Renders one dimension on the SVG canvas, in the shop-drawing shape: dotted
+// Renders one dimension on the SVG canvas, in the shop-drawing shape: thin
 // extension lines running out from the two measured points, a DASHED
 // dimension line between them with a solid tick at each end, and the
 // measurement — prefixed with the side's letter where it has one
-// ("B: 121.7""). Purely presentational: nothing on it is interactive, so it
-// stays out of the tab order and screen readers skip it.
+// ("B: 121.7"") — sitting on the line with a white halo behind it.
+// Purely presentational: nothing on it is interactive, so it stays out of
+// the tab order and screen readers skip it.
 //
 // Strokes and text are divided by the current zoom, so they stay the same
 // size on screen however far the drawing is zoomed out — the whole point of
@@ -14,25 +15,25 @@ import type { DimensionLineLayout } from '@/lib/drawing/dimensions';
 import { formatLength } from '@/lib/drawing/units';
 import { useDrawingEditor } from './DrawingEditorContext';
 
-const FONT_SIZE_PX = 11;
+const FONT_SIZE_PX = 12;
 const STROKE_PX = 1;
-const TICK_PX = 4;
-/** Clear of the dimension line itself, so the text never sits on the stroke. */
-const TEXT_GAP_PX = 6;
+const TICK_PX = 5;
 /** How far the extension line stops short of the point it measures. */
 const EXTENSION_GAP_PX = 3;
 /** How far it carries on past the dimension line. */
-const EXTENSION_OVERSHOOT_PX = 4;
-/** The extension line's own dot size and the gap between dots — a true round
- *  dot (via strokeLinecap) rather than a dash, and spaced further apart than
- *  the dot itself so the line reads as a light, clean row of dots. */
-const EXTENSION_DOT_PX = 0.1;
-const EXTENSION_DOT_GAP_PX = 4.5;
-/** The dimension line's own dash and gap — a real dash, not the extension
- *  lines' fine dots, so the line itself reads as clean and dashed rather
- *  than a plain solid rule. */
-const DASH_PX = 4;
+const EXTENSION_OVERSHOOT_PX = 3;
+/** The dimension line's own dash and gap. */
+const DASH_PX = 5;
 const DASH_GAP_PX = 3;
+/** The measurement sits ON its dimension line, with a white halo cutting the
+ *  line behind it — the CAD convention. That keeps each dimension to a single
+ *  compact strip instead of a line plus a label floating beside it, which is
+ *  what made neighbouring sides' labels pile up at the corners. */
+const HALO_PX = 4;
+/** Average glyph width as a multiple of the font size (a safe over-estimate)
+ *  and the clear space wanted either side of the text. */
+const GLYPH_WIDTH_EM = 0.62;
+const TEXT_CLEARANCE_PX = 10;
 
 /** World coordinates treat +y as "up" (geometry.ts/dimensions.ts); SVG y grows
  *  downward — negate every y the moment a world point reaches markup. */
@@ -81,11 +82,13 @@ export function DimensionLine(
       y2={end.y + outward.y * px(EXTENSION_OVERSHOOT_PX)}
       stroke="currentColor"
       strokeWidth={px(STROKE_PX)}
-      strokeLinecap="round"
-      strokeDasharray={`${px(EXTENSION_DOT_PX)} ${px(EXTENSION_DOT_GAP_PX)}`}
-      className="text-stone-400"
+      className="text-stone-300"
     />
   );
+  // A side too short on screen to hold its measurement keeps its line and
+  // ticks but drops the text, rather than printing over its neighbours'.
+  const lineLengthPx = layout.lengthMm * state.zoom;
+  const showLabel = lineLengthPx >= label.length * GLYPH_WIDTH_EM * FONT_SIZE_PX + TEXT_CLEARANCE_PX * 2;
 
   return (
     <g aria-hidden="true" pointerEvents="none">
@@ -106,16 +109,22 @@ export function DimensionLine(
         x2={to.x + along.x * tick} y2={to.y + along.y * tick}
         stroke="currentColor" strokeWidth={px(STROKE_PX)} className="text-stone-500"
       />
-      <text
-        x={textAt.x + outward.x * px(TEXT_GAP_PX)}
-        y={textAt.y + outward.y * px(TEXT_GAP_PX)}
-        transform={`rotate(${textRotation} ${textAt.x} ${textAt.y})`}
-        textAnchor="middle"
-        fontSize={px(FONT_SIZE_PX)}
-        className="fill-stone-700 font-medium"
-      >
-        {label}
-      </text>
+      {showLabel && (
+        <text
+          x={textAt.x}
+          y={textAt.y}
+          transform={`rotate(${textRotation} ${textAt.x} ${textAt.y})`}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={px(FONT_SIZE_PX)}
+          strokeWidth={px(HALO_PX)}
+          strokeLinejoin="round"
+          paintOrder="stroke"
+          className="fill-stone-800 stroke-white font-medium"
+        >
+          {label}
+        </text>
+      )}
     </g>
   );
 }

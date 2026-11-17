@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -76,6 +76,20 @@ function drawing(overrides: Partial<Drawing> = {}): Drawing {
   };
 }
 
+/** Drops one square on the board: the Draw tool, a click, then back to Select
+ *  (the rail's old Shapes flyout is gone — Draw is how a piece gets added). */
+async function addAPiece(user: Pick<typeof userEvent, 'click'>) {
+  vi.spyOn(SVGElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0, toJSON: () => undefined,
+  } as DOMRect);
+  await user.click(await screen.findByRole('button', { name: 'Draw' }));
+  const click = { pointerId: 1, button: 0, clientX: 400, clientY: 300 };
+  const sheet = await screen.findByTestId('tool-capture');
+  fireEvent.pointerDown(sheet, click);
+  fireEvent.pointerUp(sheet, click);
+  await user.click(screen.getByRole('button', { name: 'Select' }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
@@ -86,8 +100,7 @@ beforeEach(() => {
 describe('SalesOrderDrawingPage', () => {
   it('renders the toolbar, the active area in the bottom bar and an empty canvas, with no Properties panel until something is selected, when no drawing exists yet', async () => {
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    expect(await screen.findByRole('button', { name: 'Add rectangle' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Draw' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Areas, Area 1 selected/ })).toBeDefined();
     expect(screen.getByRole('application', { name: 'Drawing canvas' })).toBeDefined();
     expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
@@ -103,8 +116,7 @@ describe('SalesOrderDrawingPage', () => {
 
   it('sets the breadcrumb label on mount and clears it on unmount', async () => {
     const { unmount } = renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
+    await screen.findByRole('button', { name: 'Draw' });
     expect(useBreadcrumbStore.getState().labels['so-1']).toBe('SO-1042');
     unmount();
     expect(useBreadcrumbStore.getState().labels['so-1']).toBeUndefined();
@@ -112,14 +124,7 @@ describe('SalesOrderDrawingPage', () => {
 
   it('adding a piece, selecting it, and undoing removes it again', async () => {
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-
-    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await userEvent.type(screen.getByLabelText('Length'), '96');
-    await userEvent.type(screen.getByLabelText('Width'), '26');
-    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
-    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(userEvent);
 
     const pieceButton = screen.getByRole('button', { name: /Piece A-1/ });
     expect(pieceButton).toBeDefined();
@@ -143,21 +148,12 @@ describe('SalesOrderDrawingPage', () => {
     // Must not silently fall back to a blank editor over a real error —
     // found in the final review: this used to show a normal, empty
     // drawing with no indication anything went wrong.
-    expect(screen.queryByRole('button', { name: 'Add rectangle' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Draw' })).toBeNull();
   });
 
   it('keeps the editor and its in-memory work when a background order refetch fails, instead of replacing it with an error screen', async () => {
     const { queryClient } = renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-
-    // Add a piece — in-memory work that a wrongly-triggered error screen
-    // would throw away.
-    await userEvent.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await userEvent.type(screen.getByLabelText('Length'), '96');
-    await userEvent.type(screen.getByLabelText('Width'), '26');
-    await userEvent.type(screen.getByLabelText('Thickness'), '1.25');
-    await userEvent.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(userEvent);
     expect(screen.getByRole('button', { name: /Piece A-1/ })).toBeDefined();
 
     // Simulate a background refetch (e.g. on window refocus) failing —
@@ -218,13 +214,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
   // mixing fake timers with userEvent + TanStack Query at the page level
   // hangs (findByRole's internal polling never advances).
   async function addAPieceAndSave(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-    await user.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await user.type(screen.getByLabelText('Length'), '96');
-    await user.type(screen.getByLabelText('Width'), '26');
-    await user.type(screen.getByLabelText('Thickness'), '1.25');
-    await user.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(user);
     await user.keyboard('{Control>}s{/Control}');
   }
 
@@ -283,13 +273,7 @@ describe('SalesOrderDrawingPage — autosave, conflicts, and the unsaved-changes
     const user = userEvent.setup();
     vi.mocked(drawingService.saveDrawing).mockResolvedValue(drawing({ version: 2 }));
     renderPage();
-    await user.click(await screen.findByRole('button', { name: 'Shapes' }));
-    await screen.findByRole('button', { name: 'Add rectangle' });
-    await user.click(screen.getByRole('button', { name: 'Add rectangle' }));
-    await user.type(screen.getByLabelText('Length'), '96');
-    await user.type(screen.getByLabelText('Width'), '26');
-    await user.type(screen.getByLabelText('Thickness'), '1.25');
-    await user.click(screen.getByRole('button', { name: 'Add piece' }));
+    await addAPiece(user);
 
     const dirtyEvent = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(dirtyEvent);

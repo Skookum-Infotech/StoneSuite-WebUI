@@ -11,7 +11,7 @@ import { bounds, isClockwise, transformOutline } from '@/lib/drawing/geometry';
 import { areaLetter, nextPieceLabel } from '@/lib/drawing/labels';
 import { validateOutline } from '@/lib/drawing/validation';
 import {
-  ARROW_KEY_STEP_MM, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
+  ARROW_KEY_STEP_MM, CANVAS_EXTENT_MM, DEFAULT_PIECE_THICKNESS_MM, SHIFT_ARROW_KEY_STEP_MM, VIEWPORT_HEIGHT, VIEWPORT_WIDTH, ZOOM_STEP,
 } from '@/lib/drawing/constants';
 import { pixelDeltaToViewboxUnits, screenPointToMm } from '@/lib/drawing/viewport';
 import { DragPreviewContext, type DragPreview } from './DragPreviewContext';
@@ -20,6 +20,7 @@ import { PieceShape } from './PieceShape';
 import { PieceHandles } from './PieceHandles';
 import { PieceDimensions } from './PieceDimensions';
 import { AnnotationLayer } from './AnnotationLayer';
+import { TextNoteLayer } from './TextNoteLayer';
 import { CanvasOverlays, type Marquee } from './CanvasOverlays';
 import { CutoutPlacementLayer } from './CutoutPlacementLayer';
 import { EdgeDragLayer } from './EdgeDragLayer';
@@ -44,7 +45,7 @@ const PRIMARY_MOUSE_BUTTON = 0;
 
 export function DrawingCanvas() {
   const {
-    state, dispatch, tool, setTool, workspace, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
+    state, dispatch, tool, setTool, workspace, selectNote, toggleMap, dimensionsOn, copySelection, pasteClipboard, duplicateSelection,
   } = useDrawingEditor();
   const [draftPoints, setDraftPoints] = useState<Point[]>([]);
   const [isPanning, setIsPanning] = useState(false);
@@ -107,6 +108,7 @@ export function DrawingCanvas() {
         return;
       }
       dispatch({ type: 'selectPiece', pieceId: null });
+      selectNote(null);
       return;
     }
     if (e.key === 'm') {
@@ -248,6 +250,7 @@ export function DrawingCanvas() {
     }
     // A press on empty canvas that never became a pan is a click: deselect.
     if (isClick && selectedIds.length > 0) dispatch({ type: 'selectPiece', pieceId: null });
+    if (isClick) selectNote(null);
     setIsPanning(false);
   };
 
@@ -326,10 +329,10 @@ export function DrawingCanvas() {
           <g transform={`translate(${state.pan.x},${state.pan.y}) scale(${state.zoom})`}>
             <rect
               data-testid="canvas-background"
-              x={-5000}
-              y={-5000}
-              width={10000}
-              height={10000}
+              x={-CANVAS_EXTENT_MM}
+              y={-CANVAS_EXTENT_MM}
+              width={CANVAS_EXTENT_MM * 2}
+              height={CANVAS_EXTENT_MM * 2}
               fill="white"
               onPointerDown={onBackgroundPointerDown}
               onPointerMove={onBackgroundPointerMove}
@@ -358,6 +361,7 @@ export function DrawingCanvas() {
             {singleSelected && tool === 'select' && workspace === 'sketch' && <PieceHandles piece={singleSelected} />}
             <CanvasOverlays marquee={marquee} draftPoints={tool === 'polygon' ? draftPoints : []} />
             <AnnotationLayer pendingFrom={annotate.pendingFrom} hoverPoint={hoverPoint} />
+            <TextNoteLayer />
             {/* While a drawing tool is armed, every click belongs to that
                 tool — including clicks over a piece, which is where a seam
                 or a note usually goes. The background rect below cannot
@@ -368,10 +372,10 @@ export function DrawingCanvas() {
             {tool !== 'select' && (
               <rect
                 data-testid="tool-capture"
-                x={-5000}
-                y={-5000}
-                width={10000}
-                height={10000}
+                x={-CANVAS_EXTENT_MM}
+                y={-CANVAS_EXTENT_MM}
+                width={CANVAS_EXTENT_MM * 2}
+                height={CANVAS_EXTENT_MM * 2}
                 fill="transparent"
                 className="cursor-crosshair"
                 onPointerDown={onBackgroundPointerDown}

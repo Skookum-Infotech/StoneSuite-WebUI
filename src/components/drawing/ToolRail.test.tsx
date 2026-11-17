@@ -1,17 +1,12 @@
 // @vitest-environment jsdom
-// The icon rail's own flyout behaviour: one section open at a time, closes
-// on Escape or an outside click, and Select exits whatever tool is active.
+// The rail down the left of the board: only the pointer, Draw and Text.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Drawing } from '@/types/drawing';
 import { DrawingEditorProvider, useDrawingEditor } from './DrawingEditorContext';
 import { ToolRail } from './ToolRail';
-
-vi.mock('@/services/drawingService', () => ({
-  drawingService: { getEdgeCodes: vi.fn().mockResolvedValue([]) },
-}));
 
 const drawing: Drawing = {
   schemaVersion: 1, salesOrderId: 's', version: 0, displayUnit: 'mm', fractionDenominator: 32,
@@ -34,55 +29,44 @@ function open() {
   return userEvent.setup();
 }
 
+const tool = () => screen.getByTestId('tool').textContent;
+
 afterEach(() => vi.restoreAllMocks());
 
 describe('ToolRail', () => {
-  it('opens one section at a time: a second icon replaces the first flyout', async () => {
-    const user = open();
-    await user.click(screen.getByRole('button', { name: 'Shapes' }));
-    expect(screen.getByRole('region', { name: 'Shapes' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Cutouts' }));
-    expect(screen.queryByRole('region', { name: 'Shapes' })).toBeNull();
-    expect(screen.getByRole('region', { name: 'Cutouts' })).toBeTruthy();
+  it('holds only the pointer, Draw and Text — no Line and no flyout sections', () => {
+    open();
+    const rail = screen.getByRole('navigation', { name: 'Drawing tools' });
+    expect(within(rail).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Select', 'Draw', 'Text']);
+    for (const gone of ['Line', 'Shapes', 'Cutouts', 'Annotations', 'Materials']) {
+      expect(screen.queryByRole('button', { name: gone })).toBeNull();
+    }
   });
 
-  it('clicking the open section again closes it', async () => {
-    const user = open();
-    await user.click(screen.getByRole('button', { name: 'Shapes' }));
-    await user.click(screen.getByRole('button', { name: 'Shapes' }));
-    expect(screen.queryByRole('region', { name: 'Shapes' })).toBeNull();
-  });
-
-  it('closes on Escape', async () => {
-    const user = open();
-    await user.click(screen.getByRole('button', { name: 'Annotations' }));
-    expect(screen.getByRole('region', { name: 'Annotations' })).toBeTruthy();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('region', { name: 'Annotations' })).toBeNull();
-  });
-
-  it('closes on a click outside the rail', async () => {
-    const user = open();
-    await user.click(screen.getByRole('button', { name: 'Shapes' }));
-    fireEvent.pointerDown(document.body);
-    expect(screen.queryByRole('region', { name: 'Shapes' })).toBeNull();
-  });
-
-  it('closes via its own Close button', async () => {
-    const user = open();
-    await user.click(screen.getByRole('button', { name: 'Shapes' }));
-    await user.click(screen.getByRole('button', { name: 'Close Shapes' }));
-    expect(screen.queryByRole('region', { name: 'Shapes' })).toBeNull();
-  });
-
-  it('Select is pressed by default and switches the tool back from Annotations', async () => {
-    const user = open();
+  it('starts on Select', () => {
+    open();
     expect(screen.getByRole('button', { name: 'Select' }).getAttribute('aria-pressed')).toBe('true');
-    await user.click(screen.getByRole('button', { name: 'Annotations' }));
-    await user.click(screen.getByRole('button', { name: 'Add note' }));
-    expect(screen.getByTestId('tool').textContent).toBe('note');
+    expect(tool()).toBe('select');
+  });
+
+  it('arms Draw and Text, and lights only the armed tool', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Draw' }));
+    expect(tool()).toBe('draw');
+    expect(screen.getByRole('button', { name: 'Draw' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Select' }).getAttribute('aria-pressed')).toBe('false');
+    await user.click(screen.getByRole('button', { name: 'Text' }));
+    expect(tool()).toBe('text');
+    expect(screen.getByRole('button', { name: 'Draw' }).getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('pressing an armed tool again, or Select, hands back to Select', async () => {
+    const user = open();
+    await user.click(screen.getByRole('button', { name: 'Text' }));
+    await user.click(screen.getByRole('button', { name: 'Text' }));
+    expect(tool()).toBe('select');
+    await user.click(screen.getByRole('button', { name: 'Draw' }));
     await user.click(screen.getByRole('button', { name: 'Select' }));
-    expect(screen.getByTestId('tool').textContent).toBe('select');
-    expect(screen.queryByRole('region', { name: 'Annotations' })).toBeNull();
+    expect(tool()).toBe('select');
   });
 });

@@ -111,9 +111,15 @@ export interface Piece {
 
 export interface Note {
   id: string;
+  /** May hold several lines (the Text tool's textarea). */
   text: string;
   at: Point;
   pieceId?: string;
+  /** Text-tool formatting; absent on a plain note. `fontSize` is in screen
+   *  pixels — a note keeps its size on screen at any zoom. */
+  bold?: boolean;
+  italic?: boolean;
+  fontSize?: number;
 }
 
 /** A manual measurement between two points, in the area's world millimetres.

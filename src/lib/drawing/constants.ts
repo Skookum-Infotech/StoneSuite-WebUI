@@ -83,6 +83,10 @@ export const MAX_DIMENSION_MM = 30000;
 /** How far outside a piece's own edge its auto-placed dimension line sits
  *  — 1 inch. */
 export const DEFAULT_DIMENSION_OFFSET_MM = 25.4;
+/** The canvas never draws a piece's dimension line closer to its edge than
+ *  this many ON-SCREEN pixels. A fixed millimetre offset collapses onto the
+ *  outline when the view is zoomed out, leaving the measurement unreadable. */
+export const MIN_DIMENSION_OFFSET_PX = 28;
 
 /** The editor's undo/redo history depth (build spec Task 3). */
 export const MAX_UNDO_STEPS = 50;
@@ -108,6 +112,14 @@ export const OPEN_ZOOM = 0.4;
  *  scaled to fit the tighter dimension, centred, the grid running on past it)
  *  — every screen<->world conversion in viewport.ts follows the same rule. */
 export const VIEWPORT_WIDTH = 800;
+
+/** Half-width, in mm, of the invisible sheets that catch pointer events on the
+ *  board (the background, the armed tool's click sheet, the cutout-placement
+ *  sheet, the menu click-away). The white board has no edge, so these must
+ *  reach well past anywhere the user can zoom out or pan to — at 10% zoom the
+ *  screen already spans 12 m, and a sheet that stops short leaves dead patches
+ *  where a click does nothing. */
+export const CANVAS_EXTENT_MM = 500_000;
 export const VIEWPORT_HEIGHT = 600;
 
 /** A dragged cutout or vertex snaps to this step — 1/4". */

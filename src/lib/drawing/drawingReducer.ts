@@ -40,6 +40,9 @@ export type EditorAction =
   | { type: 'setSeams'; areaId: string; pieceId: string; seams: Seam[] }
   /** Replaces an area's notes and/or manual dimensions as one undo step. */
   | { type: 'setAnnotations'; areaId: string; notes?: Note[]; dimensions?: Dimension[] }
+  /** Edits one note. Successive edits to the same note (every keystroke in
+   *  the Text tool's box) fold into a single undo step. */
+  | { type: 'updateNote'; areaId: string; noteId: string; patch: Partial<Omit<Note, 'id'>> }
   | { type: 'selectPiece'; pieceId: string | null; additive?: boolean }
   | { type: 'selectPieces'; pieceIds: string[] }
   | { type: 'selectCutout'; pieceId: string; cutoutId: string | null }
@@ -210,6 +213,15 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         dimensions: action.dimensions ?? area.dimensions,
       })));
 
+    case 'updateNote': {
+      const edit = (drawing: Drawing) => updateArea(drawing, action.areaId, (area) => ({
+        ...area,
+        notes: area.notes.map((n) => (n.id === action.noteId ? { ...n, ...action.patch } : n)),
+      }));
+      if (state.noteEditId === action.noteId) return { ...state, present: edit(state.present) };
+      return { ...mutateDocument(state, edit), noteEditId: action.noteId };
+    }
+
     case 'selectPiece':
       return selectPiece(state, action.pieceId, action.additive === true);
 
@@ -252,6 +264,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const previous = state.past[state.past.length - 1];
       return sanitizeSelection({
         ...state,
+        noteEditId: undefined,
         past: state.past.slice(0, -1),
         present: keepSavedVersion(previous, state.present),
         future: [state.present, ...state.future],
@@ -263,6 +276,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const [next, ...rest] = state.future;
       return sanitizeSelection({
         ...state,
+        noteEditId: undefined,
         past: [...state.past, state.present],
         present: keepSavedVersion(next, state.present),
         future: rest,
@@ -273,7 +287,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     // save conflict, or restoring a version) is not an undoable edit of the
     // current one — past/future reset, same as opening a different file.
     case 'loadDrawing':
-      return sanitizeSelection({ ...state, past: [], present: action.drawing, future: [] });
+      return sanitizeSelection({ ...state, past: [], present: action.drawing, future: [], noteEditId: undefined });
 
     // A background autosave completing is not an undoable edit either, and
     // must not revert any edit made while it was in flight — only the

@@ -10,15 +10,13 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { Point } from '@/types/drawing';
-import { FINE_SNAP_MM } from '@/lib/drawing/constants';
+import { CANVAS_EXTENT_MM, FINE_SNAP_MM } from '@/lib/drawing/constants';
 import { cutoutOutline, validateCutouts } from '@/lib/drawing/cutouts';
 import { snapToGrid, toLocalPoint } from '@/lib/drawing/geometry';
 import { screenPointToMm } from '@/lib/drawing/viewport';
 import { CutoutLabel } from './CutoutLabel';
 import { CutoutPicture } from './CutoutPicture';
 import { useDrawingEditor } from './DrawingEditorContext';
-
-const SHEET_MM = 5000;
 
 export function CutoutPlacementLayer() {
   const { state, dispatch, placing, cancelPlacing } = useDrawingEditor();
@@ -66,10 +64,10 @@ export function CutoutPlacementLayer() {
     <g>
       <rect
         data-testid="cutout-placement"
-        x={-SHEET_MM}
-        y={-SHEET_MM}
-        width={SHEET_MM * 2}
-        height={SHEET_MM * 2}
+        x={-CANVAS_EXTENT_MM}
+        y={-CANVAS_EXTENT_MM}
+        width={CANVAS_EXTENT_MM * 2}
+        height={CANVAS_EXTENT_MM * 2}
         fill="transparent"
         className="cursor-crosshair"
         onPointerMove={(e) => setHover(localAt(e))}

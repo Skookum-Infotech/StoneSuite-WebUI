@@ -17,7 +17,7 @@ import {
  *  "Fit" doesn't crop a piece flush against the edge. */
 const FIT_MARGIN = 0.9;
 
-export type EditorTool = 'select' | 'draw' | 'polygon' | 'note' | 'dimension' | 'line';
+export type EditorTool = 'select' | 'draw' | 'polygon' | 'note' | 'text' | 'dimension' | 'line';
 
 /** The editor's three working areas, picked from the top bar: the drawing
  *  board itself, and the Cutout and Material side panels beside it. */
@@ -44,6 +44,10 @@ export interface DrawingEditorContextValue {
   /** A new cutout, built in the Cutout dialog, waiting for the user to click
    *  where on `pieceId` it goes (the cursor becomes a target). Null otherwise. */
   placing: PlacingCutout | null;
+  /** The text on the board that the bottom control bar is editing, or null.
+   *  Picking a piece (or any other tool's work) lets go of it. */
+  selectedNoteId: string | null;
+  selectNote: (noteId: string | null) => void;
   startPlacing: (pieceId: string, cutout: Cutout) => void;
   cancelPlacing: () => void;
   materialLines: SalesOrderLine[];
@@ -89,6 +93,14 @@ export function DrawingEditorProvider(
   const [placing, setPlacing] = useState<PlacingCutout | null>(null);
   const startPlacing = useCallback((pieceId: string, cutout: Cutout) => setPlacing({ pieceId, cutout }), []);
   const cancelPlacing = useCallback(() => setPlacing(null), []);
+  const [pickedNoteId, setPickedNoteId] = useState<string | null>(null);
+  // Picking a piece of text lets go of any selected piece: the control bar is
+  // hidden while a piece is selected, so leaving it selected would swallow the
+  // bar the moment the text is placed or picked.
+  const selectNote = useCallback((noteId: string | null) => {
+    setPickedNoteId(noteId);
+    if (noteId !== null) dispatch({ type: 'selectPiece', pieceId: null });
+  }, []);
   const [mapOpen, setMapOpen] = useState(true);
   const toggleMap = useCallback(() => setMapOpen((open) => !open), []);
   const [dimensionsOn, setDimensionsOn] = useState(false);
@@ -101,11 +113,12 @@ export function DrawingEditorProvider(
   const setTool = useCallback((next: EditorTool) => {
     setToolState(next);
     if (next !== 'select') {
+      selectNote(null);
       setWorkspaceState('sketch');
       editCutout(null);
       setPlacing(null);
     }
-  }, []);
+  }, [selectNote]);
   const setWorkspace = useCallback((next: EditorWorkspace) => {
     setWorkspaceState(next);
     if (next !== 'sketch') setToolState('select');
@@ -122,6 +135,8 @@ export function DrawingEditorProvider(
       dispatch({ type: 'selectCutout', pieceId: state.selectedPieceId, cutoutId: null });
     }
   }, [workspace, state.selectedCutoutId, state.selectedPieceId]);
+  // Picking a piece takes the control bar away from whatever text had it.
+  const selectedNoteId = state.selectedPieceIds.length > 0 ? null : pickedNoteId;
   // Copied pieces live outside the document so copying is not an edit, and
   // survive switching area (paste lands in whichever area is active).
   const clipboard = useRef<Piece[]>([]);
@@ -189,13 +204,13 @@ export function DrawingEditorProvider(
   const value = useMemo<DrawingEditorContextValue>(
     () => ({
       state, dispatch, tool, setTool, workspace, setWorkspace, editingCutoutId, editCutout, placing, startPlacing,
-      cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
+      selectedNoteId, selectNote, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen, toggleProperties, fitToArea, copySelection, pasteClipboard, duplicateSelection,
     }),
     // fitToArea closes over state/materialLines, so it's already covered by
     // those deps — listing it too would just be the same change twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
+      state, tool, setTool, workspace, setWorkspace, editingCutoutId, placing, startPlacing, selectedNoteId, cancelPlacing, materialLines, mapOpen, toggleMap, dimensionsOn, toggleDimensions, propertiesOpen,
       toggleProperties, copySelection, pasteClipboard, duplicateSelection,
     ],
   );

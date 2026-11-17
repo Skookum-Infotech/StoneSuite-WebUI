@@ -21,6 +21,7 @@ import { MiniMap } from '@/components/drawing/MiniMap';
 import { InspectorPanel } from '@/components/drawing/InspectorPanel';
 import { WorkspacePanel } from '@/components/drawing/WorkspacePanel';
 import { OPEN_ZOOM } from '@/lib/drawing/constants';
+import { TextControls } from '@/components/drawing/TextControls';
 import { ToolRail } from '@/components/drawing/ToolRail';
 import { DrawingStatusBar } from '@/components/drawing/DrawingStatusBar';
 import { ConflictDialog } from '@/components/drawing/ConflictDialog';
@@ -193,6 +194,7 @@ function DrawingEditorBody({ salesOrderId, order, onOrderUpdated }: {
           <div className="relative min-h-0 min-w-0 flex-1">
             <DrawingCanvas />
             <DrawModeBar />
+            <TextControls />
             <MiniMap />
             <InspectorPanel />
           </div>

@@ -14,7 +14,7 @@
 
 import { memo, useId, useMemo, useState } from 'react';
 import type { Piece, Point } from '@/types/drawing';
-import { centroid, snapToGrid, transformOutline } from '@/lib/drawing/geometry';
+import { snapToGrid, transformOutline } from '@/lib/drawing/geometry';
 import { GRID_SIZE_MM, MIN_DRAG_MM, SNAP_TOLERANCE_MM } from '@/lib/drawing/constants';
 import { validateCutouts } from '@/lib/drawing/cutouts';
 import { snapNudge } from '@/lib/drawing/snapping';
@@ -22,6 +22,10 @@ import { pixelDeltaToMm } from '@/lib/drawing/viewport';
 import { CutoutShape } from './CutoutShape';
 import { useDragPreview } from './DragPreviewContext';
 import { useDrawingEditor } from './DrawingEditorContext';
+import { PieceLabel } from './PieceLabel';
+
+/** On-screen outline weight, shared by selected and unselected pieces. */
+const PIECE_STROKE_PX = 2;
 
 interface DragState {
   pointerId: number;
@@ -46,7 +50,6 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
     ?? (followDelta ? { x: piece.position.x + followDelta.x, y: piece.position.y + followDelta.y } : piece.position);
   const worldOutline = transformOutline(piece.outline, displayPosition, piece.rotationDeg);
   const points = worldOutline.map((p) => `${p.x},${-p.y}`).join(' ');
-  const labelAt = centroid(worldOutline);
   const invalidCutoutIds = useMemo(
     () => new Set(validateCutouts(piece).flatMap((issue) => (issue.otherId ? [issue.cutoutId, issue.otherId] : [issue.cutoutId]))),
     [piece],
@@ -134,17 +137,18 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
       {/* Strokes and text are divided by the zoom so they keep the same size
           on screen at any scale — a 200" piece zoomed out to fit would
           otherwise draw its outline and label too fine to read.
-          A selected piece's own outline stays sharp and dark, like an
-          unselected one, just heavier — brand green is reserved for a
-          specific side (PieceHandles' highlighted edge) and for a side
-          being dragged (EdgeDragLayer). The selected piece's inside takes a
-          light brand tint so it stands out from the rest. Fills are
-          see-through, so two pieces overlapping each show their own outline
-          through the other instead of one hiding the other. */}
+          Every piece, selected or not, has the same sharp dark outline at the
+          same weight — brand green is reserved for a specific side
+          (PieceHandles' highlighted edge) and for a side being dragged
+          (EdgeDragLayer). Selection shows only in the inside: a light brand
+          tint on the selected piece, plain white (the board's own colour) on
+          the rest. Fills are slightly see-through, so two pieces overlapping
+          each show their own outline through the other instead of one hiding
+          the other. */}
       <polygon
         points={points}
-        className={selected ? 'fill-brand/30 stroke-stone-900' : 'fill-stone-100/70 stroke-stone-400'}
-        strokeWidth={(selected ? 2 : 1) / state.zoom}
+        className={selected ? 'fill-brand/30 stroke-stone-900' : 'fill-white/70 stroke-stone-900'}
+        strokeWidth={PIECE_STROKE_PX / state.zoom}
       />
       {/* Local coordinates -> screen: position, then rotation, then the
           y-flip every world point gets on its way to SVG. */}
@@ -187,9 +191,7 @@ function PieceShapeBase({ piece, selected }: { piece: Piece; selected: boolean }
           />
         ))}
       </g>
-      <text x={labelAt.x} y={-labelAt.y} textAnchor="middle" fontSize={14 / state.zoom} className="fill-stone-800 select-none">
-        {piece.label}
-      </text>
+      <PieceLabel label={piece.label} worldOutline={worldOutline} />
     </g>
   );
 }
