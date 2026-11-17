@@ -21,6 +21,8 @@ import {
   mergeReceiptLines, IR_EDITABLE_STATUSES, irStatusLabel, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const EMPTY_CUSTOM: Record<string, unknown> = {};
 
 // Editing an item receipt is PEND-only (itemreceipt/store_update.go) — once
@@ -148,10 +150,10 @@ export default function EditItemReceiptPage() {
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
           <Lock className="size-8 text-stone-400" aria-hidden="true" />
-          <p className="text-sm font-semibold text-stone-700">
+          <p className="type-card-title">
             This item receipt is {irStatusLabel(ir.statusCode)} and can no longer be edited.
           </p>
-          <p className="text-xs text-stone-500">
+          <p className="type-helper">
             {ir.statusCode === 'VOID'
               ? 'A voided receipt is terminal.'
               : 'Void and reissue a new receipt to make changes — a posted receipt is immutable.'}
@@ -159,7 +161,7 @@ export default function EditItemReceiptPage() {
           <button
             type="button"
             onClick={() => navigate(`/purchases/item_receipt/${id}`)}
-            className="mt-2 rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'mt-2')}
           >
             Back to item receipt
           </button>
@@ -183,7 +185,7 @@ export default function EditItemReceiptPage() {
           subtitle={`Against ${po.purchaseOrderNumber}`}
           actions={(
             <button type="submit" disabled={save.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {save.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -200,7 +202,7 @@ export default function EditItemReceiptPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(save.error, 'Failed to save item receipt.')}
             </p>

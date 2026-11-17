@@ -8,6 +8,8 @@ import { REORDER_QUERY_KEY, monthsPhrase, type CreatedBatch } from '@/lib/replen
 import { CreatedOrdersBanner } from './components/CreatedOrdersBanner';
 import { ReorderItemCard } from './components/ReorderItemCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function ReorderPage() {
   const [created, setCreated] = useState<CreatedBatch[]>([]);
   // The list is worked out from live stock, usage and POs, so it is never
@@ -29,7 +31,7 @@ export default function ReorderPage() {
             <PackagePlus className="size-5 text-accent-foreground" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-stone-900">Reorder</h1>
+            <h1 className="type-page-title">Reorder</h1>
             <p className="text-sm text-stone-500">
               Items the open POs and stock on hand won't cover next month, based on what was
               used{data && data.months.length > 0 ? ` in ${monthsPhrase(data.months)}` : ' recently'}.
@@ -38,13 +40,13 @@ export default function ReorderPage() {
         </div>
         <div className="flex items-center gap-3">
           {dataUpdatedAt > 0 && (
-            <span className="text-2xs text-stone-500">Computed {new Date(dataUpdatedAt).toLocaleTimeString()}</span>
+            <span className="type-subline">Computed {new Date(dataUpdatedAt).toLocaleTimeString()}</span>
           )}
           <button
             type="button"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-xs font-semibold text-stone-900 transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(buttonVariants(), 'flex')}
           >
             <RefreshCw className={isFetching ? 'size-3.5 motion-safe:animate-spin' : 'size-3.5'} aria-hidden="true" />
             Compute

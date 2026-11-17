@@ -39,6 +39,7 @@ import { formatDateValue } from '@/lib/dateUtils';
 import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 import { lookupService } from '@/services/lookupService';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
@@ -251,7 +252,7 @@ export default function VendorBillDetailPage() {
               type="button"
               onClick={() => navigate(`/purchases/vendor_payment/new?fromBill=${encodeURIComponent(id)}`)}
               aria-label="Record payment for this vendor bill"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover"
+              className={buttonVariants()}
             >
               <Wallet className="size-3.5" aria-hidden="true" />
               Record Payment
@@ -262,7 +263,7 @@ export default function VendorBillDetailPage() {
       />
 
       {transition.isError && (
-        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(transition.error, 'Failed to change status.')}
         </p>
       )}
@@ -275,7 +276,7 @@ export default function VendorBillDetailPage() {
         resubmitVia="submit"
       />
       {bill.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve vendor bill.')}
         </p>
       )}
@@ -359,7 +360,7 @@ export default function VendorBillDetailPage() {
                       { label: 'Tax %', right: true },
                       { label: 'Total', right: true },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -372,7 +373,7 @@ export default function VendorBillDetailPage() {
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
-                      <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
@@ -440,7 +441,7 @@ export default function VendorBillDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -465,7 +466,7 @@ export default function VendorBillDetailPage() {
             {bill.approvalStatus && bill.approvalStatus !== 'none' && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
                 <span className="text-stone-500">Approval</span>
-                <span className={cn('font-medium', bill.approvalStatus === 'approved' ? 'text-emerald-600' : 'text-amber-600')}>
+                <span className={cn('font-medium', bill.approvalStatus === 'approved' ? 'text-success-ink' : 'text-amber-600')}>
                   {bill.approvalStatus === 'approved' ? 'Approved' : 'Pending Approval'}
                 </span>
               </div>
@@ -555,7 +556,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold, currencyCode }: { label: string; value: number; bold?: boolean; currencyCode?: string }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="type-overline">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {formatMoney(value, currencyCode)}
       </p>

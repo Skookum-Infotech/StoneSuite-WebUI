@@ -24,6 +24,8 @@ import {
 } from '@/lib/vendorPaymentForm';
 import type { VendorPaymentApplicationInput } from '@/types/vendorPayment';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 function currency(n: number): string {
   return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
@@ -188,7 +190,7 @@ export default function AddVendorPaymentPage() {
           subtitle="Fields marked * are required."
           actions={(
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Vendor Payment'}
             </button>
@@ -205,7 +207,7 @@ export default function AddVendorPaymentPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save vendor payment.')}
             </p>
@@ -280,14 +282,14 @@ export default function AddVendorPaymentPage() {
                   type="button"
                   onClick={addApplication}
                   disabled={!pendingBill || !(parseFloat(pendingAmount) > 0)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                  className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
                 >
                   <Plus className="size-3.5" />
                   Add
                 </button>
               </div>
 
-              <p className="text-2xs text-stone-500">
+              <p className="type-helper">
                 {vendor
                   ? 'Only this vendor’s approved bills with a balance due can be paid. Each application is recorded after the payment itself saves — if one is rejected, the payment still exists and can be applied again from its detail page.'
                   : 'Select a vendor above to apply this payment to their bills.'}

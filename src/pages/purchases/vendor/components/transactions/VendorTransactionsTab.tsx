@@ -18,6 +18,7 @@ import { VendorTransactionFilters } from './VendorTransactionFilters';
 import { VendorTransactionsPager } from './VendorTransactionsPager';
 import { VendorTransactionsTable } from './VendorTransactionsTable';
 
+import { buttonVariants } from '@/components/ui/button';
 // Tailwind's lg breakpoint: the 7-column table needs this much width; below it
 // the rows render as cards.
 const WIDE_LAYOUT_QUERY = '(min-width: 1024px)';
@@ -26,8 +27,7 @@ const HTTP_NOT_FOUND = 404;
 const UNAVAILABLE_MESSAGE = 'Transactions are not available for this vendor.';
 const NO_ACCESS_MESSAGE = "You don't have access to any transaction types for this vendor.";
 
-const GHOST_BTN =
-  'rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50 cursor-pointer';
+const GHOST_BTN = buttonVariants({ variant: 'outline' });
 
 function errorText(err: unknown): string {
   if (err instanceof AxiosError && err.response?.status === HTTP_NOT_FOUND) return UNAVAILABLE_MESSAGE;
@@ -129,7 +129,7 @@ export function VendorTransactionsTab({ vendorId }: { vendorId: string }) {
             {isFiltered(filters) ? (
               <>
                 <p className="text-xs font-semibold text-stone-500">No matching transactions</p>
-                <p className="text-xs text-stone-500">Try adjusting your search or filters</p>
+                <p className="type-helper">Try adjusting your search or filters</p>
                 <button type="button" onClick={clear} className={cn(GHOST_BTN, 'mt-2')}>Clear filters</button>
               </>
             ) : (
@@ -140,7 +140,7 @@ export function VendorTransactionsTab({ vendorId }: { vendorId: string }) {
           <>
             <div className={cn('transition-opacity', list.isPlaceholderData && 'opacity-60')}>
               {rows.length === 0 ? (
-                <p className="px-4 py-10 text-center text-xs text-stone-500">No more transactions.</p>
+                <p className="px-4 py-10 text-center type-helper">No more transactions.</p>
               ) : isWide ? (
                 <VendorTransactionsTable rows={rows} />
               ) : (

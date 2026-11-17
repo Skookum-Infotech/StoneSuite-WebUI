@@ -9,6 +9,8 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { textareaCls } from '@/components/crm/formUtils';
 import type { Expense } from '@/types/expense';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Rejects a submitted expense claim (POST /expenses/{id}/reject), always
 // capturing a reason — spec AD-5: rejection is a dedicated decision, never
 // reachable through the generic transition bar, and never requires quorum
@@ -39,7 +41,7 @@ export function RejectExpenseDialog({ expenseId, onRejected }: {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Reject this expense claim"
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-white px-3.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/5 transition-all"
+        className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
       >
         <XCircle className="size-3" />
         Reject
@@ -104,14 +106,14 @@ function RejectDialogContent({ expenseId, onClose, onRejected }: {
             <AlertTriangle className="size-4 text-destructive" />
           </div>
           <div>
-            <h3 id="reject-exp-dialog-title" className="text-sm font-bold text-stone-900">
-              Reject expense claim?
+            <h3 id="reject-exp-dialog-title" className="type-card-title">
+              Reject Expense Claim?
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">A reason is required.</p>
+            <p className="mt-0.5 type-helper">A reason is required.</p>
           </div>
         </div>
 
-        <label htmlFor="reject-exp-reason" className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+        <label htmlFor="reject-exp-reason" className="type-field-label">
           Reason
         </label>
         <textarea
@@ -127,7 +129,7 @@ function RejectDialogContent({ expenseId, onClose, onRejected }: {
         />
 
         {reject.error && (
-          <p id="reject-exp-error" role="alert" className="mb-3 text-xs text-destructive">
+          <p id="reject-exp-error" role="alert" className="mb-3 type-error">
             {apiErrorMessage(reject.error, 'Failed to reject expense claim.')}
           </p>
         )}
@@ -137,7 +139,7 @@ function RejectDialogContent({ expenseId, onClose, onRejected }: {
             type="button"
             onClick={closeIfIdle}
             disabled={reject.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -145,7 +147,7 @@ function RejectDialogContent({ expenseId, onClose, onRejected }: {
             type="button"
             onClick={() => reject.mutate()}
             disabled={reject.isPending || reason.trim() === ''}
-            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
           >
             {reject.isPending ? <Loader2 className="mr-1 inline size-3 animate-spin" /> : null}
             {reject.isPending ? 'Rejecting…' : 'Reject claim'}

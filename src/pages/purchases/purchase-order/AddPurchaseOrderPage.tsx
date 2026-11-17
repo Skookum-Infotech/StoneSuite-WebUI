@@ -40,6 +40,7 @@ import { fromPurchaseOrderForCopy } from '@/lib/purchaseOrderCopy';
 import { copySubtitle } from '@/lib/recordCopy';
 import type { PurchaseOrder } from '@/types/purchaseOrder';
 
+import { buttonVariants } from '@/components/ui/button';
 /** Unsaved form state carried across an "Add to Inventory" round trip. */
 interface PurchaseOrderDraft {
   activeTab: PageTab;
@@ -228,7 +229,7 @@ function AddPurchaseOrderForm({ source }: { source?: PurchaseOrder }) {
           subtitle={source ? copySubtitle(source.purchaseOrderNumber) : 'Fields marked * are required.'}
           actions={review.active ? undefined : (
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Purchase Order'}
             </button>
@@ -245,7 +246,7 @@ function AddPurchaseOrderForm({ source }: { source?: PurchaseOrder }) {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save purchase order.')}
             </p>

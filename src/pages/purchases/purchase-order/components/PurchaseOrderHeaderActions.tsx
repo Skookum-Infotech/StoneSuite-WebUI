@@ -1,17 +1,20 @@
 import { FilePlus, Loader2, Mail, PackagePlus, Send, ShieldCheck } from 'lucide-react';
 import { isPoTransitionBlocked, poHeaderTransitions, poTransitionLabel } from '@/lib/purchaseOrderForm';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const BLOCKED_REASON = 'Awaiting approval sign-off';
 const RECEIVE_HINT = 'Receive goods against this order';
 const CREATE_BILL_HINT = 'Bill what has been received and not yet billed';
 const RESEND_HINT = 'Email this purchase order to the vendor again';
 
-const PRIMARY_BTN =
-  'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-all hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed';
+const PRIMARY_BTN = buttonVariants();
 // A brand-tinted outline: clearly an action (not chrome like Back), but
-// quieter than the solid button beside it.
-const TINTED_BTN =
-  'inline-flex items-center gap-1.5 rounded-lg border border-brand/50 bg-brand/10 px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand/20 disabled:opacity-50 disabled:cursor-not-allowed';
+// quieter than the solid button beside it. Sized like every other button.
+const TINTED_BTN = cn(
+  buttonVariants({ variant: 'outline' }),
+  'border-brand/50 bg-brand/10 font-semibold text-ink-strong hover:bg-brand/20',
+);
 const ACTION_ICON = 'size-3.5 sm:size-4';
 
 // The Purchase Order Detail page's header buttons: Receive items and Create

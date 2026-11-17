@@ -49,7 +49,7 @@ function ChipList({ items, emptyLabel }: { items: string[]; emptyLabel: ReactNod
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item) => (
-        <span key={item} className="inline-flex items-center rounded-md bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
+        <span key={item} className="inline-flex items-center rounded-md bg-stone-100 px-2.5 py-1 text-stone-600 type-pill">
           {item}
         </span>
       ))}
@@ -116,7 +116,7 @@ export function VendorOverviewTab({ vendor, countryName, countryCode }: { vendor
             <ReadonlyField label="Fax Number" value={vendor.faxNumber} />
             <ReadonlyField label="Physical Address" value={vendor.physicalAddress} full multiline />
           </div>
-          <p className="pt-1 text-2xs font-semibold uppercase tracking-wider text-stone-500">Primary Contact Point</p>
+          <p className="pt-1 type-overline">Primary Contact Point</p>
           <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             <ReadonlyField label="Contact Type" value={vendor.contactPoint?.contactType} />
             <ReadonlyField label="Contact Telephone" value={vendor.contactPoint?.telephone} />
@@ -157,7 +157,7 @@ export function VendorOverviewTab({ vendor, countryName, countryCode }: { vendor
       {!isPerson && (
         <>
           <ModernSection title="Accepted Payment Methods" index={6}>
-            <ChipList items={acceptedPaymentMethods} emptyLabel={<p className="text-xs text-stone-500 italic">No payment methods on file.</p>} />
+            <ChipList items={acceptedPaymentMethods} emptyLabel={<p className="italic type-helper">No payment methods on file.</p>} />
           </ModernSection>
           <ModernSection title="Compliance Policies" index={7}>
             <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">

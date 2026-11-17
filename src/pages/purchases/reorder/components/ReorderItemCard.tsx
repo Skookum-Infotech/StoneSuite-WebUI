@@ -13,6 +13,8 @@ import { OpenOrdersNote } from './OpenOrdersNote';
 import { ReorderStat } from './ReorderStat';
 import { VendorSplitLine } from './VendorSplitLine';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 /** One item that will run short, with the controls to split what it needs
  *  across vendors and create a draft PO for each. */
 export function ReorderItemCard({ item, onCreated }: {
@@ -48,10 +50,10 @@ export function ReorderItemCard({ item, onCreated }: {
   return (
     <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-stone-900">
-          {item.name} <span className="font-normal text-stone-400">· {item.sku} · {item.unit}</span>
+        <p className="type-card-title">
+          {item.name} <span className="font-normal text-ink-muted">· {item.sku} · {item.unit}</span>
         </p>
-        <p className="text-2xs text-stone-500">
+        <p className="type-helper">
           Used {usagePhrase(item)} in {item.usage.map((u) => monthName(u.month)).join(', ')}
         </p>
       </div>
@@ -83,18 +85,18 @@ export function ReorderItemCard({ item, onCreated }: {
           type="button"
           onClick={() => setRows((prev) => [...prev, newSplitRow('')])}
           disabled={rows.length >= MAX_DRAFT_VENDORS}
-          className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(buttonVariants({ variant: 'ghost' }), 'flex')}
         >
           <Plus className="size-3.5" aria-hidden="true" /> Add vendor
         </button>
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-2xs text-stone-500" aria-live="polite">{planSummary(item.needed, planned)}</span>
+          <span className="type-subline" aria-live="polite">{planSummary(item.needed, planned)}</span>
           <button
             type="button"
             onClick={() => create.mutate()}
             disabled={problem !== null || create.isPending}
             title={problem ?? undefined}
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-xs font-semibold text-stone-900 transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(buttonVariants(), 'flex')}
           >
             {create.isPending
               ? <Loader2 className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />

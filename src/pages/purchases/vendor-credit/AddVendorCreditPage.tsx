@@ -19,6 +19,7 @@ import {
   PRIMARY_INFO_FIELDS, vendorCreditDefaults, toCreatePayload, PAGE_TABS, type PageTab,
 } from '@/lib/vendorCreditForm';
 
+import { buttonVariants } from '@/components/ui/button';
 /** Unsaved form state carried across a "Create Vendor" round trip. */
 interface VendorCreditDraft {
   activeTab: PageTab;
@@ -98,7 +99,7 @@ export default function AddVendorCreditPage() {
           subtitle="Fields marked * are required."
           actions={(
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : 'Save Vendor Credit'}
             </button>
@@ -115,7 +116,7 @@ export default function AddVendorCreditPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save vendor credit.')}
             </p>
@@ -132,7 +133,7 @@ export default function AddVendorCreditPage() {
           filesPanelRef={panelRef}
         >
           <ModernSection title="Note" index={2}>
-            <p className="text-2xs text-stone-500">
+            <p className="type-helper">
               This credit starts as a Draft. Approve it from its detail page before applying it
               to a vendor bill.
             </p>

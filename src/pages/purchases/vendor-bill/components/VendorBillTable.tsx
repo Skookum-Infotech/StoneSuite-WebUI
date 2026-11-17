@@ -23,6 +23,7 @@ import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
+import { buttonVariants } from '@/components/ui/button';
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 1, 2, 8]);
 
@@ -228,7 +229,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
             placeholder="Search bill #, vendor, invoice #…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -248,13 +249,13 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
+          <span className="pr-0.5 type-overline">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
               onClick={() => handleSort(field)}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
                   : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
@@ -269,7 +270,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <X className="size-3" />
             Clear
@@ -284,7 +285,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
               onClick={handleDownloadCsv}
               disabled={isExporting}
               aria-label={hasFilters ? 'Download filtered vendor bills as CSV' : 'Download all vendor bills as CSV'}
-              className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
             >
               {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
               {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
@@ -295,10 +296,10 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load vendor bills. Please try again.')}</p>
+        <p className="type-error">{apiErrorMessage(error, 'Failed to load vendor bills. Please try again.')}</p>
       )}
       {exportError && (
-        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
+        <p className="type-error">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}
@@ -307,17 +308,17 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
           <table className="w-full sm:min-w-[980px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Bill #</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Approval</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Bill Date</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Due Date</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Owner</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Grand Total</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Balance Due</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Bill #</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Approval</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Bill Date</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Due Date</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Owner</th>
+                <th className="px-4 max-sm:px-2 py-3 text-right max-sm:hidden type-th">Grand Total</th>
+                <th className="px-4 max-sm:px-2 py-3 text-right type-th">Balance Due</th>
                 {canEdit && (
-                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-right max-sm:hidden type-th">Actions</th>
                 )}
               </tr>
             </thead>
@@ -345,7 +346,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                           {bill.vendorBillNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[200px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[200px] type-cell-strong">
                         <VendorLink vendor={bill.vendor} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
@@ -363,29 +364,29 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                       <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
                           <span
-                            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 whitespace-nowrap type-pill"
                             style={{ backgroundColor: `${APPROVAL_COLORS[approvalStatus]}18`, color: APPROVAL_COLORS[approvalStatus] }}
                           >
                             <ShieldCheck className="size-2.5" aria-hidden="true" />
                             {approvalLabel}
                           </span>
                         ) : (
-                          <span className="text-2xs text-stone-500">—</span>
+                          <span className="type-subline">—</span>
                         )}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(bill.billDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(bill.dueDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] max-sm:hidden type-cell">
                         {ownerName ?? '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap max-sm:hidden type-cell-strong">
                         {currency(bill.grandTotal, bill.currencyId)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(bill.balanceDue, bill.currencyId)}
                       </td>
                       {canEdit && (
@@ -411,16 +412,16 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <FileCheck className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No vendor bills added yet.</p>
-                        <p className="text-xs text-stone-500">Create your first vendor bill to get started.</p>
+                        <p className="type-card-title">No vendor bills added yet.</p>
+                        <p className="type-helper">Create your first vendor bill to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No vendor bills match the current search.</p>
-                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
+                        <p className="type-card-title">No vendor bills match the current search.</p>
+                        <p className="type-helper">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>
@@ -432,14 +433,14 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
 
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {pageNum}{hasMore ? '' : ' · last page'}
             </p>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Previous page"
               >
                 <ChevronLeft className="size-3.5" />
@@ -448,7 +449,7 @@ export function VendorBillTable({ toolbarActions }: { toolbarActions?: ReactNode
               <button
                 onClick={goNext}
                 disabled={!hasMore}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Next page"
               >
                 Next

@@ -37,6 +37,7 @@ import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar'
 import { formatDateValue } from '@/lib/dateUtils';
 import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
@@ -231,7 +232,7 @@ export default function RequisitionDetailPage() {
             type="button"
             onClick={() => setConvertOpen(true)}
             aria-label="Convert this requisition to a purchase order"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover"
+            className={buttonVariants()}
           >
             <ArrowRightLeft className="size-3.5" aria-hidden="true" />
             Convert to Purchase Order
@@ -247,7 +248,7 @@ export default function RequisitionDetailPage() {
         resubmitVia="submit"
       />
       {reqn.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve requisition.')}
         </p>
       )}
@@ -313,7 +314,7 @@ export default function RequisitionDetailPage() {
                       { label: 'Est. Unit Price', right: true },
                       { label: 'Amount', right: true },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -326,7 +327,7 @@ export default function RequisitionDetailPage() {
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{line.description || '—'}</td>
-                      <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells size={line} unit={line.dimensionUnit} units={line.unitCode} />
                       <td className="px-3 py-2.5 text-stone-500">{line.unitCode || '—'}</td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{line.quantity}</td>
@@ -390,7 +391,7 @@ export default function RequisitionDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -404,7 +405,7 @@ export default function RequisitionDetailPage() {
                 variant="pill"
               />
               {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
+                <p role="alert" className="type-error">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
               )}
             </div>
           )}
@@ -505,7 +506,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: ReactNod
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="type-overline">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

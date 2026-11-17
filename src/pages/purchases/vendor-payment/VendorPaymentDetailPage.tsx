@@ -206,7 +206,7 @@ export default function VendorPaymentDetailPage() {
       />
 
       {transition.isError && (
-        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(transition.error, 'Failed to change status.')}
         </p>
       )}
@@ -219,7 +219,7 @@ export default function VendorPaymentDetailPage() {
         resubmitVia="submit"
       />
       {payment.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve vendor payment.')}
         </p>
       )}
@@ -315,7 +315,7 @@ export default function VendorPaymentDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -328,7 +328,7 @@ export default function VendorPaymentDetailPage() {
             {payment.approvalStatus !== 'none' && (
               <div className="flex justify-between items-center py-2 border-b border-stone-100 text-xs">
                 <span className="text-stone-500">Approval</span>
-                <span className={cn('font-medium', payment.approvalStatus === 'approved' ? 'text-emerald-600' : 'text-amber-600')}>
+                <span className={cn('font-medium', payment.approvalStatus === 'approved' ? 'text-success-ink' : 'text-amber-600')}>
                   {payment.approvalStatus === 'approved' ? 'Approved' : 'Pending Approval'}
                 </span>
               </div>
@@ -411,7 +411,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="type-overline">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

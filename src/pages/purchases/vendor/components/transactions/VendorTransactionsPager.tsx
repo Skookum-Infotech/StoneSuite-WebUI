@@ -2,8 +2,8 @@ import { ChevronLeft, ChevronRight, ChevronsLeft } from 'lucide-react';
 import { Select } from '@/components/ui/select';
 import { PAGE_SIZE_OPTIONS } from '@/lib/myTransactions';
 
-const NAV_BTN =
-  'flex h-9 items-center justify-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer sm:h-8';
+import { buttonVariants } from '@/components/ui/button';
+const NAV_BTN = buttonVariants({ variant: 'outline' });
 
 /**
  * Keyset pager: the server gives no total or page numbers, only whether a next
@@ -26,10 +26,10 @@ export function VendorTransactionsPager({
       className="flex flex-col gap-3 border-t border-stone-100 bg-stone-50/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
-        <p className="text-xs text-stone-500" aria-live="polite">
+        <p className="type-helper" aria-live="polite">
           Showing <span className="font-semibold text-stone-700">{count.toLocaleString()}</span> on this page
         </p>
-        <label className="flex items-center gap-2 text-xs text-stone-500">
+        <label className="flex items-center gap-2 type-field-label">
           <span>Rows per page</span>
           <Select
             value={pageSize}

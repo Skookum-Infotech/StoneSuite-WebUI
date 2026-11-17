@@ -190,7 +190,7 @@ export default function VendorCreditDetailPage() {
         reject={{ noun: 'vendor credit', run: (reason) => vendorCreditService.reject(id, reason), onRejected: handleRejected }}
       />
       {credit.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve vendor credit.')}
         </p>
       )}
@@ -279,7 +279,7 @@ export default function VendorCreditDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -293,7 +293,7 @@ export default function VendorCreditDetailPage() {
                 variant="pill"
               />
               {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">
+                <p role="alert" className="type-error">
                   {apiErrorMessage(transition.error, 'Failed to change status.')}
                 </p>
               )}
@@ -356,7 +356,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="type-overline">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

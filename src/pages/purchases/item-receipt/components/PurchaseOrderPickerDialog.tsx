@@ -9,6 +9,7 @@ import { purchaseOrderService } from '@/services/purchaseOrderService';
 import { PO_STATUS_COLORS } from '@/lib/purchaseOrderForm';
 import { RECEIVABLE_PO_STATUS_CODES } from '@/lib/itemReceiptForm';
 
+import { buttonVariants } from '@/components/ui/button';
 const RESULT_LIMIT = 15;
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -54,8 +55,8 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
     >
       <div ref={contentRef} tabIndex={-1} className="mx-4 flex max-h-[80vh] w-full max-w-lg flex-col rounded-xl bg-white shadow-2xl outline-none">
         <div className="shrink-0 border-b border-stone-200 px-5 py-4">
-          <h3 id="po-picker-dialog-title" className="text-sm font-bold text-stone-900">Receive against a purchase order</h3>
-          <p className="mt-0.5 text-xs text-stone-500">Only Sent or Partially Received orders can be received against.</p>
+          <h3 id="po-picker-dialog-title" className="type-card-title">Receive Against a Purchase Order</h3>
+          <p className="mt-0.5 type-helper">Only Sent or Partially Received orders can be received against.</p>
           <div className="relative mt-3">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-stone-400" />
             <input
@@ -83,7 +84,7 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
               <p className="text-xs font-medium text-stone-500">
                 {debounced ? `No open purchase orders match "${debounced}".` : 'No purchase orders are open for receiving.'}
               </p>
-              <p className="text-2xs text-stone-500">
+              <p className="type-helper">
                 {debounced
                   ? 'It may not exist yet, or may not have been sent to the vendor.'
                   : 'Send a purchase order to the vendor first, or create a new one.'}
@@ -93,7 +94,7 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
                   type="button"
                   onClick={onCreatePurchaseOrder}
                   aria-label="Create purchase order"
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+                  className={cn(buttonVariants(), 'mt-2 active:scale-95')}
                 >
                   <Plus className="size-3.5" aria-hidden="true" />
                   Create purchase order
@@ -115,10 +116,10 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
                       <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold text-stone-800">{po.purchaseOrderNumber || '—'}</p>
-                        <p className="truncate text-2xs text-stone-500">{po.vendor?.name ?? '—'}</p>
+                        <p className="truncate type-helper">{po.vendor?.name ?? '—'}</p>
                       </div>
                       <span
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-semibold text-stone-600 whitespace-nowrap"
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-stone-600 whitespace-nowrap type-pill"
                         style={{ backgroundColor: `${color}18` }}
                       >
                         <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
@@ -136,7 +137,7 @@ export function PurchaseOrderPickerDialog({ onClose, onSelect, onCreatePurchaseO
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>

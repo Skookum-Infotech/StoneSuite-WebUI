@@ -109,7 +109,7 @@ export function PurchaseOrderField({ field, value, set, lookups, dependsOnValue 
             placeholder={field.placeholder}
             aria-label={field.label}
           />
-          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+          {field.hint && <p className="type-helper">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -130,7 +130,7 @@ export function PurchaseOrderField({ field, value, set, lookups, dependsOnValue 
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+        {field.hint && <p className="type-helper">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

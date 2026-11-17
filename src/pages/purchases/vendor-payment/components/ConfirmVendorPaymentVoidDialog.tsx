@@ -2,6 +2,8 @@ import { createPortal } from 'react-dom';
 import { Ban } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Void is terminal — no legal move leaves it — so the Danger Zone button asks
 // first. Mounted only while open (focus-in / restore-focus lines up); the page
 // owns the mutation and closes this on settle, failures show in its banner.
@@ -27,8 +29,8 @@ export function ConfirmVendorPaymentVoidDialog({ paymentNumber, pending, onConfi
             <Ban className="size-4 text-destructive" aria-hidden="true" />
           </div>
           <div>
-            <h3 id="vp-void-confirm-title" className="text-sm font-bold text-stone-900">Void {paymentNumber}?</h3>
-            <p className="mt-0.5 text-xs text-stone-500">This action cannot be undone.</p>
+            <h3 id="vp-void-confirm-title" className="type-card-title">Void {paymentNumber}?</h3>
+            <p className="mt-0.5 type-helper">This action cannot be undone.</p>
           </div>
         </div>
         <p className="mb-4 text-xs text-stone-600">A voided payment is final: it can no longer be scheduled, sent or edited.</p>
@@ -37,7 +39,7 @@ export function ConfirmVendorPaymentVoidDialog({ paymentNumber, pending, onConfi
             type="button"
             onClick={onCancel}
             disabled={pending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -45,7 +47,7 @@ export function ConfirmVendorPaymentVoidDialog({ paymentNumber, pending, onConfi
             type="button"
             onClick={onConfirm}
             disabled={pending}
-            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-destructive/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
           >
             {pending ? 'Voiding…' : 'Void vendor payment'}
           </button>

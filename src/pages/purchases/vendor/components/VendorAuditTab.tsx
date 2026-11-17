@@ -19,8 +19,8 @@ export function VendorAuditTab({ vendorId }: { vendorId?: string }) {
     return <p className="py-12 text-center text-sm text-stone-500">Audit trail will be available after saving the vendor.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
-  if (error) return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
-  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
+  if (error) return <p className="py-6 text-center type-error italic">Failed to load audit trail.</p>;
+  if (entries.length === 0) return <p className="py-6 text-center italic type-helper">No audit events recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
@@ -28,7 +28,7 @@ export function VendorAuditTab({ vendorId }: { vendorId?: string }) {
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
-              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 px-3 text-left whitespace-nowrap type-th">
                 {h}
               </th>
             ))}
@@ -53,10 +53,10 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         onClick={() => hasChanges && setExpanded((v) => !v)}
       >
         <td className="py-2.5 px-3"><ActionBadge action={entry.action} /></td>
-        <td className="py-2.5 px-3 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
-        <td className="py-2.5 px-3 text-stone-500 font-mono text-2xs">{entry.ipAddress || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-500 text-2xs">{entry.appVersion || '—'}</td>
-        <td className="py-2.5 px-3 text-stone-500 text-2xs whitespace-nowrap">
+        <td className="py-2.5 px-3 type-cell">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="py-2.5 px-3 type-record-id">{entry.ipAddress || '—'}</td>
+        <td className="py-2.5 px-3 type-cell">{entry.appVersion || '—'}</td>
+        <td className="py-2.5 px-3 whitespace-nowrap type-cell">
           {new Date(entry.at).toLocaleString()}
           {hasChanges && <span className="ml-1.5 text-stone-500">{expanded ? '▲' : '▼'}</span>}
         </td>
@@ -75,11 +75,11 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
 function ActionBadge({ action }: { action: string }) {
   const color =
     action === 'create' ? 'bg-accent-lime text-accent-foreground' :
-    action === 'delete' ? 'bg-destructive/10 text-destructive' :
+    action === 'delete' ? 'bg-destructive/10 text-danger-ink' :
     action === 'update' ? 'bg-workflow-prospect-bg text-workflow-prospect-text' :
     'bg-stone-100 text-stone-600';
   return (
-    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-2xs font-semibold capitalize', color)}>
+    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill', color)}>
       {action}
     </span>
   );

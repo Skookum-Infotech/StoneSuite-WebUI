@@ -8,7 +8,7 @@ export function ExpenseSummaryCard({ total }: { total: number }) {
   return (
     <div className="rounded-lg border border-stone-200 bg-white overflow-hidden sticky top-4">
       <div className="px-4 py-2.5 bg-stone-50 border-b border-stone-200">
-        <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Summary</p>
+        <p className="type-overline">Summary</p>
       </div>
       <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50">
         <span className="text-xs font-medium text-stone-700">Total</span>

@@ -18,10 +18,10 @@ import { PackingListPanel } from './PackingListPanel';
 import { SlabGroupTable, type SlabGroupActions, type SlabGroupRow } from './SlabGroupTable';
 import { SlabIndividualTable, type SlabRowActions } from './SlabIndividualTable';
 
-const headerButtonCls =
-  'inline-flex shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+import { buttonVariants } from '@/components/ui/button';
+const headerButtonCls = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'shrink-0');
 const countInputCls =
-  'w-20 rounded border border-stone-200 bg-white px-2 py-1 text-right text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 transition-all';
+  'w-20 rounded border border-stone-200 bg-white px-2 py-1 text-right type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 transition-all';
 
 /** Why "Generate rows" can't run for this typed count, or null when it can. */
 function generateBlocker(typed: string, existing: number): string | null {
@@ -151,7 +151,7 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
             </span>
           </p>
           {progress && (
-            <p className={cn('mt-0.5 text-2xs', overExpected ? 'text-amber-700' : 'text-stone-500')} data-testid="slab-progress">
+            <p className={cn('mt-0.5 text-micro', overExpected ? 'text-amber-700' : 'text-stone-500')} data-testid="slab-progress">
               {progress}
             </p>
           )}
@@ -195,7 +195,7 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
       </div>
 
       <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-stone-300 bg-white px-3 py-2">
-        <label className="flex items-center gap-2 text-xs font-medium text-stone-700">
+        <label className="flex items-center gap-2 type-field-label">
           Slabs arrived
           <input
             type="number" min="1" step="1" inputMode="numeric"
@@ -221,9 +221,9 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
         >
           Generate rows
         </button>
-        {blocker && <p className="text-2xs text-stone-500">{blocker}</p>}
+        {blocker && <p className="type-helper">{blocker}</p>}
       </div>
-      <p className="mb-2 text-2xs text-stone-500">{BIN_STATUS_HINT}</p>
+      <p className="mb-2 type-helper">{BIN_STATUS_HINT}</p>
 
       {panel === 'paste' && (
         <PackingListPanel
@@ -256,7 +256,7 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
       {listed.length > 0 && (
         <>
           {grouped && (
-            <p className="mb-1 mt-3 text-2xs font-semibold uppercase tracking-wide text-stone-500">Slabs edited one by one</p>
+            <p className="mb-1 mt-3 type-overline">Slabs edited one by one</p>
           )}
           <SlabIndividualTable entries={slabView.items} serials={serials} bins={bins} units={units} actions={rowActions} />
           <SlabPager noun="slabs" page={slabView} onPage={setSlabPage} />
@@ -264,7 +264,7 @@ export function SlabRowsEditor({ line, onChange, serials, warehouseId, problems 
       )}
 
       {problems.length > 0 && (
-        <ul role="alert" className="mt-2 space-y-0.5 text-2xs text-destructive">
+        <ul role="alert" className="mt-2 space-y-0.5 text-micro text-danger-ink">
           {problems.map((p) => <li key={p}>{p}</li>)}
         </ul>
       )}

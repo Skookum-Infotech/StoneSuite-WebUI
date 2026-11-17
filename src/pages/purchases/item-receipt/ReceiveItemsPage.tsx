@@ -26,6 +26,8 @@ import {
   mergeReceiptLines, isPurchaseOrderReceivable, PAGE_TABS, type PageTab, type ItemReceiptDraftLine,
 } from '@/lib/itemReceiptForm';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Saving a new receipt posts it: the backend creates and posts in one
 // transaction, so there is no Pending receipt to come back to and post later.
 // A delivery over the ordered quantity is refused with nothing saved; the
@@ -129,11 +131,11 @@ export default function ReceiveItemsPage() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
         <Inbox className="size-8 text-stone-400" aria-hidden="true" />
-        <p className="text-sm font-semibold text-stone-700">Choose a purchase order to receive against.</p>
+        <p className="type-card-title">Choose a purchase order to receive against.</p>
         <button
           type="button"
           onClick={() => navigate('/purchases/item_receipt')}
-          className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+          className={cn(buttonVariants({ variant: 'outline' }), 'mt-1')}
         >
           <ArrowLeft className="size-3.5" />
           Back to Item Receipts
@@ -157,14 +159,14 @@ export default function ReceiveItemsPage() {
           subtitle={po.vendor.name}
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <p className="text-sm font-semibold text-stone-700">
+          <p className="type-card-title">
             {po.purchaseOrderNumber} is {po.status} and cannot be received against.
           </p>
-          <p className="text-xs text-stone-500">Only Sent or Partially Received purchase orders can accept a receipt.</p>
+          <p className="type-helper">Only Sent or Partially Received purchase orders can accept a receipt.</p>
           <button
             type="button"
             onClick={() => navigate(`/purchases/purchase_order/${po.id}`)}
-            className="mt-2 rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'mt-2')}
           >
             View purchase order
           </button>
@@ -185,7 +187,7 @@ export default function ReceiveItemsPage() {
           subtitle={`Against ${po.purchaseOrderNumber} · Saving posts the receipt and moves stock; ticked slabs become available in Inventory. Fields marked * are required.`}
           actions={(
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {isPending ? <Loader2 className="size-3 animate-spin" /> : <PackageCheck className="size-3" />}
               {isPending ? 'Posting…' : 'Save & Post Receipt'}
             </button>
@@ -202,7 +204,7 @@ export default function ReceiveItemsPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save and post item receipt.')}
             </p>

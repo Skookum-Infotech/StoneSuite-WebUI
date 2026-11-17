@@ -36,7 +36,7 @@ export function VendorPaymentRefundsTab({ refunds }: { refunds: VendorPaymentRef
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr className="divide-x divide-stone-200">
             {['Bill #', 'Amount', 'Reason', 'Reference #', 'Memo', 'Refunded On'].map((h) => (
-              <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">
+              <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">
                 {h}
               </th>
             ))}
@@ -56,7 +56,7 @@ export function VendorPaymentRefundsTab({ refunds }: { refunds: VendorPaymentRef
               </td>
               <td className="px-3 py-2.5 tabular-nums text-stone-700">{currency(refund.amount)}</td>
               <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{refund.reason || '—'}</td>
-              <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{refund.referenceNumber || '—'}</td>
+              <td className="px-3 py-2.5 type-record-id">{refund.referenceNumber || '—'}</td>
               <td className="px-3 py-2.5 text-stone-500 max-w-[200px] truncate">{refund.memo || '—'}</td>
               <td className="px-3 py-2.5 tabular-nums text-stone-500 whitespace-nowrap">{fmtDate(refund.refundedAt)}</td>
             </tr>

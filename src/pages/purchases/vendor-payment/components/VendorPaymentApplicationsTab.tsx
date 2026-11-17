@@ -9,6 +9,7 @@ import { ApplyToBillDialog } from './ApplyToBillDialog';
 import type { VendorPayment } from '@/types/vendorPayment';
 import { formatDateValue } from '@/lib/dateUtils';
 
+import { buttonVariants } from '@/components/ui/button';
 function currency(n: number | undefined): string {
   return (n ?? 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
 }
@@ -56,7 +57,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
                   : undefined
             }
             aria-label="Apply this payment to a vendor bill"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className={buttonVariants()}
           >
             <Wallet className="size-3.5" />
             Apply to bill
@@ -69,7 +70,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {['Bill #', 'Amount', 'Applied On'].map((h) => (
-                <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">
+                <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">
                   {h}
                 </th>
               ))}
@@ -97,7 +98,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
                       onClick={() => unapply.mutate(app.vendorBillId)}
                       disabled={unapply.isPending}
                       aria-label={`Unapply this payment from vendor bill ${app.vendorBillNumber}`}
-                      className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-500 hover:bg-stone-50 disabled:opacity-40 transition-colors"
+                      className={buttonVariants({ variant: 'outline', size: 'sm' })}
                     >
                       <Unlink className="size-3" />
                       Unapply
@@ -118,7 +119,7 @@ export function VendorPaymentApplicationsTab({ payment, canEdit, onChanged }: {
       </div>
 
       {unapply.error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="type-error">
           {apiErrorMessage(unapply.error, 'Failed to unapply vendor payment.')}
         </p>
       )}

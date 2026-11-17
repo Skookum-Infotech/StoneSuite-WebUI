@@ -98,7 +98,7 @@ export function VendorBillField({ field, value, set, lookups }: {
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+        {field.hint && <p className="type-helper">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

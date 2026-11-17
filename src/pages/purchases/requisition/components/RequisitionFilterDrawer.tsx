@@ -11,6 +11,7 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { REQUISITION_PRIORITIES } from '@/lib/requisitionForm';
 import { EMPTY_FILTER_STATE, type RequisitionFilterState } from '@/lib/requisitionFilters';
 
+import { buttonVariants } from '@/components/ui/button';
 // Filter drawer for the Requisition list — covers the server-whitelisted
 // filter keys (requisition/resolver.go systemFields) minus `status` and
 // `vendor_id`.
@@ -143,14 +144,14 @@ export function RequisitionFilterDrawer({ onClose, value, onApply }: {
           <button
             type="button"
             onClick={() => setDraft(EMPTY_FILTER_STATE)}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Clear all
           </button>
           <button
             type="button"
             onClick={() => { onApply(draft); onClose(); }}
-            className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover transition-colors shadow-sm"
+            className={buttonVariants()}
           >
             Apply Filters
           </button>

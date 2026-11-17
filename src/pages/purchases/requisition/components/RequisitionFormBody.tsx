@@ -94,7 +94,7 @@ export function RequisitionFormBody({
                     <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
                       <ModernFieldShell label="Suggested Vendor">
                         <VendorPicker value={vendor} onChange={setVendor} onCreateNew={onCreateVendor} />
-                        <p className="text-2xs text-stone-500">
+                        <p className="type-helper">
                           A suggestion only — the vendor is confirmed when this becomes a purchase order.
                         </p>
                       </ModernFieldShell>

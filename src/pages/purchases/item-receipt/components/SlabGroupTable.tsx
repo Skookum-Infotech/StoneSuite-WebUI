@@ -6,7 +6,7 @@ import { slabArea, type SlabGroup, type ItemReceiptDraftSlab, type SlabUnits } f
 import type { Bin } from '@/types/inventory';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-right text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-right type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 
@@ -48,7 +48,7 @@ export function SlabGroupTable({ rows, bins, units, actions }: {
     <div className="overflow-x-auto modal-scrollbar">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+          <tr className="type-th">
             <th className="w-24 px-1.5 py-1.5">Slabs</th>
             {DIMENSION_COLUMNS.map((c) => <th key={c.key} className="w-28 px-1.5 py-1.5">{c.label} ({units.length}) *</th>)}
             <th className="w-28 px-1.5 py-1.5 text-right">Area ({units.area})</th>

@@ -22,6 +22,7 @@ import type { RequisitionSearchRequest } from '@/types/requisition';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
+import { buttonVariants } from '@/components/ui/button';
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 1, 3, 8]);
 
@@ -229,7 +230,7 @@ export function RequisitionTable() {
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             aria-label="Search requisitions"
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -250,14 +251,14 @@ export function RequisitionTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
+          <span className="pr-0.5 type-overline">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
               onClick={() => handleSort(field)}
               aria-label={`Sort by ${label}`}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
                   : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
@@ -273,7 +274,7 @@ export function RequisitionTable() {
           <button
             onClick={clearFilters}
             aria-label="Clear search and filters"
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <X className="size-3" />
             Clear
@@ -286,7 +287,7 @@ export function RequisitionTable() {
             onClick={handleDownloadCsv}
             disabled={isExporting}
             aria-label={hasFilters ? 'Download filtered requisitions as CSV' : 'Download all requisitions as CSV'}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
           >
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
@@ -297,10 +298,10 @@ export function RequisitionTable() {
       {/* A 400 here is an invalid filter key, not a generic failure —
           apiErrorMessage surfaces the server's InvalidFilterError text. */}
       {isError && (
-        <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load requisitions. Please try again.')}</p>
+        <p className="type-error">{apiErrorMessage(error, 'Failed to load requisitions. Please try again.')}</p>
       )}
       {exportError && (
-        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
+        <p className="type-error">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}
@@ -309,17 +310,17 @@ export function RequisitionTable() {
           <table className="w-full sm:min-w-[980px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Requisition #</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Requested By</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Department</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Approval</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Priority</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Needed By</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Suggested Vendor</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Est. Total</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Requisition #</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Requested By</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Department</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Approval</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Priority</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Needed By</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Suggested Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 text-right type-th">Est. Total</th>
                 {canEdit && (
-                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-right max-sm:hidden type-th">Actions</th>
                 )}
               </tr>
             </thead>
@@ -350,10 +351,10 @@ export function RequisitionTable() {
                           {reqn.requisitionNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[140px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] type-cell">
                         {requesterName ?? '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[120px] max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[120px] max-sm:hidden type-cell">
                         {reqn.department || '—'}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
@@ -371,31 +372,31 @@ export function RequisitionTable() {
                       <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         {approvalLabel ? (
                           <span
-                            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 whitespace-nowrap type-pill"
                             style={{ backgroundColor: `${APPROVAL_COLORS[reqn.approvalStatus]}18`, color: APPROVAL_COLORS[reqn.approvalStatus] }}
                           >
                             <ShieldCheck className="size-2.5" aria-hidden="true" />
                             {approvalLabel}
                           </span>
                         ) : (
-                          <span className="text-2xs text-stone-500">—</span>
+                          <span className="type-subline">—</span>
                         )}
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden">
                         <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-semibold whitespace-nowrap"
+                          className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 whitespace-nowrap type-pill"
                           style={{ backgroundColor: `${priorityColor}18`, color: priorityColor }}
                         >
                           {priorityLabel(reqn.priority)}
                         </span>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(reqn.neededByDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[160px] max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[160px] max-sm:hidden type-cell-strong">
                         <VendorLink vendor={reqn.vendor} />
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs font-semibold text-stone-900 tabular-nums text-right whitespace-nowrap">
+                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums text-right whitespace-nowrap type-cell-strong">
                         {currency(reqn.estimatedTotal)}
                       </td>
                       {canEdit && (
@@ -421,16 +422,16 @@ export function RequisitionTable() {
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No requisitions raised yet.</p>
-                        <p className="text-xs text-stone-500">Create your first requisition to get started.</p>
+                        <p className="type-card-title">No requisitions raised yet.</p>
+                        <p className="type-helper">Create your first requisition to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No requisitions match the current search.</p>
-                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
+                        <p className="type-card-title">No requisitions match the current search.</p>
+                        <p className="type-helper">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>
@@ -442,14 +443,14 @@ export function RequisitionTable() {
 
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {pageNum}{hasMore ? '' : ' · last page'}
             </p>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Previous page"
               >
                 <ChevronLeft className="size-3.5" />
@@ -458,7 +459,7 @@ export function RequisitionTable() {
               <button
                 onClick={goNext}
                 disabled={!hasMore}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Next page"
               >
                 Next

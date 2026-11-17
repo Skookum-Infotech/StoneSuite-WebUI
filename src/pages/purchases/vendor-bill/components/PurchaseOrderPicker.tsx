@@ -126,12 +126,12 @@ export function PurchaseOrderPicker({
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {error && !isFetching && (
             // A failed search must not read as "this vendor has no orders".
-            <p role="alert" className="px-3 py-2 text-xs text-red-600">
+            <p role="alert" className="px-3 py-2 type-error">
               {apiErrorMessage(error, 'Failed to load purchase orders.')}
             </p>
           )}
           {!error && results.length === 0 && !isFetching && (
-            <p className="px-3 py-2 text-xs text-stone-500">
+            <p className="px-3 py-2 type-helper">
               {debounced ? 'No matching purchase orders.' : 'No purchase orders for this vendor.'}
             </p>
           )}

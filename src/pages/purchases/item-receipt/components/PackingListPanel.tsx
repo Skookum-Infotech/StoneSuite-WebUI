@@ -10,8 +10,9 @@ import { mmToDimension, normalizeUnit, type DimensionUnit } from '@/lib/lineDime
 import { PACKING_LIST_UNITS, parsePackingList, type PackingListUnit } from '@/lib/slabPackingList';
 import { unitLabel } from '@/lib/unitLabels';
 
+import { buttonVariants } from '@/components/ui/button';
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 
@@ -91,7 +92,7 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
         <ClipboardPaste className="size-3.5 text-stone-400" aria-hidden="true" />
         Paste from packing list
       </p>
-      <p className="mt-1 text-2xs text-stone-500">
+      <p className="mt-1 type-helper">
         One slab per line: length, width, optionally thickness and a lot — copied straight from your supplier&apos;s
         packing list or spreadsheet. Paste only those columns.
       </p>
@@ -106,7 +107,7 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
       />
 
       <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
-        <label className="block text-2xs font-medium text-stone-500">
+        <label className="block type-field-label">
           Sizes are in
           <Select
             value={unit}
@@ -117,7 +118,7 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
             {PACKING_LIST_UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
           </Select>
         </label>
-        <label className="block text-2xs font-medium text-stone-500">
+        <label className="block type-field-label">
           Thickness ({lengthUnit}) for rows without one
           <MmDimensionInput
             valueMm={thickness}
@@ -135,7 +136,7 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
             {parsed.slabs.length} slab{parsed.slabs.length === 1 ? '' : 's'} read
             {unitName && totalArea > 0 ? ` · ${totalArea.toFixed(AREA_DISPLAY_DECIMALS)} ${unitName} in total` : ''}
           </p>
-          <ul className="mt-1 space-y-0.5 text-2xs tabular-nums text-stone-500">
+          <ul className="mt-1 space-y-0.5 text-micro tabular-nums text-stone-500">
             {drafts.slice(0, PREVIEW_ROWS).map((d) => (
               <li key={d.key}>
                 {mmToDimension(parseFloat(d.lengthMm), lengthUnit)} × {mmToDimension(parseFloat(d.widthMm), lengthUnit)} × {mmToDimension(parseFloat(d.thicknessMm), lengthUnit)} {lengthUnit}{d.lot ? ` · ${d.lot}` : ''}
@@ -147,19 +148,19 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
       )}
 
       {implausible && (
-        <p role="alert" className="mt-2 flex items-start gap-1.5 text-2xs text-amber-700">
+        <p role="alert" className="mt-2 flex items-start gap-1.5 text-micro text-warning-ink">
           <AlertTriangle className="mt-px size-3 shrink-0" aria-hidden="true" />
           These slabs look unusually {averageSqm < MIN_PLAUSIBLE_SLAB_SQM ? 'small' : 'large'} — check that the sizes are
           in the units you picked.
         </p>
       )}
       {missingThickness && (
-        <p role="alert" className="mt-2 text-2xs text-destructive">
+        <p role="alert" className="mt-2 type-error">
           Some rows have no thickness — enter a default thickness above.
         </p>
       )}
       {parsed.problems.length > 0 && (
-        <div role="alert" className="mt-2 text-2xs text-destructive">
+        <div role="alert" className="mt-2 text-micro text-danger-ink">
           <p className="font-medium">These rows will be skipped:</p>
           <ul className="mt-0.5 space-y-0.5">
             {parsed.problems.map((p) => <li key={p}>{p}</li>)}
@@ -172,14 +173,14 @@ export function PackingListPanel({ itemId, unitCode, dimensionUnit, onAdd, onClo
           type="button"
           onClick={add}
           disabled={!canAdd}
-          className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-40 transition-colors"
+          className={buttonVariants()}
         >
           {parsed.slabs.length > 0 ? `Add ${parsed.slabs.length} slab${parsed.slabs.length === 1 ? '' : 's'}` : 'Add slabs'}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+          className={buttonVariants({ variant: 'outline' })}
         >
           Cancel
         </button>

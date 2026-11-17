@@ -5,6 +5,8 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ItemReceiptTable } from './components/ItemReceiptTable';
 import { PurchaseOrderPickerDialog } from './components/PurchaseOrderPickerDialog';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function ItemReceiptListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
@@ -24,14 +26,14 @@ export default function ItemReceiptListPage() {
               <Inbox className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Item Receipts</h1>
+              <h1 className="type-page-title">Item Receipts</h1>
               <p className="text-sm text-stone-500">Record goods arriving against your purchase orders.</p>
             </div>
           </div>
           {canCreate && (
             <button
               onClick={() => setPickerOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Receipt

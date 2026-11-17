@@ -3,6 +3,8 @@ import { FilePlus, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { VendorCreditTable } from './components/VendorCreditTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function VendorCreditListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
@@ -17,14 +19,14 @@ export default function VendorCreditListPage() {
               <FilePlus className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Vendor Credits</h1>
+              <h1 className="type-page-title">Vendor Credits</h1>
               <p className="text-sm text-stone-500">Track credits owed back by vendors and apply them to bills.</p>
             </div>
           </div>
           {canCreate && (
             <button
               onClick={() => navigate('/purchases/vendor_credit/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Vendor Credit

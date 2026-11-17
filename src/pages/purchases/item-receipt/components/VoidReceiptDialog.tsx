@@ -7,6 +7,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import type { ItemReceipt } from '@/types/itemReceipt';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Voiding reverses a posted receipt's stock/qty_received effects (or just
 // closes out an unposted one) — terminal, and requires a non-empty reason
 // (spec §3). Mirrors DeletePurchaseOrderDialog's focus management.
@@ -77,10 +79,10 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="void-receipt-dialog-title" className="text-sm font-bold text-stone-900">
-                  Void this item receipt?
+                <h3 id="void-receipt-dialog-title" className="type-card-title">
+                  Void This Item Receipt?
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -90,7 +92,7 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
                 : 'This receipt has not been posted, so nothing needs to be reversed — it will simply be marked void.'}
             </p>
 
-            <label className="block text-xs font-semibold text-stone-900 mb-1.5" htmlFor="void-reason">
+            <label className="block mb-1.5 type-field-label" htmlFor="void-reason">
               Void Reason <span className="text-red-400">*</span>
             </label>
             <textarea
@@ -105,7 +107,7 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
             />
 
             {voidMutation.error && (
-              <p role="alert" className="mt-3 text-xs text-destructive">
+              <p role="alert" className="mt-3 type-error">
                 {apiErrorMessage(voidMutation.error, 'Failed to void item receipt.')}
               </p>
             )}
@@ -115,7 +117,7 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
                 type="button"
                 onClick={close}
                 disabled={voidMutation.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -123,7 +125,7 @@ export function VoidReceiptDialog({ itemReceiptId, statusCode, onVoided }: {
                 type="button"
                 onClick={() => voidMutation.mutate()}
                 disabled={voidMutation.isPending || !reason.trim()}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {voidMutation.isPending ? 'Voiding…' : 'Void Receipt'}
               </button>

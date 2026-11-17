@@ -9,7 +9,7 @@ export function ReceiptSlabsTable({ lines }: { lines: ItemReceiptLine[] }) {
 
   return (
     <div className="mt-4 space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500">Slabs received</h3>
+      <h3 className="type-overline">Slabs received</h3>
       {slabLines.map((line) => <ReceiptLineSlabs key={line.id} line={line} />)}
     </div>
   );

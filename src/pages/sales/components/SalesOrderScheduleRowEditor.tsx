@@ -18,7 +18,7 @@ const CREATED_CODE = 'created';
 
 // Matches the DatePicker trigger beside it (h-8, stone-200 border).
 const TIME_INPUT_CLS =
-  'h-8 w-28 shrink-0 rounded-lg border border-stone-200 bg-white px-2.5 text-sm text-stone-900 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50';
+  'h-8 w-28 shrink-0 rounded-lg border border-stone-200 bg-white px-2.5 type-input outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50';
 
 const STATUS_OPTIONS: { value: ScheduleActivityStatus; label: string }[] = [
   { value: 'pending', label: SCHEDULE_STATUS_LABELS.pending },

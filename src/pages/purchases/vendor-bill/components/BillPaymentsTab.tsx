@@ -10,6 +10,7 @@ import { ApplyExistingPaymentDialog } from './ApplyExistingPaymentDialog';
 import { formatDateValue } from '@/lib/dateUtils';
 import { formatMoney } from '@/lib/formatMoney';
 
+import { buttonVariants } from '@/components/ui/button';
 function fmtDate(iso?: string): string {
   if (!iso) return '—';
   return formatDateValue(iso, undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -62,7 +63,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
               type="button"
               onClick={() => setApplyOpen(true)}
               aria-label="Apply an existing vendor payment to this bill"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-all"
+              className={buttonVariants({ variant: 'outline' })}
             >
               <Wallet className="size-3.5" />
               Apply existing payment
@@ -72,7 +73,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
             type="button"
             onClick={() => navigate(`/purchases/vendor_payment/new?fromBill=${encodeURIComponent(vendorBillId)}`)}
             aria-label="Record a vendor payment for this bill"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all"
+            className={buttonVariants()}
           >
             <Plus className="size-3.5" />
             Record vendor payment
@@ -83,7 +84,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
       {isLoading ? (
         <div className="py-6 flex justify-center"><Spinner label="Loading payments…" /></div>
       ) : error ? (
-        <p role="alert" className="py-6 text-center text-xs text-destructive/70 italic">
+        <p role="alert" className="py-6 text-center type-error italic">
           {apiErrorMessage(error, 'Failed to load payments.')}
         </p>
       ) : (
@@ -92,7 +93,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
             <div className="flex flex-col items-center gap-2 py-12 text-center">
               <Wallet className="size-6 text-stone-400" aria-hidden="true" />
               <p className="text-sm text-stone-500">No vendor payments applied to this bill yet.</p>
-              <p className="text-xs text-stone-500">
+              <p className="type-helper">
                 Bills are settled by applying a vendor payment — an approved bill with a balance due can be paid from the Vendor Payments module.
               </p>
             </div>
@@ -102,7 +103,7 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
                 <thead className="bg-stone-50 border-b border-stone-200">
                   <tr>
                     {['Payment #', 'Amount', 'Applied On'].map((h) => (
-                      <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -138,14 +139,14 @@ export function BillPaymentsTab({ vendorBillId, balanceDue, vendor, currencyCode
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
                 <Undo2 className="size-3.5 text-stone-400" aria-hidden="true" />
-                <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Refunds</p>
+                <p className="type-overline">Refunds</p>
               </div>
               <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-stone-50 border-b border-stone-200">
                     <tr>
                       {['Payment #', 'Amount', 'Reason', 'Refunded On'].map((h) => (
-                        <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
                       ))}
                     </tr>
                   </thead>

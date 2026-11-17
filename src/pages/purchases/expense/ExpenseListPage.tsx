@@ -3,6 +3,8 @@ import { Wallet, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ExpenseTable } from './components/ExpenseTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function ExpenseListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
@@ -17,7 +19,7 @@ export default function ExpenseListPage() {
               <Wallet className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Expenses</h1>
+              <h1 className="type-page-title">Expenses</h1>
               <p className="text-sm text-stone-500">Submit and approve employee expense claims.</p>
             </div>
           </div>
@@ -25,7 +27,7 @@ export default function ExpenseListPage() {
             <button
               onClick={() => navigate('/purchases/expense/new')}
               aria-label="Create a new expense claim"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Expense

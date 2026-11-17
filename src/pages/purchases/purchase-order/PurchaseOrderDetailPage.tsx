@@ -275,7 +275,7 @@ export default function PurchaseOrderDetailPage() {
       />
 
       {transition.isError && (
-        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="border-b border-stone-200 bg-white px-5 py-2 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(transition.error, 'Failed to change status.')}
         </p>
       )}
@@ -288,7 +288,7 @@ export default function PurchaseOrderDetailPage() {
         resubmitVia="submit"
       />
       {po.gated && approve.isError && (
-        <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+        <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
           {apiErrorMessage(approve.error, 'Failed to approve purchase order.')}
         </p>
       )}
@@ -363,7 +363,7 @@ export default function PurchaseOrderDetailPage() {
                       { label: 'Tax %', right: true },
                       { label: 'Total', right: true },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -376,7 +376,7 @@ export default function PurchaseOrderDetailPage() {
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-stone-500 min-w-[200px] max-w-md whitespace-pre-wrap break-words">{line.description || '—'}</td>
-                      <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <LineSizeViewCells
                         size={{ length: line.length, width: line.width, slabs: line.expectedSlabs, thickness: line.thickness }}
                         unit={line.dimensionUnit}
@@ -389,10 +389,10 @@ export default function PurchaseOrderDetailPage() {
                       <td className="px-3 py-2.5">
                         <LineReceivingProgress line={line} />
                         {(line.expectedSlabs || line.slabsReceived) ? (
-                          <p className="mt-1 text-2xs text-stone-500">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
+                          <p className="mt-1 type-helper">{slabProgressText(line.slabsReceived ?? 0, line.expectedSlabs)}</p>
                         ) : null}
                         {line.slabsOnOrder ? (
-                          <p className="mt-1 text-2xs text-stone-500">{line.slabsOnOrder} on order in Inventory</p>
+                          <p className="mt-1 type-helper">{line.slabsOnOrder} on order in Inventory</p>
                         ) : null}
                       </td>
                       <td className="px-3 py-2.5 tabular-nums text-right text-stone-600">{currency(line.unitPrice)}</td>
@@ -456,7 +456,7 @@ export default function PurchaseOrderDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -565,7 +565,7 @@ function AddressBlock({ addr }: { addr: { name?: string; attention?: string; add
   ].filter(Boolean);
 
   if (lines.length === 0 && !addr.stateId && !addr.countryId) {
-    return <p className="text-xs text-stone-500 italic">No address on file.</p>;
+    return <p className="italic type-helper">No address on file.</p>;
   }
   return (
     <div className="space-y-1 text-xs text-stone-700">
@@ -579,7 +579,7 @@ function AddressBlock({ addr }: { addr: { name?: string; attention?: string; add
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="type-overline">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

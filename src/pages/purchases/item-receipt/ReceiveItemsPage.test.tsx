@@ -211,7 +211,7 @@ describe('ReceiveItemsPage — a delivery over the ordered quantity', () => {
     await clickSave(user);
 
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('This exceeds the ordered quantity');
+    expect(dialog).toHaveTextContent('This Exceeds the Ordered Quantity');
     expect(dialog).toHaveTextContent('Line 1 — ordered 10, already received 0, receiving 50');
     // The dialog carries the explanation; the page banner would only repeat it.
     expect(screen.queryByText(/Failed to save and post item receipt/)).not.toBeInTheDocument();

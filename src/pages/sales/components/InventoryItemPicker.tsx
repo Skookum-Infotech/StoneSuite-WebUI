@@ -16,7 +16,7 @@ const RESULTS_STALE_MS = 30 * 1000;
 const PANEL_WIDTH = 288; // w-72
 
 const inputCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 export interface InventoryItemPickerHandlers {
   onPick: (item: InventoryItem) => void;

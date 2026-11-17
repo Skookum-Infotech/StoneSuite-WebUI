@@ -15,7 +15,7 @@ import { SlabPager } from './SlabPager';
 const AREA_DISPLAY_DECIMALS = 3;
 
 const thicknessCls =
-  'w-24 rounded border border-stone-200 bg-white px-2 py-1 text-right text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 transition-all';
+  'w-24 rounded border border-stone-200 bg-white px-2 py-1 text-right type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 transition-all';
 
 /** What the checklist changes on its line. */
 export type OnOrderChecklistChange = Required<Pick<ItemReceiptDraftLine, 'onOrder'>>;
@@ -59,11 +59,11 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
       <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold text-stone-700">On-order slabs for {itemLabel}</p>
-          <p className="mt-0.5 text-2xs text-stone-500" data-testid="arrival-progress">
+          <p className="mt-0.5 type-helper" data-testid="arrival-progress">
             {arrivalProgressText(arrived, drafts.length)}
             {' — tick the slabs that arrived. Slabs you leave unticked stay on order.'}
           </p>
-          <p className="mt-0.5 text-2xs text-stone-500">{BIN_STATUS_HINT}</p>
+          <p className="mt-0.5 type-helper">{BIN_STATUS_HINT}</p>
         </div>
         <div className="w-60">
           {/* An action, not a setting: it stays on its prompt and writes the bin onto each ticked slab. */}
@@ -78,7 +78,7 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
       <div className="overflow-x-auto modal-scrollbar">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+            <tr className="type-th">
               <th className="w-8 px-1.5 py-1.5">
                 <input
                   ref={showPartial}
@@ -113,7 +113,7 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
                       className="size-3.5 accent-emerald-600"
                     />
                   </td>
-                  <td className="px-1.5 py-1.5 align-middle font-mono text-2xs text-stone-600">{slab.serial}</td>
+                  <td className="px-1.5 py-1.5 align-middle type-record-id">{slab.serial}</td>
                   <td className="px-1.5 py-1.5 align-middle text-right tabular-nums text-stone-600">
                     {mmToDimension(slab.lengthMm, lengthUnit)}
                   </td>
@@ -153,7 +153,7 @@ export function OnOrderSlabChecklist({ line, onChange, warehouseId, problems }: 
       <SlabPager noun="slabs" page={view} onPage={setPage} />
 
       {problems.length > 0 && (
-        <ul role="alert" className="mt-2 space-y-0.5 text-2xs text-destructive">
+        <ul role="alert" className="mt-2 space-y-0.5 text-micro text-danger-ink">
           {problems.map((p) => <li key={p}>{p}</li>)}
         </ul>
       )}

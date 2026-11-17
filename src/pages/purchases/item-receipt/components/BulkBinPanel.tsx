@@ -4,8 +4,9 @@ import { BinPicker } from '@/components/inventory/BinPicker';
 import { countReached, type BinAssignScope, type ItemReceiptDraftSlab } from '@/lib/itemReceiptSlabs';
 import type { Bin } from '@/types/inventory';
 
+import { buttonVariants } from '@/components/ui/button';
 const inputCls =
-  'rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 function positionOf(raw: string): number | undefined {
   const n = Number(raw);
@@ -46,23 +47,23 @@ export function BulkBinPanel({ slabs, bins, onApply, onClose }: {
   return (
     <div className="mb-3 rounded-lg border border-stone-200 bg-white p-3" role="group" aria-label="Assign a bin to slabs">
       <p className="text-xs font-semibold text-stone-700">Assign a bin</p>
-      <p className="mt-1 text-2xs text-stone-500">
+      <p className="mt-1 type-helper">
         Puts slabs into one bin in a single step. Slab numbers are the row numbers, counted from 1 down this line.
       </p>
 
       <div className="mt-2 flex flex-wrap items-end gap-x-5 gap-y-2">
         <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <legend className="sr-only">Which slabs</legend>
-          <label className="flex items-center gap-1.5 text-xs text-stone-700">
+          <label className="flex items-center gap-1.5 type-field-label">
             <input type="radio" name="bin-scope" checked={!ranged} onChange={() => { setRanged(false); setDone(null); }} aria-label="All slabs" />
             All {slabs.length} slab{slabs.length === 1 ? '' : 's'}
           </label>
-          <label className="flex items-center gap-1.5 text-xs text-stone-700">
+          <label className="flex items-center gap-1.5 type-field-label">
             <input type="radio" name="bin-scope" checked={ranged} onChange={() => { setRanged(true); setDone(null); }} aria-label="A range of slabs" />
             A range
           </label>
           {ranged && (
-            <span className="flex items-center gap-1.5 text-2xs text-stone-500">
+            <span className="flex items-center gap-1.5 type-subline">
               slab
               <input
                 type="number" min="1" step="1" inputMode="numeric" value={from}
@@ -79,7 +80,7 @@ export function BulkBinPanel({ slabs, bins, onApply, onClose }: {
           )}
         </fieldset>
 
-        <label className="flex items-center gap-1.5 text-xs text-stone-700">
+        <label className="flex items-center gap-1.5 type-field-label">
           <input
             type="checkbox" checked={onlyUnassigned}
             onChange={(e) => { setOnlyUnassigned(e.target.checked); setDone(null); }}
@@ -98,21 +99,21 @@ export function BulkBinPanel({ slabs, bins, onApply, onClose }: {
         </div>
         <button
           type="button" onClick={apply} disabled={!canApply} aria-label="Assign bin to slabs"
-          className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 transition-colors hover:bg-brand-hover disabled:opacity-40"
+          className={buttonVariants()}
         >
           Assign bin
         </button>
         <button
           type="button" onClick={onClose}
-          className="rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+          className={buttonVariants({ variant: 'outline' })}
         >
           Done
         </button>
       </div>
 
-      <p className="mt-2 min-h-4 text-2xs text-stone-500" role="status">
+      <p className="mt-2 min-h-4 type-helper" role="status">
         {done !== null
-          ? <span className="text-emerald-700">Bin set on {done} slab{done === 1 ? '' : 's'}.</span>
+          ? <span className="text-success-ink">Bin set on {done} slab{done === 1 ? '' : 's'}.</span>
           : `Sets the bin on ${reached} slab${reached === 1 ? '' : 's'}.`}
       </p>
     </div>

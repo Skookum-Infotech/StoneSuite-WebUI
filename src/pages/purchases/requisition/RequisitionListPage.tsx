@@ -3,6 +3,8 @@ import { ClipboardList, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { RequisitionTable } from './components/RequisitionTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function RequisitionListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
@@ -17,7 +19,7 @@ export default function RequisitionListPage() {
               <ClipboardList className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Requisitions</h1>
+              <h1 className="type-page-title">Requisitions</h1>
               <p className="text-sm text-stone-500">Raise and approve internal requests to buy.</p>
             </div>
           </div>
@@ -25,7 +27,7 @@ export default function RequisitionListPage() {
             <button
               onClick={() => navigate('/purchases/requisition/new')}
               aria-label="Create a new requisition"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Requisition

@@ -28,7 +28,7 @@ function buildTiles(s: Summary): Tile[] {
     tiles.push({
       key: 'overdue', label: 'Overdue', value: moneyOrDash(s.overdueAmount),
       sub: plural(s.overdueBillCount ?? 0, 'overdue bill'),
-      tone: s.overdueAmount > 0 ? 'text-red-600 dark:text-red-400' : undefined,
+      tone: s.overdueAmount > 0 ? 'text-danger-ink dark:text-red-400' : undefined,
     });
   }
   if (s.unappliedCredits !== null) {
@@ -64,12 +64,12 @@ export function VendorTransactionSummary({
             <div key={t.key} className="min-w-0 flex-1 basis-36 rounded-2xl border border-stone-200 bg-white px-3 py-3 shadow-sm sm:px-4">
               <p className="text-xs font-semibold leading-tight text-stone-500">{t.label}</p>
               <p className={cn('mt-1 truncate text-base font-bold tabular-nums text-stone-900', t.tone)}>{t.value}</p>
-              <p className="mt-0.5 truncate text-2xs text-stone-500">{t.sub}</p>
+              <p className="mt-0.5 truncate type-helper">{t.sub}</p>
             </div>
           ))}
         </div>
       )}
-      {scopeLimited && <p className="text-2xs text-stone-500">Based on records you can see.</p>}
+      {scopeLimited && <p className="type-helper">Based on records you can see.</p>}
     </section>
   );
 }

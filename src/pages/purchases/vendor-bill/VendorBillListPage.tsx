@@ -11,6 +11,8 @@ import { PendingDocumentsChip } from '@/components/tenant/documentExtraction/Pen
 import { uploadDisabledReason } from '@/lib/documentUploadAvailability';
 import { VendorBillTable } from './components/VendorBillTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function VendorBillListPage() {
   const navigate = useNavigate();
   // A customer-portal session never creates vendor bills; hide the whole flow.
@@ -43,14 +45,14 @@ export default function VendorBillListPage() {
               <FileCheck className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Vendor Bills</h1>
+              <h1 className="type-page-title">Vendor Bills</h1>
               <p className="text-sm text-stone-500">Record and approve bills received from vendors.</p>
             </div>
           </div>
           {canCreate && (
             <button
               onClick={() => navigate('/purchases/vendor_bill/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Vendor Bill

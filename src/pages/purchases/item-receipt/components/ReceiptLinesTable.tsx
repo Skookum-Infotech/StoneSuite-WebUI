@@ -11,7 +11,7 @@ const COLUMN_COUNT = 9;
 const QTY_DISPLAY_DECIMALS = 3;
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 // Every row here is a fixed line inherited from the source purchase order —
 // unlike PurchaseOrderItemsTab, there is no add/remove: a receipt can only
@@ -70,7 +70,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
                 { label: 'Rejected', w: 'w-20', right: true },
                 { label: 'Notes', w: 'min-w-[140px]' },
               ].map((c) => (
-                <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w, c.right && 'text-right')}>
+                <th key={c.label} className={cn('px-2.5 py-2.5 whitespace-nowrap type-th', c.w, c.right && 'text-right')}>
                   {c.label}
                 </th>
               ))}
@@ -89,7 +89,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
                 <Fragment key={line.purchaseOrderItemId}>
                 <tr className="hover:bg-stone-50/70 transition-colors divide-x divide-stone-100">
                   <td className="px-2.5 py-2.5 font-medium text-stone-800">{line.itemName || <span className="text-stone-500">—</span>}</td>
-                  <td className="px-2.5 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                  <td className="px-2.5 py-2.5 type-record-id">{line.sku || '—'}</td>
                   <td className="px-2.5 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                     {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                   </td>
@@ -119,7 +119,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
                       />
                     )}
                     {overOutstanding && (
-                      <p id={outstandingId} className="mt-1 flex items-center gap-1 text-2xs text-amber-600">
+                      <p id={outstandingId} className="mt-1 flex items-center gap-1 text-micro text-warning-ink">
                         <AlertTriangle className="size-2.5 shrink-0" aria-hidden="true" />
                         Exceeds outstanding
                       </p>
@@ -127,7 +127,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
                   </td>
                   <td className="px-2 py-1.5 align-top">
                     {serialized ? (
-                      <p className="w-16 py-1 text-right text-xs text-stone-500" title="A refused slab is simply left out.">—</p>
+                      <p className="w-16 py-1 text-right type-helper" title="A refused slab is simply left out.">—</p>
                     ) : (
                       <input
                         type="number"
@@ -143,7 +143,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
                       />
                     )}
                     {lineError && (
-                      <p id={errorId} role="alert" className="mt-1 text-2xs text-destructive">
+                      <p id={errorId} role="alert" className="mt-1 type-error">
                         {lineError}
                       </p>
                     )}
@@ -190,7 +190,7 @@ export function ReceiptLinesTable({ lines, onChange, lineErrors, serials, wareho
           </tbody>
         </table>
       </div>
-      <p className="border-t border-stone-100 bg-stone-50/50 px-4 py-2.5 text-2xs text-stone-500">
+      <p className="border-t border-stone-100 bg-stone-50/50 px-4 py-2.5 type-helper">
         Leave <span className="font-medium text-stone-500">Receiving</span> blank to skip a line. Receiving beyond a
         line&apos;s ordered quantity needs an over-receipt reason when posting. A slab item is received slab by slab:
         tick the slabs that arrived (or add each slab under its line) and the quantity is worked out from their areas.

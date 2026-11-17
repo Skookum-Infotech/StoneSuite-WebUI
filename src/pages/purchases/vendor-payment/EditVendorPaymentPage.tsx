@@ -18,6 +18,7 @@ import {
   vpStatusLabel, PAGE_TABS, type PageTab,
 } from '@/lib/vendorPaymentForm';
 
+import { buttonVariants } from '@/components/ui/button';
 // Stable empty default so the unsaved-changes baseline doesn't see a brand new
 // object every render before the payment loads.
 const EMPTY_CUSTOM: Record<string, unknown> = {};
@@ -114,7 +115,7 @@ export default function EditVendorPaymentPage() {
           subtitle={payment.vendor.name}
           actions={(
             <button type="submit" disabled={save.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {save.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -131,7 +132,7 @@ export default function EditVendorPaymentPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(save.error, 'Failed to save vendor payment.')}
             </p>

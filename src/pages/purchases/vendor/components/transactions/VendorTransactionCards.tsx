@@ -31,20 +31,20 @@ export function VendorTransactionCards({ rows }: { rows: VendorTransactionRow[] 
 
               <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                 <div>
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Date</dt>
+                  <dt className="type-overline">Date</dt>
                   <dd className="font-semibold text-stone-800">{dateOrDash(row.date)}</dd>
                 </div>
                 <div className="text-right">
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Due</dt>
+                  <dt className="type-overline">Due</dt>
                   <dd className="font-semibold text-stone-800">{dateOrDash(row.dueDate)}</dd>
                 </div>
                 <div>
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Amount</dt>
+                  <dt className="type-overline">Amount</dt>
                   <dd className="font-bold tabular-nums text-stone-900">{moneyOrDash(row.amount)}</dd>
                 </div>
                 {row.balance !== null && (
                   <div className="text-right">
-                    <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">{balanceNote || 'Balance'}</dt>
+                    <dt className="type-overline">{balanceNote || 'Balance'}</dt>
                     <dd className="font-bold tabular-nums text-stone-900">{moneyOrDash(row.balance)}</dd>
                   </div>
                 )}

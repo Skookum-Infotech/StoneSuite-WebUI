@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { SlabPage } from '@/lib/itemReceiptSlabs';
 
-const pagerButtonCls =
-  'inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2 py-1 text-2xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40';
+import { buttonVariants } from '@/components/ui/button';
+const pagerButtonCls = buttonVariants({ variant: 'outline', size: 'sm' });
 
 // Previous / Next under a table of a long delivery. Nothing is drawn while
 // everything fits on one page.
@@ -18,7 +18,7 @@ export function SlabPager({ noun, page, onPage }: {
 
   return (
     <div className="mt-1.5 flex items-center justify-between">
-      <p className="text-2xs tabular-nums text-stone-500" aria-live="polite">{heading} {first}–{last} of {page.total}</p>
+      <p className="tabular-nums type-helper" aria-live="polite">{heading} {first}–{last} of {page.total}</p>
       <div className="flex items-center gap-1.5">
         <button
           type="button" onClick={() => onPage(page.page - 1)} disabled={page.page <= 1}

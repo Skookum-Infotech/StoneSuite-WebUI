@@ -6,7 +6,7 @@ import type { OpenOrder } from '@/types/replenishment';
 export function OpenOrdersNote({ orders, unit }: { orders: ReadonlyArray<OpenOrder>; unit: string }) {
   if (orders.length === 0) return null;
   return (
-    <p className="mt-3 text-2xs text-stone-500">
+    <p className="mt-3 type-helper">
       Already on order:{' '}
       {orders.map((o, i) => (
         <span key={o.id}>

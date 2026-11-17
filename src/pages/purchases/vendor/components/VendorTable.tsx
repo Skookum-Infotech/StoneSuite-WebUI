@@ -13,6 +13,7 @@ import { VENDOR_STATUS_COLORS } from '@/types/vendor';
 import { exportPagedCsv } from '@/lib/csvExport';
 import type { VendorSearchRequest } from '@/types/vendor';
 
+import { buttonVariants } from '@/components/ui/button';
 const EXPORT_PAGE_SIZE = 200;
 
 // Vendors are a dedicated relational module (mirrors salesorder), not a
@@ -160,20 +161,20 @@ export function VendorTable() {
             placeholder="Search vendor #, name, email…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
+          <span className="pr-0.5 type-overline">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
               onClick={() => handleSort(field)}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
                   : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
@@ -188,7 +189,7 @@ export function VendorTable() {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <X className="size-3" />
             Clear
@@ -201,7 +202,7 @@ export function VendorTable() {
             onClick={handleDownloadCsv}
             disabled={isExporting}
             aria-label={hasFilters ? 'Download filtered vendors as CSV' : 'Download all vendors as CSV'}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
           >
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
@@ -210,10 +211,10 @@ export function VendorTable() {
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">Failed to load vendors. Please try again.</p>
+        <p className="type-error">Failed to load vendors. Please try again.</p>
       )}
       {exportError && (
-        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
+        <p className="type-error">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}
@@ -222,13 +223,13 @@ export function VendorTable() {
           <table className="w-full min-w-[640px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor #</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Type</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
+                <th className="px-4 py-3 type-th">Vendor #</th>
+                <th className="px-4 py-3 type-th">Name</th>
+                <th className="px-4 py-3 type-th">Type</th>
+                <th className="px-4 py-3 type-th">Status</th>
+                <th className="px-4 py-3 type-th">Email</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 py-3 text-right type-th">Actions</th>
                 )}
               </tr>
             </thead>
@@ -258,25 +259,25 @@ export function VendorTable() {
                           {vendor.vendorNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[240px]">
+                      <td className="px-4 py-3.5 truncate max-w-[240px] type-cell-strong">
                         {vendor.displayName}
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 rounded-md bg-stone-100 px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill">
                           <TypeIcon className="size-3" />
                           {vendor.vendorType}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
+                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill"
                           style={{ backgroundColor: `${statusColor}18` }}
                         >
                           <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusColor }} aria-hidden="true" />
                           {vendor.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-500 whitespace-nowrap">
+                      <td className="px-4 py-3.5 whitespace-nowrap type-cell">
                         {vendor.email || '—'}
                       </td>
                       {canEdit && (
@@ -302,16 +303,16 @@ export function VendorTable() {
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No vendors added yet.</p>
-                        <p className="text-xs text-stone-500">Create your first vendor to get started.</p>
+                        <p className="type-card-title">No vendors added yet.</p>
+                        <p className="type-helper">Create your first vendor to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No vendors match the current search.</p>
-                        <p className="text-xs text-stone-500">Try adjusting your search terms.</p>
+                        <p className="type-card-title">No vendors match the current search.</p>
+                        <p className="type-helper">Try adjusting your search terms.</p>
                       </div>
                     )}
                   </td>
@@ -323,14 +324,14 @@ export function VendorTable() {
 
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {pageNum}{hasMore ? '' : ' · last page'}
             </p>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Previous page"
               >
                 <ChevronLeft className="size-3.5" />
@@ -339,7 +340,7 @@ export function VendorTable() {
               <button
                 onClick={goNext}
                 disabled={!hasMore}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Next page"
               >
                 Next

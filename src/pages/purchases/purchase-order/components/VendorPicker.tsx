@@ -122,7 +122,7 @@ export function VendorPicker({
       {open && (
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white py-1 shadow-lg max-h-64 overflow-y-auto modal-scrollbar">
           {results.length === 0 && !isFetching && (
-            <p className="px-3 py-2 text-xs text-stone-500">
+            <p className="px-3 py-2 type-helper">
               {debounced ? 'No matching vendors.' : 'No vendors available.'}
             </p>
           )}
@@ -139,12 +139,12 @@ export function VendorPicker({
           ))}
           {notFound && (
             <div role="status" className="px-3 py-2">
-              <p className="flex items-start gap-1.5 text-xs font-medium text-amber-700">
+              <p className="flex items-start gap-1.5 text-xs font-medium text-warning-ink">
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 break-words">“{debounced}” isn't an existing vendor.</span>
               </p>
               {!onCreateNew && (
-                <p className="mt-0.5 pl-5 text-2xs text-stone-500">
+                <p className="mt-0.5 pl-5 type-helper">
                   Ask someone with vendor access to add them first.
                 </p>
               )}

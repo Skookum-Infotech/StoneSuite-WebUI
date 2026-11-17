@@ -20,6 +20,7 @@ import type { ItemReceiptSearchRequest } from '@/types/itemReceipt';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 import { VendorLink } from '@/pages/purchases/vendor/components/VendorLink';
 
+import { buttonVariants } from '@/components/ui/button';
 // Columns still shown below the sm breakpoint (indexes into the header row); the rest return from sm up.
 const PHONE_COLUMNS = new Set([0, 2, 3]);
 
@@ -193,7 +194,7 @@ export function ItemReceiptTable() {
             placeholder="Search receipt #, packing slip, tracking, PO #…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -213,13 +214,13 @@ export function ItemReceiptTable() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
+          <span className="pr-0.5 type-overline">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
               onClick={() => handleSort(field)}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
                   : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
@@ -234,7 +235,7 @@ export function ItemReceiptTable() {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <X className="size-3" />
             Clear
@@ -247,7 +248,7 @@ export function ItemReceiptTable() {
             onClick={handleDownloadCsv}
             disabled={isExporting}
             aria-label={hasFilters ? 'Download filtered item receipts as CSV' : 'Download all item receipts as CSV'}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
           >
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
@@ -256,10 +257,10 @@ export function ItemReceiptTable() {
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load item receipts. Please try again.')}</p>
+        <p className="type-error">{apiErrorMessage(error, 'Failed to load item receipts. Please try again.')}</p>
       )}
       {exportError && (
-        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
+        <p className="type-error">Failed to export CSV: {exportError}</p>
       )}
 
       {/* Table */}
@@ -268,15 +269,15 @@ export function ItemReceiptTable() {
           <table className="w-full sm:min-w-[920px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Receipt #</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">PO #</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Vendor</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Receipt Date</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Location</th>
-                <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 max-sm:hidden">Owner</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Receipt #</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">PO #</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Vendor</th>
+                <th className="px-4 max-sm:px-2 py-3 type-th">Status</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Receipt Date</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Location</th>
+                <th className="px-4 max-sm:px-2 py-3 max-sm:hidden type-th">Owner</th>
                 {canEdit && (
-                  <th className="px-4 max-sm:px-2 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right max-sm:hidden">Actions</th>
+                  <th className="px-4 max-sm:px-2 py-3 text-right max-sm:hidden type-th">Actions</th>
                 )}
               </tr>
             </thead>
@@ -304,28 +305,28 @@ export function ItemReceiptTable() {
                           {ir.itemReceiptNumber || '—'}
                         </Link>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 max-sm:hidden type-cell">
                         {ir.purchaseOrder?.number ?? '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-700 truncate max-w-[180px]">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[180px] type-cell-strong">
                         <VendorLink vendor={ir.vendor} />
                       </td>
                       <td className="px-4 max-sm:px-2 py-3.5">
                         <span
-                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-stone-600 whitespace-nowrap"
+                          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-stone-600 whitespace-nowrap type-pill"
                           style={{ backgroundColor: `${color}18` }}
                         >
                           <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
                           {ir.status}
                         </span>
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 tabular-nums whitespace-nowrap max-sm:hidden type-cell">
                         {fmtDate(ir.receiptDate)}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] max-sm:hidden type-cell">
                         {ir.warehouseName || '—'}
                       </td>
-                      <td className="px-4 max-sm:px-2 py-3.5 text-xs text-stone-500 truncate max-w-[140px] max-sm:hidden">
+                      <td className="px-4 max-sm:px-2 py-3.5 truncate max-w-[140px] max-sm:hidden type-cell">
                         {ownerName ?? '—'}
                       </td>
                       {canEdit && (
@@ -353,16 +354,16 @@ export function ItemReceiptTable() {
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No item receipts added yet.</p>
-                        <p className="text-xs text-stone-500">Receive against a purchase order to get started.</p>
+                        <p className="type-card-title">No item receipts added yet.</p>
+                        <p className="type-helper">Receive against a purchase order to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No item receipts match the current search.</p>
-                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
+                        <p className="type-card-title">No item receipts match the current search.</p>
+                        <p className="type-helper">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>
@@ -374,14 +375,14 @@ export function ItemReceiptTable() {
 
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {pageNum}{hasMore ? '' : ' · last page'}
             </p>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Previous page"
               >
                 <ChevronLeft className="size-3.5" />
@@ -390,7 +391,7 @@ export function ItemReceiptTable() {
               <button
                 onClick={goNext}
                 disabled={!hasMore}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Next page"
               >
                 Next

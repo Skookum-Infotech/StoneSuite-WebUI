@@ -38,7 +38,7 @@ describe('ConvertToBillDialog', () => {
   it('lists each line with how much of it the bill covers', () => {
     renderDialog();
 
-    expect(screen.getByRole('dialog')).toHaveAccessibleName('Create a vendor bill?');
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Create a Vendor Bill?');
     const list = screen.getByRole('list', { name: 'Lines on the new bill' });
     expect(list).toHaveTextContent('1. Slab');
     expect(list).toHaveTextContent('4 of 10 ordered');

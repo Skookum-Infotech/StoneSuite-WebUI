@@ -25,6 +25,7 @@ import { VENDOR_USABLE_STATUS_CODE, type Vendor, type VendorType } from '@/types
 import { VendorTypeSwitcher } from './components/VendorTypeSwitcher';
 import { VendorFormBody } from './components/VendorFormBody';
 
+import { buttonVariants } from '@/components/ui/button';
 const VENDOR_LIST_PATH = '/purchases/vendor';
 
 interface VendorDuplicate {
@@ -176,7 +177,7 @@ export default function AddVendorPage() {
             <button
               type="submit"
               disabled={isPending || isCheckingDuplicate}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
+              className={buttonVariants()}
             >
               {(isPending || isCheckingDuplicate) ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {isPending ? 'Saving…' : isCheckingDuplicate ? 'Checking…' : 'Save Vendor'}
@@ -194,7 +195,7 @@ export default function AddVendorPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save vendor.')}
             </p>
@@ -210,7 +211,7 @@ export default function AddVendorPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {duplicateCheckError}
             </p>
@@ -223,10 +224,10 @@ export default function AddVendorPage() {
               <AlertCircle className="size-3 text-red-600" />
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-red-700 mb-1.5">Please fill in the required fields before saving:</p>
+              <p className="text-xs font-semibold text-danger-ink mb-1.5">Please fill in the required fields before saving:</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {validationErrors.map((e) => (
-                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-red-600">
+                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-danger-ink">
                     <ChevronRight className="size-3 shrink-0" />
                     {e.label}
                   </span>

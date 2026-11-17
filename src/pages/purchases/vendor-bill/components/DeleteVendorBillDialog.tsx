@@ -6,6 +6,8 @@ import { vendorBillService } from '@/services/vendorBillService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Mirrors DeletePurchaseOrderDialog's focus management (moves focus into the
 // panel on open, restores it to the trigger on close, closes on Escape) — a
 // createPortal overlay isn't natively part of the DOM's focus order, so none
@@ -74,10 +76,10 @@ export function DeleteVendorBillDialog({ vendorBillId, label, onDeleted }: {
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="delete-vb-dialog-title" className="text-sm font-bold text-stone-900">
-                  Delete vendor bill?
+                <h3 id="delete-vb-dialog-title" className="type-card-title">
+                  Delete Vendor Bill?
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -86,7 +88,7 @@ export function DeleteVendorBillDialog({ vendorBillId, label, onDeleted }: {
             </p>
 
             {del.error && (
-              <p className="mb-3 text-xs text-destructive">
+              <p className="mb-3 type-error">
                 {apiErrorMessage(del.error, 'Failed to delete vendor bill.')}
               </p>
             )}
@@ -96,7 +98,7 @@ export function DeleteVendorBillDialog({ vendorBillId, label, onDeleted }: {
                 type="button"
                 onClick={close}
                 disabled={del.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -104,7 +106,7 @@ export function DeleteVendorBillDialog({ vendorBillId, label, onDeleted }: {
                 type="button"
                 onClick={() => del.mutate()}
                 disabled={del.isPending}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {del.isPending ? 'Deleting…' : 'Delete vendor bill'}
               </button>

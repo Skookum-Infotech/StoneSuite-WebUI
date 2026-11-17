@@ -14,6 +14,7 @@ import { NAME_PARAM } from '@/lib/recordCreateReturn';
 import { VendorPicker, type VendorRef } from '../../purchase-order/components/VendorPicker';
 import type { RequisitionConvertResult, RequisitionVendorRef } from '@/types/requisition';
 
+import { buttonVariants } from '@/components/ui/button';
 const VENDOR_NEW_PATH = '/purchases/vendor/new';
 
 // Vendor-selection modal for converting an approved requisition into a
@@ -94,10 +95,10 @@ export function ConvertToPurchaseOrderDialog({
                 <ArrowRightLeft className="size-4 text-accent-foreground" />
               </div>
               <div>
-                <h3 id="reqn-convert-title" className="text-sm font-bold text-stone-900">
+                <h3 id="reqn-convert-title" className="type-card-title">
                   Convert to Purchase Order
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">{requisitionNumber}</p>
+                <p className="mt-0.5 type-helper">{requisitionNumber}</p>
               </div>
             </div>
 
@@ -116,19 +117,19 @@ export function ConvertToPurchaseOrderDialog({
             </ModernFieldShell>
 
             {suggestedVendor ? (
-              <p className="mt-1.5 text-2xs text-stone-500">
+              <p className="mt-1.5 type-helper">
                 {changedFromSuggestion
                   ? `Requisition suggested ${suggestedVendor.name}.`
                   : `Pre-filled from the requisition’s suggested vendor.`}
               </p>
             ) : (
-              <p className="mt-1.5 text-2xs text-stone-500">
+              <p className="mt-1.5 type-helper">
                 This requisition didn&rsquo;t suggest a vendor — pick the one to order from.
               </p>
             )}
 
             {convert.error && (
-              <p className="mt-3 text-2xs text-destructive">
+              <p className="mt-3 type-error">
                 {apiErrorMessage(convert.error, 'Failed to convert requisition.')}
               </p>
             )}
@@ -138,7 +139,7 @@ export function ConvertToPurchaseOrderDialog({
                 type="button"
                 onClick={onClose}
                 disabled={convert.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -147,10 +148,7 @@ export function ConvertToPurchaseOrderDialog({
                 onClick={() => convert.mutate()}
                 disabled={!vendor || convert.isPending}
                 aria-label="Create purchase order from this requisition"
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition-all',
-                  'hover:bg-brand-hover active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
-                )}
+                className={cn(buttonVariants(), 'active:scale-95 disabled:active:scale-100')}
               >
                 {convert.isPending && <Loader2 className="size-3 animate-spin" />}
                 {convert.isPending ? 'Converting…' : 'Create Purchase Order'}

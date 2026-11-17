@@ -19,6 +19,8 @@ import {
   type PageTab, type ItemReceiptDraftLine, type ReceiptLineError,
 } from '@/lib/itemReceiptForm';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Shared tab bar + tab content for both the Receive and Edit Item Receipt
 // pages — mirrors PurchaseOrderFormBody. Custom fields render from the
 // `item_receipt` workflow's field definitions (DynamicFieldInput).
@@ -108,14 +110,14 @@ export function ItemReceiptFormBody({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-stone-800">{sourcePurchaseOrder.number || '—'}</p>
-                      <p className="truncate text-xs text-stone-500">{sourcePurchaseOrder.vendorName}</p>
+                      <p className="truncate type-card-title">{sourcePurchaseOrder.number || '—'}</p>
+                      <p className="truncate type-helper">{sourcePurchaseOrder.vendorName}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => navigate(`/purchases/purchase_order/${sourcePurchaseOrder.id}`)}
-                    className="shrink-0 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+                    className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
                   >
                     View order
                   </button>

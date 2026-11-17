@@ -7,6 +7,8 @@ import { purchaseOrderService } from '@/services/purchaseOrderService';
 import type { BillableLine } from '@/lib/purchaseOrderForm';
 import type { VendorBill } from '@/types/vendorBill';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Confirmation modal for POST /purchase-orders/{id}/convert-to-bill (the Create
 // Bill button). Unlike ConvertToPurchaseOrderDialog (requisition -> PO), there
 // is no vendor picker here — a vendor bill's vendor comes directly from the
@@ -43,10 +45,10 @@ export function ConvertToBillDialog({ purchaseOrder, lines, onClose, onConverted
             <FilePlus className="size-4 text-accent-foreground" />
           </div>
           <div>
-            <h3 id="convert-to-bill-title" className="text-sm font-bold text-stone-900">
-              Create a vendor bill?
+            <h3 id="convert-to-bill-title" className="type-card-title">
+              Create a Vendor Bill?
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">From {purchaseOrder.number}</p>
+            <p className="mt-0.5 type-helper">From {purchaseOrder.number}</p>
           </div>
         </div>
 
@@ -73,7 +75,7 @@ export function ConvertToBillDialog({ purchaseOrder, lines, onClose, onConverted
         </p>
 
         {convert.error && (
-          <p role="alert" className="mb-3 text-xs text-destructive">
+          <p role="alert" className="mb-3 type-error">
             {apiErrorMessage(convert.error, 'Failed to create a vendor bill from this purchase order.')}
           </p>
         )}
@@ -83,7 +85,7 @@ export function ConvertToBillDialog({ purchaseOrder, lines, onClose, onConverted
             type="button"
             onClick={onClose}
             disabled={convert.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -91,7 +93,7 @@ export function ConvertToBillDialog({ purchaseOrder, lines, onClose, onConverted
             type="button"
             onClick={() => convert.mutate()}
             disabled={convert.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {convert.isPending ? <Loader2 className="size-3 animate-spin" /> : <FilePlus className="size-3" />}
             {convert.isPending ? 'Creating…' : 'Create vendor bill'}

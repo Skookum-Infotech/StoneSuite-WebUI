@@ -11,6 +11,8 @@ import type { VendorPayment } from '@/types/vendorPayment';
 import { formatMoney, currencyCodeFor } from '@/lib/formatMoney';
 import { lookupService } from '@/services/lookupService';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Applies part of a payment's unapplied balance to one vendor bill. Takes the
 // whole `payment` rather than five separate scalars — it needs the id, vendor,
 // unapplied balance and the already-applied bill ids, and the project caps a
@@ -57,10 +59,10 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
             <Wallet className="size-4 text-emerald-600" />
           </div>
           <div>
-            <h3 id="apply-vendor-payment-dialog-title" className="text-sm font-bold text-stone-900">
-              Apply to vendor bill
+            <h3 id="apply-vendor-payment-dialog-title" className="type-card-title">
+              Apply to Vendor Bill
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <p className="mt-0.5 type-helper">
               Unapplied balance: {currency(payment.unappliedAmount)}
             </p>
           </div>
@@ -96,12 +98,12 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
               aria-label="Application amount"
             />
             {bill && (
-              <p className="mt-1 text-2xs text-stone-500">
+              <p className="mt-1 type-helper">
                 At most {currency(cap)} — the smaller of this payment's unapplied balance and the bill's balance due.
               </p>
             )}
             {overCap && (
-              <p role="alert" className="mt-1 text-2xs text-destructive">
+              <p role="alert" className="mt-1 type-error">
                 Amount exceeds the available balance of {currency(cap)}.
               </p>
             )}
@@ -109,7 +111,7 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
         </div>
 
         {apply.error && (
-          <p role="alert" className="mt-3 text-xs text-destructive">
+          <p role="alert" className="mt-3 type-error">
             {apiErrorMessage(apply.error, 'Failed to apply vendor payment.')}
           </p>
         )}
@@ -119,7 +121,7 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
             type="button"
             onClick={onClose}
             disabled={apply.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -127,7 +129,7 @@ export function ApplyToBillDialog({ payment, onClose, onApplied }: {
             type="button"
             onClick={() => apply.mutate()}
             disabled={apply.isPending || !bill || !validAmount}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {apply.isPending ? 'Applying…' : 'Apply'}
           </button>

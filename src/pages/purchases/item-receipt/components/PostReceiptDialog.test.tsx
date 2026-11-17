@@ -49,7 +49,7 @@ describe('PostReceiptDialog', () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole('button', { name: 'Post Receipt' }));
-    expect(screen.getByRole('dialog')).toHaveAccessibleName('Post this item receipt?');
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Post This Item Receipt?');
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Post Receipt' }));
 
     await waitFor(() => expect(itemReceiptService.post).toHaveBeenCalledWith('ir-1', {}));
@@ -64,7 +64,7 @@ describe('PostReceiptDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Post Receipt' }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Post Receipt' }));
 
-    const dialog = await screen.findByRole('dialog', { name: 'This exceeds the ordered quantity' });
+    const dialog = await screen.findByRole('dialog', { name: 'This Exceeds the Ordered Quantity' });
     expect(dialog).toHaveTextContent('Line 2 — ordered 10, already received 4, receiving 20');
     const confirm = within(dialog).getByRole('button', { name: 'Confirm & Post' });
     expect(confirm).toBeDisabled();
@@ -83,7 +83,7 @@ describe('PostReceiptDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Post Receipt' }));
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Post Receipt' }));
 
-    const dialog = await screen.findByRole('dialog', { name: 'This exceeds the ordered quantity' });
+    const dialog = await screen.findByRole('dialog', { name: 'This Exceeds the Ordered Quantity' });
     expect(dialog).toHaveTextContent("You don't have permission to accept an over-delivery.");
     expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Close' }));

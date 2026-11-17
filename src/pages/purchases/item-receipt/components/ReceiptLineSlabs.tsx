@@ -48,7 +48,7 @@ export function ReceiptLineSlabs({ line }: { line: ItemReceiptLine }) {
       </p>
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+          <tr className="type-th">
             <th className="px-3 py-2">Serial</th>
             <th className="px-3 py-2 text-right">Length ({unit})</th>
             <th className="px-3 py-2 text-right">Width ({unit})</th>
@@ -69,7 +69,7 @@ export function ReceiptLineSlabs({ line }: { line: ItemReceiptLine }) {
             ].filter(Boolean).join(' · ');
             return (
               <tr key={slab.serial || `pending-${view.offset + i}`} className="hover:bg-stone-50/50">
-                <td className="px-3 py-2 font-mono text-2xs">
+                <td className="px-3 py-2 type-record-id">
                   {slab.unitId && slab.serial ? (
                     <Link
                       to={`/inventory/unit/${slab.unitId}`}
@@ -90,7 +90,7 @@ export function ReceiptLineSlabs({ line }: { line: ItemReceiptLine }) {
                 <td className="px-3 py-2 text-stone-500">{extras || <span className="text-stone-500">—</span>}</td>
                 <td className="px-3 py-2">
                   {slab.unitStatus ? (
-                    <span className={cn('rounded-full px-2 py-0.5 text-2xs font-medium', STATUS_STYLES[slab.unitStatus] ?? DEFAULT_STATUS_STYLE)}>
+                    <span className={cn('rounded-full px-2 py-0.5 type-pill', STATUS_STYLES[slab.unitStatus] ?? DEFAULT_STATUS_STYLE)}>
                       {statusLabel(slab.unitStatus)}
                     </span>
                   ) : (

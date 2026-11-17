@@ -88,7 +88,7 @@ export function ItemReceiptField({ field, value, set, lookups }: {
         placeholder={field.placeholder}
         aria-label={field.label}
       />
-      {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+      {field.hint && <p className="type-helper">{field.hint}</p>}
     </ModernFieldShell>
   );
 }

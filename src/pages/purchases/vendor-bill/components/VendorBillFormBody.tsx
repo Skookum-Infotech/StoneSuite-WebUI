@@ -129,7 +129,7 @@ export function VendorBillFormBody({
                             </div>
                           )}
                           {purchaseOrderItemsError && (
-                            <p role="alert" className="mt-1 text-2xs text-destructive">{purchaseOrderItemsError}</p>
+                            <p role="alert" className="mt-1 type-error">{purchaseOrderItemsError}</p>
                           )}
                         </ModernFieldShell>
                       )}

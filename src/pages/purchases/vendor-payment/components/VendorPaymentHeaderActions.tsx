@@ -7,7 +7,7 @@ const APPROVAL_BLOCKED_REASON = 'Awaiting approval sign-off';
 const SCHEDULE_BLOCKED_REASON = 'Set a scheduled date first';
 
 const BASE_BTN =
-  'inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex h-7.5 items-center justify-center gap-1.5 rounded-lg border px-3 text-button font-semibold shadow-sm transition-colors pointer-coarse:min-h-10 disabled:opacity-50 disabled:cursor-not-allowed';
 
 // One look per target status, so a button previews the move it performs.
 const TONES: Record<string, { icon: LucideIcon; className: string }> = {

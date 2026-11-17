@@ -3,6 +3,8 @@ import { Wallet, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { VendorPaymentTable } from './components/VendorPaymentTable';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function VendorPaymentListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading } = useUserPermissions();
@@ -17,14 +19,14 @@ export default function VendorPaymentListPage() {
               <Wallet className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Vendor Payments</h1>
+              <h1 className="type-page-title">Vendor Payments</h1>
               <p className="text-sm text-stone-500">Pay vendor bills and track what's still unapplied.</p>
             </div>
           </div>
           {canCreate && (
             <button
               onClick={() => navigate('/purchases/vendor_payment/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               Record Payment

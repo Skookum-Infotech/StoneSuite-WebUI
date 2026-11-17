@@ -107,7 +107,7 @@ export function VendorPaymentField({ field, value, set, lookups }: {
 
 function FieldHint({ hint }: { hint?: string }) {
   if (!hint) return null;
-  return <p className="mt-1 text-2xs text-stone-500">{hint}</p>;
+  return <p className="mt-1 type-helper">{hint}</p>;
 }
 
 export function VendorPaymentSectionGrid({ fields, data, set, lookups }: {

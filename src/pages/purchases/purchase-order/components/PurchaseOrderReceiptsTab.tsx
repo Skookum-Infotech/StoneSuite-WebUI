@@ -26,7 +26,7 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
     return <p className="py-12 text-center text-sm text-stone-500">Receipts will be available after saving the purchase order.</p>;
   }
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading receipts…" /></div>;
-  if (error) return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load item receipts.</p>;
+  if (error) return <p className="py-6 text-center type-error italic">Failed to load item receipts.</p>;
   if (receipts.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-12 text-center">
@@ -42,7 +42,7 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
         <thead className="bg-stone-50 border-b border-stone-200">
           <tr>
             {['Receipt #', 'Status', 'Receipt Date', 'Location', 'Posted', 'Voided'].map((h) => (
-              <th key={h} className="px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap">{h}</th>
+              <th key={h} className="px-3 py-2.5 whitespace-nowrap type-th">{h}</th>
             ))}
           </tr>
         </thead>
@@ -62,7 +62,7 @@ export function PurchaseOrderReceiptsTab({ purchaseOrderId }: { purchaseOrderId?
                 </td>
                 <td className="px-3 py-2.5">
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-semibold text-stone-600 whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-stone-600 whitespace-nowrap type-pill"
                     style={{ backgroundColor: `${color}18` }}
                   >
                     <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />

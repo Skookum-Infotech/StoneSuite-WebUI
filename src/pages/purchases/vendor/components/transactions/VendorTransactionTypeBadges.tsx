@@ -25,7 +25,7 @@ function Chip({
     >
       {label}
       {count !== undefined && (
-        <span className={cn('rounded-full px-1.5 text-2xs tabular-nums', active ? 'bg-white/20' : 'bg-stone-100 text-stone-500')}>
+        <span className={cn('rounded-full px-1.5 text-micro tabular-nums', active ? 'bg-white/20' : 'bg-stone-100 text-stone-500')}>
           {count.toLocaleString()}
         </span>
       )}

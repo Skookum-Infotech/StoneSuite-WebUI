@@ -26,6 +26,7 @@ import { WorkflowCard } from '@/components/tenant/WorkflowCard';
 import { SalesDetailSidebar } from '@/pages/sales/components/SalesDetailSidebar';
 import { formatDateValue } from '@/lib/dateUtils';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'items', label: 'Items' },
@@ -187,14 +188,14 @@ export default function ItemReceiptDetailPage() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Package className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-stone-800">{ir.purchaseOrder.number || '—'}</p>
-                      <p className="truncate text-xs text-stone-500">{ir.vendor.name}</p>
+                      <p className="truncate type-card-title">{ir.purchaseOrder.number || '—'}</p>
+                      <p className="truncate type-helper">{ir.vendor.name}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => navigate(`/purchases/purchase_order/${ir.purchaseOrder.id}`)}
-                    className="shrink-0 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+                    className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
                   >
                     View order
                   </button>
@@ -234,7 +235,7 @@ export default function ItemReceiptDetailPage() {
                       { label: 'Rejected', right: true },
                       { label: 'Notes' },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -245,7 +246,7 @@ export default function ItemReceiptDetailPage() {
                       <td className="px-3 py-2.5 font-medium text-stone-800">
                         {line.itemName || line.description || <span className="text-stone-500">—</span>}
                       </td>
-                      <td className="px-3 py-2.5 font-mono text-2xs text-stone-500">{line.sku || '—'}</td>
+                      <td className="px-3 py-2.5 type-record-id">{line.sku || '—'}</td>
                       <td className="px-3 py-2.5 text-stone-500 whitespace-nowrap" title={line.unitCode || undefined}>
                         {unitLabel(line.unitCode) || <span className="text-stone-500">—</span>}
                       </td>
@@ -307,7 +308,7 @@ export default function ItemReceiptDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 

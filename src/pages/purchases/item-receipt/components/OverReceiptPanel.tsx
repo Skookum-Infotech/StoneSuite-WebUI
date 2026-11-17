@@ -1,6 +1,7 @@
 import { AlertTriangle, ShieldAlert, Loader2 } from 'lucide-react';
 import type { OverReceiptLine } from '@/lib/itemReceiptErrors';
 
+import { buttonVariants } from '@/components/ui/button';
 // The two over-receipt views shared by every place a delivery can be refused
 // for exceeding the ordered quantity: PostReceiptDialog (posting an existing
 // Pending receipt) and OverReceiptDialog (the New Item Receipt page's
@@ -27,8 +28,8 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
             <AlertTriangle className="size-4 text-destructive" />
           </div>
           <div>
-            <h3 id={OVER_RECEIPT_TITLE_ID} className="text-sm font-bold text-stone-900">This exceeds the ordered quantity</h3>
-            <p className="text-xs text-stone-500 mt-0.5">You don&apos;t have permission to accept an over-delivery.</p>
+            <h3 id={OVER_RECEIPT_TITLE_ID} className="type-card-title">This Exceeds the Ordered Quantity</h3>
+            <p className="mt-0.5 type-helper">You don&apos;t have permission to accept an over-delivery.</p>
           </div>
         </div>
         <OverReceiptLinesList lines={lines} />
@@ -40,7 +41,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
           <button
             type="button"
             onClick={actions.onClose}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Close
           </button>
@@ -56,12 +57,12 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
           <ShieldAlert className="size-4 text-amber-600" />
         </div>
         <div>
-          <h3 id={OVER_RECEIPT_TITLE_ID} className="text-sm font-bold text-stone-900">This exceeds the ordered quantity</h3>
-          <p className="text-xs text-stone-500 mt-0.5">Confirm the over-receipt to post anyway.</p>
+          <h3 id={OVER_RECEIPT_TITLE_ID} className="type-card-title">This Exceeds the Ordered Quantity</h3>
+          <p className="mt-0.5 type-helper">Confirm the over-receipt to post anyway.</p>
         </div>
       </div>
       <OverReceiptLinesList lines={lines} />
-      <label className="mt-4 block text-xs font-semibold text-stone-900" htmlFor="over-receipt-reason">
+      <label className="mt-4 block type-field-label" htmlFor="over-receipt-reason">
         Reason <span className="text-red-400">*</span>
       </label>
       <textarea
@@ -79,7 +80,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
           type="button"
           onClick={actions.onClose}
           disabled={isPending}
-          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+          className={buttonVariants({ variant: 'outline' })}
         >
           Cancel
         </button>
@@ -99,7 +100,7 @@ export function OverReceiptPanel({ lines, canApprove, isPending, reason, actions
 
 function OverReceiptLinesList({ lines }: { lines: OverReceiptLine[] }) {
   return (
-    <ul className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-2xs text-amber-800">
+    <ul className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-micro text-amber-800">
       {lines.map((l) => (
         <li key={l.lineNumber}>
           Line {l.lineNumber} — ordered {l.ordered}, already received {l.alreadyReceived}, receiving {l.receiving}

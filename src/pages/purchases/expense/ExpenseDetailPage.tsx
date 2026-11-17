@@ -200,7 +200,7 @@ export default function ExpenseDetailPage() {
             approving={approve.isPending}
           />
           {approve.isError && (
-            <p role="alert" className="px-5 py-1.5 text-2xs text-destructive 3xl:px-12 4xl:px-16">
+            <p role="alert" className="px-5 py-1.5 3xl:px-12 4xl:px-16 type-error">
               {apiErrorMessage(approve.error, 'Failed to approve expense claim.')}
             </p>
           )}
@@ -257,7 +257,7 @@ export default function ExpenseDetailPage() {
                       { label: 'Description' },
                       { label: 'Amount', right: true },
                     ].map((h) => (
-                      <th key={h.label} className={cn('px-3 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', h.right && 'text-right')}>{h.label}</th>
+                      <th key={h.label} className={cn('px-3 py-2.5 whitespace-nowrap type-th', h.right && 'text-right')}>{h.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -327,7 +327,7 @@ export default function ExpenseDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 
@@ -350,7 +350,7 @@ export default function ExpenseDetailPage() {
                 />
               )}
               {transition.error && (
-                <p role="alert" className="text-2xs text-destructive">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
+                <p role="alert" className="type-error">{apiErrorMessage(transition.error, 'Failed to change status.')}</p>
               )}
             </div>
           )}
@@ -401,7 +401,7 @@ function ReadonlyField({ label, value, full }: { label: string; value?: string; 
 function Total({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <div>
-      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="type-overline">{label}</p>
       <p className={cn('tabular-nums', bold ? 'text-sm font-bold text-stone-900' : 'text-xs font-semibold text-stone-600')}>
         {currency(value)}
       </p>

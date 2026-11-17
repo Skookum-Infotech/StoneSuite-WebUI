@@ -7,7 +7,7 @@ import { slabArea, type ItemReceiptDraftSlab, type SlabUnits } from '@/lib/itemR
 import type { Bin } from '@/types/inventory';
 
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 const AREA_DISPLAY_DECIMALS = 3;
 const SERIAL_PENDING_HINT = 'assigned on save';
@@ -65,7 +65,7 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
     <div className="overflow-x-auto modal-scrollbar">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+          <tr className="type-th">
             <th className="w-8 px-1.5 py-1.5"><span className="sr-only">More fields</span></th>
             <th className="min-w-[150px] px-1.5 py-1.5">Serial</th>
             {DIMENSION_COLUMNS.map((c) => <th key={c.key} className="w-28 px-1.5 py-1.5">{c.label} ({units.length}) *</th>)}
@@ -95,7 +95,7 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
                       {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                     </button>
                   </td>
-                  <td className="px-1.5 py-1.5 align-top font-mono text-2xs text-stone-500">
+                  <td className="px-1.5 py-1.5 align-top type-record-id">
                     <span className="inline-block py-1" data-testid={`slab-serial-${n}`}>
                       {serials[index] || <span className="text-stone-500">{SERIAL_PENDING_HINT}</span>}
                     </span>
@@ -138,7 +138,7 @@ export function SlabIndividualTable({ entries, serials, bins, units, actions }: 
                     <td colSpan={COLUMN_COUNT}>
                       <div className="grid grid-cols-2 gap-3 pb-2 pl-9 pr-2 sm:grid-cols-4">
                         {EXTRA_FIELDS.map((f) => (
-                          <label key={f.key} className="block text-2xs font-medium text-stone-500">
+                          <label key={f.key} className="block type-field-label">
                             {f.label}
                             <input
                               type="text"

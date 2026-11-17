@@ -74,7 +74,7 @@ export function RequisitionField({ field, value, set, lookups }: {
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
           </Select>
-          {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+          {field.hint && <p className="type-helper">{field.hint}</p>}
         </ModernFieldShell>
       </div>
     );
@@ -105,7 +105,7 @@ export function RequisitionField({ field, value, set, lookups }: {
           step={field.type === 'number' ? 'any' : undefined}
           aria-label={field.label}
         />
-        {field.hint && <p className="text-2xs text-stone-500">{field.hint}</p>}
+        {field.hint && <p className="type-helper">{field.hint}</p>}
       </ModernFieldShell>
     </div>
   );

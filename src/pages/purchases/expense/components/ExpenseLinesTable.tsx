@@ -7,8 +7,9 @@ import { LINE_ACTIONS_HEAD_CLS, LINE_ACTIONS_CELL_CLS, LINE_ACTIONS_EDIT_CELL_CL
 import { expenseService } from '@/services/expenseService';
 import { EMPTY_LINE_ITEM, categoryNameForCode, type ExpenseLineItem } from '@/lib/expenseForm';
 
+import { buttonVariants } from '@/components/ui/button';
 const inlineCls =
-  'w-full rounded border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800 outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
+  'w-full rounded border border-stone-200 bg-white px-2 py-1 type-input outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-900/5 placeholder:text-stone-500 transition-all';
 
 let rowCounter = 0;
 function genId() { rowCounter += 1; return `expli-${rowCounter}`; }
@@ -94,7 +95,7 @@ export function ExpenseLinesTable({ items, onUpdate }: {
           <thead className="bg-stone-50 border-b border-stone-200">
             <tr className="divide-x divide-stone-200">
               {ITEM_COLS.map((c) => (
-                <th key={c.label} className={cn('px-2.5 py-2.5 text-2xs font-semibold uppercase tracking-wide text-stone-500 whitespace-nowrap', c.w, c.right && 'text-right')}>
+                <th key={c.label} className={cn('px-2.5 py-2.5 whitespace-nowrap type-th', c.w, c.right && 'text-right')}>
                   {c.label}
                 </th>
               ))}
@@ -143,8 +144,8 @@ export function ExpenseLinesTable({ items, onUpdate }: {
 
       {items.length === 0 && !isAdding && (
         <div className="flex flex-col items-center gap-1.5 py-8 text-center">
-          <p className="text-xs text-stone-500">No expense lines yet.</p>
-          <p className="text-2xs text-stone-500">Click <strong className="text-stone-500">+ Add Line</strong> to add a receipt.</p>
+          <p className="type-helper">No expense lines yet.</p>
+          <p className="type-helper">Click <strong className="text-stone-500">+ Add Line</strong> to add a receipt.</p>
         </div>
       )}
 
@@ -157,24 +158,24 @@ export function ExpenseLinesTable({ items, onUpdate }: {
             else if (editId) commitEdit();
             else { setIsAdding(true); setEditId(null); setDraft(EMPTY_LINE_ITEM); }
           }}
-          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-colors"
+          className={buttonVariants()}
         >
           <Plus className="size-3" />
           {isAdding || editId ? 'Save Line' : 'Add Line'}
         </button>
         {activeDraft && (
           <button type="button" onClick={() => { setIsAdding(false); setEditId(null); setDraft(EMPTY_LINE_ITEM); }}
-            className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors">
+            className={buttonVariants({ variant: 'outline' })}>
             <X className="size-3" /> Cancel
           </button>
         )}
         <button type="button" onClick={copyPrev} disabled={items.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
+          className={buttonVariants({ variant: 'outline' })}>
           <Copy className="size-3" /> Copy Previous
         </button>
         <button type="button" onClick={() => { if (items.length) remove(items[items.length - 1].id); }}
           disabled={items.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors">
+          className={buttonVariants({ variant: 'outline' })}>
           <Trash2 className="size-3" /> Remove Last
         </button>
       </div>

@@ -18,6 +18,7 @@ import { VendorTypeSwitcher } from './components/VendorTypeSwitcher';
 import { VendorFormBody } from './components/VendorFormBody';
 import { VendorStatusControl } from './components/VendorStatusControl';
 
+import { buttonVariants } from '@/components/ui/button';
 export default function EditVendorPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -129,7 +130,7 @@ export default function EditVendorPage() {
           subtitle="Edit vendor"
           actions={(
             <button type="submit" disabled={save.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm">
+              className={buttonVariants()}>
               {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {save.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -146,7 +147,7 @@ export default function EditVendorPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save vendor.')}
             </p>
@@ -159,10 +160,10 @@ export default function EditVendorPage() {
               <AlertCircle className="size-3 text-red-600" />
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-red-700 mb-1.5">Please fill in the required fields before saving:</p>
+              <p className="text-xs font-semibold text-danger-ink mb-1.5">Please fill in the required fields before saving:</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {validationErrors.map((e) => (
-                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-red-600">
+                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-danger-ink">
                     <ChevronRight className="size-3 shrink-0" />
                     {e.label}
                   </span>

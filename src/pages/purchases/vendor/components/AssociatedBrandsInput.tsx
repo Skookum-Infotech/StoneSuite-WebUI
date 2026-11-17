@@ -2,6 +2,8 @@ import { useState, type KeyboardEvent } from 'react';
 import { Plus, X } from 'lucide-react';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Dynamic tag/badge input for "Associated Brands" — no shadcn multi-value
 // component exists in this repo (see formUtils.ts convention), so this is a
 // small controlled string[] input styled to match fieldCls/badge tokens used
@@ -50,7 +52,7 @@ export function AssociatedBrandsInput({ value, onChange }: {
           onClick={addBrand}
           disabled={!draft.trim()}
           aria-label="Add brand"
-          className="inline-flex shrink-0 items-center gap-1 rounded-[10px] border border-stone-200 bg-white px-3 text-xs font-medium text-stone-600 transition-all hover:border-stone-300 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(buttonVariants({ variant: 'outline' }), 'shrink-0')}
         >
           <Plus className="size-3.5" />
           Add
@@ -61,7 +63,7 @@ export function AssociatedBrandsInput({ value, onChange }: {
           {value.map((brand) => (
             <span
               key={brand}
-              className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground ring-1 ring-accent-foreground/10"
+              className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-accent-foreground ring-1 ring-accent-foreground/10 type-pill"
             >
               {brand}
               <button

@@ -10,6 +10,8 @@ import { overReceiptDetails, type OverReceiptLine } from '@/lib/itemReceiptError
 import type { ItemReceipt } from '@/types/itemReceipt';
 import { OverReceiptPanel, OVER_RECEIPT_TITLE_ID } from './OverReceiptPanel';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 type PostBranch = 'confirm' | 'approve' | 'escalate';
 
 // Posting is the act that actually moves stock — a distinct, deliberate step
@@ -27,7 +29,7 @@ export function PostReceiptDialog({ itemReceiptId, onPosted }: {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover transition-all shadow-sm active:scale-95"
+        className={cn(buttonVariants(), 'w-full active:scale-95')}
       >
         <PackageCheck className="size-3.5" />
         Post Receipt
@@ -120,15 +122,15 @@ function PostReceiptDialogContent({
               <PackageCheck className="size-4 text-accent-foreground" />
             </div>
             <div>
-              <h3 id="post-receipt-title" className="text-sm font-bold text-stone-900">Post this item receipt?</h3>
-              <p className="text-xs text-stone-500 mt-0.5">This moves stock and advances the purchase order.</p>
+              <h3 id="post-receipt-title" className="type-card-title">Post This Item Receipt?</h3>
+              <p className="mt-0.5 type-helper">This moves stock and advances the purchase order.</p>
             </div>
           </div>
           <p className="text-xs text-stone-600 mb-5">
             Once posted this receipt can no longer be edited. To correct a mistake, void it and receive again.
           </p>
           {error && (
-            <p role="alert" className="mb-3 text-xs text-destructive">
+            <p role="alert" className="mb-3 type-error">
               {apiErrorMessage(error, 'Failed to post item receipt.')}
             </p>
           )}
@@ -137,7 +139,7 @@ function PostReceiptDialogContent({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>
@@ -145,7 +147,7 @@ function PostReceiptDialogContent({
               type="button"
               onClick={onConfirm}
               disabled={isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               {isPending && <Loader2 className="size-3 animate-spin" />}
               {isPending ? 'Posting…' : 'Post Receipt'}

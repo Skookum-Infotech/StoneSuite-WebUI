@@ -10,6 +10,8 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { fieldCls, fieldLabelCls } from '@/components/crm/formUtils';
 import { formatMoney } from '@/lib/formatMoney';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const MIN_UNAPPLIED = 0.01;
 const SEARCH_LIMIT = 100;
 const VOID_CODE = 'VOID';
@@ -82,15 +84,15 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
             <Wallet className="size-4 text-emerald-600" />
           </div>
           <div>
-            <h3 id="apply-existing-payment-title" className="text-sm font-bold text-stone-900">Apply existing payment</h3>
-            <p className="text-xs text-stone-500 mt-0.5">Balance due: {currency(balanceDue)}</p>
+            <h3 id="apply-existing-payment-title" className="type-card-title">Apply Existing Payment</h3>
+            <p className="mt-0.5 type-helper">Balance due: {currency(balanceDue)}</p>
           </div>
         </div>
 
         {isLoading ? (
           <div className="py-6 flex justify-center"><Spinner label="Loading payments…" /></div>
         ) : error ? (
-          <p role="alert" className="py-4 text-xs text-destructive">{apiErrorMessage(error, 'Failed to load payments.')}</p>
+          <p role="alert" className="py-4 type-error">{apiErrorMessage(error, 'Failed to load payments.')}</p>
         ) : payments.length === 0 ? (
           <p className="py-4 text-sm text-stone-500">{vendor.name} has no payments with an unapplied balance.</p>
         ) : (
@@ -125,7 +127,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
                 className={`${fieldCls} mt-1.5`}
               />
               {overCap && (
-                <p role="alert" className="mt-1 text-2xs text-destructive">
+                <p role="alert" className="mt-1 type-error">
                   Amount exceeds the available {currency(cap)}.
                 </p>
               )}
@@ -134,7 +136,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
         )}
 
         {apply.error && (
-          <p role="alert" className="mt-3 text-xs text-destructive">
+          <p role="alert" className="mt-3 type-error">
             {apiErrorMessage(apply.error, 'Failed to apply vendor payment.')}
           </p>
         )}
@@ -144,7 +146,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
             type="button"
             onClick={onClose}
             disabled={apply.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -152,7 +154,7 @@ export function ApplyExistingPaymentDialog({ vendorBillId, vendor, balanceDue, c
             type="button"
             onClick={() => apply.mutate()}
             disabled={apply.isPending || !valid}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {apply.isPending ? 'Applying…' : 'Apply'}
           </button>

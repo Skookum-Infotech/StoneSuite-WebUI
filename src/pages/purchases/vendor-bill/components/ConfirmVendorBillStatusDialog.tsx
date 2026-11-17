@@ -3,6 +3,7 @@ import { Ban, CheckCircle2, type LucideIcon } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import type { VbConfirmedCode } from '@/lib/vendorBillForm';
 
+import { buttonVariants } from '@/components/ui/button';
 interface ConfirmCopy {
   icon: LucideIcon;
   title: (billNumber: string) => string;
@@ -25,7 +26,7 @@ const COPY: Record<VbConfirmedCode, ConfirmCopy> = {
     confirm: 'Mark Paid',
     pending: 'Marking paid…',
     iconDisc: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
+    iconColor: 'text-success-ink',
     confirmBtn: 'bg-emerald-600 hover:bg-emerald-700',
   },
   VOID: {
@@ -35,7 +36,7 @@ const COPY: Record<VbConfirmedCode, ConfirmCopy> = {
     confirm: 'Void vendor bill',
     pending: 'Voiding…',
     iconDisc: 'bg-destructive/10',
-    iconColor: 'text-destructive',
+    iconColor: 'text-danger-ink',
     confirmBtn: 'bg-destructive hover:bg-destructive/90',
   },
 };
@@ -69,10 +70,10 @@ export function ConfirmVendorBillStatusDialog({ target, billNumber, pending, onC
             <Icon className={`size-4 ${copy.iconColor}`} aria-hidden="true" />
           </div>
           <div>
-            <h3 id="vb-status-confirm-title" className="text-sm font-bold text-stone-900">
+            <h3 id="vb-status-confirm-title" className="type-card-title">
               {copy.title(billNumber)}
             </h3>
-            <p className="mt-0.5 text-xs text-stone-500">This action cannot be undone.</p>
+            <p className="mt-0.5 type-helper">This action cannot be undone.</p>
           </div>
         </div>
 
@@ -83,7 +84,7 @@ export function ConfirmVendorBillStatusDialog({ target, billNumber, pending, onC
             type="button"
             onClick={onCancel}
             disabled={pending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
