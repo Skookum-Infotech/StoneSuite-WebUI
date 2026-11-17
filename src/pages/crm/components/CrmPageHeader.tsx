@@ -48,7 +48,7 @@ export function CrmPageHeader({
             type="button"
             onClick={onBack}
             aria-label={`Back to ${backLabel}`}
-            className="flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-800 transition-colors py-1 pr-2 rounded-lg hover:bg-stone-100"
+            className="flex items-center gap-1 text-button font-medium text-ink-muted hover:text-ink-strong transition-colors py-1 pr-2 rounded-lg hover:bg-stone-100"
           >
             <ChevronLeft className="size-3.5 shrink-0" />
             {backLabel}
@@ -58,12 +58,12 @@ export function CrmPageHeader({
           {(deleteSlot || actions) && (
             <div className="flex items-center gap-1.5">
               {deleteSlot && (
-                <div className="[&>button]:text-2xs [&>button]:px-2 [&>button]:py-1 [&>button]:rounded-lg shrink-0">
+                <div className="[&>button]:text-caption [&>button]:px-2 [&>button]:py-1 [&>button]:rounded-lg shrink-0">
                   {deleteSlot}
                 </div>
               )}
               {actions && (
-                <div className="[&>button]:text-2xs [&>button]:px-2.5 [&>button]:py-1 [&>button]:rounded-lg shrink-0">
+                <div className="[&>button]:text-caption [&>button]:px-2.5 [&>button]:py-1 [&>button]:rounded-lg shrink-0">
                   {actions}
                 </div>
               )}
@@ -78,18 +78,18 @@ export function CrmPageHeader({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate max-w-[160px]">
+              <h1 className="type-page-title truncate max-w-[160px]">
                 {title}
               </h1>
               {recordNumber && (
-                <span className="font-mono text-2xs bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 shrink-0">
+                <span className="type-record-id bg-stone-100 px-1.5 py-0.5 rounded shrink-0">
                   {recordNumber}
                 </span>
               )}
               {statusBadge}
             </div>
             {subtitle && (
-              <p className="text-2xs text-stone-500 leading-relaxed mt-0.5">{subtitle}</p>
+              <p className="type-page-subtitle mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
@@ -105,18 +105,18 @@ export function CrmPageHeader({
         {/* Title block */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
+            <h1 className="type-page-title truncate">
               {title}
             </h1>
             {recordNumber && (
-              <span className="font-mono text-xs bg-stone-100 px-2 py-0.5 rounded-lg text-stone-500 shrink-0">
+              <span className="type-record-id bg-stone-100 px-2 py-0.5 rounded-lg shrink-0">
                 {recordNumber}
               </span>
             )}
             {statusBadge}
           </div>
           {subtitle && (
-            <p className="text-sm text-stone-500 leading-relaxed truncate">{subtitle}</p>
+            <p className="type-page-subtitle truncate">{subtitle}</p>
           )}
         </div>
 
@@ -125,7 +125,7 @@ export function CrmPageHeader({
           type="button"
           onClick={onBack}
           aria-label={`Back to ${backLabel}`}
-          className="flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-700 transition-colors px-2 py-1.5 rounded-lg hover:bg-stone-100 shrink-0"
+          className="flex items-center gap-1 text-button font-medium text-ink-muted hover:text-ink-strong transition-colors px-2 py-1.5 rounded-lg hover:bg-stone-100 shrink-0"
         >
           <ChevronLeft className="size-3.5" />
           Back
@@ -133,7 +133,7 @@ export function CrmPageHeader({
 
         {/* Delete */}
         {deleteSlot && (
-          <div className="shrink-0 [&>button]:text-xs [&>button]:px-2.5 [&>button]:rounded-lg">
+          <div className="shrink-0 [&>button]:px-2.5 [&>button]:rounded-lg">
             {deleteSlot}
           </div>
         )}

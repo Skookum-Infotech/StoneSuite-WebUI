@@ -67,7 +67,7 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
       <div ref={contentRef} tabIndex={-1} className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl outline-none">
         <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-3.5">
           <div>
-            <h2 id="period-history-drawer-title" className="text-sm font-bold text-stone-900">History</h2>
+            <h2 id="period-history-drawer-title" className="type-dialog-title">History</h2>
             <p className="mt-0.5 text-2xs text-stone-500">{period.fiscalYearName} · {period.name}</p>
           </div>
           <button

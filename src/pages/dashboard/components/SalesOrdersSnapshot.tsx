@@ -45,24 +45,24 @@ export function SalesOrdersSnapshot({
     <WidgetCard title="Sales orders snapshot" subtitle="open orders · approved & beyond">
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Open</div>
+          <div className="truncate type-overline">Open</div>
           <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{data.openCount}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Backlog</div>
+          <div className="truncate type-overline">Backlog</div>
           <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{currency(data.openValue)}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Late</div>
+          <div className="truncate type-overline">Late</div>
           <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', data.lateCount > 0 ? 'text-warning' : 'text-stone-950')}>
             {data.lateCount}
           </div>
-          {data.lateCount > 0 && <div className="text-2xs text-stone-500 tabular-nums">{currency(data.lateValue)}</div>}
+          {data.lateCount > 0 && <div className="type-subline tabular-nums">{currency(data.lateValue)}</div>}
         </div>
       </div>
 
       {data.statuses.length > 0 && (
-        <p className="mt-3 text-2xs text-stone-500">
+        <p className="mt-3 type-helper">
           {data.statuses.map((s, i) => (
             <span key={s.code}>
               {i > 0 && ' · '}
@@ -84,20 +84,20 @@ export function SalesOrdersSnapshot({
               return (
                 <div key={o.id} className="flex items-center justify-between gap-2.5 py-2 first:pt-0 last:pb-0">
                   <div className="min-w-0">
-                    <div className="truncate text-xs font-semibold text-stone-950">{o.customer}</div>
+                    <div className="truncate type-cell-strong">{o.customer}</div>
                     <button
                       type="button"
                       onClick={() => navigate(`/sales/sales_order/${o.id}`)}
                       aria-label={`View sales order ${o.recordNumber} for ${o.customer}`}
-                      className="rounded font-mono text-2xs text-stone-500 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="rounded font-mono text-caption text-ink-muted hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {o.recordNumber}
                     </button>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-xs font-bold text-stone-950 tabular-nums">{currency(o.value)}</div>
-                    <div className="text-2xs text-stone-500">{o.status}</div>
-                    <div className={cn('text-2xs font-medium', due.warn ? 'text-warning' : 'text-stone-500')}>{due.text}</div>
+                    <div className="type-cell-strong">{currency(o.value)}</div>
+                    <div className="type-subline">{o.status}</div>
+                    <div className={cn('text-micro font-medium', due.warn ? 'text-warning-ink' : 'text-ink-muted')}>{due.text}</div>
                   </div>
                 </div>
               );

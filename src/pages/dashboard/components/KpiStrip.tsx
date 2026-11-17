@@ -160,12 +160,12 @@ function KpiTile({ metric, className }: { metric: KpiMetric; className?: string 
         <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-stone-100 text-stone-500 transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
           <Icon className="size-3" aria-hidden="true" />
         </span>
-        <span className="truncate text-[10.5px] font-semibold uppercase tracking-[.09em] text-stone-500">{meta.label}</span>
+        <span className="truncate type-overline">{meta.label}</span>
       </div>
       <div className="mt-1.5">
         <span
           className={cn(
-            '-mx-1.5 inline-block rounded px-1.5 py-0.5 text-[26px] font-bold leading-none tracking-[-0.02em] text-stone-950 tabular-nums transition-colors duration-500',
+            '-mx-1.5 inline-block rounded px-1.5 py-0.5 type-kpi transition-colors duration-500',
             flash ? 'bg-accent/70' : 'bg-transparent',
           )}
         >

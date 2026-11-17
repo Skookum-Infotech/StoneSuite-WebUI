@@ -45,30 +45,30 @@ export function PurchasesStatus({
     <WidgetCard title="Purchases & requisitions" subtitle="status">
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Pending</div>
+          <div className="truncate type-overline">Pending</div>
           <div className="mt-1 text-sm font-bold tabular-nums text-stone-950 sm:text-base lg:text-lg">
             {data.pending ? data.pending.count : <span className="text-stone-500">—</span>}
           </div>
-          {data.pending && <div className="truncate text-2xs text-stone-500 tabular-nums">{currency(data.pending.value)}</div>}
+          {data.pending && <div className="truncate type-subline tabular-nums">{currency(data.pending.value)}</div>}
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Incoming</div>
+          <div className="truncate type-overline">Incoming</div>
           <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{data.incoming.count}</div>
-          <div className="truncate text-2xs text-stone-500 tabular-nums">{currency(data.incoming.value)}</div>
+          <div className="truncate type-subline tabular-nums">{currency(data.incoming.value)}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Overdue</div>
+          <div className="truncate type-overline">Overdue</div>
           <div className={cn('mt-1 text-sm font-bold tabular-nums sm:text-base lg:text-lg', overdueActive ? 'text-warning' : 'text-stone-950')}>
             {data.overdue.count}
           </div>
-          <div className={cn('truncate text-2xs tabular-nums', overdueActive ? 'text-warning' : 'text-stone-500')}>
+          <div className={cn('truncate text-micro tabular-nums', overdueActive ? 'text-warning-ink' : 'text-ink-muted')}>
             {currency(data.overdue.value)}
           </div>
         </div>
       </div>
 
       {data.attention.length === 0 ? (
-        <p className="mt-4 text-xs text-stone-500">Nothing needs attention right now.</p>
+        <p className="mt-4 type-helper">Nothing needs attention right now.</p>
       ) : (
         <>
           <div className="mt-4 flex flex-col divide-y divide-stone-100">
@@ -76,23 +76,23 @@ export function PurchasesStatus({
               <div key={`${row.kind}-${row.id}`} className="flex items-center justify-between gap-2.5 py-2 first:pt-0 last:pb-0">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-stone-500">
+                    <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 type-overline">
                       {attentionKindLabel(row)}
                     </span>
                     <button
                       type="button"
                       onClick={() => navigate(attentionRowHref(row))}
                       aria-label={`View ${row.kind === 'purchase_order' ? 'purchase order' : 'requisition'} ${row.party}, ${row.recordNumber}`}
-                      className="truncate rounded text-left text-xs font-semibold text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="truncate rounded text-left text-caption font-semibold text-ink-strong hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {row.party}
                     </button>
                   </div>
-                  <div className={cn('mt-0.5 text-2xs', row.daysOverdue !== null ? 'text-warning' : 'text-stone-500')}>
+                  <div className={cn('mt-0.5 text-micro', row.daysOverdue !== null ? 'text-warning-ink' : 'text-ink-muted')}>
                     <span className="font-mono">{row.recordNumber}</span> · {formatAttentionDetail(row)}
                   </div>
                 </div>
-                <div className="shrink-0 text-right text-xs font-bold text-stone-950 tabular-nums">{currency(row.value)}</div>
+                <div className="shrink-0 text-right type-cell-strong">{currency(row.value)}</div>
               </div>
             ))}
           </div>

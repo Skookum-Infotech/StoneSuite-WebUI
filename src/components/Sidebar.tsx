@@ -18,23 +18,23 @@ interface SidebarProps {
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'group flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+    'group flex items-center gap-2.5 rounded-md px-3 py-2 type-nav-item transition-all duration-200',
     isActive
-      ? 'bg-accent text-accent-foreground font-bold'
+      ? 'bg-accent text-accent-foreground'
       : 'text-stone-700 hover:bg-accent/60 hover:text-stone-900',
   );
 
 const childLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium tracking-wide transition-all duration-200',
+    'group flex items-center gap-2 rounded-md px-2.5 py-1.5 type-nav-item transition-all duration-200',
     isActive
-      ? 'bg-accent text-accent-foreground font-semibold'
+      ? 'bg-accent text-accent-foreground'
       : 'text-stone-700 hover:bg-accent/50 hover:text-stone-900',
   );
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1 pt-4 text-2xs xl:text-xs font-semibold tracking-wide text-stone-700 dark:text-stone-700">
+    <p className="px-3 pb-1 pt-4 type-nav-section">
       {children}
     </p>
   );
@@ -193,7 +193,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
         <span>{item.label}</span>
         {badgeCount > 0 && (
-          <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+          <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-micro font-semibold tabular-nums text-white">
             {badgeCount}
             <span className="sr-only"> {item.badge === 'approvals-pending' ? 'pending' : 'unread'}</span>
           </span>
@@ -219,7 +219,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           aria-expanded={groupOpen}
           aria-controls={`nav-group-${group.id}`}
           className={cn(
-            'group flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold tracking-wide transition-all duration-200',
+            'group flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 type-nav-item transition-all duration-200',
             active
               ? 'bg-accent/60 text-accent-foreground'
               : 'text-stone-700 hover:bg-accent/40 hover:text-stone-900',

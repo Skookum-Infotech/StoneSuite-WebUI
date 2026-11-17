@@ -197,7 +197,7 @@ export function AccountFormDrawer({
       <div ref={contentRef} tabIndex={-1} className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl outline-none">
         <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3.5 shrink-0">
           <div>
-            <h2 id="account-form-drawer-title" className="text-sm font-bold text-stone-900">
+            <h2 id="account-form-drawer-title" className="type-dialog-title">
               {isEdit
                 ? 'Edit Account'
                 : parent

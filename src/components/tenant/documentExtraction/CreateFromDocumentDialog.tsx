@@ -127,7 +127,7 @@ export function CreateFromDocumentDialog({
               <FileText className="size-4 text-accent-foreground" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h2 id="create-from-document-title" className="text-sm font-bold text-stone-900 dark:text-stone-100">
+              <h2 id="create-from-document-title" className="type-dialog-title">
                 Create {routes.label} from document
               </h2>
               <p className="truncate text-xs text-stone-500 dark:text-stone-400" title={current.name}>

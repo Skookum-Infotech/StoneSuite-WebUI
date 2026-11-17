@@ -76,20 +76,20 @@ export function RecentRecordsTable({
   return (
     <div className="overflow-hidden rounded-xl border border-stone-200 bg-card shadow-sm">
       <div className="flex flex-col gap-0.5 px-4 pb-[13px] pt-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2.5 sm:px-[19px] sm:pt-[17px]">
-        <span className="text-[13.5px] font-bold text-stone-950">Recent records</span>
-        <span className="text-[11.5px] text-stone-500">across CRM, Sales &amp; Purchases</span>
+        <span className="type-card-title">Recent Records</span>
+        <span className="text-field text-ink-muted">across CRM, Sales &amp; Purchases</span>
       </div>
 
       <div className="overflow-x-auto modal-scrollbar">
         <table className="w-full min-w-[660px] text-left">
           <thead className="border-t border-b border-stone-200 bg-table-header">
             <tr>
-              <th className="whitespace-nowrap px-[19px] py-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">Type</th>
-              <th className="whitespace-nowrap px-[19px] py-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">Record</th>
-              <th className="whitespace-nowrap px-[19px] py-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">Account</th>
-              <th className="whitespace-nowrap px-[19px] py-2.5 text-right text-2xs font-semibold uppercase tracking-wider text-stone-500">Value</th>
-              <th className="whitespace-nowrap px-[19px] py-2.5 text-2xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-              <th className="whitespace-nowrap px-[19px] py-2.5 text-right text-2xs font-semibold uppercase tracking-wider text-stone-500">Updated</th>
+              <th className="whitespace-nowrap px-[19px] py-2.5 type-th">Type</th>
+              <th className="whitespace-nowrap px-[19px] py-2.5 type-th">Record</th>
+              <th className="whitespace-nowrap px-[19px] py-2.5 type-th">Account</th>
+              <th className="whitespace-nowrap px-[19px] py-2.5 text-right type-th">Value</th>
+              <th className="whitespace-nowrap px-[19px] py-2.5 type-th">Status</th>
+              <th className="whitespace-nowrap px-[19px] py-2.5 text-right type-th">Updated</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -99,11 +99,11 @@ export function RecentRecordsTable({
               return (
                 <tr key={r.id} className="transition-colors duration-150 hover:bg-stone-50">
                   <td className="whitespace-nowrap px-[19px] py-3">
-                    <span className={cn('inline-block rounded-full px-2.5 py-1 text-2xs font-bold', meta.bg, meta.text)}>
+                    <span className={cn('inline-block rounded-full px-2.5 py-1 type-pill', meta.bg, meta.text)}>
                       {typeLabel}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-[19px] py-3 font-mono text-xs text-stone-500">
+                  <td className="whitespace-nowrap px-[19px] py-3 type-record-id">
                     <Link
                       to={recordRoute(r.domain, r.module, r.id)}
                       aria-label={`View ${typeLabel} ${r.recordNumber}${r.account ? ` for ${r.account}` : ''}`}
@@ -112,14 +112,14 @@ export function RecentRecordsTable({
                       {r.recordNumber}
                     </Link>
                   </td>
-                  <td className="px-[19px] py-3 text-xs text-stone-950">{r.account ?? '—'}</td>
-                  <td className="whitespace-nowrap px-[19px] py-3 text-right text-xs font-semibold text-stone-950 tabular-nums">
+                  <td className="px-[19px] py-3 type-cell">{r.account ?? '—'}</td>
+                  <td className="whitespace-nowrap px-[19px] py-3 text-right type-cell-strong">
                     {currency(r.value)}
                   </td>
                   <td className="whitespace-nowrap px-[19px] py-3">
-                    <span className="text-xs font-semibold text-stone-950">{r.status}</span>
+                    <span className="type-cell">{r.status}</span>
                   </td>
-                  <td className="whitespace-nowrap px-[19px] py-3 text-right font-mono text-2xs text-stone-500">
+                  <td className="whitespace-nowrap px-[19px] py-3 text-right type-helper tabular-nums">
                     <time dateTime={r.updatedAt} title={new Date(r.updatedAt).toLocaleString()}>
                       {relativeTime(r.updatedAt)}
                     </time>
@@ -132,7 +132,7 @@ export function RecentRecordsTable({
       </div>
       {hasMore && (
         <div className="px-[19px] pb-3">
-          <p className="pt-2 text-2xs font-medium text-stone-500">More records available — narrow the range to see fewer.</p>
+          <p className="pt-2 type-helper">More records available — narrow the range to see fewer.</p>
         </div>
       )}
     </div>

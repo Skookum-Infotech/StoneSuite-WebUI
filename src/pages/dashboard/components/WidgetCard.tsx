@@ -17,8 +17,8 @@ export function WidgetCard({
   return (
     <div className="flex h-full flex-col rounded-2xl border border-stone-300 bg-card p-4 sm:p-[19px]">
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2.5">
-        <span className="text-[13.5px] font-bold text-stone-950">{title}</span>
-        {subtitle && <span className="text-[11.5px] text-stone-500 sm:shrink-0">{subtitle}</span>}
+        <span className="type-card-title">{title}</span>
+        {subtitle && <span className="text-field text-ink-muted sm:shrink-0">{subtitle}</span>}
       </div>
       <div className="mt-4 flex min-h-0 flex-1 flex-col">{children}</div>
     </div>

@@ -75,7 +75,7 @@ export function PipelineDonut({
             <span className="text-2xl font-bold leading-none tracking-[-0.02em] text-stone-950 tabular-nums">
               {data.closeRate}%
             </span>
-            <span className="mt-0.5 text-[10px] text-stone-500">close rate</span>
+            <span className="mt-0.5 type-subline">close rate</span>
           </div>
         </div>
 
@@ -83,8 +83,8 @@ export function PipelineDonut({
           {arcs.map((s) => (
             <div key={s.id} className="flex items-center gap-[9px]">
               <span className="h-[9px] w-[9px] shrink-0 rounded-[3px]" style={{ background: s.color }} aria-hidden="true" />
-              <span className="flex-1 text-[13px] font-semibold text-stone-950">{s.label}</span>
-              <span className="text-xs font-bold text-stone-500 tabular-nums">{s.count}</span>
+              <span className="flex-1 text-field font-semibold text-ink-strong">{s.label}</span>
+              <span className="text-caption font-semibold text-ink-muted tabular-nums">{s.count}</span>
             </div>
           ))}
         </div>

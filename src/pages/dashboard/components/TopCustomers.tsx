@@ -75,31 +75,31 @@ export function TopCustomers({
           // collide on key.
           return (
             <div key={c.id ?? `${c.name}-${i}`} className="flex items-center gap-2 sm:gap-[11px]">
-              <span className="w-4 shrink-0 text-2xs font-bold text-stone-500 tabular-nums">{i + 1}</span>
+              <span className="w-4 shrink-0 text-micro font-semibold text-ink-muted tabular-nums">{i + 1}</span>
               {c.id ? (
                 <button
                   type="button"
                   onClick={() => navigate(`/crm/customer/${c.id}`)}
                   aria-label={`View customer ${c.name}`}
-                  className="min-w-0 flex-1 truncate rounded text-left text-xs font-medium text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="min-w-0 flex-1 truncate rounded text-left text-caption font-semibold text-ink-strong hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {c.name}
                 </button>
               ) : (
-                <span className="min-w-0 flex-1 truncate text-xs font-medium text-stone-950">{c.name}</span>
+                <span className="min-w-0 flex-1 truncate type-cell-strong">{c.name}</span>
               )}
               <div className="h-[9px] w-12 shrink-0 overflow-hidden rounded-full bg-stone-100 sm:w-16 md:w-20 lg:w-28">
                 <div className="h-full rounded-full bg-brand-dark" style={{ width: `${proportion * 100}%` }} />
               </div>
               <div className="w-[76px] shrink-0 text-right sm:w-24">
-                <div className="text-xs font-bold text-stone-950 tabular-nums">{currency(c.value)}</div>
-                {delta && <div className={cn('text-2xs font-semibold', DELTA_TONE_CLASS[delta.tone])}>{delta.text}</div>}
+                <div className="type-cell-strong">{currency(c.value)}</div>
+                {delta && <div className={cn('type-delta', DELTA_TONE_CLASS[delta.tone])}>{delta.text}</div>}
               </div>
             </div>
           );
         })}
       </div>
-      <p className="mt-3 text-2xs text-stone-500">
+      <p className="mt-3 type-helper">
         Top {data.customers.length} · {concentrationPct}% of revenue
       </p>
       <MoreHint count={data.customerCount - data.customers.length} label="more customers" />

@@ -175,11 +175,11 @@
   letter-spacing: 0.025em;
   color: var(--color-ink-muted);
 }
+/* No color: the sidebar sets it per state (idle ink, active lime-dark). */
 @utility type-nav-item {
   font-size: var(--text-button);
   line-height: 1.6;
   font-weight: 600;
-  color: var(--color-ink);
 }
 @utility type-link {
   font-weight: 500;

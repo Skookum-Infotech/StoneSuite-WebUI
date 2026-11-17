@@ -41,7 +41,7 @@ export function MaterialConsumption({
   return (
     <WidgetCard title="Material consumption" subtitle={subtitle}>
       {data.materials.length === 0 ? (
-        <p className="text-xs text-stone-500">No material has been consumed yet.</p>
+        <p className="type-helper">No material has been consumed yet.</p>
       ) : (
         <>
           <div className="flex flex-col gap-[13px]">
@@ -57,21 +57,21 @@ export function MaterialConsumption({
                     type="button"
                     onClick={() => navigate(`/inventory/item/${m.id}`)}
                     aria-label={`View inventory item ${m.name}`}
-                    className="block w-full truncate rounded text-left text-xs font-medium text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="block w-full truncate rounded text-left text-caption font-semibold text-ink-strong hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {m.name}
                   </button>
-                  <div className="truncate text-2xs text-stone-500">{materialDetailLine(m)}</div>
+                  <div className="truncate type-subline">{materialDetailLine(m)}</div>
                 </div>
                 <div className="hidden h-[9px] w-14 shrink-0 overflow-hidden rounded-full bg-stone-100 sm:block md:w-20 lg:w-28">
                   <div className="h-full rounded-full bg-brand-dark" style={{ width: `${(m.netUsed / max) * 100}%` }} />
                 </div>
                 <div className="flex w-[84px] shrink-0 flex-col items-end gap-0.5 sm:w-[92px]">
-                  <span className="text-xs font-bold text-stone-950 tabular-nums">
+                  <span className="type-cell-strong">
                     {formatMaterialArea(m.netUsed, m.unitCode)}
                   </span>
                   {m.scrappedArea > 0 && (
-                    <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                    <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-micro font-semibold text-warning-ink">
                       {formatMaterialArea(m.scrappedArea, m.unitCode)} scrapped
                     </span>
                   )}

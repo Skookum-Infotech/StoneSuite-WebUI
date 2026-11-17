@@ -50,15 +50,15 @@ export function ArOutstanding({
     <WidgetCard title="Accounts receivable" subtitle="outstanding invoices">
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Outstanding</div>
+          <div className="truncate type-overline">Outstanding</div>
           <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{currency(data.outstanding)}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500">Overdue</div>
+          <div className="truncate type-overline">Overdue</div>
           <div className="mt-1 text-sm font-bold text-warning tabular-nums sm:text-base lg:text-lg">{currency(data.overdueTotal)}</div>
         </div>
         <div className="rounded-xl bg-stone-50 p-2 sm:p-2.5 lg:p-3">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[.09em] text-stone-500"># Overdue</div>
+          <div className="truncate type-overline"># Overdue</div>
           <div className="mt-1 text-sm font-bold text-stone-950 tabular-nums sm:text-base lg:text-lg">{data.overdueCount}</div>
         </div>
       </div>
@@ -66,14 +66,14 @@ export function ArOutstanding({
       <div className="mt-4 flex flex-col gap-[9px]">
         {data.buckets.map((b) => (
           <div key={b.label} className="flex items-center gap-[11px]">
-            <span className="w-12 shrink-0 text-2xs font-semibold text-stone-500">{b.label}d</span>
+            <span className="w-12 shrink-0 text-micro font-semibold text-ink-muted">{b.label}d</span>
             <div className="h-[9px] flex-1 overflow-hidden rounded-full bg-stone-100">
               <div
                 className="h-full rounded-full"
                 style={{ width: `${(b.amount / maxBucket) * 100}%`, backgroundColor: BUCKET_COLOR[b.label] }}
               />
             </div>
-            <span className="w-16 shrink-0 text-right text-xs font-bold text-stone-950 tabular-nums">
+            <span className="w-16 shrink-0 text-right type-cell-strong">
               {currency(b.amount)}
             </span>
           </div>
@@ -81,7 +81,7 @@ export function ArOutstanding({
       </div>
 
       {data.oldest.length === 0 ? (
-        <p className="mt-4 text-xs text-stone-500">Nothing outstanding right now.</p>
+        <p className="mt-4 type-helper">Nothing outstanding right now.</p>
       ) : (
         <>
           <div className="mt-4 flex flex-col divide-y divide-stone-100">
@@ -92,16 +92,16 @@ export function ArOutstanding({
                     type="button"
                     onClick={() => navigate(`/sales/invoice/${row.id}`)}
                     aria-label={`View invoice ${row.invoiceNumber}, ${row.customer}`}
-                    className="truncate rounded text-left text-xs font-semibold text-stone-950 hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="truncate rounded text-left text-caption font-semibold text-ink-strong hover:text-accent-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {row.customer}
                   </button>
-                  <div className={row.daysPastDue > 0 ? 'mt-0.5 text-2xs text-warning' : 'mt-0.5 text-2xs text-stone-500'}>
+                  <div className={row.daysPastDue > 0 ? 'mt-0.5 text-micro text-warning-ink' : 'mt-0.5 text-micro text-ink-muted'}>
                     <span className="font-mono">{row.invoiceNumber}</span>
                     {row.daysPastDue > 0 ? ` · ${row.daysPastDue}d past due` : null}
                   </div>
                 </div>
-                <div className="shrink-0 text-right text-xs font-bold text-stone-950 tabular-nums">{currency(row.balanceDue)}</div>
+                <div className="shrink-0 text-right type-cell-strong">{currency(row.balanceDue)}</div>
               </div>
             ))}
           </div>

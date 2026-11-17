@@ -50,7 +50,7 @@ export function CustomerOrderFormDialog({ orderId, form, isDraft, onClose }: Cus
               <ClipboardList className="size-4 text-accent-foreground" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <h2 id="customer-order-form-title" className="truncate text-sm font-bold text-stone-900">
+              <h2 id="customer-order-form-title" className="truncate type-dialog-title">
                 Customer Order Form
               </h2>
               <p className="truncate text-xs text-stone-500">

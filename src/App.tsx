@@ -8,7 +8,19 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      <Toaster richColors position="top-right" closeButton />
+      <Toaster
+        richColors
+        position="top-right"
+        closeButton
+        toastOptions={{
+          classNames: {
+            title: 'text-body font-medium',
+            description: 'text-field',
+            // Approved: success message text in dark gray, title stays in the success green.
+            success: '[&_[data-description]]:text-ink!',
+          },
+        }}
+      />
     </QueryClientProvider>
   );
 }

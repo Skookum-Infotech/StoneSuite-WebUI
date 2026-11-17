@@ -56,7 +56,7 @@ export function VendorCreditFilterDrawer({ onClose, value, onApply }: {
         <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3.5 shrink-0">
           <div className="flex items-center gap-2">
             <Filter className="size-4 text-stone-500" aria-hidden="true" />
-            <h2 id="vc-filter-drawer-title" className="text-sm font-bold text-stone-900">Filters</h2>
+            <h2 id="vc-filter-drawer-title" className="type-dialog-title">Filters</h2>
           </div>
           <button
             type="button"

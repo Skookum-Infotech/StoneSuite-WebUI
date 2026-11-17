@@ -37,19 +37,19 @@ export function DeltaIndicator({
 }) {
   if (variant === 'note') {
     return (
-      <span className={cn('text-[11px] font-semibold whitespace-nowrap', NOTE_TONE[tone])}>{text}</span>
+      <span className={cn('text-caption font-semibold whitespace-nowrap', NOTE_TONE[tone])}>{text}</span>
     );
   }
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap',
+        'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 type-delta whitespace-nowrap',
         CHIP_TONE[tone],
       )}
     >
-      {direction === 'up' && <ArrowUp className="size-2.5" aria-hidden="true" />}
-      {direction === 'down' && <ArrowDown className="size-2.5" aria-hidden="true" />}
+      {direction === 'up' && <ArrowUp className="size-3" aria-hidden="true" />}
+      {direction === 'down' && <ArrowDown className="size-3" aria-hidden="true" />}
       {text}
     </span>
   );
