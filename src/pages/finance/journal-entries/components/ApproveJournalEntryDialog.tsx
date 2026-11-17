@@ -6,6 +6,8 @@ import { journalEntryService } from '@/services/journalEntryService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { JournalEntry } from '@/types/journalEntry';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Approve moves a Draft journal entry to Approved (cashtransfer AD-5: a
 // single-step approval, not a multi-approver chain) — the generic transition
 // endpoint, gated by `cash_transfer:transition`. Mirrors DeleteItemReceiptDialog's
@@ -53,7 +55,7 @@ export function ApproveJournalEntryDialog({ journalEntryId, onApproved }: {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover transition-all shadow-sm active:scale-95"
+        className={cn(buttonVariants(), 'w-full active:scale-95')}
       >
         <CheckCircle2 className="size-3.5" />
         Approve
@@ -73,13 +75,13 @@ export function ApproveJournalEntryDialog({ journalEntryId, onApproved }: {
                 <CheckCircle2 className="size-4 text-accent-foreground" />
               </div>
               <div>
-                <h3 id="approve-je-dialog-title" className="text-sm font-bold text-stone-900">Approve this journal entry?</h3>
-                <p className="text-xs text-stone-500 mt-0.5">It can then be posted to the ledger.</p>
+                <h3 id="approve-je-dialog-title" className="type-card-title">Approve This Journal Entry?</h3>
+                <p className="mt-0.5 type-helper">It can then be posted to the ledger.</p>
               </div>
             </div>
 
             {approve.error && (
-              <p role="alert" className="mb-3 text-xs text-destructive">
+              <p role="alert" className="mb-3 type-error">
                 {apiErrorMessage(approve.error, 'Failed to approve journal entry.')}
               </p>
             )}
@@ -89,7 +91,7 @@ export function ApproveJournalEntryDialog({ journalEntryId, onApproved }: {
                 type="button"
                 onClick={close}
                 disabled={approve.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -97,7 +99,7 @@ export function ApproveJournalEntryDialog({ journalEntryId, onApproved }: {
                 type="button"
                 onClick={() => approve.mutate()}
                 disabled={approve.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants(), 'active:scale-95')}
               >
                 {approve.isPending ? 'Approving…' : 'Approve'}
               </button>

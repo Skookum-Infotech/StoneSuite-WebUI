@@ -22,6 +22,7 @@ import { BulkActionBar } from './BulkActionBar';
 import { AccountFormDrawer } from './AccountFormDrawer';
 import { formatDateValue, LIST_DATE_OPTIONS } from '@/lib/dateUtils';
 
+import { buttonVariants } from '@/components/ui/button';
 const EXPORT_PAGE_SIZE = 200;
 const PAGE_SIZE = 25;
 
@@ -202,7 +203,7 @@ export function AccountTableView() {
             placeholder="Search code or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
             aria-label="Search accounts by code or name"
           />
         </div>
@@ -220,11 +221,11 @@ export function AccountTableView() {
           Filters
         </button>
 
-        <label className="flex items-center gap-1.5 text-xs text-stone-600">
+        <label className="flex items-center gap-1.5 type-field-label">
           <Switch checked={includeInactive} onCheckedChange={(v) => { setIncludeInactive(v); resetPaging(); }} aria-label="Include inactive accounts" />
           Inactive
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-stone-600">
+        <label className="flex items-center gap-1.5 type-field-label">
           <Switch checked={includeHidden} onCheckedChange={(v) => { setIncludeHidden(v); resetPaging(); }} aria-label="Include hidden accounts" />
           Hidden
         </label>
@@ -232,7 +233,7 @@ export function AccountTableView() {
         <div className="h-5 w-px bg-stone-200" aria-hidden="true" />
 
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
+          <span className="pr-0.5 type-overline">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
@@ -240,7 +241,7 @@ export function AccountTableView() {
               aria-pressed={sortBy === field}
               aria-label={`Sort by ${label}${sortBy === field ? `, currently ${sortDir === 'asc' ? 'ascending' : 'descending'}` : ''}`}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
                   : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
@@ -255,7 +256,7 @@ export function AccountTableView() {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <X className="size-3" />
             Clear
@@ -268,7 +269,7 @@ export function AccountTableView() {
             onClick={handleDownloadCsv}
             disabled={isExporting}
             aria-label={hasFilters ? 'Download filtered accounts as CSV' : 'Download all accounts as CSV'}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
           >
             {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
             {isExporting ? 'Exporting…' : hasFilters ? 'Download filtered CSV' : 'Download CSV'}
@@ -279,10 +280,10 @@ export function AccountTableView() {
       <BulkActionBar selectedIds={[...selectedIds]} onClear={() => setSelectedIds(new Set())} />
 
       {isError && (
-        <p className="text-xs text-red-500">{apiErrorMessage(error, 'Failed to load accounts. Please try again.')}</p>
+        <p className="type-error">{apiErrorMessage(error, 'Failed to load accounts. Please try again.')}</p>
       )}
       {exportError && (
-        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
+        <p className="type-error">Failed to export CSV: {exportError}</p>
       )}
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
@@ -291,15 +292,15 @@ export function AccountTableView() {
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
                 {canUpdate && <th className="px-4 py-3 w-8" />}
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Code</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Type</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Placement</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">BS/PNL</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Updated</th>
+                <th className="px-4 py-3 type-th">Code</th>
+                <th className="px-4 py-3 type-th">Name</th>
+                <th className="px-4 py-3 type-th">Type</th>
+                <th className="px-4 py-3 type-th">Placement</th>
+                <th className="px-4 py-3 type-th">BS/PNL</th>
+                <th className="px-4 py-3 type-th">Status</th>
+                <th className="px-4 py-3 type-th">Updated</th>
                 {canUpdate && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 py-3 text-right type-th">Actions</th>
                 )}
               </tr>
             </thead>
@@ -346,23 +347,23 @@ export function AccountTableView() {
                         {a.code}
                       </button>
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-700 truncate max-w-[220px]">
+                    <td className="px-4 py-3.5 truncate max-w-[220px] type-cell">
                       <span className={cn(!a.isActive && 'italic text-stone-500')}>{a.name}</span>
-                      {a.isSystem && <span className="ml-1.5 text-2xs font-semibold text-stone-500">SYS</span>}
+                      {a.isSystem && <span className="ml-1.5 text-micro font-semibold text-stone-500">SYS</span>}
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-500 whitespace-nowrap">{ACCOUNT_TYPE_LABELS[a.type]}</td>
-                    <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">
+                    <td className="px-4 py-3.5 whitespace-nowrap type-cell">{ACCOUNT_TYPE_LABELS[a.type]}</td>
+                    <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">
                       {placementLabel(a)}
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-500">{a.bsPnl}</td>
+                    <td className="px-4 py-3.5 type-cell">{a.bsPnl}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1.5">
-                        {!a.isActive && <span className="text-2xs font-semibold text-stone-500">Inactive</span>}
-                        {!a.isVisible && <span className="text-2xs font-semibold text-stone-500">Hidden</span>}
-                        {a.isActive && a.isVisible && <span className="text-2xs font-semibold text-emerald-600">Active</span>}
+                        {!a.isActive && <span className="text-micro font-semibold text-stone-500">Inactive</span>}
+                        {!a.isVisible && <span className="text-micro font-semibold text-stone-500">Hidden</span>}
+                        {a.isActive && a.isVisible && <span className="text-micro font-semibold text-success-ink">Active</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap">
+                    <td className="px-4 py-3.5 tabular-nums whitespace-nowrap type-cell">
                       {fmtDate(a.updatedAt)}
                     </td>
                     {canUpdate && (
@@ -387,15 +388,15 @@ export function AccountTableView() {
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Landmark className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No accounts found.</p>
+                        <p className="type-card-title">No accounts found.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No accounts match the current search.</p>
-                        <p className="text-xs text-stone-500">Try adjusting your search or filters.</p>
+                        <p className="type-card-title">No accounts match the current search.</p>
+                        <p className="type-helper">Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </td>
@@ -407,14 +408,14 @@ export function AccountTableView() {
 
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {pageNum}{hasMore ? '' : ' · last page'}
             </p>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Previous page"
               >
                 <ChevronLeft className="size-3.5" />
@@ -423,7 +424,7 @@ export function AccountTableView() {
               <button
                 onClick={goNext}
                 disabled={!hasMore}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Next page"
               >
                 Next

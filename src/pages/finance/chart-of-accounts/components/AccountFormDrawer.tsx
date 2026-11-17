@@ -20,6 +20,7 @@ import {
   type Account, type AccountType, type BSPNL,
 } from '@/types/chartOfAccounts';
 
+import { buttonVariants } from '@/components/ui/button';
 /** Where a sub-account's parent sits, so the drawer can show the inherited
  *  placement and resolve the category side without refetching the parent. */
 export interface AccountParentRef {
@@ -206,7 +207,7 @@ export function AccountFormDrawer({
                     ? `New Account under ${initialPlacementLabel}`
                     : 'New Account'}
             </h2>
-            {isEdit && account && <p className="text-2xs text-stone-500 font-mono mt-0.5">{account.code}</p>}
+            {isEdit && account && <p className="font-mono mt-0.5 type-helper">{account.code}</p>}
           </div>
           <button
             type="button"
@@ -226,7 +227,7 @@ export function AccountFormDrawer({
             className="shrink-0 flex items-start gap-2.5 border-b border-red-200 bg-red-50 px-4 py-2.5 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-inset"
           >
             <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-600" />
-            <div className="text-xs text-red-700">
+            <div className="text-xs text-danger-ink">
               <p>{errorInfo.message}</p>
               {errorInfo.kind === 'versionConflict' && account && (
                 <button
@@ -282,7 +283,7 @@ export function AccountFormDrawer({
                   ))}
                 </Select>
                 {showErrors && missingPlacement && (
-                  <p id="category-error" className="text-2xs text-destructive">
+                  <p id="category-error" className="type-error">
                     A category is required.
                   </p>
                 )}
@@ -322,14 +323,14 @@ export function AccountFormDrawer({
                 aria-describedby={showErrors && missingBsPnl ? 'bspnl-error' : undefined}
               >
                 {(['BS', 'PNL'] as const).map((side) => (
-                  <label key={side} className="flex items-center gap-1.5 text-xs text-stone-700">
+                  <label key={side} className="flex items-center gap-1.5 type-field-label">
                     <input type="radio" name="bsPnl" value={side} checked={bsPnl === side} onChange={() => setBsPnl(side)} />
                     {side === 'BS' ? 'Balance Sheet' : 'Profit & Loss'}
                   </label>
                 ))}
               </div>
               {showErrors && missingBsPnl && (
-                <p id="bspnl-error" className="text-2xs text-destructive">
+                <p id="bspnl-error" className="type-error">
                   This category holds both balance-sheet and P&L accounts — pick one.
                 </p>
               )}
@@ -348,7 +349,7 @@ export function AccountFormDrawer({
               aria-describedby={showErrors && !name.trim() ? 'account-name-error' : undefined}
             />
             {showErrors && !name.trim() && (
-              <p id="account-name-error" className="text-2xs text-destructive">An account name is required.</p>
+              <p id="account-name-error" className="type-error">An account name is required.</p>
             )}
           </ModernFieldShell>
 
@@ -383,7 +384,7 @@ export function AccountFormDrawer({
             showErrors={showErrors}
           />
 
-          <label className="flex items-center gap-2 text-xs text-stone-700">
+          <label className="flex items-center gap-2 type-field-label">
             <input type="checkbox" checked={isPostable} onChange={(e) => setIsPostable(e.target.checked)} />
             Postable (accepts transactions directly)
           </label>
@@ -394,7 +395,7 @@ export function AccountFormDrawer({
             type="button"
             onClick={onClose}
             disabled={save.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -402,7 +403,7 @@ export function AccountFormDrawer({
             type="button"
             onClick={handleSubmit}
             disabled={save.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 transition-colors shadow-sm"
+            className={buttonVariants()}
           >
             {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
             {save.isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Account'}

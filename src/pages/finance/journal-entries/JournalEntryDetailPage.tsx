@@ -175,17 +175,17 @@ export default function JournalEntryDetailPage() {
                   <div className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
                     <Landmark className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">From</p>
-                      <p className="truncate text-sm font-semibold text-stone-800">{je.fromAccount.name}</p>
-                      <p className="truncate text-2xs text-stone-500 font-mono">{je.fromAccount.code}</p>
+                      <p className="type-overline">From</p>
+                      <p className="truncate type-card-title">{je.fromAccount.name}</p>
+                      <p className="truncate font-mono type-helper">{je.fromAccount.code}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-stone-50/60 px-4 py-3">
                     <Landmark className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">To</p>
-                      <p className="truncate text-sm font-semibold text-stone-800">{je.toAccount.name}</p>
-                      <p className="truncate text-2xs text-stone-500 font-mono">{je.toAccount.code}</p>
+                      <p className="type-overline">To</p>
+                      <p className="truncate type-card-title">{je.toAccount.name}</p>
+                      <p className="truncate font-mono type-helper">{je.toAccount.code}</p>
                     </div>
                   </div>
                 </div>
@@ -244,7 +244,7 @@ export default function JournalEntryDetailPage() {
               </button>
             </div>
             {exportPdfError && (
-              <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>
+              <p role="alert" className="type-error">{exportPdfError}</p>
             )}
           </div>
 

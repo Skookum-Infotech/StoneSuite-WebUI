@@ -18,6 +18,8 @@ import { AccountFormDrawer, type AccountParentRef } from './AccountFormDrawer';
 import { TaxonomyFormDialog, type TaxonomyIntent } from './TaxonomyFormDialog';
 import { TaxonomyGroupHeader, type TaxonomyGroup } from './TaxonomyGroupHeader';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const SEARCH_RESULT_LIMIT = 100;
 
 type DrawerState =
@@ -213,7 +215,7 @@ export function AccountTreeView() {
             placeholder="Search code or name…"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-8 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
             aria-label="Search accounts by code or name"
           />
           {term && (
@@ -228,11 +230,11 @@ export function AccountTreeView() {
           )}
         </div>
 
-        <label className="flex items-center gap-1.5 text-xs text-stone-600">
+        <label className="flex items-center gap-1.5 type-field-label">
           <Switch checked={includeInactive} onCheckedChange={setIncludeInactive} aria-label="Include inactive accounts" />
           Include inactive
         </label>
-        <label className="flex items-center gap-1.5 text-xs text-stone-600">
+        <label className="flex items-center gap-1.5 type-field-label">
           <Switch checked={includeHidden} onCheckedChange={setIncludeHidden} aria-label="Include hidden accounts" />
           Include hidden
         </label>
@@ -264,7 +266,7 @@ export function AccountTreeView() {
             <button
               type="button"
               onClick={() => setTaxonomy({ kind: 'create-category' })}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white py-1.5 px-3 text-xs font-semibold text-stone-600 shadow-sm transition hover:bg-stone-50 active:scale-95"
+              className={cn(buttonVariants({ variant: 'outline' }), 'active:scale-95')}
             >
               <FolderPlus className="size-3.5" />
               New Category
@@ -274,7 +276,7 @@ export function AccountTreeView() {
             <button
               type="button"
               onClick={() => setDrawer({ mode: 'create' })}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-1.5 px-3 text-xs font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Account
@@ -307,7 +309,7 @@ export function AccountTreeView() {
               ))}
             </HighlightedAccountContext.Provider>
             {searchPage?.hasMore && (
-              <p className="px-2 py-2 text-2xs text-stone-500">
+              <p className="px-2 py-2 type-helper">
                 Showing the first {SEARCH_RESULT_LIMIT} matches. Refine your search or use the table view for full pagination.
               </p>
             )}
@@ -386,7 +388,7 @@ export function AccountTreeView() {
 
                                   {!subCollapsed && (
                                     sub.accounts.length === 0 ? (
-                                      <p className="pl-8 py-1 text-2xs italic text-stone-500">No accounts yet.</p>
+                                      <p className="pl-8 py-1 italic type-helper">No accounts yet.</p>
                                     ) : (
                                       <div>
                                         {sub.accounts.map((acct) => (
@@ -406,7 +408,7 @@ export function AccountTreeView() {
                             })}
 
                             {cat.accounts.length === 0 && cat.subCategories.length === 0 && (
-                              <p className="pl-2 py-1 text-2xs italic text-stone-500">
+                              <p className="pl-2 py-1 italic type-helper">
                                 Nothing under this category yet.
                               </p>
                             )}

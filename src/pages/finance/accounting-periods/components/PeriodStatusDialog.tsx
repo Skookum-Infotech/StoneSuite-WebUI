@@ -9,6 +9,7 @@ import { textareaCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
 import { LOCK_STATUS_FIELDS, LOCK_TARGET_LABELS, type LockTarget, type Period } from '@/types/accountingPeriod';
 
+import { buttonVariants } from '@/components/ui/button';
 /** Locking G/L is the only one of the four that stops anything today —
  *  journal.CreateEntry reads gl_lock_status at its choke point. A/P and A/R
  *  are recorded and audited but have no posting module consuming them yet, so
@@ -101,19 +102,19 @@ export function PeriodStatusDialog({ period, target, onClose }: {
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl outline-none">
         <div className="mb-4 flex items-center gap-3">
           <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-full', closing ? 'bg-amber-100' : 'bg-emerald-100')}>
-            <Icon className={cn('size-4', closing ? 'text-amber-600' : 'text-emerald-600')} />
+            <Icon className={cn('size-4', closing ? 'text-amber-600' : 'text-success-ink')} />
           </div>
           <div>
-            <h3 id="period-status-dialog-title" className="text-sm font-bold text-stone-900">
+            <h3 id="period-status-dialog-title" className="type-card-title">
               {title}
             </h3>
-            <p className="mt-0.5 text-xs text-stone-500">
+            <p className="mt-0.5 type-helper">
               {closing ? TARGET_HINTS[target].closing : TARGET_HINTS[target].reopening}
             </p>
           </div>
         </div>
 
-        <label htmlFor="period-status-note" className="mb-1.5 block text-xs font-semibold text-stone-900">
+        <label htmlFor="period-status-note" className="mb-1.5 block type-field-label">
           Note (optional)
         </label>
         <textarea
@@ -125,14 +126,14 @@ export function PeriodStatusDialog({ period, target, onClose }: {
           aria-label="Note"
         />
 
-        {errorInfo && <p role="alert" className="mb-3 text-xs text-destructive">{errorInfo.message}</p>}
+        {errorInfo && <p role="alert" className="mb-3 type-error">{errorInfo.message}</p>}
 
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
             disabled={mutate.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -141,7 +142,7 @@ export function PeriodStatusDialog({ period, target, onClose }: {
             onClick={() => mutate.mutate()}
             disabled={mutate.isPending}
             aria-label={title}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-all hover:bg-brand-hover disabled:opacity-50 active:scale-95"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {mutate.isPending ? <Loader2 className="size-3 animate-spin" /> : <Icon className="size-3" />}
             {mutate.isPending

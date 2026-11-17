@@ -20,7 +20,7 @@ export interface TaxonomyGroupActions {
 
 const LABEL_CLASSES: Record<TaxonomyGroup['level'], string> = {
   category: 'text-xs font-semibold text-stone-700',
-  subcategory: 'text-2xs font-semibold uppercase tracking-wide text-stone-500',
+  subcategory: 'type-overline',
 };
 
 const NOUN: Record<TaxonomyGroup['level'], string> = {

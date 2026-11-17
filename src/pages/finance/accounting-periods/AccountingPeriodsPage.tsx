@@ -9,6 +9,8 @@ import { CalendarSetupCard } from './components/CalendarSetupCard';
 import { PeriodTreeTable } from './components/PeriodTreeTable';
 import { GenerateFiscalYearDialog } from './components/GenerateFiscalYearDialog';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Finance > Accounting Periods. Renders the one-time calendar setup card
 // until accounting-calendar reports configured=true, then the FY -> quarter
 // -> month tree. Route-gated on accounting_period:read; :configure and
@@ -49,7 +51,7 @@ export default function AccountingPeriodsPage() {
               <CalendarClock className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Accounting Periods</h1>
+              <h1 className="type-page-title">Accounting Periods</h1>
               <p className="text-sm text-stone-500">
                 {calendar?.configured && currentPeriod
                   ? `Current period: ${currentPeriod.name}`
@@ -62,7 +64,7 @@ export default function AccountingPeriodsPage() {
             <button
               type="button"
               onClick={() => setGenerateOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               Generate Fiscal Year

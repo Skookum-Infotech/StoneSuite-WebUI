@@ -6,6 +6,8 @@ import { journalEntryService } from '@/services/journalEntryService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { JournalEntry } from '@/types/journalEntry';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Reverse creates a reversing ledger entry for a Posted journal entry,
 // restoring both accounts' balances (cashtransfer/store_reverse.go) — only
 // legal from Posted, and terminal (a reversed entry can never be reversed
@@ -54,7 +56,7 @@ export function ReverseJournalEntryDialog({ journalEntryId, onReversed }: {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-all active:scale-95"
+        className={cn(buttonVariants({ variant: 'outline' }), 'w-full active:scale-95')}
       >
         <Undo2 className="size-3.5" />
         Reverse
@@ -74,8 +76,8 @@ export function ReverseJournalEntryDialog({ journalEntryId, onReversed }: {
                 <Undo2 className="size-4 text-amber-600" />
               </div>
               <div>
-                <h3 id="reverse-je-dialog-title" className="text-sm font-bold text-stone-900">Reverse this journal entry?</h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <h3 id="reverse-je-dialog-title" className="type-card-title">Reverse This Journal Entry?</h3>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -84,7 +86,7 @@ export function ReverseJournalEntryDialog({ journalEntryId, onReversed }: {
             </p>
 
             {reverse.error && (
-              <p role="alert" className="mb-3 text-xs text-destructive">
+              <p role="alert" className="mb-3 type-error">
                 {apiErrorMessage(reverse.error, 'Failed to reverse journal entry.')}
               </p>
             )}
@@ -94,7 +96,7 @@ export function ReverseJournalEntryDialog({ journalEntryId, onReversed }: {
                 type="button"
                 onClick={close}
                 disabled={reverse.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>

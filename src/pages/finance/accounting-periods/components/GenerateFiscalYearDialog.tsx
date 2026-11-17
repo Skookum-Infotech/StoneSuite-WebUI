@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { MAX_GENERATE_YEARS } from '@/types/accountingPeriod';
 import type { AccountingCalendar, FiscalYear } from '@/types/accountingPeriod';
 
+import { buttonVariants } from '@/components/ui/button';
 const YEAR_OPTIONS = Array.from({ length: MAX_GENERATE_YEARS }, (_, i) => i + 1);
 
 /** "2026-01-01T00:00:00.000Z" -> "January 2026". Locked-field display only —
@@ -83,7 +84,7 @@ export function GenerateFiscalYearDialog({ onClose, fiscalYears, calendar }: {
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent">
             <CalendarPlus className="size-4 text-accent-foreground" />
           </div>
-          <h3 id="generate-fy-dialog-title" className="text-sm font-bold text-stone-900">
+          <h3 id="generate-fy-dialog-title" className="type-card-title">
             {generate.isSuccess ? 'Fiscal year generated' : 'Generate fiscal years'}
           </h3>
         </div>
@@ -104,7 +105,7 @@ export function GenerateFiscalYearDialog({ onClose, fiscalYears, calendar }: {
                 ? rangeLabel(previews)
                 : 'Next fiscal year'}
           </p>
-          <p className={cn('mt-1 text-sm font-medium', generate.isSuccess ? 'text-emerald-700' : 'text-stone-600')}>
+          <p className={cn('mt-1 text-sm font-medium', generate.isSuccess ? 'text-success-ink' : 'text-stone-600')}>
             {generate.isSuccess
               ? `${years(generated.length)} generated · ${generated.length * 12} periods, all open.`
               : firstPreview
@@ -154,14 +155,14 @@ export function GenerateFiscalYearDialog({ onClose, fiscalYears, calendar }: {
           </div>
         )}
 
-        {errorInfo && <p role="alert" className="mb-3 text-xs text-destructive">{errorInfo.message}</p>}
+        {errorInfo && <p role="alert" className="mb-3 type-error">{errorInfo.message}</p>}
 
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
             disabled={generate.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             {generate.isSuccess ? 'Close' : 'Cancel'}
           </button>
@@ -170,7 +171,7 @@ export function GenerateFiscalYearDialog({ onClose, fiscalYears, calendar }: {
               type="button"
               onClick={() => generate.mutate()}
               disabled={generate.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-all hover:bg-brand-hover disabled:opacity-50 active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               {generate.isPending ? <Loader2 className="size-3 animate-spin" /> : <CalendarPlus className="size-3" />}
               {generate.isPending ? 'Generating…' : 'Generate'}

@@ -9,6 +9,7 @@ import { fieldCls } from '@/components/crm/formUtils';
 import { MonthYearPicker } from '@/components/finance/MonthYearPicker';
 import { monthYearToRfc3339 } from '@/lib/monthYearValue';
 
+import { buttonVariants } from '@/components/ui/button';
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -59,8 +60,8 @@ export function CalendarSetupCard() {
           <CalendarClock className="size-5 text-accent-foreground" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-stone-900">Set up your fiscal calendar</h2>
-          <p className="mt-0.5 text-xs text-stone-500">
+          <h2 className="type-card-title">Set Up Your Fiscal Calendar</h2>
+          <p className="mt-0.5 type-helper">
             One-time setup — this cannot be changed afterward. Reconfiguring a live calendar
             would re-bucket every journal entry already posted.
           </p>
@@ -70,7 +71,7 @@ export function CalendarSetupCard() {
       {errorInfo && (
         <div role="alert" className="mb-4 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
           <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-600" />
-          <p className="text-xs text-red-700">{errorInfo.message}</p>
+          <p className="type-error">{errorInfo.message}</p>
         </div>
       )}
 
@@ -96,11 +97,11 @@ export function CalendarSetupCard() {
             ariaLabel="Base period go-live month"
             ariaDescribedBy={showErrors && missingBase ? 'base-period-error' : undefined}
           />
-          <p className="mt-1 text-2xs text-stone-500">
+          <p className="mt-1 type-helper">
             The first month you&apos;ll post transactions into. Earlier months are generated closed.
           </p>
           {showErrors && missingBase && (
-            <p id="base-period-error" className="text-2xs text-destructive">A base period is required.</p>
+            <p id="base-period-error" className="type-error">A base period is required.</p>
           )}
         </ModernFieldShell>
       </div>
@@ -110,7 +111,7 @@ export function CalendarSetupCard() {
           type="button"
           onClick={handleSubmit}
           disabled={setup.isPending}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-stone-950 shadow-sm transition-colors hover:bg-brand-hover disabled:opacity-50"
+          className={buttonVariants()}
         >
           {setup.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <CalendarClock className="size-3.5" />}
           {setup.isPending ? 'Setting up…' : 'Set Up Calendar'}

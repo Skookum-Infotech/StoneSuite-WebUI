@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { useModalDialog } from '@/hooks/useModalDialog';
 import { chartOfAccountsService } from '@/services/chartOfAccountsService';
 
+import { buttonVariants } from '@/components/ui/button';
 // Renders a 409 that carries blockingSlots (AD-7) — naming the default-slot(s)
 // pointing at the account and deep-linking to Default Accounts so the user
 // can repoint first, then retry. Used for both single-row and bulk actions.
@@ -40,10 +41,10 @@ export function BlockingSlotsDialog({
             <AlertTriangle className="size-4 text-amber-600" aria-hidden="true" />
           </div>
           <div>
-            <h3 id="blocking-slots-dialog-title" className="text-sm font-bold text-stone-900">
-              Account in use as a default
+            <h3 id="blocking-slots-dialog-title" className="type-card-title">
+              Account in Use as a Default
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">Point the default at another account first.</p>
+            <p className="mt-0.5 type-helper">Point the default at another account first.</p>
           </div>
         </div>
 
@@ -61,14 +62,14 @@ export function BlockingSlotsDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Close
           </button>
           <Link
             to={`/finance/account-defaults#slot-${slots[0]}`}
             onClick={onClose}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover shadow-sm transition-colors"
+            className={buttonVariants()}
           >
             Repoint defaults
             <ArrowRight className="size-3" />

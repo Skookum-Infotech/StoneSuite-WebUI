@@ -9,6 +9,7 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { EMPTY_ACCOUNT_TABLE_FILTER_STATE, type AccountTableFilterState } from '@/lib/coaFilters';
 import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS } from '@/types/chartOfAccounts';
 
+import { buttonVariants } from '@/components/ui/button';
 // Filter drawer for the Chart of Accounts table view — mirrors
 // ItemReceiptFilterDrawer's "mount only while open" pattern. Does not offer
 // active/visible/postable — the table view's Include-inactive/Include-hidden
@@ -130,14 +131,14 @@ export function AccountFilterDrawer({ onClose, value, onApply }: {
           <button
             type="button"
             onClick={() => setDraft(EMPTY_ACCOUNT_TABLE_FILTER_STATE)}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 transition-colors"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Clear all
           </button>
           <button
             type="button"
             onClick={() => { onApply(draft); onClose(); }}
-            className="rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover transition-colors shadow-sm"
+            className={buttonVariants()}
           >
             Apply Filters
           </button>

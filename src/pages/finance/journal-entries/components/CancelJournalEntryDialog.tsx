@@ -7,6 +7,8 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import type { JournalEntry } from '@/types/journalEntry';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Cancel is legal from Draft/Approved only (cashtransfer/transitions.go) —
 // the generic transition endpoint, terminal (CANC never moves anywhere
 // else). Mirrors VoidReceiptDialog, trimmed: no reason field required
@@ -72,8 +74,8 @@ export function CancelJournalEntryDialog({ journalEntryId, onCancelled }: {
                 <Ban className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="cancel-je-dialog-title" className="text-sm font-bold text-stone-900">Cancel this journal entry?</h3>
-                <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+                <h3 id="cancel-je-dialog-title" className="type-card-title">Cancel This Journal Entry?</h3>
+                <p className="mt-0.5 type-helper">This action cannot be undone.</p>
               </div>
             </div>
 
@@ -82,7 +84,7 @@ export function CancelJournalEntryDialog({ journalEntryId, onCancelled }: {
             </p>
 
             {cancel.error && (
-              <p role="alert" className="mb-3 text-xs text-destructive">
+              <p role="alert" className="mb-3 type-error">
                 {apiErrorMessage(cancel.error, 'Failed to cancel journal entry.')}
               </p>
             )}
@@ -92,7 +94,7 @@ export function CancelJournalEntryDialog({ journalEntryId, onCancelled }: {
                 type="button"
                 onClick={close}
                 disabled={cancel.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Keep it
               </button>
@@ -100,7 +102,7 @@ export function CancelJournalEntryDialog({ journalEntryId, onCancelled }: {
                 type="button"
                 onClick={() => cancel.mutate()}
                 disabled={cancel.isPending}
-                className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
               >
                 {cancel.isPending ? 'Cancelling…' : 'Cancel Journal Entry'}
               </button>

@@ -13,6 +13,7 @@ import {
   type CategorySide, type NormalBalance,
 } from '@/types/chartOfAccounts';
 
+import { buttonVariants } from '@/components/ui/button';
 /** What the dialog is being opened to do. A tagged union rather than four
  *  near-identical dialogs: the four operations differ only in which fields show
  *  and which service call fires, and splitting them would mean four copies of
@@ -126,7 +127,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
     >
       <div ref={contentRef} tabIndex={-1} className="mx-4 w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl outline-none">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h3 id="taxonomy-dialog-title" className="text-sm font-bold text-stone-900">
+          <h3 id="taxonomy-dialog-title" className="type-card-title">
             {titleFor(intent)}
           </h3>
           <button
@@ -142,7 +143,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
         {errorInfo && (
           <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
             <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-red-600" />
-            <p className="text-xs text-red-700">{errorInfo.message}</p>
+            <p className="type-error">{errorInfo.message}</p>
           </div>
         )}
 
@@ -165,7 +166,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
               aria-describedby={showErrors && missingName ? 'taxonomy-name-error' : undefined}
             />
             {showErrors && missingName && (
-              <p id="taxonomy-name-error" className="text-2xs text-destructive">A name is required.</p>
+              <p id="taxonomy-name-error" className="type-error">A name is required.</p>
             )}
           </ModernFieldShell>
 
@@ -197,7 +198,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
                 </Select>
               </ModernFieldShell>
 
-              <p className="text-2xs text-stone-500">
+              <p className="type-helper">
                 The code and range are assigned automatically from the next free block, and cannot
                 be changed later.
               </p>
@@ -205,7 +206,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
           )}
 
           {intent.kind === 'create-subcategory' && (
-            <p className="text-2xs text-stone-500">
+            <p className="type-helper">
               The code and range are assigned automatically from the next free block under{' '}
               {intent.parentLabel}. It reports on the same side as its category.
             </p>
@@ -217,7 +218,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
             type="button"
             onClick={onClose}
             disabled={save.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -225,7 +226,7 @@ export function TaxonomyFormDialog({ intent, onClose }: {
             type="button"
             onClick={handleSubmit}
             disabled={save.isPending}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 shadow-sm transition-colors hover:bg-brand-hover disabled:opacity-50"
+            className={buttonVariants()}
           >
             {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
             {save.isPending ? 'Saving…' : intent.kind === 'rename' ? 'Save Changes' : 'Create'}

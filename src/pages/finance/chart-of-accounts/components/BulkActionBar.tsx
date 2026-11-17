@@ -7,6 +7,7 @@ import { parseCoaError } from '@/lib/coaErrors';
 import { visibilityPayload, VISIBILITY_ACTION_LABELS, type VisibilityAction } from '@/lib/coaVisibility';
 import { BlockingSlotsDialog } from './BlockingSlotsDialog';
 
+import { buttonVariants } from '@/components/ui/button';
 const ACTION_ICONS: Record<VisibilityAction, LucideIcon> = {
   activate: CheckCircle2,
   deactivate: XCircle,
@@ -74,7 +75,7 @@ export function BulkActionBar({ selectedIds, onClear }: { selectedIds: string[];
                 onClick={() => bulk.mutate(action)}
                 disabled={bulk.isPending}
                 aria-label={`${VISIBILITY_ACTION_LABELS[action]} ${selectedIds.length} selected accounts`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
+                className={buttonVariants({ variant: 'outline', size: 'sm' })}
               >
                 {pendingAction === action ? <Loader2 className="size-3 animate-spin" /> : <Icon className="size-3" />}
                 {VISIBILITY_ACTION_LABELS[action]}

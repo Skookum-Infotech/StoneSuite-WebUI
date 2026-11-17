@@ -14,8 +14,10 @@ import { PeriodBulkActionBar } from './PeriodBulkActionBar';
 import { PeriodStatusDialog } from './PeriodStatusDialog';
 import { PeriodHistoryDrawer } from './PeriodHistoryDrawer';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const filterSelectCls =
-  'h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
+  'h-8 rounded-lg border border-stone-200 bg-white px-2.5 type-input transition-colors focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand';
 
 const COLUMN_HEADERS = [
   'Period Name', 'Period Close',
@@ -182,7 +184,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
             type="button"
             onClick={clearFilters}
             aria-label="Clear filters"
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 text-xs text-stone-500 transition-colors hover:bg-stone-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             <X className="size-3" />
             Clear
@@ -193,7 +195,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
           type="button"
           onClick={handleDownloadCsv}
           aria-label="Download accounting periods as CSV"
-          className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+          className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto')}
         >
           <Download className="size-3.5" />
           Download CSV
@@ -208,7 +210,7 @@ export function PeriodTreeTable({ calendar }: { calendar: AccountingCalendar }) 
             <tr>
               {canUpdate && <th className="w-8 px-3 py-3" />}
               {COLUMN_HEADERS.map((h) => (
-                <th key={h} className="whitespace-nowrap px-4 py-3 text-2xs font-semibold uppercase tracking-wider text-stone-500">
+                <th key={h} className="whitespace-nowrap px-4 py-3 type-th">
                   {h}
                 </th>
               ))}

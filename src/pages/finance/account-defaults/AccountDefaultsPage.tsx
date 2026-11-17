@@ -35,7 +35,7 @@ export default function AccountDefaultsPage() {
             <Settings2 className="size-5 text-accent-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-stone-900">Default Accounts</h1>
+            <h1 className="type-page-title">Default Accounts</h1>
             <p className="text-sm text-stone-500">
               Where each posting purpose lands. Clearing a picker unsets the slot.
             </p>
@@ -76,8 +76,8 @@ function SlotRow({ slot }: { slot: DefaultSlot }) {
   return (
     <div id={`slot-${slot.key}`} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 scroll-mt-4">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-stone-900">{slot.label}</p>
-        <p className="mt-0.5 text-xs text-stone-500">{slot.description}</p>
+        <p className="type-card-title">{slot.label}</p>
+        <p className="mt-0.5 type-helper">{slot.description}</p>
       </div>
       <div className="mt-3">
         <AccountPicker
@@ -86,8 +86,8 @@ function SlotRow({ slot }: { slot: DefaultSlot }) {
           options={{ ariaLabel: `Default account for ${slot.label}` }}
         />
       </div>
-      {localError && <p className="mt-2 text-2xs text-destructive">{localError}</p>}
-      {repoint.isPending && <p className="mt-2 text-2xs text-stone-500">Saving…</p>}
+      {localError && <p className="mt-2 type-error">{localError}</p>}
+      {repoint.isPending && <p className="mt-2 type-helper">Saving…</p>}
     </div>
   );
 }

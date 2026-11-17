@@ -21,7 +21,7 @@ export default function ChartOfAccountsPage() {
               <ListTree className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Chart of Accounts</h1>
+              <h1 className="type-page-title">Chart of Accounts</h1>
               <p className="text-sm text-stone-500">The tenant&apos;s fixed category tree and postable accounts.</p>
             </div>
           </div>

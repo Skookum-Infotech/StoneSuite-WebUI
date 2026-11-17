@@ -26,7 +26,7 @@ const FIELD_LABELS: Record<string, string> = {
 
 const ACTION_COLORS: Record<string, string> = {
   create: 'bg-accent-lime text-accent-foreground',
-  delete: 'bg-destructive/10 text-destructive',
+  delete: 'bg-destructive/10 text-danger-ink',
   update: 'bg-workflow-prospect-bg text-workflow-prospect-text',
   activate: 'bg-emerald-100 text-emerald-700',
   deactivate: 'bg-stone-100 text-stone-600',
@@ -64,9 +64,9 @@ export function AccountHistoryTab({ accountId }: { accountId?: string }) {
   if (!accountId) return null;
   if (isLoading) return <div className="py-6 flex justify-center"><Spinner label="Loading history…" /></div>;
   if (error) {
-    return <p className="py-6 text-center text-xs text-destructive/70 italic">{apiErrorMessage(error, 'Failed to load history.')}</p>;
+    return <p className="py-6 text-center type-error italic">{apiErrorMessage(error, 'Failed to load history.')}</p>;
   }
-  if (entries.length === 0) return <p className="py-6 text-center text-xs text-stone-500 italic">No history recorded yet.</p>;
+  if (entries.length === 0) return <p className="py-6 text-center italic type-helper">No history recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-stone-200 bg-white">
@@ -74,7 +74,7 @@ export function AccountHistoryTab({ accountId }: { accountId?: string }) {
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Field', 'Change', 'By', 'Date'].map((h) => (
-              <th key={h} className="py-2 px-3 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 px-3 text-left whitespace-nowrap type-th">
                 {h}
               </th>
             ))}
@@ -97,7 +97,7 @@ function HistoryRow({ entry, employeeNames }: { entry: AccountHistoryEntry; empl
       <td className="py-2.5 px-3">
         <span
           className={cn(
-            'inline-flex items-center rounded px-1.5 py-0.5 text-2xs font-semibold capitalize',
+            'inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill',
             ACTION_COLORS[entry.action] ?? 'bg-stone-100 text-stone-600',
           )}
         >
@@ -119,7 +119,7 @@ function HistoryRow({ entry, employeeNames }: { entry: AccountHistoryEntry; empl
         )}
       </td>
       <td className="py-2.5 px-3 text-stone-500">{byName ?? <span className="italic text-stone-500">system</span>}</td>
-      <td className="py-2.5 px-3 text-stone-500 text-2xs whitespace-nowrap">{new Date(entry.at).toLocaleString()}</td>
+      <td className="py-2.5 px-3 whitespace-nowrap type-cell">{new Date(entry.at).toLocaleString()}</td>
     </tr>
   );
 }

@@ -6,6 +6,7 @@ import { accountingPeriodService } from '@/services/accountingPeriodService';
 import { parseAccountingPeriodError } from '@/lib/accountingPeriodErrors';
 import { LOCK_STATUS_FIELDS, LOCK_TARGET_LABELS, type LockTarget, type Period } from '@/types/accountingPeriod';
 
+import { buttonVariants } from '@/components/ui/button';
 const TARGETS: readonly LockTarget[] = ['period', 'ap', 'ar', 'gl'];
 
 /** Past-tense wording for the result banner, per target and direction. */
@@ -90,7 +91,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optional)"
             aria-label="Note for the selected periods"
-            className="h-7 min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 text-xs placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30"
+            className="h-7 min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 type-input"
           />
 
           {allOpen && (
@@ -99,7 +100,7 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
               onClick={() => bulk.mutate(true)}
               disabled={bulk.isPending}
               aria-label={`${closeLabel} for ${selectedPeriods.length} selected periods`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
             >
               {bulk.isPending ? <Loader2 className="size-3 animate-spin" /> : <Lock className="size-3" />}
               {closeLabel}
@@ -111,14 +112,14 @@ export function PeriodBulkActionBar({ selectedPeriods, onClear }: {
               onClick={() => bulk.mutate(false)}
               disabled={bulk.isPending}
               aria-label={`${reopenLabel} for ${selectedPeriods.length} selected periods`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
             >
               {bulk.isPending ? <Loader2 className="size-3 animate-spin" /> : <Unlock className="size-3" />}
               {reopenLabel}
             </button>
           )}
           {!allOpen && !allClosed && (
-            <span className="text-2xs italic text-stone-500">
+            <span className="italic type-subline">
               Select periods that are all open or all closed for {LOCK_TARGET_LABELS[target]}.
             </span>
           )}

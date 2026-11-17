@@ -114,25 +114,25 @@ export function AccountTreeRow({
           onClick={() => navigate(`/finance/chart-of-accounts/${account.id}`)}
           className="flex flex-1 min-w-0 items-center gap-2 text-left"
         >
-          <span className="w-16 shrink-0 font-mono text-2xs text-stone-500">{account.code}</span>
+          <span className="w-16 shrink-0 font-mono type-subline">{account.code}</span>
           <span className={cn('truncate text-xs', account.isActive ? 'text-stone-800' : 'italic text-stone-500')}>
             {account.name}
           </span>
         </button>
 
-        <span className="hidden shrink-0 text-2xs text-stone-500 sm:inline">{ACCOUNT_TYPE_LABELS[account.type]}</span>
+        <span className="hidden shrink-0 sm:inline type-subline">{ACCOUNT_TYPE_LABELS[account.type]}</span>
         {account.isSystem && (
-          <span className="hidden shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500 md:inline" title="Seeded system account">
+          <span className="hidden shrink-0 rounded bg-stone-100 px-1 py-0.5 text-stone-500 md:inline type-pill" title="Seeded system account">
             SYS
           </span>
         )}
         {!account.isPostable && (
-          <span className="hidden shrink-0 rounded bg-violet-50 px-1 py-0.5 text-2xs font-semibold text-violet-600 md:inline" title="Header account — not postable">
+          <span className="hidden shrink-0 rounded bg-violet-50 px-1 py-0.5 text-violet-600 md:inline type-pill" title="Header account — not postable">
             HEADER
           </span>
         )}
-        {!account.isActive && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500">Inactive</span>}
-        {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500">Hidden</span>}
+        {!account.isActive && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-stone-500 type-pill">Inactive</span>}
+        {!account.isVisible && <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-stone-500 type-pill">Hidden</span>}
 
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           {perms.canUpdate && visibilityActions.map((action) => {
@@ -194,7 +194,7 @@ export function AccountTreeRow({
       <p role="status" className="sr-only">{announcement}</p>
 
       {rowError && (
-        <p role="alert" className="pl-9 text-2xs text-destructive">{rowError.message}</p>
+        <p role="alert" className="pl-9 type-error">{rowError.message}</p>
       )}
 
       {account.children.map((child) => (

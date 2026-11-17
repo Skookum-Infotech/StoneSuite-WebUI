@@ -40,7 +40,7 @@ export function AccountAttributeFields({
           <div key={f.key} className="space-y-1.5">
             <label className={fieldLabelCls} htmlFor={`coa-attr-${f.key}`}>
               {f.label}
-              {f.required && <span className="ml-0.5 text-destructive">*</span>}
+              {f.required && <span className="ml-0.5 text-danger-ink">*</span>}
             </label>
             <input
               id={`coa-attr-${f.key}`}
@@ -55,12 +55,12 @@ export function AccountAttributeFields({
               aria-describedby={missing ? `coa-attr-${f.key}-error` : undefined}
             />
             {isBankNumber && currentLast4 && (
-              <p className="text-2xs text-stone-500">
+              <p className="type-helper">
                 Currently on file, ending •••• {currentLast4}. Leave blank to keep it unchanged.
               </p>
             )}
             {missing && (
-              <p id={`coa-attr-${f.key}-error`} className="text-2xs text-destructive">{f.label} is required.</p>
+              <p id={`coa-attr-${f.key}-error`} className="type-error">{f.label} is required.</p>
             )}
           </div>
         );

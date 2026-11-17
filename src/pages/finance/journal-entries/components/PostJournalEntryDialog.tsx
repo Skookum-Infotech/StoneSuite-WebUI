@@ -6,6 +6,8 @@ import { journalEntryService } from '@/services/journalEntryService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { JournalEntry } from '@/types/journalEntry';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Posting is the act that actually moves money: it creates a balanced ledger
 // entry and updates both accounts' running balances (cashtransfer/store_post.go)
 // — a distinct, deliberate step from approving, never automatic. A 409 here
@@ -54,7 +56,7 @@ export function PostJournalEntryDialog({ journalEntryId, onPosted }: {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover transition-all shadow-sm active:scale-95"
+        className={cn(buttonVariants(), 'w-full active:scale-95')}
       >
         <Landmark className="size-3.5" />
         Post Journal Entry
@@ -74,8 +76,8 @@ export function PostJournalEntryDialog({ journalEntryId, onPosted }: {
                 <Landmark className="size-4 text-accent-foreground" />
               </div>
               <div>
-                <h3 id="post-je-dialog-title" className="text-sm font-bold text-stone-900">Post this journal entry?</h3>
-                <p className="text-xs text-stone-500 mt-0.5">This creates a real ledger entry and updates both accounts&apos; balances.</p>
+                <h3 id="post-je-dialog-title" className="type-card-title">Post This Journal Entry?</h3>
+                <p className="mt-0.5 type-helper">This creates a real ledger entry and updates both accounts&apos; balances.</p>
               </div>
             </div>
 
@@ -84,7 +86,7 @@ export function PostJournalEntryDialog({ journalEntryId, onPosted }: {
             </p>
 
             {post.error && (
-              <p role="alert" className="mb-3 text-xs text-destructive">
+              <p role="alert" className="mb-3 type-error">
                 {apiErrorMessage(post.error, 'Failed to post journal entry.')}
               </p>
             )}
@@ -94,7 +96,7 @@ export function PostJournalEntryDialog({ journalEntryId, onPosted }: {
                 type="button"
                 onClick={close}
                 disabled={post.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 Cancel
               </button>
@@ -102,7 +104,7 @@ export function PostJournalEntryDialog({ journalEntryId, onPosted }: {
                 type="button"
                 onClick={() => post.mutate()}
                 disabled={post.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                className={cn(buttonVariants(), 'active:scale-95')}
               >
                 {post.isPending ? 'Posting…' : 'Post Journal Entry'}
               </button>

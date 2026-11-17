@@ -68,7 +68,7 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
         <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-3.5">
           <div>
             <h2 id="period-history-drawer-title" className="type-dialog-title">History</h2>
-            <p className="mt-0.5 text-2xs text-stone-500">{period.fiscalYearName} · {period.name}</p>
+            <p className="mt-0.5 type-helper">{period.fiscalYearName} · {period.name}</p>
           </div>
           <button
             type="button"
@@ -84,18 +84,18 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
           {isLoading ? (
             <Spinner label="Loading history…" />
           ) : isError ? (
-            <p className="text-xs text-destructive">{apiErrorMessage(error, 'Failed to load history.')}</p>
+            <p className="type-error">{apiErrorMessage(error, 'Failed to load history.')}</p>
           ) : entries.length === 0 ? (
-            <p className="py-6 text-center text-xs italic text-stone-500">No history recorded yet.</p>
+            <p className="py-6 text-center italic type-helper">No history recorded yet.</p>
           ) : (
             <ul className="space-y-3">
               {entries.map((e) => (
                 <li key={e.id} className="rounded-lg border border-stone-100 p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-2xs font-semibold', ACTION_COLORS[e.action] ?? 'bg-stone-100 text-stone-600')}>
+                    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 type-pill', ACTION_COLORS[e.action] ?? 'bg-stone-100 text-stone-600')}>
                       {ACTION_LABELS[e.action] ?? e.action}
                     </span>
-                    <span className="whitespace-nowrap text-2xs text-stone-500">{new Date(e.at).toLocaleString()}</span>
+                    <span className="whitespace-nowrap type-subline">{new Date(e.at).toLocaleString()}</span>
                   </div>
                   {(e.fromStatus || e.toStatus) && (
                     <p className="mt-1.5 text-xs text-stone-600">
@@ -104,8 +104,8 @@ export function PeriodHistoryDrawer({ period, onClose }: { period: Period; onClo
                       {e.toStatus && <span className="font-medium text-stone-800">{e.toStatus}</span>}
                     </p>
                   )}
-                  {e.note && <p className="mt-1.5 text-xs italic text-stone-500">&ldquo;{e.note}&rdquo;</p>}
-                  <p className="mt-1.5 text-2xs text-stone-500">
+                  {e.note && <p className="mt-1.5 italic type-helper">&ldquo;{e.note}&rdquo;</p>}
+                  <p className="mt-1.5 type-helper">
                     {e.by ? employeeNames.get(String(e.by)) ?? 'system' : 'system'}
                   </p>
                 </li>

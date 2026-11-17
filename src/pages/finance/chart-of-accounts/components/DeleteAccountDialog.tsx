@@ -8,6 +8,8 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { BlockingSlotsDialog } from './BlockingSlotsDialog';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 /** How the trigger renders. 'menu' is the Danger Zone card row in the detail
  *  page; 'icon' is the hover action in a tree row, which sits in a strip of
  *  same-sized icon buttons. Only the trigger differs — the dialog, the
@@ -105,10 +107,10 @@ function DeleteAccountDialogContent({ label, del, onClose }: {
             <AlertTriangle className="size-4 text-destructive" />
           </div>
           <div>
-            <h3 id="delete-account-dialog-title" className="text-sm font-bold text-stone-900">
-              Delete account?
+            <h3 id="delete-account-dialog-title" className="type-card-title">
+              Delete Account?
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">This action cannot be undone.</p>
+            <p className="mt-0.5 type-helper">This action cannot be undone.</p>
           </div>
         </div>
 
@@ -117,7 +119,7 @@ function DeleteAccountDialogContent({ label, del, onClose }: {
         </p>
 
         {showGenericError && (
-          <p role="alert" className="mb-3 text-xs text-destructive">{errorInfo.message}</p>
+          <p role="alert" className="mb-3 type-error">{errorInfo.message}</p>
         )}
 
         <div className="flex justify-end gap-2">
@@ -125,7 +127,7 @@ function DeleteAccountDialogContent({ label, del, onClose }: {
             type="button"
             onClick={onClose}
             disabled={del.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -133,7 +135,7 @@ function DeleteAccountDialogContent({ label, del, onClose }: {
             type="button"
             onClick={() => del.mutate()}
             disabled={del.isPending}
-            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
           >
             {del.isPending ? 'Deleting…' : 'Delete account'}
           </button>

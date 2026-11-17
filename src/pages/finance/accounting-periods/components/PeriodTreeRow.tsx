@@ -165,7 +165,7 @@ export function PeriodTreeRow({
       <td className="px-4 py-2 pl-14 text-stone-700">
         {period.name}
         {period.isBasePeriod && (
-          <span className="ml-1.5 rounded bg-stone-100 px-1 py-0.5 text-2xs font-semibold text-stone-500">
+          <span className="ml-1.5 rounded bg-stone-100 px-1 py-0.5 text-stone-500 type-pill">
             Base period
           </span>
         )}

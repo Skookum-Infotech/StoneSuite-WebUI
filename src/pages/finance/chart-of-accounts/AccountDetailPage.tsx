@@ -23,6 +23,8 @@ import { DeleteAccountDialog } from './components/DeleteAccountDialog';
 import { DangerZoneCard } from '@/components/tenant/DangerZoneCard';
 import { formatDateValue } from '@/lib/dateUtils';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'history', label: 'History' },
@@ -203,7 +205,7 @@ export default function AccountDetailPage() {
               <OverviewRow label="Depth" value={account.depth === 0 ? 'Top-level account' : 'Sub-account'} />
               {attributeFields.length > 0 && (
                 <div className="border-t border-stone-100 pt-3 space-y-2">
-                  <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Attributes</p>
+                  <p className="type-overline">Attributes</p>
                   {attributeFields.map((f) => (
                     <OverviewRow key={f.key} label={f.label} value={account.attributes[f.key] || '—'} />
                   ))}
@@ -261,7 +263,7 @@ export default function AccountDetailPage() {
                 {exportingPdf ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            {exportPdfError && <p role="alert" className="text-2xs text-destructive">{exportPdfError}</p>}
+            {exportPdfError && <p role="alert" className="type-error">{exportPdfError}</p>}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4 space-y-3 mb-4">
@@ -290,7 +292,7 @@ export default function AccountDetailPage() {
                     type="button"
                     onClick={() => toggle.mutate(action)}
                     disabled={toggle.isPending}
-                    className="flex-1 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-2xs font-semibold text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition-colors"
+                    className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'flex-1')}
                   >
                     {VISIBILITY_ACTION_LABELS[action]}
                   </button>
