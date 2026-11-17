@@ -10,6 +10,7 @@ import { apiErrorMessage } from '@/api/tenantClient';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 type Props = { recordId: string; workflowKey: CRMWorkflowKey };
 
 type DialogState = { mode: 'create' } | { mode: 'edit'; activity: Activity } | null;
@@ -75,7 +76,7 @@ export function ActivityLogPanel({ recordId, workflowKey }: Props) {
             type="button"
             onClick={() => setDialogState({ mode: 'create' })}
             aria-label="Log activity"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover transition-all active:scale-95 shrink-0"
+            className={cn(buttonVariants(), 'active:scale-95 shrink-0')}
           >
             <Plus className="size-3.5" aria-hidden="true" />
             Log Activity
@@ -89,7 +90,7 @@ export function ActivityLogPanel({ recordId, workflowKey }: Props) {
         ) : error ? (
           <ErrorNote>{apiErrorMessage(error, 'Failed to load activity.')}</ErrorNote>
         ) : activities.length === 0 ? (
-          <p className="py-6 text-center text-xs text-stone-500 italic">No activity logged yet.</p>
+          <p className="py-6 text-center italic type-helper">No activity logged yet.</p>
         ) : (
           <div className="divide-y divide-stone-50">
             {activities.map((a) => (
@@ -110,7 +111,7 @@ export function ActivityLogPanel({ recordId, workflowKey }: Props) {
         )}
 
         {deleteError && (
-          <p role="alert" className="mt-3 text-xs text-destructive">{deleteError}</p>
+          <p role="alert" className="mt-3 type-error">{deleteError}</p>
         )}
       </div>
 
@@ -135,7 +136,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'rounded-full px-2.5 py-1 text-2xs font-semibold transition-colors',
+        'rounded-full px-2.5 py-1 text-micro font-semibold transition-colors',
         active ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700',
       )}
     >
@@ -171,15 +172,15 @@ function ActivityRow({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-2xs font-semibold px-1 rounded bg-stone-100 text-stone-500">{typeLabel}</span>
+          <span className="px-1 rounded bg-stone-100 text-stone-500 type-pill">{typeLabel}</span>
           <p className="text-xs font-medium text-stone-700 truncate">
             {activity.subject || <span className="text-stone-500">—</span>}
           </p>
         </div>
         {activity.body && (
-          <p className="text-xs text-stone-500 mt-1 whitespace-pre-wrap">{activity.body}</p>
+          <p className="mt-1 whitespace-pre-wrap type-helper">{activity.body}</p>
         )}
-        <div className="flex items-center gap-2 mt-1.5 text-2xs text-stone-500">
+        <div className="flex items-center gap-2 mt-1.5 type-subline">
           <span>{formatOccurredAt(activity.occurredAt)}</span>
           {activity.author.name && (
             <>
@@ -197,7 +198,7 @@ function ActivityRow({
               type="button"
               onClick={onDeleteConfirm}
               disabled={deleting}
-              className="px-2 py-1 rounded text-2xs text-white bg-destructive hover:bg-destructive/90 transition-colors disabled:opacity-50"
+              className={buttonVariants({ variant: 'destructive', size: 'sm' })}
             >
               {deleting ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : 'Delete'}
             </button>
@@ -205,7 +206,7 @@ function ActivityRow({
               type="button"
               onClick={onDeleteCancel}
               disabled={deleting}
-              className="px-2 py-1 rounded text-2xs text-stone-500 hover:bg-stone-100 transition-colors"
+              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
             >
               Cancel
             </button>

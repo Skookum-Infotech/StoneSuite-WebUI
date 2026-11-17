@@ -7,6 +7,7 @@ import { customerStatusActions, type CustomerStatusAction, type CustomerStatusAc
 import { cn } from '@/lib/utils';
 import type { StatusInfo, WorkflowRecord } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 type Props = {
   recordId: string;
   /** Code of the customer's current status. */
@@ -36,14 +37,12 @@ const ACTION_ICONS: Record<CustomerStatusActionKey, LucideIcon> = {
 // reversible restriction and not an exit — a red button would clash with
 // the amber badge the record wears the moment it lands.
 const BUTTON_CLS: Record<CustomerStatusActionKey, string> = {
-  activate:
-    'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50',
-  release:
-    'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50',
+  activate: buttonVariants(),
+  release: buttonVariants(),
   inactivate:
-    'inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex items-center gap-1.5 justify-center rounded-lg border border-red-200 bg-white h-7.5 px-3 text-button font-semibold text-danger-ink shadow-sm pointer-coarse:min-h-10 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50',
   hold:
-    'inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex items-center gap-1.5 justify-center rounded-lg border border-amber-200 bg-amber-50 h-7.5 px-3 text-button font-semibold text-warning-ink shadow-sm pointer-coarse:min-h-10 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50',
 };
 
 // The customer's header status buttons: Make Active, Make Inactive, Credit

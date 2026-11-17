@@ -6,6 +6,8 @@ import { JOB_STATUS_COLOR } from '@/lib/tenantDisplay';
 import { Badge, Spinner, ErrorNote } from '@/components/tenant/ui';
 import type { AsyncJob, Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Polling cadence while a job is still pending/running (ADR-1: lightweight
 // polling instead of WebSockets at current scale).
 const JOB_POLL_INTERVAL_MS = 3000;
@@ -35,7 +37,7 @@ export function TenantJobsPanel({ tenant }: { tenant: Tenant }) {
 
   return (
     <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-3">
-      <h3 className="mb-2 text-xs font-bold text-stone-600">Provisioning jobs</h3>
+      <h3 className="mb-2 type-card-title">Provisioning Jobs</h3>
       {jobsQ.isLoading && <Spinner label="Loading jobs…" />}
       {jobsQ.isError && <ErrorNote>{apiErrorMessage(jobsQ.error, 'Failed to load jobs.')}</ErrorNote>}
       {retry.error && (
@@ -61,9 +63,9 @@ function JobRow({ job, onRetry, retrying }: { job: AsyncJob; onRetry: () => void
         <span className="text-xs font-semibold text-stone-700">{job.jobType}</span>
         <Badge color={JOB_STATUS_COLOR[job.status]}>{job.status}</Badge>
       </div>
-      {job.progress?.step && <p className="mt-1 text-2xs text-stone-500">Step: {job.progress.step}</p>}
-      {job.lastError && <p className="mt-1 text-2xs text-red-500">{job.lastError}</p>}
-      <p className="mt-1 text-2xs text-stone-500">
+      {job.progress?.step && <p className="mt-1 type-helper">Step: {job.progress.step}</p>}
+      {job.lastError && <p className="mt-1 type-error">{job.lastError}</p>}
+      <p className="mt-1 type-helper">
         Attempt {job.attempts}/{job.maxAttempts} · updated {new Date(job.updatedAt).toLocaleString()}
       </p>
       {canRetry && (
@@ -72,7 +74,7 @@ function JobRow({ job, onRetry, retrying }: { job: AsyncJob; onRetry: () => void
           onClick={onRetry}
           disabled={retrying}
           aria-label={`Retry ${job.jobType} job`}
-          className="mt-2 inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950 disabled:opacity-50"
+          className={cn(buttonVariants({ size: 'sm' }), 'mt-2')}
         >
           <RefreshCw className={`size-3 ${retrying ? 'animate-spin' : ''}`} />
           {retrying ? 'Retrying…' : 'Retry'}

@@ -3,7 +3,7 @@ import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import { cn } from '@/lib/utils';
 
 export const inputClass =
-  'w-full rounded border border-stone-300 bg-white px-2 py-1 text-xs text-stone-800 outline-none placeholder:text-stone-500 focus:border-brand focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
+  'w-full rounded border border-stone-300 bg-white px-2 py-1 type-input outline-none placeholder:text-stone-500 focus:border-brand focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
 
 /** A bordered card with the blue, collapsible-looking header used across forms. */
 export function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -11,7 +11,7 @@ export function Section({ title, children }: { title: string; children: React.Re
     <div className="overflow-hidden rounded border border-stone-200 bg-white">
       <div className="flex items-center gap-2 border-b border-stone-200 bg-stone-50 px-4 py-2">
         <ChevronDown className="size-3 text-stone-400" />
-        <h3 className="text-label font-bold uppercase tracking-wide text-stone-700">{title}</h3>
+        <h3 className="type-overline">{title}</h3>
       </div>
       <div className="px-4 py-3">{children}</div>
     </div>
@@ -29,9 +29,9 @@ export function FieldShell({
 }) {
   return (
     <div className="space-y-1">
-      <label className="block text-2xs font-semibold uppercase tracking-wide text-stone-500">
+      <label className="block type-field-label">
         {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
+        {required && <span className="ml-0.5 text-danger-ink">*</span>}
       </label>
       {children}
     </div>

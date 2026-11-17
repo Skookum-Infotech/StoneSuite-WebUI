@@ -46,7 +46,7 @@ export function CustomerTransactionsTable({ rows }: { rows: CustomerTransactionR
                     to={href}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`View ${row.typeLabel} ${row.number || row.id}`}
-                    className="rounded font-mono text-2xs font-semibold text-stone-700 hover:text-stone-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="rounded hover:text-stone-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring type-record-id"
                   >
                     {row.number || '—'}
                   </Link>
@@ -65,7 +65,7 @@ export function CustomerTransactionsTable({ rows }: { rows: CustomerTransactionR
                   {row.balance === null ? '—' : (
                     <>
                       <span className="font-bold">{moneyOrDash(row.balance)}</span>
-                      {balanceNote && <span className="block text-2xs text-stone-500">{balanceNote}</span>}
+                      {balanceNote && <span className="block type-subline">{balanceNote}</span>}
                     </>
                   )}
                 </td>

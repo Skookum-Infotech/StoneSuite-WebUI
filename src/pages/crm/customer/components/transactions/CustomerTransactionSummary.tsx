@@ -29,7 +29,7 @@ function buildTiles(s: Summary): Tile[] {
     tiles.push({
       key: 'overdue', label: 'Overdue', value: moneyOrDash(s.overdueBalance),
       sub: plural(s.overdueInvoiceCount ?? 0, 'overdue invoice'),
-      tone: late ? 'text-red-600' : undefined,
+      tone: late ? 'text-danger-ink' : undefined,
     });
   }
   if (s.unappliedCredits !== null) {
@@ -68,12 +68,12 @@ export function CustomerTransactionSummary({
             <div key={t.key} className="min-w-0 flex-1 basis-36 rounded-2xl border border-stone-200 bg-white px-3 py-3 shadow-sm sm:px-4">
               <p className="text-xs font-semibold leading-tight text-stone-500">{t.label}</p>
               <p className={cn('mt-1 truncate text-base font-bold tabular-nums text-stone-900', t.tone)}>{t.value}</p>
-              <p className="mt-0.5 truncate text-2xs text-stone-500">{t.sub}</p>
+              <p className="mt-0.5 truncate type-helper">{t.sub}</p>
             </div>
           ))}
         </div>
       )}
-      {scopeLimited && <p className="text-2xs text-stone-500">Based on records you can see.</p>}
+      {scopeLimited && <p className="type-helper">Based on records you can see.</p>}
     </section>
   );
 }

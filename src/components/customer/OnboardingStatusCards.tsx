@@ -26,7 +26,7 @@ export function OnboardingStatusCards({ counts, active, onSelect }: OnboardingSt
               selected ? 'border-brand bg-brand/10' : 'border-stone-200 bg-white'
             }`}
           >
-            <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <span className="flex items-center gap-2 type-overline">
               <span className={`size-2 rounded-full ${f.dotClass}`} aria-hidden="true" />
               {f.label}
             </span>

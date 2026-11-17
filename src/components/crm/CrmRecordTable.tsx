@@ -22,6 +22,7 @@ import {
   type StatusInfo, type FilterRequest, type FilterClause, type WorkflowRecord,
 } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
 
 const AVATAR_PALETTE: { bg: string; fg: string }[] = [
@@ -284,7 +285,7 @@ export function CrmRecordTable({ config }: Props) {
             placeholder={`Search ${lowerLabel}s…`}
             value={nameFilter}
             onChange={(e) => setNameFilter(e.target.value)}
-            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150"
+            className="h-8 w-full rounded-lg border border-stone-200 bg-white pl-8 pr-3 type-input placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 type-input"
           />
         </div>
 
@@ -294,7 +295,7 @@ export function CrmRecordTable({ config }: Props) {
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setCursor(''); setPrevCursors([]); }}
             className={cn(
-              'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
+              'h-8 w-full rounded-lg border border-stone-200 bg-white pl-3 pr-7 type-input focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all duration-150 appearance-none',
               statusFilter === '' ? 'text-stone-500' : 'text-stone-900',
             )}
             aria-label="Filter by status"
@@ -312,13 +313,13 @@ export function CrmRecordTable({ config }: Props) {
 
         {/* Sort chips */}
         <div className="flex items-center gap-1.5">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-stone-500 pr-0.5">Sort:</span>
+          <span className="pr-0.5 type-overline">Sort:</span>
           {(Object.entries(SORT_LABELS) as [SortField, string][]).map(([field, label]) => (
             <button
               key={field}
               onClick={() => handleSort(field)}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold transition-colors',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-micro font-semibold transition-colors',
                 sortBy === field
                   ? 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20'
                   : 'bg-white border border-stone-200 text-stone-500 hover:border-stone-300 hover:text-stone-700',
@@ -334,7 +335,7 @@ export function CrmRecordTable({ config }: Props) {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs text-stone-500 hover:bg-stone-50 transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
           >
             <X className="size-3" />
             Clear
@@ -348,7 +349,7 @@ export function CrmRecordTable({ config }: Props) {
             onClick={handleDownloadCsv}
             disabled={isExporting}
             aria-label={hasFilters ? `Download filtered ${lowerLabel}s as CSV` : `Download all ${lowerLabel}s as CSV`}
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 h-8 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={cn(buttonVariants({ variant: 'outline' }), 'ml-auto flex')}
           >
             {isExporting ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -361,10 +362,10 @@ export function CrmRecordTable({ config }: Props) {
       </div>
 
       {isError && (
-        <p className="text-xs text-red-500">Failed to load {lowerLabel}s. Please try again.</p>
+        <p className="type-error">Failed to load {lowerLabel}s. Please try again.</p>
       )}
       {exportError && (
-        <p className="text-xs text-red-500">Failed to export CSV: {exportError}</p>
+        <p className="type-error">Failed to export CSV: {exportError}</p>
       )}
 
       {/* ── Table ── */}
@@ -373,15 +374,15 @@ export function CrmRecordTable({ config }: Props) {
           <table className="w-full min-w-[520px] text-left text-xs">
             <thead className="border-b border-stone-200 bg-table-header">
               <tr>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Company</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Owner</th>
+                <th className="px-4 py-3 type-th">Company</th>
+                <th className="px-4 py-3 type-th">Status</th>
+                <th className="px-4 py-3 type-th">Owner</th>
                 {config.showEmail && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Email</th>
+                  <th className="px-4 py-3 type-th">Email</th>
                 )}
-                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Created</th>
+                <th className="px-4 py-3 type-th">Created</th>
                 {canEdit && (
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 text-right">Actions</th>
+                  <th className="px-4 py-3 text-right type-th">Actions</th>
                 )}
               </tr>
             </thead>
@@ -430,7 +431,7 @@ export function CrmRecordTable({ config }: Props) {
                               {company}
                             </Link>
                             {record.recordNumber && (
-                              <p className="font-mono text-2xs text-stone-500 mt-0.5">{record.recordNumber}</p>
+                              <p className="font-mono mt-0.5 type-subline">{record.recordNumber}</p>
                             )}
                           </div>
                         </div>
@@ -453,15 +454,15 @@ export function CrmRecordTable({ config }: Props) {
                           <span className="text-xs text-stone-500">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-stone-600 truncate max-w-[160px]">
+                      <td className="px-4 py-3.5 truncate max-w-[160px] type-cell">
                         {(record.ownerUserId && userMap.get(record.ownerUserId)) || (
                           <span className="text-stone-500">—</span>
                         )}
                       </td>
                       {config.showEmail && (
-                        <td className="px-4 py-3.5 text-xs text-stone-500 truncate max-w-[180px]">{email}</td>
+                        <td className="px-4 py-3.5 truncate max-w-[180px] type-cell">{email}</td>
                       )}
-                      <td className="px-4 py-3.5 text-xs text-stone-500 tabular-nums whitespace-nowrap">
+                      <td className="px-4 py-3.5 tabular-nums whitespace-nowrap type-cell">
                         {new Date(record.createdAt).toLocaleDateString(undefined, LIST_DATE_OPTIONS)}
                       </td>
                       {canEdit && (
@@ -486,16 +487,16 @@ export function CrmRecordTable({ config }: Props) {
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Inbox className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s added yet.</p>
-                        <p className="text-xs text-stone-500">Create your first {lowerLabel} to get started.</p>
+                        <p className="type-card-title">No {lowerLabel}s added yet.</p>
+                        <p className="type-helper">Create your first {lowerLabel} to get started.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <div className="rounded-2xl bg-stone-100 p-4">
                           <Search className="size-6 text-stone-400" />
                         </div>
-                        <p className="text-sm font-semibold text-stone-700">No {lowerLabel}s match the current filters.</p>
-                        <p className="text-xs text-stone-500">Try adjusting your search or status filter.</p>
+                        <p className="type-card-title">No {lowerLabel}s match the current filters.</p>
+                        <p className="type-helper">Try adjusting your search or status filter.</p>
                       </div>
                     )}
                   </td>
@@ -508,14 +509,14 @@ export function CrmRecordTable({ config }: Props) {
         {/* ── Pagination footer ── */}
         {records.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50/40">
-            <p className="text-xs text-stone-500 tabular-nums">
+            <p className="tabular-nums type-helper">
               Page {pageNum}{hasMore ? '' : ' · last page'}
             </p>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Previous page"
               >
                 <ChevronLeft className="size-3.5" />
@@ -524,7 +525,7 @@ export function CrmRecordTable({ config }: Props) {
               <button
                 onClick={goNext}
                 disabled={!hasMore}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-stone-200 bg-white text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className={cn(buttonVariants({ variant: 'outline' }), 'flex')}
                 aria-label="Next page"
               >
                 Next

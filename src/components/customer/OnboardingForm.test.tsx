@@ -185,10 +185,10 @@ describe('OnboardingForm — Primary Location', () => {
     const location = section('Primary Location');
 
     for (const label of ['Location Name', 'Address Line 1', 'City', 'Country', 'State / Province', 'Zip / Postal Code']) {
-      expect(location.getByText(label).querySelector('.text-red-500'), `${label} should show *`).not.toBeNull();
+      expect(location.getByText(label).querySelector('.text-danger-ink'), `${label} should show *`).not.toBeNull();
     }
     for (const label of ['Phone', 'Address Line 2', 'Suite / Unit #']) {
-      expect(location.getByText(label).querySelector('.text-red-500'), `${label} should not show *`).toBeNull();
+      expect(location.getByText(label).querySelector('.text-danger-ink'), `${label} should not show *`).toBeNull();
     }
   });
 

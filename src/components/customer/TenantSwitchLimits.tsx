@@ -15,6 +15,8 @@ import {
 } from '@/lib/sessionPolicyForm';
 import type { Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const COOLDOWN_LABEL = 'Wait between device switches';
 const COOLDOWN_HELP =
   'After a user moves their sign-in to another device, how long before they can move it again. 0 = no wait.';
@@ -76,7 +78,7 @@ export function TenantSwitchLimits({ tenant }: { tenant: Tenant }) {
           onClick={() => save.mutate()}
           disabled={!dirty || !valid || save.isPending}
           aria-label="Save device switch limits"
-          className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition-all hover:bg-brand/80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(buttonVariants(), 'active:scale-95')}
         >
           {save.isPending ? 'Saving…' : 'Save'}
         </button>

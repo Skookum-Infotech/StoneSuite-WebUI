@@ -10,6 +10,7 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { fieldCls, fieldLabelCls, textareaCls } from '@/components/crm/formUtils';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 type Props = {
   workflowKey: CRMWorkflowKey;
   recordId: string;
@@ -65,10 +66,10 @@ export function LogActivityDialog({ workflowKey, recordId, mode, activity, onClo
             <ClipboardList className="size-4 text-stone-600" aria-hidden="true" />
           </div>
           <div>
-            <h3 id="log-activity-dialog-title" className="text-sm font-bold text-stone-900">
+            <h3 id="log-activity-dialog-title" className="type-card-title">
               {title}
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">Calls, emails, meetings, notes, and tasks.</p>
+            <p className="mt-0.5 type-helper">Calls, emails, meetings, notes, and tasks.</p>
           </div>
         </div>
 
@@ -135,7 +136,7 @@ export function LogActivityDialog({ workflowKey, recordId, mode, activity, onClo
         </div>
 
         {save.error && (
-          <p role="alert" className="mt-3 text-xs text-destructive">
+          <p role="alert" className="mt-3 type-error">
             {apiErrorMessage(save.error, `Failed to ${mode === 'edit' ? 'update' : 'log'} activity.`)}
           </p>
         )}
@@ -145,7 +146,7 @@ export function LogActivityDialog({ workflowKey, recordId, mode, activity, onClo
             type="button"
             onClick={onClose}
             disabled={save.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -153,7 +154,7 @@ export function LogActivityDialog({ workflowKey, recordId, mode, activity, onClo
             type="button"
             onClick={() => save.mutate()}
             disabled={save.isPending}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants(), 'active:scale-95')}
           >
             {save.isPending ? 'Saving…' : mode === 'edit' ? 'Save changes' : 'Log activity'}
           </button>

@@ -10,6 +10,7 @@ import type {
   CustomerTransactionsOverview,
 } from '@/types/customerTransactions';
 
+import { buttonVariants } from '@/components/ui/button';
 const SEARCH_DEBOUNCE_MS = 300;
 const SELECT_CLS =
   'h-9 w-full rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 hover:bg-stone-50 cursor-pointer';
@@ -60,7 +61,7 @@ export function CustomerTransactionFilters({
             maxLength={100}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 text-xs text-stone-900 placeholder:text-stone-500 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40"
+            className="h-9 w-full rounded-xl border border-stone-200 bg-white pl-8.5 pr-3 placeholder:text-stone-500 focus:border-brand/50 focus:outline-none focus:ring-2 focus:ring-brand/40 type-input"
           />
         </div>
         <Select
@@ -93,7 +94,7 @@ export function CustomerTransactionFilters({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-stone-600">
+        <label className="flex cursor-pointer items-center gap-2 type-field-label">
           <Switch
             checked={filters.open}
             onCheckedChange={(open) => onChange({ open })}
@@ -105,7 +106,7 @@ export function CustomerTransactionFilters({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-50 cursor-pointer"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Clear filters
           </button>

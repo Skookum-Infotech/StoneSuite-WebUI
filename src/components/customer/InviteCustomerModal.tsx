@@ -8,6 +8,8 @@ import { platformService } from '@/services/tenantServices';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { CreateTenantResult } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 const inviteSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   recipientName: z.string().trim().min(1, 'Recipient name is required'),
@@ -16,7 +18,7 @@ const inviteSchema = z.object({
 type InviteFields = z.infer<typeof inviteSchema>;
 
 const inputClass =
-  'w-full rounded border border-stone-300 bg-white px-2.5 py-1.5 text-xs text-stone-800 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition';
+  'w-full rounded border border-stone-300 bg-white px-2.5 py-1.5 type-input outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition';
 
 export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -65,7 +67,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand/20">
               <Send className="size-3.5 text-brand-dark" />
             </div>
-            <h2 className="text-sm font-bold text-stone-800">Invite Customer</h2>
+            <h2 className="type-card-title">Invite Customer</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-600">
             <X className="size-4" />
@@ -74,13 +76,13 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
 
         {result ? (
           <div className="space-y-4 px-5 py-5">
-            <p className="text-xs text-stone-500">
+            <p className="type-helper">
               Invite created{result.emailSent ? ' and emailed' : ''}. Share this link so the customer can complete
               their onboarding{result.emailSent ? '' : ' (the email could not be sent — copy it)'}:
             </p>
             <div className="flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 p-2">
               <code className="flex-1 truncate px-2 text-label text-stone-700">{result.inviteLink}</code>
-              <button type="button" onClick={copyLink} aria-label="Copy invite link" className="flex items-center gap-1 rounded-md bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950">
+              <button type="button" onClick={copyLink} aria-label="Copy invite link" className={cn(buttonVariants({ size: 'sm' }), 'flex')}>
                 <Copy className="size-3.5" /> {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
@@ -90,7 +92,7 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit((data) => invite.mutate(data))} className="space-y-4 px-5 py-4">
-            <p className="text-xs text-stone-500">
+            <p className="type-helper">
               Send an email invitation with a secure link for the customer to complete their own onboarding.
             </p>
             <Field label="Company Name" required error={errors.companyName?.message}>
@@ -102,8 +104,8 @@ export function InviteCustomerModal({ onClose }: { onClose: () => void }) {
             <Field label="Recipient Email" required error={errors.contactEmail?.message}>
               <input {...register('contactEmail')} type="email" placeholder="jane@acme.com" className={inputClass} aria-invalid={Boolean(errors.contactEmail)} />
             </Field>
-{invite.error && <p className="text-xs text-red-600">{apiErrorMessage(invite.error)}</p>}
-            <button type="submit" disabled={invite.isPending} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand py-2 text-xs font-semibold text-stone-950 hover:bg-brand-hover disabled:opacity-50">
+{invite.error && <p className="type-error">{apiErrorMessage(invite.error)}</p>}
+            <button type="submit" disabled={invite.isPending} className={cn(buttonVariants(), 'w-full')}>
               <Send className="size-3.5" /> {invite.isPending ? 'Sending…' : 'Send Invite'}
             </button>
           </form>
@@ -126,12 +128,12 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-label font-semibold text-stone-600">
+      <label className="block type-field-label">
         {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
+        {required && <span className="ml-0.5 text-danger-ink">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="type-error">{error}</p>}
     </div>
   );
 }

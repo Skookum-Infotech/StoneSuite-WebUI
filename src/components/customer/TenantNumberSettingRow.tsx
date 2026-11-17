@@ -23,12 +23,12 @@ export function TenantNumberSettingRow({ label, description, value, onChange, ex
   return (
     <div className="flex items-start justify-between gap-4 px-4 py-3.5">
       <div className="min-w-0">
-        <label htmlFor={inputId} className="text-sm font-semibold text-stone-900">
+        <label htmlFor={inputId} className="type-field-label">
           {label}
         </label>
-        <p id={descId} className="mt-0.5 text-xs text-stone-500">{description}</p>
+        <p id={descId} className="mt-0.5 type-helper">{description}</p>
         {extra.error && (
-          <p id={errorId} role="alert" className="mt-1 text-xs font-medium text-destructive">{extra.error}</p>
+          <p id={errorId} role="alert" className="mt-1 type-error">{extra.error}</p>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-2 pt-0.5">

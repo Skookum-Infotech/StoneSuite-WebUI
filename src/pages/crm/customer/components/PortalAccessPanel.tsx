@@ -15,6 +15,7 @@ import { EmailStatusBadge } from "@/components/tenant/EmailStatusBadge";
 import { cn } from "@/lib/utils";
 import type { PortalUser } from "@/types/portalUser";
 
+import { buttonVariants } from '@/components/ui/button';
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
@@ -122,12 +123,12 @@ export function PortalAccessPanel({
     <div className="rounded-xl border border-stone-200 bg-white">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-stone-100 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-brand-dark">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/20 text-link">
             <KeyRound className="size-4" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-stone-800">Portal Access</h3>
-            <p className="text-2xs text-stone-500">How this customer signs in to the portal.</p>
+            <h3 className="type-card-title">Portal Access</h3>
+            <p className="type-helper">How this customer signs in to the portal.</p>
           </div>
         </div>
         {canCreate && !hasLiveLogin && (
@@ -144,7 +145,8 @@ export function PortalAccessPanel({
                   : undefined
             }
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-950 transition hover:bg-brand-hover",
+              buttonVariants(),
+              "shrink-0",
               !canGrant && "opacity-50 cursor-not-allowed hover:bg-brand",
             )}
           >
@@ -260,16 +262,16 @@ function PortalUserRow({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-stone-800 truncate">
+            <p className="truncate type-card-title">
               {user.fullName || user.email}
             </p>
             <PortalUserStatusBadge status={user.status} />
             <PortalInviteStatusBadge status={user.inviteStatus} expiresAt={user.inviteExpiresAt} />
           </div>
           {user.fullName && (
-            <p className="text-xs text-stone-500 truncate">{user.email}</p>
+            <p className="truncate type-helper">{user.email}</p>
           )}
-          <p className="text-2xs text-stone-500 mt-0.5">
+          <p className="mt-0.5 type-helper">
             Granted {fmtDate(user.createdAt)}
           </p>
           {(user.inviteStatus === "pending" || user.inviteStatus === "expired") && (
@@ -336,7 +338,7 @@ function PortalUserRow({
 
       {confirmingRevoke && (
         <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 space-y-2">
-          <p className="text-xs font-medium text-red-700">
+          <p className="type-error">
             Revoke portal access for {user.email}? This ends their session immediately and cannot be undone from here — access would need to be granted again.
           </p>
           <div className="flex gap-2">
@@ -345,7 +347,7 @@ function PortalUserRow({
               type="button"
               onClick={onConfirmRevoke}
               disabled={revoking}
-              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              className={cn(buttonVariants({ variant: 'destructive' }), 'flex')}
             >
               {revoking && <Loader2 className="size-3 animate-spin" />}
               Yes, revoke
@@ -354,7 +356,7 @@ function PortalUserRow({
               type="button"
               onClick={onCancelRevoke}
               disabled={revoking}
-              className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>

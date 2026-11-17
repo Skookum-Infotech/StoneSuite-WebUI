@@ -6,6 +6,8 @@ import { crmService } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { DangerZoneAction } from '@/components/tenant/DangerZoneCard';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 type Props = {
   recordId: string;
   workflowKey: string;
@@ -62,10 +64,10 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                 <AlertTriangle className="size-4 text-destructive" />
               </div>
               <div>
-                <h3 id="delete-dialog-title" className="text-sm font-bold text-stone-900">
+                <h3 id="delete-dialog-title" className="type-card-title">
                   {blocked ? 'Can’t delete this record yet' : 'Delete record?'}
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
+                <p className="mt-0.5 type-helper">
                   {blocked ? 'Resolve the item below first.' : 'This action cannot be undone.'}
                 </p>
               </div>
@@ -80,8 +82,8 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                 </p>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="delete-reason" className="text-xs font-semibold text-stone-500">
-                    Reason for deletion <span className="text-destructive">*</span>
+                  <label htmlFor="delete-reason" className="type-field-label">
+                    Reason for deletion <span className="text-danger-ink">*</span>
                   </label>
                   <textarea
                     id="delete-reason"
@@ -94,7 +96,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                 </div>
 
                 {del.error && (
-                  <p className="mt-3 text-xs text-destructive">
+                  <p className="mt-3 type-error">
                     {apiErrorMessage(del.error, 'Failed to delete record.')}
                   </p>
                 )}
@@ -106,7 +108,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                 type="button"
                 onClick={handleClose}
                 disabled={del.isPending}
-                className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                className={buttonVariants({ variant: 'outline' })}
               >
                 {blocked ? 'Close' : 'Cancel'}
               </button>
@@ -115,7 +117,7 @@ export function DeleteRecordDialog({ recordId, workflowKey, label, onDeleted, gu
                   type="button"
                   onClick={() => del.mutate()}
                   disabled={del.isPending || reason.trim().length === 0}
-                  className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+                  className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
                 >
                   {del.isPending ? 'Deleting…' : 'Delete record'}
                 </button>

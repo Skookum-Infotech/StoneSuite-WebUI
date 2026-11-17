@@ -23,8 +23,8 @@ export function TenantSettingRow({ label, description, checked, onChange, state 
   return (
     <div className="flex items-start justify-between gap-4 px-4 py-3.5">
       <div className="min-w-0">
-        <p id={labelId} className="text-sm font-semibold text-stone-900">{label}</p>
-        <p id={descId} className="mt-0.5 text-xs text-stone-500">{description}</p>
+        <p id={labelId} className="type-card-title">{label}</p>
+        <p id={descId} className="mt-0.5 type-helper">{description}</p>
         {state?.note && <p className="mt-1 text-xs font-medium text-stone-600">{state.note}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2 pt-0.5">

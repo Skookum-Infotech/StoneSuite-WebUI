@@ -8,6 +8,7 @@ import { Badge, Spinner, ErrorNote, EmptyState } from '@/components/tenant/ui';
 import { EmailStatusBadge } from '@/components/tenant/EmailStatusBadge';
 import type { Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 const COPIED_RESET_MS = 2000;
 const EXPIRED_COLOR = '#ef4444';
 
@@ -48,13 +49,13 @@ export function TenantInvitesPanel({ tenant }: { tenant: Tenant }) {
   return (
     <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-3">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xs font-bold text-stone-600">Invites</h3>
+        <h3 className="type-card-title">Invites</h3>
         {!hideResend && (
           <button
             type="button"
             onClick={() => resend.mutate()}
             disabled={resend.isPending}
-            className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1.5 text-label font-semibold text-stone-950 disabled:opacity-50"
+            className={buttonVariants({ size: 'sm' })}
           >
             <RefreshCw className={`size-3 ${resend.isPending ? 'animate-spin' : ''}`} />
             {resend.isPending ? 'Sending…' : 'Resend invite'}
@@ -97,12 +98,12 @@ export function TenantInvitesPanel({ tenant }: { tenant: Tenant }) {
                 <button
                   type="button"
                   onClick={() => copy(inv.inviteLink, `link-${inv.id}`)}
-                  className="rounded-md border border-stone-200 px-2 py-1 text-2xs font-semibold text-stone-500 hover:bg-stone-100"
+                  className={buttonVariants({ variant: 'outline', size: 'sm' })}
                 >
                   {copied === `link-${inv.id}` ? 'Link copied' : copied === `key-${inv.id}` ? 'Key copied' : 'Copy link'}
                 </button>
               </div>
-              <p className="mt-1.5 text-2xs text-stone-500">
+              <p className="mt-1.5 type-helper">
                 Expires {new Date(inv.expiresAt).toLocaleString()}
                 {inv.acceptedAt && ` · accepted ${new Date(inv.acceptedAt).toLocaleDateString()}`}
               </p>

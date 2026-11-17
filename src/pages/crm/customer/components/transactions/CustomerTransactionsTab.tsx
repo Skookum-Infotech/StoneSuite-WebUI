@@ -109,7 +109,7 @@ export function CustomerTransactionsTab({ customerId }: { customerId: string }) 
             {isFiltered(filters) ? (
               <>
                 <p className="text-xs font-semibold text-stone-500">No matching transactions</p>
-                <p className="text-xs text-stone-500">Try adjusting your search or filters</p>
+                <p className="type-helper">Try adjusting your search or filters</p>
                 <button type="button" onClick={clear} className={cn(GHOST_BTN, 'mt-2')}>Clear filters</button>
               </>
             ) : (

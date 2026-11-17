@@ -200,7 +200,7 @@ export function CrmDetailSidebar({
 
           {/* Sheet header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200 shrink-0">
-            <h3 className="text-sm font-semibold text-stone-800">Record Details</h3>
+            <h3 className="type-card-title">Record Details</h3>
             <button
               type="button"
               onClick={() => setOpen(false)}

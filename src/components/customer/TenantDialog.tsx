@@ -42,15 +42,15 @@ export function TenantDialog({ title, subtitle, tone, onClose, children }: Props
             )}
           >
             <AlertTriangle
-              className={cn('size-4', tone === 'danger' ? 'text-destructive' : 'text-amber-600')}
+              className={cn('size-4', tone === 'danger' ? 'text-danger-ink' : 'text-amber-600')}
               aria-hidden="true"
             />
           </div>
           <div className="min-w-0">
-            <h3 id={titleId} className="text-sm font-bold text-stone-900">
+            <h3 id={titleId} className="type-card-title">
               {title}
             </h3>
-            <p className="mt-0.5 text-xs text-stone-500">{subtitle}</p>
+            <p className="mt-0.5 type-helper">{subtitle}</p>
           </div>
         </div>
         {children}

@@ -3,6 +3,8 @@ import { Users, Plus } from 'lucide-react';
 import { ProspectTable } from './components/ProspectTable';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function ProspectListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
@@ -18,7 +20,7 @@ export default function ProspectListPage() {
               <Users className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Prospects</h1>
+              <h1 className="type-page-title">Prospects</h1>
               <p className="text-sm text-stone-500">Active sales opportunities. Create and track prospects.</p>
             </div>
           </div>
@@ -26,7 +28,7 @@ export default function ProspectListPage() {
           {canCreate && (
             <button
               onClick={() => navigate('/crm/prospect/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-stone-950 shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Prospect

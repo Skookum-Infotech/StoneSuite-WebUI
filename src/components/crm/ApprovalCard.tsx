@@ -54,7 +54,7 @@ export function ApprovalCard({
             {approvers.map((a) => (
               <li key={a.id} className="flex items-center justify-between gap-2">
                 <span className="font-medium text-stone-700">{a.name}</span>
-                {a.approved && <span className="text-2xs font-semibold text-emerald-600">Signed off</span>}
+                {a.approved && <span className="text-micro font-semibold text-success-ink">Signed off</span>}
               </li>
             ))}
           </ul>

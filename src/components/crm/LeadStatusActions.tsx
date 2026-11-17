@@ -8,6 +8,7 @@ import { leadStatusActions, type LeadStatusAction, type LeadStatusActionKey } fr
 import { cn } from '@/lib/utils';
 import type { StatusInfo, WorkflowRecord } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 type Props = {
   recordId: string;
   /** Code of the lead's current status. */
@@ -22,10 +23,9 @@ type Props = {
 };
 
 const BUTTON_CLS: Record<LeadStatusActionKey, string> = {
-  qualify:
-    'inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50',
+  qualify: buttonVariants(),
   unqualify:
-    'inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex items-center gap-1.5 justify-center rounded-lg border border-red-200 bg-white h-7.5 px-3 text-button font-semibold text-danger-ink shadow-sm pointer-coarse:min-h-10 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50',
 };
 
 const ACTION_ICONS: Record<LeadStatusActionKey, typeof CheckCircle2> = {

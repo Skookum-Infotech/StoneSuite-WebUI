@@ -44,7 +44,7 @@ export function TenantRow({ tenant }: { tenant: Tenant }) {
 
         <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">
           <span className="text-label text-stone-500">{formatTenantDate(tenant.createdAt)}</span>
-          {tenant.dbName && <span className="font-mono text-2xs text-stone-500">{tenant.dbName}</span>}
+          {tenant.dbName && <span className="font-mono type-subline">{tenant.dbName}</span>}
         </div>
 
         <ChevronRight className="size-4 shrink-0 text-stone-400" aria-hidden="true" />

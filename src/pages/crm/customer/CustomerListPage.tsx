@@ -3,6 +3,8 @@ import { Building2, Plus } from 'lucide-react';
 import { CustomerTable } from './components/CustomerTable';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 export default function CustomerListPage() {
   const navigate = useNavigate();
   const { hasPermission, isLoading: permissionsLoading } = useUserPermissions();
@@ -17,14 +19,14 @@ export default function CustomerListPage() {
               <Building2 className="size-5 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-stone-900">Customers</h1>
+              <h1 className="type-page-title">Customers</h1>
               <p className="text-sm text-stone-500">Closed deals and active customer accounts.</p>
             </div>
           </div>
           {canCreate && (
             <button
               onClick={() => navigate('/crm/customer/new')}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand text-stone-950 py-2 px-4 text-sm font-semibold shadow-sm transition hover:bg-brand-hover active:scale-95"
+              className={cn(buttonVariants(), 'active:scale-95')}
             >
               <Plus className="size-3.5" />
               New Customer

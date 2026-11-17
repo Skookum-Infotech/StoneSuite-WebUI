@@ -63,7 +63,7 @@ export function PortalAccessStatusCard({
       <button
         type="button"
         onClick={onManage}
-        className="text-xs font-semibold text-brand-dark hover:underline"
+        className="text-xs font-semibold text-link hover:underline"
       >
         Manage portal access →
       </button>

@@ -14,6 +14,7 @@ import { AuditChanges } from '@/components/tenant/AuditChanges';
 import { apiErrorMessage } from '@/api/tenantClient';
 import { DXF_CONTENT_TYPE, withDxfContentType } from '@/lib/drawing/dxfFiles';
 
+import { buttonVariants } from '@/components/ui/button';
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = { readonly key: string; readonly label: string };
@@ -143,7 +144,7 @@ export const EditableFilesPanel = forwardRef<EditableFilesPanelHandle, EditableF
       <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
         <div className="flex items-center gap-2.5 px-5 py-3 border-b border-stone-100">
           <div className="w-1 h-4 rounded-full shrink-0 bg-brand" />
-          <h3 className="text-xs font-semibold text-stone-700">Files</h3>
+          <h3 className="type-card-title">Files</h3>
         </div>
         <div className="px-5 py-4">
           <FilesContent ref={innerRef} recordId={recordId} readOnly={false} />
@@ -158,7 +159,7 @@ EditableFilesPanel.displayName = 'EditableFilesPanel';
 
 export function TransactionsContent() {
   return (
-    <p className="py-6 text-center text-xs text-stone-500 italic">No transactions yet.</p>
+    <p className="py-6 text-center italic type-helper">No transactions yet.</p>
   );
 }
 
@@ -172,13 +173,13 @@ export function AuditContent({ recordId, workflowKey }: { recordId?: string; wor
   });
 
   if (!recordId)
-    return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
+    return <p className="py-6 text-center italic type-helper">No audit events recorded yet.</p>;
   if (isLoading)
     return <div className="py-6 flex justify-center"><Spinner label="Loading audit trail…" /></div>;
   if (error)
-    return <p className="py-6 text-center text-xs text-destructive/70 italic">Failed to load audit trail.</p>;
+    return <p className="py-6 text-center type-error italic">Failed to load audit trail.</p>;
   if (entries.length === 0)
-    return <p className="py-6 text-center text-xs text-stone-500 italic">No audit events recorded yet.</p>;
+    return <p className="py-6 text-center italic type-helper">No audit events recorded yet.</p>;
 
   return (
     <div className="overflow-x-auto">
@@ -186,7 +187,7 @@ export function AuditContent({ recordId, workflowKey }: { recordId?: string; wor
         <thead>
           <tr className="border-b border-stone-100">
             {['Action', 'Resource', 'Actor', 'IP Address', 'Version', 'Date'].map((h) => (
-              <th key={h} className="py-2 pr-4 text-left font-semibold uppercase tracking-wide text-stone-500 text-2xs whitespace-nowrap">
+              <th key={h} className="py-2 pr-4 text-left whitespace-nowrap type-th">
                 {h}
               </th>
             ))}
@@ -212,10 +213,10 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
       >
         <td className="py-2.5 pr-4"><ActionBadge action={entry.action} /></td>
         <td className="py-2.5 pr-4 text-stone-900 capitalize">{entry.resource}</td>
-        <td className="py-2.5 pr-4 text-stone-900 text-xs">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
-        <td className="py-2.5 pr-4 text-stone-500 font-mono text-2xs">{entry.ipAddress || '—'}</td>
-        <td className="py-2.5 pr-4 text-stone-500 text-2xs">{entry.appVersion || '—'}</td>
-        <td className="py-2.5 text-stone-500 text-2xs whitespace-nowrap">
+        <td className="py-2.5 pr-4 type-cell">{entry.actorName || <span className="text-stone-500 italic">system</span>}</td>
+        <td className="py-2.5 pr-4 type-record-id">{entry.ipAddress || '—'}</td>
+        <td className="py-2.5 pr-4 type-cell">{entry.appVersion || '—'}</td>
+        <td className="py-2.5 whitespace-nowrap type-cell">
           {new Date(entry.at).toLocaleString()}
           {hasChanges && <span className="ml-1.5 text-stone-500">{expanded ? '▲' : '▼'}</span>}
         </td>
@@ -234,11 +235,11 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
 function ActionBadge({ action }: { action: string }) {
   const color =
     action === 'create' ? 'bg-accent-lime text-accent-foreground' :
-    action === 'delete' ? 'bg-destructive/10 text-destructive' :
+    action === 'delete' ? 'bg-destructive/10 text-danger-ink' :
     action === 'update' ? 'bg-workflow-prospect-bg text-workflow-prospect-text' :
     'bg-stone-100 text-stone-600';
   return (
-    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 text-2xs font-semibold capitalize', color)}>
+    <span className={cn('inline-flex items-center rounded px-1.5 py-0.5 capitalize type-pill', color)}>
       {action}
     </span>
   );
@@ -449,11 +450,11 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             <p className="text-xs font-medium text-stone-600 mb-1">
               {dragging ? 'Release to add' : 'Drop files here or click to browse'}
             </p>
-            <p className="text-2xs text-stone-500">PDF, DOCX, XLSX, PNG, JPG, DXF · Max 25 MB each</p>
+            <p className="type-helper">PDF, DOCX, XLSX, PNG, JPG, DXF · Max 25 MB each</p>
             {!recordId && (
               <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-3 py-1">
                 <CloudUpload className="h-3 w-3 text-warning" />
-                <span className="text-2xs text-stone-600 font-medium">Files will upload automatically when you save</span>
+                <span className="text-micro text-stone-600 font-medium">Files will upload automatically when you save</span>
               </div>
             )}
           </div>
@@ -465,11 +466,11 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             {validationErrors.map((e, i) => (
               <div key={i} className="flex items-start gap-2">
                 <AlertCircle className="h-3.5 w-3.5 text-destructive/70 shrink-0 mt-0.5" />
-                <p className="text-xs text-destructive">{e}</p>
+                <p className="type-error">{e}</p>
               </div>
             ))}
             <button type="button" onClick={() => setValidationErrors([])}
-              className="text-2xs text-destructive/60 hover:text-destructive mt-1">Dismiss</button>
+              className="text-micro text-destructive/60 hover:text-destructive mt-1">Dismiss</button>
           </div>
         )}
 
@@ -480,14 +481,14 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
               {stagedCount > 0 && !isUploading ? (
                 <>
                   <CloudUpload className="h-3 w-3 text-warning" />
-                  <span className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+                  <span className="type-overline">
                     {stagedCount} file{stagedCount > 1 ? 's' : ''} queued · uploads on save
                   </span>
                 </>
               ) : (
                 <>
                   <Loader2 className="h-3 w-3 text-stone-400 animate-spin" />
-                  <span className="text-2xs font-semibold uppercase tracking-wide text-stone-500">Uploading</span>
+                  <span className="type-overline">Uploading</span>
                 </>
               )}
             </div>
@@ -508,10 +509,10 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
           <div className="rounded-lg border border-destructive/15 bg-destructive/5 px-4 py-3 flex items-start gap-2">
             <AlertCircle className="h-3.5 w-3.5 text-destructive/70 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-xs text-destructive">{actionError}</p>
+              <p className="type-error">{actionError}</p>
             </div>
             <button type="button" onClick={() => setActionError(null)}
-              className="text-2xs text-destructive/60 hover:text-destructive shrink-0">Dismiss</button>
+              className="text-micro text-destructive/60 hover:text-destructive shrink-0">Dismiss</button>
           </div>
         )}
 
@@ -532,7 +533,7 @@ export const FilesContent = forwardRef<EditableFilesPanelHandle, FilesContentPro
             ))}
           </div>
         ) : activeUploads.length === 0 ? (
-          <p className="py-4 text-center text-xs text-stone-500 italic">No files attached yet.</p>
+          <p className="py-4 text-center italic type-helper">No files attached yet.</p>
         ) : null}
 
       </div>
@@ -565,14 +566,14 @@ function UploadProgressRow({ item, onDismiss }: { item: UploadItem; onDismiss: (
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs font-medium text-stone-700 truncate pr-2">{item.file.name}</p>
           <span className={cn(
-            'text-2xs shrink-0',
-            item.status === 'error' ? 'text-destructive' : 'text-stone-500',
+            'text-micro shrink-0',
+            item.status === 'error' ? 'text-danger-ink' : 'text-stone-500',
           )}>
             {statusLabel}
           </span>
         </div>
         {item.status === 'error' ? (
-          <p className="text-2xs text-destructive truncate">{item.error ?? 'Upload failed'}</p>
+          <p className="truncate type-error">{item.error ?? 'Upload failed'}</p>
         ) : item.status === 'staged' ? (
           <div className="h-1 rounded-full bg-warning/20">
             <div className="h-full w-1/3 rounded-full bg-warning/60 animate-pulse" />
@@ -627,21 +628,21 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-stone-700 truncate">{att.fileName}</p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className={cn('text-2xs font-semibold px-1 rounded', ft.bg, ft.color)}>{ft.label}</span>
-          <span className="text-2xs text-stone-500">{formatBytes(att.sizeBytes)}</span>
+          <span className={cn('px-1 rounded type-pill', ft.bg, ft.color)}>{ft.label}</span>
+          <span className="type-subline">{formatBytes(att.sizeBytes)}</span>
           {att.createdAt && (
             <>
-              <span className="text-2xs text-stone-500">·</span>
-              <span className="text-2xs text-stone-500">{formatDate(att.createdAt)}</span>
+              <span className="type-subline">·</span>
+              <span className="type-subline">{formatDate(att.createdAt)}</span>
             </>
           )}
           {att.status === 'infected' && (
-            <span className="text-2xs text-destructive font-medium flex items-center gap-0.5">
+            <span className="text-micro text-danger-ink font-medium flex items-center gap-0.5">
               <AlertCircle className="h-3 w-3" /> Infected
             </span>
           )}
           {att.status === 'clean' && (
-            <span className="text-2xs text-brand-dark flex items-center gap-0.5">
+            <span className="text-micro text-link flex items-center gap-0.5">
               <CheckCircle2 className="h-3 w-3" />
             </span>
           )}
@@ -655,7 +656,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
           type="button"
           onClick={onDownload}
           disabled={isDownloading || att.status === 'infected'}
-          className="flex items-center gap-1 px-2 py-1.5 rounded text-2xs text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'flex')}
           title="Download"
         >
           {isDownloading
@@ -671,14 +672,14 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
                 type="button"
                 onClick={onDelete}
                 disabled={isDeleting}
-                className="px-2 py-1.5 rounded text-2xs text-white bg-destructive hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                className={buttonVariants({ variant: 'destructive', size: 'sm' })}
               >
                 {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Delete'}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="px-2 py-1.5 rounded text-2xs text-stone-500 hover:bg-stone-100 transition-colors"
+                className={buttonVariants({ variant: 'ghost', size: 'sm' })}
               >
                 Cancel
               </button>
@@ -687,7 +688,7 @@ function AttachmentRow({ att, isDownloading, isDeleting, readOnly, onDownload, o
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-2xs text-stone-500 hover:text-destructive hover:bg-destructive/5 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-micro text-stone-500 hover:text-destructive hover:bg-destructive/5 transition-colors"
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />

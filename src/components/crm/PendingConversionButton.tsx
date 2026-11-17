@@ -5,6 +5,7 @@ import { crmService, CRM_WORKFLOW_KEYS } from '@/services/crmService';
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { WorkflowRecord } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 type Props = {
   recordId: string;
   /** Id of the Pending Conversion status, from the prospect workflow's status
@@ -40,7 +41,7 @@ export function PendingConversionButton({ recordId, toStateId, onMarked }: Props
       type="button"
       onClick={() => mark.mutate()}
       disabled={mark.isPending}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+      className={buttonVariants()}
     >
       {mark.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Hourglass className="size-3.5" />}
       Pending Conversion

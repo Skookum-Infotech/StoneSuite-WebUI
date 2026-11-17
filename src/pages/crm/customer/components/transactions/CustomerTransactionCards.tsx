@@ -19,7 +19,7 @@ export function CustomerTransactionCards({ rows }: { rows: CustomerTransactionRo
               className="block h-full rounded-xl border border-stone-200 bg-white p-3.5 transition-colors hover:bg-stone-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 truncate font-mono text-xs font-semibold text-stone-800">{row.number || '—'}</p>
+                <p className="min-w-0 truncate type-record-id">{row.number || '—'}</p>
                 <TypeBadge row={row} />
               </div>
 
@@ -30,20 +30,20 @@ export function CustomerTransactionCards({ rows }: { rows: CustomerTransactionRo
 
               <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                 <div>
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Date</dt>
+                  <dt className="type-overline">Date</dt>
                   <dd className="font-semibold text-stone-800">{dateOrDash(row.date)}</dd>
                 </div>
                 <div className="text-right">
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Due</dt>
+                  <dt className="type-overline">Due</dt>
                   <dd className="font-semibold text-stone-800">{dateOrDash(row.dueDate)}</dd>
                 </div>
                 <div>
-                  <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">Amount</dt>
+                  <dt className="type-overline">Amount</dt>
                   <dd className="font-bold tabular-nums text-stone-900">{moneyOrDash(row.amount)}</dd>
                 </div>
                 {row.balance !== null && (
                   <div className="text-right">
-                    <dt className="text-2xs font-semibold uppercase tracking-wider text-stone-500">{balanceNote || 'Balance'}</dt>
+                    <dt className="type-overline">{balanceNote || 'Balance'}</dt>
                     <dd className="font-bold tabular-nums text-stone-900">{moneyOrDash(row.balance)}</dd>
                   </div>
                 )}

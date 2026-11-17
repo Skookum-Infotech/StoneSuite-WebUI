@@ -23,6 +23,7 @@ import { customerEditNotice } from '@/lib/crmStatusFlow';
 import { TAB_LIST_CLASS, tabClass } from '@/components/ui/tabStyles';
 import type { FieldDefinition } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 const TABS = [
   { key: 'details', label: 'Details' },
   { key: 'files', label: 'Files' },
@@ -152,7 +153,7 @@ export default function EditCustomerPage() {
               type="submit"
               disabled={save.isPending || locked}
               title={locked ? 'This record is awaiting approval and cannot be edited.' : undefined}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm"
+              className={buttonVariants()}
             >
               {save.isPending ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
               {save.isPending ? 'Saving…' : 'Save Changes'}
@@ -195,7 +196,7 @@ export default function EditCustomerPage() {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="size-3 text-red-600" />
             </span>
-            <p className="text-xs text-red-700">
+            <p className="type-error">
               <span className="font-bold">Error: </span>
               {apiErrorMessage(saveError, 'Failed to save.')}
             </p>
@@ -207,10 +208,10 @@ export default function EditCustomerPage() {
               <AlertCircle className="size-3 text-red-600" />
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-red-700 mb-1.5">Please review the highlighted fields before saving:</p>
+              <p className="text-xs font-semibold text-danger-ink mb-1.5">Please review the highlighted fields before saving:</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {validationErrors.map((e) => (
-                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-red-600">
+                  <span key={e.key} className="inline-flex items-center gap-1 text-xs text-danger-ink">
                     <ChevronRight className="size-3 shrink-0" />{e.label}
                   </span>
                 ))}

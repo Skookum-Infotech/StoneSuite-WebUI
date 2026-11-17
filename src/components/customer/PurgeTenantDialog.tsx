@@ -8,6 +8,8 @@ import { ErrorNote } from '@/components/tenant/ui';
 import { TenantDialog } from '@/components/customer/TenantDialog';
 import type { Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 type Props = {
   tenant: Tenant;
   onClose: () => void;
@@ -63,7 +65,7 @@ export function PurgeTenantDialog({ tenant, onClose, onPurged }: Props) {
       </ul>
 
       <div className="mt-4 space-y-1.5">
-        <label htmlFor={inputId} className="text-xs font-semibold text-stone-500">
+        <label htmlFor={inputId} className="type-field-label">
           Type <span className="font-mono text-stone-900">{tenant.slug}</span> to confirm
         </label>
         <input
@@ -76,7 +78,7 @@ export function PurgeTenantDialog({ tenant, onClose, onPurged }: Props) {
           autoComplete="off"
           spellCheck={false}
           aria-label={`Type ${tenant.slug} to confirm`}
-          className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 font-mono text-xs text-stone-800 focus:border-destructive/30 focus:outline-none focus:ring-2 focus:ring-destructive/10 disabled:opacity-50"
+          className="w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 font-mono focus:border-destructive/30 focus:outline-none focus:ring-2 focus:ring-destructive/10 disabled:opacity-50 type-input"
         />
       </div>
 
@@ -91,7 +93,7 @@ export function PurgeTenantDialog({ tenant, onClose, onPurged }: Props) {
           type="button"
           onClick={close}
           disabled={purge.isPending}
-          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+          className={buttonVariants({ variant: 'outline' })}
         >
           Cancel
         </button>
@@ -99,7 +101,7 @@ export function PurgeTenantDialog({ tenant, onClose, onPurged }: Props) {
           type="button"
           onClick={() => purge.mutate()}
           disabled={!confirmed || purge.isPending}
-          className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-destructive/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
         >
           {purge.isPending ? 'Deleting…' : 'Delete permanently'}
         </button>

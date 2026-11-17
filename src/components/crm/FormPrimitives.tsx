@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { fieldLabelCls } from './formUtils';
 
 
+import { buttonVariants } from '@/components/ui/button';
 const PILL_COLORS = [
   'bg-brand',
   'bg-sky-400',
@@ -41,7 +42,7 @@ export function ModernSection({
           {index !== undefined && (
             <div className={cn('w-1 h-4 rounded-full shrink-0', PILL_COLORS[index % PILL_COLORS.length])} />
           )}
-          <h3 className="text-sm font-semibold text-stone-950">{title}</h3>
+          <h3 className="type-card-title">{title}</h3>
         </div>
         <ChevronDown
           className={cn(
@@ -76,7 +77,7 @@ export function FormActionBar({
         type="button"
         onClick={onCancel}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 disabled:opacity-50 transition-all"
+        className={buttonVariants({ variant: 'outline' })}
       >
         <X className="size-3" />
         Cancel
@@ -84,7 +85,7 @@ export function FormActionBar({
       <button
         type="submit"
         disabled={busy || isSubmitDisabled}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-stone-900 hover:bg-brand-hover disabled:opacity-50 transition-all shadow-sm active:scale-95"
+        className={cn(buttonVariants(), 'active:scale-95')}
       >
         {busy ? <Loader2 className="size-3 animate-spin" /> : <Save className="size-3" />}
         {saveLabel}
@@ -107,7 +108,7 @@ export function ModernFieldShell({
       {label && (
         <label className={fieldLabelCls}>
           {label}
-          {required && <span className="ml-0.5 text-destructive">*</span>}
+          {required && <span className="ml-0.5 text-danger-ink">*</span>}
         </label>
       )}
       {children}

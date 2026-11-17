@@ -10,6 +10,7 @@ import { TenantDialog } from '@/components/customer/TenantDialog';
 import { TenantSwitchLimits } from '@/components/customer/TenantSwitchLimits';
 import type { Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 const SINGLE_SESSION_LABEL = 'Enforce single session';
 const SINGLE_SESSION_HELP =
   'Each user can be signed in on only one browser at a time. Signing in elsewhere asks to end the other session.';
@@ -76,7 +77,7 @@ export function TenantSettingsTab({ tenant }: { tenant: Tenant }) {
               onClick={close}
               disabled={save.isPending}
               aria-label="Cancel"
-              className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>

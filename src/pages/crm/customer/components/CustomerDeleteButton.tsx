@@ -74,7 +74,7 @@ export function CustomerDeleteButton({
                 close();
                 onManagePortal();
               }}
-              className="text-xs font-semibold text-brand-dark hover:underline"
+              className="text-xs font-semibold text-link hover:underline"
             >
               Manage portal access →
             </button>

@@ -5,6 +5,7 @@ import { crmService, CRM_WORKFLOW_KEYS, type CRMWorkflowKey } from '@/services/c
 import { apiErrorMessage } from '@/api/tenantClient';
 import type { WorkflowRecord } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 /** The workflows a record is converted FROM — each hop copies it into the next stage. */
 type ConvertibleWorkflow = typeof CRM_WORKFLOW_KEYS.LEAD | typeof CRM_WORKFLOW_KEYS.PROSPECT;
 
@@ -66,7 +67,7 @@ export function ConvertRecordButton({ recordId, sourceKey, onConverted }: Props)
       type="button"
       onClick={() => convert.mutate()}
       disabled={convert.isPending}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-stone-900 shadow-sm transition-colors hover:bg-brand-hover disabled:opacity-50"
+      className={buttonVariants()}
     >
       {convert.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <ArrowRightLeft className="size-3.5" />}
       {action.label}

@@ -39,7 +39,7 @@ function TenantCompanyDetails({ tenant }: { tenant: Tenant }) {
 
   if (cells.length === 0) return null;
   return (
-    <SectionCard title="Company details">
+    <SectionCard title="Company Details">
       <div className="grid grid-cols-2 gap-px bg-stone-100 sm:grid-cols-3 lg:grid-cols-4">
         {cells.map(([label, value]) => (
           <TenantDetailCell key={label} label={label} value={value} />

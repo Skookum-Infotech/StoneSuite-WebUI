@@ -8,6 +8,8 @@ import { useModalDialog } from '@/hooks/useModalDialog';
 import { textareaCls } from '@/components/crm/formUtils';
 import type { WorkflowRecord } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 // Rejects a CRM record pending approval (POST /crm/{workflowKey}/records/{id}/reject),
 // always capturing a reason — mirrors RejectExpenseDialog. A veto, not a
 // vote: unlike Approve, this needs no quorum, only that the caller is a
@@ -34,7 +36,7 @@ export function RejectRecordDialog({ recordId, workflowKey, onRejected }: {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Reject this record"
-        className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+        className={cn(buttonVariants({ variant: 'outline' }), 'flex shrink-0')}
       >
         <XCircle className="size-3.5" />
         Reject
@@ -93,14 +95,14 @@ function RejectDialogContent({ recordId, workflowKey, onClose, onRejected }: {
             <AlertTriangle className="size-4 text-destructive" />
           </div>
           <div>
-            <h3 id="reject-crm-dialog-title" className="text-sm font-bold text-stone-900">
-              Reject this record?
+            <h3 id="reject-crm-dialog-title" className="type-card-title">
+              Reject This Record?
             </h3>
-            <p className="text-xs text-stone-500 mt-0.5">A reason is required.</p>
+            <p className="mt-0.5 type-helper">A reason is required.</p>
           </div>
         </div>
 
-        <label htmlFor="reject-crm-reason" className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+        <label htmlFor="reject-crm-reason" className="type-field-label">
           Reason
         </label>
         <textarea
@@ -116,7 +118,7 @@ function RejectDialogContent({ recordId, workflowKey, onClose, onRejected }: {
         />
 
         {reject.error && (
-          <p id="reject-crm-error" role="alert" className="mb-3 text-xs text-destructive">
+          <p id="reject-crm-error" role="alert" className="mb-3 type-error">
             {apiErrorMessage(reject.error, 'Failed to reject record.')}
           </p>
         )}
@@ -126,7 +128,7 @@ function RejectDialogContent({ recordId, workflowKey, onClose, onRejected }: {
             type="button"
             onClick={closeIfIdle}
             disabled={reject.isPending}
-            className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+            className={buttonVariants({ variant: 'outline' })}
           >
             Cancel
           </button>
@@ -134,7 +136,7 @@ function RejectDialogContent({ recordId, workflowKey, onClose, onRejected }: {
             type="button"
             onClick={() => reject.mutate()}
             disabled={reject.isPending || reason.trim() === ''}
-            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+            className={cn(buttonVariants({ variant: 'destructive' }), 'active:scale-95')}
           >
             {reject.isPending ? <Loader2 className="mr-1 inline size-3 animate-spin" /> : null}
             {reject.isPending ? 'Rejecting…' : 'Reject record'}

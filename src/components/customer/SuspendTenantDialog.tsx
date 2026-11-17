@@ -6,6 +6,7 @@ import { ErrorNote } from '@/components/tenant/ui';
 import { TenantDialog } from '@/components/customer/TenantDialog';
 import type { Tenant } from '@/types/tenant';
 
+import { buttonVariants } from '@/components/ui/button';
 type Props = {
   tenant: Tenant;
   onClose: () => void;
@@ -52,7 +53,7 @@ export function SuspendTenantDialog({ tenant, onClose }: Props) {
           type="button"
           onClick={close}
           disabled={suspend.isPending}
-          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+          className={buttonVariants({ variant: 'outline' })}
         >
           Cancel
         </button>

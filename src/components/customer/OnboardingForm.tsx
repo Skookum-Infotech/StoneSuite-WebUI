@@ -20,8 +20,9 @@ import {
 import type { FieldDefinition } from '@/types/tenant';
 import { cn } from '@/lib/utils';
 
+import { buttonVariants } from '@/components/ui/button';
 const inputCls =
-  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
+  'w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 type-input outline-none placeholder:text-stone-500 focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/20 transition disabled:bg-stone-100 disabled:text-stone-400';
 
 export function OnboardingForm({
   prefill,
@@ -177,7 +178,7 @@ export function OnboardingForm({
       {bannerMessage && (
         <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
           <AlertCircle className="size-4 mt-0.5 shrink-0 text-red-500" />
-          <p className="text-sm text-red-700">{bannerMessage}</p>
+          <p className="text-sm text-danger-ink">{bannerMessage}</p>
         </div>
       )}
 
@@ -195,16 +196,16 @@ export function OnboardingForm({
                 <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand/10">
                   <Icon className="size-3.5 text-brand-dark" />
                 </div>
-                <h3 className="text-sm font-bold text-stone-800">{section.title}</h3>
+                <h3 className="type-card-title">{section.title}</h3>
               </div>
 
               {/* Fields — 2-col grid inside each card */}
               <div className="flex-1 px-5 py-4 grid grid-cols-2 gap-x-4 gap-y-3.5 content-start">
                 {section.fields.map((f) => (
                   <div key={f.key} className={cn(f.full ? 'col-span-2' : 'col-span-1')}>
-                    <label className="mb-1 block text-xs font-semibold text-stone-500">
+                    <label className="mb-1 block type-field-label">
                       {f.label}
-                      {f.required && <span className="ml-0.5 text-red-500">*</span>}
+                      {f.required && <span className="ml-0.5 text-danger-ink">*</span>}
                     </label>
                     {renderField(f)}
                   </div>
@@ -222,7 +223,7 @@ export function OnboardingForm({
             <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand/10">
               <Plus className="size-3.5 text-brand-dark" />
             </div>
-            <h3 className="text-sm font-bold text-stone-800">Additional Information</h3>
+            <h3 className="type-card-title">Additional Information</h3>
           </div>
           <div className="px-5 py-4 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3.5">
             {extras.map((f) => (
@@ -239,7 +240,7 @@ export function OnboardingForm({
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-stone-950 hover:bg-brand/80 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className={cn(buttonVariants(), 'gap-2 active:scale-[0.98]')}
         >
           {submitting ? 'Submitting…' : 'Submit application'}
           {!submitting && <ArrowRight className="size-4" />}

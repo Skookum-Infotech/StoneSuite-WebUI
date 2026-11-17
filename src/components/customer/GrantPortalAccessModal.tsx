@@ -7,6 +7,7 @@ import { apiErrorMessage } from "@/api/tenantClient";
 import { ErrorNote } from "@/components/tenant/ui";
 import { Button } from "@/components/ui/button";
 
+import { buttonVariants } from '@/components/ui/button';
 // Long enough to read and act on: a failed invite is something staff must fix.
 const EMAIL_FAILURE_TOAST_MS = 12000;
 
@@ -67,10 +68,10 @@ export function GrantPortalAccessModal({
       <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-5 shadow-xl sm:p-6">
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-stone-900">
-              Grant portal access
+            <h2 className="type-dialog-title">
+              Grant Portal Access
             </h2>
-            <p className="mt-0.5 text-xs text-stone-500">
+            <p className="mt-0.5 type-helper">
               They'll receive an email to set up their portal login.
             </p>
           </div>
@@ -86,18 +87,18 @@ export function GrantPortalAccessModal({
 
         <div className="space-y-4">
           <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-stone-500">
+            <p className="type-overline">
               Portal login
             </p>
-            <p className="mt-0.5 text-sm font-semibold text-stone-800 break-all">
+            <p className="mt-0.5 break-all type-card-title">
               {contactEmail}
             </p>
             {contactName && (
-              <p className="text-xs text-stone-500">{contactName}</p>
+              <p className="type-helper">{contactName}</p>
             )}
           </div>
 
-          <p className="text-xs text-stone-500">
+          <p className="type-helper">
             This is the contact email on the customer record. Update the record
             first if it should go to a different address.
           </p>
@@ -112,7 +113,7 @@ export function GrantPortalAccessModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
+              className={buttonVariants({ variant: 'outline' })}
             >
               Cancel
             </button>
