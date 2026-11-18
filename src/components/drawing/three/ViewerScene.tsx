@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, type ElementRef } from 'react';
 import { useThree } from '@react-three/fiber';
-import type { Texture } from 'three';
+import { MOUSE, TOUCH, type Texture } from 'three';
 import { OrbitControls } from '@react-three/drei';
 import { cameraPose, type ViewPreset } from '@/lib/drawing/three/cameraViews';
 import { FLOOR_COLOR, FLOOR_SPAN_FACTOR, MM_TO_SCENE } from '@/lib/drawing/three/constants';
@@ -35,9 +35,11 @@ interface ViewerSceneProps {
   photos: Record<string, Texture>;
   /** Hands the parent the function that saves the view as a picture, once the scene is ready. */
   onCaptureReady: (capture: CaptureFn) => void;
+  /** The hand tool: dragging moves the view instead of turning it. */
+  handOn: boolean;
 }
 
-export function ViewerScene({ solids, view, photos, onCaptureReady }: ViewerSceneProps) {
+export function ViewerScene({ solids, view, photos, onCaptureReady, handOn }: ViewerSceneProps) {
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
   const gl = useThree((s) => s.gl);
@@ -88,7 +90,15 @@ export function ViewerScene({ solids, view, photos, onCaptureReady }: ViewerScen
           <PieceMesh key={solid.id} solid={solid} photo={solid.texture ? photos[solid.texture.photoUrl] ?? null : null} />
         ))}
       </group>
-      <OrbitControls ref={controls} makeDefault enableDamping keyEvents={domElement} maxPolarAngle={Math.PI / 2} />
+      <OrbitControls
+        ref={controls}
+        makeDefault
+        enableDamping
+        keyEvents={domElement}
+        maxPolarAngle={Math.PI / 2}
+        mouseButtons={{ LEFT: handOn ? MOUSE.PAN : MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
+        touches={{ ONE: handOn ? TOUCH.PAN : TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN }}
+      />
     </>
   );
 }

@@ -1,7 +1,6 @@
-// The dock bar fixed to the bottom of the whole editor (SalesOrderDrawingPage
-// renders it as a sibling of the canvas column and the Material/Cutout
-// WorkspacePanel, not inside either, so opening that panel never resizes or
-// repositions it — see SalesOrderDrawingPage.tsx): the active area (click it
+// The bar along the bottom of the whole editor (SalesOrderDrawingPage renders it under
+// the board and the Material/Cutout WorkspacePanel, full width, so the panel stops
+// right above it and opening the panel never resizes it): the active area (click it
 // to open the Areas sidebar), its square footage (click to pin open the
 // Countertop/Fabrication breakdown — it stays open until clicked again, not
 // just while hovering), the zoom controls, and the Dimensions / Properties /
@@ -30,7 +29,7 @@ export function DrawingStatusBar() {
   const sqFt = mm2ToSqFt(areaMetrics(activeArea?.pieces ?? []).grossAreaMm2);
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-between gap-2 bg-stone-900 px-2 py-1 text-white">
+    <div className="relative z-30 flex shrink-0 items-center justify-between gap-2 bg-stone-900 px-2 py-1 text-white">
       {areasOpen && (
         <div className="absolute bottom-full left-0 z-30 mb-1">
           <AreaSidebar onClose={() => setAreasOpen(false)} />

@@ -95,7 +95,7 @@ function renderEditor(pieces: Piece[] = []) {
   render(
     <QueryClientProvider client={client}>
       <DrawingEditorProvider drawing={drawingWith(pieces)} materialLines={[]}>
-        <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" /></div>
+        <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" onExit={() => {}} /></div>
         <WorkspacePanel />
         <svg><CutoutPlacementLayer /></svg>
         <SelectPiece />
@@ -167,7 +167,7 @@ describe('tools and tabs', () => {
     render(
       <QueryClientProvider client={client}>
         <DrawingEditorProvider drawing={drawingWith([])} materialLines={[]}>
-          <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" /></div>
+          <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" onExit={() => {}} /></div>
           <WorkspacePanel />
           <ToolProbe />
         </DrawingEditorProvider>

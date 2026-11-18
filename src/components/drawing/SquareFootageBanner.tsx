@@ -64,7 +64,7 @@ export function SquareFootageBanner({ areas, order, onLineUpdated }: {
   };
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 px-2 py-1 empty:hidden">
       {mismatches.map((m) => (
         <div key={m.lineId} role="status" className="flex items-center gap-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-800">
           <span>

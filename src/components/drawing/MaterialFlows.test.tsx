@@ -78,7 +78,7 @@ function renderMaterial(piece: Piece = rectPiece(600, 400)) {
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
       <DrawingEditorProvider drawing={drawingWith(piece)} materialLines={[]}>
         <MaterialPickerProvider>
-          <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" /></div>
+          <div data-drawing-editor><DrawingToolbar saveStatus="idle" onSave={() => {}} orderNumber="1001" onExit={() => {}} /></div>
           <WorkspacePanel />
           <svg><BoardPiece /></svg>
           <PlacementReadout />

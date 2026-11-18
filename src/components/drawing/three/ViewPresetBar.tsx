@@ -7,7 +7,7 @@ export function ViewPresetBar({ onPick, onSave }: { onPick: (preset: ViewPreset)
     <div
       role="group"
       aria-label="Camera views"
-      className="absolute bottom-12 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-lg bg-stone-900 p-1 shadow-lg"
+      className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-lg bg-stone-900 p-1 shadow-lg"
     >
       {VIEW_PRESETS.map(({ id, label }) => (
         <button

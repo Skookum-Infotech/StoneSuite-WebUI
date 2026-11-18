@@ -51,9 +51,7 @@ export function MaterialPanel() {
         </div>
       )}
 
-      {/* pb-12 clears DrawingStatusBar, which docks over this panel's bottom
-          edge (SalesOrderDrawingPage.tsx) rather than resizing it. */}
-      <div className="modal-scrollbar flex-1 space-y-3 overflow-y-auto p-3 pb-12">
+      <div className="modal-scrollbar flex-1 space-y-3 overflow-y-auto p-3">
         {isLoading && <p role="status" className="mt-16 text-center text-xs text-stone-500">Loading slabs…</p>}
         {!isLoading && Boolean(error) && (
           <p role="alert" className="mt-16 text-center text-xs text-destructive">{apiErrorMessage(error, 'Could not load the slabs.')}</p>

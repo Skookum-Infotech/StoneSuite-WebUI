@@ -1,37 +1,26 @@
-// The 2D | 3D switch floating at the top-right of the board. It is not a tool: it does not
-// live in the tool rail, and changing it never touches the drawing.
+// The one button that flips the board between 2D and 3D, floating at the top-left. It shows the
+// view it will switch to: "3D" while you are in 2D, "2D" while you are in 3D. It is not a tool,
+// so it does not live in the tool rail, and changing the view never touches the drawing.
 
-import { cn } from '@/lib/utils';
+import { Box, PencilRuler } from 'lucide-react';
 
 export type ViewMode = '2d' | '3d';
 
-const OPTIONS: ReadonlyArray<{ id: ViewMode; label: string }> = [
-  { id: '2d', label: '2D' },
-  { id: '3d', label: '3D' },
-];
-
 export function ViewModeToggle({ mode, onChange }: { mode: ViewMode; onChange: (mode: ViewMode) => void }) {
+  const next: ViewMode = mode === '2d' ? '3d' : '2d';
+  const label = next === '3d' ? '3D' : '2D';
+  const Icon = next === '3d' ? Box : PencilRuler;
+
   return (
-    <div
-      role="group"
-      aria-label="Drawing view"
-      className="absolute right-3 top-3 z-50 flex rounded-full border border-stone-200 bg-white p-0.5 shadow-md"
+    <button
+      type="button"
+      aria-label={`Switch to ${label} view`}
+      title={`Switch to ${label} view`}
+      onClick={() => onChange(next)}
+      className="flex h-12 w-12 flex-col items-center justify-center rounded-2xl bg-stone-900 text-lime-300 shadow-lg hover:bg-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
     >
-      {OPTIONS.map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          aria-label={`${label} view`}
-          aria-pressed={mode === id}
-          onClick={() => onChange(id)}
-          className={cn(
-            'rounded-full px-3 py-1 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-500',
-            mode === id ? 'bg-stone-900 text-lime-300' : 'text-stone-600 hover:bg-stone-100',
-          )}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+      <Icon className="size-4" strokeWidth={1.75} aria-hidden="true" />
+      <span className="text-2xs font-semibold leading-none">{label}</span>
+    </button>
   );
 }

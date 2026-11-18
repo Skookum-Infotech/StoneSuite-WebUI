@@ -84,7 +84,7 @@ export function TextControls() {
     <div
       role="toolbar"
       aria-label="Text controls"
-      className="absolute bottom-12 left-1/2 z-20 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-2 rounded-xl bg-stone-900 p-2 text-white shadow-xl"
+      className="absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-2 rounded-xl bg-stone-900 p-2 text-white shadow-xl"
     >
       <textarea
         ref={fieldRef}

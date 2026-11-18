@@ -12,6 +12,11 @@ vi.mock('@/services/drawingService', async (importOriginal) => ({
   drawingService: { getDrawing: vi.fn(), saveDrawing: vi.fn(), listVersions: vi.fn() },
 }));
 
+// WebGL does not exist in jsdom; the real viewer is covered by its own geometry tests.
+vi.mock('@/components/drawing/three/DrawingViewer3D', () => ({
+  DrawingViewer3D: () => <div data-testid="viewer-3d" />,
+}));
+
 import SalesOrderDrawingPage from './SalesOrderDrawingPage';
 import { salesOrderService } from '@/services/salesOrderService';
 import { DrawingConflictError, drawingService } from '@/services/drawingService';
@@ -55,6 +60,7 @@ function renderPage() {
       <MemoryRouter initialEntries={['/sales/sales_order/so-1/drawing']}>
         <Routes>
           <Route path="/sales/sales_order/:id/drawing" element={<SalesOrderDrawingPage />} />
+          <Route path="/sales/sales_order/:id" element={<p>Order page</p>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -193,9 +199,43 @@ describe('SalesOrderDrawingPage — fills the screen', () => {
     renderPage();
     const canvas = await screen.findByRole('application', { name: 'Drawing canvas' });
     expect(canvas.className).toContain('h-full');
-    expect(canvas.parentElement?.className).toContain('min-h-0');
-    expect(canvas.parentElement?.className).toContain('flex-1');
+    // The canvas fills the board (absolute inset-0), and the board takes whatever the row leaves.
+    expect(canvas.parentElement?.className).toContain('inset-0');
+    expect(canvas.parentElement?.parentElement?.className).toContain('min-h-0');
+    expect(canvas.parentElement?.parentElement?.className).toContain('flex-1');
     expect(screen.queryByRole('complementary', { name: 'Properties' })).toBeNull();
+  });
+
+  it('runs the top bar and the status bar full width, with the side panel between them touching both', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const editor = await screen.findByTestId('drawing-editor');
+    const bar = screen.getByRole('tablist', { name: 'Workspace' }).parentElement?.parentElement;
+    const statusBar = screen.getByRole('button', { name: /^Areas,/ }).parentElement;
+    // Both bars are direct children of the editor, so a panel opening beside the board cannot squeeze them.
+    expect(bar?.parentElement).toBe(editor);
+    expect(statusBar?.parentElement).toBe(editor);
+    expect(bar?.className).toContain('w-full');
+    expect(bar?.className).toContain('shrink-0');
+    expect(editor.className).not.toContain('p-2');
+
+    await user.click(screen.getByRole('tab', { name: 'Cutout' }));
+    const panel = screen.getByRole('complementary', { name: 'Cutouts' });
+    expect(bar?.parentElement).toBe(editor);
+    expect(bar?.contains(panel)).toBe(false);
+    // The panel sits in the row between the two bars.
+    expect(panel.parentElement?.parentElement).toBe(editor);
+    expect(editor.children[0]).toBe(bar);
+    expect(editor.lastElementChild === statusBar || editor.children[editor.children.length - 1] === statusBar).toBe(true);
+  });
+
+  it('floats the tool rail over the board instead of giving it a column of its own', async () => {
+    renderPage();
+    const rail = await screen.findByRole('navigation', { name: 'Drawing tools' });
+    const canvas = screen.getByRole('application', { name: 'Drawing canvas' });
+    const board = canvas.parentElement?.parentElement;
+    expect(board?.contains(rail)).toBe(true);
+    expect(rail.parentElement?.className).toContain('absolute');
   });
 
   it('stretches the drawing to the canvas without distorting it', async () => {
@@ -204,6 +244,73 @@ describe('SalesOrderDrawingPage — fills the screen', () => {
     const svg = canvas.querySelector('svg');
     expect(svg?.getAttribute('height')).toBe('100%');
     expect(svg?.getAttribute('preserveAspectRatio')).toBe('xMidYMid meet');
+  });
+});
+
+describe('SalesOrderDrawingPage — 2D / 3D', () => {
+  beforeEach(() => {
+    vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
+    vi.mocked(drawingService.getDrawing).mockResolvedValue(null);
+  });
+
+  it('has one button that offers the other view, and swaps the tools for the 3D view', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Switch to 3D view' }));
+
+    expect(await screen.findByTestId('viewer-3d')).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: 'Drawing tools' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Switch to 3D view' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Switch to 2D view' }));
+    expect(screen.queryByTestId('viewer-3d')).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Drawing tools' })).toBeTruthy();
+  });
+
+  it('keeps the 2D canvas mounted but hidden and unreachable while in 3D', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Switch to 3D view' }));
+    const canvas = await screen.findByTestId('viewer-3d').then(() => document.querySelector('[aria-label="Drawing canvas"]'));
+    const wrapper = canvas?.parentElement;
+    expect(wrapper?.className).toContain('invisible');
+    expect(wrapper?.hasAttribute('inert')).toBe(true);
+  });
+});
+
+describe('SalesOrderDrawingPage — Exit', () => {
+  beforeEach(() => {
+    vi.mocked(salesOrderService.getOrder).mockResolvedValue(order());
+    vi.mocked(drawingService.getDrawing).mockResolvedValue(drawing());
+  });
+
+  it('goes back to the sales order straight away when nothing is unsaved', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Exit drawing' }));
+    expect(await screen.findByText('Order page')).toBeTruthy();
+    expect(drawingService.saveDrawing).not.toHaveBeenCalled();
+  });
+
+  it('saves unsaved edits first and only leaves once the save has landed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(drawingService.saveDrawing).mockResolvedValue(drawing({ version: 2 }));
+    renderPage();
+    await addAPiece(user);
+    await user.click(screen.getByRole('button', { name: 'Exit drawing' }));
+    await vi.waitFor(() => expect(drawingService.saveDrawing).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('Order page')).toBeTruthy();
+  });
+
+  it('stays in the editor when that save fails, so nothing is lost', async () => {
+    const user = userEvent.setup();
+    vi.mocked(drawingService.saveDrawing).mockRejectedValue(new Error('network down'));
+    renderPage();
+    await addAPiece(user);
+    await user.click(screen.getByRole('button', { name: 'Exit drawing' }));
+    await vi.waitFor(() => expect(drawingService.saveDrawing).toHaveBeenCalled());
+    expect(await screen.findByRole('button', { name: 'Save drawing' })).toBeTruthy();
+    expect(screen.queryByText('Order page')).toBeNull();
   });
 });
 

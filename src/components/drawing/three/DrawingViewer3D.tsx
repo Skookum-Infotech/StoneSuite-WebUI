@@ -5,11 +5,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { ViewPreset } from '@/lib/drawing/three/cameraViews';
 import { viewerNotices } from '@/lib/drawing/three/notices';
+import { cn } from '@/lib/utils';
 import { downloadBlob, snapshotFileName } from '@/lib/drawing/three/snapshot';
 import { buildAreaSolids } from '@/lib/drawing/three/solids';
 import { useDrawingEditor } from '../DrawingEditorContext';
 import { useEdgeTypeList } from '../EdgeTypesContext';
 import { useMaterialPicker } from '../MaterialPickerContext';
+import { HandToggle } from './HandToggle';
 import { useSlabTextures } from './useSlabTextures';
 import { ViewerScene, type CaptureFn, type ViewRequest } from './ViewerScene';
 import { ViewPresetBar } from './ViewPresetBar';
@@ -36,6 +38,7 @@ export function DrawingViewer3D() {
   const { textures, failed } = useSlabTextures(photoUrls);
   const notices = viewerNotices(solids, failed);
   const [view, setView] = useState<ViewRequest>({ preset: 'iso', nonce: 0 });
+  const [handOn, setHandOn] = useState(false);
   const [capture, setCapture] = useState<CaptureFn | null>(null);
   // A function as state needs the updater form, or React would call it.
   const onCaptureReady = useCallback((fn: CaptureFn) => setCapture(() => fn), []);
@@ -49,9 +52,12 @@ export function DrawingViewer3D() {
   };
 
   return (
-    <div data-testid="drawing-viewer-3d" className="absolute inset-0 z-40 bg-stone-100">
+    <div
+      data-testid="drawing-viewer-3d"
+      className={cn('absolute inset-0 z-10 bg-stone-100', handOn && 'cursor-grab active:cursor-grabbing')}
+    >
       <Canvas camera={{ fov: CAMERA_FOV, near: CAMERA_NEAR, far: CAMERA_FAR }} dpr={[1, 2]}>
-        <ViewerScene solids={solids} view={view} photos={textures} onCaptureReady={onCaptureReady} />
+        <ViewerScene solids={solids} view={view} photos={textures} onCaptureReady={onCaptureReady} handOn={handOn} />
       </Canvas>
       {solids.pieces.length === 0 && (
         <p role="status" className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-sm text-stone-500">
@@ -59,12 +65,13 @@ export function DrawingViewer3D() {
         </p>
       )}
       {notices.length > 0 && (
-        <div role="status" className="absolute left-3 top-3 flex max-w-sm flex-col gap-1">
+        <div role="status" className="absolute left-[4.5rem] top-3 flex max-w-sm flex-col gap-1">
           {notices.map((notice) => (
             <p key={notice} className="rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-900 shadow">{notice}</p>
           ))}
         </div>
       )}
+      <HandToggle active={handOn} onToggle={() => setHandOn((on) => !on)} />
       <ViewPresetBar onPick={pick} onSave={save} />
     </div>
   );

@@ -36,9 +36,7 @@ export function CutoutPanel() {
         </div>
       )}
 
-      {/* pb-12 clears DrawingStatusBar, which docks over this panel's bottom
-          edge (SalesOrderDrawingPage.tsx) rather than resizing it. */}
-      <div className="modal-scrollbar flex-1 overflow-y-auto p-3 pb-12">
+      <div className="modal-scrollbar flex-1 overflow-y-auto p-3">
         {!piece && <p className="mt-16 text-center text-xs text-stone-500">Select a piece to add cutouts to it.</p>}
         {piece && piece.cutouts.length === 0 && (
           <p className="mt-16 text-center text-xs text-stone-500">No cutouts in this part yet.</p>

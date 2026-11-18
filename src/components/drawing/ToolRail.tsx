@@ -62,7 +62,7 @@ export function ToolRail() {
   const { tool, setTool, border, corner } = useDrawingEditor();
 
   return (
-    <nav aria-label="Drawing tools" className="flex shrink-0 flex-col items-center px-2 py-2">
+    <nav aria-label="Drawing tools" className="flex flex-col items-center">
       <div className="flex flex-col items-center gap-1 rounded-2xl bg-stone-900 p-1.5 shadow-lg">
         {TOOLS.map((def) => <PlainToolButton key={def.tool} def={def} />)}
 
