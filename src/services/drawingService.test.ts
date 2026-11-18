@@ -103,6 +103,29 @@ describe('drawingService.restoreVersion', () => {
   });
 });
 
+describe('drawingService edge types', () => {
+  const input = { name: 'Cove', pricingType: 'linear' as const, price: 12.5, alias: 'C', color: '#aa00ff', finish: 'bullnose' as const };
+  const saved = { ...input, id: 'e1', isSystem: false };
+
+  it('GETs the edge type list', async () => {
+    vi.mocked(tenantClient.get).mockResolvedValue({ data: { success: true, edgeTypes: [saved] } });
+    expect(await drawingService.getEdgeTypes()).toEqual([saved]);
+    expect(tenantClient.get).toHaveBeenCalledWith('/tenant/settings/edge-types');
+  });
+
+  it('POSTs a new edge type and returns what the server saved', async () => {
+    vi.mocked(tenantClient.post).mockResolvedValue({ data: { success: true, edgeType: saved } });
+    expect(await drawingService.createEdgeType(input)).toEqual(saved);
+    expect(tenantClient.post).toHaveBeenCalledWith('/tenant/settings/edge-types', input);
+  });
+
+  it('PUTs changes to an existing edge type', async () => {
+    vi.mocked(tenantClient.put).mockResolvedValue({ data: { success: true, edgeType: saved } });
+    expect(await drawingService.updateEdgeType('e1', input)).toEqual(saved);
+    expect(tenantClient.put).toHaveBeenCalledWith('/tenant/settings/edge-types/e1', input);
+  });
+});
+
 describe('drawingService.getEdgeCodes', () => {
   it('GETs the edge code list', async () => {
     const edgeCodes = [{ code: 'EE', label: 'Eased Edge' }];

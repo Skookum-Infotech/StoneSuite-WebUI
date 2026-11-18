@@ -7,6 +7,7 @@
 // remnants, which this editor does not model.
 
 import type { DrawingArea, Piece } from '@/types/drawing';
+import { outlineAreaWithArcs, perimeterWithArcs } from './arcs';
 import { cutoutArea } from './cutouts';
 import { edgeTotals, type EdgeTotals } from './edges';
 import { area, distance, outlineEdges, perimeter } from './geometry';
@@ -32,7 +33,7 @@ export interface PieceMetrics {
 }
 
 export function pieceMetrics(piece: Pick<Piece, 'outline' | 'cutouts'> & { edges?: Piece['edges'] }): PieceMetrics {
-  const grossAreaMm2 = area(piece.outline);
+  const grossAreaMm2 = outlineAreaWithArcs(piece.outline, piece.edges, area(piece.outline));
   const cutoutAreaMm2 = piece.cutouts.reduce((sum, c) => sum + cutoutArea(c), 0);
   const angles = interiorAngles(piece.outline);
   return {
@@ -40,7 +41,7 @@ export function pieceMetrics(piece: Pick<Piece, 'outline' | 'cutouts'> & { edges
     grossAreaMm2,
     cutoutAreaMm2,
     netAreaMm2: Math.max(0, grossAreaMm2 - cutoutAreaMm2),
-    perimeterMm: perimeter(piece.outline),
+    perimeterMm: piece.edges ? perimeterWithArcs(piece.outline, piece.edges) : perimeter(piece.outline),
     edges: outlineEdges(piece.outline).map(([a, b], index) => ({
       index, lengthMm: distance(a, b), startAngleDeg: angles[index],
     })),

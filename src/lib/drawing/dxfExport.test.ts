@@ -45,6 +45,15 @@ describe('buildAreaDxf — piece placement', () => {
     expect(Math.max(...xs)).toBeCloseTo(110, 3);
   });
 
+  it('writes a curved side as short straight pieces, and the piece still reaches the crown of the arc', () => {
+    const area = singlePieceArea(MM_PER_INCH * 10, MM_PER_INCH * 5, 'A-1');
+    // Side 0 runs along the top, so a positive height bows it up past y = 0.
+    area.pieces[0].edges = [{ index: 0, arcHeightMm: MM_PER_INCH * 2 }];
+    const vertices = outlineOf(buildAreaDxf(area, meta));
+    expect(vertices.length).toBeGreaterThan(30);
+    expect(Math.max(...vertices.map((v) => v.y))).toBeCloseTo(2, 3);
+  });
+
   it('applies the piece rotation, so a 90 degree piece swaps its extents', () => {
     const area = singlePieceArea(MM_PER_INCH * 10, MM_PER_INCH * 5, 'A-1');
     area.pieces[0].rotationDeg = 90;

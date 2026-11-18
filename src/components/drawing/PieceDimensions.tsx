@@ -6,9 +6,11 @@
 import { memo, useMemo } from 'react';
 import type { Piece } from '@/types/drawing';
 import { layoutEdgeDimensions } from '@/lib/drawing/dimensions';
+import { DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX } from '@/lib/drawing/constants';
 import { transformOutline } from '@/lib/drawing/geometry';
 import { edgeLetter } from '@/lib/drawing/labels';
 import { DimensionLine } from './DimensionLine';
+import { useDrawingEditor } from './DrawingEditorContext';
 import { EdgeMarks } from './EdgeMarks';
 
 export const PieceDimensions = memo(function PieceDimensions(
@@ -16,9 +18,15 @@ export const PieceDimensions = memo(function PieceDimensions(
     piece: Piece; displayUnit: 'in' | 'mm'; fractionDenominator: 16 | 32;
   },
 ) {
+  const { state } = useDrawingEditor();
+  // The dimension line stands off the edge by a constant number of screen
+  // pixels (never less than the default in millimetres), so zooming out to
+  // fit a large piece pushes it further out in world units instead of
+  // letting it collapse onto the outline.
+  const offsetMm = Math.max(DEFAULT_DIMENSION_OFFSET_MM, MIN_DIMENSION_OFFSET_PX / state.zoom);
   const layouts = useMemo(
-    () => layoutEdgeDimensions(transformOutline(piece.outline, piece.position, piece.rotationDeg)),
-    [piece.outline, piece.position, piece.rotationDeg],
+    () => layoutEdgeDimensions(transformOutline(piece.outline, piece.position, piece.rotationDeg), offsetMm),
+    [piece.outline, piece.position, piece.rotationDeg, offsetMm],
   );
   return (
     <>

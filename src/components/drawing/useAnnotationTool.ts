@@ -1,4 +1,5 @@
-// Click handling for the Note, Dimension and Line tools. A note is one click.
+// Click handling for the Text, Note, Dimension and Line tools. A note and a
+// piece of text are one click.
 // A dimension and a line take two points, and accept either gesture people
 // actually use for them: press-drag-release in one motion, or click once and
 // click again. Whichever comes first wins — `release` finishes the line when
@@ -16,6 +17,7 @@ import type { Piece, Point } from '@/types/drawing';
 import { areaVertices, dimensionProblem, newDimension, newNote, snapToVertex } from '@/lib/drawing/annotations';
 import { SNAP_TOLERANCE_MM } from '@/lib/drawing/constants';
 import { distance, toLocalPoint, transformOutline } from '@/lib/drawing/geometry';
+import { newTextNote, noteHit } from '@/lib/drawing/textNotes';
 import { pointInPolygon } from '@/lib/drawing/polygon';
 import { useDrawingEditor } from './DrawingEditorContext';
 
@@ -27,7 +29,7 @@ const TWO_POINT_TOOLS = ['dimension', 'line'];
 const DRAG_THRESHOLD_PX = 6;
 
 export function useAnnotationTool() {
-  const { state, dispatch, tool, setTool } = useDrawingEditor();
+  const { state, dispatch, tool, setTool, selectNote } = useDrawingEditor();
   const [pending, setPending] = useState<{ from: Point; tool: string } | null>(null);
   const area = state.present.areas.find((a) => a.id === state.activeAreaId);
 
@@ -52,7 +54,23 @@ export function useAnnotationTool() {
 
   /** Handles a press on the canvas; false when no drawing tool is armed. */
   const place = (point: Point): boolean => {
-    if (!area || (tool !== 'note' && !TWO_POINT_TOOLS.includes(tool))) return false;
+    if (!area) return false;
+    if (tool === 'text') {
+      // A press on text already on the board picks that text up; a press on
+      // empty board drops a new one right there. Either way the control bar
+      // opens on it and the tool hands back to Select.
+      const existing = [...area.notes].reverse().find((n) => noteHit(n, point, state.zoom));
+      if (existing) {
+        selectNote(existing.id);
+      } else {
+        const created = newTextNote(point, crypto.randomUUID());
+        dispatch({ type: 'setAnnotations', areaId: area.id, notes: [...area.notes, created] });
+        selectNote(created.id);
+      }
+      setTool('select');
+      return true;
+    }
+    if (tool !== 'note' && !TWO_POINT_TOOLS.includes(tool)) return false;
     const at = snap(point);
     if (tool === 'note') {
       dispatch({ type: 'setAnnotations', areaId: area.id, notes: [...area.notes, newNote(at, crypto.randomUUID())] });

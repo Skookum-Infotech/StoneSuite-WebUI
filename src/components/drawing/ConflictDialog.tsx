@@ -3,7 +3,7 @@
 // overwrite silently — the user picks Reload latest (discard local edits,
 // pull the current saved version) or Save as copy (force-save local edits
 // as the new current version anyway). Same useModalDialog + createPortal
-// shape as AreaTabs.tsx's DeleteAreaDialog — this repo has no Dialog
+// shape as AreaSidebar.tsx's DeleteAreaDialog — this repo has no Dialog
 // primitive, every dialog hand-rolls its own overlay and focus handling.
 
 import { createPortal } from 'react-dom';

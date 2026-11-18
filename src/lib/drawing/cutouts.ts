@@ -13,7 +13,10 @@ import { polygonInside, polygonsOverlap, boundaryDistance } from './polygon';
 export const CUTOUT_TYPE_LABELS: Record<CutoutType, string> = {
   sink: 'Sink',
   cooktop: 'Cooktop',
-  faucet: 'Faucet hole',
+  faucet: 'Faucet',
+  fireplace: 'Fireplace',
+  bathtub: 'Bathtub',
+  other: 'Other',
   soap_dispenser: 'Soap dispenser',
   outlet: 'Electrical outlet',
   custom: 'Custom cutout',
@@ -34,6 +37,9 @@ export const CUTOUT_DEFAULTS: Record<CutoutType, CutoutDefaults> = {
   sink: { shape: 'rect', widthMm: 30 * MM_PER_INCH, depthMm: 18 * MM_PER_INCH },
   cooktop: { shape: 'rect', widthMm: 30 * MM_PER_INCH, depthMm: 21 * MM_PER_INCH },
   faucet: { shape: 'round', diameterMm: 1.375 * MM_PER_INCH },
+  fireplace: { shape: 'rect', widthMm: 36 * MM_PER_INCH, depthMm: 30 * MM_PER_INCH },
+  bathtub: { shape: 'rect', widthMm: 60 * MM_PER_INCH, depthMm: 32 * MM_PER_INCH },
+  other: { shape: 'rect', widthMm: 12 * MM_PER_INCH, depthMm: 12 * MM_PER_INCH },
   soap_dispenser: { shape: 'round', diameterMm: 1.25 * MM_PER_INCH },
   outlet: { shape: 'rect', widthMm: 2.75 * MM_PER_INCH, depthMm: 4.5 * MM_PER_INCH },
   custom: { shape: 'rect', widthMm: 12 * MM_PER_INCH, depthMm: 12 * MM_PER_INCH },
@@ -52,6 +58,56 @@ export function cutoutShape(cutout: Cutout): CutoutShape {
   if (cutout.outline && cutout.outline.length >= 3) return 'polygon';
   if (cutout.diameterMm !== undefined && cutout.widthMm === undefined) return 'round';
   return 'rect';
+}
+
+/** The shapes sized by a width x height box rather than a diameter or outline. */
+export const BOX_SHAPES: readonly CutoutShape[] = ['rect', 'ellipse', 'arc', 'stadium'];
+export const isBoxShape = (shape: CutoutShape): boolean => BOX_SHAPES.includes(shape);
+
+/** Where an arc's dome starts, as a fraction of its height from the bottom —
+ *  below that the sides run straight up. */
+const ARC_STRAIGHT_FRACTION = 0.3;
+
+/** A half-width x half-depth box's outline for `shape`, around (0, 0), clockwise
+ *  (y up). Curves are approximated by ROUND_CUTOUT_SEGMENTS points. */
+function boxOutline(shape: CutoutShape, hw: number, hd: number): Point[] {
+  const steps = ROUND_CUTOUT_SEGMENTS;
+  if (shape === 'ellipse') {
+    return Array.from({ length: steps }, (_, i) => {
+      const angle = -(2 * Math.PI * i) / steps;
+      return { x: hw * Math.cos(angle), y: hd * Math.sin(angle) };
+    });
+  }
+  if (shape === 'arc') {
+    const half = steps / 2;
+    const baseY = -hd + 2 * hd * ARC_STRAIGHT_FRACTION;
+    const domeHeight = hd - baseY;
+    const dome = Array.from({ length: half + 1 }, (_, i) => {
+      const angle = Math.PI - (Math.PI * i) / half;
+      return { x: hw * Math.cos(angle), y: baseY + domeHeight * Math.sin(angle) };
+    });
+    return [{ x: -hw, y: -hd }, ...dome, { x: hw, y: -hd }];
+  }
+  if (shape === 'stadium') {
+    const r = Math.min(hw, hd);
+    const perCorner = steps / 4;
+    const corners = [
+      { cx: -hw + r, cy: hd - r, from: Math.PI },
+      { cx: hw - r, cy: hd - r, from: Math.PI / 2 },
+      { cx: hw - r, cy: -hd + r, from: 0 },
+      { cx: -hw + r, cy: -hd + r, from: -Math.PI / 2 },
+    ];
+    const points = corners.flatMap(({ cx, cy, from }) => Array.from({ length: perCorner + 1 }, (_, i) => {
+      const angle = from - (Math.PI / 2) * (i / perCorner);
+      return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+    }));
+    // A cap as wide as the box meets its neighbour at one point: keep it once.
+    return points.filter((p, i) => {
+      const prev = points[(i - 1 + points.length) % points.length];
+      return Math.hypot(p.x - prev.x, p.y - prev.y) > 1e-9;
+    });
+  }
+  return [{ x: -hw, y: hd }, { x: hw, y: hd }, { x: hw, y: -hd }, { x: -hw, y: -hd }];
 }
 
 /** The opening's outline in the piece's local coordinates, clockwise. Round
@@ -73,13 +129,26 @@ export function cutoutOutline(cutout: Cutout): Point[] {
     const hw = (cutout.widthMm ?? 0) / 2;
     const hd = (cutout.depthMm ?? 0) / 2;
     if (hw <= 0 || hd <= 0) return [];
-    relative = [{ x: -hw, y: hd }, { x: hw, y: hd }, { x: hw, y: -hd }, { x: -hw, y: -hd }];
+    relative = boxOutline(shape, hw, hd);
   }
   const rotation = cutout.rotationDeg ?? 0;
   return relative.map((p) => {
     const r = rotatePoint(p, rotation);
     return { x: r.x + cutout.center.x, y: r.y + cutout.center.y };
   });
+}
+
+/** The opening's length (along its own X) and height (along its own Y), before
+ *  any rotation — what the drawing labels it with. A round opening is its
+ *  diameter both ways; a custom one its bounding box. */
+export function cutoutSize(cutout: Cutout): { lengthMm: number; heightMm: number } {
+  const shape = cutoutShape(cutout);
+  if (shape === 'round') return { lengthMm: cutout.diameterMm ?? 0, heightMm: cutout.diameterMm ?? 0 };
+  if (shape === 'polygon') {
+    const b = bounds(cutout.outline ?? []);
+    return { lengthMm: b.maxX - b.minX, heightMm: b.maxY - b.minY };
+  }
+  return { lengthMm: cutout.widthMm ?? cutout.diameterMm ?? 0, heightMm: cutout.depthMm ?? cutout.diameterMm ?? 0 };
 }
 
 /** Area of the opening in mm². */
@@ -167,13 +236,13 @@ export function convertCutoutShape(cutout: Cutout, to: CutoutShape): Partial<Cut
   if (from === to) return {};
   const extent = (): { w: number; d: number } => {
     if (from === 'round') return { w: cutout.diameterMm ?? FALLBACK_SIZE_MM, d: cutout.diameterMm ?? FALLBACK_SIZE_MM };
-    if (from === 'rect') return { w: cutout.widthMm ?? FALLBACK_SIZE_MM, d: cutout.depthMm ?? FALLBACK_SIZE_MM };
+    if (isBoxShape(from)) return { w: cutout.widthMm ?? FALLBACK_SIZE_MM, d: cutout.depthMm ?? FALLBACK_SIZE_MM };
     const b = bounds(cutout.outline ?? []);
     return { w: b.maxX - b.minX || FALLBACK_SIZE_MM, d: b.maxY - b.minY || FALLBACK_SIZE_MM };
   };
   const { w, d } = extent();
   if (to === 'round') return { shape: 'round', diameterMm: Math.max(w, d) };
-  if (to === 'rect') return { shape: 'rect', widthMm: w, depthMm: d };
+  if (isBoxShape(to)) return { shape: to, widthMm: w, depthMm: d, diameterMm: undefined, outline: undefined };
   const relative = from === 'round'
     ? Array.from({ length: ROUND_TO_POLYGON_SEGMENTS }, (_, i) => {
       const angle = -(2 * Math.PI * i) / ROUND_TO_POLYGON_SEGMENTS;
