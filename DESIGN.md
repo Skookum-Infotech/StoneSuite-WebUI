@@ -205,7 +205,7 @@ Every text role is one `type-*` class in `src/styles/typography.css` (sizes are 
 | Page title | `type-page-title` | 23.5px / 600, -0.02em | Title Case |
 | Page subtitle | `type-page-subtitle` | 13px / 400 muted | |
 | Sign-in title | `type-display` | 26px / 400 brand font | Title Case; sign-in, onboarding cards |
-| KPI figure | `type-kpi` | 28px / 700, tabular | Currency symbol smaller and muted |
+| KPI figure | `type-kpi` | 28px / 700, tabular | Currency symbol smaller and muted (`type-kpi-currency`: 60%, 500, ink-muted) |
 | Dialog / section title | `type-dialog-title` | 15px / 600 | Title Case |
 | Card title | `type-card-title` | 14px / 600 | Title Case |
 | Dialog message | `type-dialog-body` | 12.5px / 400 | |

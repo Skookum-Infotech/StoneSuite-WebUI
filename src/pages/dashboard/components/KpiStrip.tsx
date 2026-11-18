@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, DollarSign, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,17 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 
 function formatValue(meta: MetricMeta, value: number): string {
   return meta.format === 'currency' ? currencyFormatter.format(value) : String(Math.round(value));
+}
+
+// The figure as shown in the tile: same text as formatValue, but a currency
+// symbol is wrapped so it renders smaller and muted (type-kpi-currency).
+function renderValue(meta: MetricMeta, value: number): ReactNode {
+  if (meta.format !== 'currency') return String(Math.round(value));
+  return currencyFormatter.formatToParts(value).map((part, i) =>
+    part.type === 'currency'
+      ? <span key={i} className="type-kpi-currency">{part.value}</span>
+      : part.value,
+  );
 }
 
 interface DeltaDescriptor {
@@ -169,7 +181,7 @@ function KpiTile({ metric, className }: { metric: KpiMetric; className?: string 
             flash ? 'bg-accent/70' : 'bg-transparent',
           )}
         >
-          {formatValue(meta, shown)}
+          {renderValue(meta, shown)}
         </span>
       </div>
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">

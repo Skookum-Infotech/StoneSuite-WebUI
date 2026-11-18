@@ -78,6 +78,15 @@
   color: var(--color-ink-strong);
   font-variant-numeric: tabular-nums;
 }
+/* The currency symbol inside a KPI figure: smaller and muted, so the eye
+   lands on the number (approved design: "$" at 60%, medium weight). */
+@utility type-kpi-currency {
+  font-size: 0.6em;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--color-ink-muted);
+  margin-right: 0.125rem;
+}
 @utility type-dialog-title {
   font-size: var(--text-dialog-title);
   line-height: 1.47;

@@ -46,8 +46,17 @@ describe('KpiStrip', () => {
     ];
     render(<KpiStrip metrics={metrics} isLoading={false} isError={false} />);
     expect(screen.getByText('Revenue')).toBeInTheDocument();
-    expect(screen.getByText('$184,250')).toBeInTheDocument();
+    // The figure reads "$184,250"; the symbol is its own smaller, muted span.
+    expect(screen.getByText('184,250')).toHaveTextContent('$184,250');
+    expect(screen.getByText('$')).toHaveClass('type-kpi-currency');
     expect(screen.getByText('18%')).toBeInTheDocument();
+  });
+
+  it('leaves count figures as plain numbers, with no currency span', () => {
+    const metrics: KpiMetric[] = [{ id: 'open-leads', value: 42, deltaCount: 3 }];
+    const { container } = render(<KpiStrip metrics={metrics} isLoading={false} isError={false} />);
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(container.querySelector('.type-kpi-currency')).toBeNull();
   });
 
   it('shows a downward trend for a negative percent delta', () => {
