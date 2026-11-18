@@ -2,6 +2,10 @@ import type { ElementType, ReactNode } from 'react'
 import { CalendarDays } from 'lucide-react'
 import { SegmentedProgressBar } from '@/components/tenant/SegmentedProgressBar'
 
+/** At or past this share of its limit a meter says so in words, so the state
+ *  never depends on colour alone. */
+const QUOTA_REACHED_PERCENT = 100
+
 export interface UsageMeterHeading {
   title: string
   icon: ElementType
@@ -52,12 +56,18 @@ export function UsageMeter({ heading, limit, children }: UsageMeterProps) {
         <p className="mt-0.5 text-xs text-stone-500">{heading.detail}</p>
       </div>
       {limit ? (
-        <SegmentedProgressBar
-          percent={limit.percent}
-          ariaLabel={`${heading.title} used`}
-          valueLabel={`${limit.percent}%`}
-          block
-        />
+        <>
+          <SegmentedProgressBar
+            percent={limit.percent}
+            ariaLabel={`${heading.title} used`}
+            valueLabel={`${limit.percent}%`}
+            variant="quota"
+            block
+          />
+          {limit.percent >= QUOTA_REACHED_PERCENT && (
+            <p className="text-xs font-semibold text-red-600">Limit reached</p>
+          )}
+        </>
       ) : (
         <p className="text-xs font-medium text-stone-500">No limit on your current plan</p>
       )}
